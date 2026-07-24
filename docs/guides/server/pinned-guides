@@ -1,4 +1,5 @@
 configuration
+supported-configurations
 configuration-production
 bootstrap-admin-recovery
 directory-structure
@@ -6,6 +7,10 @@ containers
 enabletls
 hostname
 reverseproxy
+haproxy-passthrough
+haproxy-reencrypt
+traefik-passthrough
+traefik-reencrypt
 db
 caching
 outgoinghttp
@@ -14,6 +19,9 @@ mutual-tls
 features
 configuration-provider
 logging
+logging/console
+logging/file
+logging/syslog
 fips
 management-interface
 importExport
@@ -21,3 +29,4 @@ vault
 all-config
 all-provider-config
 update-compatibility
+windows-service

@@ -17,10 +17,13 @@
 
 package org.keycloak.testsuite.adapter;
 
-import org.apache.commons.io.IOUtils;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
@@ -28,19 +31,18 @@ import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.utils.arquillian.DeploymentArchiveProcessorUtils;
 import org.keycloak.testsuite.utils.io.IOUtil;
 
-import jakarta.ws.rs.core.UriBuilder;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
+import org.apache.commons.io.IOUtils;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.asset.UrlAsset;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.jupiter.api.Assertions;
 
-import org.junit.Assert;
+import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
@@ -61,10 +63,10 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         String webInfPath = baseSAMLPath + name + "/WEB-INF/";
 
         URL keycloakSAMLConfig = AbstractServletsAdapterTest.class.getResource(webInfPath + "keycloak-saml.xml");
-        Assert.assertNotNull("keycloak-saml.xml should be in " + webInfPath, keycloakSAMLConfig);
+        Assertions.assertNotNull(keycloakSAMLConfig, "keycloak-saml.xml should be in " + webInfPath);
 
         URL webXML = AbstractServletsAdapterTest.class.getResource(baseSAMLPath + webXMLPath);
-        Assert.assertNotNull("web.xml should be in " + baseSAMLPath + webXMLPath, keycloakSAMLConfig);
+        Assertions.assertNotNull(keycloakSAMLConfig, "web.xml should be in " + baseSAMLPath + webXMLPath);
 
         WebArchive deployment = ShrinkWrap.create(WebArchive.class, customArchiveName + ".war")
                 .addClasses(servletClasses)
@@ -114,7 +116,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
         String webInfPath = baseSAMLPath + name + "/WEB-INF/";
 
         URL webXML = AbstractServletsAdapterTest.class.getResource(baseSAMLPath + webXMLPath);
-        Assert.assertNotNull("web.xml should be in " + baseSAMLPath + webXMLPath, webXML);
+        Assertions.assertNotNull(webXML, "web.xml should be in " + baseSAMLPath + webXMLPath);
 
         WebArchive deployment = ShrinkWrap.create(WebArchive.class, name + ".war")
                 .addClasses(servletClasses)
@@ -132,18 +134,18 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
         // add the xml for each tenant in classes
         URL config1Url = AbstractServletsAdapterTest.class.getResource(webInfPath + config1);
-        Assert.assertNotNull("config1Url should be in " + webInfPath + config1, config1Url);
+        Assertions.assertNotNull(config1Url, "config1Url should be in " + webInfPath + config1);
         deployment.add(new UrlAsset(config1Url), "/WEB-INF/classes/" + config1);
         URL config2Url = AbstractServletsAdapterTest.class.getResource(webInfPath + config2);
-        Assert.assertNotNull("config2Url should be in " + webInfPath + config2, config2Url);
+        Assertions.assertNotNull(config2Url, "config2Url should be in " + webInfPath + config2);
         deployment.add(new UrlAsset(config2Url), "/WEB-INF/classes/" + config2);
 
         // add the keystores for each tenant in classes
         URL keystore1Url = AbstractServletsAdapterTest.class.getResource(webInfPath + keystore1);
-        Assert.assertNotNull("keystore1Url should be in " + webInfPath + keystore1, keystore1Url);
+        Assertions.assertNotNull(keystore1Url, "keystore1Url should be in " + webInfPath + keystore1);
         deployment.add(new UrlAsset(keystore1Url), "/WEB-INF/classes/" + keystore1);
         URL keystore2Url = AbstractServletsAdapterTest.class.getResource(webInfPath + keystore2);
-        Assert.assertNotNull("keystore2Url should be in " + webInfPath + keystore2, keystore2Url);
+        Assertions.assertNotNull(keystore2Url, "keystore2Url should be in " + webInfPath + keystore2);
         deployment.add(new UrlAsset(keystore2Url), "/WEB-INF/classes/" + keystore2);
 
         return deployment;
@@ -161,7 +163,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     }
 
     protected void setAdapterAndServerTimeOffset(int timeOffset, String... servletUris) {
-        setTimeOffset(timeOffset);
+        timeOffSet.set(timeOffset);
 
         for (String servletUri : servletUris) {
             setAdapterServletTimeOffset(timeOffset, servletUri);

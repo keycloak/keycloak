@@ -1,4 +1,5 @@
 import type { KeycloakAdminClient } from "../client.js";
+import { NetworkError } from "../utils/fetchWithError.js";
 import type CertificateRepresentation from "../defs/certificateRepresentation.js";
 import type ClientRepresentation from "../defs/clientRepresentation.js";
 import type ClientScopeRepresentation from "../defs/clientScopeRepresentation.js";
@@ -19,6 +20,7 @@ import type ScopeRepresentation from "../defs/scopeRepresentation.js";
 import type UserRepresentation from "../defs/userRepresentation.js";
 import type UserSessionRepresentation from "../defs/userSessionRepresentation.js";
 import Resource from "./resource.js";
+import { ClientsV2 } from "./clientsV2.js";
 
 export interface PaginatedQuery {
   first?: number;
@@ -53,6 +55,12 @@ export interface PolicyQuery extends PaginatedQuery {
 }
 
 export class Clients extends Resource<{ realm?: string }> {
+  /**
+   * Clients v2 API - New versioned API with OpenAPI-generated client.
+   */
+  #v2: ClientsV2;
+  #client: KeycloakAdminClient;
+
   public find = this.makeRequest<ClientQuery, ClientRepresentation[]>({
     method: "GET",
   });
@@ -419,6 +427,16 @@ export class Clients extends Resource<{ realm?: string }> {
     queryParamKeys: ["scope"],
   });
 
+  public evaluateGenerateSamlResponse = this.makeRequest<
+    { id: string; scope: string; userId: string },
+    Record<string, unknown>
+  >({
+    method: "GET",
+    path: "/{id}/evaluate-scopes/generate-example-saml-response",
+    urlParamKeys: ["id"],
+    queryParamKeys: ["scope", "userId"],
+  });
+
   public evaluateGenerateAccessToken = this.makeRequest<
     { id: string; scope: string; userId: string; audience: string },
     Record<string, unknown>
@@ -662,13 +680,23 @@ export class Clients extends Resource<{ realm?: string }> {
     urlParamKeys: ["id", "type"],
   });
 
-  public findOnePolicy = this.makeRequest<
+  public findOnePolicyWithType = this.makeRequest<
     { id: string; type: string; policyId: string },
     void
   >({
     method: "GET",
     path: "/{id}/authz/resource-server/policy/{type}/{policyId}",
     urlParamKeys: ["id", "type", "policyId"],
+    catchNotFound: true,
+  });
+
+  public findOnePolicy = this.makeRequest<
+    { id: string; policyId: string },
+    void
+  >({
+    method: "GET",
+    path: "/{id}/authz/resource-server/policy/{policyId}",
+    urlParamKeys: ["id", "policyId"],
     catchNotFound: true,
   });
 
@@ -701,11 +729,11 @@ export class Clients extends Resource<{ realm?: string }> {
     policyName: string;
     policy: PolicyRepresentation;
   }): Promise<PolicyRepresentation> {
-    const policyFound = await this.findPolicyByName({
-      id: payload.id,
-      name: payload.policyName,
-    });
-    if (policyFound) {
+    try {
+      const policyFound = await this.findPolicyByName({
+        id: payload.id,
+        name: payload.policyName,
+      });
       await this.updatePolicy(
         {
           id: payload.id,
@@ -714,15 +742,18 @@ export class Clients extends Resource<{ realm?: string }> {
         },
         payload.policy,
       );
-      return this.findPolicyByName({
+      return await this.findPolicyByName({
         id: payload.id,
         name: payload.policyName,
       });
-    } else {
-      return this.createPolicy(
-        { id: payload.id, type: payload.policy.type! },
-        payload.policy,
-      );
+    } catch (error) {
+      if (error instanceof NetworkError && error.response.status === 404) {
+        return this.createPolicy(
+          { id: payload.id, type: payload.policy.type! },
+          payload.policy,
+        );
+      }
+      throw error;
     }
   }
 
@@ -758,7 +789,7 @@ export class Clients extends Resource<{ realm?: string }> {
 
   public listPermissionsByResource = this.makeRequest<
     { id: string; resourceId: string },
-    ResourceServerRepresentation[]
+    PolicyRepresentation[]
   >({
     method: "GET",
     path: "/{id}/authz/resource-server/resource/{resourceId}/permissions",
@@ -1045,6 +1076,62 @@ export class Clients extends Resource<{ realm?: string }> {
       }),
       getBaseUrl: () => client.baseUrl,
     });
+
+    this.#client = client;
+    // Initialize v2 API
+    this.#v2 = new ClientsV2(client);
+  }
+
+  /**
+   * Get the clients v2 API endpoint for the currently configured realm.
+   * Returns a fluent API builder for client operations using the new versioned API.
+   *
+   * Note: This API is experimental and must be explicitly enabled by setting
+   * `enableExperimentalApis: true` in the client configuration.
+   *
+   * @example
+   * ```typescript
+   * // Enable experimental APIs in client configuration
+   * const kcAdminClient = new KeycloakAdminClient({
+   *   baseUrl: "http://localhost:8080",
+   *   enableExperimentalApis: true,
+   * });
+   *
+   * // List all clients
+   * const clients = await kcAdminClient.clients.v2().get();
+   *
+   * // Get a single client by clientId
+   * const client = await kcAdminClient.clients.v2().byId("my-client").get();
+   *
+   * // Create a new client
+   * await kcAdminClient.clients.v2().post({
+   *   clientId: "my-client",
+   *   protocol: "openid-connect",
+   *   enabled: true,
+   * });
+   *
+   * // Update a client
+   * await kcAdminClient.clients.v2().byId("my-client").put({
+   *   clientId: "my-client",
+   *   protocol: "openid-connect",
+   *   description: "Updated description",
+   * });
+   *
+   * // Delete a client
+   * await kcAdminClient.clients.v2().byId("my-client").delete();
+   * ```
+   *
+   * @returns A promise that resolves to the clients v2 endpoint
+   * @throws Error if experimental APIs are not enabled
+   */
+  v2() {
+    if (!this.#client.enableExperimentalApis) {
+      throw new Error(
+        "The v2 API is experimental and not enabled. " +
+          "To use it, set `enableExperimentalApis: true` in the KeycloakAdminClient configuration.",
+      );
+    }
+    return this.#v2.api();
   }
 
   /**

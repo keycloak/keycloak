@@ -1,10 +1,11 @@
 package org.keycloak.testframework.events;
 
-import org.jboss.logging.Logger;
+import java.util.List;
+
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testframework.realm.ManagedRealm;
 
-import java.util.List;
+import org.jboss.logging.Logger;
 
 public class Events extends AbstractEvents<EventRepresentation> {
 
@@ -27,6 +28,11 @@ public class Events extends AbstractEvents<EventRepresentation> {
     @Override
     protected String getRealmId(EventRepresentation rep) {
         return rep.getRealmId();
+    }
+
+    @Override
+    protected long getTime(EventRepresentation rep) {
+        return rep.getTime();
     }
 
     @Override

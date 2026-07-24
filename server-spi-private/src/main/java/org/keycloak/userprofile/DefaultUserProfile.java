@@ -19,30 +19,36 @@
 
 package org.keycloak.userprofile;
 
-import static org.keycloak.models.UserModel.DISABLED_REASON;
-import static org.keycloak.models.UserModel.IS_TEMP_ADMIN_ATTR_NAME;
-import static org.keycloak.userprofile.UserProfileUtil.createUserProfileMetadata;
-import static org.keycloak.userprofile.UserProfileUtil.isRootAttribute;
-
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.AbstractUserRepresentation;
+import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.utils.StringUtil;
+
+import static org.keycloak.models.UserModel.DISABLED_REASON;
+import static org.keycloak.models.UserModel.IS_TEMP_ADMIN_ATTR_NAME;
+import static org.keycloak.userprofile.UserProfileUtil.createUserProfileMetadata;
+import static org.keycloak.userprofile.UserProfileUtil.isRootAttribute;
 
 /**
  * <p>The default implementation for {@link UserProfile}. Should be reused as much as possible by the different implementations
@@ -87,11 +93,16 @@ public final class DefaultUserProfile implements UserProfile {
 
     @Override
     public UserModel create() throws ValidationException {
+        return create(true);
+    }
+
+    @Override
+    public UserModel create(boolean validate) throws ValidationException {
         if (user != null) {
             throw new RuntimeException("User already created");
         }
 
-        if (!validated) {
+        if (validate && !validated) {
             validate();
         }
 
@@ -127,9 +138,7 @@ public final class DefaultUserProfile implements UserProfile {
                     continue;
                 }
 
-                boolean ignoreEmptyValue = !removeAttributes && updatedValue.isEmpty();
-
-                if (isCustomAttribute(name) && ignoreEmptyValue) {
+                if (isIgnoreAttributeUpdate(removeAttributes, updatedValue, name)) {
                     continue;
                 }
 
@@ -190,6 +199,23 @@ public final class DefaultUserProfile implements UserProfile {
         return user;
     }
 
+    private boolean isIgnoreAttributeUpdate(boolean removeAttributes, List<String> updatedValue, String name) {
+        boolean ignoreEmptyValue = !removeAttributes && updatedValue.isEmpty();
+
+        if (isCustomAttribute(name) && ignoreEmptyValue) {
+            return true;
+        }
+
+        if (UserModel.EMAIL.equals(name)) {
+            AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
+            // do not set email when during an authentication flow if there is a pending update email action
+            Stream<String> actions = Optional.ofNullable(user.getRequiredActionsStream()).orElse(Stream.empty());
+            return authSession != null && actions.anyMatch(RequiredAction.UPDATE_EMAIL.name()::equals);
+        }
+
+        return false;
+    }
+
     private boolean isCustomAttribute(String name) {
         return !isRootAttribute(name);
     }
@@ -200,24 +226,31 @@ public final class DefaultUserProfile implements UserProfile {
     }
 
     @Override
-    public <R extends AbstractUserRepresentation> R toRepresentation() {
+    public <R extends AbstractUserRepresentation> R toRepresentation(boolean full) {
         if (user == null) {
             throw new IllegalStateException("Can not create the representation because the user is not yet created");
         }
 
-        R rep = createUserRepresentation();
-        Map<String, List<String>> readable = attributes.getReadable();
-        Map<String, List<String>> attributesRep = new HashMap<>(readable);
+        R rep = createUserRepresentation(full);
+        Map<String, List<String>> attributesRep;
+
+        if (full) {
+            attributesRep = new HashMap<>(attributes.getReadable());
+            rep.setUserProfileMetadata(createUserProfileMetadata(session, this));
+        } else {
+            attributesRep = new HashMap<>(attributes.getDefaultAttributes());
+        }
 
         // all the attributes here have read access and might be available in the representation
-        for (String name : readable.keySet()) {
-            List<String> values = attributesRep.getOrDefault(name, Collections.emptyList())
-                    .stream().filter(StringUtil::isNotBlank)
-                    .collect(Collectors.toList());
+        Iterator<Entry<String, List<String>>> iterator = attributesRep.entrySet().iterator();
 
-            if (values.isEmpty()) {
-                // make sure empty attributes are not in the representation
-                attributesRep.remove(name);
+        while (iterator.hasNext()) {
+            Entry<String, List<String>> entry = iterator.next();
+            String name = entry.getKey();
+            List<String> values = entry.getValue();
+
+            if (values == null || values.isEmpty()) {
+                iterator.remove();
                 continue;
             }
 
@@ -229,7 +262,7 @@ public final class DefaultUserProfile implements UserProfile {
                 }
 
                 boolean isUnmanagedAttribute = metadata.getAttribute(name).isEmpty();
-                String value = isUnmanagedAttribute ? null : values.stream().findFirst().orElse(null);
+                String value = isUnmanagedAttribute ? null : values.get(0);
 
                 if (UserModel.USERNAME.equals(name)) {
                     rep.setUsername(value);
@@ -242,29 +275,44 @@ public final class DefaultUserProfile implements UserProfile {
                     rep.setLastName(value);
                 }
 
-                // we don't have root attributes as a regular attribute in the representation as they have their own fields
-                attributesRep.remove(name);
+                iterator.remove();
             }
         }
 
         setAttributeIfExists(user, DISABLED_REASON, attributesRep);
         setAttributeIfExists(user, IS_TEMP_ADMIN_ATTR_NAME, attributesRep);
 
+        RealmModel realm = session.getContext().getRealm();
+
+        if (realm.isBruteForceProtected() && !attributesRep.containsKey(DISABLED_REASON)) {
+            BruteForceProtector protector = session.getProvider(BruteForceProtector.class);
+            boolean lockedOut = protector.isPermanentlyLockedOut(session, realm, user);
+
+            if (lockedOut) {
+                rep.setEnabled(false);
+                attributesRep.put(DISABLED_REASON, List.of(BruteForceProtector.DISABLED_BY_PERMANENT_LOCKOUT));
+            }
+        }
+
         rep.setId(user.getId());
         rep.setAttributes(attributesRep.isEmpty() ? null : attributesRep);
-        rep.setUserProfileMetadata(createUserProfileMetadata(session, this));
 
         return rep;
     }
 
     @SuppressWarnings("unchecked")
-    private <R extends AbstractUserRepresentation> R createUserRepresentation() {
+    private <R extends AbstractUserRepresentation> R createUserRepresentation(boolean full) {
         UserProfileContext context = metadata.getContext();
         R rep;
 
         if (context.isAdminContext()) {
             RealmModel realm = session.getContext().getRealm();
-            rep = (R) ModelToRepresentation.toRepresentation(session, realm, user);
+
+            if (full) {
+                rep = (R) ModelToRepresentation.toRepresentation(session, realm, user);
+            } else {
+                rep = (R) new org.keycloak.representations.idm.UserRepresentation();
+            }
         } else {
             // by default, we build the simplest representation without exposing much information about users
             rep = (R) new org.keycloak.representations.account.UserRepresentation();

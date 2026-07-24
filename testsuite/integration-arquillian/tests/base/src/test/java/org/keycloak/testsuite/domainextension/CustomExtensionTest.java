@@ -17,16 +17,17 @@
 
 package org.keycloak.testsuite.domainextension;
 
-import org.junit.Test;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.client.resources.TestExampleCompanyResource;
-import org.keycloak.testsuite.util.RealmBuilder;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.client.resources.TestExampleCompanyResource;
+
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -75,9 +76,9 @@ public class CustomExtensionTest extends AbstractKeycloakTest {
             names.add(comp.getName());
         }
 
-        Assert.assertEquals(expectedNames.length, names.size());
+        Assertions.assertEquals(expectedNames.length, names.size());
         for (String expectedName : expectedNames) {
-            Assert.assertTrue(names.contains(expectedName));
+            Assertions.assertTrue(names.contains(expectedName));
         }
     }
 }

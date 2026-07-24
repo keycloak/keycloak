@@ -44,6 +44,7 @@ public class UPAttribute implements Cloneable {
     private UPAttributeSelector selector;
     private String group;
     private boolean multivalued;
+    private String defaultValue;
 
     public UPAttribute() {
     }
@@ -75,6 +76,11 @@ public class UPAttribute implements Cloneable {
     public UPAttribute(String name, boolean multivalued, UPAttributePermissions permissions) {
         this(name, permissions, null);
         setMultivalued(multivalued);
+    }
+
+    public UPAttribute(String name, Map<String, Object> annotations) {
+        this(name);
+        this.annotations = annotations;
     }
 
     public String getName() {
@@ -152,13 +158,21 @@ public class UPAttribute implements Cloneable {
         this.multivalued = multivalued;
     }
 
+    public String getDefaultValue() {
+        return defaultValue;
+    }
+
+    public void setDefaultValue(String defaultValue) {
+        this.defaultValue = defaultValue;
+    }
+
     public boolean isMultivalued() {
         return multivalued;
     }
 
     @Override
     public String toString() {
-        return "UPAttribute [name=" + name + ", displayName=" + displayName + ", permissions=" + permissions + ", selector=" + selector + ", required=" + required + ", validations=" + validations + ", annotations=" + annotations + ", group=" + group + ", multivalued=" + multivalued + "]";
+        return "UPAttribute [name=" + name + ", displayName=" + displayName + ", permissions=" + permissions + ", selector=" + selector + ", required=" + required + ", validations=" + validations + ", annotations=" + annotations + ", group=" + group + ", multivalued=" + multivalued + ", defaultValue=" + defaultValue + "]";
     }
 
     @Override
@@ -184,6 +198,7 @@ public class UPAttribute implements Cloneable {
         attr.setSelector(this.selector == null ? null : this.selector.clone());
         attr.setGroup(this.group);
         attr.setMultivalued(this.multivalued);
+        attr.setDefaultValue(this.defaultValue);
         return attr;
     }
 
@@ -209,6 +224,7 @@ public class UPAttribute implements Cloneable {
                 && Objects.equals(this.required, other.required)
                 && Objects.equals(this.permissions, other.permissions)
                 && Objects.equals(this.selector, other.selector)
-                && Objects.equals(this.multivalued, other.multivalued);
+                && Objects.equals(this.multivalued, other.multivalued)
+                && Objects.equals(this.defaultValue, other.defaultValue);
     }
 }

@@ -4,12 +4,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
 
-import org.infinispan.protostream.annotations.ProtoFactory;
-import org.infinispan.protostream.annotations.ProtoField;
-import org.infinispan.protostream.annotations.ProtoTypeId;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.cache.infinispan.authorization.entities.InScope;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
+
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

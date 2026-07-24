@@ -17,21 +17,22 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
 
 import io.smallrye.config.EnvConfigSource;
 import io.smallrye.config.PropertiesConfigSource;
+import org.eclipse.microprofile.config.spi.ConfigSource;
+
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+
+import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 
 // Not extending EnvConfigSource as it's too smart for our own good. It does unnecessary mapping of provided keys
 // leading to e.g. duplicate entries (like kc.db-password and kc.db.password), or incorrectly handling getters due to
@@ -40,6 +41,7 @@ public class KcEnvConfigSource extends PropertiesConfigSource {
 
     public static final String NAME = "KcEnvVarConfigSource";
     public static final String KCKEY_PREFIX = "KCKEY_";
+    public static final String KCRAW_PREFIX = "KCRAW_";
 
     static final Map<String, String> ENV_OVERRIDE = new HashMap<String, String>();
 
@@ -54,13 +56,29 @@ public class KcEnvConfigSource extends PropertiesConfigSource {
         for (Map.Entry<String, String> entry : env.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
-            String transformedKey = null;
 
-            if (!key.startsWith(kcPrefix)) {
+            if (!(key.startsWith(kcPrefix) || key.startsWith(KCRAW_PREFIX))) {
                 continue;
             }
-            String baseKey = key.substring(kcPrefix.length());
 
+            boolean isRaw = key.startsWith(KCRAW_PREFIX);
+            String baseKey;
+
+            if (isRaw) {
+                baseKey = key.substring(KCRAW_PREFIX.length());
+
+                // Fail fast if both KC_ and KCRAW_ are set for the same base key
+                if (env.containsKey(kcPrefix + baseKey)) {
+                    throw new IllegalArgumentException(
+                            "Both " + kcPrefix + baseKey + " and " + KCRAW_PREFIX + baseKey
+                                    + " are set. Use only one.");
+                }
+            } else {
+                baseKey = key.substring(kcPrefix.length());
+            }
+
+            // Resolve the transformed key
+            String transformedKey;
             String actualKey = env.get(KCKEY_PREFIX + baseKey);
             if (actualKey != null) {
                 // use the explicit mapping
@@ -79,7 +97,10 @@ public class KcEnvConfigSource extends PropertiesConfigSource {
                             .orElseThrow();
                 }
             }
-            properties.put(transformedKey, value);
+
+            // KCRAW_ values escape $ as $$ to prevent SmallRye Config variable interpolation
+            // Then replace \$ with \\ to prevent SmallRye's escapeDollarIfExists from consuming backslashes before dollars
+            properties.put(transformedKey, isRaw ? value.replace("$", "$$").replace("\\$", "\\\\") : value);
         }
 
         return properties;

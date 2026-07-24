@@ -28,7 +28,7 @@
 
     <artifactId>keycloak-crypto-elytron</artifactId>
     <name>Keycloak Crypto Wildfly Elytron Integration</name>
-    <description/>
+    <description>Keycloak Crypto Wildfly Elytron Integration</description>
 
     <dependencies>
         <dependency>

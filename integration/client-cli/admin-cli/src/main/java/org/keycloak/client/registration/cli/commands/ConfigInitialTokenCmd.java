@@ -1,12 +1,12 @@
 package org.keycloak.client.registration.cli.commands;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 import org.keycloak.client.cli.config.RealmConfigData;
 import org.keycloak.client.registration.cli.CmdStdinContext;
 import org.keycloak.client.registration.cli.KcRegMain;
 import org.keycloak.common.util.IoUtils;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;

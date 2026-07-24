@@ -16,6 +16,12 @@
  */
 package org.keycloak.forms.login.freemarker.model;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.authentication.otp.OTPApplicationProvider;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.KeycloakSession;
@@ -25,11 +31,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.utils.TotpUtils;
-
-import jakarta.ws.rs.core.UriBuilder;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Used for UpdateTotp required action
@@ -71,7 +72,7 @@ public class TotpBean {
             this.totpSecret = secret;
         }
         this.totpSecretEncoded = TotpUtils.encode(totpSecret);
-        this.totpSecretQrCode = TotpUtils.qrCode(totpSecret, realm, user);
+        this.totpSecretQrCode = TotpUtils.qrCode(session, totpSecret, realm, user);
 
         OTPPolicy otpPolicy = realm.getOTPPolicy();
         this.supportedApplications = session.getAllProviders(OTPApplicationProvider.class).stream()

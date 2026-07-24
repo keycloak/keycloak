@@ -16,9 +16,21 @@
  */
 package org.keycloak.broker.provider;
 
-import org.jboss.logging.Logger;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
+
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -27,28 +39,22 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.util.Booleans;
 
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriInfo;
-
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import org.jboss.logging.Logger;
 
 /**
  * @author Pedro Igor
  */
-public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> implements IdentityProvider<C> {
+public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> implements UserAuthenticationIdentityProvider<C> {
 
     protected static final Logger logger = Logger.getLogger(AbstractIdentityProvider.class);
 
-    // The clientSession note flag to indicate that email provided by identityProvider was changed on updateProfile page
+    // The clientSession note flag to indicate that email or username provided by identityProvider was changed on updateProfile page
     public static final String UPDATE_PROFILE_EMAIL_CHANGED = "UPDATE_PROFILE_EMAIL_CHANGED";
+    public static final String UPDATE_PROFILE_USERNAME_CHANGED = "UPDATE_PROFILE_USERNAME_CHANGED";
 
     // clientSession.note flag specifies if we imported new user to keycloak (true) or we just linked to an existing keycloak user (false)
     public static final String BROKER_REGISTERED_NEW_USER = "BROKER_REGISTERED_NEW_USER";
@@ -66,9 +72,8 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
         return this.config;
     }
 
-    @Override
-    public Response export(UriInfo uriInfo, RealmModel realm, String format) {
-        return Response.noContent().build();
+    protected String getFederatedAccessTokenKey() {
+        return FEDERATED_ACCESS_TOKEN + ":" + getConfig().getAlias();
     }
 
     @Override
@@ -115,8 +120,12 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
         Map<String, String> error = new HashMap<>();
         error.put("error", errorCode);
         error.put("error_description", reason);
-        String accountLinkUrl = getLinkingUrl(uriInfo, authorizedClient, tokenUserSession);
-        if (accountLinkUrl != null) error.put(ACCOUNT_LINK_URL, accountLinkUrl);
+        if (authorizedClient != null) {
+            String accountLinkUrl = getLinkingUrl(uriInfo, authorizedClient, tokenUserSession);
+            if (accountLinkUrl != null) {
+                error.put(ACCOUNT_LINK_URL, accountLinkUrl);
+            }
+        }
         return Response.status(400).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build();
     }
 
@@ -175,8 +184,18 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
 
     protected void updateEmail(UserModel user, BrokeredIdentityContext context) {
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
+
         // Could be the case during external-internal token exchange
-        if (authSession == null) return;
+        if (authSession == null) {
+            return;
+        }
+
+        String email = context.getEmail();
+
+        if (email == null) {
+            // do not set email if not provided by the IdP
+            return;
+        }
 
         boolean isNewUser = Boolean.parseBoolean(authSession.getAuthNote(BROKER_REGISTERED_NEW_USER));
 
@@ -184,11 +203,11 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
             if (Boolean.parseBoolean(authSession.getAuthNote(UPDATE_PROFILE_EMAIL_CHANGED))) {
                 // user updated the email and needs verification
                 user.setEmailVerified(false);
-                return;
+            } else {
+                setEmailVerified(user, context);
             }
 
-            setEmailVerified(user, context);
-            user.setEmail(context.getEmail());
+            user.setEmail(email);
         }
     }
 
@@ -200,7 +219,7 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
 
         if (isNewUser || federatedEmail != null && !federatedEmail.equalsIgnoreCase(localEmail)) {
             IdentityProviderModel config = context.getIdpConfig();
-            boolean trustEmail = config.isTrustEmail();
+            boolean trustEmail = Booleans.isTrue(config.isTrustEmail());
 
             if (logger.isTraceEnabled()) {
                 logger.tracef("Email %s verified automatically after updating user '%s' through Identity provider '%s' ", trustEmail ? "" : "not", user.getUsername(), config.getAlias());
@@ -215,4 +234,49 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
         return new DefaultDataMarshaller();
     }
 
+    protected String getFederatedTokenNote(UserSessionModel userSession, String namespacedKey, String legacyKey) {
+        String value = userSession.getNote(namespacedKey);
+        if (value != null) {
+            return value;
+        }
+        // Fallback to un-namespaced key for backward compatibility
+        String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
+        if (brokerId == null) {
+            brokerId = userSession.getNote(EXTERNAL_IDENTITY_PROVIDER);
+        }
+        if (getConfig().getAlias().equals(brokerId)) {
+            return userSession.getNote(legacyKey);
+        }
+        return null;
+    }
+
+    protected String getFederatedAccessToken(UserSessionModel userSession) {
+        return getFederatedTokenNote(userSession, getFederatedAccessTokenKey(), FEDERATED_ACCESS_TOKEN);
+    }
+
+    protected void setFederatedAccessToken(UserSessionModel userSession, String token) {
+        userSession.setNote(getFederatedAccessTokenKey(), token);
+    }
+
+    protected void setFederatedAccessToken(AuthenticationSessionModel authSession, String token) {
+        authSession.setUserSessionNote(getFederatedAccessTokenKey(), token);
+    }
+
+    protected Response buildTokenResponse(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient,
+            UserSessionModel tokenUserSession, AccessTokenResponse tokenResponse, String issuedTokenType) {
+        tokenResponse.setIdToken(null);
+        tokenResponse.setRefreshToken(null);
+        tokenResponse.setRefreshExpiresIn(0);
+        tokenResponse.getOtherClaims().clear();
+
+        tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, issuedTokenType);
+
+        if (authorizedClient != null) {
+            tokenResponse.getOtherClaims().put(ACCOUNT_LINK_URL, getLinkingUrl(uriInfo, authorizedClient, tokenUserSession));
+        }
+        if (event != null) {
+            event.success();
+        }
+        return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
+    }
 }

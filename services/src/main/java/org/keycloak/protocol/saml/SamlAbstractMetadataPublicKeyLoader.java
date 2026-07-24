@@ -18,13 +18,18 @@ package org.keycloak.protocol.saml;
 
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.function.Supplier;
 import javax.xml.crypto.MarshalException;
 import javax.xml.crypto.XMLStructure;
 import javax.xml.crypto.dsig.keyinfo.KeyInfo;
 import javax.xml.crypto.dsig.keyinfo.KeyName;
 import javax.xml.crypto.dsig.keyinfo.X509Data;
-import org.jboss.logging.Logger;
+import javax.xml.datatype.Duration;
+import javax.xml.datatype.XMLGregorianCalendar;
+
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.PublicKeysWrapper;
@@ -36,6 +41,8 @@ import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.saml.processing.core.saml.v2.util.SAMLMetadataUtil;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
+
+import org.jboss.logging.Logger;
 import org.w3c.dom.Element;
 
 /**
@@ -60,14 +67,21 @@ public abstract class SamlAbstractMetadataPublicKeyLoader implements PublicKeyLo
     public PublicKeysWrapper loadKeys() throws Exception {
         String descriptor = getKeys();
 
-        List<KeyDescriptorType> keyDescriptor;
+        List<KeyDescriptorType> keyDescriptor = null;
         EntityDescriptorType entityType = SAMLMetadataUtil.parseEntityDescriptorType(descriptor);
+        Long expirationTime = getExpirationTime(entityType::getValidUntil, entityType::getCacheDuration);
         if (forIdP) {
             IDPSSODescriptorType idpDescriptor = SAMLMetadataUtil.locateIDPSSODescriptorType(entityType);
             keyDescriptor = idpDescriptor != null? idpDescriptor.getKeyDescriptor() : null;
+            if (idpDescriptor != null && expirationTime == null) {
+                expirationTime = getExpirationTime(idpDescriptor::getValidUntil, idpDescriptor::getCacheDuration);
+            }
         } else {
             SPSSODescriptorType spDescriptor = SAMLMetadataUtil.locateSPSSODescriptorType(entityType);
             keyDescriptor = spDescriptor != null? spDescriptor.getKeyDescriptor() : null;
+            if (spDescriptor != null && expirationTime == null) {
+                expirationTime = getExpirationTime(spDescriptor::getValidUntil, spDescriptor::getCacheDuration);
+            }
         }
 
         List<KeyWrapper> keys = new ArrayList<>();
@@ -119,7 +133,25 @@ public abstract class SamlAbstractMetadataPublicKeyLoader implements PublicKeyLo
             }
         }
 
-        return new PublicKeysWrapper(keys);
+        return new PublicKeysWrapper(keys, expirationTime);
+    }
+
+    private Long getExpirationTime(Supplier<XMLGregorianCalendar> validUntil, Supplier<Duration> cacheDuration) {
+        Long exp = null;
+        final Duration cacheDurationValue = cacheDuration.get();
+        if (cacheDurationValue != null) {
+            final long now = Time.currentTimeMillis();
+            exp = now + cacheDurationValue.getTimeInMillis(new Date(now));
+        }
+
+        final XMLGregorianCalendar validUntilValue = validUntil.get();
+        if (validUntilValue != null) {
+            exp = exp == null
+                    ? validUntilValue.toGregorianCalendar().getTime().getTime()
+                    : Math.min(exp, validUntilValue.toGregorianCalendar().getTime().getTime());
+        }
+
+        return exp;
     }
 
     private KeyWrapper createKeyWrapper(X509Certificate cert, String kid, KeyUse use) {

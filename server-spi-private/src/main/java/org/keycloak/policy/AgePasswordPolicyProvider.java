@@ -17,6 +17,8 @@
 
 package org.keycloak.policy;
 
+import java.time.Duration;
+
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.models.KeycloakSession;
@@ -24,9 +26,8 @@ import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
-import org.jboss.logging.Logger;
 
-import java.time.Duration;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:dev.maciej.mierzwa@gmail.com">Maciej Mierzwa</a>

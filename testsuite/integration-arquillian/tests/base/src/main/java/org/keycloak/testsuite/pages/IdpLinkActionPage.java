@@ -19,8 +19,9 @@
 
 package org.keycloak.testsuite.pages;
 
-import org.junit.Assert;
 import org.keycloak.testsuite.util.UIUtils;
+
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -39,8 +40,8 @@ public class IdpLinkActionPage extends AbstractPage {
     private WebElement message;
 
     @Override
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).startsWith("Linking ");
+    public String getExpectedPageId() {
+        return "login-link-idp-action";
     }
 
     public void confirm() {
@@ -51,6 +52,6 @@ public class IdpLinkActionPage extends AbstractPage {
     }
 
     public void assertIdpInMessage(String expectedIdpDisplayName) {
-        Assert.assertEquals("Do you want to link your account with " + expectedIdpDisplayName + "?", message.getText());
+        Assertions.assertEquals("Do you want to link your account with " + expectedIdpDisplayName + "?", message.getText());
     }
 }

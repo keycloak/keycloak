@@ -65,9 +65,8 @@ export default function ClientProfileForm() {
 
   const {
     handleSubmit,
-    setValue,
     getValues,
-    formState: { isDirty },
+    formState: { isDirty, isValid },
     control,
   } = form;
 
@@ -95,6 +94,13 @@ export default function ClientProfileForm() {
   const editMode = profileName ? true : false;
   const [key, setKey] = useState(0);
   const reload = () => setKey(key + 1);
+  const setupForm = (profile?: ClientProfileRepresentation) => {
+    form.reset({
+      name: profile?.name ?? "",
+      description: profile?.description ?? "",
+      executors: profile?.executors ?? [],
+    });
+  };
 
   useFetch(
     () =>
@@ -109,15 +115,8 @@ export default function ClientProfileForm() {
       );
       const profile = profiles.profiles?.find((p) => p.name === profileName);
       setIsGlobalProfile(globalProfile !== undefined);
-      setValue("name", globalProfile?.name ?? profile?.name ?? "");
-      setValue(
-        "description",
-        globalProfile?.description ?? profile?.description ?? "",
-      );
-      setValue(
-        "executors",
-        globalProfile?.executors ?? profile?.executors ?? [],
-      );
+      const source = globalProfile ?? profile;
+      setupForm(source);
     },
     [key],
   );
@@ -244,7 +243,7 @@ export default function ClientProfileForm() {
                   variant="primary"
                   onClick={() => handleSubmit(save)()}
                   data-testid="saveCreateProfile"
-                  isDisabled={!isDirty}
+                  isDisabled={!isValid}
                 >
                   {t("save")}
                 </Button>

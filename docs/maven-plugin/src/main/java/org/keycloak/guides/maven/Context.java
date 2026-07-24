@@ -1,42 +1,55 @@
 package org.keycloak.guides.maven;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
-import java.util.Collections;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class Context {
 
-    private File srcDir;
-    private Options options;
-    private Features features;
-    private List<Guide> guides;
+    private final Options options;
+    private final Features features;
+    private final ProtocolMappers protocolMappers;
+    private final AdminApiV2 adminApiV2;
+    private final List<Guide> guides;
 
-    public Context(File srcDir) throws IOException {
-        this.srcDir = srcDir;
+    public Context(Path srcPath, Path docFile, Path cliExamplesFile, Path jsExamplesFile) throws IOException {
         this.options = new Options();
         this.features = new Features();
-
+        this.protocolMappers = new ProtocolMappers(srcPath.getParent().getParent().getParent());
+        this.adminApiV2 = new AdminApiV2(docFile, cliExamplesFile, jsExamplesFile);
         this.guides = new LinkedList<>();
 
+        Path partials = srcPath.resolve("partials");
+        Map<String, Integer> guidePriorities = loadPinnedGuides(srcPath);
+
+        List<Path> guidePaths;
+        try (Stream<Path> files = Files.walk(srcPath)) {
+            guidePaths = files
+                  .filter(Files::isRegularFile)
+                  .filter(p -> !p.startsWith(partials))
+                  .filter(p -> p.getFileName().toString().endsWith(".adoc"))
+                  .filter(p -> !p.getFileName().toString().equals("index.adoc"))
+                  .toList();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load guides from " + srcPath, e);
+        }
+
         GuideParser parser = new GuideParser();
-
-        Map<String, Integer> guidePriorities = loadPinnedGuides(new File(srcDir, "pinned-guides"));
-
-        for (File f : srcDir.listFiles((dir, f) -> f.endsWith(".adoc") && !f.equals("index.adoc"))) {
-            Guide guide = parser.parse(f);
+        for (Path guidePath : guidePaths) {
+            Guide guide = parser.parse(srcPath, guidePath);
 
             if (guide != null) {
                 if (guidePriorities != null) {
                     Integer priority = guidePriorities.get(guide.getId());
                     if (priority != null) {
                         if (guide.getPriority() != Integer.MAX_VALUE) {
-                            throw new RuntimeException("Guide is pinned, but has a priority specified: " + f.getName());
+                            throw new RuntimeException("Guide is pinned, but has a priority specified: " + guidePath.getFileName());
                         }
                         guidePriorities.remove(guide.getId());
                         guide.setPriority(priority);
@@ -44,7 +57,7 @@ public class Context {
                 }
 
                 if (!guide.isTileVisible() && guide.getPriority() == Integer.MAX_VALUE) {
-                    throw new RuntimeException("Invisible tiles should be pinned or have an explicit priority: " + f.getName());
+                    throw new RuntimeException("Invisible tiles should be pinned or have an explicit priority: " + guidePath.getFileName());
                 }
 
                 guides.add(guide);
@@ -55,7 +68,7 @@ public class Context {
             throw new RuntimeException("File 'pinned-guides' contains files that no longer exist or are misspelled: " + guidePriorities.keySet());
         }
 
-        Collections.sort(guides, (o1, o2) -> {
+        guides.sort((o1, o2) -> {
             if (o1.getPriority() == o2.getPriority()) {
                 return o1.getTitle().compareTo(o2.getTitle());
             } else {
@@ -72,26 +85,34 @@ public class Context {
         return features;
     }
 
+    public ProtocolMappers getProtocolMappers() {
+        return protocolMappers;
+    }
+
+    public AdminApiV2 getAdminApiV2() {
+        return adminApiV2;
+    }
+
     public List<Guide> getGuides() {
         return guides;
     }
 
-    private Map<String, Integer> loadPinnedGuides(File pinnedGuides) throws IOException {
-        if (!pinnedGuides.isFile()) {
+    private Map<String, Integer> loadPinnedGuides(Path src) throws IOException {
+        Path pinnedGuides = src.resolve("pinned-guides");
+        if (Files.notExists(pinnedGuides) || Files.isDirectory(pinnedGuides)) {
             return null;
         }
         Map<String, Integer> priorities = new HashMap<>();
-        try (BufferedReader br = new BufferedReader(new FileReader(pinnedGuides))) {
+        try (BufferedReader br = Files.newBufferedReader(pinnedGuides)) {
             int c = 1;
             for (String l = br.readLine(); l != null; l = br.readLine()) {
                 l = l.trim();
                 if (!l.isEmpty()) {
-                    priorities.put(l, c);
+                    priorities.put(Guide.toId(l), c);
                 }
                 c++;
             }
             return priorities;
         }
     }
-
 }

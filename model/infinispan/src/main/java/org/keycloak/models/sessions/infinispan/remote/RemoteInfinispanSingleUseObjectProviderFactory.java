@@ -21,13 +21,11 @@ import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import io.reactivex.rxjava3.core.Completable;
-import io.reactivex.rxjava3.core.Flowable;
-import org.infinispan.client.hotrod.RemoteCache;
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
@@ -37,13 +35,20 @@ import org.keycloak.models.session.RevokedToken;
 import org.keycloak.models.session.RevokedTokenPersisterProvider;
 import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
 import org.keycloak.models.sessions.infinispan.remote.transaction.SingleUseObjectTransaction;
+import org.keycloak.models.sessions.infinispan.transaction.InfinispanTransactionProvider;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
+
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Flowable;
+import org.infinispan.client.hotrod.RemoteCache;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.getRemoteCache;
@@ -53,7 +58,6 @@ import static org.keycloak.models.sessions.infinispan.InfinispanSingleUseObjectP
 import static org.keycloak.models.sessions.infinispan.InfinispanSingleUseObjectProviderFactory.LOADED;
 import static org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanSingleUseObjectProvider.REVOKED_TOKEN_VALUE;
 import static org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanSingleUseObjectProvider.RevokeTokenConsumer;
-import static org.keycloak.storage.datastore.DefaultDatastoreProviderFactory.setupClearExpiredRevokedTokensScheduledTask;
 
 public class RemoteInfinispanSingleUseObjectProviderFactory implements SingleUseObjectProviderFactory<RemoteInfinispanSingleUseObjectProvider>, EnvironmentDependentProviderFactory, ProviderEventListener, ServerInfoAwareProviderFactory {
 
@@ -101,7 +105,7 @@ public class RemoteInfinispanSingleUseObjectProviderFactory implements SingleUse
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return InfinispanUtils.isRemoteInfinispan();
+        return !Profile.isFeatureEnabled(Profile.Feature.STATELESS) && InfinispanUtils.isRemoteInfinispan();
     }
 
     @Override
@@ -136,15 +140,20 @@ public class RemoteInfinispanSingleUseObjectProviderFactory implements SingleUse
 
         // preload revoked tokens from the database and register cleanup expired tokens task
         KeycloakSessionFactory sessionFactory = pme.getFactory();
-        setupClearExpiredRevokedTokensScheduledTask(sessionFactory);
         try (var session = sessionFactory.create()) {
             preloadRevokedTokens(session);
         }
     }
 
+    @Override
+    public Set<Class<? extends Provider>> dependsOn() {
+        return Set.of(InfinispanTransactionProvider.class);
+    }
+
     private SingleUseObjectTransaction createAndEnlistTransaction(KeycloakSession session) {
+        var provider = session.getProvider(InfinispanTransactionProvider.class);
         var tx = new SingleUseObjectTransaction(cache);
-        session.getTransactionManager().enlistAfterCompletion(tx);
+        provider.registerTransaction(tx);
         return tx;
     }
 

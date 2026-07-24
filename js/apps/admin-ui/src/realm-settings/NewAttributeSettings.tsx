@@ -30,6 +30,10 @@ import {
 import { AttributeAnnotations } from "./user-profile/attribute/AttributeAnnotations";
 import { AttributeGeneralSettings } from "./user-profile/attribute/AttributeGeneralSettings";
 import { AttributePermission } from "./user-profile/attribute/AttributePermission";
+import {
+  AttributeScimSettings,
+  SCIM_ANNOTATION_KEY,
+} from "./user-profile/attribute/AttributeScimSettings";
 import { AttributeValidations } from "./user-profile/attribute/AttributeValidations";
 
 import "./realm-settings-section.css";
@@ -104,6 +108,7 @@ const CreateAttributeFormContent = ({
           { title: t("permission"), panel: <AttributePermission /> },
           { title: t("validations"), panel: <AttributeValidations /> },
           { title: t("annotations"), panel: <AttributeAnnotations /> },
+          { title: t("scimSettings"), panel: <AttributeScimSettings /> },
         ]}
       />
       <Form onSubmit={form.handleSubmit(save)}>
@@ -132,7 +137,7 @@ export default function NewAttributeSettings() {
   const { adminClient } = useAdminClient();
   const { realm: realmName, attributeName } = useParams<AttributeParams>();
   const form = useForm<UserProfileAttributeFormFields>();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
   const [config, setConfig] = useState<UserProfileConfig | null>(null);
@@ -149,6 +154,7 @@ export default function NewAttributeSettings() {
         selector,
         required,
         multivalued,
+        defaultValue,
         ...values
       } = config.attributes!.find(
         (attribute) => attribute.name === attributeName,
@@ -180,6 +186,7 @@ export default function NewAttributeSettings() {
       );
       form.setValue("isRequired", required !== undefined);
       form.setValue("multivalued", multivalued === true);
+      form.setValue("defaultValue", defaultValue);
     },
     [],
   );
@@ -206,10 +213,12 @@ export default function NewAttributeSettings() {
       {} as Record<string, unknown>,
     );
 
-    const annotations = formFields.annotations.reduce(
-      (obj, item) => Object.assign(obj, { [item.key]: item.value }),
-      {},
-    );
+    const annotations = formFields.annotations
+      .filter((item) => !(item.key === SCIM_ANNOTATION_KEY && !item.value))
+      .reduce(
+        (obj, item) => Object.assign(obj, { [item.key]: item.value }),
+        {},
+      );
 
     const patchAttributes = () =>
       (config?.attributes || []).map((attribute) => {
@@ -229,6 +238,9 @@ export default function NewAttributeSettings() {
             annotations,
             validations,
           },
+          formFields.defaultValue
+            ? { defaultValue: formFields.defaultValue }
+            : { defaultValue: null },
           formFields.isRequired ? { required: formFields.required } : undefined,
           formFields.group ? { group: formFields.group } : { group: null },
         );
@@ -247,6 +259,9 @@ export default function NewAttributeSettings() {
             annotations,
             validations,
           },
+          formFields.defaultValue
+            ? { defaultValue: formFields.defaultValue }
+            : { defaultValue: null },
           formFields.isRequired ? { required: formFields.required } : undefined,
           formFields.group ? { group: formFields.group } : undefined,
         ),
@@ -261,6 +276,7 @@ export default function NewAttributeSettings() {
         realm: realmName,
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- translation is undefined when user hasn't interacted with translation dialogs
       if (formFields.translation) {
         try {
           await saveTranslations({
@@ -270,6 +286,7 @@ export default function NewAttributeSettings() {
               translation: formFields.translation,
             },
           });
+          await i18n.reloadResources();
         } catch (error) {
           addError(t("errorSavingTranslations"), error);
         }

@@ -12,9 +12,9 @@ const NewAttributeSettings = lazy(() => import("../NewAttributeSettings"));
 export const AddAttributeRoute: AppRouteObject = {
   path: "/:realm/realm-settings/user-profile/attributes/add-attribute",
   element: <NewAttributeSettings />,
-  breadcrumb: (t) => t("createAttribute"),
   handle: {
     access: "manage-realm",
+    breadcrumb: (t) => t("createAttribute"),
   },
 };
 

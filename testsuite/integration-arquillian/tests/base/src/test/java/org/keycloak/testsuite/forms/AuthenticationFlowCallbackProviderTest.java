@@ -17,10 +17,6 @@
 
 package org.keycloak.testsuite.forms;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 import org.keycloak.authentication.authenticators.access.AllowAccessAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticator;
@@ -33,6 +29,11 @@ import org.keycloak.testsuite.authentication.CustomAuthenticationFlowCallbackFac
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.FlowUtil;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -61,7 +62,7 @@ public class AuthenticationFlowCallbackProviderTest extends AbstractTestRealmKey
 
     @After
     public void revertFlow() {
-        BrowserFlowTest.revertFlows(testRealm(), DEFAULT_FLOW);
+        BrowserFlowTest.revertFlows(managedRealm.admin(), DEFAULT_FLOW);
     }
 
     @Test

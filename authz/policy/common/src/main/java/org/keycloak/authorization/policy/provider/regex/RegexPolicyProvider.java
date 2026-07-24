@@ -17,10 +17,6 @@
  */
 package org.keycloak.authorization.policy.provider.regex;
 
-import static org.keycloak.utils.JsonUtils.getJsonValue;
-import static org.keycloak.utils.JsonUtils.hasPath;
-import static org.keycloak.utils.JsonUtils.splitClaimPath;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +24,6 @@ import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.model.Policy;
@@ -36,7 +31,13 @@ import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.representations.idm.authorization.RegexPolicyRepresentation;
 import org.keycloak.util.JsonSerialization;
+
 import com.fasterxml.jackson.databind.JsonNode;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.utils.JsonUtils.getJsonValue;
+import static org.keycloak.utils.JsonUtils.hasPath;
+import static org.keycloak.utils.JsonUtils.splitClaimPath;
 
 /**
  * @author <a href="mailto:yoshiyuki.tabata.jy@hitachi.com">Yoshiyuki Tabata</a>

@@ -19,11 +19,10 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import freemarker.template.TemplateModelException;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import freemarker.template.TemplateModelException;
 
 /**
  * @author Vlastimil Elias (velias at redhat dot com)

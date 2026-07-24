@@ -16,13 +16,13 @@
  */
 package org.keycloak.dom.saml.v2.protocol;
 
-import org.keycloak.dom.saml.v2.assertion.AssertionType;
-import org.keycloak.dom.saml.v2.assertion.EncryptedAssertionType;
-
-import javax.xml.datatype.XMLGregorianCalendar;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import javax.xml.datatype.XMLGregorianCalendar;
+
+import org.keycloak.dom.saml.v2.assertion.AssertionType;
+import org.keycloak.dom.saml.v2.assertion.EncryptedAssertionType;
 
 /**
  * <p>

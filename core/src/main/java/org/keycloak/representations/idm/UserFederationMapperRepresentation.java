@@ -70,4 +70,3 @@ public class UserFederationMapperRepresentation {
         this.config = config;
     }
 }
-

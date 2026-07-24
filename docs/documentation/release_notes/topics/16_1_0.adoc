@@ -4,4 +4,4 @@
 
 Keycloak server was upgraded to use Wildfly 26.0.0.Final as the underlying container.
 
-For more information on WildFly 26 refer to the https://www.wildfly.org/news/2021/12/16/WildFly26-Final-Released/[WildFly 26 release notes].
+For more information on WildFly 26 refer to the https://www.wildfly.org/news/2021/12/16/WildFly-26-is-released/[WildFly 26 release notes].

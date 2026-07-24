@@ -17,15 +17,16 @@
 
 package org.keycloak.timer.basic;
 
+import java.util.Map;
+import java.util.Timer;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.timer.TimerProviderFactory;
-
-import java.util.Timer;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -48,7 +49,7 @@ public class BasicTimerProviderFactory implements TimerProviderFactory {
     @Override
     public void init(Config.Scope config) {
         transactionTimeout = config.getInt(TRANSACTION_TIMEOUT, 0);
-        timer = new Timer();
+        timer = new Timer(true);
     }
 
     @Override
@@ -58,8 +59,10 @@ public class BasicTimerProviderFactory implements TimerProviderFactory {
 
     @Override
     public void close() {
-        timer.cancel();
-        timer = null;
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
+        }
     }
 
     @Override
@@ -75,4 +78,7 @@ public class BasicTimerProviderFactory implements TimerProviderFactory {
         return scheduledTasks.remove(taskName);
     }
 
+    protected Map<String, TimerTaskContextImpl> getTasks(){
+        return scheduledTasks;
+    }
 }

@@ -2651,6 +2651,28 @@
     },
     "notBefore" : 0,
     "groups" : [ ]
+  }, {
+    "id" : "08420acf-d86f-4eba-8a69-73e7da43c668",
+    "username" : "consent-user",
+    "emailVerified" : false,
+    "createdTimestamp" : 1779110441255,
+    "enabled" : true,
+    "totp" : false,
+    "credentials" : [ ],
+    "disableableCredentialTypes" : [ ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "offline_access", "uma_authorization" ],
+    "clientRoles" : {
+      "account" : [ "manage-account", "view-profile" ]
+    },
+    "clientConsents" : [ {
+      "clientId" : "migration-consent-client",
+      "grantedClientScopes" : [ "roles", "email", "profile" ],
+      "createdDate" : 1779175201074,
+      "lastUpdatedDate" : 1779175201101
+    } ],
+    "notBefore" : 0,
+    "groups" : [ ]
   } ],
   "scopeMappings" : [ {
     "clientScope" : "offline_access",
@@ -2950,6 +2972,55 @@
       }
     } ],
     "defaultClientScopes" : [ "web-origins", "roles", "profile", "email" ],
+    "optionalClientScopes" : [ "address", "phone", "offline_access", "microprofile-jwt" ]
+  },
+  {
+    "clientId": "http://localhost:8280/sales-post-enc/",
+    "enabled": true,
+    "protocol": "saml",
+    "fullScopeAllowed": true,
+    "baseUrl": "http://localhost:8080/sales-post-enc",
+    "redirectUris": [
+      "http://localhost:8080/sales-post-enc/*"
+    ],
+    "attributes": {
+      "saml.server.signature": "true",
+      "saml.signature.algorithm": "RSA_SHA512",
+      "saml.client.signature": "true",
+      "saml.encrypt": "true",
+      "saml.authnstatement": "true",
+      "saml.signing.certificate": "MIIDBjCCAe6gAwIBAgIJANPu/mvxOREdMA0GCSqGSIb3DQEBCwUAMDAxLjAsBgNVBAMTJWh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9zYWxlcy1wb3N0LWVuYy8wIBcNMjQwNjIxMTkzMTE3WhgPMjEyNDA1MjgxOTMxMTdaMDAxLjAsBgNVBAMTJWh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9zYWxlcy1wb3N0LWVuYy8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDE5iKDNNW5XxHAF0ITErZcHDYZI68z7u68n7o4dsiywkfOWf7jVnw7PJVnMeDEtLWtTO6f0tRTqJ4OV5HYdJ9+mhPJtn+2UuvrepyYa2IsC1eFPH98ZEtYapsE6ObvhKBQMcu5G/tQrxkCFY2ssDa99unwBH5STLyX78UvqKiYnkPCvIhkiPIHy8ab7DQowc+EE9XhlE3b63A65rp4G9R87rwgJX5VTM3h81WcDuWLPOg7YRYLZoorWz2p38/qL9gXY5NxIRK16EHGfw2W1dPrX3GyMOJbXVyrBNZ6m5IL9Wn7lBEJ/Dl7ZFMFB5W36QkJ+3aaNLT/Tu/Gz+7f24inAgMBAAGjITAfMB0GA1UdDgQWBBSk7RegFbEBruVbt/VFl2gZhZ2IpDANBgkqhkiG9w0BAQsFAAOCAQEAGyH1sXVU3HDMhCzP2k5fsJBGA+1iKLMsyyiGcaD/22anQ1uVU7iWPZH8mSJGWqkvo/4oFb7RjB2KzO/50wP0q/P/tymGsYoznt+MEJKKxYEqAYmIns7SKRIgv3xEfF8yQy2jOuULC9FTq/Pb3gd9Om40jmeJtYccDSICjEC+A2fcGe56ScuRRLt+3WFyIZUFH7Y9FYZQ3EYQ88UZg//5F1ddAzGtdMSeTanMxLKow7rUIm/+Sx6cd+Vkwo/SYdk4hsD8xZCYx8Ln4i3NKh+SzyvbYykyWVI2fwjplqvM5Md/M+SNvPtU9tkOCUxQqVfz/bwtTiqfjdSaUJlasgGByg==",
+      "saml.encryption.certificate": "MIIDBjCCAe6gAwIBAgIJANPu/mvxOREdMA0GCSqGSIb3DQEBCwUAMDAxLjAsBgNVBAMTJWh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9zYWxlcy1wb3N0LWVuYy8wIBcNMjQwNjIxMTkzMTE3WhgPMjEyNDA1MjgxOTMxMTdaMDAxLjAsBgNVBAMTJWh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9zYWxlcy1wb3N0LWVuYy8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDE5iKDNNW5XxHAF0ITErZcHDYZI68z7u68n7o4dsiywkfOWf7jVnw7PJVnMeDEtLWtTO6f0tRTqJ4OV5HYdJ9+mhPJtn+2UuvrepyYa2IsC1eFPH98ZEtYapsE6ObvhKBQMcu5G/tQrxkCFY2ssDa99unwBH5STLyX78UvqKiYnkPCvIhkiPIHy8ab7DQowc+EE9XhlE3b63A65rp4G9R87rwgJX5VTM3h81WcDuWLPOg7YRYLZoorWz2p38/qL9gXY5NxIRK16EHGfw2W1dPrX3GyMOJbXVyrBNZ6m5IL9Wn7lBEJ/Dl7ZFMFB5W36QkJ+3aaNLT/Tu/Gz+7f24inAgMBAAGjITAfMB0GA1UdDgQWBBSk7RegFbEBruVbt/VFl2gZhZ2IpDANBgkqhkiG9w0BAQsFAAOCAQEAGyH1sXVU3HDMhCzP2k5fsJBGA+1iKLMsyyiGcaD/22anQ1uVU7iWPZH8mSJGWqkvo/4oFb7RjB2KzO/50wP0q/P/tymGsYoznt+MEJKKxYEqAYmIns7SKRIgv3xEfF8yQy2jOuULC9FTq/Pb3gd9Om40jmeJtYccDSICjEC+A2fcGe56ScuRRLt+3WFyIZUFH7Y9FYZQ3EYQ88UZg//5F1ddAzGtdMSeTanMxLKow7rUIm/+Sx6cd+Vkwo/SYdk4hsD8xZCYx8Ln4i3NKh+SzyvbYykyWVI2fwjplqvM5Md/M+SNvPtU9tkOCUxQqVfz/bwtTiqfjdSaUJlasgGByg=="
+    }
+  },
+  {
+    "id" : "e908e55c-7cfe-46de-8c86-9ed6c65c11d9",
+    "clientId" : "migration-consent-client",
+    "surrogateAuthRequired" : false,
+    "enabled" : true,
+    "alwaysDisplayInConsole" : false,
+    "clientAuthenticatorType" : "client-secret",
+    "redirectUris" : [ ],
+    "webOrigins" : [ ],
+    "notBefore" : 0,
+    "bearerOnly" : false,
+    "consentRequired" : true,
+    "standardFlowEnabled" : true,
+    "implicitFlowEnabled" : false,
+    "directAccessGrantsEnabled" : true,
+    "serviceAccountsEnabled" : false,
+    "publicClient" : true,
+    "frontchannelLogout" : false,
+    "protocol" : "openid-connect",
+    "attributes" : {
+      "post.logout.redirect.uris" : "+",
+      "backchannel.logout.session.required" : "true",
+      "backchannel.logout.revoke.offline.tokens" : "false"
+    },
+    "authenticationFlowBindingOverrides" : { },
+    "fullScopeAllowed" : true,
+    "nodeReRegistrationTimeout" : -1,
+    "defaultClientScopes" : [ "acr", "web-origins", "roles", "profile", "email" ],
     "optionalClientScopes" : [ "address", "phone", "offline_access", "microprofile-jwt" ]
   } ],
   "clientScopes" : [ {
@@ -3415,6 +3486,32 @@
       "consentRequired" : false,
       "config" : { }
     } ]
+  }, {
+    "id" : "d1a1b2c3-0003-4000-a000-000000000003",
+    "name" : "dynamic-scope-default",
+    "description" : "",
+    "protocol" : "openid-connect",
+    "attributes" : {
+      "is.dynamic.scope" : "true",
+      "consent.screen.text" : "",
+      "include.in.token.scope" : "false",
+      "dynamic.scope.regexp" : "dynamic-scope-default:*",
+      "display.on.consent.screen" : "true",
+      "gui.order" : ""
+    }
+  }, {
+    "id" : "d1a1b2c3-0004-4000-a000-000000000004",
+    "name" : "dynamic-scope-custom",
+    "description" : "",
+    "protocol" : "openid-connect",
+    "attributes" : {
+      "is.dynamic.scope" : "true",
+      "consent.screen.text" : "",
+      "include.in.token.scope" : "false",
+      "dynamic.scope.regexp" : "dynamic-scope-custom:[a-z]+",
+      "display.on.consent.screen" : "true",
+      "gui.order" : ""
+    }
   } ],
   "defaultDefaultClientScopes" : [ "roles", "profile", "role_list", "email", "web-origins", "acr" ],
   "defaultOptionalClientScopes" : [ "phone", "offline_access", "address", "microprofile-jwt" ],
@@ -5258,7 +5355,41 @@
       "id" : "307bba27-f8da-4c4d-a1b9-3c1bf49f824e",
       "name" : "ldap",
       "providerId" : "ldap",
-      "subComponents" : { },
+      "subComponents" : {
+        "org.keycloak.storage.ldap.mappers.LDAPStorageMapper" : [ {
+          "id" : "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "name" : "objectGUID",
+          "providerId" : "user-attribute-ldap-mapper",
+          "subComponents" : { },
+          "config" : {
+            "ldap.attribute" : [ "objectGUID" ],
+            "is.binary.attribute" : [ "true" ],
+            "always.read.value.from.ldap" : [ "true" ],
+            "user.model.attribute" : [ "objectGUID" ],
+            "read.only" : [ "true" ],
+            "is.mandatory.in.ldap" : [ "false" ]
+          }
+        }, {
+          "id" : "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+          "name" : "groups",
+          "providerId" : "group-ldap-mapper",
+          "subComponents" : { },
+          "config" : {
+            "groups.dn" : [ "ou=Groups,dc=keycloak,dc=org" ],
+            "group.name.ldap.attribute" : [ "cn" ],
+            "group.object.classes" : [ "groupOfNames" ],
+            "preserve.group.inheritance" : [ "true" ],
+            "ignore.missing.groups" : [ "false" ],
+            "mapped.group.attributes" : [ "objectGUID" ],
+            "membership.ldap.attribute" : [ "member" ],
+            "membership.attribute.type" : [ "DN" ],
+            "membership.user.ldap.attribute" : [ "uid" ],
+            "mode" : [ "LDAP_ONLY" ],
+            "user.roles.retrieve.strategy" : [ "LOAD_GROUPS_BY_MEMBER_ATTRIBUTE" ],
+            "drop.non.existing.groups.during.sync" : [ "false" ]
+          }
+        } ]
+      },
       "config" : {
         "fullSyncPeriod" : [ "-1" ],
         "pagination" : [ "false" ],

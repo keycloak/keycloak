@@ -1,10 +1,11 @@
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { SelectControl } from "@keycloak/keycloak-ui-shared";
+import { SelectControl, TextControl } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 import { Toggle } from "./SamlConfig";
+import { SamlEncryption } from "./SamlEncryption";
 
 export const SIGNATURE_ALGORITHMS = [
   "RSA_SHA1",
@@ -44,6 +45,17 @@ export const SamlSignature = () => {
     convertAttributeNameToForm<FormFields>(
       "attributes.saml.assertion.signature",
     ),
+  );
+  const samlEncryption = watch(
+    convertAttributeNameToForm<FormFields>("attributes.saml.encrypt"),
+    "false",
+  );
+
+  const useMetadataDescriptorUrl = watch(
+    convertAttributeNameToForm<FormFields>(
+      "attributes.saml.useMetadataDescriptorUrl",
+    ),
+    "false",
   );
 
   return (
@@ -96,6 +108,27 @@ export const SamlSignature = () => {
               value: name,
             }))}
           />
+          <TextControl
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.saml.metadataDescriptorUrl",
+            )}
+            label={t("samlClientMetadataDescriptorUrl")}
+            labelIcon={t("samlClientMetadataDescriptorUrlHelp")}
+            type="url"
+            rules={{
+              required: {
+                value: useMetadataDescriptorUrl === "true",
+                message: t("required"),
+              },
+            }}
+          />
+          <Toggle
+            name={convertAttributeNameToForm(
+              "attributes.saml.useMetadataDescriptorUrl",
+            )}
+            label="samlClientUseMetadataDescriptorUrl"
+          />
+          {samlEncryption === "true" && <SamlEncryption />}
         </>
       )}
     </FormAccess>

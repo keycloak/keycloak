@@ -18,13 +18,14 @@
 
 package org.keycloak.authentication.authenticators.x509;
 
-import org.keycloak.OAuth2Constants;
-import org.keycloak.authentication.AuthenticationFlowContext;
+import java.util.HashMap;
+import java.util.Map;
 
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.util.HashMap;
-import java.util.Map;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.AuthenticationFlowContext;
 
 /**
  * @author <a href="mailto:pnalyvayko@agi.com">Peter Nalyvayko</a>

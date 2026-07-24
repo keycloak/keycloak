@@ -17,26 +17,35 @@
 
 package org.keycloak.authentication;
 
-import org.jboss.logging.Logger;
-import org.keycloak.authentication.authenticators.conditional.ConditionalAuthenticator;
-import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.AuthenticationFlowModel;
-import org.keycloak.models.Constants;
-import org.keycloak.models.UserModel;
-import org.keycloak.services.ServicesLogger;
-import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.sessions.CommonClientSessionModel;
-import org.keycloak.utils.StringUtil;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
-import java.util.*;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
+import org.keycloak.authentication.authenticators.conditional.ConditionalAuthenticator;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.services.ServicesLogger;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.CommonClientSessionModel;
+import org.keycloak.utils.StringUtil;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -88,6 +97,22 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         if (HttpMethod.POST.equals(processor.getRequest().getHttpMethod())) {
             MultivaluedMap<String, String> inputData = processor.getRequest().getDecodedFormParameters();
             String authExecId = inputData.getFirst(Constants.AUTHENTICATION_EXECUTION);
+
+            // User clicked on "switch organization" link
+            if (inputData.containsKey("switchOrganization")) {
+                logger.trace("User clicked on link 'Switch Organization'");
+                AuthenticationSessionModel authSession = processor.getAuthenticationSession();
+                // preserve the username so the user doesn't have to re-enter it after flow reset
+                String attemptedUsername = authSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
+                if (attemptedUsername != null) {
+                    authSession.setClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, attemptedUsername);
+                }
+                authSession.removeClientNote(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+                // clear the cached organization from the session context so it is re-evaluated after flow reset
+                processor.getSession().getContext().setOrganization(null);
+                processor.resetFlow();
+                return processor.authenticate();
+            }
 
             // User clicked on "try another way" link
             if (inputData.containsKey("tryAnotherWay")) {
@@ -357,7 +382,8 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
     }
 
     private boolean isConditionalAuthenticator(AuthenticationExecutionModel model) {
-        return !model.isAuthenticatorFlow() && model.getAuthenticator() != null && createAuthenticator(getAuthenticatorFactory(model)) instanceof ConditionalAuthenticator;
+        return !model.isAuthenticatorFlow() && model.getAuthenticator() != null && model.isEnabled()
+                && createAuthenticator(getAuthenticatorFactory(model)) instanceof ConditionalAuthenticator;
     }
 
     private AuthenticatorFactory getAuthenticatorFactory(AuthenticationExecutionModel model) {
@@ -509,7 +535,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 return null;
             case FAILED:
                 logger.debugv("authenticator FAILED: {0}", execution.getAuthenticator());
-                processor.logFailure();
+                processor.logFailure(execution.getAuthenticator());
                 setExecutionStatus(execution, AuthenticationSessionModel.ExecutionStatus.FAILED);
                 if (result.getChallenge() != null) {
                     return sendChallenge(result, execution);
@@ -525,7 +551,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 return sendChallenge(result, execution);
             case FAILURE_CHALLENGE:
                 logger.debugv("authenticator FAILURE_CHALLENGE: {0}", execution.getAuthenticator());
-                processor.logFailure();
+                processor.logFailure(execution.getAuthenticator());
                 setExecutionStatus(execution, AuthenticationSessionModel.ExecutionStatus.CHALLENGED);
                 return sendChallenge(result, execution);
             case ATTEMPTED:

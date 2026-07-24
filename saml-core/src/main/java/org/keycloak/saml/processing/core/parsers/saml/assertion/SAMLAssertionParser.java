@@ -16,15 +16,16 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml.assertion;
 
+import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.events.StartElement;
+
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.saml.common.ErrorCodes;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.processing.core.parsers.util.SAMLParserUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
-import javax.xml.datatype.XMLGregorianCalendar;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.events.StartElement;
 
 /**
  * Parse the saml assertion

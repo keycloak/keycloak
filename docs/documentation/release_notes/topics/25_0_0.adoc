@@ -72,7 +72,7 @@ bin/kc.sh build --features=persistent-user-sessions ...
 ----
 
 For more details see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
-The https://www.keycloak.org/high-availability/concepts-memory-and-cpu-sizing[sizing guide] contains a new paragraph describing the updated resource requirements when this feature is enabled.
+The https://www.keycloak.org/high-availability/single-cluster/concepts-memory-and-cpu-sizing[sizing guide] contains a new paragraph describing the updated resource requirements when this feature is enabled.
 
 For information on how to upgrade, see the link:{upgradingguide_link}[{upgradingguide_name}].
 

@@ -17,13 +17,14 @@
 
 package org.keycloak.models;
 
-import org.infinispan.protostream.annotations.Proto;
-import org.infinispan.protostream.annotations.ProtoTypeId;
-import org.keycloak.util.EnumWithStableIndex;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
+
+import org.keycloak.util.EnumWithStableIndex;
+
+import org.infinispan.protostream.annotations.Proto;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -76,7 +77,10 @@ public interface UserSessionModel {
 
     /**
      * Returns map where key is ID of the client (its UUID) and value is ID respective {@link AuthenticatedClientSessionModel} object.
-     * @return
+     * <p>
+     * Any direct modification via the {@link Map} interface will throw an {@link UnsupportedOperationException}. To add a
+     * new mapping, use a method like {@link UserSessionProvider#createClientSession(RealmModel, ClientModel, UserSessionModel)} or
+     * equivalent. To remove a mapping, use {@link AuthenticatedClientSessionModel#detachFromUserSession()}.
      */
     Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions();
     /**

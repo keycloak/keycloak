@@ -125,17 +125,26 @@ export { UserDataTableToolbarItems } from "./components/users/UserDataTableToolb
 export { ViewHeader } from "./components/view-header/ViewHeader";
 export { WizardSectionHeader } from "./components/wizard-section-header/WizardSectionHeader";
 export { DefaultSwitchControl } from "./components/SwitchControl";
-export { useAccess, AccessContextProvider } from "./context/access/Access";
+export {
+  useAccess,
+  AccessContextProvider,
+  AccessContext,
+} from "./context/access/Access";
 export { fetchAdminUI } from "./context/auth/admin-ui-endpoint";
 export {
   useRealm,
   RealmContextProvider,
+  RealmContext,
 } from "./context/realm-context/RealmContext";
 export {
   useServerInfo,
   ServerInfoProvider,
 } from "./context/server-info/ServerInfoProvider";
-export { useWhoAmI, WhoAmIContextProvider } from "./context/whoami/WhoAmI";
+export {
+  useWhoAmI,
+  WhoAmIContextProvider,
+  WhoAmIContext,
+} from "./context/whoami/WhoAmI";
 export {
   useErrorBoundary,
   ErrorBoundaryProvider,
@@ -190,6 +199,7 @@ export { IdentityProviders as OrganizationIdentityProviders } from "./organizati
 export { InviteMemberModal } from "./organizations/InviteMemberModal";
 export { LinkIdentityProviderModal } from "./organizations/LinkIdentityProviderModal";
 export { Members as OrganizationMembers } from "./organizations/Members";
+export { Invitations as OrganizationInvitations } from "./organizations/Invitations";
 export { OrganizationForm } from "./organizations/OrganizationForm";
 export * as OrganizationSection from "./organizations/OrganizationsSection";
 export * as Page from "./page/Page";
@@ -253,6 +263,8 @@ export * as RealmSettingsSection from "./realm-settings/RealmSettingsSection";
 export { RealmSettingsTabs } from "./realm-settings/RealmSettingsTabs";
 export { RealmSettingsSessionsTab } from "./realm-settings/SessionsTab";
 export * as ThemesTab from "./realm-settings/themes/ThemesTab";
+export { QuickTheme } from "./realm-settings/themes/QuickTheme";
+export type { ThemeRealmRepresentation } from "./realm-settings/themes/QuickTheme";
 export { ThemeColors } from "./realm-settings/themes/ThemeColors";
 export { ThemeSettingsTab } from "./realm-settings/themes/ThemeSettings";
 export { RealmSettingsTokensTab } from "./realm-settings/TokensTab";
@@ -310,8 +322,14 @@ export { Header } from "./PageHeader";
 export { PageNav } from "./PageNav";
 export { PageNotFoundSection } from "./PageNotFoundSection";
 export { App as AdminUi } from "./App";
-export type { Environment as AccountEnvironment } from "./environment";
+export type { Environment as AdminEnvironment } from "./environment-types";
 export { KeycloakProvider, useEnvironment } from "@keycloak/keycloak-ui-shared";
-export { AdminClientContext, initAdminClient } from "./admin-client";
+export {
+  AdminClientContext,
+  AdminClientProvider,
+  initAdminClient,
+  useAdminClient,
+} from "./admin-client";
 export { AppContexts } from "./App";
 export * as PermissionsConfigurationSection from "./permissions-configuration/PermissionsConfigurationSection";
+export { routes } from "./routes";

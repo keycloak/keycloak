@@ -19,29 +19,31 @@ package org.keycloak.tests.admin.authz.fgap;
 
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 
 public class RealmAdminPermissionsConfig implements RealmConfig {
 
     @Override
-    public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-        realm.addUser("myadmin")
+    public RealmBuilder configure(RealmBuilder realm) {
+        realm.users(UserBuilder.create("myadmin")
                 .name("My", "Admin")
                 .email("myadmin@localhost")
-                .emailVerified()
+                .emailVerified(true)
                 .password("password")
                 .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, 
                         AdminRoles.QUERY_USERS,
                         AdminRoles.QUERY_GROUPS,
-                        AdminRoles.QUERY_CLIENTS);
-        realm.addClient("myclient")
+                        AdminRoles.QUERY_CLIENTS));
+        realm.clients(ClientBuilder.create("myclient")
                 .secret("mysecret")
-                .directAccessGrants();
-        realm.addClient("myresourceserver")
+                .directAccessGrantsEnabled(true));
+        realm.clients(ClientBuilder.create("myresourceserver")
                 .secret("mysecret")
-                .directAccessGrants()
-                .authorizationServices();
+                .directAccessGrantsEnabled(true)
+                .authorizationServicesEnabled(true));
         return realm.adminPermissionsEnabled(true);
     }
 }

@@ -17,9 +17,10 @@
 
 package org.keycloak.authentication;
 
-import jakarta.ws.rs.core.Response;
 import java.util.Collections;
 import java.util.List;
+
+import jakarta.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

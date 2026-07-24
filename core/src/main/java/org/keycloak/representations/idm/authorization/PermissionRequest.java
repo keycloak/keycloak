@@ -24,9 +24,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.keycloak.json.StringListMapDeserializer;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import org.keycloak.json.StringListMapDeserializer;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

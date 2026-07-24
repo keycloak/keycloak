@@ -17,11 +17,13 @@
 
 package org.keycloak.services.resteasy;
 
-import jakarta.ws.rs.core.NewCookie;
-import org.keycloak.http.HttpResponse;
-
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
+
+import jakarta.ws.rs.core.NewCookie;
+
+import org.keycloak.http.HttpResponse;
 
 public class HttpResponseImpl implements HttpResponse {
 
@@ -29,7 +31,7 @@ public class HttpResponseImpl implements HttpResponse {
     private Set<NewCookie> newCookies;
 
     public HttpResponseImpl(org.jboss.resteasy.spi.HttpResponse delegate) {
-        this.delegate = delegate;
+        this.delegate = Objects.requireNonNull(delegate);
     }
 
     @Override

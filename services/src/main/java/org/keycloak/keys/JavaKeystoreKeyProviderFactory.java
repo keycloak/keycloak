@@ -17,20 +17,8 @@
 
 package org.keycloak.keys;
 
-import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.KeystoreUtil;
-import org.keycloak.component.ComponentModel;
-import org.keycloak.component.ComponentValidationException;
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.provider.ConfigurationValidationHelper;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.provider.ProviderConfigurationBuilder;
-
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathValidator;
@@ -44,6 +32,23 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import org.keycloak.Config;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.component.ComponentValidationException;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.provider.ConfigurationValidationHelper;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+
+import org.jboss.logging.Logger;
+
+import static org.keycloak.keys.Attributes.KID_KEY;
 import static org.keycloak.provider.ProviderConfigProperty.LIST_TYPE;
 import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
 
@@ -55,30 +60,40 @@ public class JavaKeystoreKeyProviderFactory implements KeyProviderFactory {
 
     public static final String ID = "java-keystore";
 
-    public static String KEYSTORE_KEY = "keystore";
-    public static ProviderConfigProperty KEYSTORE_PROPERTY = new ProviderConfigProperty(KEYSTORE_KEY, "Keystore", "Path to keys file", STRING_TYPE, null);
+    public static final String KEYSTORES_PATH_INIT_KEY = "keystores-path";
 
-    public static String KEYSTORE_PASSWORD_KEY = "keystorePassword";
-    public static ProviderConfigProperty KEYSTORE_PASSWORD_PROPERTY = new ProviderConfigProperty(KEYSTORE_PASSWORD_KEY, "Keystore Password", "Password for the keys", STRING_TYPE, null, true);
+    public static final String KEYSTORE_KEY = "keystore";
+    public static final ProviderConfigProperty KEYSTORE_PROPERTY = new ProviderConfigProperty(KEYSTORE_KEY, "Keystore",
+            """
+            Path to the keystore file. The keystore should be located inside a folder named like the realm name inside
+            the main keystores directory (by default `data` directory under {project_name}'s installation folder). For a
+            realm called `test` the keystore file should located inside `${kc.home.dir}/data/test`. This way the keystore
+            file is isolated between different realms. If the path is relative, the file will be located from that folder.
+            """,
+            STRING_TYPE, null);
 
-    public static String KEYSTORE_TYPE_KEY = "keystoreType";
+    public static final String KEYSTORE_PASSWORD_KEY = "keystorePassword";
+    public static final ProviderConfigProperty KEYSTORE_PASSWORD_PROPERTY = new ProviderConfigProperty(KEYSTORE_PASSWORD_KEY, "Keystore Password", "Password for the keys", STRING_TYPE, null, true);
+
+    public static final String KEYSTORE_TYPE_KEY = "keystoreType";
 
     // Initialization of this property is postponed to "init()" due the CryptoProvider must be set
     private ProviderConfigProperty keystoreTypeProperty;
 
-    public static String KEY_ALIAS_KEY = "keyAlias";
-    public static ProviderConfigProperty KEY_ALIAS_PROPERTY = new ProviderConfigProperty(KEY_ALIAS_KEY, "Key Alias", "Alias for the private key", STRING_TYPE, null);
+    public static final String KEY_ALIAS_KEY = "keyAlias";
+    public static final ProviderConfigProperty KEY_ALIAS_PROPERTY = new ProviderConfigProperty(KEY_ALIAS_KEY, "Key Alias", "Alias for the private key", STRING_TYPE, null);
 
-    public static String KEY_PASSWORD_KEY = "keyPassword";
-    public static ProviderConfigProperty KEY_PASSWORD_PROPERTY = new ProviderConfigProperty(KEY_PASSWORD_KEY, "Key Password", "Password for the private key", STRING_TYPE, null, true);
+    public static final String KEY_PASSWORD_KEY = "keyPassword";
+    public static final ProviderConfigProperty KEY_PASSWORD_PROPERTY = new ProviderConfigProperty(KEY_PASSWORD_KEY, "Key Password", "Password for the private key", STRING_TYPE, null, true);
 
     private static final String HELP_TEXT = "Loads keys from a Java keys file";
 
     private List<ProviderConfigProperty> configProperties;
-
+    private Path keystoresPath;
 
     @Override
     public void init(Config.Scope config) {
+        this.keystoresPath = Paths.get(config.get(KEYSTORES_PATH_INIT_KEY, System.getProperty("kc.home.dir") + "/data")).normalize();
         String[] supportedKeystoreTypes = CryptoIntegration.getProvider().getSupportedKeyStoreTypes()
                 .map(KeystoreUtil.KeystoreFormat::toString)
                 .toArray(String[]::new);
@@ -102,11 +117,17 @@ public class JavaKeystoreKeyProviderFactory implements KeyProviderFactory {
 
     @Override
     public KeyProvider create(KeycloakSession session, ComponentModel model) {
-        return new JavaKeystoreKeyProvider(session.getContext().getRealm(), model, session.vault());
+        return new JavaKeystoreKeyProvider(keystoresPath, session.getContext().getRealm(), model, session.vault());
     }
 
     @Override
     public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
+        String kid = model.get(KID_KEY);
+
+        if (kid == null) {
+            kid = KeycloakModelUtils.generateId();
+            model.put(KID_KEY, kid);
+        }
 
         ConfigurationValidationHelper.check(model)
                 .checkLong(Attributes.PRIORITY_PROPERTY, false)
@@ -118,8 +139,17 @@ public class JavaKeystoreKeyProviderFactory implements KeyProviderFactory {
                 .checkSingle(KEY_ALIAS_PROPERTY, true)
                 .checkSingle(KEY_PASSWORD_PROPERTY, true);
 
+        Path keystorePath = Paths.get(model.get(KEYSTORE_KEY)).normalize();
+        if (!keystorePath.isAbsolute()) {
+            keystorePath = this.keystoresPath.resolve(realm.getName()).resolve(keystorePath);
+        }
+        if (!keystorePath.startsWith(keystoresPath.resolve(realm.getName()))) {
+            throw new ComponentValidationException(String.format(
+                    "Keystore file '%s' is not under the realm directory '%s'", keystorePath, keystoresPath.resolve(realm.getName())));
+        }
+
         try {
-            KeyWrapper key = new JavaKeystoreKeyProvider(realm, model, session.vault()).loadKey(realm, model);
+            KeyWrapper key = new JavaKeystoreKeyProvider(keystoresPath, realm, model, session.vault()).loadKey(keystoresPath, realm, model);
             validateCertificateChain(key.getCertificateChain());
         } catch(GeneralSecurityException e) {
             logger.error("Failed to load keys.", e);
@@ -188,4 +218,21 @@ public class JavaKeystoreKeyProviderFactory implements KeyProviderFactory {
         return ID;
     }
 
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name(KEYSTORES_PATH_INIT_KEY)
+                .type("string")
+                .helpText(
+                        """
+                        The parent directory where the keystore files should be placed. The default value is the keycloak
+                        data folder "${kc.home.dir}/data". In order to isolate keystores between realms, the final keystore
+                        files should be placed in a folder with the realm name inside this directory. For example:
+                        "${kc.home.dir}/data/{realm-name}/keystore.jks".
+                        """
+                )
+                .add()
+                .build();
+    }
 }

@@ -23,7 +23,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
     <name>Keycloak Docs Parent</name>
-    <description/>
+    <description>Keycloak Docs Parent</description>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-docs-parent</artifactId>

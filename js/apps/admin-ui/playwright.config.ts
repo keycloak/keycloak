@@ -1,6 +1,6 @@
-import { defineConfig, devices } from "@playwright/test";
+import { type ViewportSize, defineConfig, devices } from "@playwright/test";
 
-const retryCount = parseInt(process.env.RETRY_COUNT || "0");
+const viewport: ViewportSize = { width: 1920, height: 1080 };
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -8,31 +8,29 @@ const retryCount = parseInt(process.env.RETRY_COUNT || "0");
 export default defineConfig({
   testDir: "./test",
   fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: retryCount,
+  // The admin console tests are not optimized for parallel execution, long-term
+  // this should be addressed and 'workers' should be returned to the default value.
   workers: 1,
-  timeout: 60 * 1000,
+  forbidOnly: !!process.env.CI,
   reporter: process.env.CI ? [["github"], ["html"]] : "list",
 
   use: {
-    baseURL: "http://localhost:8080",
-    trace: "on-first-retry",
+    trace: "retain-on-failure",
   },
 
-  /* Configure projects for major browsers */
   projects: [
     {
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
-        viewport: { width: 1920, height: 1200 },
+        viewport,
       },
     },
     {
       name: "firefox",
       use: {
         ...devices["Desktop Firefox"],
-        viewport: { width: 1920, height: 1200 },
+        viewport,
       },
     },
   ],

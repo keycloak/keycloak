@@ -17,10 +17,10 @@
 
 package org.keycloak.theme;
 
-import org.keycloak.provider.Provider;
-
 import java.io.IOException;
 import java.util.Set;
+
+import org.keycloak.provider.Provider;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

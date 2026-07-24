@@ -17,8 +17,6 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -30,20 +28,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.eclipse.microprofile.config.spi.ConfigSource;
-import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.keycloak.quarkus.runtime.Environment;
 
 import io.smallrye.config.AbstractLocationConfigSourceLoader;
+import io.smallrye.config.EnvConfigSource;
 import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.common.utils.ConfigSourceUtil;
+import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
+
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
 /**
  * A configuration source for {@code keycloak.conf}.
  */
 public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSourceLoader {
 
-    public static final int PROPERTIES_FILE_ORDINAL = 475;
+    public static final int PROPERTIES_FILE_ORDINAL = EnvConfigSource.ORDINAL - 1;
 
     private static final String KEYCLOAK_CONFIG_FILE_ENV = "KC_CONFIG_FILE";
     private static final String KEYCLOAK_CONF_FILE = "keycloak.conf";
@@ -89,19 +90,18 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
             }
 
             if (filePath == null) {
-                String homeDir = Environment.getHomeDir();
-
-                if (homeDir != null) {
-                    File file = Paths.get(homeDir, "conf", KeycloakPropertiesConfigSource.KEYCLOAK_CONF_FILE).toFile();
-
-                    if (file.exists()) {
-                        filePath = file.getAbsolutePath();
-                    }
-                }
+                filePath = Environment.getHomeDir()
+                        .map(f -> Paths.get(f, "conf", KeycloakPropertiesConfigSource.KEYCLOAK_CONF_FILE).toFile())
+                        .filter(File::exists).map(File::getAbsolutePath).orElse(null);
             }
 
             if (filePath == null) {
                 return null;
+            }
+
+            if (!filePath.endsWith(".conf")) {
+                throw new RuntimeException(
+                        String.format("Configuration file '%s' must have the '.conf' extension.", filePath));
             }
 
             return Paths.get(filePath);

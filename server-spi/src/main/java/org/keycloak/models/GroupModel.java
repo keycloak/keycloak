@@ -17,18 +17,18 @@
 
 package org.keycloak.models;
 
-import org.keycloak.provider.ProviderEvent;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import org.keycloak.provider.ProviderEvent;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface GroupModel extends RoleMapperModel {
+public interface GroupModel extends RoleMapperModel, Model {
 
     enum Type {
         REALM(0),
@@ -110,7 +110,7 @@ public interface GroupModel extends RoleMapperModel {
     }
 
     interface GroupMemberJoinEvent extends GroupEvent {
-        static void fire(GroupModel group, KeycloakSession session) {
+        static void fire(GroupModel group, UserModel user, KeycloakSession session) {
             session.getKeycloakSessionFactory().publish(new GroupMemberJoinEvent() {
                 @Override
                 public RealmModel getRealm() {
@@ -123,15 +123,22 @@ public interface GroupModel extends RoleMapperModel {
                 }
 
                 @Override
+                public UserModel getUser() {
+                    return user;
+                }
+
+                @Override
                 public KeycloakSession getKeycloakSession() {
                     return session;
                 }
             });
         }
+
+        UserModel getUser();
     }
 
     interface GroupMemberLeaveEvent extends GroupEvent {
-        static void fire(GroupModel group, KeycloakSession session) {
+        static void fire(GroupModel group, UserModel user, KeycloakSession session) {
             session.getKeycloakSessionFactory().publish(new GroupMemberLeaveEvent() {
                 @Override
                 public RealmModel getRealm() {
@@ -144,11 +151,18 @@ public interface GroupModel extends RoleMapperModel {
                 }
 
                 @Override
+                public UserModel getUser() {
+                    return user;
+                }
+
+                @Override
                 public KeycloakSession getKeycloakSession() {
                     return session;
                 }
             });
         }
+
+        UserModel getUser();
     }
 
     interface GroupPathChangeEvent extends GroupEvent {
@@ -186,6 +200,27 @@ public interface GroupModel extends RoleMapperModel {
     }
 
     Comparator<GroupModel> COMPARE_BY_NAME = Comparator.comparing(GroupModel::getName);
+
+    /**
+     * Get timestamp of group creation. May be null for groups created before this feature introduction.
+     */
+    default Long getCreatedTimestamp() {
+        return null;
+    }
+
+    default void setCreatedTimestamp(Long timestamp) {
+    }
+
+    /**
+     * Get timestamp of last group modification. May be null for groups that have not been modified
+     * since this feature was introduced.
+     */
+    default Long getLastModifiedTimestamp() {
+        return null;
+    }
+
+    default void setLastModifiedTimestamp(Long timestamp) {
+    }
 
     String getId();
 
@@ -327,4 +362,9 @@ public interface GroupModel extends RoleMapperModel {
     default Type getType() {
         return Type.REALM;
     }
+
+    /**
+     * @return Organization this group belongs to, or null if the group is of {@link Type#REALM}.
+     */
+    OrganizationModel getOrganization();
 }

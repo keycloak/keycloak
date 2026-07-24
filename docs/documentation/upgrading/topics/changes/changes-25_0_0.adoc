@@ -101,7 +101,7 @@ bin/kc.sh build --features=persistent-user-sessions ...
 ----
 
 For more details see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
-The https://www.keycloak.org/high-availability/concepts-memory-and-cpu-sizing[sizing guide] contains a new paragraph describing the updated resource requirements when this feature is enabled.
+The https://www.keycloak.org/high-availability/single-cluster/concepts-memory-and-cpu-sizing[sizing guide] contains a new paragraph describing the updated resource requirements when this feature is enabled.
 
 NOTE: If this feature is enabled for an existing deployment that is using only the embedded Infinispan for storing sessions, the existing online user and client sessions will not be migrated to the database. It will only affect newly created online user and online client sessions.
 
@@ -110,7 +110,7 @@ Items which are evicted from memory will be loaded on-demand from the database w
 To set different sizes for the caches, edit {project_name}'s cache config file to set a `+<memory max-count="..."/>+` for those caches.
 Once this feature is enabled, expect an increased database utilization on each login, logout and refresh token request.
 
-To configure the cache size in an external {jdgserver_name} in a {project_name} multi-site setup, consult the updated https://www.keycloak.org/high-availability/deploy-infinispan-kubernetes-crossdc[Deploy Infinispan for HA with the Infinispan Operator] {section}.
+To configure the cache size in an external {jdgserver_name} in a {project_name} multi-site setup, consult the updated https://www.keycloak.org/high-availability/multi-cluster/deploy-infinispan-kubernetes-crossdc[Deploy Infinispan for HA with the Infinispan Operator] {section}.
 
 With this feature enabled, the options `spi-user-sessions-infinispan-offline-session-cache-entry-lifespan-override` and `spi-user-sessions-infinispan-offline-client-session-cache-entry-lifespan-override` are no longer available, as they were previously used to override the time offline sessions were kept in-memory.
 
@@ -161,7 +161,7 @@ This includes clearing the caches of the external {jdgserver_name} if one is use
 * If the remote {jdgserver_name} has been used in a single-site setup solely for keeping user sessions across {project_name} restarts, remove the remote {jdgserver_name} configuration for those caches.
 --
 +
-TIP: If the remote {jdgserver_name} is used in a multi-site setup, you can reduce the resource consumption by the external Infinispan by configuring the number of entries in memory. Use the settings outlined in https://www.keycloak.org/high-availability/deploy-infinispan-kubernetes-crossdc[Deploy Infinispan for HA with the Infinispan Operator] {section}.
+TIP: If the remote {jdgserver_name} is used in a multi-site setup, you can reduce the resource consumption by the external Infinispan by configuring the number of entries in memory. Use the settings outlined in https://www.keycloak.org/high-availability/multi-cluster/deploy-infinispan-kubernetes-crossdc[Deploy Infinispan for HA with the Infinispan Operator] {section}.
 
 . Rolling restart of {project_name} to activate the new cache configuration XML.
 

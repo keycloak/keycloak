@@ -1,6 +1,7 @@
 <#import "/templates/guide.adoc" as tmpl>
 <#import "/templates/kc.adoc" as kc>
 <#import "/templates/links.adoc" as links>
+<#import "/templates/features.adoc" as features>
 
 <@tmpl.guide
 title="Configuring {project_name} for production"
@@ -10,6 +11,10 @@ includedOptions="">
 A {project_name} production environment provides secure authentication and authorization for deployments that range from on-premise deployments that support a few thousand users to deployments that serve millions of users.
 
 This {section} describes the general areas of configuration required for a production ready {project_name} environment. This information focuses on the general concepts instead of the actual implementation, which depends on your environment. The key aspects covered in this {section} apply to all environments, whether it is containerized, on-premise, GitOps, or Ansible.
+
+== Supported configurations for production environments
+
+For an overview of supported platforms, Java versions, databases, and other system requirements for {project_name}, see <@links.server id="supported-configurations"/>.
 
 == TLS for secure communication
 {project_name} continually exchanges sensitive data, which means that all communication to and from {project_name} requires a secure communication channel. To prevent several attack vectors, you enable HTTP over TLS, or HTTPS, for that channel.
@@ -47,20 +52,30 @@ By default, there is no limit set.
 Set the option `http-max-queued-requests` to limit the number of queued requests to a given threshold matching your environment.
 Any request that exceeds this limit would return with an immediate `503 Server not Available` response.
 
+[[server-bootstrap-behavior]]
+== Server bootstrap behavior
+
+Server initialization, such as database migrations, may take a significant amount of time to complete.
+When {project_name} is configured to expose health endpoints, the server will open its HTTP(S) and Management endpoints while initialization progresses in the background.
+This allows the startup and liveness probes to report UP early, preventing orchestrators like Kubernetes from killing the container during a long-running migration, while the readiness probe reports DOWN until initialization completes.
+
+If you run {project_name} behind a proxy or load balancer, configure an HTTP health check with the path `/health/ready` to ensure traffic is routed only to instances that have completed initialization.
+
+If an HTTP health check is not possible, or you prefer the server to accept connections only after initialization completes, start {project_name} with the following option:
+
+<@kc.start parameters="--server-async-bootstrap=false"/>
+
+With this setting, {project_name} opens its endpoints only after the bootstrap is complete and the server is ready to handle requests.
+
 == Production grade database
 The database used by {project_name} is crucial for the overall performance, availability, reliability and integrity of {project_name}. For details on how to configure a supported database, see <@links.server id="db"/>.
 
-== Support for {project_name} in a cluster
+== Running {project_name} in a cluster
 To ensure that users can continue to log in when a {project_name} instance goes down, a typical production environment contains two or more {project_name} instances.
 
-{project_name} runs on top of JGroups and Infinispan, which provide a reliable, high-availability stack for a clustered scenario. When deployed to a cluster, the embedded Infinispan server communication should be secured. You secure this communication either by enabling authentication and encryption or by isolating the network used for cluster communication.
+{project_name} runs on top of JGroups and Infinispan, which provide a reliable, high-availability stack for a clustered scenario. In the default setup, communication between the nodes is encrypted using TLS.
 
 To find out more about using multiple nodes, the different caches and an appropriate stack for your environment, see <@links.server id="caching"/>.
-
-=== Secure network communication
-
-JGroups supports Java SSL sockets for TCP communication.
-Check <@links.server id="caching" anchor="securing-cache-communication"/> for more information on how to configure TLS and the alternatives available for UDP communication.
 
 === Configure Firewall ports
 
@@ -91,5 +106,26 @@ export JAVA_OPTS_APPEND="-Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6A
 ----
 
 See <@links.server id="caching" anchor="network-bind-address"/> for more details.
+
+== Preview of enhanced HTTP performance
+<@features.techpreview feature="http-optimized-serializers" additionalCommunityText="We gather more feedback on this feature to promote it to supported. Please, share your feedback about any issue in https://github.com/keycloak/keycloak/discussions/43484[this discussion]."/>
+
+In production environments, the performance of the HTTP layer is critical.
+Every request passes through it, making it a key factor in overall system responsiveness, scalability, and user experience.
+
+This feature improves how {project_name} handles JSON data in HTTP requests and responses.
+The result is a more efficient runtime with measurable benefits:
+
+- ~5% increase in throughput
+- More stable response times
+- Reduced system resource usage
+
+These improvements help ensure smoother, more predictable performance at scale while also lowering the operational cost of running production systems.
+
+The only known tradeoff is that build time increases by ~6% as certain actions were moved to the build time instead of runtime.
+
+You can enable this feature as follows:
+
+<@kc.start parameters="--features=http-optimized-serializers"/>
 
 </@tmpl.guide>

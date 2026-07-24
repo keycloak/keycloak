@@ -18,39 +18,38 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.FixMethodOrder;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExternalResource;
-import org.junit.runners.MethodSorters;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.RealmModel;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.testsuite.arquillian.annotation.EnableVault;
-import org.keycloak.testsuite.Assert;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPRule.LDAPConnectionParameters;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
-
-import java.util.Objects;
-import org.junit.Assume;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Assume;
+import org.junit.FixMethodOrder;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.rules.ExternalResource;
+import org.junit.runners.MethodSorters;
 
 /**
  * Test user logins utilizing various LDAP authentication methods and different LDAP connection encryption mechanisms.
@@ -142,43 +141,38 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
     }
 
     @Page
-    protected AppPage appPage;
-
-    @Page
     protected LoginPage loginPage;
 
     // Helper methods
     private void verifyLoginSucceededAndLogout(String username, String password) {
         String userId = findUser(username).getId();
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
-        appPage.assertCurrent();
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
-        EventRepresentation loginEvent = events.expectLogin().user(userId).assertEvent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).getEvent();
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
-        appPage.logout(tokenResponse.getIdToken());
-        events.expectLogout(loginEvent.getSessionId()).user(userId).assertEvent();
+        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
+        EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId()).userId(userId);
     }
 
     private void verifyLoginFailed(String username, String password) {
         // Clear the events queue before the actual test to catch all errors properly
         events.clear();
         // Run the test actions
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         if (username.equals(DEFAULT_TEST_USERS.get("INVALID_USER_EMAIL")) || username.equals(DEFAULT_TEST_USERS.get("INVALID_USER_NAME"))) {
 
-            events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.USER_NOT_FOUND).assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).userId(null).error(Errors.USER_NOT_FOUND);
 
         } else if (username.equals(DEFAULT_TEST_USERS.get("VALID_USER_EMAIL")) || username.equals(DEFAULT_TEST_USERS.get("VALID_USER_NAME"))) {
 
             List<UserRepresentation> knownUsers = getAdminClient().realm(TEST_REALM_NAME).users().search(DEFAULT_TEST_USERS.get("VALID_USER_NAME"));
-            Assert.assertTrue(!knownUsers.isEmpty());
+            Assertions.assertTrue(!knownUsers.isEmpty());
             final String userId = knownUsers.get(0).getId();
-            events.expect(EventType.LOGIN_ERROR).user(userId).error(Errors.INVALID_USER_CREDENTIALS).assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).userId(userId).error(Errors.INVALID_USER_CREDENTIALS);
 
         }
     }
@@ -212,7 +206,7 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
 
     private void verifyConnectionUrlProtocolPrefix(String ldapProtocolPrefix) {
         final String ldapConnectionUrl = ldapRule.getConfig().get(LDAPConstants.CONNECTION_URL);
-        Assert.assertTrue(!ldapConnectionUrl.isEmpty() && ldapConnectionUrl.startsWith(ldapProtocolPrefix));
+        Assertions.assertTrue(!ldapConnectionUrl.isEmpty() && ldapConnectionUrl.startsWith(ldapProtocolPrefix));
     }
 
     // Tests themselves

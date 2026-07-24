@@ -1,4 +1,5 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
+set -e
 
 GROUP="$1"
 if [ "$GROUP" == "" ]; then

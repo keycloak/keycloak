@@ -17,17 +17,30 @@
 package org.keycloak.services.resources.admin;
 
 import java.util.Arrays;
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
-import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.reactive.NoCache;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
@@ -53,35 +66,22 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.UserPermissionEvaluator;
+import org.keycloak.services.util.DateUtil;
 import org.keycloak.userprofile.UserProfile;
-import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.SearchQueryUtils;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.ForbiddenException;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-
-import java.text.MessageFormat;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.NoCache;
 
 import static org.keycloak.models.utils.KeycloakModelUtils.findGroupByPath;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
@@ -97,7 +97,6 @@ import static org.keycloak.userprofile.UserProfileContext.USER_API;
 public class UsersResource {
 
     private static final Logger logger = Logger.getLogger(UsersResource.class);
-    private static final String SEARCH_ID_PARAMETER = "id:";
 
     protected final RealmModel realm;
 
@@ -171,6 +170,7 @@ public class UsersResource {
             RepresentationToModel.createGroups(session, rep, realm, user);
 
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
+            RepresentationToModel.createVerifiableCredentials(rep, session, user);
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), user.getId()).representation(rep).success();
 
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(user.getId()).build()).build();
@@ -178,8 +178,7 @@ public class UsersResource {
             throw ErrorResponse.exists("User exists with same username or email");
         } catch (PasswordPolicyNotMetException e) {
             logger.warn("Password policy not met for user " + e.getUsername(), e);
-            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
-            throw new ErrorResponseException(e.getMessage(), MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
+            throw new ErrorResponseException(e.getMessage(), ErrorResponse.resolveMessage(session, auth.adminAuth().getToken().getLocale(), e.getMessage(), e.getParameters()),
                     Response.Status.BAD_REQUEST);
         } catch (ModelIllegalStateException e) {
             logger.error(e.getMessage(), e);
@@ -271,7 +270,8 @@ public class UsersResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Get users Returns a stream of users, filtered according to query parameters.")
+    @Operation(summary = "Get users Returns a stream of users, filtered according to query parameters.",
+               description = "Returns a stream of users. Note that the 'credentials' field in the returned UserRepresentation objects is typically not populated for performance reasons. If specific credential metadata is required, use the dedicated 'GET /admin/realms/{realm}/users/{user-id}/credentials' endpoint.")
     public Stream<UserRepresentation> getUsers(
             @Parameter(description = "A String contained in username, first or last name, or email. Default search behavior is prefix-based (e.g., foo or foo*). Use *foo* for infix search and \"foo\" for exact search.") @QueryParam("search") String search,
             @Parameter(description = "A String contained in lastName, or the complete lastName, if param \"exact\" is true") @QueryParam("lastName") String last,
@@ -286,7 +286,9 @@ public class UsersResource {
             @Parameter(description = "Boolean representing if user is enabled or not") @QueryParam("enabled") Boolean enabled,
             @Parameter(description = "Boolean which defines whether brief representations are returned (default: false)") @QueryParam("briefRepresentation") Boolean briefRepresentation,
             @Parameter(description = "Boolean which defines whether the params \"last\", \"first\", \"email\" and \"username\" must match exactly") @QueryParam("exact") Boolean exact,
-            @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery) {
+            @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery,
+            @Parameter(description = "Only return users created after (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdAfter") String createdAfter,
+            @Parameter(description = "Only return users created before (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdBefore") String createdBefore) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
 
         userPermissionEvaluator.requireQuery();
@@ -300,9 +302,11 @@ public class UsersResource {
 
         Stream<UserModel> userModels = Stream.empty();
         if (search != null) {
-            if (search.startsWith(SEARCH_ID_PARAMETER)) {
-                String[] userIds = search.substring(SEARCH_ID_PARAMETER.length()).trim().split("\\s+");
-                userModels = Arrays.stream(userIds).map(id -> session.users().getUserById(realm, id)).filter(Objects::nonNull);
+            SearchQueryUtils.UserSearchPrefix prefix = SearchQueryUtils.UserSearchPrefix.matching(search);
+            if (prefix != null) {
+                userModels = Arrays.stream(prefix.splitTerms(search))
+                        .map(term -> prefix.lookup(session.users(), realm, term))
+                        .filter(Objects::nonNull);
                 if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
                     userModels = userModels.filter(userPermissionEvaluator::canView);
                 }
@@ -312,11 +316,17 @@ public class UsersResource {
                 if (enabled != null) {
                     attributes.put(UserModel.ENABLED, enabled.toString());
                 }
+                if (emailVerified != null) {
+                    attributes.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
+                }
+                addCreatedTimestampConditions(attributes, createdAfter, createdBefore);
+
                 return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
                         maxResults, false);
             }
         } else if (last != null || first != null || email != null || username != null || emailVerified != null
-                || idpAlias != null || idpUserId != null || enabled != null || exact != null || !searchAttributes.isEmpty()) {
+                || idpAlias != null || idpUserId != null || enabled != null || exact != null || !searchAttributes.isEmpty()
+                || createdAfter != null || createdBefore != null) {
                     Map<String, String> attributes = new HashMap<>();
                     if (last != null) {
                         attributes.put(UserModel.LAST_NAME, last);
@@ -345,6 +355,7 @@ public class UsersResource {
                     if (exact != null) {
                         attributes.put(UserModel.EXACT, exact.toString());
                     }
+                    addCreatedTimestampConditions(attributes, createdAfter, createdBefore);
 
                     attributes.putAll(searchAttributes);
 
@@ -373,12 +384,17 @@ public class UsersResource {
      * {@code email} or {@code username} those criteria are matched against their
      * respective fields on a user entity. Combined with a logical and.
      *
-     * @param search   arbitrary search string for all the fields below. Default search behavior is prefix-based (e.g., <code>foo</code> or <code>foo*</code>). Use <code>*foo*</code> for infix search and <code>"foo"</code> for exact search.
-     * @param last     last name filter
-     * @param first    first name filter
-     * @param email    email filter
-     * @param username username filter
+     * @param search A String contained in username, first or last name, or email. Default search behavior is prefix-based (e.g., <code>foo</code> or <code>foo*</code>). Use <code>*foo*</code> for infix search and <code>"foo"</code> for exact search.
+     * @param last A String contained in lastName, or the complete lastName, if param "exact" is true
+     * @param first A String contained in firstName, or the complete firstName, if param "exact" is true
+     * @param email A String contained in email, or the complete email, if param "exact" is true
+     * @param username A String contained in username, or the complete username, if param "exact" is true
+     * @param emailVerified whether the email has been verified
+     * @param idpAlias The alias of an Identity Provider linked to the user
+     * @param idpUserId The userId at an Identity Provider linked to the user
      * @param enabled Boolean representing if user is enabled or not
+     * @param exact Boolean which defines whether the params "last", "first", "email" and "username" must match exactly
+     * @param searchQuery A query to search for custom attributes, in the format 'key1:value2 key2:value2'
      * @return the number of users that match the given criteria
      */
     @Path("count")
@@ -397,35 +413,59 @@ public class UsersResource {
                     "2. If {@code search} is specified other criteria such as {@code last} will be ignored even though you set them. The {@code search} string will be matched against the first and last name, the username and the email of a user. <p> " +
                     "3. If {@code search} is unspecified but any of {@code last}, {@code first}, {@code email} or {@code username} those criteria are matched against their respective fields on a user entity. Combined with a logical and.")
     public Integer getUsersCount(
-            @Parameter(description = "arbitrary search string for all the fields below. Default search behavior is prefix-based (e.g., foo or foo*). Use *foo* for infix search and \"foo\" for exact search.") @QueryParam("search") String search,
-            @Parameter(description = "last name filter") @QueryParam("lastName") String last,
-            @Parameter(description = "first name filter") @QueryParam("firstName") String first,
-            @Parameter(description = "email filter") @QueryParam("email") String email,
-            @QueryParam("emailVerified") Boolean emailVerified,
-            @Parameter(description = "username filter") @QueryParam("username") String username,
+            @Parameter(description = "A String contained in username, first or last name, or email. Default search behavior is prefix-based (e.g., foo or foo*). Use *foo* for infix search and \"foo\" for exact search.") @QueryParam("search") String search,
+            @Parameter(description = "A String contained in lastName, or the complete lastName, if param \"exact\" is true") @QueryParam("lastName") String last,
+            @Parameter(description = "A String contained in firstName, or the complete firstName, if param \"exact\" is true") @QueryParam("firstName") String first,
+            @Parameter(description = "A String contained in email, or the complete email, if param \"exact\" is true") @QueryParam("email") String email,
+            @Parameter(description = "A String contained in username, or the complete username, if param \"exact\" is true") @QueryParam("username") String username,
+            @Parameter(description = "whether the email has been verified") @QueryParam("emailVerified") Boolean emailVerified,
+            @Parameter(description = "The alias of an Identity Provider linked to the user") @QueryParam("idpAlias") String idpAlias,
+            @Parameter(description = "The userId at an Identity Provider linked to the user") @QueryParam("idpUserId") String idpUserId,
             @Parameter(description = "Boolean representing if user is enabled or not") @QueryParam("enabled") Boolean enabled,
-            @QueryParam("q") String searchQuery) {
+            @Parameter(description = "Boolean which defines whether the params \"last\", \"first\", \"email\" and \"username\" must match exactly") @QueryParam("exact") Boolean exact,
+            @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery,
+            @Parameter(description = "Only return users created after (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdAfter") String createdAfter,
+            @Parameter(description = "Only return users created before (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdBefore") String createdBefore) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
         userPermissionEvaluator.requireQuery();
 
         Map<String, String> searchAttributes = searchQuery == null
                 ? Collections.emptyMap()
                 : SearchQueryUtils.getFields(searchQuery);
-
         if (search != null) {
-            if (search.startsWith(SEARCH_ID_PARAMETER)) {
-                UserModel userModel = session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
-                return userModel != null && userPermissionEvaluator.canView(userModel) ? 1 : 0;
-            } else if (userPermissionEvaluator.canView()) {
-                return session.users().getUsersCount(realm, search.trim());
+            SearchQueryUtils.UserSearchPrefix prefix = SearchQueryUtils.UserSearchPrefix.matching(search);
+            if (prefix != null) {
+                return (int) Arrays.stream(prefix.splitTerms(search))
+                        .map(term -> prefix.lookup(session.users(), realm, term))
+                        .filter(Objects::nonNull)
+                        .filter(userPermissionEvaluator::canView)
+                        .count();
+            }
+
+            Map<String, String> parameters = new HashMap<>();
+            parameters.put(UserModel.SEARCH, search.trim());
+
+            if (enabled != null) {
+                parameters.put(UserModel.ENABLED, enabled.toString());
+            }
+            if (emailVerified != null) {
+                parameters.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
+            }
+            addCreatedTimestampConditions(parameters, createdAfter, createdBefore);
+            // search /users equivalent to this doesn't include service-accounts so counting shouldn't as well
+            parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, "false");
+            if (userPermissionEvaluator.canView()) {
+                return session.users().getUsersCount(realm, parameters);
             } else {
-                if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
-                    return session.users().getUsersCount(realm, search.trim());
+                if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+                    return session.users().getUsersCount(realm, parameters, auth.groups().getGroupIdsWithViewPermission());
                 } else {
-                    return session.users().getUsersCount(realm, search.trim(), auth.groups().getGroupIdsWithViewPermission());
+                    return session.users().getUsersCount(realm, parameters);
                 }
             }
-        } else if (last != null || first != null || email != null || username != null || emailVerified != null || enabled != null || !searchAttributes.isEmpty()) {
+        } else if (last != null || first != null || email != null || username != null || emailVerified != null
+                || idpAlias != null || idpUserId != null || enabled != null || exact != null || !searchAttributes.isEmpty()
+                || createdAfter != null || createdBefore != null) {
             Map<String, String> parameters = new HashMap<>();
             if (last != null) {
                 parameters.put(UserModel.LAST_NAME, last);
@@ -442,27 +482,44 @@ public class UsersResource {
             if (emailVerified != null) {
                 parameters.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
             }
+            if (idpAlias != null) {
+                parameters.put(UserModel.IDP_ALIAS, idpAlias);
+            }
+            if (idpUserId != null) {
+                parameters.put(UserModel.IDP_USER_ID, idpUserId);
+            }
             if (enabled != null) {
                 parameters.put(UserModel.ENABLED, enabled.toString());
             }
+            if (exact != null) {
+                parameters.put(UserModel.EXACT, exact.toString());
+            }
+            addCreatedTimestampConditions(parameters, createdAfter, createdBefore);
             parameters.putAll(searchAttributes);
-
+            // search /users equivalent to this does include service-accounts so we should be explicit
+            parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, "true");
             if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, parameters);
             } else {
-                if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
-                    return session.users().getUsersCount(realm, parameters);
-                } else {
+                if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
                     return session.users().getUsersCount(realm, parameters, auth.groups().getGroupIdsWithViewPermission());
+                } else {
+                    return session.users().getUsersCount(realm, parameters);
                 }
             }
-        } else if (userPermissionEvaluator.canView()) {
-            return session.users().getUsersCount(realm);
         } else {
-            if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
-                return session.users().getUsersCount(realm);
+            Map<String, String> parameters = new HashMap<>();
+            // list /users equivalent to this doesn't include service-accounts so counting shouldn't as well
+            parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, "false");
+            if (userPermissionEvaluator.canView()) {
+                return session.users().getUsersCount(realm, parameters);
+            } else {
+                if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+                    return session.users().getUsersCount(realm, parameters, auth.groups().getGroupIdsWithViewPermission());
+                } else {
+                    return session.users().getUsersCount(realm, parameters);
+                }
             }
-            return session.users().getUsersCount(realm, auth.groups().getGroupIdsWithViewPermission());
         }
     }
 
@@ -477,10 +534,27 @@ public class UsersResource {
         return new UserProfileResource(session, auth, adminEvent);
     }
 
+    private static void addCreatedTimestampConditions(Map<String, String> attributes, String createdAfter, String createdBefore) {
+        if (createdAfter != null) {
+            try {
+                attributes.put(UserModel.CREATED_AFTER, String.valueOf(DateUtil.toStartOfDay(createdAfter)));
+            } catch (Throwable t) {
+                throw new BadRequestException("Invalid value for 'createdAfter', expected format is yyyy-MM-dd or an Epoch timestamp");
+            }
+        }
+        if (createdBefore != null) {
+            try {
+                attributes.put(UserModel.CREATED_BEFORE, String.valueOf(DateUtil.toEndOfDay(createdBefore)));
+            } catch (Throwable t) {
+                throw new BadRequestException("Invalid value for 'createdBefore', expected format is yyyy-MM-dd or an Epoch timestamp");
+            }
+        }
+    }
+
     private Stream<UserRepresentation> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts) {
         attributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, includeServiceAccounts.toString());
 
-        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
             Set<String> groupIds = auth.groups().getGroupIdsWithViewPermission();
             if (!groupIds.isEmpty()) {
                 session.setAttribute(UserModel.GROUPS, groupIds);
@@ -491,7 +565,7 @@ public class UsersResource {
     }
 
     private Stream<UserRepresentation> toRepresentation(RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Stream<UserModel> userModels) {
-        boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
+        boolean briefRep = Boolean.TRUE.equals(briefRepresentation);
 
         if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
             usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
@@ -499,15 +573,9 @@ public class UsersResource {
             usersEvaluator.grantIfNoPermission(session.getAttribute(UserModel.GROUPS) != null);
         }
 
-        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
-
         return userModels
                 .map(user -> {
-                    UserProfile profile = provider.create(UserProfileContext.USER_API, user);
-                    UserRepresentation rep = profile.toRepresentation();
-                    UserRepresentation userRep = briefRepresentationB ?
-                            ModelToRepresentation.toBriefRepresentation(user, rep, false) :
-                            ModelToRepresentation.toRepresentation(session, realm, user, rep, false);
+                    UserRepresentation userRep = ModelToRepresentation.toRepresentation(session, user, briefRep);
                     userRep.setAccess(usersEvaluator.getAccessForListing(user));
                     return userRep;
                 });

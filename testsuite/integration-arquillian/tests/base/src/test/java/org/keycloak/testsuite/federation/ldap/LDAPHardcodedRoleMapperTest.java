@@ -16,14 +16,24 @@
  */
 package org.keycloak.testsuite.federation.ldap;
 
-import org.junit.ClassRule;
-import org.junit.Test;
+import java.util.stream.Collectors;
+
+import org.keycloak.component.ComponentModel;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.storage.CacheableStorageProviderModel;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.ldap.LDAPStorageProvider;
+import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.util.LDAPRule;
+import org.keycloak.testsuite.util.LDAPTestUtils;
 
-import java.util.stream.Collectors;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -45,7 +55,7 @@ public class LDAPHardcodedRoleMapperTest extends AbstractLDAPTest {
 
     @Override
     protected void afterImportTestRealm() {
-        testingClient.testing().ldap(TEST_REALM_NAME).prepareHardcodedRolesLDAPTest();
+        runOnServer.run(prepareHardcodedRolesLDAPTest());
     }
 
     /**
@@ -76,4 +86,34 @@ public class LDAPHardcodedRoleMapperTest extends AbstractLDAPTest {
         });
     }
 
+    /**
+     * Prepare hardcoded roles LDAP tests. Creates some LDAP mappers as well as some hardcoded roles and users in LDAP
+     */
+    public static RunOnServer prepareHardcodedRolesLDAPTest() {
+        return session -> {
+            RealmModel realm = session.getContext().getRealm();
+            ComponentModel ldapCompModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapCompModel);
+            UserStorageProviderModel ldapModel = ldapFedProvider.getModel();
+            ldapModel.setCachePolicy(CacheableStorageProviderModel.CachePolicy.NO_CACHE);
+            ldapModel.setImportEnabled(false);
+            ldapModel.getConfig().putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.READ_ONLY.name());
+            realm.updateComponent(ldapModel);
+
+            // Add a hardcoded and composite role
+            RoleModel clientRole = realm.getClientByClientId("admin-cli").addRole("client_role");
+            RoleModel hardcodedRole = realm.addRole("hardcoded_role");
+            hardcodedRole.addCompositeRole(clientRole);
+
+            // Add role mapper
+            LDAPTestUtils.addOrUpdateHardcodedRoleMapper(realm, ldapModel);
+
+            // Remove all LDAP users
+            LDAPTestUtils.removeAllLDAPUsers(ldapFedProvider, realm);
+
+            // Add some LDAP users for testing
+            LDAPObject john = LDAPTestUtils.addLDAPUser(ldapFedProvider, realm, "johnkeycloak", "John", "Doe", "john@email.org", null, "1234");
+            LDAPTestUtils.updateLDAPPassword(ldapFedProvider, john, "Password1");
+        };
+    }
 }

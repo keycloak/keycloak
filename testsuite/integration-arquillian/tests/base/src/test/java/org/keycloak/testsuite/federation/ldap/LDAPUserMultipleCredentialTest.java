@@ -1,12 +1,8 @@
 package org.keycloak.testsuite.federation.ldap;
 
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import org.junit.FixMethodOrder;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import java.util.Arrays;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
@@ -29,7 +25,12 @@ import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
-import java.util.Arrays;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.FixMethodOrder;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.runners.MethodSorters;
 
 /**
  * Test user login with multiple credential providers, both local and federated through LDAP.
@@ -106,13 +107,13 @@ public class LDAPUserMultipleCredentialTest extends AbstractLDAPTest {
 
         try {
             log.info("Trying login as user without OTP");
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.login("test-user");
             passwordPage.assertCurrent();
             passwordPage.assertTryAnotherWayLinkAvailability(false);
 
             log.info("Trying login as user with OTP");
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.login("test-user-with-otp");
             // OTP is locally stored, so takes precedence in Keycloak
             loginTotpPage.assertCurrent();
@@ -120,11 +121,11 @@ public class LDAPUserMultipleCredentialTest extends AbstractLDAPTest {
             loginTotpPage.clickTryAnotherWayLink();
             selectAuthenticatorPage.assertCurrent();
             // make sure password method exists as well
-            Assert.assertEquals(Arrays.asList(SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION, SelectAuthenticatorPage.PASSWORD), selectAuthenticatorPage.getAvailableLoginMethods());
+            Assertions.assertEquals(Arrays.asList(SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION, SelectAuthenticatorPage.PASSWORD), selectAuthenticatorPage.getAvailableLoginMethods());
 
         } finally {
             // Revert flow binding
-            resetDefaultBrowserFlow(testRealm());
+            resetDefaultBrowserFlow(managedRealm.admin());
         }
     }
 

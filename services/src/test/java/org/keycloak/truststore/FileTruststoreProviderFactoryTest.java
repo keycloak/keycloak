@@ -17,13 +17,14 @@
 
 package org.keycloak.truststore;
 
-import org.junit.Test;
-import org.keycloak.common.enums.HostnameVerificationPolicy;
-import org.keycloak.utils.ScopeUtil;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.keycloak.common.enums.HostnameVerificationPolicy;
+import org.keycloak.utils.ScopeUtil;
+
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

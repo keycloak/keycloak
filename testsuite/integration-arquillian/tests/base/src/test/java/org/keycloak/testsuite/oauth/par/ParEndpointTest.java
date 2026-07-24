@@ -17,16 +17,17 @@
 
 package org.keycloak.testsuite.oauth.par;
 
-import jakarta.ws.rs.core.MultivaluedHashMap;
-import org.junit.Assert;
-import org.junit.Test;
-import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
-
-
 import java.util.HashMap;
 import java.util.List;
 
-import static org.keycloak.protocol.oidc.OIDCLoginProtocol.AUTHORIZATION_DETAILS_PARAM;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+
+import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
+
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+
+import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
 
 public class ParEndpointTest {
 
@@ -34,12 +35,12 @@ public class ParEndpointTest {
     public void testFlattenDecodedFormParametersRetainAuthorizationDetails() {
         var decodedFormParameters = new MultivaluedHashMap<String, String>();
         String authorizationDetails = "[{\"type\": \"urn:openfinanceuae:account-access-consent:v1.0\",\"foo\":\"bar\"},{\"type\": \"urn:openfinanceuae:account-access-consent:v1.0\",\"gugu\":\"gaga\"}]";
-        decodedFormParameters.put(AUTHORIZATION_DETAILS_PARAM, List.of(authorizationDetails));
+        decodedFormParameters.put(AUTHORIZATION_DETAILS, List.of(authorizationDetails));
         var params = new HashMap<String, String>();
 
         ParEndpoint.flattenDecodedFormParametersToParamsMap(decodedFormParameters, params);
 
-        Assert.assertEquals(authorizationDetails, params.get(AUTHORIZATION_DETAILS_PARAM));
+        Assertions.assertEquals(authorizationDetails, params.get(AUTHORIZATION_DETAILS));
     }
 
     @Test
@@ -50,7 +51,7 @@ public class ParEndpointTest {
 
         ParEndpoint.flattenDecodedFormParametersToParamsMap(decodedFormParameters, params);
 
-        Assert.assertEquals("paramValue1", params.get("param"));
+        Assertions.assertEquals("paramValue1", params.get("param"));
     }
 
     @Test
@@ -61,7 +62,7 @@ public class ParEndpointTest {
 
         ParEndpoint.flattenDecodedFormParametersToParamsMap(decodedFormParameters, params);
 
-        Assert.assertEquals("single", params.get("param"));
+        Assertions.assertEquals("single", params.get("param"));
     }
 
     @Test
@@ -72,7 +73,7 @@ public class ParEndpointTest {
 
         ParEndpoint.flattenDecodedFormParametersToParamsMap(decodedFormParameters, params);
 
-        Assert.assertNull(params.get("param"));
+        Assertions.assertNull(params.get("param"));
     }
 
     @Test
@@ -84,7 +85,7 @@ public class ParEndpointTest {
 
         ParEndpoint.flattenDecodedFormParametersToParamsMap(decodedFormParameters, params);
 
-        Assert.assertEquals("value", params.get("param"));
+        Assertions.assertEquals("value", params.get("param"));
     }
 
     @Test
@@ -96,6 +97,6 @@ public class ParEndpointTest {
 
         ParEndpoint.flattenDecodedFormParametersToParamsMap(decodedFormParameters, params);
 
-        Assert.assertEquals("valueAAA", params.get("param"));
+        Assertions.assertEquals("valueAAA", params.get("param"));
     }
 }

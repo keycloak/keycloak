@@ -97,6 +97,10 @@ export const ExtendedNonDiscoverySettings = () => {
           field="config.acceptsPromptNoneForwardFromClient"
           label="acceptsPromptNone"
         />
+        <SwitchField
+          field="config.requiresShortStateParameter"
+          label="requiresShortStateParameter"
+        />
         <FormGroup
           label={t("allowedClockSkew")}
           labelIcon={

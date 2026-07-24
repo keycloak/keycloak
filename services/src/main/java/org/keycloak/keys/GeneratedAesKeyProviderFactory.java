@@ -17,7 +17,8 @@
 
 package org.keycloak.keys;
 
-import org.jboss.logging.Logger;
+import java.util.List;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.Algorithm;
@@ -26,7 +27,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import java.util.List;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.provider.ProviderConfigProperty.LIST_TYPE;
 
@@ -43,11 +44,11 @@ public class GeneratedAesKeyProviderFactory extends AbstractGeneratedSecretKeyPr
 
     private static final ProviderConfigProperty AES_KEY_SIZE_PROPERTY;
 
-    private static final int DEFAULT_AES_KEY_SIZE = 16;
+    private static final int DEFAULT_AES_KEY_SIZE = 32;
 
     static {
         AES_KEY_SIZE_PROPERTY = new ProviderConfigProperty(Attributes.SECRET_SIZE_KEY, "AES Key size",
-                "Size in bytes for the generated AES Key. Size 16 is for AES-128, Size 24 for AES-192 and Size 32 for AES-256. WARN: Bigger keys then 128 bits are not allowed on some JDK implementations",
+                "Size in bytes for the generated AES Key. Size 16 is for AES-128, Size 24 for AES-192 and Size 32 for AES-256.",
                 LIST_TYPE, String.valueOf(DEFAULT_AES_KEY_SIZE), "16", "24", "32");
     }
 

@@ -38,19 +38,38 @@ type SamlKeysProps = {
   save: () => void;
 };
 
+type KeyMapping = {
+  name: string;
+  title: string;
+  key: string;
+  regenerateKey: string;
+  relatedKeys: string[];
+};
+
 const KEYS = ["saml.signing", "saml.encryption"] as const;
 export type KeyTypes = (typeof KEYS)[number];
 
-const KEYS_MAPPING: { [key in KeyTypes]: { [index: string]: string } } = {
+const KEYS_MAPPING: { [key in KeyTypes]: KeyMapping } = {
   "saml.signing": {
     name: convertAttributeNameToForm("attributes.saml.client.signature"),
     title: "signingKeysConfig",
     key: "clientSignature",
+    regenerateKey: "reGenerateSigning",
+    relatedKeys: [],
   },
   "saml.encryption": {
     name: convertAttributeNameToForm("attributes.saml.encrypt"),
     title: "encryptionKeysConfig",
     key: "encryptAssertions",
+    regenerateKey: "reGenerateEncryption",
+    relatedKeys: [
+      convertAttributeNameToForm("attributes.saml.encryption.algorithm"),
+      convertAttributeNameToForm("attributes.saml.encryption.keyAlgorithm"),
+      convertAttributeNameToForm("attributes.saml.encryption.digestMethod"),
+      convertAttributeNameToForm(
+        "attributes.saml.encryption.maskGenerationFunction",
+      ),
+    ],
   },
 };
 
@@ -61,6 +80,7 @@ type KeySectionProps = {
   onChanged: (key: KeyTypes) => void;
   onGenerate: (key: KeyTypes, regenerate: boolean) => void;
   onImport: (key: KeyTypes) => void;
+  save: () => void;
 };
 
 const KeySection = ({
@@ -70,6 +90,7 @@ const KeySection = ({
   onChanged,
   onGenerate,
   onImport,
+  save,
 }: KeySectionProps) => {
   const { t } = useTranslation();
   const { control, watch } = useFormContext<FormFields>();
@@ -80,6 +101,14 @@ const KeySection = ({
   const [showImportDialog, toggleImportDialog] = useToggle();
 
   const section = watch(name as keyof FormFields);
+
+  const useMetadataDescriptorUrl = watch(
+    convertAttributeNameToForm<FormFields>(
+      "attributes.saml.useMetadataDescriptorUrl",
+    ),
+    "false",
+  );
+
   return (
     <>
       {showImportDialog && (
@@ -115,7 +144,10 @@ const KeySection = ({
                   isChecked={field.value === "true"}
                   onChange={(_event, value) => {
                     const v = value.toString();
-                    if (v === "true") {
+                    if (v === "true" && useMetadataDescriptorUrl === "true") {
+                      field.onChange(v);
+                      save();
+                    } else if (v === "true") {
                       onChanged(attr);
                       field.onChange(v);
                     } else {
@@ -129,29 +161,34 @@ const KeySection = ({
           </FormGroup>
         </FormAccess>
       </FormPanel>
-      {keyInfo?.certificate && section === "true" && (
-        <Card isFlat>
-          <CardBody className="kc-form-panel__body">
-            <Form isHorizontal>
-              <Certificate keyInfo={keyInfo} />
-              <ActionGroup>
-                <Button
-                  variant="secondary"
-                  onClick={() => onGenerate(attr, true)}
-                >
-                  {t("regenerate")}
-                </Button>
-                <Button variant="secondary" onClick={() => onImport(attr)}>
-                  {t("importKey")}
-                </Button>
-                <Button variant="tertiary" onClick={toggleImportDialog}>
-                  {t("export")}
-                </Button>
-              </ActionGroup>
-            </Form>
-          </CardBody>
-        </Card>
-      )}
+      {useMetadataDescriptorUrl !== "true" &&
+        keyInfo?.certificate &&
+        section === "true" && (
+          <Card isFlat>
+            <CardBody className="kc-form-panel__body">
+              <Form isHorizontal>
+                <Certificate
+                  helpTextKey={`saml${key}CertificateHelp`}
+                  keyInfo={keyInfo}
+                />
+                <ActionGroup>
+                  <Button
+                    variant="secondary"
+                    onClick={() => onGenerate(attr, true)}
+                  >
+                    {t("regenerate")}
+                  </Button>
+                  <Button variant="secondary" onClick={() => onImport(attr)}>
+                    {t("importKey")}
+                  </Button>
+                  <Button variant="tertiary" onClick={toggleImportDialog}>
+                    {t("export")}
+                  </Button>
+                </ActionGroup>
+              </Form>
+            </CardBody>
+          </Card>
+        )}
     </>
   );
 };
@@ -215,17 +252,23 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
     cancelButtonLabel: "no",
     onConfirm: () => {
       setValue(KEYS_MAPPING[selectedType!].name, "false");
+      for (const key of KEYS_MAPPING[selectedType!].relatedKeys) {
+        setValue(key, ""); // remove related attributes when disabled
+      }
       save();
     },
   });
 
+  const regenerateKey = selectedType
+    ? KEYS_MAPPING[selectedType].regenerateKey
+    : "";
   const [toggleReGenerateDialog, ReGenerateConfirm] = useConfirmDialog({
-    titleKey: "reGenerateSigning",
-    messageKey: "reGenerateSigningExplain",
+    titleKey: regenerateKey,
+    messageKey: regenerateKey + "Explain",
     continueButtonLabel: "yes",
     cancelButtonLabel: "no",
-    onConfirm: () => {
-      generate(selectedType!);
+    onConfirm: async () => {
+      await generate(selectedType!);
     },
   });
 
@@ -235,8 +278,12 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
         <SamlKeysDialog
           id={clientId}
           attr={isChanged}
+          localeKey={key}
           onClose={() => {
             setIsChanged(undefined);
+            for (const key of KEYS_MAPPING[selectedType!].relatedKeys) {
+              setValue(key, ""); // take defaults when enabled
+            }
             save();
             setRefresh(refresh + 1);
           }}
@@ -262,7 +309,10 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
             clientId={clientId}
             keyInfo={keyInfo?.[index]}
             attr={attr}
-            onChanged={setIsChanged}
+            onChanged={(type) => {
+              setIsChanged(type);
+              setSelectedType(type);
+            }}
             onGenerate={(type, isNew) => {
               setSelectedType(type);
               if (!isNew) {
@@ -272,6 +322,7 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
               }
             }}
             onImport={() => setImportOpen(attr)}
+            save={save}
           />
         </Fragment>
       ))}

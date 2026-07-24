@@ -11,4 +11,6 @@ public @interface MockParentAnnotation {
 
     String ref() default "";
 
+    String stringOption() default "";
+
 }

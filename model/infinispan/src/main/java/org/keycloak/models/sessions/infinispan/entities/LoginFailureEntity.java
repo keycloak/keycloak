@@ -19,11 +19,12 @@ package org.keycloak.models.sessions.infinispan.entities;
 
 import java.util.Objects;
 
+import org.keycloak.marshalling.Marshalling;
+
 import org.infinispan.api.annotations.indexing.Indexed;
 import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.infinispan.protostream.annotations.ProtoTypeId;
-import org.keycloak.marshalling.Marshalling;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -40,13 +41,15 @@ public class LoginFailureEntity extends SessionEntity {
     private long lastFailure;
     private String lastIPFailure;
 
+    private int numSecondaryAuthFailures;
+
     public LoginFailureEntity(String realmId, String userId) {
         super(Objects.requireNonNull(realmId));
         this.userId = Objects.requireNonNull(userId);
     }
 
     @ProtoFactory
-    LoginFailureEntity(String realmId, String userId, int failedLoginNotBefore, int numFailures, int numTemporaryLockouts, long lastFailure, String lastIPFailure) {
+    LoginFailureEntity(String realmId, String userId, int failedLoginNotBefore, int numFailures, int numTemporaryLockouts, long lastFailure, String lastIPFailure, int numSecondaryAuthFailures) {
         super(realmId);
         this.userId = userId;
         this.failedLoginNotBefore = failedLoginNotBefore;
@@ -54,6 +57,7 @@ public class LoginFailureEntity extends SessionEntity {
         this.numTemporaryLockouts = numTemporaryLockouts;
         this.lastFailure = lastFailure;
         this.lastIPFailure = lastIPFailure;
+        this.numSecondaryAuthFailures = numSecondaryAuthFailures;
     }
 
     @ProtoField(2)
@@ -106,6 +110,15 @@ public class LoginFailureEntity extends SessionEntity {
         return lastIPFailure;
     }
 
+    @ProtoField(8)
+    public int getNumSecondaryAuthFailures() {
+        return numSecondaryAuthFailures;
+    }
+
+    public void setNumSecondaryAuthFailures(int numSecondaryAuthFailures) {
+        this.numSecondaryAuthFailures = numSecondaryAuthFailures;
+    }
+
     public void setLastIPFailure(String lastIPFailure) {
         this.lastIPFailure = lastIPFailure;
     }
@@ -116,6 +129,11 @@ public class LoginFailureEntity extends SessionEntity {
         this.numTemporaryLockouts = 0;
         this.lastFailure = 0;
         this.lastIPFailure = null;
+    }
+
+    public void clearPrimaryAndSecondaryAuthFailures() {
+        clearFailures();
+        this.numSecondaryAuthFailures = 0;
     }
 
     @Override
@@ -135,7 +153,7 @@ public class LoginFailureEntity extends SessionEntity {
 
     @Override
     public String toString() {
-        return String.format("LoginFailureEntity [ userId=%s, realm=%s, numFailures=%d ]", userId, getRealmId(), numFailures);
+        return String.format("LoginFailureEntity [ userId=%s, realm=%s, numFailures=%d numSecondaryAuthFailures=%s]", userId, getRealmId(), numFailures, numSecondaryAuthFailures);
     }
 
 }

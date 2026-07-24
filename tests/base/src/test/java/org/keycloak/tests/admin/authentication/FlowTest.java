@@ -17,38 +17,6 @@
 
 package org.keycloak.tests.admin.authentication;
 
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.ClientErrorException;
-import jakarta.ws.rs.InternalServerErrorException;
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
-import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.keycloak.admin.client.CreatedResponseUtil;
-import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.IdentityProviderResource;
-import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthenticatorFactory;
-import org.keycloak.common.util.StreamUtil;
-import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.utils.DefaultAuthenticationFlows;
-import org.keycloak.representations.idm.AdminEventRepresentation;
-import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
-import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
-import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
-import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.events.AdminEventAssertion;
-import org.keycloak.tests.utils.admin.AdminEventPaths;
-import org.keycloak.tests.utils.admin.ApiUtil;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -62,6 +30,43 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.InternalServerErrorException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+
+import org.keycloak.admin.client.CreatedResponseUtil;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthenticatorFactory;
+import org.keycloak.common.util.StreamUtil;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
+import org.keycloak.tests.utils.admin.AdminEventPaths;
+
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+import static org.keycloak.tests.utils.matchers.Matchers.body;
+import static org.keycloak.tests.utils.matchers.Matchers.statusCodeIs;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
@@ -69,8 +74,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
-import static org.keycloak.tests.utils.matchers.Matchers.body;
-import static org.keycloak.tests.utils.matchers.Matchers.statusCodeIs;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -120,6 +123,45 @@ public class FlowTest extends AbstractAuthenticationTest {
         addFlowToParent("child", "grandchild");
     }
 
+    @Test
+    public void testRemoveBuiltinSubflowFromCustomBrowserFlow() {
+        // Create a custom top-level browser flow that is NOT marked as builtin
+        createFlow(newFlow("CustomBrowser", "Custom Browser flow", "basic-flow", true, false));
+
+        // Add a sub-flow to the custom browser flow (it is not builtin by default)
+        addFlowToParent("CustomBrowser", "builtin-child");
+
+        // Locate the child sub-flow execution in the parent flow
+        List<AuthenticationExecutionInfoRepresentation> executions = authMgmtResource.getExecutions("CustomBrowser");
+        AuthenticationExecutionInfoRepresentation childExecution = executions.stream()
+                .filter(r -> "builtin-child".equals(r.getDisplayName()) && r.getLevel() == 0)
+                .findAny().orElse(null);
+        Assertions.assertNotNull(childExecution, "Expected to find the child sub-flow execution");
+
+        // Mark the sub-flow itself as builtin via the update API
+        String subFlowId = childExecution.getFlowId();
+        Assertions.assertNotNull(subFlowId, "Expected the child execution to reference a sub-flow");
+        AuthenticationFlowRepresentation subFlow = authMgmtResource.getFlow(subFlowId);
+        subFlow.setBuiltIn(true);
+        authMgmtResource.updateFlow(subFlowId, subFlow);
+        Assertions.assertTrue(authMgmtResource.getFlow(subFlowId).isBuiltIn(),
+                "Sub-flow should now be marked as builtin");
+
+        // Skip the admin events produced by addFlowToParent (CREATE AUTH_EXECUTION_FLOW)
+        // and updateFlow (UPDATE AUTH_FLOW) since they are not the focus of this test
+        adminEvents.skip(2);
+
+        // Removing the builtin-marked sub-flow from a non-builtin parent flow must succeed
+        authMgmtResource.removeExecution(childExecution.getId());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE,
+                AdminEventPaths.authExecutionPath(childExecution.getId()), ResourceType.AUTH_EXECUTION);
+
+        // Verify the sub-flow execution is no longer present in the parent flow
+        executions = authMgmtResource.getExecutions("CustomBrowser");
+        Assertions.assertTrue(executions.isEmpty(),
+                "Expected no executions remaining in the custom browser flow after removal");
+    }
+
     private void addFlowToParent(String parentAlias, String childAlias) {
         Map<String, Object> data = new HashMap<>();
         data.put("alias", childAlias);
@@ -142,6 +184,7 @@ public class FlowTest extends AbstractAuthenticationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testAddRemoveFlow() {
 
         // test that built-in flow cannot be deleted
@@ -374,6 +417,19 @@ public class FlowTest extends AbstractAuthenticationTest {
     }
 
     @Test
+    public void testCopyFlowWithRestrictedCharInAlias() {
+        HashMap<String, Object> params = new HashMap<>();
+        params.put("newName", "copy/of(browser)");
+
+        try (Response response = authMgmtResource.copy("browser", params)) {
+            Assertions.assertEquals(400, response.getStatus());
+            OAuth2ErrorRepresentation error = response.readEntity(OAuth2ErrorRepresentation.class);
+            Assertions.assertEquals("Character '/' not allowed.", error.getError());
+        }
+    }
+
+    @Test
+    @DatabaseTest
     public void testCopyFlow() {
 
         HashMap<String, Object> params = new HashMap<>();
@@ -431,6 +487,7 @@ public class FlowTest extends AbstractAuthenticationTest {
     }
 
     @Test
+    @DatabaseTest
     // KEYCLOAK-2580
     public void addExecutionFlow() {
         HashMap<String, Object> params = new HashMap<>();
@@ -533,6 +590,7 @@ public class FlowTest extends AbstractAuthenticationTest {
     }
 
     @Test
+    @DatabaseTest
     public void editExecutionFlowTest() {
         HashMap<String, Object> params = new HashMap<>();
         List<AuthenticationExecutionInfoRepresentation> executionReps;

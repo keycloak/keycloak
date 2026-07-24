@@ -1,10 +1,15 @@
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation.js";
 import { test } from "@playwright/test";
-import { v4 as uuidv4 } from "uuid";
-import { clickCancelButton, clickSaveButton } from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { goToClientScopes } from "../utils/sidebar";
-import { assertRowExists, clickTableRowItem, searchItem } from "../utils/table";
+import { toClientScopes } from "../../src/client-scopes/routes/ClientScopes.tsx";
+import { createTestBed } from "../support/testbed.ts";
+import { clickCancelButton, clickSaveButton } from "../utils/form.ts";
+import { login, navigateTo } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import {
+  assertRowExists,
+  clickTableRowItem,
+  searchItem,
+} from "../utils/table.ts";
 import {
   addMappersByConfiguration,
   addPredefinedMappers,
@@ -13,40 +18,37 @@ import {
   fillMapperDetails,
   goToMappersTab,
   removeMappers,
-} from "./mappers";
-import adminClient from "../utils/AdminClient";
+} from "./mappers.ts";
 
-test.describe("Mappers tab test", () => {
+test.describe("Mappers tab", () => {
   const placeHolderClientScope = "Search for client scope";
-  const placeHolder = "Search for mapper";
+  const testBedData: RealmRepresentation = {
+    clientScopes: [
+      {
+        name: "test-scope",
+        protocol: "openid-connect",
+        protocolMappers: [
+          {
+            name: "test-mapper",
+            protocol: "openid-connect",
+            protocolMapper: "oidc-hardcoded-claim-mapper",
+          },
+        ],
+      },
+    ],
+  };
 
-  const scopeName = `client-scope-mapper-${uuidv4()}`;
-
-  test.beforeAll(async () => {
-    const { id } = await adminClient.createClientScope({
-      name: scopeName,
-      description: "",
-      protocol: "openid-connect",
-    });
-    await adminClient.addMapping(id, {
-      name: "test",
-      protocol: "openid-connect",
-      protocolMapper: "oidc-hardcoded-claim-mapper",
-    });
-  });
-
-  test.afterAll(() => adminClient.deleteClientScope(scopeName));
-
-  test.beforeEach(async ({ page }) => {
-    await login(page);
-    await goToClientScopes(page);
-    await searchItem(page, placeHolderClientScope, scopeName);
-    await clickTableRowItem(page, scopeName);
-    await goToMappersTab(page);
-  });
-
-  test("CRUD predefined mappers", async ({ page }) => {
+  test("updates a predefined mapper", async ({ page }) => {
+    const placeHolder = "Search for mapper";
     const mappers = ["birthdate", "email", "family name"];
+
+    await using testBed = await createTestBed(testBedData);
+
+    await login(page, { to: toClientScopes({ realm: testBed.realm }) });
+
+    await searchItem(page, placeHolderClientScope, "test-scope");
+    await clickTableRowItem(page, "test-scope");
+    await goToMappersTab(page);
 
     await addPredefinedMappers(page, mappers);
 
@@ -63,9 +65,9 @@ test.describe("Mappers tab test", () => {
     await clickSaveButton(page);
     await assertNotificationMessage(page, "Mapping successfully updated");
 
-    await goToClientScopes(page);
-    await searchItem(page, placeHolderClientScope, scopeName);
-    await clickTableRowItem(page, scopeName);
+    await navigateTo(page, toClientScopes({ realm: testBed.realm }));
+    await searchItem(page, placeHolderClientScope, "test-scope");
+    await clickTableRowItem(page, "test-scope");
     await goToMappersTab(page);
     await searchItem(page, placeHolder, mappers[0]);
     await clickTableRowItem(page, mappers[0]);
@@ -80,12 +82,51 @@ test.describe("Mappers tab test", () => {
     await clickCancelButton(page);
   });
 
-  test("crud mappers by configuration", async ({ page }) => {
+  test("creates and removes mappers by configuration", async ({ page }) => {
     const mapperNames = ["Pairwise subject identifier", "Allowed Web Origins"];
+
+    await using testBed = await createTestBed(testBedData);
+
+    await login(page, { to: toClientScopes({ realm: testBed.realm }) });
+
+    await searchItem(page, placeHolderClientScope, "test-scope");
+    await clickTableRowItem(page, "test-scope");
+    await goToMappersTab(page);
+
     await addMappersByConfiguration(page, mapperNames);
 
     await assertRowExists(page, mapperNames[0]);
 
     await removeMappers(page, mapperNames);
+  });
+
+  test("auto-navigates after creating an Audience mapper", async ({ page }) => {
+    const mapperName = "test-audience-mapper";
+
+    await using testBed = await createTestBed(testBedData);
+
+    await login(page, { to: toClientScopes({ realm: testBed.realm }) });
+
+    await searchItem(page, placeHolderClientScope, "test-scope");
+    await clickTableRowItem(page, "test-scope");
+    await goToMappersTab(page);
+
+    await page.getByRole("button", { name: "Add mapper" }).click();
+    await page.getByRole("menuitem", { name: "By configuration" }).click();
+
+    await page
+      .locator('[role="dialog"]')
+      .getByText("Audience", { exact: true })
+      .click();
+    await page.getByTestId("name").fill(mapperName);
+    await clickSaveButton(page);
+    await assertNotificationMessage(page, "Mapping successfully created");
+
+    await assertRowExists(page, mapperName);
+    await page
+      .getByRole("button", { name: "Add mapper" })
+      .waitFor({ state: "visible" });
+
+    await removeMappers(page, [mapperName]);
   });
 });

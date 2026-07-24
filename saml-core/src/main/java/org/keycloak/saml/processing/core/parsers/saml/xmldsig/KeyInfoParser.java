@@ -16,13 +16,13 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml.xmldsig;
 
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.events.StartElement;
+
 import org.keycloak.dom.xmlsec.w3.xmldsig.KeyInfoType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.KeyValueType;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.StaxParserUtil;
-
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.events.StartElement;
 
 public class KeyInfoParser extends AbstractStaxXmlDSigParser<KeyInfoType> {
 

@@ -16,14 +16,14 @@
  */
 package org.keycloak.testsuite.auth.page.login;
 
-import static org.keycloak.testsuite.util.UIUtils.clickLink;
-import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
-
-import org.keycloak.models.UserModel;
 import org.keycloak.testsuite.pages.LogoutSessionsPage;
+
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 
 public class UpdateEmailPage extends LogoutSessionsPage {
 
@@ -33,19 +33,18 @@ public class UpdateEmailPage extends LogoutSessionsPage {
     @FindBy(id = "input-error-email")
     private WebElement inputErrorEmail;
 
-    @FindBy(css = "button[name='cancel-aia']")
+    @FindBy(id = "kc-cancel")
     private WebElement cancelActionButton;
 
-    @FindBy(css = "input[type='submit']")
-    private WebElement submitActionButton;
-
-    @FindBy(css = "input[type='submit']")
+    @FindBy(id = "kc-submit")
     private WebElement submitButton;
 
+    @FindBy(className = "kc-feedback-text")
+    private WebElement feedbackMessage;
+
     @Override
-    public boolean isCurrent() {
-        return driver.getCurrentUrl().contains("login-actions/required-action")
-                && driver.getCurrentUrl().contains("execution=" + UserModel.RequiredAction.UPDATE_EMAIL.name());
+    public String getExpectedPageId() {
+        return "login-update-email";
     }
 
     public void changeEmail(String email){
@@ -80,7 +79,15 @@ public class UpdateEmailPage extends LogoutSessionsPage {
     }
 
     public void clickSubmitAction() {
-        clickLink(submitActionButton);
+        clickLink(submitButton);
+    }
+
+    public String getInfo() {
+        try {
+            return getTextFromElement(feedbackMessage);
+        } catch (NoSuchElementException e) {
+            return null;
+        }
     }
 
 }

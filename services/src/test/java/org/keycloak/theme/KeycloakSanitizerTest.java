@@ -19,6 +19,7 @@ package org.keycloak.theme;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -57,6 +58,27 @@ public class KeycloakSanitizerTest {
         
         html.set(0, "");
         expectedResult = "";
+        assertResult(expectedResult, html);
+    }
+
+    @Test
+    public void testLinks() throws Exception {
+        List<String> html = new ArrayList<>();
+
+        html.add("<a href=\"https://www.example.org/sub-page\">Link text</a>");
+        String expectedResult = "<a href=\"https://www.example.org/sub-page\" rel=\"nofollow\">Link text</a>";
+        assertResult(expectedResult, html);
+
+        html.set(0, "<a href=\"https://www.example.org/terms-of-service\" target=\"_blank\">Link text</a>");
+        expectedResult = "<a href=\"https://www.example.org/terms-of-service\" target=\"_blank\" rel=\"nofollow noopener noreferrer\">Link text</a>";
+        assertResult(expectedResult, html);
+
+        html.set(0, "<a href=\"https://www.example.org/sub-page\" target=\"_top\">Link text</a>");
+        expectedResult = "<a href=\"https://www.example.org/sub-page\" rel=\"nofollow\">Link text</a>";
+        assertResult(expectedResult, html);
+
+        html.set(0, "<a href=\"https://www.example.org/sub-page\" target=\"someframe\">Link text</a>");
+        expectedResult = "<a href=\"https://www.example.org/sub-page\" rel=\"nofollow\">Link text</a>";
         assertResult(expectedResult, html);
     }
 
@@ -102,4 +124,3 @@ public class KeycloakSanitizerTest {
     }
 
 }
-

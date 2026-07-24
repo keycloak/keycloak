@@ -17,11 +17,14 @@
 
 package org.keycloak.tests.admin.authentication;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
 import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
@@ -34,12 +37,12 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
-import org.keycloak.tests.utils.admin.ApiUtil;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
@@ -103,6 +106,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testAddRemoveExecution() {
 
         // try add execution to built-in flow
@@ -230,6 +234,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testUpdateExecution() {
 
         // get current auth-cookie execution

@@ -17,10 +17,10 @@
 
 package org.keycloak.testsuite.webauthn.utils;
 
-import org.keycloak.representations.idm.RealmRepresentation;
-
 import java.util.List;
 import java.util.function.Consumer;
+
+import org.keycloak.representations.idm.RealmRepresentation;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -61,8 +61,16 @@ public class WebAuthnRealmData {
         return isPasswordless ? realm.getWebAuthnPolicyPasswordlessAuthenticatorAttachment() : realm.getWebAuthnPolicyAuthenticatorAttachment();
     }
 
+    /**
+     * @deprecated Use {@link #getResidentKey()} instead.
+     */
+    @Deprecated
     public String getRequireResidentKey() {
         return isPasswordless ? realm.getWebAuthnPolicyPasswordlessRequireResidentKey() : realm.getWebAuthnPolicyRequireResidentKey();
+    }
+
+    public String getResidentKey() {
+        return isPasswordless ? realm.getWebAuthnPolicyPasswordlessResidentKey() : realm.getWebAuthnPolicyResidentKey();
     }
 
     public String getUserVerificationRequirement() {
@@ -123,8 +131,17 @@ public class WebAuthnRealmData {
             return this;
         }
 
+        /**
+         * @deprecated Use {@link #residentKey(String)} instead.
+         */
+        @Deprecated
         public Builder requireResidentKey(String requirement) {
             setProperty(requirement, realm::setWebAuthnPolicyRequireResidentKey, realm::setWebAuthnPolicyPasswordlessRequireResidentKey);
+            return this;
+        }
+
+        public Builder residentKey(String requirement) {
+            setProperty(requirement, realm::setWebAuthnPolicyResidentKey, realm::setWebAuthnPolicyPasswordlessResidentKey);
             return this;
         }
 

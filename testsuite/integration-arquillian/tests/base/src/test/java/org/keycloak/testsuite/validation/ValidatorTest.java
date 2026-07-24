@@ -19,21 +19,22 @@
 
 package org.keycloak.testsuite.validation;
 
-import org.junit.Test;
+import java.util.Collections;
+import java.util.Locale;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.validate.BuiltinValidators;
 import org.keycloak.validate.ValidationContext;
 
-import java.util.Collections;
-import java.util.Locale;
+import org.junit.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

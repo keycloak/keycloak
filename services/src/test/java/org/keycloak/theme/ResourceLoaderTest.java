@@ -1,8 +1,5 @@
 package org.keycloak.theme;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -10,6 +7,9 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 public class ResourceLoaderTest {
 
@@ -21,16 +21,16 @@ public class ResourceLoaderTest {
     public void testResource() throws IOException {
         String parent = "dummy-resources/parent";
         assertResourceAsStream(parent, "myresource.css", true, true);
-        assertResourceAsStream(parent, NONE + "myresource.css", false, true);
-        assertResourceAsStream(parent, SINGLE + "myresource.css", false, false);
-        assertResourceAsStream(parent, DOUBLE + "myresource.css", false, false);
+        assertResourceAsStream(parent, NONE + "forbidden.css", false, true);
+        assertResourceAsStream(parent, SINGLE + "forbidden.css", false, false);
+        assertResourceAsStream(parent, DOUBLE + "forbidden.css", false, false);
 
         assertResourceAsStream(parent, "one/" + NONE + "myresource.css", true, true);
-        assertResourceAsStream(parent, "one/" + SINGLE + "myresource.css", false, false);
-        assertResourceAsStream(parent, "one/" + DOUBLE + "myresource.css", false, false);
+        assertResourceAsStream(parent, "one/" + SINGLE + SINGLE + "forbidden.css", false, false);
+        assertResourceAsStream(parent, "one/" + DOUBLE + DOUBLE + "forbidden.css", false, false);
 
         assertResourceAsStream(parent, "one/two/" + NONE + NONE + "myresource.css", true, true);
-        assertResourceAsStream(parent, "one/" + NONE + NONE + "myresource.css", false, true);
+        assertResourceAsStream(parent, "one/" + NONE + NONE + "forbidden.css", false, true);
     }
 
     @Test
@@ -40,19 +40,24 @@ public class ResourceLoaderTest {
         File parent = new File(tempDirectory.toFile(), "resources");
         Assert.assertTrue(parent.mkdir());
 
-        new FileOutputStream(new File(tempDirectory.toFile(), "myresource.css")).close();
+        new FileOutputStream(new File(tempDirectory.toFile(), "forbidden.css")).close();
         new FileOutputStream(new File(parent, "myresource.css")).close();
 
         assertFileAsStream(parent, "myresource.css", true, true);
-        assertFileAsStream(parent, NONE + "myresource.css", false, true);
-        assertFileAsStream(parent, SINGLE + "myresource.css", false, false);
-        assertFileAsStream(parent, DOUBLE + "myresource.css", false, false);
+        assertFileAsStream(parent, NONE + "forbidden.css", false, true);
+        assertFileAsStream(parent, SINGLE + SINGLE + "forbidden.css", false, false);
+        assertFileAsStream(parent, DOUBLE + DOUBLE + "forbidden.css", false, false);
 
         assertFileAsStream(new File(tempDirectory.toFile(), "test/../resources/"), "myresource.css", true, true);
 
         // relativize tmp folder to the current working directory, something like ../../../tmp/path
-        Path relativeParent = Paths.get(".").toAbsolutePath().relativize(parent.toPath());
-        assertFileAsStream(relativeParent.toFile(), "myresource.css", true, true);
+        Path currentDir = Paths.get(".").toAbsolutePath();
+        if (currentDir.getRoot().equals(parent.toPath().getRoot())) {
+            Path relativeParent = currentDir.relativize(parent.toPath());
+            assertFileAsStream(relativeParent.toFile(), "myresource.css", true, true);
+        } else {
+            System.out.println("Skipping relative path test due to temp directory and current directory being on different drives");
+        }
     }
 
     private void assertResourceAsStream(String parent, String resource, boolean expectValid, boolean expectResourceToExist) throws IOException {

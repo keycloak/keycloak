@@ -19,28 +19,35 @@ package org.keycloak.quarkus.runtime;
 
 import java.io.File;
 import java.lang.annotation.Annotation;
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.BooleanSupplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.agroal.api.AgroalDataSource;
-import io.quarkus.agroal.DataSource;
-import io.quarkus.arc.Arc;
-import io.quarkus.arc.InstanceHandle;
-import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
-import io.quarkus.runtime.annotations.Recorder;
-import io.vertx.core.Handler;
-import io.vertx.ext.web.RoutingContext;
-import liquibase.Scope;
-import liquibase.servicelocator.ServiceLocator;
-import org.hibernate.cfg.AvailableSettings;
-import org.infinispan.protostream.SerializationContextInitializer;
 import org.keycloak.Config;
+import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorMetadata;
+import org.keycloak.authentication.authenticators.browser.WebAuthnMetadataService;
 import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Enablement;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.config.DatabaseOptions;
+import org.keycloak.config.HealthOptions;
+import org.keycloak.config.HostnameV2Options;
+import org.keycloak.config.HttpAccessLogOptions;
+import org.keycloak.config.HttpOptions;
+import org.keycloak.config.MetricsOptions;
+import org.keycloak.config.OpenApiOptions;
+import org.keycloak.config.Option;
+import org.keycloak.config.ProxyOptions;
 import org.keycloak.config.TruststoreOptions;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.provider.Provider;
@@ -48,12 +55,31 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
+import org.keycloak.quarkus.runtime.services.MisdirectedFilter;
+import org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
 import org.keycloak.truststore.TruststoreBuilder;
 import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
+
+import io.agroal.api.AgroalDataSource;
+import io.quarkus.agroal.DataSource;
+import io.quarkus.arc.Arc;
+import io.quarkus.arc.InstanceHandle;
+import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
+import io.quarkus.runtime.RuntimeValue;
+import io.quarkus.runtime.annotations.Recorder;
+import io.quarkus.vertx.http.runtime.security.SecurityHandlerPriorities;
+import io.vertx.core.Handler;
+import io.vertx.ext.web.Router;
+import io.vertx.ext.web.RoutingContext;
+import liquibase.Scope;
+import liquibase.servicelocator.ServiceLocator;
+import org.hibernate.cfg.AvailableSettings;
+import org.infinispan.protostream.SerializationContextInitializer;
 
 @Recorder
 public class KeycloakRecorder {
@@ -62,8 +88,19 @@ public class KeycloakRecorder {
         Config.init(new MicroProfileConfigProvider());
     }
 
-    public void configureProfile(Profile.ProfileName profileName, Map<Profile.Feature, Boolean> features) {
-        Profile.init(profileName, features);
+    public void createHttpAccessLogDirectory() {
+        if (Configuration.isTrue(HttpAccessLogOptions.HTTP_ACCESS_LOG_FILE_ENABLED)) {
+            Environment.getHomeDir().ifPresent(homeDir -> {
+                File logDir = new File(homeDir, "data" + File.separator + "log");
+                if (!logDir.exists() && !logDir.mkdirs() && !logDir.exists()) {
+                    throw new RuntimeException("Failed to create HTTP Access log directory");
+                }
+            });
+        }
+    }
+
+    public void configureProfile(Profile.ProfileName profileName, Map<Profile.Feature, Boolean> features, Map<Feature, Enablement> enablements) {
+        Profile.init(profileName, features, enablements);
     }
 
     // default handler for redirecting to specific path
@@ -71,26 +108,84 @@ public class KeycloakRecorder {
         return routingContext -> routingContext.redirect(redirectPath);
     }
 
+    private static final List<ManagementInterfaceItem> MANAGEMENT_INTERFACE_ENDPOINTS = List.of(
+            new ManagementInterfaceItem("/health", "Health endpoint", () -> Configuration.isTrue(HealthOptions.HEALTH_ENABLED)),
+            new ManagementInterfaceItem("/metrics", "Metrics endpoint", () -> Configuration.isTrue(MetricsOptions.METRICS_ENABLED)),
+            new ManagementInterfaceItem("/openapi", "OpenAPI specification", () -> Configuration.isTrue(OpenApiOptions.OPENAPI_ENABLED)),
+            new ManagementInterfaceItem("/openapi/ui", "OpenAPI UI specification (Swagger)", () -> Configuration.isTrue(OpenApiOptions.OPENAPI_UI_ENABLED))
+    );
+
     // default handler for the management interface
     public Handler<RoutingContext> getManagementHandler() {
-        return routingContext -> routingContext.response().end("Keycloak Management Interface");
+        String itemsHtml = "<ul>%s</ul>".formatted(MANAGEMENT_INTERFACE_ENDPOINTS.stream()
+                .filter(f -> f.isEnabled.getAsBoolean())
+                .map(ManagementInterfaceItem::getListItem)
+                .collect(Collectors.joining("\n")));
+
+        return routingContext -> routingContext.response().end("""
+                <html>
+                <h2>Keycloak Management Interface</h2>
+                %s
+                </html>
+                """.formatted(itemsHtml));
+    }
+
+    private record ManagementInterfaceItem(String path, String description, BooleanSupplier isEnabled) {
+        String getListItem() {
+            return "<li><a href=\"%s\">%s</a> - %s</li>".formatted(path, path, description);
+        }
+    }
+
+    public void rejectNonNormalizedPathFilter(RuntimeValue<Router> runtimeValue) {
+        if (Configuration.isTrue(HttpOptions.HTTP_ACCEPT_NON_NORMALIZED_PATHS)) {
+            return;
+        }
+        runtimeValue.getValue().route().order(-1 * (SecurityHandlerPriorities.CORS + 1)).handler(new RejectNonNormalizedPathFilter());
+    }
+    
+    public void misdirectedRequestFilter(RuntimeValue<Router> runtimeValue) {
+        // not checking for http/2 enablement - it is enabled by default and not exposed as a supported configuration option
+        if (!Configuration.isTrue(HttpPropertyMappers.QUARKUS_HTTPS_SNI) || !HttpPropertyMappers.isHttpsEnabled() || Configuration.getConfigValue(ProxyOptions.PROXY_HEADERS).getValue() != null) {
+            return;
+        }
+        
+        Set<String> allowedHosts = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        extractHost(HostnameV2Options.HOSTNAME, allowedHosts);
+        extractHost(HostnameV2Options.HOSTNAME_ADMIN, allowedHosts);
+        runtimeValue.getValue().route().order(-1 * (SecurityHandlerPriorities.CORS + 2)).handler(new MisdirectedFilter(allowedHosts));
+    }
+    
+    private static void extractHost(Option<String> option, Set<String> allowedHosts) {
+        String hostnameOrUrl = Configuration.getConfigValue(option).getValue();
+        if (hostnameOrUrl != null) {
+            allowedHosts.add((hostnameOrUrl.startsWith("http://") || hostnameOrUrl.startsWith("https://"))
+                    ? URI.create(hostnameOrUrl).getHost()
+                    : hostnameOrUrl);
+        }
     }
 
     public void configureTruststore() {
-        String[] truststores = Configuration.getOptionalKcValue(TruststoreOptions.TRUSTSTORE_PATHS.getKey())
-                .map(s -> s.split(",")).orElse(new String[0]);
+        List<String> truststores = new ArrayList<>();
+        Configuration.getOptionalKcValue(TruststoreOptions.TRUSTSTORE_PATHS.getKey())
+                .ifPresent(s -> Stream.of(s.split(",")).forEach(truststores::add));
 
-        String dataDir = Environment.getDataDir();
+        boolean includeKubernetesCa = Configuration.getOptionalKcValue(TruststoreOptions.TRUSTSTORE_KUBERNETES_CA_ENABLED.getKey())
+                .map(Boolean::parseBoolean).orElse(true);
+        if (includeKubernetesCa) {
+            TruststoreBuilder.includeKubernetesTrustStorePaths(truststores);
+        }
 
-        File truststoresDir = Optional.ofNullable(Environment.getHomePath()).map(path -> path.resolve("conf").resolve("truststores").toFile()).orElse(null);
+        Optional<String> dataDir = Environment.getDataDir();
+
+        File truststoresDir = Environment.getHomePath().map(p -> p.resolve("conf").resolve("truststores").toFile()).orElse(null);
 
         if (truststoresDir != null && truststoresDir.exists() && Optional.ofNullable(truststoresDir.list()).map(a -> a.length).orElse(0) > 0) {
-            truststores = Stream.concat(Stream.of(truststoresDir.getAbsolutePath()), Stream.of(truststores)).toArray(String[]::new);
-        } else if (truststores.length == 0) {
+            truststores.add(truststoresDir.getAbsolutePath());
+        } else if (truststores.size() == 0) {
             return; // nothing to configure, we'll just use the system default
         }
 
-        TruststoreBuilder.setSystemTruststore(truststores, true, dataDir);
+        TruststoreBuilder.setSystemTruststore(truststores.toArray(String[]::new), true, dataDir.orElseThrow());
     }
 
     public void configureLiquibase(Map<String, List<String>> services) {
@@ -100,17 +195,22 @@ public class KeycloakRecorder {
         }
     }
 
-    public void configSessionFactory(
+    public RuntimeValue<QuarkusKeycloakSessionFactory> createSessionFactory(
             Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories,
             Map<Class<? extends Provider>, String> defaultProviders,
             Map<String, ProviderFactory> preConfiguredProviders,
             List<ClasspathThemeProviderFactory.ThemesRepresentation> themes) {
-        QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, preConfiguredProviders, themes));
+        return new RuntimeValue<QuarkusKeycloakSessionFactory>(new QuarkusKeycloakSessionFactory(factories, defaultProviders, preConfiguredProviders, themes));
     }
 
     public void setDefaultUserProfileConfiguration(UPConfig configuration) {
         DeclarativeUserProfileProviderFactory.setDefaultConfig(configuration);
     }
+
+    public void setDefaultWebAuthnMetadata(Map<String, WebAuthnAuthenticatorMetadata> metadata) {
+        WebAuthnMetadataService.setDefaultMetadata(metadata);
+    }
+
 
     public HibernateOrmIntegrationRuntimeInitListener createUserDefinedUnitListener(String name) {
         return propertyCollector -> {
@@ -130,7 +230,7 @@ public class KeycloakRecorder {
     }
 
     public HibernateOrmIntegrationRuntimeInitListener createDefaultUnitListener() {
-        return propertyCollector -> propertyCollector.accept(AvailableSettings.DEFAULT_SCHEMA, Configuration.getRawValue("kc.db-schema"));
+        return propertyCollector -> propertyCollector.accept(AvailableSettings.DEFAULT_SCHEMA, Configuration.getConfigValue(DatabaseOptions.DB_SCHEMA).getValue());
     }
 
     public void setCryptoProvider(FipsMode fipsMode) {

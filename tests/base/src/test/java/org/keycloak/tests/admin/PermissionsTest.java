@@ -17,11 +17,14 @@
 
 package org.keycloak.tests.admin;
 
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+
 import jakarta.ws.rs.core.Response;
-import org.hamcrest.Matchers;
-import org.jgroups.util.UUID;
-import org.junit.jupiter.api.Test;
-import org.keycloak.admin.client.resource.AuthorizationResource;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
@@ -41,31 +44,24 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.representations.idm.authorization.PolicyRepresentation;
-import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
-import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
-import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.services.resources.admin.AdminAuth.Resource;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.CredentialBuilder;
+import org.keycloak.testframework.realm.FederatedIdentityBuilder;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.UserConfigBuilder;
-import org.keycloak.tests.utils.admin.ApiUtil;
-import org.keycloak.testsuite.util.CredentialBuilder;
-import org.keycloak.testsuite.util.FederatedIdentityBuilder;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.util.ApiUtil;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
+import org.hamcrest.Matchers;
+import org.jgroups.util.UUID;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.services.resources.admin.AdminAuth.Resource.AUTHORIZATION;
-import static org.keycloak.services.resources.admin.AdminAuth.Resource.CLIENT;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -109,7 +105,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
 
     @Test
     public void attackDetection() {
-        UserRepresentation newUser = UserConfigBuilder.create()
+        UserRepresentation newUser = UserBuilder.create()
                 .username("attacked")
                 .enabled(true)
                 .build();
@@ -144,7 +140,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
 
         invoke(realm -> realm.convertClientDescription("blahblah"), Resource.CLIENT, true);
         invoke((realm, response) ->
-                        response.set(realm.clients().create(ClientConfigBuilder.create().clientId("foo").build())),
+                        response.set(realm.clients().create(ClientBuilder.create().clientId("foo").build())),
                 Resource.CLIENT, true);
 
         ClientRepresentation foo = managedRealm1.admin().clients().findByClientId("foo").get(0);
@@ -220,6 +216,9 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.flows().getClientAuthenticatorProviders(), clients.get(AdminRoles.MANAGE_CLIENTS), true);
         invoke(realm -> realm.flows().getClientAuthenticatorProviders(), clients.get(AdminRoles.QUERY_USERS), false);
         invoke(realm -> realm.flows().getPerClientConfigDescription(), clients.get(AdminRoles.QUERY_CLIENTS), true);
+        for (String role : AdminRoles.ALL_QUERY_ROLES) {
+            invoke(realm -> realm.clients().get(foo.getId()).roles().list(), clients.get(role), false);
+        }
     }
 
     @Test
@@ -298,75 +297,6 @@ public class PermissionsTest extends AbstractPermissionsTest {
     }
 
     @Test
-    public void clientAuthorization() {
-        String fooAuthzClientUuid = ApiUtil.getCreatedId(managedRealm1.admin().clients().create(ClientConfigBuilder.create().clientId("foo-authz").build()));
-        ClientRepresentation foo = managedRealm1.admin().clients().get(fooAuthzClientUuid).toRepresentation();
-
-        invoke((realm, response) -> {
-            foo.setServiceAccountsEnabled(true);
-            foo.setAuthorizationServicesEnabled(true);
-            realm.clients().get(foo.getId()).update(foo);
-        }, CLIENT, true);
-        invoke(realm -> realm.clients().get(foo.getId()).authorization().getSettings(), AUTHORIZATION, false);
-        invoke(realm -> {
-            AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
-            ResourceServerRepresentation settings = authorization.getSettings();
-            authorization.update(settings);
-        }, AUTHORIZATION, true);
-        invoke(realm -> {
-            AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
-            authorization.resources().resources();
-        }, AUTHORIZATION, false);
-        invoke(realm -> {
-            AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
-            authorization.scopes().scopes();
-        }, AUTHORIZATION, false);
-        invoke(realm -> {
-            AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
-            authorization.policies().policies();
-        }, AUTHORIZATION, false);
-        invoke((realm, response) -> {
-            AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
-            response.set(authorization.resources().create(new ResourceRepresentation("Test", Collections.emptySet())));
-        }, AUTHORIZATION, true);
-        invoke((realm, response) -> {
-            AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
-            response.set(authorization.scopes().create(new ScopeRepresentation("Test")));
-        }, AUTHORIZATION, true);
-        invoke((realm, response) -> {
-            AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
-            ResourcePermissionRepresentation representation = new ResourcePermissionRepresentation();
-            representation.setName("Test PermissionsTest");
-            representation.addResource("Default Resource");
-            response.set(authorization.permissions().resource().create(representation));
-        }, AUTHORIZATION, true);
-        invoke(realm -> {
-            AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
-            authorization.resources().resource("nosuch").update(new ResourceRepresentation());
-        }, AUTHORIZATION, true);
-        invoke(realm -> {
-            AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
-            authorization.scopes().scope("nosuch").update(new ScopeRepresentation());
-        }, AUTHORIZATION, true);
-        invoke(realm -> {
-            AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
-            authorization.policies().policy("nosuch").update(new PolicyRepresentation());
-        }, AUTHORIZATION, true);
-        invoke(realm -> {
-            AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
-            authorization.resources().resource("nosuch").remove();
-        }, AUTHORIZATION, true);
-        invoke(realm -> {
-            AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
-            authorization.scopes().scope("nosuch").remove();
-        }, AUTHORIZATION, true);
-        invoke(realm -> {
-            AuthorizationResource authorization = realm.clients().get(foo.getId()).authorization();
-            authorization.policies().policy("nosuch").remove();
-        }, AUTHORIZATION, true);
-    }
-
-    @Test
     public void roles() {
         RoleRepresentation newRole = RoleBuilder.create().name("sample-role").build();
         managedRealm1.admin().roles().create(newRole);
@@ -377,6 +307,9 @@ public class PermissionsTest extends AbstractPermissionsTest {
         // this should throw forbidden as "create-client" role isn't enough
         invoke(realm -> clients.get(AdminRoles.CREATE_CLIENT).realm(REALM_NAME).roles().list(),
                 clients.get(AdminRoles.CREATE_CLIENT), false);
+        for (String role : AdminRoles.ALL_QUERY_ROLES) {
+            invoke(realm -> realm.roles().list(), clients.get(role), false);
+        }
         invoke(realm -> realm.roles().get("sample-role").toRepresentation(),
                 Resource.REALM, false);
         invoke(realm -> realm.roles().get("sample-role").update(newRole),
@@ -394,6 +327,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.roles().get("sample-role").getRoleComposites(), Resource.REALM, false);
         invoke(realm -> realm.roles().get("sample-role").getRealmRoleComposites(), Resource.REALM, false);
         invoke(realm -> realm.roles().get("sample-role").getClientRoleComposites(KeycloakModelUtils.generateId()), Resource.REALM, false);
+        invoke(realm -> realm.roles().list(), clients.get(AdminRoles.MANAGE_IDENTITY_PROVIDERS), true);
     }
 
     @Test
@@ -470,7 +404,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
     @Test
     public void users() {
         invoke((realm, response) ->
-                        response.set(realm.users().create(UserConfigBuilder.create().username("testuser").build())),
+                        response.set(realm.users().create(UserBuilder.create().username("testuser").build())),
                 Resource.USER, true);
         UserRepresentation user = managedRealm1.admin().users().search("testuser").get(0);
         invoke(realm -> {
@@ -493,8 +427,17 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.users().get(user.getId()).removeFederatedIdentity("nosuch"), Resource.USER, true);
         invoke(realm -> realm.users().get(user.getId()).getConsents(), Resource.USER, false);
         invoke(realm -> realm.users().get(user.getId()).revokeConsent("testclient"), Resource.USER, true);
+
+        invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().getCredentials(), Resource.USER, false);
+        invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().getIssuedCredentials(), Resource.USER, false);
+        UserVerifiableCredentialRepresentation verifCred = new UserVerifiableCredentialRepresentation();
+        verifCred.setCredentialScopeName("nosuch");
+        invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().createCredential(verifCred), Resource.USER, true);
+        invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().updateCredential("nosuch"), Resource.USER, true);
+        invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().revokeCredential("nosuch"), Resource.USER, true);
+
         invoke(realm -> realm.users().get(user.getId()).logout(), Resource.USER, true);
-        invoke(realm -> realm.users().get(user.getId()).resetPassword(CredentialBuilder.create().password("password").build()),
+        invoke(realm -> realm.users().get(user.getId()).resetPassword(CredentialBuilder.password("password").build()),
                 Resource.USER, true);
         invoke(realm -> {
             CredentialRepresentation totpCredential = realm.users().get(user.getId()).credentials().stream()
@@ -544,11 +487,21 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.users().get(user.getId()).update(user), clients.get(AdminRoles.QUERY_CLIENTS), false);
         // users with query-user role should be able to query required actions so the user detail page can be rendered successfully when fine-grained permissions are enabled.
         invoke(realm -> realm.flows().getRequiredActions(), clients.get(AdminRoles.QUERY_USERS), true);
-        // users with query-user role should be able to query clients so the user detail page can be rendered successfully when fine-grained permissions are enabled.
-        // if the admin wants to restrict the clients that an user can see he can define permissions for these clients
-        invoke(realm -> clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).clients().findAll(), clients.get(AdminRoles.QUERY_USERS), true);
         invoke(realm -> clients.get(AdminRoles.VIEW_USERS).realm(REALM_NAME).users().get(user.getId()).getConfiguredUserStorageCredentialTypes(),
                 clients.get(AdminRoles.VIEW_USERS), true);
+        for (String role : Stream.of(AdminRoles.ALL_REALM_ROLES)
+                .filter(Predicate.not(AdminRoles.VIEW_REALM::equals)
+                .and(Predicate.not(AdminRoles.MANAGE_REALM::equals)
+                .and(Predicate.not(AdminRoles.VIEW_USERS::equals)
+                .and(Predicate.not(AdminRoles.MANAGE_USERS::equals)
+                .and(Predicate.not(AdminRoles.QUERY_USERS::equals)))))).toList()) {
+            invoke(realm -> realm.users().userProfile().getConfiguration(), clients.get(role), false);
+            invoke(realm -> realm.users().userProfile().getMetadata(), clients.get(role), false);
+        }
+        for (String role : Stream.of(AdminRoles.VIEW_REALM, AdminRoles.MANAGE_REALM, AdminRoles.VIEW_USERS, AdminRoles.MANAGE_USERS, AdminRoles.QUERY_USERS).toList()) {
+            invoke(realm -> realm.users().userProfile().getConfiguration(), clients.get(role), true);
+            invoke(realm -> realm.users().userProfile().getMetadata(), clients.get(role), true);
+        }
     }
 
     @Test
@@ -559,8 +512,8 @@ public class PermissionsTest extends AbstractPermissionsTest {
                                         .providerId("oidc")
                                         .displayName("nosuch-foo")
                                         .alias("foo")
-                                        .setAttribute("clientId", "foo")
-                                        .setAttribute("clientSecret", "foo")
+                                        .attribute("clientId", "foo")
+                                        .attribute("clientSecret", "foo")
                                         .build()
                         )
                 ), Resource.IDENTITY_PROVIDER, true);

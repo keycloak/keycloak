@@ -1,7 +1,17 @@
 package org.keycloak.protocol.docker;
 
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.reactive.server.jaxrs.ResponseBuilderImpl;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.concurrent.atomic.AtomicReference;
+
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
+
+import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
@@ -12,7 +22,6 @@ import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ClientData;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -23,13 +32,8 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriInfo;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.concurrent.atomic.AtomicReference;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.server.jaxrs.ResponseBuilderImpl;
 
 public class DockerAuthV2Protocol implements LoginProtocol {
     protected static final Logger logger = Logger.getLogger(DockerEndpoint.class);
@@ -95,7 +99,7 @@ public class DockerAuthV2Protocol implements LoginProtocol {
         final ClientModel client = clientSession.getClient();
 
         DockerResponseToken responseToken = new DockerResponseToken()
-                .id(KeycloakModelUtils.generateId())
+                .id(SecretGenerator.getInstance().generateSecureID())
                 .type(TokenUtil.TOKEN_TYPE_BEARER)
                 .issuer(authSession.getClientNote(DockerAuthV2Protocol.ISSUER))
                 .subject(userSession.getUser().getUsername())
@@ -134,11 +138,13 @@ public class DockerAuthV2Protocol implements LoginProtocol {
                         .setIssued_at(expiresInIso8601String);
                 return new ResponseBuilderImpl().status(Response.Status.OK).header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON).entity(responseEntity).build();
             } else {
-                logger.errorv("Unable to handle request for event type {0}.  Currently only LOGIN event types are supported by docker protocol.", event.getEvent() == null ? "null" : event.getEvent().getType());
+                event.detail(Details.REASON, "Unable to handle request. Currently only LOGIN event types are supported by docker protocol.");
+                event.error(Errors.INVALID_REQUEST);
                 throw new ErrorResponseException("invalid_request", "Event type not supported", Response.Status.BAD_REQUEST);
             }
         } catch (final InstantiationException e) {
-            logger.errorv("Error attempting to create Key ID for Docker JOSE header: ", e.getMessage());
+            event.detail(Details.REASON, "Error attempting to create Key ID for Docker JOSE header: " + e.getMessage());
+            event.error(Errors.GENERIC_AUTHENTICATION_ERROR);
             throw new ErrorResponseException("token_error", "Unable to construct JOSE header for JWT", Response.Status.INTERNAL_SERVER_ERROR);
         }
 

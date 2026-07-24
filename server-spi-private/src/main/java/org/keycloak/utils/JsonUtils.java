@@ -18,10 +18,16 @@
 package org.keycloak.utils;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
@@ -57,6 +63,74 @@ public class JsonUtils {
     }
 
     /**
+     * Maps the Claim with the value {@code attributeValue} into the {@code jsonObject} under the path {@code split}.
+     * <br />
+     * <b>Input</b>
+     * <ul>
+     * <li>split = ["user", "profile", "email"]</li>
+     * <li>attributeValue = "alice@example.com"</li>
+     * <li>isMultivalued = false</li>
+     * <li>jsonObject = {"foo": "bar"}</li>
+     * </ul>
+     * <br />
+     * <b>Output</b>
+     * <pre>
+     * {@code
+     * {
+     *   "user": {
+     *     "profile": {
+     *       "email": "alice@example.com"
+     *     }
+     *   },
+     *   "foo": "bar"
+     * }
+     * }
+     * </pre>
+     *
+     * @param split The claim path (as created by {@link #splitClaimPath(String)}) of the (sub-)claim to map into.
+     * @param attributeValue the value to map into the claim.
+     * @param jsonObject the object that contains the claims (e.g., the value that will be used as the claim container)
+     * @param isMultivalued whether the claim should be treated as multivalued (i.e., multiple values for the same
+     *                      claim should be built into a JSON array).
+     */
+    public static void mapClaim(List<String> split, Object attributeValue, Map<String, Object> jsonObject, boolean isMultivalued) {
+        final int length = split.size();
+        int i = 0;
+        for (String component : split) {
+            i++;
+            if (i == length && !isMultivalued) {
+                jsonObject.put(component, attributeValue);
+            } else if (i == length) {
+                Object values = jsonObject.get(component);
+                if (values == null) {
+                    jsonObject.put(component, attributeValue);
+                } else {
+                    Collection collectionValues = values instanceof Collection ? (Collection) values : Stream.of(values).collect(Collectors.toSet());
+                    if (attributeValue instanceof Collection) {
+                        ((Collection) attributeValue).stream().forEach(val -> {
+                            if (!collectionValues.contains(val))
+                                collectionValues.add(val);
+                        });
+                    } else if (!collectionValues.contains(attributeValue)) {
+                        collectionValues.add(attributeValue);
+                    }
+                    jsonObject.put(component, collectionValues);
+                }
+            } else {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> nested = (Map<String, Object>) jsonObject.get(component);
+
+                if (nested == null) {
+                    nested = new HashMap<>();
+                    jsonObject.put(component, nested);
+                }
+
+                jsonObject = nested;
+            }
+        }
+    }
+
+    /**
      * Determines if the given {@code claim} contains paths.
      *
      * @param claim the claim
@@ -74,66 +148,76 @@ public class JsonUtils {
      * @return the value
      */
     public static Object getJsonValue(JsonNode node, String claim) {
-        if (node != null) {
-            List<String> fields = splitClaimPath(claim);
-            if (fields.isEmpty() || claim.endsWith(".")) {
+        if (node != null && claim != null) {
+            List<String> paths = splitClaimPath(claim);
+            if (paths.isEmpty() || claim.endsWith(".")) {
                 return null;
             }
 
-            JsonNode currentNode = node;
-            for (String currentFieldName : fields) {
-
-                // if array path, retrieve field name and index
-                String currentNodeName = currentFieldName;
-                int arrayIndex = -1;
-                if (currentFieldName.endsWith("]")) {
-                    int bi = currentFieldName.indexOf("[");
-                    if (bi == -1) {
-                        return null;
-                    }
-                    try {
-                        String is = currentFieldName.substring(bi + 1, currentFieldName.length() - 1).trim();
-                        arrayIndex = Integer.parseInt(is);
-                        if( arrayIndex < 0) throw new ArrayIndexOutOfBoundsException();
-                    } catch (Exception e) {
-                        return null;
-                    }
-                    currentNodeName = currentFieldName.substring(0, bi).trim();
-                }
-
-                currentNode = currentNode.get(currentNodeName);
-                if (arrayIndex > -1 && currentNode.isArray()) {
-                    currentNode = currentNode.get(arrayIndex);
-                }
-
-                if (currentNode == null) {
-                    return null;
-                }
-
-                if (currentNode.isArray()) {
-                    List<String> values = new ArrayList<>();
-                    for (JsonNode childNode : currentNode) {
-                        if (childNode.isTextual()) {
-                            values.add(childNode.textValue());
-                        }
-                    }
-                    if (values.isEmpty()) {
-                        return null;
-                    }
-                    return values ;
-                } else if (currentNode.isNull()) {
-                    return null;
-                } else if (currentNode.isValueNode()) {
-                    String ret = currentNode.asText();
-                    if (ret != null && !ret.trim().isEmpty())
-                        return ret.trim();
-                    else
-                        return null;
-                }
-
-            }
-            return currentNode;
+            return getJsonValue(node, paths);
         }
+
         return null;
+    }
+
+    public static Object getJsonValue(JsonNode node, List<String> paths) {
+        JsonNode currentNode = node;
+        for (String currentFieldName : paths) {
+
+            // if array path, retrieve field name and index
+            String currentNodeName = currentFieldName;
+            int arrayIndex = -1;
+            if (currentFieldName.endsWith("]")) {
+                int bi = currentFieldName.indexOf("[");
+                if (bi == -1) {
+                    return null;
+                }
+                try {
+                    String is = currentFieldName.substring(bi + 1, currentFieldName.length() - 1).trim();
+                    arrayIndex = Integer.parseInt(is);
+                    if( arrayIndex < 0) throw new ArrayIndexOutOfBoundsException();
+                } catch (Exception e) {
+                    return null;
+                }
+                currentNodeName = currentFieldName.substring(0, bi).trim();
+            }
+
+            currentNode = currentNode.get(currentNodeName);
+
+            if (currentNode != null && arrayIndex > -1 && currentNode.isArray()) {
+                currentNode = currentNode.get(arrayIndex);
+            }
+
+            if (currentNode == null) {
+                return null;
+            }
+
+            if (currentNode.isArray()) {
+                List<Object> values = new ArrayList<>();
+                for (JsonNode childNode : currentNode) {
+                    if (childNode.isTextual()) {
+                        values.add(childNode.textValue());
+                    } else if (childNode.isValueNode()) {
+                        values.add(childNode.asText());
+                    } else {
+                        values.add(childNode);
+                    }
+                }
+                if (values.isEmpty()) {
+                    return null;
+                }
+                return values ;
+            } else if (currentNode.isNull()) {
+                return null;
+            } else if (currentNode.isValueNode()) {
+                String ret = currentNode.asText();
+                if (ret != null && !ret.trim().isEmpty())
+                    return ret.trim();
+                else
+                    return null;
+            }
+
+        }
+        return currentNode;
     }
 }

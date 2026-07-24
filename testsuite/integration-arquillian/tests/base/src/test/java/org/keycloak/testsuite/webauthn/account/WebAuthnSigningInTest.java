@@ -17,24 +17,6 @@
 
 package org.keycloak.testsuite.webauthn.account;
 
-import org.hamcrest.Matchers;
-import org.junit.Test;
-import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
-import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
-import org.keycloak.models.credential.WebAuthnCredentialModel;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
-import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
-import org.keycloak.testsuite.webauthn.pages.SigningInPage;
-import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
-import org.keycloak.testsuite.webauthn.updaters.AbstractWebAuthnRealmUpdater;
-import org.keycloak.testsuite.webauthn.updaters.PasswordLessRealmAttributeUpdater;
-import org.keycloak.testsuite.webauthn.updaters.WebAuthnRealmAttributeUpdater;
-import org.keycloak.theme.DateTimeFormatterUtil;
-import org.openqa.selenium.firefox.FirefoxDriver;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.text.DateFormat;
@@ -47,7 +29,35 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
+import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
+import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
+import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
+import org.keycloak.testsuite.webauthn.pages.DeviceActivityPage;
+import org.keycloak.testsuite.webauthn.pages.SigningInPage;
+import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
+import org.keycloak.testsuite.webauthn.updaters.AbstractWebAuthnRealmUpdater;
+import org.keycloak.testsuite.webauthn.updaters.PasswordLessRealmAttributeUpdater;
+import org.keycloak.testsuite.webauthn.updaters.WebAuthnRealmAttributeUpdater;
+import org.keycloak.theme.DateTimeFormatterUtil;
+
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Test;
+import org.openqa.selenium.firefox.FirefoxDriver;
+
 import static java.util.Collections.emptyList;
+
+import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
+import static org.keycloak.testsuite.webauthn.utils.SigningInPageUtils.assertUserCredential;
+import static org.keycloak.testsuite.webauthn.utils.SigningInPageUtils.testSetUpLink;
+
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -55,12 +65,11 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
-import static org.keycloak.testsuite.webauthn.utils.SigningInPageUtils.assertUserCredential;
-import static org.keycloak.testsuite.webauthn.utils.SigningInPageUtils.testSetUpLink;
-import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
+
+    @Page
+    protected DeviceActivityPage deviceActivityPage;
 
     @Test
     public void categoriesTest() {
@@ -73,7 +82,8 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
 
         // Delete WebAuthn flow ==> Passwordless category should disappear
         testRealmResource().flows().deleteFlow(WEBAUTHN_FLOW_ID);
-        refreshPageAndWaitForLoad();
+        deviceActivityPage.navigateToUsingSidebar();
+        signingInPage.navigateToUsingSidebar();
 
         assertThat(signingInPage.getCategoriesCount(), is(2));
     }
@@ -87,15 +97,18 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
     @Test
     @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
     public void passwordlessWebAuthnTest() {
+        getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.DEFAULT_RESIDENT_KEY.getOptions());
         testWebAuthn(true);
     }
 
     @Test
     @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
     public void createWebAuthnSameUserLabel() {
+        getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.DEFAULT_RESIDENT_KEY.getOptions());
+
         final String SAME_LABEL = "key123";
 
-        SigningInPage.UserCredential webAuthn = addWebAuthnCredential(SAME_LABEL, false);
+        SigningInPage.UserCredential webAuthn = addWebAuthnCredential(SAME_LABEL, true);
         assertThat(webAuthn, notNullValue());
 
         SigningInPage.CredentialType credentialType = webAuthnPwdlessCredentialType;
@@ -109,7 +122,7 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
         waitForPageToLoad();
 
         webAuthnErrorPage.assertCurrent();
-        assertThat(webAuthnErrorPage.getError(), is("Failed to register your Passkey.\nDevice already exists with the same name"));
+        assertThat(webAuthnErrorPage.getError(), is("Failed to register your Passkey. Device already exists with the same name"));
         webAuthnErrorPage.clickTryAgain();
 
         webAuthnRegisterPage.assertCurrent();
@@ -118,6 +131,8 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
     @Test
     @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
     public void multipleSecurityKeys() {
+        getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.DEFAULT_RESIDENT_KEY.getOptions());
+
         final String LABEL = "SecurityKey#";
 
         List<SigningInPage.UserCredential> createdCredentials = new ArrayList<>();
@@ -175,13 +190,14 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
     @Test
     @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
     public void avoidSameAuthenticatorRegisterPasswordless() throws IOException {
+        getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.DEFAULT_RESIDENT_KEY.getOptions());
         avoidSameAuthenticatorRegister(new PasswordLessRealmAttributeUpdater(testRealmResource()), webAuthnPwdlessCredentialType);
     }
 
     @Test
     public void setUpLinksTest() {
-        testSetUpLink(testRealmResource(), webAuthnCredentialType, WebAuthnRegisterFactory.PROVIDER_ID);
-        testSetUpLink(testRealmResource(), webAuthnPwdlessCredentialType, WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
+        testSetUpLink(testRealmResource(), webAuthnCredentialType, WebAuthnRegisterFactory.PROVIDER_ID, deviceActivityPage);
+        testSetUpLink(testRealmResource(), webAuthnPwdlessCredentialType, WebAuthnPasswordlessRegisterFactory.PROVIDER_ID, deviceActivityPage);
     }
 
     @Test
@@ -212,6 +228,8 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
     @Test
     @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
     public void notDisplayAvailableAuthenticatorsPasswordless() {
+        getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.DEFAULT_RESIDENT_KEY.getOptions());
+
         addWebAuthnCredential("authenticator#1", true);
         addWebAuthnCredential("authenticator#2", true);
 
@@ -263,7 +281,7 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
         assertThat(credentialId, notNullValue());
         testUserResource().removeCredential(credentialId);
 
-        driver.navigate().refresh();
+        refreshPageAndWaitForLoad();
 
         webAuthnLoginPage.assertCurrent();
         authenticators = webAuthnLoginPage.getAuthenticators();
@@ -466,11 +484,12 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
         assertThat(credentialType.getUserCredentialsCount(), is(2));
         assertUserCredential(label2, true, webAuthn2);
 
-        RequiredActionProviderRepresentation requiredAction = new RequiredActionProviderRepresentation();
+        RequiredActionProviderRepresentation requiredAction = testRealmResource().flows().getRequiredAction(providerId);
         requiredAction.setEnabled(false);
         testRealmResource().flows().updateRequiredAction(providerId, requiredAction);
 
-        refreshPageAndWaitForLoad();
+        deviceActivityPage.navigateToUsingSidebar();
+        signingInPage.navigateToUsingSidebar();
 
         assertThat("Set up link for \"" + credentialType.getType() + "\" is visible", credentialType.isSetUpLinkVisible(), is(false));
         assertThat("Not set up link for \"" + credentialType.getType() + "\" is visible", credentialType.isNotSetUpLabelVisible(), is(false));
@@ -478,5 +497,7 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
         assertThat(credentialType.getUserCredentialsCount(), is(2));
 
         testRemoveCredential(webAuthn1);
+        requiredAction.setEnabled(true);
+        testRealmResource().flows().updateRequiredAction(providerId, requiredAction);
     }
 }

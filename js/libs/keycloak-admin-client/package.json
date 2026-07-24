@@ -18,11 +18,16 @@
     "build": "wireit",
     "lint": "wireit",
     "test": "wireit",
+    "generate:openapi": "wireit",
     "prepublishOnly": "pnpm build"
   },
   "wireit": {
     "build": {
       "command": "tsc --pretty",
+      "dependencies": [
+        "generate:openapi",
+        "generate:doc-examples"
+      ],
       "files": [
         "src",
         "tsconfig.json"
@@ -31,27 +36,60 @@
         "lib"
       ]
     },
+    "generate:doc-examples": {
+      "command": "node --loader ts-node/esm scripts/generate-doc-examples.ts && tsc -p src/generated/doc-examples/tsconfig.doc-check.json",
+      "dependencies": [
+        "generate:openapi"
+      ],
+      "files": [
+        "scripts/generate-doc-examples.ts"
+      ],
+      "output": [
+        "src/generated/doc-examples"
+      ]
+    },
+    "generate:openapi": {
+      "command": "kiota generate -l typescript -d openapi.json -c AdminClient -n ApiSdk -o ./src/generated --clean-output",
+      "env": {
+        "KIOTA_VERSION": "v1.32.4"
+      },
+      "files": [
+        "openapi.json"
+      ],
+      "output": [
+        "src/generated"
+      ]
+    },
     "lint": {
       "command": "eslint ."
     },
     "test": {
-      "command": "TS_NODE_PROJECT=tsconfig.test.json mocha --recursive \"test/**/*.spec.ts\" --timeout 10000"
+      "command": "TS_NODE_PROJECT=tsconfig.test.json mocha --recursive \"test/**/*.spec.ts\" --timeout 10000",
+      "dependencies": [
+        "build"
+      ]
     }
   },
   "dependencies": {
+    "@microsoft/kiota-abstractions": "1.0.0-preview.103",
+    "@microsoft/kiota-http-fetchlibrary": "1.0.0-preview.103",
+    "@microsoft/kiota-serialization-form": "1.0.0-preview.103",
+    "@microsoft/kiota-serialization-json": "1.0.0-preview.103",
+    "@microsoft/kiota-serialization-multipart": "1.0.0-preview.103",
+    "@microsoft/kiota-serialization-text": "1.0.0-preview.103",
     "camelize-ts": "^3.0.0",
-    "url-join": "^5.0.0",
     "url-template": "^3.1.1"
   },
   "devDependencies": {
-    "@faker-js/faker": "^9.8.0",
+    "@faker-js/faker": "^10.2.0",
+    "@kiota-community/kiota-gen": "^1.0.2",
     "@types/chai": "^5.2.2",
     "@types/lodash-es": "^4.17.12",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^24.0.1",
-    "chai": "^5.2.0",
-    "lodash-es": "^4.17.21",
-    "mocha": "^11.6.0",
+    "@types/node": "^26.1.0",
+    "chai": "^6.2.2",
+    "lodash-es": "^4.18.1",
+    "mocha": "^11.7.5",
     "ts-node": "^10.9.2"
   },
   "author": {

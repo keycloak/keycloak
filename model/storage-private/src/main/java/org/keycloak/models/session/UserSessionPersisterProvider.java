@@ -17,16 +17,17 @@
 
 package org.keycloak.models.session;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Stream;
+
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.Provider;
-
-import java.util.Collection;
-import java.util.Map;
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -73,6 +74,19 @@ public interface UserSessionPersisterProvider extends Provider {
      * @return
      */
     Stream<UserSessionModel> loadUserSessionsStream(RealmModel realm, UserModel user, boolean offline, Integer firstResult, Integer maxResults);
+
+    /**
+     * Returns user-session ids and their associated client UUIDs for the given {@link UserModel}, without applying the
+     * {@code lastSessionRefresh} idle-timeout filter.
+     *
+     * @param realm   The {@link RealmModel}.
+     * @param user    The {@link UserModel} whose sessions are queried.
+     * @param offline If {@code true}, returns offline sessions, otherwise online sessions.
+     * @return A map of user-session id to the set of associated client UUIDs (the set may be empty).
+     */
+    default Map<String, Set<String>> findUserSessionsByUserId(RealmModel realm, UserModel user, boolean offline) {
+        throw new IllegalStateException("not implemented");
+    }
 
     /**
      * Loads the user sessions for the given {@link ClientModel} in the given {@link RealmModel} if present.
@@ -153,6 +167,55 @@ public interface UserSessionPersisterProvider extends Provider {
     default void removeUserSessions(RealmModel realm) {
         removeUserSessions(realm, true);
         removeUserSessions(realm, false);
+    }
+
+    /**
+     * Stream all the sessions belonging to the realm.
+     * <p>
+     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the JPA and any
+     * modification may throw an {@link UnsupportedOperationException}.
+     *
+     * @param realm   The {@link RealmModel} instance.
+     * @param offline If {@code true}, it streams the offline sessions, otherwise the regular sessions.
+     * @return A {@link Stream} for all the sessions in the realm.
+     */
+    Stream<UserSessionModel> readOnlyUserSessionStream(RealmModel realm, boolean offline);
+
+    /**
+     * Stream all the sessions belonging to the realm and having a client session from the client.
+     * <p>
+     * The returned {@link UserSessionModel} instances are immutable. More precisely, the entity is not tracked by the
+     * JPA and any modification may throw an {@link UnsupportedOperationException}.
+     * <p>
+     * The {@code skip} and {@code maxResults} parameters control how many sessions should be streamed. A negative value
+     * for either parameter is ignored (no skip/limit applied). If {@code maxResults} is zero, an empty stream is
+     * returned.
+     *
+     * @param realm      The {@link RealmModel} instance.
+     * @param client     The {@link ClientModel} instance.
+     * @param offline    If {@code true}, it streams the offline sessions, otherwise the regular sessions.
+     * @param skip       The number of leading elements to skip.
+     * @param maxResults The number of elements the stream should be limited to.
+     * @return A {@link Stream} for all the sessions matching the parameters.
+     */
+    Stream<UserSessionModel> readOnlyUserSessionStream(RealmModel realm, ClientModel client, boolean offline, int skip, int maxResults);
+
+    /**
+     * Locking the entity that is about to be updated.
+     *
+     * @return When this returns true, there is either no entity to be locked, or all entities are now locked, and it is unlikely that the transaction will roll back.
+     */
+    default boolean lockUserSession(RealmModel realm, String userSessionId, boolean offline, boolean isRemove) {
+        return false;
+    }
+
+    /**
+     * Locking the entity that is about to be updated.
+     *
+     * @return When this returns true, there is either no entity to be locked, or all entities are now locked, and it is unlikely that the transaction will roll back.
+     */
+    default boolean lockClientSession(RealmModel realm, String userSessionId, String clientId, boolean offline, boolean isRemove) {
+        return false;
     }
 
 }

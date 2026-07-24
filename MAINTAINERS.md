@@ -1,12 +1,12 @@
 # Active maintainers
 
 * [Alexander Schwartz](https://github.com/ahus1)
-* [Bruno Oliveira da Silva](https://github.com/abstractj)
 * [Marek Posolda](https://github.com/mposolda)
-* [Michal Hajas](https://github.com/mhajas)
 * [Pedro Igor](https://github.com/pedroigor)
+* [Ricardo Martin](https://github.com/rmartinc)
 * [Sebastian Schuster](https://github.com/sschu)
 * [Stan Silvert](https://github.com/ssilvert)
+* [Steven Hawkins](https://github.com/shawkins)
 * [Stian Thorgersen](https://github.com/stianst) (project lead)
 * [Takashi Norimatsu](https://github.com/tnorimat)
 * [Thomas Darimont](https://github.com/thomasdarimont)
@@ -14,6 +14,8 @@
 
 # Emeritus maintainers
 
+* [Bruno Oliveira da Silva](https://github.com/abstractj)
 * [Hynek Mlnařík](https://github.com/hmlnarik)
+* [Michal Hajas](https://github.com/mhajas)
 * [Pavel Drozd](https://github.com/pdrozd)
 

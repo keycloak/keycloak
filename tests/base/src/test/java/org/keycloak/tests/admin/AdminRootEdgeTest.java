@@ -17,21 +17,22 @@
 
 package org.keycloak.tests.admin;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.startsWith;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import java.util.Map;
+
+import org.keycloak.testframework.annotations.InjectHttpClient;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.keycloak.testframework.annotations.InjectHttpClient;
-import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.server.KeycloakServerConfig;
-import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -39,13 +40,13 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 @KeycloakIntegrationTest(config = AdminRootEdgeTest.AdminUrlConfig.class)
 public class AdminRootEdgeTest {
     // full url with https, with default hostname-admin
-    private static final String HOSTNAME = "https://127.0.0.1.nip.io:8080";
+    private static final String HOSTNAME = "https://localtest.me:8080";
 
     @InjectHttpClient(followRedirects = false)
     private HttpClient client;
 
     @ParameterizedTest
-    @ValueSource(strings = {"http://127.0.0.1:8080", "http://127.0.0.1.nip.io:8080"})
+    @ValueSource(strings = {"http://127.0.0.1:8080", "http://localtest.me:8080"})
     public void testRedirect(String hostname) throws Exception {
         HttpResponse response = client.execute(new HttpGet(hostname + "/admin"));
 

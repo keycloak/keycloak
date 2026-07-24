@@ -16,18 +16,20 @@
  */
 package org.keycloak.test.broker.oidc;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import org.junit.Assert;
-import org.junit.Test;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Unit test for {@link org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider}
@@ -62,10 +64,37 @@ public class AbstractOAuth2IdentityProviderTest {
 		Assert.assertNull(tested.getJsonProperty(jsonNode, "nonexisting"));
 		Assert.assertNull(tested.getJsonProperty(jsonNode, "nullone"));
 		Assert.assertNull(tested.getJsonProperty(jsonNode, "emptyone"));
-		Assert.assertEquals(" ", tested.getJsonProperty(jsonNode, "blankone"));
+		Assert.assertEquals(null, tested.getJsonProperty(jsonNode, "blankone"));
 		Assert.assertEquals("my value", tested.getJsonProperty(jsonNode, "withvalue"));
 		Assert.assertEquals("true", tested.getJsonProperty(jsonNode, "withbooleanvalue"));
 		Assert.assertEquals("10", tested.getJsonProperty(jsonNode, "withnumbervalue"));
+	}
+
+	@Test
+	public void getJsonProperty_nullAndBlankInputs() throws IOException {
+		TestProvider tested = getTested();
+		JsonNode jsonNode = tested.asJsonNode("{\"data\":{\"id\":\"123\"}}");
+
+		Assert.assertNull(tested.getJsonProperty(null, "data.id"));
+		Assert.assertNull(tested.getJsonProperty(jsonNode, null));
+		Assert.assertNull(tested.getJsonProperty(jsonNode, "  "));
+	}
+
+	@Test
+	public void getJsonProperty_nestedPath() throws IOException {
+		TestProvider tested = getTested();
+
+		Assert.assertEquals("123", tested.getJsonProperty(tested.asJsonNode("{\"data\":{\"id\":\"123\"}}"), "data.id"));
+		Assert.assertEquals("deep", tested.getJsonProperty(tested.asJsonNode("{\"a\":{\"b\":{\"c\":\"deep\"}}}"), "a.b.c"));
+		Assert.assertEquals("nested", tested.getJsonProperty(tested.asJsonNode("{\"data.id\":\"literal\",\"data\":{\"id\":\"nested\"}}"), "data.id"));
+		Assert.assertNull(tested.getJsonProperty(tested.asJsonNode("{\"data\":{\"other\":\"val\"}}"), "data.id"));
+		Assert.assertNull(tested.getJsonProperty(tested.asJsonNode("{\"data\":{\"id\":null}}"), "data.id"));
+		Assert.assertNull(tested.getJsonProperty(tested.asJsonNode("{\"data\":{\"id\":\"\"}}"), "data.id"));
+		Assert.assertEquals("literal", tested.getJsonProperty(tested.asJsonNode("{\"data.id\":\"literal\"}"), "data\\.id"));
+		Assert.assertEquals("val", tested.getJsonProperty(tested.asJsonNode("{\"foo\":{\"bar.xyz\":\"val\"}}"), "foo.bar\\.xyz"));
+		Assert.assertNull(tested.getJsonProperty(tested.asJsonNode("{\"foo\":{\"bar.xyz\":\"val\"}}"), "foo.bar.xyz"));
+		Assert.assertEquals("true", tested.getJsonProperty(tested.asJsonNode("{\"data\":{\"flag\":true}}"), "data.flag"));
+		Assert.assertEquals("42", tested.getJsonProperty(tested.asJsonNode("{\"data\":{\"num\":42}}"), "data.num"));
 	}
 
 	@Test(expected = IdentityBrokerException.class)
@@ -124,6 +153,40 @@ public class AbstractOAuth2IdentityProviderTest {
 		return new TestProvider(getConfig(null, null, null, Boolean.FALSE, Boolean.FALSE));
 	}
 
+	@Test
+	public void oAuthResponse_nullRefreshExpiresIn_shouldNotThrowException() throws IOException {
+		// Test that OAuthResponse can handle null refreshExpiresIn during JSON serialization/deserialization
+		AbstractOAuth2IdentityProvider.OAuthResponse response = new AbstractOAuth2IdentityProvider.OAuthResponse();
+		response.setToken("test_token");
+		response.setRefreshToken("test_refresh");
+		response.setRefreshExpiresIn(null); // This should not cause NPE
+
+		// Should not throw JsonMapperException during serialization
+		String json = JsonSerialization.writeValueAsString(response);
+		Assert.assertNotNull(json);
+
+		// Should not throw exception during deserialization
+		AbstractOAuth2IdentityProvider.OAuthResponse deserialized =
+			JsonSerialization.readValue(json, AbstractOAuth2IdentityProvider.OAuthResponse.class);
+		Assert.assertNotNull(deserialized);
+		Assert.assertNull(deserialized.getRefreshExpiresIn()); // Should return null, not throw NPE
+	}
+
+	@Test  
+	public void oAuthResponse_missingRefreshExpiresInField_shouldNotThrowException() throws IOException {
+		// Test JSON without refresh_expires_in field
+		String jsonWithoutRefreshExpires = "{\"access_token\":\"test\",\"refresh_token\":\"refresh\"}";
+		
+		// Should not throw JsonMapperException during deserialization
+		AbstractOAuth2IdentityProvider.OAuthResponse response = 
+			JsonSerialization.readValue(jsonWithoutRefreshExpires, AbstractOAuth2IdentityProvider.OAuthResponse.class);
+		
+		Assert.assertNotNull(response);
+		Assert.assertEquals("test", response.getToken());
+		Assert.assertEquals("refresh", response.getRefreshToken());
+		Assert.assertNull(response.getRefreshExpiresIn()); // Should return null, not throw NPE
+	}
+
 	private OAuth2IdentityProviderConfig getConfig(final String autorizationUrl, final String defaultScope, final String clientId, final Boolean isLoginHint, final Boolean passMaxAge) {
 		IdentityProviderModel model = new IdentityProviderModel();
 		OAuth2IdentityProviderConfig config = new OAuth2IdentityProviderConfig(model);
@@ -139,6 +202,7 @@ public class AbstractOAuth2IdentityProviderTest {
 
 		public TestProvider(OAuth2IdentityProviderConfig config) {
 			super(null, config);
+            config.setEnabled(true);
 		}
 
 		@Override

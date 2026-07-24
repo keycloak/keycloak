@@ -17,12 +17,12 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
+import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
-
-import java.util.function.Supplier;
-import java.util.stream.Stream;
-
-import org.jboss.logging.Logger;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -31,8 +31,8 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -40,13 +40,22 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
+import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.PreTokenRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenResponseContext;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.services.util.DefaultClientSessionContext;
+import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
+import static org.keycloak.models.Constants.AUTHORIZATION_DETAILS_RESPONSE;
 
 /**
  * OAuth 2.0 Authorization Code Grant
@@ -57,6 +66,11 @@ import org.keycloak.services.util.DefaultClientSessionContext;
 public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
 
     private static final Logger logger = Logger.getLogger(AuthorizationCodeGrantType.class);
+
+    @Override
+    public void preProcess(KeycloakSession session, MultivaluedMap<String, String> formParams) throws ClientPolicyException {
+        session.clientPolicy().triggerOnEvent(new PreTokenRequestContext(session, formParams));
+    }
 
     @Override
     public Response process(Context context) {
@@ -91,9 +105,11 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Code is expired", Response.Status.BAD_REQUEST);
         }
 
-        UserSessionModel userSession = null;
+        final UserSessionModel userSession;
         if (clientSession != null) {
             userSession = clientSession.getUserSession();
+        } else {
+            userSession = null;
         }
 
         if (userSession == null) {
@@ -188,26 +204,87 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
+        String scopeParam = codeData.getScope();
+        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, scopeParam, session);
+
         updateClientSession(clientSession);
         updateUserSessionFromClientAuth(userSession);
 
         // Compute client scopes again from scope parameter. Check if user still has them granted
         // (but in code-to-token request, it could just theoretically happen that they are not available)
-        String scopeParam = codeData.getScope();
-        Supplier<Stream<ClientScopeModel>> clientScopesSupplier = () -> TokenManager.getRequestedClientScopes(session, scopeParam, client, user);
-        if (!TokenManager.verifyConsentStillAvailable(session, user, client, clientScopesSupplier.get())) {
+        if (!TokenManager.verifyConsentStillAvailable(session, user, client, clientSession, scopeParam)) {
             String errorMessage = "Client no longer has requested consent from user";
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.NOT_ALLOWED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, errorMessage, Response.Status.BAD_REQUEST);
         }
 
-        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, scopeParam, session);
-
         // Set nonce as an attribute in the ClientSessionContext. Will be used for the token generation
         clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, codeData.getNonce());
 
-        return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true, s -> {return new TokenResponseContext(formParams, parseResult, clientSessionCtx, s);});
+        // Process authorization_details using provider discovery (if present in request)
+        List<AuthorizationDetailsJSONRepresentation> authorizationDetailsResponse = null;
+        String providedAuthorizationDetails = formParams.getFirst(AUTHORIZATION_DETAILS);
+        String storedAuthorizationDetails = clientSession.getNote(AUTHORIZATION_DETAILS);
+
+        if (providedAuthorizationDetails != null) {
+            authorizationDetailsResponse = processAuthorizationDetails(userSession, clientSessionCtx);
+
+            if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
+                if (storedAuthorizationDetails != null &&
+                        !authorizationDetailsJsonEquals(storedAuthorizationDetails, providedAuthorizationDetails)) {
+
+                    logger.debugf("Stored details: %s, Provided details: %s", storedAuthorizationDetails, providedAuthorizationDetails);
+                    event.detail(Details.REASON, "authorization_details differ from authorization request");
+                    event.error(Errors.INVALID_REQUEST);
+                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                            "authorization_details differ from authorization request", Response.Status.BAD_REQUEST);
+                }
+
+                clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);
+            } else {
+                logger.debugf("No AuthorizationDetailsProcessor could process '%s'", providedAuthorizationDetails);
+            }
+        }
+
+        // If no authorization_details were processed from the request, try to process stored authorization_details
+        // (e.g., from PAR flow where authorization_details was in authorization request but not in token request)
+        if (authorizationDetailsResponse == null || authorizationDetailsResponse.isEmpty()) {
+            try {
+                authorizationDetailsResponse = processStoredAuthorizationDetails(userSession, clientSessionCtx);
+                if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
+                    clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);
+                }
+            } catch (CorsErrorResponseException e) {
+                // Re-throw CorsErrorResponseException as it's already properly formatted for HTTP response
+                throw e;
+            }
+        }
+
+        // Case when authorization_details response not generated
+        if (authorizationDetailsResponse == null || authorizationDetailsResponse.isEmpty()) {
+            authorizationDetailsResponse = handleMissingAuthorizationDetails(clientSession.getUserSession(), clientSessionCtx);
+            if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
+                clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);
+            }
+        }
+
+        // Call hook for post-processing authorization details (e.g., creating state objects)
+        afterAuthorizationDetailsProcessed(userSession, clientSessionCtx, authorizationDetailsResponse);
+
+        return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true, s -> {
+            // Add authorization_details to the access token and refresh token if they were processed
+            List<AuthorizationDetailsJSONRepresentation> authDetailsResponse = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
+            if (authDetailsResponse != null && !authDetailsResponse.isEmpty()) {
+                s.getAccessToken().setAuthorizationDetails(authDetailsResponse);
+                // Also add to refresh token if one is generated
+                if (s.getRefreshToken() != null) {
+                    s.getRefreshToken().setAuthorizationDetails(authDetailsResponse);
+                }
+            }
+            s.code(codeData);
+            return new TokenResponseContext(formParams, parseResult, clientSessionCtx, s);
+        });
     }
 
     @Override
@@ -215,4 +292,19 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         return EventType.CODE_TO_TOKEN;
     }
 
+    private boolean authorizationDetailsJsonEquals(String first, String second) {
+        try {
+            JsonNode firstNode = JsonSerialization.mapper.readTree(first);
+            JsonNode secondNode = JsonSerialization.mapper.readTree(second);
+            return firstNode != null && firstNode.equals(secondNode);
+        } catch (Exception e) {
+            logger.debugf(e, "Failed to parse authorization_details for comparison");
+            return false;
+        }
+    }
+
+    @Override
+    public Set<String> getTokenParameterNames() {
+        return Collections.emptySet();
+    }
 }

@@ -19,18 +19,23 @@ package org.keycloak.services.clientpolicy.context;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class TokenRefreshContext implements ClientPolicyContext {
+public class TokenRefreshContext implements ClientPolicyContext, ClientModelContext, ScopeParameterContext {
 
     private final MultivaluedMap<String, String> params;
+    private final ClientModel client;
+    private final String scope;
 
-    public TokenRefreshContext(MultivaluedMap<String, String> params) {
+    public TokenRefreshContext(MultivaluedMap<String, String> params, ClientModel client, String scope) {
         this.params = params;
+        this.client = client;
+        this.scope = scope;
     }
 
     @Override
@@ -42,4 +47,13 @@ public class TokenRefreshContext implements ClientPolicyContext {
         return params;
     }
 
+    @Override
+    public ClientModel getClient() {
+        return client;
+    }
+
+    @Override
+    public String getScopeParameter() {
+        return scope;
+    }
 }

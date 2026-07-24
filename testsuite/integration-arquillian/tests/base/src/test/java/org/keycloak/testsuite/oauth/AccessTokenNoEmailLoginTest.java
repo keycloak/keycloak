@@ -18,18 +18,19 @@ package org.keycloak.testsuite.oauth;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import org.junit.Before;
-import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
-
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+
+import org.junit.Before;
+import org.junit.Test;
 import org.openqa.selenium.By;
+
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.admin.AdminApiUtil.findUserByUsername;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:slawomir@dabek.name">Slawomir Dabek</a>
@@ -43,7 +44,7 @@ public class AccessTokenNoEmailLoginTest extends AbstractKeycloakTest {
 
     @Before
     public void clientConfiguration() {
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
     }
 
     @Override

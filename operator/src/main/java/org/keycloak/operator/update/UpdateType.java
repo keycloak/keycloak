@@ -17,8 +17,9 @@
 
 package org.keycloak.operator.update;
 
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
+
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 
 /**
  * Supported update types by {@link KeycloakDeploymentDependentResource}.

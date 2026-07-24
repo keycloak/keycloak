@@ -17,15 +17,21 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.toDashCase;
-
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import org.eclipse.microprofile.config.ConfigProvider;
 
 import org.keycloak.Config;
+import org.keycloak.Config.AbstractScope;
+import org.keycloak.Config.Scope;
+
+import io.smallrye.config.SmallRyeConfig;
+import org.eclipse.microprofile.config.ConfigValue;
+
+import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.toDashCase;
 
 public class MicroProfileConfigProvider implements Config.ConfigProvider {
 
@@ -35,13 +41,13 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
     public static final String NS_QUARKUS = "quarkus";
     public static final String NS_QUARKUS_PREFIX = "quarkus" + ".";
 
-    private final org.eclipse.microprofile.config.Config config;
+    private final SmallRyeConfig config;
 
     public MicroProfileConfigProvider() {
-        this(ConfigProvider.getConfig());
+        this(Configuration.getConfig());
     }
 
-    public MicroProfileConfigProvider(org.eclipse.microprofile.config.Config config) {
+    public MicroProfileConfigProvider(SmallRyeConfig config) {
         this.config = config;
     }
 
@@ -52,7 +58,7 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
 
     @Override
     public String getDefaultProvider(String spi) {
-        return scope(spi).get("provider.default");
+        return scope(spi).get("provider-default");
     }
 
     @Override
@@ -60,7 +66,7 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
         return new MicroProfileScope(SPI_PREFIX, scope);
     }
 
-    public class MicroProfileScope implements Config.Scope {
+    public class MicroProfileScope extends AbstractScope {
 
         private final String prefix;
         private final String separatorPrefix;
@@ -76,47 +82,7 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
 
         @Override
         public String get(String key) {
-            return getValue(key, String.class, null);
-        }
-
-        @Override
-        public String get(String key, String defaultValue) {
-            return getValue(key, String.class, defaultValue);
-        }
-
-        @Override
-        public String[] getArray(String key) {
-            return getValue(key, String[].class, null);
-        }
-
-        @Override
-        public Integer getInt(String key) {
-            return getValue(key, Integer.class, null);
-        }
-
-        @Override
-        public Integer getInt(String key, Integer defaultValue) {
-            return getValue(key, Integer.class, defaultValue);
-        }
-
-        @Override
-        public Long getLong(String key) {
-            return getValue(key, Long.class, null);
-        }
-
-        @Override
-        public Long getLong(String key, Long defaultValue) {
-            return getValue(key, Long.class, defaultValue);
-        }
-
-        @Override
-        public Boolean getBoolean(String key) {
-            return getValue(key, Boolean.class, null);
-        }
-
-        @Override
-        public Boolean getBoolean(String key, Boolean defaultValue) {
-            return getValue(key, Boolean.class, defaultValue);
+            return get(key, null);
         }
 
         @Override
@@ -131,10 +97,26 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
                     .collect(Collectors.toSet());
         }
 
-        private <T> T getValue(String key, Class<T> clazz, T defaultValue) {
+        @Override
+        protected <T> T getValue(String key, Function<String, T> conversion, Class<T> clazz, T defaultValue) {
+            if (NS_KEYCLOAK_PREFIX.equals(separatorPrefix)) {
+                return config.getOptionalValue(separatorPrefix.concat(key), clazz).orElse(defaultValue);
+            }
             String dashCase = toDashCase(key);
-            return config.getOptionalValue(separatorPrefix.concat(dashCase), clazz)
-                    .or(() -> config.getOptionalValue(prefix.concat(dashCase), clazz)).orElse(defaultValue);
+            String name = separatorPrefix.concat(dashCase);
+            String oldName = prefix.concat(dashCase);
+            ConfigValue value = config.getConfigValue(name);
+            ConfigValue oldValue = config.getConfigValue(oldName);
+            if (value.getValue() == null
+                    || (oldValue.getValue() != null && oldValue.getSourceOrdinal() > value.getSourceOrdinal())) {
+                value = oldValue;
+            }
+            return Optional.ofNullable(config.convert(value.getValue(), clazz)).orElse(defaultValue);
+        }
+
+        @Override
+        public Scope root() {
+            return new MicroProfileScope(NS_KEYCLOAK_PREFIX);
         }
 
     }

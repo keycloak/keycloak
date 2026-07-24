@@ -18,7 +18,7 @@
             <#if messagesPerField.existsError('termsAccepted')>
                 <div class="${properties.kcLabelWrapperClass!}">
                             <span id="input-error-terms-accepted" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
-                                ${kcSanitize(messagesPerField.get('termsAccepted'))?no_esc}
+                                ${messagesPerField.get('termsAccepted')}
                             </span>
                 </div>
             </#if>

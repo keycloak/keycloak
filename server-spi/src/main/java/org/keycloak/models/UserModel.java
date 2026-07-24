@@ -17,25 +17,28 @@
 
 package org.keycloak.models;
 
-import static org.keycloak.utils.StringUtil.isNotBlank;
-
-import org.keycloak.provider.ProviderEvent;
-
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import org.keycloak.provider.ProviderEvent;
+
+import static org.keycloak.utils.StringUtil.isNotBlank;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface UserModel extends RoleMapperModel {
+public interface UserModel extends RoleMapperModel, Model {
+    String ID = "id";
     String USERNAME = "username";
     String FIRST_NAME = "firstName";
     String LAST_NAME = "lastName";
     String EMAIL = "email";
+    String EMAIL_PENDING = "kc.email.pending";
     String EMAIL_VERIFIED = "emailVerified";
+    String DID = "did";
     String LOCALE = "locale";
     String ENABLED = "enabled";
     String IDP_ALIAS = "keycloak.session.realm.users.query.idp_alias";
@@ -44,9 +47,12 @@ public interface UserModel extends RoleMapperModel {
     String GROUPS = "keycloak.session.realm.users.query.groups";
     String SEARCH = "keycloak.session.realm.users.query.search";
     String EXACT = "keycloak.session.realm.users.query.exact";
+    String CREATED_AFTER = "keycloak.session.realm.users.query.created_after";
+    String CREATED_BEFORE = "keycloak.session.realm.users.query.created_before";
     String DISABLED_REASON = "disabledReason";
     //attribute name used to mark a temporary admin user/service account as temporary
     String IS_TEMP_ADMIN_ATTR_NAME = "is_temporary_admin";
+    String CREATED_TIMESTAMP = "createdTimestamp";
 
     Comparator<UserModel> COMPARE_BY_USERNAME = Comparator.comparing(UserModel::getUsername, String.CASE_INSENSITIVE_ORDER);
 
@@ -61,8 +67,6 @@ public interface UserModel extends RoleMapperModel {
         UserModel getUser();
         KeycloakSession getKeycloakSession();
     }
-
-    String getId();
 
     // No default method here to allow Abstract subclasses where the username is provided in a different manner
     String getUsername();
@@ -82,6 +86,17 @@ public interface UserModel extends RoleMapperModel {
     Long getCreatedTimestamp();
 
     void setCreatedTimestamp(Long timestamp);
+
+    /**
+     * Get timestamp of last user modification. May be null for users that have not been modified
+     * since this feature was introduced.
+     */
+    default Long getLastModifiedTimestamp() {
+        return null;
+    }
+
+    default void setLastModifiedTimestamp(Long timestamp) {
+    }
 
     boolean isEnabled();
 

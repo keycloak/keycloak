@@ -18,6 +18,7 @@
 package org.keycloak.sdjwt.sdjwtvp;
 
 import org.keycloak.sdjwt.vp.KeyBindingJwtVerificationOpts;
+
 import org.junit.Test;
 
 public class KeyBindingJwtVerificationOptsTest {
@@ -33,7 +34,7 @@ public class KeyBindingJwtVerificationOptsTest {
     public void buildShouldFail_IfKeyBindingRequired_AndNonceEmpty() {
         KeyBindingJwtVerificationOpts.builder()
                 .withKeyBindingRequired(true)
-                .withNonce("")
+                .withNonceCheck("")
                 .build();
     }
 
@@ -41,7 +42,7 @@ public class KeyBindingJwtVerificationOptsTest {
     public void buildShouldFail_IfKeyBindingRequired_AndAudNotSpecified() {
         KeyBindingJwtVerificationOpts.builder()
                 .withKeyBindingRequired(true)
-                .withNonce("12345678")
+                .withNonceCheck("12345678")
                 .build();
     }
 

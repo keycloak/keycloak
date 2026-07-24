@@ -24,12 +24,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import org.keycloak.json.StringListMapDeserializer;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import org.keycloak.json.StringListMapDeserializer;
 
 /**
  * <p>One or more resources that the resource server manages as a set of protected resources.
@@ -39,6 +40,10 @@ import org.keycloak.json.StringListMapDeserializer;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class ResourceRepresentation {
+
+    public static Builder create() {
+        return new Builder();
+    }
 
     @JsonProperty("_id")
     private String id;
@@ -290,5 +295,23 @@ public class ResourceRepresentation {
 
     public int hashCode() {
         return Objects.hash(getName());
+    }
+
+    public static final class Builder {
+
+        private final ResourceRepresentation rep;
+
+        private Builder() {
+            rep = new ResourceRepresentation();
+        }
+
+        public Builder name(String name) {
+            rep.setName(name);
+            return this;
+        }
+
+        public ResourceRepresentation build() {
+            return rep;
+        }
     }
 }

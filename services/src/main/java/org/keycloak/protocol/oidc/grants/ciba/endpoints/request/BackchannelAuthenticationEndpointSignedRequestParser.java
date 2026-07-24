@@ -18,7 +18,6 @@
 
 package org.keycloak.protocol.oidc.grants.ciba.endpoints.request;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -32,6 +31,8 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Parse the parameters from OIDC "request" object

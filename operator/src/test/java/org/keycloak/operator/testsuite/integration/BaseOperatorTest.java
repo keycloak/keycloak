@@ -17,71 +17,26 @@
 
 package org.keycloak.operator.testsuite.integration;
 
-import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.MicroTime;
-import io.fabric8.kubernetes.api.model.NamespaceBuilder;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.api.model.events.v1.Event;
-import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
-import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.ConfigBuilder;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
-import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.dsl.ExecWatch;
-import io.fabric8.kubernetes.client.dsl.Loggable;
-import io.fabric8.kubernetes.client.dsl.PodResource;
-import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.utils.Serialization;
-import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
-import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
-import io.quarkus.logging.Log;
-import io.quarkus.test.junit.callback.QuarkusTestAfterEachCallback;
-import io.quarkus.test.junit.callback.QuarkusTestMethodContext;
-
-import org.awaitility.Awaitility;
-import org.eclipse.microprofile.config.ConfigProvider;
-import org.jboss.logging.Logger.Level;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.TestInfo;
-import org.keycloak.operator.Constants;
-import org.keycloak.operator.controllers.KeycloakController;
-import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
-import org.keycloak.operator.controllers.KeycloakRealmImportController;
-import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
-import org.keycloak.operator.testsuite.apiserver.ApiServerHelper;
-import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
-import org.keycloak.operator.testsuite.utils.K8sUtils;
-import org.opentest4j.TestAbortedException;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -93,9 +48,75 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.enterprise.util.TypeLiteral;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.keycloak.operator.Constants;
+import org.keycloak.operator.controllers.KeycloakController;
+import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
+import org.keycloak.operator.controllers.KeycloakOIDCClientController;
+import org.keycloak.operator.controllers.KeycloakRealmImportController;
+import org.keycloak.operator.controllers.KeycloakSAMLClientController;
+import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
+import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClient;
+import org.keycloak.operator.crds.v2alpha1.client.KeycloakSAMLClient;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatus;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImportStatus;
+import org.keycloak.operator.testsuite.apiserver.ApiServerHelper;
+import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
+import org.keycloak.operator.testsuite.utils.K8sUtils;
+
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.MicroTime;
+import io.fabric8.kubernetes.api.model.NamespaceBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionSpec;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.events.v1.Event;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.Role;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.ConfigBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.dsl.ExecWatch;
+import io.fabric8.kubernetes.client.dsl.Loggable;
+import io.fabric8.kubernetes.client.dsl.PodResource;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.base.ResourceDefinitionContext;
+import io.fabric8.kubernetes.client.utils.Serialization;
+import io.fabric8.openshift.api.model.monitoring.v1.ServiceMonitor;
+import io.javaoperatorsdk.operator.Operator;
+import io.javaoperatorsdk.operator.api.config.BaseConfigurationService;
+import io.javaoperatorsdk.operator.api.config.InformerStoppedHandler;
+import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
+import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
+import io.quarkus.logging.Log;
+import io.quarkus.test.junit.callback.QuarkusTestAfterEachCallback;
+import io.quarkus.test.junit.callback.QuarkusTestMethodContext;
+import org.awaitility.Awaitility;
+import org.eclipse.microprofile.config.ConfigProvider;
+import org.jboss.logging.Logger.Level;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
+import org.opentest4j.TestAbortedException;
+
 import static org.keycloak.operator.Utils.isOpenShift;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
 
@@ -107,11 +128,41 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
   public static final String OPERATOR_KUBERNETES_IP = "test.operator.kubernetes.ip";
   public static final String OPERATOR_CUSTOM_IMAGE = "test.operator.custom.image";
   public static final String POSTGRESQL_NAME = "postgresql-db";
+  public static final String KEYCLOAK_OPERATOR = "keycloak-operator";
 
   public static final String TEST_RESULTS_DIR = "target/operator-test-results/";
   public static final String POD_LOGS_DIR = TEST_RESULTS_DIR + "pod-logs/";
 
-  public enum OperatorDeployment {local_apiserver,local,remote}
+  private static final class BaseOperatorTestConfigurationService extends BaseConfigurationService {
+
+    private final KubernetesClient client;
+    private boolean stopped;
+
+    private BaseOperatorTestConfigurationService(KubernetesClient client) {
+        this.client = client;
+    }
+
+    @Override
+    public KubernetesClient getKubernetesClient() {
+        return client;
+    }
+
+    @Override
+    public Optional<InformerStoppedHandler> getInformerStoppedHandler() {
+        return Optional.of((informer, ex) -> {
+            if (ex != null && informer.hasSynced()) {
+                if (!stopped) {
+                    log.error("Fatal error in informer: {}.", informer, ex);
+                    stopped = true;
+                }
+            } else {
+                super.getInformerStoppedHandler().ifPresent(handler -> handler.onStop(informer, ex));
+            }
+        });
+    }
+}
+
+public enum OperatorDeployment {local_apiserver,local,remote}
 
   protected static OperatorDeployment operatorDeployment;
   protected static QuarkusConfigurationService configuration;
@@ -121,12 +172,16 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
   protected static String kubernetesIp;
   protected static String customImage;
   private static Operator operator;
+  private static BaseOperatorTestConfigurationService config;
   protected static boolean isOpenShift;
+  private static boolean watchAllNamespaces;
 
   private static ApiServerHelper kubeApi;
 
+  private static List<HasMetadata> resources;
+
   @BeforeAll
-  public static void before(TestInfo testInfo) throws FileNotFoundException {
+  public static void before(TestInfo testInfo) throws IOException {
     configuration = CDI.current().select(QuarkusConfigurationService.class).get();
     operatorDeployment = ConfigProvider.getConfig().getOptionalValue(OPERATOR_DEPLOYMENT_PROP, OperatorDeployment.class).orElse(OperatorDeployment.local_apiserver);
     if (testInfo.getTestClass().map(m -> m.getAnnotation(DisabledIfApiServerTest.class)).isPresent()) {
@@ -137,12 +192,11 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
 
     setDefaultAwaitilityTimings();
 
-    if (operatorDeployment == OperatorDeployment.local_apiserver) {
+    if (operatorDeployment == OperatorDeployment.local_apiserver && kubeApi == null) {
       kubeApi = new ApiServerHelper();
     }
 
-    createK8sClient();
-    createNamespace();
+    createK8sClientForRandomNamespace();
     kubernetesIp = ConfigProvider.getConfig().getOptionalValue(OPERATOR_KUBERNETES_IP, String.class).orElseGet(() -> {
         try {
             return new URL(k8sclient.getConfiguration().getMasterUrl()).getHost();
@@ -153,6 +207,8 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
     Log.info("Creating CRDs");
     createCRDs(k8sclient);
     isOpenShift = isOpenShift(k8sclient);
+    
+    watchAllNamespaces = testInfo.getTestClass().map(m -> m.getAnnotation(ClusterWide.class)).isPresent();
 
     if (operatorDeployment == OperatorDeployment.remote) {
       createRBACresourcesAndOperatorDeployment();
@@ -162,7 +218,7 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
 
     if (operatorDeployment == OperatorDeployment.local_apiserver) {
       deployDBSecret();
-    } else {
+    } else if (!watchAllNamespaces) {
       deployDB();
     }
   }
@@ -178,67 +234,110 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
               + "------- Mode: " + operatorDeployment.name());
   }
 
-  private static void createK8sClient() {
+  private static void createK8sClientForRandomNamespace() {
       namespace = getNewRandomNamespaceName();
+      Log.infof("Creating new K8s Client for namespace %s", namespace);
       if (operatorDeployment == OperatorDeployment.local_apiserver) {
           k8sclient = kubeApi.createClient(namespace);
       } else {
           k8sclient = new KubernetesClientBuilder().withConfig(new ConfigBuilder(Config.autoConfigure(null)).withNamespace(namespace).build()).build();
       }
+      Log.info("Creating Namespace " + namespace);
+      k8sclient.resource(new NamespaceBuilder().withNewMetadata().addToLabels("app","keycloak-test").withName(namespace).endMetadata().build()).create();
   }
 
-  private static void createRBACresourcesAndOperatorDeployment() throws FileNotFoundException {
+  protected static void createRBACresourcesAndOperatorDeployment() throws FileNotFoundException {
     Log.info("Creating RBAC and Deployment into Namespace " + namespace);
-    K8sUtils.set(k8sclient, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + deploymentTarget + ".yml"), obj -> {
+
+    resources = K8sUtils.set(k8sclient, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + deploymentTarget + ".yml"), obj -> {
+        if (obj instanceof Role && watchAllNamespaces) {
+            Map<String, Object> map = k8sclient.getKubernetesSerialization().convertValue(obj, Map.class);
+            map.put("kind", "ClusterRole");
+            return k8sclient.getKubernetesSerialization().convertValue(map, ClusterRole.class);
+        }
+        if (obj instanceof RoleBinding) {
+            if ("keycloak-operator-view".equals(obj.getMetadata().getName())) {
+                return null; // exclude this role since it's not present in olm
+            }
+            if (watchAllNamespaces) {
+                obj.getMetadata().setNamespace(null);
+                ((RoleBinding)obj).getRoleRef().setKind("ClusterRole");
+                Map<String, Object> map = k8sclient.getKubernetesSerialization().convertValue(obj, Map.class);
+                map.put("kind", "ClusterRoleBinding");
+                obj = k8sclient.getKubernetesSerialization().convertValue(map, ClusterRoleBinding.class);
+            }
+        }
         if (obj instanceof ClusterRoleBinding) {
             ((ClusterRoleBinding)obj).getSubjects().forEach(s -> s.setNamespace(namespace));
-        } else if (obj instanceof RoleBinding && "keycloak-operator-view".equals(obj.getMetadata().getName())) {
-            return null; // exclude this role since it's not present in olm
         } else if (obj instanceof Deployment) {
             // set values useful for testing - TODO: could drive this in some way from the test/resource/application.properties
-            ((Deployment)obj).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar("KC_OPERATOR_KEYCLOAK_UPDATE_POD_DEADLINE_SECONDS", "60", null));
+            List<EnvVar> env = ((Deployment)obj).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+            env.add(new EnvVar("KC_OPERATOR_KEYCLOAK_UPDATE_POD_DEADLINE_SECONDS", "60", null));
+            
+            if (watchAllNamespaces) {
+                env.stream().forEach(envVar -> {
+                            if (io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE.equals(envVar.getValue())) {
+                                envVar.setValue(io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_ALL_NAMESPACES);
+                            }
+                        });
+            }
         }
         return obj;
     });
   }
 
   private static void cleanRBACresourcesAndOperatorDeployment() throws FileNotFoundException {
-    Log.info("Deleting RBAC from Namespace " + namespace);
-    k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER +deploymentTarget+".yml"))
-            .inNamespace(namespace).delete();
+    Log.info("Deleting from Namespace " + namespace);
+    if (resources != null) {
+        resources.forEach(resource -> k8sclient.resource(resource).delete());
+    }
   }
 
-  public static void createCRDs(KubernetesClient client) throws FileNotFoundException {
-    K8sUtils.set(client, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.k8s.keycloak.org-v1.yml"));
-    K8sUtils.set(client, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakrealmimports.k8s.keycloak.org-v1.yml"));
+  public static void createCRDs(KubernetesClient client) throws IOException {
+    Path folder = Paths.get(TARGET_KUBERNETES_GENERATED_YML_FOLDER);
+    List<ResourceDefinitionContext> rdcs = new ArrayList<>();
+    try (var files = Files.newDirectoryStream(folder, entry -> entry.getFileName().toString().endsWith("k8s.keycloak.org-v1.yml"))) {
+      for (Path file : files) {
+        K8sUtils.set(client, new FileInputStream(file.toFile()), obj -> {
+            if (obj instanceof CustomResourceDefinition crd) {
+                CustomResourceDefinitionSpec spec = crd.getSpec();
+                spec.getVersions().forEach(crdv -> {
+                    rdcs.add(new ResourceDefinitionContext.Builder().withGroup(spec.getGroup())
+                            .withKind(spec.getNames().getKind()).withNamespaced("Namespaced".equals(spec.getScope()))
+                            .withPlural(spec.getNames().getPlural()).withVersion(crdv.getName()).build());
+                });
+            }
+            return obj;
+        });
+      }
+    }
 
-    Awaitility.await().pollInterval(100, TimeUnit.MILLISECONDS).untilAsserted(() -> client.resources(Keycloak.class).list());
-    Awaitility.await().pollInterval(100, TimeUnit.MILLISECONDS).untilAsserted(() -> client.resources(KeycloakRealmImport.class).list());
+    K8sUtils.set(client, BaseOperatorTest.class.getResourceAsStream("/service-monitor-crds.yml"));
+
+    rdcs.forEach(rdc -> Awaitility.await().pollInterval(100, TimeUnit.MILLISECONDS)
+            .untilAsserted(() -> client.genericKubernetesResources(rdc).list()));
+    Awaitility.await().pollInterval(100, TimeUnit.MILLISECONDS).untilAsserted(() -> client.resources(ServiceMonitor.class).list());
   }
 
   private static void createOperator() {
     // create the operator to use the current client / namespace and injected dependent resources
     // to be replaced later with full cdi construction or test mechanics from quarkus operator sdk
-    operator = new Operator(new BaseConfigurationService() {
-        @Override
-        public KubernetesClient getKubernetesClient() {
-            return k8sclient;
-        }
-    });
-    Log.info("Registering reconcilers for operator : " + operator + " [" + operatorDeployment + "]");
+    config = new BaseOperatorTestConfigurationService(k8sclient);
+    operator = new Operator(config);
+    Log.info("Registering reconcilers for operator : " + operator + " [" + operatorDeployment + "]"
+        + (watchAllNamespaces ? " (watching all namespaces)" : ""));
 
     Instance<Reconciler<? extends HasMetadata>> reconcilers = CDI.current().select(new TypeLiteral<>() {});
 
     for (Reconciler<?> reconciler : reconcilers) {
       Log.info("Register and apply : " + reconciler.getClass().getName());
-      operator.register(reconciler, overrider -> overrider.settingNamespace(k8sclient.getNamespace()));
+      if (watchAllNamespaces) {
+        operator.register(reconciler, overrider -> overrider.watchingAllNamespaces());
+      } else {
+        operator.register(reconciler, overrider -> overrider.settingNamespace(k8sclient.getNamespace()));
+      }
     }
     operator.start();
-  }
-
-  private static void createNamespace() {
-    Log.info("Creating Namespace " + namespace);
-    k8sclient.resource(new NamespaceBuilder().withNewMetadata().addToLabels("app","keycloak-test").withName(namespace).endMetadata().build()).create();
   }
 
   public static String getNewRandomNamespaceName() {
@@ -301,21 +400,35 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
       if (operatorDeployment == OperatorDeployment.local_apiserver) {
           // by default garbage collection is not supported by envtest
           // so might as well do a namespace per test
-          k8sclient.namespaces().withName(namespace).delete();
+          String oldNamespace = namespace;
           stopOperator();
-          createNamespace();
+          // create a new client bc operator has closed the old one
+          createK8sClientForRandomNamespace();
+          k8sclient.namespaces().withName(oldNamespace).delete();
           createOperator();
           deployDBSecret();
           return;
       }
       Log.info("Deleting Keycloak CR");
 
+      // first graceful scaledown
+      k8sclient.resources(Keycloak.class).list().getItems().forEach(
+              k -> k8sclient.resource(new KeycloakBuilder(k).editSpec().withInstances(0).endSpec().build()).unlock().patch());
+
+      try {
+          k8sclient.resources(Keycloak.class).informOnCondition(
+                  l -> l.stream().allMatch(k -> Optional.ofNullable(k.getStatus()).map(KeycloakStatus::getInstances).orElse(0).equals(0)))
+                  .get(40, TimeUnit.SECONDS);
+      } catch (Exception e) {
+          throw KubernetesClientException.launderThrowable(e);
+      }
+
       // this can be simplified to just the root deletion after we pick up the fix
       // it can be further simplified after https://github.com/fabric8io/kubernetes-client/issues/5838
       // to just a timed foreground deletion
-      var roots = List.of(Keycloak.class, KeycloakRealmImport.class);
+      var roots = List.of(Keycloak.class, KeycloakRealmImport.class, KeycloakOIDCClient.class, KeycloakSAMLClient.class);
       roots.forEach(c -> k8sclient.resources(c).delete());
-      // enforce that at least the statefulset / pods are gone
+      // enforce that at least the statefulset are gone
       try {
           k8sclient
                   .apps()
@@ -345,11 +458,10 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
           logEvents();
           savePodLogs();
           // provide some helpful entries in the main log as well
-          logFailedKeycloaks();
-          k8sclient.resources(Keycloak.class).list().getItems()
-                  .forEach(keycloak -> Log.infof("Keycloak '%s' status:%n%s", keycloak.getMetadata().getName(), Serialization.asYaml(keycloak.getStatus())));
+          logKeycloaks();
+          logKeycloakRealmImports();
           if (operatorDeployment == OperatorDeployment.remote) {
-              log(k8sclient.apps().deployments().withName("keycloak-operator"), Deployment::getStatus, false);
+              log(k8sclient.apps().deployments().withName(KEYCLOAK_OPERATOR), Deployment::getStatus, false);
           }
           if (operatorDeployment != OperatorDeployment.local_apiserver) {
               logFailed(k8sclient.apps().statefulSets().withName(POSTGRESQL_NAME), StatefulSet::getStatus);
@@ -395,26 +507,43 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
       log(resource, statusExtractor, true);
   }
 
-  private void logFailedKeycloaks() {
-      k8sclient.resources(Keycloak.class).list().getItems().stream()
-              .filter(kc -> !Optional.ofNullable(kc.getStatus()).map(KeycloakStatus::isReady).orElse(false))
-              .forEach(kc -> {
-                  Log.warnf("Keycloak failed to become ready \"%s\" %s", kc.getMetadata().getName(), Serialization.asYaml(kc.getStatus()));
-                  var statefulSet = k8sclient.apps().statefulSets().withName(KeycloakDeploymentDependentResource.getName(kc)).get();
-                  if (statefulSet != null) {
-                      Log.warnf("Keycloak \"%s\" StatefulSet status %s", kc.getMetadata().getName(), Serialization.asYaml(statefulSet.getStatus()));
-                      k8sclient.pods().withLabels(statefulSet.getSpec().getSelector().getMatchLabels()).list()
-                              .getItems().stream().map(pod -> k8sclient.pods().resource(pod)).forEach(p -> {
-                                  logFailed(p, Pod::getStatus);
-                                  threadDump(p);
-                              });
+  private void logKeycloakRealmImports() {
+      k8sclient.resources(KeycloakRealmImport.class).list().getItems().stream()
+              .forEach(kcri -> {
+                  if (Optional.ofNullable(kcri.getStatus()).map(KeycloakRealmImportStatus::isDone).orElse(false)) {
+                      Log.infof("Keycloak realm import '%s' status: %s", kcri.getMetadata().getName(), Serialization.asYaml(kcri.getStatus()));
+                  } else {
+                      Log.warnf("Keycloak realm import failed to be done \"%s\": %s", kcri.getMetadata().getName(), Serialization.asYaml(kcri.getStatus()));
+
+                      Keycloak kc = k8sclient.resources(Keycloak.class).withName(kcri.getSpec().getKeycloakCRName()).get();
+
+                      var job = k8sclient.batch().v1().jobs()
+                              .inNamespace(kcri.getMetadata().getNamespace())
+                              .withName(KeycloakUpdateJobDependentResource.jobName(kc))
+                              .get();
+                      if (job != null) {
+                          Log.warnf("Keycloak Update Job \"%s\" %s", job.getMetadata().getName(), Serialization.asYaml(job.getStatus()));
+                      }
                   }
-                  var job = k8sclient.batch().v1().jobs()
-                          .inNamespace(kc.getMetadata().getNamespace())
-                          .withName(KeycloakUpdateJobDependentResource.jobName(kc))
-                          .get();
-                  if (job != null) {
-                      Log.warnf("Keycloak Update Job \"%s\" %s", job.getMetadata().getName(), Serialization.asYaml(job.getStatus()));
+              });
+  }
+
+  private void logKeycloaks() {
+      k8sclient.resources(Keycloak.class).list().getItems().stream()
+              .forEach(kc -> {
+                  if (Optional.ofNullable(kc.getStatus()).map(KeycloakStatus::isReady).orElse(false)) {
+                      Log.infof("Keycloak '%s' status: %s", kc.getMetadata().getName(), Serialization.asYaml(kc.getStatus()));
+                  } else {
+                      Log.warnf("Keycloak failed to become ready \"%s\": %s", kc.getMetadata().getName(), Serialization.asYaml(kc.getStatus()));
+                      var statefulSet = k8sclient.apps().statefulSets().withName(KeycloakDeploymentDependentResource.getName(kc)).get();
+                      if (statefulSet != null) {
+                          Log.warnf("Keycloak \"%s\" StatefulSet status %s", kc.getMetadata().getName(), Serialization.asYaml(statefulSet.getStatus()));
+                          k8sclient.pods().withLabels(statefulSet.getSpec().getSelector().getMatchLabels()).list()
+                                  .getItems().stream().map(pod -> k8sclient.pods().resource(pod)).forEach(p -> {
+                                      logFailed(p, Pod::getStatus);
+                                      threadDump(p);
+                                  });
+                      }
                   }
               });
   }
@@ -486,24 +615,24 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
           k8sclient = null;
       }
 
-      if (kubeApi != null) {
+      // scope the api server to the entire test run
+      /*if (kubeApi != null) {
           kubeApi.stop();
           kubeApi = null;
-      }
+      }*/
   }
 
   private static void stopOperator() {
       Log.info("Stopping Operator");
+      assertFalse(config.stopped, "An informer unexpected stopped, check log for an ERROR");
+      config.stopped = true;
       operator.stop();
 
       // Avoid issues with Event Informers between tests
       Log.info("Removing Controllers and application scoped DRs from CDI");
-      Stream.of(KeycloakController.class, KeycloakRealmImportController.class, KeycloakUpdateJobDependentResource.class)
-                      .forEach(c -> CDI.current().destroy(CDI.current().select(c).get()));
-
-      Log.info("Creating new K8s Client");
-      // create a new client bc operator has closed the old one
-      createK8sClient();
+      Stream.of(KeycloakController.class, KeycloakRealmImportController.class, KeycloakOIDCClientController.class,
+              KeycloakSAMLClientController.class, KeycloakUpdateJobDependentResource.class)
+              .forEach(c -> CDI.current().destroy(CDI.current().select(c).get()));
   }
 
   public static String getCurrentNamespace() {
@@ -522,17 +651,21 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
    * @return
    */
   public static Keycloak getTestKeycloakDeployment(boolean disableProbes) {
-      Keycloak kc = K8sUtils.getDefaultKeycloakDeployment();
-      kc.getMetadata().setNamespace(getCurrentNamespace());
-      String image = getTestCustomImage();
-      if (image != null) {
-          kc.getSpec().setImage(image);
-      }
-      if (disableProbes) {
-          return disableProbes(kc);
-      }
-      return kc;
+      return getTestKeycloakDeployment(disableProbes, true);
   }
+
+    public static Keycloak getTestKeycloakDeployment(boolean disableProbes, boolean setCustomImage) {
+        Keycloak kc = K8sUtils.getDefaultKeycloakDeployment();
+        kc.getMetadata().setNamespace(getCurrentNamespace());
+        String image = getTestCustomImage();
+        if (setCustomImage && image != null) {
+            kc.getSpec().setImage(image);
+        }
+        if (disableProbes) {
+            return disableProbes(kc);
+        }
+        return kc;
+    }
 
   public static Keycloak disableProbes(Keycloak keycloak) {
       KeycloakSpecBuilder specBuilder = new KeycloakSpecBuilder(keycloak.getSpec());

@@ -1,10 +1,12 @@
 package org.keycloak.testsuite.broker;
 
-import org.junit.Test;
-import org.keycloak.testsuite.Assert;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class KcSamlBrokerLoginHintWithOptionEnabledTest extends AbstractSamlLoginHintTest {
 
@@ -14,19 +16,20 @@ public class KcSamlBrokerLoginHintWithOptionEnabledTest extends AbstractSamlLogi
         String username = "all-info-set@localhost.com";
         createUser(bc.providerRealmName(), username, "password", "FirstName");
 
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         log.debug("Clicking social " + bc.getIDPAlias());
         String fishyLoginHint = "<an-xml-tag>";
         addLoginHintOnSocialButton(fishyLoginHint);
         loginPage.clickSocial(bc.getIDPAlias());
         waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+                "Driver should be on the provider realm page right now");
         log.debug("Logging in");
 
-        assertEquals("Username input should contain the SAML subject", loginPage.getUsername(), fishyLoginHint);
+        assertEquals(loginPage.getUsername(), fishyLoginHint, "Username input should contain the SAML subject");
     }
 
     @Override

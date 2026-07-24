@@ -68,7 +68,7 @@ import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
         ),
         @CSVMetadata.InstallMode(
             type = "AllNamespaces",
-            supported = false
+            supported = true
         )
     },
     annotations = @CSVMetadata.Annotations(
@@ -82,7 +82,7 @@ import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
             """
                 [
                   {
-                    "apiVersion": "k8s.keycloak.org/v2alpha1",
+                    "apiVersion": "k8s.keycloak.org/v2beta1",
                     "kind": "Keycloak",
                     "metadata": {
                       "name": "example-keycloak",
@@ -101,7 +101,7 @@ import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
                     }
                   },
                   {
-                    "apiVersion": "k8s.keycloak.org/v2alpha1",
+                    "apiVersion": "k8s.keycloak.org/v2beta1",
                     "kind": "KeycloakRealmImport",
                     "metadata": {
                       "name": "example-keycloak-realm-import",
@@ -112,6 +112,43 @@ import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
                     "spec": {
                       "keycloakCRName": "example-keycloak",
                       "realm": {}
+                    }
+                  },
+                  {
+                    "apiVersion": "k8s.keycloak.org/v2alpha1",
+                    "kind": "KeycloakOIDCClient",
+                    "metadata": {
+                      "name": "example-oidc-client",
+                      "labels": {
+                        "app": "sso"
+                      }
+                    },
+                    "spec": {
+                      "keycloakCRName": "example-keycloak",
+                      "realm": "my-realm",
+                      "client": {
+                        "loginFlows": ["STANDARD"],
+                        "redirectUris": ["https://app.example.com/*"]
+                      }
+                    }
+                  },
+                  {
+                    "apiVersion": "k8s.keycloak.org/v2alpha1",
+                    "kind": "KeycloakSAMLClient",
+                    "metadata": {
+                      "name": "example-saml-client",
+                      "labels": {
+                        "app": "sso"
+                      }
+                    },
+                    "spec": {
+                      "keycloakCRName": "example-keycloak",
+                      "realm": "my-realm",
+                      "client": {
+                        "nameIdFormat": "persistent",
+                        "signDocuments": true,
+                        "signAssertions": true
+                      }
                     }
                   }
                 ]""",
@@ -137,11 +174,17 @@ import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
 
             * Install Keycloak to a namespace
             * Import Keycloak Realms
+            * Manage Keycloak Clients (experimental)
             """,
     icon = @CSVMetadata.Icon(
         fileName = "KeycloakController.icon.png",
         mediatype = "image/png"
-    )
+    ),
+    labels = {
+        @CSVMetadata.Label(name = "operatorframework.io/arch.amd64", value = "supported"),
+        @CSVMetadata.Label(name = "operatorframework.io/arch.arm64", value = "supported"),
+        @CSVMetadata.Label(name = "operatorframework.io/arch.ppc64le", value = "supported")
+    }
 )
 public class KeycloakSharedCsvMetadata implements SharedCSVMetadata {
 }

@@ -1,12 +1,14 @@
 package org.keycloak.config;
 
-import org.jboss.logmanager.handlers.SyslogHandler;
-
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.function.Function;
+
+import io.quarkus.runtime.logging.LogRuntimeConfig;
+import org.jboss.logmanager.handlers.SyslogHandler;
 
 import static java.lang.String.format;
 
@@ -20,10 +22,9 @@ public class LoggingOptions {
     public static final String DEFAULT_LOG_PATH = "data" + File.separator + "log" + File.separator + DEFAULT_LOG_FILENAME;
 
     // Log format + tracing
-    private static final Function<String, String> DEFAULT_LOG_FORMAT_FUNC = (additionalFields) ->
+    public static final Function<String, String> DEFAULT_LOG_FORMAT_FUNC = (additionalFields) ->
             "%d{yyyy-MM-dd HH:mm:ss,SSS} " + additionalFields + "%-5p [%c] (%t) %s%e%n";
     public static final String DEFAULT_LOG_FORMAT = DEFAULT_LOG_FORMAT_FUNC.apply("");
-    public static final String DEFAULT_LOG_TRACING_FORMAT = DEFAULT_LOG_FORMAT_FUNC.apply("traceId=%X{traceId}, parentId=%X{parentId}, spanId=%X{spanId}, sampled=%X{sampled} ");
 
     public enum Handler {
         console,
@@ -69,6 +70,17 @@ public class LoggingOptions {
             .category(OptionCategory.LOGGING)
             .defaultValue(false)
             .description("Indicates whether to log asynchronously to all handlers.")
+            .build();
+
+    public static final Option<String> LOG_SERVICE_NAME = new OptionBuilder<>("log-service-name", String.class)
+            .category(OptionCategory.LOGGING)
+            .description("Set the 'service.name' field in JSON log entries for all log handlers.")
+            .defaultValue("keycloak")
+            .build();
+
+    public static final Option<String> LOG_SERVICE_ENVIRONMENT = new OptionBuilder<>("log-service-environment", String.class)
+            .category(OptionCategory.LOGGING)
+            .description("Set the 'service.environment' field in JSON log entries for all log handlers. In ECS format, defaults to the Quarkus profile if not set.")
             .build();
 
     public enum Output {
@@ -125,15 +137,21 @@ public class LoggingOptions {
             .defaultValue(true)
             .build();
 
+    public static final Option<Boolean> LOG_CONSOLE_INCLUDE_MDC = new OptionBuilder<>("log-console-include-mdc", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .description(format("Include mdc information in the console log. If the '%s' option is specified, this option has no effect.", LOG_CONSOLE_FORMAT.getKey()))
+            .defaultValue(true)
+            .build();
+
     public static final Option<Boolean> LOG_CONSOLE_COLOR = new OptionBuilder<>("log-console-color", Boolean.class)
             .category(OptionCategory.LOGGING)
-            .description("Enable or disable colors when logging to console.")
-            .defaultValue(Boolean.FALSE) // :-(
+            .description("Enable or disable colors when logging to console. If this is not present then an attempt will be made to guess if the terminal supports color.")
+            .defaultValue(Optional.empty())
             .build();
 
     public static final Option<Boolean> LOG_CONSOLE_ENABLED = new OptionBuilder<>("log-console-enabled", Boolean.class)
             .category(OptionCategory.LOGGING)
-            .hidden()
+            .synthetic()
             .build();
 
     // Console Async
@@ -152,7 +170,7 @@ public class LoggingOptions {
     // File
     public static final Option<Boolean> LOG_FILE_ENABLED = new OptionBuilder<>("log-file-enabled", Boolean.class)
             .category(OptionCategory.LOGGING)
-            .hidden()
+            .synthetic()
             .build();
 
     public static final Option<File> LOG_FILE = new OptionBuilder<>("log-file", File.class)
@@ -188,6 +206,12 @@ public class LoggingOptions {
             .defaultValue(true)
             .build();
 
+    public static final Option<Boolean> LOG_FILE_INCLUDE_MDC = new OptionBuilder<>("log-file-include-mdc", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .description(format("Include MDC information in the file log. If the '%s' option is specified, this option has no effect.", LOG_FILE_FORMAT.getKey()))
+            .defaultValue(true)
+            .build();
+
     public static final Option<Output> LOG_FILE_OUTPUT = new OptionBuilder<>("log-file-output", Output.class)
             .category(OptionCategory.LOGGING)
             .defaultValue(DEFAULT_CONSOLE_OUTPUT)
@@ -207,10 +231,42 @@ public class LoggingOptions {
             .description("The queue length to use before flushing writing when logging to file log.")
             .build();
 
+    // File rotation
+    public static final Option<Boolean> LOG_FILE_ROTATION_ENABLED = new OptionBuilder<>("log-file-rotation-enabled", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(true)
+            .description("Enables log file rotation.")
+            .build();
+
+    public static final Option<String> LOG_FILE_ROTATION_MAX_FILE_SIZE = new OptionBuilder<>("log-file-rotation-max-file-size", String.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue("10M")
+            .description("The maximum log file size, after which a rotation is executed. Supports size suffixes (e.g. 10M, 1G).")
+            .build();
+
+    public static final Option<Integer> LOG_FILE_ROTATION_MAX_BACKUP_INDEX = new OptionBuilder<>("log-file-rotation-max-backup-index", Integer.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(5)
+            .description("The maximum number of backup log files to keep.")
+            .build();
+
+    public static final Option<String> LOG_FILE_ROTATION_FILE_SUFFIX = new OptionBuilder<>("log-file-rotation-file-suffix", String.class)
+            .category(OptionCategory.LOGGING)
+            .description("Set the log file handler rotation file suffix. When used, the file will be rotated based on its suffix. "
+                    + "Example: `.yyyy-MM-dd` to rotate daily. "
+                    + "Note: If the suffix ends with `.zip` or `.gz`, the rotation file will also be compressed.")
+            .build();
+
+    public static final Option<Boolean> LOG_FILE_ROTATION_ROTATE_ON_BOOT = new OptionBuilder<>("log-file-rotation-rotate-on-boot", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(true)
+            .description("Indicates whether to rotate log files on server start.")
+            .build();
+
     // Syslog
     public static final Option<Boolean> LOG_SYSLOG_ENABLED = new OptionBuilder<>("log-syslog-enabled", Boolean.class)
             .category(OptionCategory.LOGGING)
-            .hidden()
+            .synthetic()
             .build();
 
     public static final Option<String> LOG_SYSLOG_ENDPOINT = new OptionBuilder<>("log-syslog-endpoint", String.class)
@@ -273,10 +329,24 @@ public class LoggingOptions {
             .defaultValue(true)
             .build();
 
+    public static final Option<Boolean> LOG_SYSLOG_INCLUDE_MDC = new OptionBuilder<>("log-syslog-include-mdc", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .description(format("Include MDC information in the Syslog. If the '%s' option is specified, this option has no effect.", LOG_SYSLOG_FORMAT.getKey()))
+            .defaultValue(true)
+            .build();
+
     public static final Option<Output> LOG_SYSLOG_OUTPUT = new OptionBuilder<>("log-syslog-output", Output.class)
             .category(OptionCategory.LOGGING)
             .defaultValue(DEFAULT_SYSLOG_OUTPUT)
             .description("Set the Syslog output to JSON or default (plain) unstructured logging.")
+            .build();
+
+    public static final Option<LogRuntimeConfig.SyslogConfig.CountingFraming> LOG_SYSLOG_COUNTING_FRAMING = new OptionBuilder<>("log-syslog-counting-framing", LogRuntimeConfig.SyslogConfig.CountingFraming.class)
+            .category(OptionCategory.LOGGING)
+            .transformEnumValues(true)
+            .defaultValue(LogRuntimeConfig.SyslogConfig.CountingFraming.PROTOCOL_DEPENDENT)
+            .description("If 'true', the message being sent is prefixed with the size of the message. If '%s', the default value is 'true' when '%s' is 'tcp' or 'ssl-tcp', otherwise 'false'."
+                    .formatted(Option.transformEnumValue(LogRuntimeConfig.SyslogConfig.CountingFraming.PROTOCOL_DEPENDENT.name()), LOG_SYSLOG_PROTOCOL.getKey()))
             .build();
 
     // Syslog async
@@ -291,4 +361,19 @@ public class LoggingOptions {
             .defaultValue(512)
             .description("The queue length to use before flushing writing when logging to Syslog.")
             .build();
+
+    public static final Option<Boolean> LOG_MDC_ENABLED = new OptionBuilder<>("log-mdc-enabled", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(false)
+            .buildTime(true)
+            .description("Indicates whether to add information about the realm and other information to the mapped diagnostic context. All elements will be prefixed with 'kc.'")
+            .build();
+
+    public static final Option<List<String>> LOG_MDC_KEYS = OptionBuilder.listOptionBuilder("log-mdc-keys", String.class)
+            .category(OptionCategory.LOGGING)
+            .expectedValues(List.of("realmName", "clientId", "userId", "ipAddress", "org", "sessionId", "authenticationSessionId", "authenticationTabId"))
+            .defaultValue(List.of("realmName", "clientId", "org", "sessionId", "authenticationSessionId", "authenticationTabId"))
+            .description("Defines which information should be added to the mapped diagnostic context as a comma-separated list.")
+            .build();
+
 }

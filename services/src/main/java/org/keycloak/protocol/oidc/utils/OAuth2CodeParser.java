@@ -20,7 +20,6 @@ package org.keycloak.protocol.oidc.utils;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
@@ -30,6 +29,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserSessionModel;
 
+import org.jboss.logging.Logger;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -38,14 +39,11 @@ public class OAuth2CodeParser {
     private static final Logger logger = Logger.getLogger(OAuth2CodeParser.class);
 
     private static final Pattern DOT = Pattern.compile("\\.");
-
+    public static final String CACHE_KEY_PREFIX = "code:";
 
     /**
      * Will persist the code to the cache and return the object with the codeData and code correctly set
      *
-     * @param session
-     * @param clientSession
-     * @param codeData
      * @return code parameter to be used in OAuth2 handshake
      */
     public static String persistCode(KeycloakSession session, AuthenticatedClientSessionModel clientSession, OAuth2Code codeData) {
@@ -57,7 +55,7 @@ public class OAuth2CodeParser {
         }
 
         Map<String, String> serialized = codeData.serializeCode();
-        codeStore.put(key, clientSession.getUserSession().getRealm().getAccessCodeLifespan(), serialized);
+        codeStore.put(CACHE_KEY_PREFIX + key, clientSession.getUserSession().getRealm().getAccessCodeLifespan(), serialized);
         return key + "." + clientSession.getUserSession().getId() + "." + clientSession.getClient().getId();
     }
 
@@ -66,12 +64,6 @@ public class OAuth2CodeParser {
      * Will parse the code and retrieve the corresponding OAuth2Code and AuthenticatedClientSessionModel. Will also check if code wasn't already
      * used and if it wasn't expired. If it was already used (or other error happened during parsing), then returned parser will have "isIllegalCode"
      * set to true. If it was expired, the parser will have "isExpired" set to true
-     *
-     * @param session
-     * @param code
-     * @param realm
-     * @param event
-     * @return
      */
     public static ParseResult parseCode(KeycloakSession session, String code, RealmModel realm, EventBuilder event) {
         ParseResult result = new ParseResult(code);
@@ -82,20 +74,12 @@ public class OAuth2CodeParser {
             return result.illegalCode();
         }
 
+        String codeUUID = parsed[0];
         String userSessionId = parsed[1];
         String clientUUID = parsed[2];
 
         event.detail(Details.CODE_ID, userSessionId);
         event.session(userSessionId);
-
-        // Parse UUID
-        String codeUUID;
-        try {
-            codeUUID = parsed[0];
-        } catch (IllegalArgumentException re) {
-            logger.warn("Invalid format of the UUID in the code");
-            return result.illegalCode();
-        }
 
         // Retrieve UserSession
         var userSessionProvider = session.sessions();
@@ -111,7 +95,7 @@ public class OAuth2CodeParser {
         result.clientSession = userSession.getAuthenticatedClientSessionByClient(clientUUID);
 
         SingleUseObjectProvider codeStore = session.singleUseObjects();
-        Map<String, String> codeData = codeStore.remove(codeUUID);
+        Map<String, String> codeData = codeStore.remove(CACHE_KEY_PREFIX + codeUUID);
 
         // Either code not available or was already used
         if (codeData == null) {
@@ -187,5 +171,4 @@ public class OAuth2CodeParser {
             return this;
         }
     }
-
 }

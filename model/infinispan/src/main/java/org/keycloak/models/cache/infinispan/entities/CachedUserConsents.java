@@ -16,11 +16,10 @@
  */
 package org.keycloak.models.cache.infinispan.entities;
 
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserConsentModel;
-
 import java.util.HashMap;
 import java.util.List;
+
+import org.keycloak.models.RealmModel;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -31,12 +30,12 @@ public class CachedUserConsents extends AbstractRevisioned implements InRealm {
     private final String realmId;
     private boolean allConsents;
 
-    public CachedUserConsents(Long revision, String id, RealmModel realm,
+    public CachedUserConsents(long revision, String id, RealmModel realm,
                               List<CachedUserConsent> consents) {
         this(revision, id, realm, consents, true);
     }
 
-    public CachedUserConsents(Long revision, String id, RealmModel realm,
+    public CachedUserConsents(long revision, String id, RealmModel realm,
             List<CachedUserConsent> consents, boolean allConsents) {
         super(revision, id);
         this.realmId = realm.getId();

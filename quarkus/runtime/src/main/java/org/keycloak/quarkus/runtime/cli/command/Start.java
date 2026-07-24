@@ -17,17 +17,14 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
-
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
-import org.keycloak.common.profile.ProfileException;
-import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+
+import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 @Command(name = Start.NAME,
         header = "Start the server.",
@@ -37,7 +34,7 @@ import picocli.CommandLine.Command;
         footer = "%nBy default, this command tries to update the server configuration by running a '" + Build.NAME + "' before starting the server. You can disable this behavior by using the '" + OPTIMIZED_BUILD_OPTION_LONG + "' option:%n%n"
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} '" + OPTIMIZED_BUILD_OPTION_LONG + "'%n%n"
                 + "By doing that, the server should start faster based on any previous configuration you have set when manually running the '" + Build.NAME + "' command.")
-public final class Start extends AbstractStartCommand implements Runnable {
+public final class Start extends AbstractAutoBuildCommand {
 
     public static final String NAME = "start";
 
@@ -47,20 +44,11 @@ public final class Start extends AbstractStartCommand implements Runnable {
     @CommandLine.Mixin
     ImportRealmMixin importRealmMixin;
 
-    @CommandLine.Mixin
-    HelpAllMixin helpAllMixin;
-
     @Override
     protected void doBeforeRun() {
-        Environment.updateProfile(true);
         if (Environment.isDevProfile()) {
             throw new PropertyException(Messages.devProfileNotAllowedError(NAME));
         }
-    }
-
-    @Override
-    public boolean includeRuntime() {
-        return true;
     }
 
     @Override
@@ -68,17 +56,14 @@ public final class Start extends AbstractStartCommand implements Runnable {
         return NAME;
     }
 
-    public static void fastStart(Picocli picocli, boolean dryRun) {
-        try {
-            Start start = new Start();
-            Environment.setParsedCommand(start);
-            PropertyMappers.sanitizeDisabledMappers();
-            start.optimizedMixin.optimized = true;
-            start.dryRunMixin.dryRun = dryRun;
-            start.setPicocli(picocli);
-            start.run();
-        } catch (PropertyException | ProfileException e) {
-            picocli.usageException(e.getMessage(), e.getCause());
-        }
+    @Override
+    public boolean isServing() {
+        return true;
     }
+
+    @Override
+    protected OptimizedMixin getOptimizedMixin() {
+        return optimizedMixin;
+    }
+
 }

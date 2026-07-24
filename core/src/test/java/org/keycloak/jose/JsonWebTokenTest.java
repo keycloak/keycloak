@@ -17,12 +17,13 @@
 
 package org.keycloak.jose;
 
-import org.junit.Test;
+import java.io.IOException;
+
 import org.keycloak.common.util.Time;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
+import org.junit.Test;
 
 import static junit.framework.TestCase.assertFalse;
 import static org.junit.Assert.assertArrayEquals;
@@ -83,7 +84,7 @@ public class JsonWebTokenTest {
     @Test
     public void isActiveReturnFalseWhenBeforeTimeInFuture() {
         long currentTime = Time.currentTime();
-        long futureTime = currentTime + 10;
+        long futureTime = currentTime + 12; // default allowed clock skew is 10 seconds
         JsonWebToken jsonWebToken = new JsonWebToken();
         jsonWebToken.nbf(futureTime);
         assertFalse(jsonWebToken.isActive());

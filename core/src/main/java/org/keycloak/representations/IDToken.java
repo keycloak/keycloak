@@ -17,9 +17,13 @@
 
 package org.keycloak.representations;
 
+import java.util.Map;
+
+import org.keycloak.TokenCategory;
+import org.keycloak.util.JsonSerialization;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.TokenCategory;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -57,6 +61,10 @@ public class IDToken extends JsonWebToken {
     // Financial API - Part 2: Read and Write API Security Profile
     // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
     public static final String S_HASH = "s_hash";
+
+    // RFC 8693 - OAuth 2.0 Token Exchange
+    public static final String MAY_ACT = "may_act";
+    public static final String ACT = "act";
 
     // NOTE!!!  WE used to use @JsonUnwrapped on a UserClaimSet object.  This screws up otherClaims and the won't work
     // anymore.  So don't have any @JsonUnwrapped!
@@ -124,9 +132,6 @@ public class IDToken extends JsonWebToken {
 
     @JsonProperty(PHONE_NUMBER_VERIFIED)
     protected Boolean phoneNumberVerified;
-
-    @JsonProperty(ADDRESS)
-    protected AddressClaimSet address;
 
     @JsonProperty(UPDATED_AT)
     protected Long updatedAt;
@@ -327,12 +332,30 @@ public class IDToken extends JsonWebToken {
         this.phoneNumberVerified = phoneNumberVerified;
     }
 
-    public AddressClaimSet getAddress() {
-        return address;
+    @JsonIgnore
+    public Map<String, Object> getAddressClaimsMap() {
+        Object value = getOtherClaims().get(ADDRESS);
+        return value instanceof Map ? (Map<String, Object>) value : null;
     }
 
+    @JsonIgnore
+    public AddressClaimSet getAddress() {
+        Object value = getOtherClaims().get(ADDRESS);
+        if (value == null) {
+            return null;
+        }
+
+        return JsonSerialization.mapper.convertValue(value, AddressClaimSet.class);
+    }
+
+    @JsonIgnore
     public void setAddress(AddressClaimSet address) {
-        this.address = address;
+        getOtherClaims().put(ADDRESS, JsonSerialization.mapper.convertValue(address, Map.class));
+    }
+
+    @JsonIgnore
+    public void setAddress(Map<String, Object> address) {
+        getOtherClaims().put(ADDRESS, address);
     }
 
     public Long getUpdatedAt() {

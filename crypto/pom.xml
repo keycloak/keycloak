@@ -24,7 +24,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
     <name>Keycloak Crypto Parent</name>
-    <description/>
+    <description>Keycloak Crypto Parent</description>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-crypto-parent</artifactId>

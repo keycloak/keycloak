@@ -17,6 +17,10 @@
 
 package org.keycloak.authentication.authenticators.access;
 
+import java.util.Optional;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
@@ -26,9 +30,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
-
-import jakarta.ws.rs.core.Response;
-import java.util.Optional;
 
 /**
  * Explicitly deny access to the resources.

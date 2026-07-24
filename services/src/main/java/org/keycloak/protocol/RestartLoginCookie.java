@@ -17,13 +17,18 @@
 
 package org.keycloak.protocol;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.jboss.logging.Logger;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import javax.crypto.SecretKey;
+
 import org.keycloak.Token;
 import org.keycloak.TokenCategory;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.jose.jwe.JWE;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -32,10 +37,8 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jboss.logging.Logger;
 
 /**
  * This is an an encoded token that is stored as a cookie so that if there is a client timeout, then the authentication session
@@ -173,31 +176,43 @@ public class RestartLoginCookie implements Token {
         return authSession;
     }
 
-    private static RestartLoginCookie decryptAndDecode(KeycloakSession session, String encodedToken) {
+    public static RestartLoginCookie decryptAndDecode(KeycloakSession session, String encodedToken) {
         try {
-            String sigAlgorithm = session.tokens().signatureAlgorithm(TokenCategory.INTERNAL);
-            String algAlgorithm = session.tokens().cekManagementAlgorithm(TokenCategory.INTERNAL);
-            SecretKey encKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, algAlgorithm).getSecretKey();
-            SecretKey signKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, sigAlgorithm).getSecretKey();
-
-            byte[] contentBytes = TokenUtil.jweDirectVerifyAndDecode(encKey, signKey, encodedToken);
-            String jwt = new String(contentBytes, StandardCharsets.UTF_8);
-            return session.tokens().decode(jwt, RestartLoginCookie.class);
+            String kid = new JWE(encodedToken).getHeader().getKeyId();
+            if (kid != null) {
+                // new way using kid
+                String algAlgorithm = session.tokens().cekManagementAlgorithm(TokenCategory.INTERNAL);
+                RealmModel realm = session.getContext().getRealm();
+                KeyWrapper encKey = session.keys().getKey(realm, kid, KeyUse.ENC, algAlgorithm);
+                if (encKey == null) {
+                    return null;
+                }
+                byte[] contentBytes = TokenUtil.jweDirectVerifyAndDecode(encKey.getSecretKey(), null, encodedToken);
+                String jwt = new String(contentBytes, StandardCharsets.UTF_8);
+                return session.tokens().decode(jwt, RestartLoginCookie.class);
+            } else {
+                // decoding as before
+                String sigAlgorithm = session.tokens().signatureAlgorithm(TokenCategory.INTERNAL);
+                String algAlgorithm = session.tokens().cekManagementAlgorithm(TokenCategory.INTERNAL);
+                SecretKey encKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, algAlgorithm).getSecretKey();
+                SecretKey signKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, sigAlgorithm).getSecretKey();
+                byte[] contentBytes = TokenUtil.jweDirectVerifyAndDecode(encKey, signKey, encodedToken);
+                String jwt = new String(contentBytes, StandardCharsets.UTF_8);
+                return session.tokens().decode(jwt, RestartLoginCookie.class);
+            }
         } catch (Exception e) {
             // Might be the cookie from the older version
             return session.tokens().decode(encodedToken, RestartLoginCookie.class);
         }
     }
 
-    private static String encodeAndEncrypt(KeycloakSession session, RestartLoginCookie cookie) {
+    public static String encodeAndEncrypt(KeycloakSession session, RestartLoginCookie cookie) {
         try {
-            String sigAlgorithm = session.tokens().signatureAlgorithm(cookie.getCategory());
             String algAlgorithm = session.tokens().cekManagementAlgorithm(cookie.getCategory());
-            SecretKey encKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, algAlgorithm).getSecretKey();
-            SecretKey signKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, sigAlgorithm).getSecretKey();
+            KeyWrapper encKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, algAlgorithm);
 
             String encodedJwt = session.tokens().encode(cookie);
-            return TokenUtil.jweDirectEncode(encKey, signKey, encodedJwt.getBytes(StandardCharsets.UTF_8));
+            return TokenUtil.jweDirectEncode(encKey.getKid(), encKey.getSecretKey(), null, encodedJwt.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             throw new RuntimeException("Error encoding cookie.", e);
         }

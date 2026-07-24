@@ -16,7 +16,6 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.spec.ECParameterSpec;
 import java.util.stream.Stream;
-
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactory;
@@ -135,6 +134,6 @@ public interface CryptoProvider {
      * @return Allowed key sizes of RSA key modulus, which this cryptoProvider supports
      */
     default String[] getSupportedRsaKeySizes() {
-        return new String[] {"1024", "2048", "4096"};
+        return new String[] {"1024", "2048", "3072", "4096"};
     }
 }

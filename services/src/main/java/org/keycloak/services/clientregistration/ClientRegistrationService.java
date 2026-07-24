@@ -17,14 +17,14 @@
 
 package org.keycloak.services.clientregistration;
 
-import org.keycloak.events.EventBuilder;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.ErrorResponseException;
-
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Response;
+
+import org.keycloak.events.EventBuilder;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.ErrorResponseException;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

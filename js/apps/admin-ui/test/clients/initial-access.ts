@@ -1,5 +1,5 @@
-import { Page, expect } from "@playwright/test";
-import { assertFieldError } from "../utils/form";
+import { type Page, expect } from "@playwright/test";
+import { assertFieldError } from "../utils/form.ts";
 
 export async function goToInitialAccessTokenTab(page: Page) {
   await page.getByTestId("initialAccessToken").click();
@@ -14,7 +14,7 @@ export async function assertInitialAccessTokensIsEmpty(page: Page) {
 export async function assertInitialAccessTokensIsNotEmpty(page: Page) {
   await expect(
     page.getByTestId("no-initial-access-tokens-empty-action"),
-  ).not.toBeVisible();
+  ).toBeHidden();
 }
 
 export async function goToCreateFromEmptyList(page: Page) {

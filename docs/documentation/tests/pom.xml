@@ -65,6 +65,8 @@
     </parent>
 
     <name>Keycloak Documentation tests</name>
+    <description>Keycloak Documentation tests</description>
+
     <artifactId>tests</artifactId>
     <packaging>jar</packaging>
 
@@ -115,7 +117,7 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.7</version>
+            <version>2.14.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>

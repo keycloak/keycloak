@@ -22,11 +22,12 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Objects;
 
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.util.JsonSerialization;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.util.JsonSerialization;
 
 /**
  * JPA entity to store the {@link X509Certificate} and {@link KeyPair}.

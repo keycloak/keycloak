@@ -17,8 +17,9 @@
 
 package org.keycloak.representations.dpop;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.representations.JsonWebToken;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:dmitryt@backbase.com">Dmitry Telegin</a>

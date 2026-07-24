@@ -17,10 +17,6 @@
 
 package org.keycloak.common.util;
 
-import org.ietf.jgss.GSSCredential;
-
-import javax.security.auth.kerberos.KerberosPrincipal;
-import javax.security.auth.kerberos.KerberosTicket;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -29,6 +25,10 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.InetAddress;
+import javax.security.auth.kerberos.KerberosPrincipal;
+import javax.security.auth.kerberos.KerberosTicket;
+
+import org.ietf.jgss.GSSCredential;
 
 /**
  * Provides serialization/deserialization of kerberos {@link org.ietf.jgss.GSSCredential}, so it can be transmitted from auth-server to the application
@@ -95,7 +95,7 @@ public class KerberosSerializationUtils {
             out = new ObjectOutputStream(bos);
             out.writeObject(obj);
             byte[] objBytes = bos.toByteArray();
-            return Base64.encodeBytes(objBytes);
+            return java.util.Base64.getEncoder().encodeToString(objBytes);
         } finally {
             try {
                 if (out != null) {
@@ -108,7 +108,7 @@ public class KerberosSerializationUtils {
     }
 
     private static Object deserialize(String serialized) throws ClassNotFoundException, IOException {
-        byte[] bytes = Base64.decode(serialized);
+        byte[] bytes = java.util.Base64.getMimeDecoder().decode(serialized);
         ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
         ObjectInputStream in = null;
         try {

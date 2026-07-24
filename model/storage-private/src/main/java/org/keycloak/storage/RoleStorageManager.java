@@ -17,22 +17,26 @@
 package org.keycloak.storage;
 
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.jboss.logging.Logger;
+
 import org.keycloak.common.util.reflections.Types;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.StorageProviderRealmModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleProvider;
+import org.keycloak.models.StorageProviderRealmModel;
 import org.keycloak.storage.role.RoleLookupProvider;
 import org.keycloak.storage.role.RoleStorageProvider;
 import org.keycloak.storage.role.RoleStorageProviderFactory;
 import org.keycloak.storage.role.RoleStorageProviderModel;
 import org.keycloak.utils.ServicesUtils;
+
+import org.jboss.logging.Logger;
 
 public class RoleStorageManager implements RoleProvider {
     private static final Logger logger = Logger.getLogger(RoleStorageManager.class);
@@ -157,6 +161,32 @@ public class RoleStorageManager implements RoleProvider {
     @Override
     public Stream<RoleModel> getRolesStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) {
         return localStorage().getRolesStream(realm, ids, search, first, max);
+    }
+
+    @Override
+    public Stream<RoleModel> getCompositeRolesStream(RealmModel realm, Set<String> parentRoleIds) {
+        if (parentRoleIds == null || parentRoleIds.isEmpty()) {
+            return Stream.empty();
+        }
+        // Split local and external IDs. Local IDs are handled by a single batched query; external
+        // (federated) IDs are resolved individually via getRoleById and then expanded per-role.
+        Set<String> localIds = parentRoleIds.stream()
+                .filter(StorageId::isLocalStorage)
+                .collect(Collectors.toSet());
+        Set<String> externalIds = parentRoleIds.stream()
+                .filter(id -> !StorageId.isLocalStorage(id))
+                .collect(Collectors.toSet());
+
+        Stream<RoleModel> localComposites = localIds.isEmpty()
+                ? Stream.empty()
+                : localStorage().getCompositeRolesStream(realm, localIds);
+
+        Stream<RoleModel> externalComposites = externalIds.stream()
+                .map(id -> getRoleById(realm, id))
+                .filter(Objects::nonNull)
+                .flatMap(RoleModel::getCompositesStream);
+
+        return Stream.concat(localComposites, externalComposites).distinct();
     }
 
     /**

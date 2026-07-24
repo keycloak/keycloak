@@ -17,11 +17,19 @@
 
 package org.keycloak.tests.admin;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.admin.client.resource.RoleByIdResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -36,19 +44,14 @@ import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
-import org.keycloak.testsuite.util.RoleBuilder;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -94,8 +97,8 @@ public class RoleByIdResourceTest {
         managedRealm.admin().roles().create(RoleBuilder.create()
                 .name(roleNameCompositeWihD)
                 .description("Composite Role with Role D")
-                .composite()
-                .realmComposite(roleD)
+                .composite(true)
+                .realmComposite(roleD.getName())
                 .build()
         );
 
@@ -153,6 +156,7 @@ public class RoleByIdResourceTest {
     }
 
     @Test
+    @DatabaseTest
     public void composites() {
         assertFalse(resource.getRole(roleIds.get(roleNameA)).isComposite());
         assertEquals(0, resource.getRoleComposites(roleIds.get(roleNameA)).size());
@@ -205,7 +209,7 @@ public class RoleByIdResourceTest {
     public void createNewMixedRealmCompositeRole() {
         RoleRepresentation newRoleComp = RoleBuilder.create()
                 .name("role-mixed-comp")
-                .composite()
+                .composite(true)
                 .realmComposite(roleNameA)
                 .realmComposite(roleNameCompositeWihD)
                 .clientComposite(managedClient.getClientId(), roleNameC).build();
@@ -239,7 +243,7 @@ public class RoleByIdResourceTest {
         String unknownRealmRole = "realm-role-unknown";
         RoleRepresentation newRoleComp = RoleBuilder.create()
                 .name("role-broken-comp1")
-                .composite()
+                .composite(true)
                 .realmComposite(unknownRealmRole)
                 .clientComposite(managedRealm.getId(), roleNameC)
                 .build();
@@ -255,7 +259,7 @@ public class RoleByIdResourceTest {
         String unknownClientRole = "client-role-unknown";
         RoleRepresentation newRoleComp = RoleBuilder.create()
                 .name("role-broken-comp2")
-                .composite()
+                .composite(true)
                 .realmComposite(roleNameA)
                 .clientComposite(managedClient.getClientId(), unknownClientRole)
                 .build();

@@ -17,6 +17,8 @@
 
 package org.keycloak.models;
 
+import org.keycloak.common.util.Throwables;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -46,5 +48,10 @@ public class ModelException extends RuntimeException {
 
     public void setParameters(Object[] parameters) {
         this.parameters = parameters;
+    }
+
+    @SafeVarargs
+    public final boolean isCausedBy(Class<? extends Exception>... type) {
+        return Throwables.isCausedBy(this, type);
     }
 }

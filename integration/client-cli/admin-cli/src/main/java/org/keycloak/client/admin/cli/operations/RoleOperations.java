@@ -16,17 +16,17 @@
  */
 package org.keycloak.client.admin.cli.operations;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.keycloak.representations.idm.RoleRepresentation;
+
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import static org.keycloak.client.cli.util.HttpUtil.composeResourceUrl;
 import static org.keycloak.client.cli.util.HttpUtil.doDeleteJSON;
 import static org.keycloak.client.cli.util.HttpUtil.doGetJSON;
 import static org.keycloak.client.cli.util.HttpUtil.doPostJSON;
-
-import org.keycloak.representations.idm.RoleRepresentation;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>

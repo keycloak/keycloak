@@ -1,14 +1,15 @@
 package org.keycloak.testframework.http;
 
-import com.sun.net.httpserver.HttpServer;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+
 import org.keycloak.testframework.annotations.InjectHttpServer;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
+import com.sun.net.httpserver.HttpServer;
 
 public class HttpServerSupplier implements Supplier<HttpServer, InjectHttpServer> {
 

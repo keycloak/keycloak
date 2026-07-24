@@ -23,6 +23,7 @@ import java.util.Map;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.FlushModeType;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -36,7 +37,6 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import jakarta.persistence.LockModeType;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 
@@ -93,7 +93,10 @@ public class JPAScopeStore implements ScopeStore {
         }
 
         ScopeEntity entity = entityManager.find(ScopeEntity.class, id);
-        if (entity == null) return null;
+
+        if (entity == null || !entity.getResourceServer().getId().equals(resourceServer.getId())) {
+            return null;
+        }
 
         return new ScopeAdapter(entity, entityManager, provider.getStoreFactory());
     }
@@ -145,7 +148,8 @@ public class JPAScopeStore implements ScopeStore {
                     predicates.add(root.get(filterOption.getName()).in(value));
                     break;
                 case NAME:
-                    predicates.add(builder.like(builder.lower(root.get(filterOption.getName())), "%" + value[0].toLowerCase() + "%"));
+                    String escapedValue = value[0].toLowerCase().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_").replace("*", "%");
+                    predicates.add(builder.like(builder.lower(root.get(filterOption.getName())), "%" + escapedValue + "%", '\\'));
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported filter [" + filterOption + "]");

@@ -1,18 +1,19 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { assertRequiredFieldError } from "../utils/form";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { goToClients, goToRealm } from "../utils/sidebar";
-import { clickTableRowItem, searchItem } from "../utils/table";
-import { continueNext, createClient, save } from "./utils";
+import adminClient from "../utils/AdminClient.ts";
+import { assertRequiredFieldError } from "../utils/form.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { goToClients, goToRealm } from "../utils/sidebar.ts";
+import { clickTableRowItem, searchItem } from "../utils/table.ts";
+import { continueNext, createClient, save } from "./utils.ts";
 import {
   assertKeyForCodeExchangeInput,
   selectKeyForCodeExchangeInput,
-} from "./details";
+  toggleLogoutConfirmation,
+} from "./details.ts";
 
-test.describe("Clients details test", () => {
+test.describe.serial("Clients details test", () => {
   const realmName = `clients-details-realm-${uuid()}`;
   const clientId = `client-details-${uuid()}`;
 
@@ -69,6 +70,7 @@ test.describe("Clients details test", () => {
   test("Should be able to update a client", async ({ page }) => {
     await clickTableRowItem(page, clientId);
     await selectKeyForCodeExchangeInput(page, "S256");
+    await toggleLogoutConfirmation(page);
     await save(page);
     await assertNotificationMessage(page, "Client successfully updated");
     await assertKeyForCodeExchangeInput(page, "S256");

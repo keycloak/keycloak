@@ -16,11 +16,11 @@
  */
 package org.keycloak.client.cli.util;
 
-import org.apache.http.entity.ContentType;
-
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+
+import org.apache.http.entity.ContentType;
 
 import static org.keycloak.client.cli.util.IoUtil.copyStream;
 

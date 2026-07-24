@@ -24,6 +24,22 @@ For the best start up of your {project_name} container, build an image by runnin
 This step will save time in every subsequent start phase of the container image.
 
 === Writing your optimized {project_name} Containerfile
+
+<@profile.ifCommunity>
+
+[NOTE]
+====
+A Containerfile is functionally identical to a Dockerfile and uses the same syntax.
+The term "Containerfile" is used to be more tool-agnostic, especially in non-Docker environments like Podman or Buildah.
+When using Docker, you have two options: either name your file `Dockerfile` (which Docker expects by default), or keep the name `Containerfile` and specify it explicitly using the `-f` flag:
+
+----
+docker build -f Containerfile -t mykeycloak .
+----
+====
+
+</@profile.ifCommunity>
+
 The following `Containerfile` creates a pre-configured {project_name} image that enables the health and metrics endpoints, enables the token exchange feature, and uses a PostgreSQL database.
 
 .Containerfile:
@@ -89,6 +105,7 @@ First, consider if your use case can be implemented in a different way, and so a
 * A `+RUN curl+` instruction in your Containerfile can be replaced with `+ADD+`, since that instruction natively supports remote URLs.
 * Some common CLI tools can be replaced by creative use of the Linux filesystem. For example, `+ip addr show tap0+` becomes `+cat /sys/class/net/tap0/address+`
 * Tasks that need RPMs can be moved to a former stage of an image build, and the results copied across instead.
+* The Kerberos features of {project_name} do not require the binary parts of `krb5-libs` to be installed. Instead you can `+ADD+` just the relevant text configuration files, e.g. `/etc/krb5.conf`.
 
 Here is an example. Running `+update-ca-trust+` in a former build stage, then copying the result forward:
 
@@ -120,6 +137,7 @@ This approach uses a chroot, `+/mnt/rootfs+`, so that only the packages you spec
 
 WARNING: Some packages have a large tree of dependencies. By installing new RPMs you may unintentionally increase the container's attack surface. Check the list of installed packages carefully.
 
+[#custom-entrypoint-shell-scripts]
 === Custom ENTRYPOINT shell scripts
 
 If you use a custom entry point script, start {project_name} with `exec` so it can receive termination signals that are essential for a graceful shutdown.
@@ -142,12 +160,20 @@ Without `exec`, the shell script remains PID 1 in the container and blocks signa
 This prevents a graceful shutdown and can lead to cache inconsistencies or data loss.
 ====
 
+To check if {project_name} shuts down gracefully, check the log file of the node shutting down for the following log entry.
+If it shows, the shutdown was graceful.
+If it is missing, it did not shut down gracefully, possibly because it did not receive the signal from the container runtime.
+
+----
+INFO  [io.quarkus] (Shutdown thread) Keycloak stopped in ...s
+----
+
 === Building the container image
 To build the actual container image, run the following command from the directory containing your Containerfile:
 
 [source,bash]
 ----
-podman|docker build . -t mykeycloak
+podman|docker build . -t mykeycloak -f Containerfile
 ----
 
 <@profile.ifProduct>
@@ -177,14 +203,7 @@ Opening up `https://localhost:9000/metrics` leads to a page containing operation
 === Known issues with Docker
 
 * If a `RUN dnf install` command seems to be taking an excessive amount of time, then likely your Docker systemd service has the file limit setting `LimitNOFILE` configured incorrectly.
-Either update the service configuration to use a better value, such as 1024000, or directly use `ulimit` in the RUN command:
-
-[source, dockerfile]
-----
-...
-RUN ulimit -n 1024000 && dnf install --installroot ...
-...
-----
+Either update the service configuration to use a better value, such as 1024000, or use `--ulimit` in the https://docs.docker.com/reference/cli/docker/buildx/build/#ulimit[docker build command], e.g. `--ulimit nofile=1024000`.
 
 * If you are including provider JARs and your container fails a `start --optimized` with a notification that a provider JAR has changed, this is due to Docker truncating
 or otherwise modifying file modification timestamps from what the `build` command recorded to what is seen at runtime.

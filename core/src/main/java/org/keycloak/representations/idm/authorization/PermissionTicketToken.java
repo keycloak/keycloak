@@ -20,11 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.keycloak.TokenIdGenerator;
 import org.keycloak.json.StringListMapDeserializer;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

@@ -11,7 +11,7 @@
 
     <artifactId>keycloak-sssd-federation</artifactId>
     <name>Keycloak SSSD Federation</name>
-    <description/>
+    <description>Keycloak SSSD Federation</description>
 
     <build>
         <plugins>
@@ -65,6 +65,10 @@
     </build>
 
     <dependencies>
+        <dependency>
+            <groupId>com.github.hypfvieh</groupId>
+            <artifactId>dbus-java-transport-native-unixsocket</artifactId>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>

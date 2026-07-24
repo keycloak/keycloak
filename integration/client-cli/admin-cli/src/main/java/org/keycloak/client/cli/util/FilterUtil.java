@@ -16,15 +16,15 @@
  */
 package org.keycloak.client.cli.util;
 
+import java.io.IOException;
+import java.util.Iterator;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import static org.keycloak.client.cli.util.OutputUtil.MAPPER;
 import static org.keycloak.client.cli.util.OutputUtil.convertToJsonNode;
-
-import java.io.IOException;
-import java.util.Iterator;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>

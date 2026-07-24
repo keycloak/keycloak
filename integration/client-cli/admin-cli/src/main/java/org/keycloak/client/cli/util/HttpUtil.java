@@ -16,6 +16,25 @@
  */
 package org.keycloak.client.cli.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.URLEncoder;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import javax.net.ssl.SSLContext;
+
+import org.keycloak.util.JsonSerialization;
+
 import org.apache.http.HeaderIterator;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
@@ -24,6 +43,7 @@ import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpOptions;
+import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -34,22 +54,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.SSLContexts;
-import org.keycloak.util.JsonSerialization;
-
-import javax.net.ssl.SSLContext;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -118,6 +122,10 @@ public class HttpUtil {
     }
 
     public static HeadersBodyStatus doRequest(String type, String url, HeadersBody request) throws IOException {
+        return doRequest(type, url, request, false);
+    }
+
+    public static HeadersBodyStatus doRequest(String type, String url, HeadersBody request, boolean allowJakartaValidation) throws IOException {
         HttpRequestBase req;
         switch (type) {
             case "get":
@@ -131,6 +139,9 @@ public class HttpUtil {
                 break;
             case "delete":
                 req = new HttpDelete(url);
+                break;
+            case "patch":
+                req = new HttpPatch(url);
                 break;
             case "options":
                 req = new HttpOptions(url);
@@ -170,7 +181,7 @@ public class HttpUtil {
             headers.add(header.getName(), header.getValue());
         }
 
-        return new HeadersBodyStatus(res.getStatusLine().toString(), headers, responseStream);
+        return new HeadersBodyStatus(res.getStatusLine().toString(), headers, responseStream, allowJakartaValidation);
     }
 
     private static void addHeaders(HttpRequestBase request, Headers headers) {
@@ -201,6 +212,10 @@ public class HttpUtil {
         int code = response.getStatusLine().getStatusCode();
         if (code >= 200 && code < 300) {
             return responseStream;
+        } else if (code >= HttpURLConnection.HTTP_MOVED_PERM && code <= HttpURLConnection.HTTP_SEE_OTHER) {
+            throw new RuntimeException(
+                    "Request was unsuccessful as the server responded with a redirect to %s - please check that your server URL is correct."
+                            .formatted(Optional.ofNullable(response.getFirstHeader("Location")).map(org.apache.http.Header::getValue).orElse("UNKNOWN")));
         } else {
             Map<String, String> error = null;
             try {
@@ -226,6 +241,11 @@ public class HttpUtil {
         if (authorization != null) {
             request.setHeader(HttpHeaders.AUTHORIZATION, authorization);
         }
+    }
+
+    public static void clearHttpClient() {
+        httpClient = null;
+        sslsf = null;
     }
 
     public static HttpClient getHttpClient() {

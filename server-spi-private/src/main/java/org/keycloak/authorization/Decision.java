@@ -42,4 +42,14 @@ public interface Decision<D extends Evaluation> {
 
     default void onComplete(ResourcePermission permission) {
     }
+
+    /**
+     * Checks if the given {@code scope} is associated with any policy processed in this decision.
+     *
+     * @param scope the scope name
+     * @return {@code true} if the scope is associated with a policy. Otherwise, {@code false}.
+     */
+    default boolean isEvaluated(String scope) {
+        return false;
+    }
 }

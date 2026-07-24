@@ -16,7 +16,10 @@
  */
 package org.keycloak.testsuite.broker;
 
-import org.junit.Before;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
@@ -30,16 +33,14 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation.KeyMetadataRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.AuthenticationExecutionBuilder;
+import org.keycloak.testframework.realm.AuthenticationFlowBuilder;
 import org.keycloak.testsuite.broker.oidc.ClientIdRequiredJWTClientAuthenticator;
-import org.keycloak.testsuite.util.ExecutionBuilder;
-import org.keycloak.testsuite.util.FlowBuilder;
 import org.keycloak.testsuite.util.KeyUtils;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.junit.Before;
 
-import static org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest.findFlowByAlias;
+import static org.keycloak.testsuite.AbstractAuthenticationTest.findFlowByAlias;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
 import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
@@ -57,7 +58,7 @@ public class KcOidcBrokerPrivateKeyJwtClientIdRequiredTest extends AbstractBroke
         super.beforeBrokerTest();
         RealmResource realmResource = adminClient.realm(bc.providerRealmName());
 
-        AuthenticationFlowRepresentation clientFlow = FlowBuilder.create()
+        AuthenticationFlowRepresentation clientFlow = AuthenticationFlowBuilder.create()
                 .alias("new-client-flow")
                 .description("Base authentication for clients")
                 .providerId(AuthenticationFlow.CLIENT_FLOW)
@@ -74,7 +75,7 @@ public class KcOidcBrokerPrivateKeyJwtClientIdRequiredTest extends AbstractBroke
         // refresh flow to find its id
         clientFlow = findFlowByAlias(clientFlow.getAlias(), realmResource.flows().getFlows());
 
-        AuthenticationExecutionRepresentation execution = ExecutionBuilder.create()
+        AuthenticationExecutionRepresentation execution = AuthenticationExecutionBuilder.create()
                 .parentFlow(clientFlow.getId())
                 .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.toString())
                 .authenticator(ClientIdRequiredJWTClientAuthenticator.PROVIDER_ID)

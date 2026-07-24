@@ -17,9 +17,8 @@
 
 package org.keycloak.testsuite.webauthn.account;
 
-import org.hamcrest.Matchers;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Test;
+import java.io.IOException;
+
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -28,13 +27,16 @@ import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnErrorPage;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
 import org.keycloak.testsuite.webauthn.updaters.WebAuthnRealmAttributeUpdater;
-import org.openqa.selenium.firefox.FirefoxDriver;
 
-import java.io.IOException;
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Test;
+import org.openqa.selenium.firefox.FirefoxDriver;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 
 public class WebAuthnErrorTest extends AbstractWebAuthnAccountTest {
 
@@ -83,6 +85,8 @@ public class WebAuthnErrorTest extends AbstractWebAuthnAccountTest {
 
             webAuthnErrorPage.assertCurrent();
             assertThat(webAuthnErrorPage.getError(), is("Failed to authenticate by the Passkey."));
+            assertThat("execution value should be a double-quoted JS string via ?c",
+                    driver.getPageSource(), containsString("getElementById('executionValue').value = \""));
         }
     }
 }

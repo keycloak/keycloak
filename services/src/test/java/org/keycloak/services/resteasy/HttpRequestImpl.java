@@ -17,12 +17,11 @@
 
 package org.keycloak.services.resteasy;
 
-import static jakarta.ws.rs.core.MediaType.MULTIPART_FORM_DATA_TYPE;
-
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
@@ -32,34 +31,31 @@ import jakarta.ws.rs.core.UriInfo;
 import jakarta.ws.rs.ext.MessageBodyReader;
 import jakarta.ws.rs.ext.Providers;
 
-import org.jboss.resteasy.core.ResteasyContext;
-import org.jboss.resteasy.reactive.server.multipart.FormValue;
-import org.jboss.resteasy.reactive.server.multipart.MultipartFormDataInput;
 import org.keycloak.http.FormPartValue;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.services.FormPartValueImpl;
+
+import org.jboss.resteasy.core.ResteasyContext;
+import org.jboss.resteasy.reactive.server.multipart.FormValue;
+import org.jboss.resteasy.reactive.server.multipart.MultipartFormDataInput;
+
+import static jakarta.ws.rs.core.MediaType.MULTIPART_FORM_DATA_TYPE;
 
 public class HttpRequestImpl implements HttpRequest {
 
     private org.jboss.resteasy.spi.HttpRequest delegate;
 
     public HttpRequestImpl(org.jboss.resteasy.spi.HttpRequest delegate) {
-        this.delegate = delegate;
+        this.delegate = Objects.requireNonNull(delegate);
     }
 
     @Override
     public String getHttpMethod() {
-        if (delegate == null) {
-            return null;
-        }
         return delegate.getHttpMethod();
     }
 
     @Override
     public MultivaluedMap<String, String> getDecodedFormParameters() {
-        if (delegate == null) {
-            return null;
-        }
         MediaType mediaType = getHttpHeaders().getMediaType();
         if (mediaType == null || !mediaType.isCompatible(MediaType.valueOf("application/x-www-form-urlencoded"))) {
             return new MultivaluedHashMap<>();
@@ -102,25 +98,16 @@ public class HttpRequestImpl implements HttpRequest {
 
     @Override
     public HttpHeaders getHttpHeaders() {
-        if (delegate == null) {
-            return null;
-        }
         return delegate.getHttpHeaders();
     }
 
     @Override
     public X509Certificate[] getClientCertificateChain() {
-        if (delegate == null) {
-            return null;
-        }
         return (X509Certificate[]) delegate.getAttribute("jakarta.servlet.request.X509Certificate");
     }
 
     @Override
     public UriInfo getUri() {
-        if (delegate == null) {
-            return null;
-        }
         return delegate.getUri();
     }
 

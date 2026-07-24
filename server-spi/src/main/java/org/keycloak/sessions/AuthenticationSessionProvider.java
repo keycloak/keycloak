@@ -17,11 +17,12 @@
 
 package org.keycloak.sessions;
 
+import java.util.Map;
+
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.Provider;
-
-import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -56,6 +57,8 @@ public interface AuthenticationSessionProvider extends Provider {
      * Removes provided root authentication session.
      * @param realm {@code RealmModel} Associated realm to the given root authentication session.
      * @param authenticationSession {@code RootAuthenticationSessionModel} Can't be {@code null}.
+     * @throws NullPointerException if {@code realm} or {@code authenticationSession} is {@code null}.
+     * @throws ModelException if the authentication session does not belong to the given realm.
      */
     void removeRootAuthenticationSession(RealmModel realm, RootAuthenticationSessionModel authenticationSession);
 
@@ -65,7 +68,8 @@ public interface AuthenticationSessionProvider extends Provider {
      * @deprecated manual removal of expired entities should not be used anymore. It is responsibility of the store
      *             implementation to handle expirable entities
      */
-    void removeAllExpired();
+    @Deprecated(since = "19.0", forRemoval = true)
+    default void removeAllExpired() {}
 
     /**
      * Removes all expired root authentication sessions for the given realm.
@@ -75,7 +79,8 @@ public interface AuthenticationSessionProvider extends Provider {
      * @deprecated manual removal of expired entities should not be used anymore. It is responsibility of the store
      *             implementation to handle expirable entities
      */
-    void removeExpired(RealmModel realm);
+    @Deprecated(since = "19.0", forRemoval = true)
+    default void removeExpired(RealmModel realm) {}
 
     /**
      * Removes all associated root authentication sessions to the given realm which was removed.
@@ -87,8 +92,10 @@ public interface AuthenticationSessionProvider extends Provider {
      * Removes all associated root authentication sessions to the given realm and client which was removed.
      * @param realm {@code RealmModel} Can't be {@code null}.
      * @param client {@code ClientModel} Can't be {@code null}.
+     * @deprecated to remove, all implementations are empty.
      */
-    void onClientRemoved(RealmModel realm, ClientModel client);
+    @Deprecated(since = "26.5", forRemoval = true)
+    default void onClientRemoved(RealmModel realm, ClientModel client) {}
 
     /**
      * Requests update of authNotes of a root authentication session that is not owned

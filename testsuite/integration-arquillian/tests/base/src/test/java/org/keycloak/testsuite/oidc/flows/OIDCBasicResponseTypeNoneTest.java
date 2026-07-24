@@ -17,16 +17,17 @@
 
 package org.keycloak.testsuite.oidc.flows;
 
-import org.junit.Before;
+import java.util.Collections;
+import java.util.List;
+
 import org.keycloak.events.Details;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import java.util.Collections;
-import java.util.List;
+import org.junit.Before;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Test for response_type=none
@@ -39,7 +40,7 @@ public class OIDCBasicResponseTypeNoneTest extends AbstractOIDCResponseTypeTest 
     public void clientConfiguration() {
         clientManagerBuilder().standardFlow(true).implicitFlow(false);
 
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
         oauth.responseType(OIDCResponseType.NONE);
     }
 
@@ -51,11 +52,11 @@ public class OIDCBasicResponseTypeNoneTest extends AbstractOIDCResponseTypeTest 
 
     @Override
     protected List<IDToken> testAuthzResponseAndRetrieveIDTokens(AuthorizationEndpointResponse authzResponse, EventRepresentation loginEvent) {
-        Assert.assertEquals(OIDCResponseType.NONE, loginEvent.getDetails().get(Details.RESPONSE_TYPE));
+        Assertions.assertEquals(OIDCResponseType.NONE, loginEvent.getDetails().get(Details.RESPONSE_TYPE));
 
-        Assert.assertNull(authzResponse.getCode());
-        Assert.assertNull(authzResponse.getAccessToken());
-        Assert.assertNull(authzResponse.getIdToken());
+        Assertions.assertNull(authzResponse.getCode());
+        Assertions.assertNull(authzResponse.getAccessToken());
+        Assertions.assertNull(authzResponse.getIdToken());
         return Collections.emptyList();
     }
 }

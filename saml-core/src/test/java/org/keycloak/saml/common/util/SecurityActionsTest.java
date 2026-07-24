@@ -19,6 +19,7 @@ package org.keycloak.saml.common.util;
 import java.security.AccessControlException;
 import java.security.AllPermission;
 import java.security.Policy;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;

@@ -17,13 +17,14 @@
 
 package org.keycloak.sdjwt.consumer;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import org.keycloak.common.VerificationException;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.keycloak.common.VerificationException;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * A simple presentation definition of the kind of credential expected.

@@ -17,30 +17,30 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
+import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Properties;
+import java.util.function.Function;
+
+import org.keycloak.Config;
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.KeycloakMain;
+import org.keycloak.quarkus.runtime.cli.command.Start;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+
+import io.smallrye.config.ConfigValue;
+import io.smallrye.config.ConfigValue.ConfigValueBuilder;
+import io.smallrye.config.SmallRyeConfig;
+import org.junit.After;
+import org.junit.BeforeClass;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-
-import java.nio.file.Paths;
-import java.util.Map;
-import java.util.Properties;
-import java.util.function.Function;
-
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.keycloak.Config;
-import org.keycloak.common.Profile;
-import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
-
-import io.smallrye.config.ConfigValue;
-import io.smallrye.config.ConfigValue.ConfigValueBuilder;
-import io.smallrye.config.SmallRyeConfig;
 
 public abstract class AbstractConfigurationTest {
 
@@ -63,7 +63,6 @@ public abstract class AbstractConfigurationTest {
 
     public static void setSystemProperty(String key, String value, Runnable runnable) {
         System.setProperty(key, value);
-        createConfig();
         try {
             runnable.run();
         } finally {
@@ -73,27 +72,14 @@ public abstract class AbstractConfigurationTest {
 
     @BeforeClass
     public static void resetConfiguration() {
-        System.setProperties((Properties) SYSTEM_PROPERTIES.clone());
+        KeycloakMain.reset(SYSTEM_PROPERTIES);
         Environment.setHomeDir(Paths.get("src/test/resources/"));
-
         KcEnvConfigSource.ENV_OVERRIDE.clear();
-
-        PropertyMappers.reset();
-        ConfigArgsConfigSource.setCliArgs();
-        PersistedConfigSource.getInstance().getConfigValueProperties().clear();
-        Profile.reset();
-        Configuration.resetConfig();
-        ExecutionExceptionHandler.resetExceptionTransformers();
     }
 
     @After
     public void onAfter() {
         resetConfiguration();
-    }
-
-    @AfterClass
-    public static void afterAll() {
-        Environment.removeHomeDir();
     }
 
     protected static Config.Scope initConfig(String... scope) {
@@ -103,7 +89,6 @@ public abstract class AbstractConfigurationTest {
 
     static protected SmallRyeConfig createConfig() {
         Configuration.resetConfig();
-        KeycloakConfigSourceProvider.reload();
         Environment.getCurrentOrCreateFeatureProfile();
         return Configuration.getConfig();
     }
@@ -150,5 +135,41 @@ public abstract class AbstractConfigurationTest {
                 new ConfigValueBuilder().withName(k).withValue(v).withRawValue(v)
                         .withConfigSourceName(PersistedConfigSource.getInstance().getName())
                         .withConfigSourceOrdinal(PersistedConfigSource.getInstance().getOrdinal()).build()));
+    }
+
+    protected static SmallRyeConfig createConfigFromCliArguments(String... args) {
+        ConfigArgsConfigSource.setCliArgs(args);
+        var config = createConfig();
+        PropertyMappers.reset();
+        PropertyMappers.sanitizeDisabledMappers(new Start());
+        return config;
+    }
+
+    protected static void assertAdditionalJdbcProperty(SmallRyeConfig config, String datasource, String key, String value) {
+        if (key == null) {
+            return;
+        }
+        var quarkusOption = datasource == null ?
+                "quarkus.datasource.jdbc.additional-jdbc-properties.%s".formatted(key) :
+                "quarkus.datasource.\"%s\".jdbc.additional-jdbc-properties.%s".formatted(datasource, key);
+        assertThat(quarkusOption, config.getConfigValue(quarkusOption).getValue(), is(value));
+    }
+
+    protected static void assertNullAdditionalJdbcProperty(SmallRyeConfig config, String datasource, String key) {
+        if (key == null) {
+            return;
+        }
+        var quarkusOption = datasource == null ?
+                "quarkus.datasource.jdbc.additional-jdbc-properties.%s".formatted(key) :
+                "quarkus.datasource.\"%s\".jdbc.additional-jdbc-properties.%s".formatted(datasource, key);
+        assertThat(quarkusOption, config.getConfigValue(quarkusOption).getValue(), is(nullValue()));
+    }
+
+    protected static void assertNullAllAdditionalJdbcProperty(SmallRyeConfig config, String datasource, Collection<String> properties) {
+        properties.forEach(property -> assertNullAdditionalJdbcProperty(config, datasource, property));
+    }
+
+    protected static void assertAllAdditionalJdbcProperty(SmallRyeConfig config, String datasource, Map<String, String> properties) {
+        properties.forEach((key, value) -> assertAdditionalJdbcProperty(config, datasource, key, value));
     }
 }

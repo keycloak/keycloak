@@ -20,8 +20,9 @@ package org.keycloak.authorization.client.util;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

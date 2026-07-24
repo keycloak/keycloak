@@ -17,8 +17,41 @@
 
 package org.keycloak.operator.testsuite.unit;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import jakarta.inject.Inject;
+
+import org.keycloak.operator.Config;
+import org.keycloak.operator.Constants;
+import org.keycloak.operator.ContextUtils;
+import org.keycloak.operator.Utils;
+import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
+import org.keycloak.operator.controllers.KeycloakDistConfigurator;
+import org.keycloak.operator.controllers.KeycloakRealmImportJobDependentResource;
+import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
+import org.keycloak.operator.controllers.WatchedResources;
+import org.keycloak.operator.controllers.WatchedResources.Watched;
+import org.keycloak.operator.crds.v2beta1.CRDUtils;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HttpSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.UnsupportedSpec;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImportBuilder;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImportSpecBuilder;
+import org.keycloak.representations.idm.RealmRepresentation;
+
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
@@ -26,6 +59,8 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretKeySelector;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
@@ -37,46 +72,27 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetSpec;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.Serialization;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedWorkflowAndDependentResourceContext;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.keycloak.operator.Config;
-import org.keycloak.operator.Constants;
-import org.keycloak.operator.Utils;
-import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
-import org.keycloak.operator.controllers.KeycloakDistConfigurator;
-import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
-import org.keycloak.operator.controllers.WatchedResources;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 import org.mockito.Mockito;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import static org.keycloak.operator.ContextUtils.DIST_CONFIGURATOR_KEY;
+import static org.keycloak.operator.ContextUtils.NEW_DEPLOYMENT_KEY;
+import static org.keycloak.operator.ContextUtils.OLD_DEPLOYMENT_KEY;
+import static org.keycloak.operator.ContextUtils.OPERATOR_CONFIG_KEY;
+import static org.keycloak.operator.ContextUtils.WATCHED_RESOURCES_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.operator.ContextUtils.DIST_CONFIGURATOR_KEY;
-import static org.keycloak.operator.ContextUtils.NEW_DEPLOYMENT_KEY;
-import static org.keycloak.operator.ContextUtils.OLD_DEPLOYMENT_KEY;
-import static org.keycloak.operator.ContextUtils.OPERATOR_CONFIG_KEY;
-import static org.keycloak.operator.ContextUtils.WATCHED_RESOURCES_KEY;
 
 @QuarkusTest
 public class PodTemplateTest {
@@ -95,9 +111,17 @@ public class PodTemplateTest {
     @Inject
     KeycloakUpdateJobDependentResource jobResource;
 
+    @Inject
+    KeycloakRealmImportJobDependentResource importJobResource;
+    
+    Context context;
+
     @BeforeEach
     protected void setup() {
         this.deployment = new KeycloakDeploymentDependentResource();
+        context = Mockito.mock(Context.class, Mockito.RETURNS_DEEP_STUBS);
+        Mockito.when(context.getClient()).thenReturn(Mockito.mock(KubernetesClient.class));
+        Mockito.when(context.getControllerConfiguration().getInformerConfig()).thenReturn(Mockito.mock(InformerConfiguration.class));
     }
 
     private StatefulSet getDeployment(PodTemplateSpec podTemplate, StatefulSet existingDeployment, Consumer<KeycloakSpecBuilder> additionalSpec) {
@@ -108,8 +132,8 @@ public class PodTemplateTest {
                 .endSelector().endSpec().build();
 
         //noinspection unchecked
-        Context<Keycloak> context = mockContext(existingDeployment);
-        return deployment.desired(kc, context);
+        mockContext(null);
+        return deployment.initialDesired(kc, context);
     }
 
     private Keycloak createKeycloak(PodTemplateSpec podTemplate, Consumer<KeycloakSpecBuilder> additionalSpec) {
@@ -130,16 +154,13 @@ public class PodTemplateTest {
         return kc;
     }
 
-    private Context<Keycloak> mockContext(StatefulSet existingDeployment) {
-        Context<Keycloak> context = Mockito.mock(Context.class);
+    private void mockContext(StatefulSet existingDeployment) {
         ManagedWorkflowAndDependentResourceContext managedWorkflowAndDependentResourceContext = Mockito.mock(ManagedWorkflowAndDependentResourceContext.class);
         Mockito.when(context.managedWorkflowAndDependentResourceContext()).thenReturn(managedWorkflowAndDependentResourceContext);
-        Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(OLD_DEPLOYMENT_KEY, StatefulSet.class)).thenReturn(existingDeployment);
+        Mockito.when(managedWorkflowAndDependentResourceContext.get(OLD_DEPLOYMENT_KEY, StatefulSet.class)).thenReturn(Optional.ofNullable(existingDeployment));
         Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(OPERATOR_CONFIG_KEY, Config.class)).thenReturn(operatorConfig);
         Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(WATCHED_RESOURCES_KEY, WatchedResources.class)).thenReturn(watchedResources);
         Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(DIST_CONFIGURATOR_KEY, KeycloakDistConfigurator.class)).thenReturn(distConfigurator);
-        Mockito.when(context.getClient()).thenReturn(Mockito.mock(KubernetesClient.class));
-        return context;
     }
 
     private StatefulSet getDeployment(PodTemplateSpec podTemplate, StatefulSet existingDeployment) {
@@ -387,6 +408,79 @@ public class PodTemplateTest {
         // Assert
         assertThat(podTemplate.getMetadata().getAnnotations()).containsEntry("two", "2");
     }
+    
+    @Test
+    public void testServiceAccountName() {
+        // in a single namespace, we'll still allow setting via the template 
+        
+        // Arrange
+        var additionalPodTemplate = new PodTemplateSpecBuilder()
+                .withNewSpec()
+                .withServiceAccount("foo")
+                .endSpec()
+                .build();
+
+        // Act
+        var podTemplate = getDeployment(additionalPodTemplate).getSpec().getTemplate();
+
+        // Assert
+        assertThat(podTemplate.getSpec().getServiceAccount()).isEqualTo("foo");
+        
+        // in multinamespace we won't
+        
+        Mockito.when(context.getControllerConfiguration().getInformerConfig().watchAllNamespaces()).thenReturn(true);
+
+        // Act
+        podTemplate = getDeployment(additionalPodTemplate).getSpec().getTemplate();
+
+        // Assert
+        assertThat(podTemplate.getSpec().getServiceAccount()).isNull();
+        
+        // test again with serviceAccountName
+        
+        additionalPodTemplate = new PodTemplateSpecBuilder()
+                .withNewSpec()
+                .withServiceAccountName("bar")
+                .endSpec()
+                .build();
+        
+        Mockito.when(context.getControllerConfiguration().getInformerConfig().watchAllNamespaces()).thenReturn(false);
+        Mockito.when(context.getControllerConfiguration().getInformerConfig().getNamespaces()).thenReturn(Set.of("one", "two"));
+
+        // Act
+        podTemplate = getDeployment(additionalPodTemplate).getSpec().getTemplate();
+
+        // Assert
+        assertThat(podTemplate.getSpec().getServiceAccountName()).isNull();
+    }
+
+    @Test
+    public void testHttpManagment() {
+        var result = getDeployment(null, new StatefulSet(),
+                spec -> spec.withAdditionalOptions(new ValueOrSecret(KeycloakDeploymentDependentResource.HTTP_MANAGEMENT_SCHEME, "http")))
+                .getSpec()
+                .getTemplate()
+                .getSpec()
+                .getContainers()
+                .get(0);
+
+        assertEquals("HTTP", result.getReadinessProbe().getHttpGet().getScheme());
+        assertEquals(9000, result.getReadinessProbe().getHttpGet().getPort().getIntVal());
+    }
+
+    @Test
+    public void testHealthOnMain() {
+        var result = getDeployment(null, new StatefulSet(),
+                spec -> spec.withAdditionalOptions(new ValueOrSecret(CRDUtils.HTTP_MANAGEMENT_HEALTH_ENABLED, "false")))
+                .getSpec()
+                .getTemplate()
+                .getSpec()
+                .getContainers()
+                .get(0);
+
+        assertEquals("HTTPS", result.getReadinessProbe().getHttpGet().getScheme());
+        assertEquals(8443, result.getReadinessProbe().getHttpGet().getPort().getIntVal());
+    }
 
     @Test
     public void testRelativePathHealthProbes() {
@@ -436,9 +530,9 @@ public class PodTemplateTest {
         assertThat(container.getArgs()).contains("-Djgroups.bind.address=$(POD_IP)");
 
         var envVars = container.getEnv();
-        assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRUSTSTORE_PATHS));
-        assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRACING_SERVICE_NAME));
-        assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRACING_RESOURCE_ATTRIBUTES));
+        assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TELEMETRY_SERVICE_NAME));
+        assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TELEMETRY_RESOURCE_ATTRIBUTES));
+        assertThat(envVars.stream()).noneMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRACING_RESOURCE_ATTRIBUTES));
         assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.POD_IP));
 
         var readiness = container.getReadinessProbe().getHttpGet();
@@ -456,32 +550,29 @@ public class PodTemplateTest {
         assertThat(startup.getPath()).isEqualTo("/health/started");
         assertThat(startup.getPort().getIntVal()).isEqualTo(Constants.KEYCLOAK_MANAGEMENT_PORT);
 
-        var affinity = podTemplate.getSpec().getAffinity();
-        assertNotNull(affinity);
-        assertThat(Serialization.asYaml(affinity)).isEqualTo("""
+        var topologySpreadConstraints = podTemplate.getSpec().getTopologySpreadConstraints();
+        assertNotNull(topologySpreadConstraints);
+        assertThat(topologySpreadConstraints).hasSize(2);
+        assertThat(Serialization.asYaml(topologySpreadConstraints)).isEqualTo("""
                 ---
-                podAffinity:
-                  preferredDuringSchedulingIgnoredDuringExecution:
-                  - podAffinityTerm:
-                      labelSelector:
-                        matchLabels:
-                          app: "keycloak"
-                          app.kubernetes.io/managed-by: "keycloak-operator"
-                          app.kubernetes.io/instance: "instance"
-                          app.kubernetes.io/component: "server"
-                      topologyKey: "topology.kubernetes.io/zone"
-                    weight: 10
-                podAntiAffinity:
-                  preferredDuringSchedulingIgnoredDuringExecution:
-                  - podAffinityTerm:
-                      labelSelector:
-                        matchLabels:
-                          app: "keycloak"
-                          app.kubernetes.io/managed-by: "keycloak-operator"
-                          app.kubernetes.io/instance: "instance"
-                          app.kubernetes.io/component: "server"
-                      topologyKey: "kubernetes.io/hostname"
-                    weight: 50
+                - labelSelector:
+                    matchLabels:
+                      app: "keycloak"
+                      app.kubernetes.io/managed-by: "keycloak-operator"
+                      app.kubernetes.io/instance: "instance"
+                      app.kubernetes.io/component: "server"
+                  maxSkew: 1
+                  topologyKey: "topology.kubernetes.io/zone"
+                  whenUnsatisfiable: "ScheduleAnyway"
+                - labelSelector:
+                    matchLabels:
+                      app: "keycloak"
+                      app.kubernetes.io/managed-by: "keycloak-operator"
+                      app.kubernetes.io/instance: "instance"
+                      app.kubernetes.io/component: "server"
+                  maxSkew: 1
+                  topologyKey: "kubernetes.io/hostname"
+                  whenUnsatisfiable: "ScheduleAnyway"
                 """);
     }
 
@@ -520,15 +611,59 @@ public class PodTemplateTest {
         // Arrange
         PodTemplateSpec additionalPodTemplate = null;
 
+        var additionalOptions = List.of(
+                new ValueOrSecret("log-level-org.package.some_class", "debug"),
+                new ValueOrSecret("tracing-header-Authorization", "Bearer aldskfjqweoiruzxcv"),
+                new ValueOrSecret("tracing-header-My-BEST_$header", "api-asdflkqjwer-key"),
+                new ValueOrSecret("telemetry-header-Authorization", "Bearer aldskfjqweoiruzxcv-telemetry"),
+                new ValueOrSecret("telemetry-header-My-BEST_$header", "api-asdflkqjwer-key-telemetry"),
+                new ValueOrSecret("telemetry-logs-header-Authorization", "Bearer aldskfjqweoiruzxcv-logs"),
+                new ValueOrSecret("telemetry-logs-header-My-BEST_$header", "api-asdflkqjwer-key-logs"),
+                new ValueOrSecret("telemetry-metrics-header-Authorization", "Bearer aldskfjqweoiruzxcv-metrics"),
+                new ValueOrSecret("telemetry-metrics-header-My-BEST_$header", "api-asdflkqjwer-key-metrics")
+        );
+
         // Act
         var podTemplate = getDeployment(additionalPodTemplate, null,
-                s -> s.addToAdditionalOptions(new ValueOrSecret("log-level-org.package.some_class", "debug")))
+                s -> s.addAllToAdditionalOptions(additionalOptions))
                 .getSpec().getTemplate();
 
         // Assert
-        assertThat(podTemplate.getSpec().getContainers().get(0).getEnv().stream())
-                .anyMatch(envVar -> envVar.getName().equals("KCKEY_LOG_LEVEL_ORG_PACKAGE_SOME_CLASS")
-                        && envVar.getValue().equals("log-level-org.package.some_class"));
+        var assertEnvVarKeys = Map.of(
+                "KCKEY_LOG_LEVEL_ORG_PACKAGE_SOME_CLASS", "log-level-org.package.some_class",
+                "KC_LOG_LEVEL_ORG_PACKAGE_SOME_CLASS", "debug",
+                "KCKEY_TRACING_HEADER_AUTHORIZATION", "tracing-header-Authorization",
+                "KC_TRACING_HEADER_AUTHORIZATION", "Bearer aldskfjqweoiruzxcv",
+                "KCKEY_TRACING_HEADER_MY_BEST__HEADER", "tracing-header-My-BEST_$header",
+                "KC_TRACING_HEADER_MY_BEST__HEADER", "api-asdflkqjwer-key"
+        );
+        var assertEnvVarKeysTelemetry = Map.of(
+                "KCKEY_TELEMETRY_HEADER_MY_BEST__HEADER", "telemetry-header-My-BEST_$header",
+                "KC_TELEMETRY_HEADER_MY_BEST__HEADER", "api-asdflkqjwer-key-telemetry",
+                "KCKEY_TELEMETRY_HEADER_AUTHORIZATION", "telemetry-header-Authorization",
+                "KC_TELEMETRY_HEADER_AUTHORIZATION", "Bearer aldskfjqweoiruzxcv-telemetry"
+        );
+        var assertEnvVarKeysTelemetryLogs = Map.of(
+                "KCKEY_TELEMETRY_LOGS_HEADER_MY_BEST__HEADER", "telemetry-logs-header-My-BEST_$header",
+                "KC_TELEMETRY_LOGS_HEADER_MY_BEST__HEADER", "api-asdflkqjwer-key-logs",
+                "KCKEY_TELEMETRY_LOGS_HEADER_AUTHORIZATION", "telemetry-logs-header-Authorization",
+                "KC_TELEMETRY_LOGS_HEADER_AUTHORIZATION", "Bearer aldskfjqweoiruzxcv-logs"
+        );
+        var assertEnvVarKeysTelemetryMetrics = Map.of(
+                "KCKEY_TELEMETRY_METRICS_HEADER_MY_BEST__HEADER", "telemetry-metrics-header-My-BEST_$header",
+                "KC_TELEMETRY_METRICS_HEADER_MY_BEST__HEADER", "api-asdflkqjwer-key-metrics",
+                "KCKEY_TELEMETRY_METRICS_HEADER_AUTHORIZATION", "telemetry-metrics-header-Authorization",
+                "KC_TELEMETRY_METRICS_HEADER_AUTHORIZATION", "Bearer aldskfjqweoiruzxcv-metrics"
+        );
+
+        var envVars = podTemplate.getSpec().getContainers().get(0).getEnv().stream()
+                .filter(e -> e.getValue() != null)
+                .collect(Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+
+        assertThat(envVars).containsAllEntriesOf(assertEnvVarKeys);
+        assertThat(envVars).containsAllEntriesOf(assertEnvVarKeysTelemetry);
+        assertThat(envVars).containsAllEntriesOf(assertEnvVarKeysTelemetryLogs);
+        assertThat(envVars).containsAllEntriesOf(assertEnvVarKeysTelemetryMetrics);
     }
 
     @Test
@@ -565,25 +700,10 @@ public class PodTemplateTest {
                 .filter(v -> v.getName().equals(KeycloakDeploymentDependentResource.CACHE_CONFIG_FILE_MOUNT_NAME))
                 .findFirst().orElseThrow();
         assertThat(volume.getConfigMap().getName()).isEqualTo("cm");
+
+        Mockito.verify(this.watchedResources).annotateDeployment(Mockito.eq(Watched.of("cm")), Mockito.eq(ConfigMap.class), Mockito.any(), Mockito.any());
     }
 
-    @Test
-    public void testServiceCaCrt() {
-        this.deployment.setUseServiceCaCrt(true);
-        try {
-            // Arrange
-            PodTemplateSpec additionalPodTemplate = null;
-
-            // Act
-            var podTemplate = getDeployment(additionalPodTemplate, null, null).getSpec().getTemplate();
-
-            // Assert
-            var paths = podTemplate.getSpec().getContainers().get(0).getEnv().stream().filter(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRUSTSTORE_PATHS)).findFirst().orElseThrow();
-            assertThat(paths.getValue()).isEqualTo("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt,/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt");
-        } finally {
-            this.deployment.setUseServiceCaCrt(false);
-        }
-    }
 
     @Test
     public void testPriorityClass() {
@@ -718,12 +838,83 @@ public class PodTemplateTest {
         StatefulSetBuilder desired = getDeployment(null, existingStatefulSet, newSpec).toBuilder();
 
         // setup the mock context
-        Context<Keycloak> context = mockContext(existingStatefulSet);
+        mockContext(null);
         var managedWorkflowAndDependentResourceContext = context.managedWorkflowAndDependentResourceContext();
         Mockito.when(managedWorkflowAndDependentResourceContext.get(OLD_DEPLOYMENT_KEY, StatefulSet.class)).thenReturn(Optional.of(existingStatefulSet));
         Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(NEW_DEPLOYMENT_KEY, StatefulSet.class)).thenReturn(desired.build());
 
         return jobResource.desired(createKeycloak(null, newSpec), context);
+    }
+
+    private Job getImportJob(Consumer<KeycloakSpecBuilder> keycloakSpec, Consumer<KeycloakRealmImportSpecBuilder> realmImportSpec, Consumer<StatefulSetBuilder> existingModifier) {
+        StatefulSetBuilder existingBuilder = getDeployment(null, null, keycloakSpec).toBuilder();
+        existingModifier.accept(existingBuilder);
+        StatefulSet existingStatefulSet = existingBuilder.build();
+
+        mockContext(existingStatefulSet);
+        var kc = createKeycloak(null, keycloakSpec);
+        Mockito.when(context.managedWorkflowAndDependentResourceContext().getMandatory(ContextUtils.KEYCLOAK, Keycloak.class)).thenReturn(kc);
+
+        var builder = new KeycloakRealmImportBuilder();
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm("realm");
+        var realmImport = builder.withNewSpec().withKeycloakCRName(existingStatefulSet.getMetadata().getName())
+                .withRealm(rep).endSpec().build();
+        KeycloakRealmImportSpecBuilder specBuilder = new KeycloakRealmImportSpecBuilder(realmImport.getSpec());
+        realmImportSpec.accept(specBuilder);
+        realmImport.setSpec(specBuilder.build());
+
+        return importJobResource.desired(realmImport, context);
+    }
+
+    @Test
+    public void testUpdateJobSchedulingDefault() {
+        Consumer<KeycloakSpecBuilder> addJobScheduling = builder -> {};
+
+        Job job = getUpdateJob(addJobScheduling, addJobScheduling, builder -> {});
+
+        // nothing should be set
+        assertNull(job.getSpec().getTemplate().getSpec().getTopologySpreadConstraints());
+        assertNull(job.getSpec().getTemplate().getSpec().getAffinity());
+    }
+
+    @Test
+    public void testUpdateJobSchedulingInherited() {
+        Consumer<KeycloakSpecBuilder> addJobScheduling = builder -> {
+            builder.editOrNewSchedulingSpec().withPriorityClassName("priority").endSchedulingSpec();
+        };
+
+        Job job = getUpdateJob(addJobScheduling, addJobScheduling, builder -> {});
+
+        assertEquals("priority", job.getSpec().getTemplate().getSpec().getPriorityClassName());
+    }
+
+    @Test
+    public void testUpdateJobSchedulingOverride() {
+        Consumer<KeycloakSpecBuilder> addJobScheduling = builder -> {
+            builder.editOrNewSchedulingSpec().withPriorityClassName("priority").endSchedulingSpec();
+            builder.editOrNewUpdateSpec().editOrNewSchedulingSpec().endSchedulingSpec().endUpdateSpec();
+        };
+
+        Job job = getUpdateJob(addJobScheduling, addJobScheduling, builder -> {});
+        assertNull(job.getSpec().getTemplate().getSpec().getPriorityClassName());
+    }
+
+    @Test
+    public void testRealmImportJobSchedulingOverride() {
+        Job job = getImportJob(
+                builder -> builder.editOrNewSchedulingSpec().addNewToleration("NoSchedule", "key", "value", 10L, "in")
+                        .endSchedulingSpec().withNewImportSpec().withNewSchedulingSpec()
+                        .addNewToleration("NoSchedule", "key1", "value1", 10L, "in").endSchedulingSpec()
+                        .endImportSpec(),
+                builder -> {},
+                builder -> {});
+        assertEquals("---\n"
+                + "effect: \"NoSchedule\"\n"
+                + "key: \"key1\"\n"
+                + "operator: \"value1\"\n"
+                + "tolerationSeconds: 10\n"
+                + "value: \"in\"\n", Serialization.asYaml(job.getSpec().getTemplate().getSpec().getTolerations().get(0)));
     }
 
     @Test
@@ -750,6 +941,25 @@ public class PodTemplateTest {
                 });
         assertNull(job.getSpec().getTemplate().getSpec().getInitContainers().get(0).getLifecycle());
         assertNull(job.getSpec().getTemplate().getSpec().getInitContainers().get(0).getRestartPolicy());
+    }
+    
+    @Test
+    public void testEnvVars() {
+        var statefulSet = getDeployment(null, null, builder -> builder.addNewEnv("JAVA_OPTS", "my opts")
+                .addToEnv(new ValueOrSecret("SECRET", new SecretKeySelector("key", "my-secret", null))));
+
+        var env = statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream()
+                .collect(Collectors.toMap(EnvVar::getName, Function.identity()));
+
+        // make sure the raw value is present
+        var envVar = env.get("JAVA_OPTS");
+        assertEquals("my opts", envVar.getValue());
+
+        // make sure the secret is there, and is watched
+        envVar = env.get("SECRET");
+        assertEquals("key", envVar.getValueFrom().getSecretKeyRef().getKey());
+
+        Mockito.verify(this.watchedResources).annotateDeployment(Mockito.eq(Watched.of("example-tls-secret", "instance-initial-admin", "my-secret")), Mockito.eq(Secret.class), Mockito.any(), Mockito.any());
     }
 
 }

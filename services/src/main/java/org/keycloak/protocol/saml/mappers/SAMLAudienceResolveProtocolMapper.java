@@ -19,7 +19,7 @@ package org.keycloak.protocol.saml.mappers;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import org.jboss.logging.Logger;
+
 import org.keycloak.dom.saml.v2.assertion.AudienceRestrictionType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.models.ClientModel;
@@ -30,6 +30,8 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
+
+import org.jboss.logging.Logger;
 
 /**
  * SAML audience resolve mapper. The mapper adds all client_ids of \"allowed\"

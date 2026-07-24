@@ -25,7 +25,7 @@ public class PermissionTicketResourceListQuery extends PermissionTicketListQuery
 
     private final String resourceId;
 
-    public PermissionTicketResourceListQuery(Long revision, String id, String resourceId, Set<String> permissions, String serverId) {
+    public PermissionTicketResourceListQuery(long revision, String id, String resourceId, Set<String> permissions, String serverId) {
         super(revision, id, permissions, serverId);
         this.resourceId = resourceId;
     }

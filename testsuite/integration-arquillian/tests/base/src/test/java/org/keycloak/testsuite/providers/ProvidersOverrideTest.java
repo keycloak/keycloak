@@ -19,7 +19,8 @@
 
 package org.keycloak.testsuite.providers;
 
-import org.junit.Test;
+import java.util.List;
+
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.authenticators.directgrant.ValidateOTP;
 import org.keycloak.authentication.authenticators.directgrant.ValidatePassword;
@@ -32,10 +33,11 @@ import org.keycloak.examples.providersoverride.CustomValidateUsername;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.remote.providers.runonserver.FetchOnServer;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.Assert;
 
-import java.util.List;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Test for having multiple providerFactory of smae SPI with same providerId
@@ -70,7 +72,24 @@ public class ProvidersOverrideTest extends AbstractKeycloakTest {
     }
 
     private void testProviderImplementationClass(Class<? extends Provider> providerClass, String providerId, Class<? extends Provider> expectedProviderImplClass) {
-        String providerImplClass = getTestingClient().testing().getProviderClassName(providerClass.getName(), providerId);
-        Assert.assertEquals(expectedProviderImplClass.getName(), providerImplClass);
+        String providerImplClass = runOnServerMaster.fetchString(getProviderClassName(providerClass.getName(), providerId)).replaceAll("\"", "");
+        Assertions.assertEquals(expectedProviderImplClass.getName(), providerImplClass);
+    }
+
+    /**
+     * @param providerClass Full name of class such as for example "org.keycloak.authentication.Authenticator"
+     * @param providerId    providerId referenced in particular provider factory. Can be null (in this case we're returning default provider for particular providerClass)
+     * @return fullname of provider implementation class
+     */
+    private static FetchOnServer getProviderClassName(String providerClass, String providerId) {
+        return session -> {
+            try {
+                Class<? extends Provider> providerClazz = (Class<? extends Provider>) Class.forName(providerClass);
+                Provider provider = (providerId == null) ? session.getProvider(providerClazz) : session.getProvider(providerClazz, providerId);
+                return provider.getClass().getName();
+            } catch (ClassNotFoundException cnfe) {
+                throw new RuntimeException("Cannot find provider class: " + providerClass, cnfe);
+            }
+        };
     }
 }

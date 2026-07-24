@@ -16,7 +16,7 @@ public class OidcUserAttributeMapperTest extends AbstractUserAttributeMapperTest
     }
 
     @Override
-    protected Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers(IdentityProviderMapperSyncMode syncMode) {
+    protected Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers(IdentityProviderMapperSyncMode syncMode, boolean nullable) {
         IdentityProviderMapperRepresentation attrMapper1 = new IdentityProviderMapperRepresentation();
         attrMapper1.setName("attribute-mapper");
         attrMapper1.setIdentityProviderMapper(UserAttributeMapper.PROVIDER_ID);
@@ -31,6 +31,7 @@ public class OidcUserAttributeMapperTest extends AbstractUserAttributeMapperTest
         emailAttrMapper.setIdentityProviderMapper(UserAttributeMapper.PROVIDER_ID);
         emailAttrMapper.setConfig(ImmutableMap.<String,String>builder()
           .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
+          .put(UserAttributeMapper.ALLOW_NULLABLE, Boolean.toString(nullable))
           .put(UserAttributeMapper.CLAIM, "email")
           .put(UserAttributeMapper.USER_ATTRIBUTE, "email")
           .build());
@@ -53,7 +54,16 @@ public class OidcUserAttributeMapperTest extends AbstractUserAttributeMapperTest
           .put(UserAttributeMapper.USER_ATTRIBUTE, "dotted.email")
           .build());
 
-        return Lists.newArrayList(attrMapper1, emailAttrMapper, nestedEmailAttrMapper, dottedEmailAttrMapper);
+        IdentityProviderMapperRepresentation usernameAttrMapper = new IdentityProviderMapperRepresentation();
+        usernameAttrMapper.setName("attribute-mapper-username");
+        usernameAttrMapper.setIdentityProviderMapper(UserAttributeMapper.PROVIDER_ID);
+        usernameAttrMapper.setConfig(ImmutableMap.<String,String>builder()
+          .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
+          .put(UserAttributeMapper.CLAIM, "preferred_username")
+          .put(UserAttributeMapper.USER_ATTRIBUTE, "username")
+          .build());
+
+        return Lists.newArrayList(attrMapper1, emailAttrMapper, nestedEmailAttrMapper, dottedEmailAttrMapper, usernameAttrMapper);
     }
 
 }

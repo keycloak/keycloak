@@ -27,7 +27,7 @@
     <artifactId>keycloak-api-docs-dist</artifactId>
     <packaging>pom</packaging>
     <name>Keycloak Docs Distribution</name>
-    <description/>
+    <description>Keycloak Docs Distribution</description>
 
     <properties>
         <javadoc.branding>Keycloak ${project.version}</javadoc.branding>
@@ -67,7 +67,7 @@
             <groupId>net.java.dev.jna</groupId>
             <artifactId>jna</artifactId>
         </dependency>
-        <!-- This is here because BloomFilter is used in the Javadoc within BlacklistPasswordPolicyProviderFactory -->
+        <!-- This is here because BloomFilter is used in the Javadoc within DenylistPasswordPolicyProviderFactory -->
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
@@ -79,6 +79,10 @@
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-component-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
         </dependency>
     </dependencies>
 
@@ -99,7 +103,8 @@
                         <dependencySourceInclude>org.keycloak:*</dependencySourceInclude>
                     </dependencySourceIncludes>
                     <dependencySourceExcludes>
-                        <dependencySourceInclude>org.keycloak:keycloak-operator</dependencySourceInclude>
+                        <dependencySourceExclude>org.keycloak:keycloak-operator</dependencySourceExclude>
+                        <dependencySourceExclude>org.keycloak:keycloak-admin-v2-api</dependencySourceExclude>
                     </dependencySourceExcludes>
                 </configuration>
                 <executions>
@@ -139,4 +144,27 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>dist-api-docs</id>
+            <activation>
+                <property>
+                    <name>dist.api.docs</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-deploy-plugin</artifactId>
+                        <configuration>
+                            <skip>snapshots</skip>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>

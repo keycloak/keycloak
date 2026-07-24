@@ -5,12 +5,17 @@
  */
 package org.keycloak.testsuite.util.matchers;
 
+import java.net.URI;
+
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import java.net.URI;
-import org.hamcrest.*;
-import static org.hamcrest.Matchers.*;
+
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+
+import static org.hamcrest.Matchers.is;
 
 /**
  *

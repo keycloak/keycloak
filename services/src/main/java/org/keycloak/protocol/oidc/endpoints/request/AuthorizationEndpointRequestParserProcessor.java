@@ -17,7 +17,12 @@
 
 package org.keycloak.protocol.oidc.endpoints.request;
 
-import org.jboss.logging.Logger;
+import java.util.HashSet;
+import java.util.List;
+
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.connections.httpclient.HttpClientProvider;
@@ -37,10 +42,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.AuthorizationContextUtil;
 import org.keycloak.util.TokenUtil;
 
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import java.util.HashSet;
-import java.util.List;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -102,14 +104,15 @@ public class AuthorizationEndpointRequestParserProcessor {
                 }
             }
 
-            if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-                request.authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, request.getScope());
+            if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
+                request.authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, client, request.getScope());
             }
 
             return request;
 
         } catch (Exception e) {
             ServicesLogger.LOGGER.invalidRequest(e);
+            event.detail(Details.REASON, e.getMessage());
             event.error(Errors.INVALID_REQUEST);
             throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
         }

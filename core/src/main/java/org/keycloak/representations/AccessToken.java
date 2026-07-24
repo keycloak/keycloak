@@ -17,24 +17,28 @@
 
 package org.keycloak.representations;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.TokenCategory;
-import org.keycloak.representations.idm.authorization.Permission;
-
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.TokenCategory;
+import org.keycloak.representations.idm.authorization.Permission;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class AccessToken extends IDToken {
+
     public static class Access implements Serializable {
         @JsonProperty("roles")
         protected Set<String> roles;
@@ -102,11 +106,15 @@ public class AccessToken extends IDToken {
     // KEYCLOAK-6771 Certificate Bound Token
     // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3.1
     public static class Confirmation {
+
         @JsonProperty("x5t#S256")
         protected String certThumbprint;
 
         @JsonProperty("jkt")
         protected String keyThumbprint;
+
+        @JsonProperty("kc-jkt-type")
+        protected String jktType;
 
         public String getCertThumbprint() {
             return certThumbprint;
@@ -118,10 +126,18 @@ public class AccessToken extends IDToken {
 
         public String getKeyThumbprint() {
             return keyThumbprint;
-    }
+        }
 
-    public void setKeyThumbprint(String keyThumbprint) {
+        public void setKeyThumbprint(String keyThumbprint) {
             this.keyThumbprint = keyThumbprint;
+        }
+
+        public String getJktType() {
+            return jktType;
+        }
+
+        public void setJktType(String jktType) {
+            this.jktType = jktType;
         }
     }
 
@@ -145,6 +161,9 @@ public class AccessToken extends IDToken {
 
     @JsonProperty("scope")
     protected String scope;
+
+    @JsonProperty(OAuth2Constants.AUTHORIZATION_DETAILS)
+    protected List<AuthorizationDetailsJSONRepresentation> authorizationDetails;
 
     @JsonIgnore
     public Map<String, Access> getResourceAccess() {
@@ -271,6 +290,14 @@ public class AccessToken extends IDToken {
 
     public void setScope(String scope) {
         this.scope = scope;
+    }
+
+    public List<AuthorizationDetailsJSONRepresentation> getAuthorizationDetails() {
+        return authorizationDetails;
+    }
+
+    public void setAuthorizationDetails(List<AuthorizationDetailsJSONRepresentation> authorizationDetails) {
+        this.authorizationDetails = authorizationDetails;
     }
 
     @Override

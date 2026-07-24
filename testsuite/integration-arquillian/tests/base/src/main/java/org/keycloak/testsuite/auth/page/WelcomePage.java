@@ -21,9 +21,9 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.UIUtils.setTextInputValue;
-import static org.keycloak.testsuite.util.UIUtils.clickLink;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -46,9 +46,8 @@ public class WelcomePage extends AuthServer {
     private WebElement welcomeMessage;
 
     public boolean isPasswordSet() {
-        return !(driver.getPageSource().contains("Create a temporary administrative user") ||
-                driver.getPageSource().contains("You will need local access to create the temporary administrative user.") ||
-                driver.getPageSource().contains("you first create a temporary administrative user. Later, to harden security, create a new permanent administrative user"));
+        return !(driver.getPageSource().contains("Create an administrative user") ||
+                driver.getPageSource().contains("You will need local access to create the administrative user."));
     }
 
     public void setPassword(String username, String password) {

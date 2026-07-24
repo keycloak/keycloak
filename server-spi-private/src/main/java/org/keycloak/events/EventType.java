@@ -18,7 +18,7 @@
 package org.keycloak.events;
 
 import java.util.Map;
-import java.util.Objects;
+
 import org.keycloak.util.EnumWithStableIndex;
 
 /**
@@ -185,14 +185,31 @@ public enum EventType implements EnumWithStableIndex {
     REMOVE_CREDENTIAL_ERROR(0x10000 + REMOVE_CREDENTIAL.getStableIndex(), true),
 
     INVITE_ORG(60, true),
-    INVITE_ORG_ERROR(0x10000 + INVITE_ORG.getStableIndex(), true);
+    INVITE_ORG_ERROR(0x10000 + INVITE_ORG.getStableIndex(), true),
+
+    USER_SESSION_DELETED(61, false),
+    USER_SESSION_DELETED_ERROR(0x10000 + USER_SESSION_DELETED.getStableIndex(), false),
+
+    VERIFIABLE_CREDENTIAL_REQUEST(62, true),
+    VERIFIABLE_CREDENTIAL_REQUEST_ERROR(0x10000 + VERIFIABLE_CREDENTIAL_REQUEST.getStableIndex(), true),
+    VERIFIABLE_CREDENTIAL_OFFER_REQUEST(63, true),
+    VERIFIABLE_CREDENTIAL_OFFER_REQUEST_ERROR(0x10000 + VERIFIABLE_CREDENTIAL_OFFER_REQUEST.getStableIndex(), true),
+    VERIFIABLE_CREDENTIAL_NONCE_REQUEST(64, false),
+    VERIFIABLE_CREDENTIAL_NONCE_REQUEST_ERROR(0x10000 + VERIFIABLE_CREDENTIAL_NONCE_REQUEST.getStableIndex(), false),
+    VERIFIABLE_CREDENTIAL_CREATE_OFFER(65, true),
+    VERIFIABLE_CREDENTIAL_CREATE_OFFER_ERROR(0x10000 + VERIFIABLE_CREDENTIAL_CREATE_OFFER.getStableIndex(), true),
+    VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED_GRANT(66, true),
+    VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED_GRANT_ERROR(0x10000 + VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED_GRANT.getStableIndex(), true),
+
+    JWT_AUTHORIZATION_GRANT(70, true),
+    JWT_AUTHORIZATION_GRANT_ERROR(0x10000 + JWT_AUTHORIZATION_GRANT.getStableIndex(), true),
+    ;
 
     private final int stableIndex;
     private final boolean saveByDefault;
     private static final Map<Integer, EventType> BY_ID = EnumWithStableIndex.getReverseIndex(values());
 
     EventType(int stableIndex, boolean saveByDefault) {
-        Objects.requireNonNull(stableIndex);
         this.stableIndex = stableIndex;
         this.saveByDefault = saveByDefault;
     }
@@ -204,7 +221,6 @@ public enum EventType implements EnumWithStableIndex {
 
     /**
      * Determines whether this event is stored when the admin has not set a specific set of event types to save.
-     * @return
      */
     public boolean isSaveByDefault() {
         return saveByDefault;

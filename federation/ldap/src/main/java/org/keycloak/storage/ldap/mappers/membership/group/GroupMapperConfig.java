@@ -17,6 +17,9 @@
 
 package org.keycloak.storage.ldap.mappers.membership.group;
 
+import java.util.Collection;
+import java.util.Collections;
+
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.LDAPConstants;
@@ -25,15 +28,12 @@ import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.membership.CommonLDAPGroupMapperConfig;
 
-import java.util.Collection;
-import java.util.Collections;
-
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class GroupMapperConfig extends CommonLDAPGroupMapperConfig {
 
-    // LDAP DN where are groups of this tree saved.
+    // LDAP DN where groups of this tree are saved.
     public static final String GROUPS_DN = "groups.dn";
     public static final String GROUPS_RELATIVE_CREATE_DN = "groups.relative.create.dn";
 
@@ -54,6 +54,9 @@ public class GroupMapperConfig extends CommonLDAPGroupMapperConfig {
 
     // Name of attributes of the LDAP group object, which will be mapped as attributes of Group in Keycloak
     public static final String MAPPED_GROUP_ATTRIBUTES = "mapped.group.attributes";
+
+    // Controls whether the UUID LDAP attribute (e.g. objectGUID) is decoded to UUID format or kept as base64
+    public static final String DECODE_GROUP_UUID_ATTRIBUTE = "decode.group.uuid.attribute";
 
     // During sync of groups from LDAP to Keycloak, we will keep just those Keycloak groups, which still exists in LDAP. Rest will be deleted
     public static final String DROP_NON_EXISTING_GROUPS_DURING_SYNC = "drop.non.existing.groups.during.sync";
@@ -129,6 +132,10 @@ public class GroupMapperConfig extends CommonLDAPGroupMapperConfig {
 
     public String getCustomLdapFilter() {
         return mapperModel.getConfig().getFirst(GROUPS_LDAP_FILTER);
+    }
+
+    public boolean isDecodeGroupUuidAttribute() {
+        return AbstractLDAPStorageMapper.parseBooleanParameter(mapperModel, DECODE_GROUP_UUID_ATTRIBUTE);
     }
 
     public boolean isDropNonExistingGroupsDuringSync() {

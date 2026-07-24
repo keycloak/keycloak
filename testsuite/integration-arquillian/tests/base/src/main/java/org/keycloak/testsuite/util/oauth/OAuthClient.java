@@ -17,9 +17,10 @@
 
 package org.keycloak.testsuite.util.oauth;
 
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.testsuite.pages.LoginPage;
+
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.PageFactory;
 
@@ -85,16 +86,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         LoginPage loginPage = new LoginPage();
         PageFactory.initElements(driver, loginPage);
         loginPage.login(username, password);
-    }
-
-    /**
-     * @deprecated This method is deprecated, use {@link OAuthClient#client(String)} for public clients,
-     * or {@link OAuthClient#client(String, String)} for confidential clients
-     */
-    @Deprecated
-    public OAuthClient clientId(String clientId) {
-        config.clientId(clientId);
-        return this;
     }
 
     public WebDriver getDriver() {

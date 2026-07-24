@@ -21,7 +21,7 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
     field: ControllerRenderProps<UserFormFields>,
   ) => {
     if (isMultiValue) {
-      if (field.value.includes(value)) {
+      if (field.value?.includes(value)) {
         field.onChange(field.value.filter((item: string) => item !== value));
       } else {
         if (Array.isArray(field.value)) {
@@ -47,14 +47,18 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
   const fetchLabel = (option: string) =>
     label(props.t, optionLabel[option], option, prefix);
 
-  const convertOptions = (selected: string) =>
+  const convertOptions = (selected: string | string[]) =>
     options
       .filter((o) =>
         fetchLabel(o)!.toLowerCase().includes(filter.toLowerCase()),
       )
       .map((option) => (
         <SelectOption
-          selected={selected === option}
+          selected={
+            Array.isArray(selected)
+              ? selected.includes(option)
+              : selected === option
+          }
           key={option}
           value={option}
         >
@@ -66,7 +70,7 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
     <UserProfileGroup {...props}>
       <Controller
         name={fieldName(attribute.name)}
-        defaultValue=""
+        defaultValue={attribute.defaultValue}
         control={form.control}
         render={({ field }) => (
           <KeycloakSelect

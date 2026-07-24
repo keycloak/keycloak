@@ -16,14 +16,6 @@
  */
 package org.keycloak.testsuite.util.saml;
 
-import org.keycloak.saml.common.util.DocumentUtil;
-import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
-import org.keycloak.testsuite.util.SamlClientBuilder;
-import org.keycloak.dom.saml.v2.SAML2Object;
-import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.processing.web.util.PostBindingUtil;
-import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
-import org.keycloak.testsuite.util.SamlClient.Binding;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -34,7 +26,18 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
+
 import jakarta.ws.rs.core.Response.Status;
+
+import org.keycloak.dom.saml.v2.SAML2Object;
+import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.saml.processing.web.util.PostBindingUtil;
+import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
+import org.keycloak.testsuite.util.SamlClient.Binding;
+import org.keycloak.testsuite.util.SamlClientBuilder;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -52,12 +55,14 @@ import org.hamcrest.Matchers;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
+import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 
 
 public class ModifySamlResponseStepBuilder extends SamlDocumentStepBuilder<SAML2Object, ModifySamlResponseStepBuilder> {

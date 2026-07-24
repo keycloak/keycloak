@@ -1,5 +1,9 @@
 import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
-import { FormSubmitButton, SelectControl } from "@keycloak/keycloak-ui-shared";
+import {
+  FormSubmitButton,
+  SelectControl,
+  TextControl,
+} from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   ButtonVariant,
@@ -32,6 +36,7 @@ type LinkRepresentation = {
   hideOnLogin: boolean;
   config: {
     "kc.org.domain": string;
+    "kc.org.excluded.domains": string;
   };
 };
 
@@ -76,7 +81,7 @@ export const LinkIdentityProviderModal = ({
         ...foundIdentityProvider.config,
         ...config,
       };
-      foundIdentityProvider.hideOnLogin = data.hideOnLogin ?? true;
+      foundIdentityProvider.hideOnLogin = data.hideOnLogin;
       await adminClient.identityProviders.update(
         { alias: data.alias[0] },
         foundIdentityProvider,
@@ -141,15 +146,38 @@ export const LinkIdentityProviderModal = ({
             options={[
               { key: "", value: t("none") },
               { key: "ANY", value: t("any") },
-              ...getValues("domains")!.map((d) => ({ key: d, value: d })),
+              ...(getValues("domains")
+                ? getValues("domains")!.map((d) => ({ key: d, value: d }))
+                : []),
             ]}
             menuAppendTo="parent"
+          />
+          <TextControl
+            label={t("excludedDomains")}
+            name={convertAttributeNameToForm("config.kc.org.excluded.domains")}
+            labelIcon={t("excludedDomainsHelp")}
           />
           <DefaultSwitchControl
             name="hideOnLogin"
             label={t("hideOnLoginPage")}
             labelIcon={t("hideOnLoginPageHelp")}
             defaultValue={true}
+          />
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm(
+              "config.kc.org.broker.login.hide-when-org-unknown",
+            )}
+            label={t("hideOnLoginWhenOrgNotResolved")}
+            labelIcon={t("hideOnLoginWhenOrgNotResolvedHelp")}
+            stringify
+          />
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm(
+              "config.kc.org.broker.login.show-when-linked-elsewhere",
+            )}
+            label={t("showOnLoginForUnlinkedMembers")}
+            labelIcon={t("showOnLoginForUnlinkedMembersHelp")}
+            stringify
           />
           <DefaultSwitchControl
             name={convertAttributeNameToForm(

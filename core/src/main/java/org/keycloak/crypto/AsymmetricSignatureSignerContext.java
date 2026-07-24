@@ -18,10 +18,13 @@ package org.keycloak.crypto;
 
 import java.security.PrivateKey;
 import java.security.Signature;
+import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.List;
 
 public class AsymmetricSignatureSignerContext implements SignatureSignerContext {
 
-    private final KeyWrapper key;
+    protected final KeyWrapper key;
 
     public AsymmetricSignatureSignerContext(KeyWrapper key) throws SignatureException {
         this.key = key;
@@ -52,6 +55,16 @@ public class AsymmetricSignatureSignerContext implements SignatureSignerContext 
         } catch (Exception e) {
             throw new SignatureException("Signing failed", e);
         }
+    }
+
+    @Override
+    public List<X509Certificate> getCertificateChain() {
+        if (key.getCertificateChain() != null && !key.getCertificateChain().isEmpty()) {
+            return key.getCertificateChain();
+        } else if (key.getCertificate() != null) {
+            return Collections.singletonList(key.getCertificate());
+        }
+        return null;
     }
 
 }

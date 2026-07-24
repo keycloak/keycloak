@@ -16,12 +16,13 @@
  */
 package org.keycloak.client.cli.config;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.keycloak.util.JsonSerialization;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -38,6 +39,8 @@ public class ConfigData {
     private String truststore;
 
     private String trustpass;
+
+    private String editor;
 
     private Map<String, Map<String, RealmConfigData>> endpoints = new HashMap<>();
 
@@ -82,6 +85,14 @@ public class ConfigData {
 
     public void setTrustpass(String trustpass) {
         this.trustpass = trustpass;
+    }
+
+    public String getEditor() {
+        return editor;
+    }
+
+    public void setEditor(String editor) {
+        this.editor = editor;
     }
 
     public Map<String, Map<String, RealmConfigData>> getEndpoints() {
@@ -142,6 +153,7 @@ public class ConfigData {
         realm = source.realm;
         truststore = source.truststore;
         trustpass = source.trustpass;
+        editor = source.editor;
 
         RealmConfigData current = getRealmConfigData(serverUrl, realm);
         RealmConfigData sourceRealm = source.getRealmConfigData(serverUrl, realm);
@@ -159,6 +171,7 @@ public class ConfigData {
         data.realm = realm;
         data.truststore = truststore;
         data.trustpass = trustpass;
+        data.editor = editor;
         data.endpoints = new HashMap<>();
 
         for (Map.Entry<String, Map<String, RealmConfigData>> item: endpoints.entrySet()) {

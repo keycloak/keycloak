@@ -18,9 +18,12 @@
 package org.keycloak.models.utils;
 
 import java.io.IOException;
+import java.util.AbstractMap;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -35,12 +38,11 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -61,7 +63,6 @@ import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
-import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.UriUtils;
@@ -79,8 +80,11 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
@@ -90,6 +94,7 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.dto.OTPCredentialData;
@@ -97,7 +102,10 @@ import org.keycloak.models.credential.dto.OTPSecretData;
 import org.keycloak.models.credential.dto.PasswordCredentialData;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.policy.PasswordPolicyNotMetException;
+import org.keycloak.protocol.oidc.rar.AuthorizationRequestParserProvider;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.rar.AuthorizationDetails;
+import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
@@ -126,11 +134,16 @@ import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentatio
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
+import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
+import org.jboss.logging.Logger;
+
 import static java.util.Optional.ofNullable;
+
 import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
 import static org.keycloak.protocol.saml.util.ArtifactBindingUtils.computeArtifactBindingIdentifierString;
 
@@ -194,6 +207,9 @@ public class RepresentationToModel {
 
     public static void importGroup(RealmModel realm, GroupModel parent, GroupRepresentation group) {
         GroupModel newGroup = realm.createGroup(group.getId(), group.getName(), parent);
+        if (group.getDescription() != null) {
+            newGroup.setDescription(group.getDescription());
+        }
         if (group.getAttributes() != null) {
             for (Map.Entry<String, List<String>> attr : group.getAttributes().entrySet()) {
                 newGroup.setAttribute(attr.getKey(), attr.getValue());
@@ -430,7 +446,7 @@ public class RepresentationToModel {
 
         updateClientProperties(resource, rep, false);
 
-        if ("saml".equals(rep.getProtocol())
+        if (newClientId != null && "saml".equals(rep.getProtocol())
                 && (rep.getAttributes() == null
                 || !rep.getAttributes().containsKey("saml.artifact.binding.identifier"))) {
             resource.setAttribute("saml.artifact.binding.identifier", computeArtifactBindingIdentifierString(newClientId));
@@ -525,8 +541,8 @@ public class RepresentationToModel {
             // Client Secret
             add(updatePropertyAction(client::setSecret, () -> determineNewSecret(client, rep)));
             // Redirect uris / Web origins
-            add(updatePropertyAction(client::setRedirectUris, () -> CollectionUtil.collectionToSet(rep.getRedirectUris()), client::getRedirectUris));
-            add(updatePropertyAction(client::setWebOrigins, () -> CollectionUtil.collectionToSet(rep.getWebOrigins()), () -> defaultWebOrigins(client)));
+            add(updatePropertyAction(client::setRedirectUris, () -> filterEmptyValues(rep.getRedirectUris()), client::getRedirectUris));
+            add(updatePropertyAction(client::setWebOrigins, () -> filterEmptyValues(rep.getWebOrigins()), () -> defaultWebOrigins(client)));
         }};
 
         // Extended client attributes
@@ -568,12 +584,12 @@ public class RepresentationToModel {
     }
 
     private static String determineNewSecret(ClientModel client, ClientRepresentation rep) {
-        if (client.isPublicClient() || client.isBearerOnly()) {
+        if (client.isPublicClient()) {
             // Clear out the secret with null
             return null;
         }
 
-        // adding secret if the client isn't public nor bearer only
+        // adding secret if the client isn't public
         String currentSecret = client.getSecret();
         String newSecret = rep.getSecret();
 
@@ -604,6 +620,13 @@ public class RepresentationToModel {
                 .collect(Collectors.toSet());
     }
 
+    private static Set<String> filterEmptyValues(Collection<String> collection) {
+        if (collection == null) return null;
+        return collection.stream()
+                .filter(s -> s != null && !s.isBlank())
+                .collect(Collectors.toSet());
+    }
+
     public static void updateClientProtocolMappers(ClientRepresentation rep, ClientModel resource) {
 
         if (rep.getProtocolMappers() != null) {
@@ -623,7 +646,11 @@ public class RepresentationToModel {
                         existingProtocolMappers.remove(protocolNameKey);
 
                 } else {
-                    resource.addProtocolMapper(toModel(protocolMapperRepresentation));
+                    try {
+                        resource.addProtocolMapper(toModel(protocolMapperRepresentation));
+                    } catch (ModelDuplicateException e) {
+                        throw new ModelValidationException("Cannot add protocol mapper '%s'. %s".formatted(protocolMapperRepresentation.getName(), e.getMessage()));
+                    }
                 }
             }
 
@@ -635,25 +662,28 @@ public class RepresentationToModel {
 
     public static void updateClientScopes(ClientRepresentation resourceRep, ClientModel client) {
         if (resourceRep.getDefaultClientScopes() != null || resourceRep.getOptionalClientScopes() != null) {
-            // First remove all default/built in client scopes
-            for (ClientScopeModel clientScope : client.getClientScopes(true).values()) {
-                client.removeClientScope(clientScope);
+            // first collect all the desired scopes
+            LinkedHashMap<String, Boolean> allScopes = new LinkedHashMap<String, Boolean>();
+            Optional.ofNullable(resourceRep.getOptionalClientScopes()).ifPresent(scopes -> scopes.forEach(scope -> allScopes.put(scope, false)));
+            Optional.ofNullable(resourceRep.getDefaultClientScopes()).ifPresent(scopes -> scopes.forEach(scope -> allScopes.put(scope, true)));
+
+            // next determine what already exists
+            Map<Map.Entry<String, Boolean>, ClientScopeModel> existing = new HashMap<Map.Entry<String,Boolean>, ClientScopeModel>();
+            client.getClientScopes(false).entrySet().stream().forEach(entry -> existing.put(new AbstractMap.SimpleEntry<String, Boolean>(entry.getKey(), false), entry.getValue()));
+            client.getClientScopes(true).entrySet().stream().forEach(entry -> existing.put(new AbstractMap.SimpleEntry<String, Boolean>(entry.getKey(), true), entry.getValue()));
+
+            // remove anything that isn't desired - this includes client scopes that are toggling the default flag
+            for (Entry<Entry<String, Boolean>, ClientScopeModel> entry : existing.entrySet()) {
+                if (Optional.ofNullable(allScopes.get(entry.getKey().getKey())).filter(entry.getKey().getValue()::equals).isEmpty()) {
+                    client.removeClientScope(entry.getValue());
+                }
             }
 
-            // First remove all default/built in client scopes
-            for (ClientScopeModel clientScope : client.getClientScopes(false).values()) {
-                client.removeClientScope(clientScope);
-            }
-        }
-
-        if (resourceRep.getDefaultClientScopes() != null) {
-            for (String clientScopeName : resourceRep.getDefaultClientScopes()) {
-                addClientScopeToClient(client.getRealm(), client, clientScopeName, true);
-            }
-        }
-        if (resourceRep.getOptionalClientScopes() != null) {
-            for (String clientScopeName : resourceRep.getOptionalClientScopes()) {
-                addClientScopeToClient(client.getRealm(), client, clientScopeName, false);
+            // finally add in all the desired
+            for (Map.Entry<String, Boolean> entry : allScopes.entrySet()) {
+                if (!existing.containsKey(entry)) {
+                    addClientScopeToClient(client.getRealm(), client, entry.getKey(), entry.getValue());
+                }
             }
         }
     }
@@ -725,13 +755,13 @@ public class RepresentationToModel {
             }
         }
 
+
         return clientScope;
     }
 
     public static void updateClientScope(ClientScopeRepresentation rep, ClientScopeModel resource) {
         if (rep.getName() != null) resource.setName(rep.getName());
         if (rep.getDescription() != null) resource.setDescription(rep.getDescription());
-
 
         if (rep.getProtocol() != null) resource.setProtocol(rep.getProtocol());
 
@@ -742,9 +772,6 @@ public class RepresentationToModel {
         }
 
     }
-
-    // Scope mappings
-
 
     // Users
 
@@ -796,6 +823,35 @@ public class RepresentationToModel {
                 } else {
                     user.credentialManager().createCredentialThroughProvider(toModel(cred));
                 }
+            }
+        }
+    }
+
+    public static void createVerifiableCredentials(UserRepresentation userRep, KeycloakSession session, UserModel user) {
+        if (userRep.getVerifiableCredentials() != null) {
+            RealmModel realm = session.getContext().getRealm();
+            for (UserVerifiableCredentialRepresentation verifiableCred : userRep.getVerifiableCredentials()) {
+                session.users().addVerifiableCredential(user.getId(), toModel(verifiableCred, realm));
+            }
+        }
+    }
+
+    public static void createIssuedVerifiableCredentials(UserRepresentation userRep, KeycloakSession session, UserModel user) {
+        if (userRep.getIssuedVerifiableCredentials() != null) {
+            RealmModel realm = session.getContext().getRealm();
+            for (IssuedVerifiableCredentialRepresentation issuedCred : userRep.getIssuedVerifiableCredentials()) {
+                ClientScopeModel clientScope = KeycloakModelUtils.getClientScopeByName(realm, issuedCred.getCredentialType());
+                if (clientScope == null) {
+                    throw new ModelException("Client scope not found: " + issuedCred.getCredentialType());
+                }
+
+                UserVerifiableCredentialModel verifiableCredential = session.users()
+                        .getVerifiableCredentialByClientScope(user.getId(), clientScope.getId());
+                if (verifiableCredential == null) {
+                    throw new ModelException("User verifiable credential not found for scope: " + issuedCred.getCredentialType());
+                }
+
+                session.users().addIssuedVerifiableCredential(toModel(issuedCred, verifiableCredential.getId()));
             }
         }
     }
@@ -880,7 +936,15 @@ public class RepresentationToModel {
         identityProviderModel.setAddReadTokenRoleOnCreate(representation.isAddReadTokenRoleOnCreate());
         updateOrganizationBroker(representation, session);
         identityProviderModel.setOrganizationId(representation.getOrganizationId());
-        identityProviderModel.setConfig(removeEmptyString(representation.getConfig()));
+
+        // Merge config from the identity provider model in case the provider sets some default config
+        Map<String, String> repConfig = removeEmptyString(representation.getConfig());
+        if (repConfig != null && !repConfig.isEmpty()) {
+            if (identityProviderModel.getConfig() == null) {
+                identityProviderModel.setConfig(new HashMap<>());
+            }
+            identityProviderModel.getConfig().putAll(repConfig);
+        }
 
         String flowAlias = representation.getFirstBrokerLoginFlowAlias();
         if (flowAlias == null || flowAlias.trim().isEmpty()) {
@@ -929,7 +993,7 @@ public class RepresentationToModel {
         return model;
     }
 
-    public static UserConsentModel toModel(RealmModel newRealm, UserConsentRepresentation consentRep) {
+    public static UserConsentModel toModel(RealmModel newRealm, UserConsentRepresentation consentRep, KeycloakSession session) {
         ClientModel client = newRealm.getClientByClientId(consentRep.getClientId());
         if (client == null) {
             throw new RuntimeException("Unable to find client consent mappings for client: " + consentRep.getClientId());
@@ -942,10 +1006,28 @@ public class RepresentationToModel {
         if (consentRep.getGrantedClientScopes() != null) {
             for (String scopeName : consentRep.getGrantedClientScopes()) {
                 ClientScopeModel clientScope = KeycloakModelUtils.getClientScopeByName(newRealm, scopeName);
-                if (clientScope == null) {
+                if (clientScope != null) {
+                    consentModel.addGrantedClientScope(clientScope);
+                } else if (Profile.isFeatureEnabled(Feature.PARAMETERIZED_SCOPES)) {
+                    // check for parameterized scopes
+                    AuthorizationRequestParserProvider clientScopeParser = session.getProvider(
+                            AuthorizationRequestParserProvider.class, "client-scope");
+                    if (clientScopeParser == null) {
+                        throw new RuntimeException("No provider found for authorization requests parser client-scope");
+                    }
+
+                    AuthorizationRequestContext ctx = clientScopeParser.parseScopes(client, scopeName);
+                    AuthorizationDetails authDetails = ctx.getAuthorizationDetailEntries().stream()
+                            .filter(a -> a.getAuthorizationDetails().getParameterizedScopeParamFromCustomData() != null)
+                            .findAny().orElse(null);
+                    if (authDetails == null) {
+                        throw new RuntimeException("Unable to find client scope referenced in consent mappings of user. Client scope name: " + scopeName);
+                    }
+
+                    consentModel.addGrantedClientScope(authDetails.getClientScope(), authDetails.getAuthorizationDetails().getParameterizedScopeParamFromCustomData());
+                } else {
                     throw new RuntimeException("Unable to find client scope referenced in consent mappings of user. Client scope name: " + scopeName);
                 }
-                consentModel.addGrantedClientScope(clientScope);
             }
         }
 
@@ -961,6 +1043,24 @@ public class RepresentationToModel {
         }
 
         return consentModel;
+    }
+
+    public static UserVerifiableCredentialModel toModel(UserVerifiableCredentialRepresentation rep, RealmModel realm) {
+        if (rep.getCredentialScopeName() == null) {
+            throw new ModelException("credentialScopeName is required");
+        }
+
+        ClientScopeModel clientScope = KeycloakModelUtils.getClientScopeByName(realm, rep.getCredentialScopeName());
+        if (clientScope == null) {
+            throw new ModelException("Client scope not found: " + rep.getCredentialScopeName());
+        }
+
+        UserVerifiableCredentialModel model = new UserVerifiableCredentialModel(null, clientScope.getId());
+        model.setRevision(rep.getRevision());
+        model.setCreatedDate(rep.getCreatedDate());
+        model.setUpdatedDate(rep.getUpdatedDate());
+        model.setUserAttributes(rep.getUserAttributes());
+        return model;
     }
 
     public static AuthenticationFlowModel toModel(AuthenticationFlowRepresentation rep) {
@@ -1437,7 +1537,7 @@ public class RepresentationToModel {
         }
 
         resourceIds = resourceIds.stream().map(id -> {
-            Resource resource = AdminPermissionsSchema.SCHEMA.getOrCreateResource(session, resourceServer, policy.getType(), policy.getResourceType(), id);
+            Resource resource = AdminPermissionsSchema.SCHEMA.getOrCreateResource(session, resourceServer, policy.getResourceType(), id);
 
             if (resource == null) {
                 return id;
@@ -1539,9 +1639,8 @@ public class RepresentationToModel {
             Map<String, List<String>> attributes = resource.getAttributes();
 
             if (attributes != null) {
-                Set<String> existingAttrNames = existing.getAttributes().keySet();
 
-                for (String name : existingAttrNames) {
+                for (String name : existing.getAttributes().keySet()) {
                     if (attributes.containsKey(name)) {
                         existing.setAttribute(name, attributes.get(name));
                         attributes.remove(name);
@@ -1550,8 +1649,8 @@ public class RepresentationToModel {
                     }
                 }
 
-                for (String name : attributes.keySet()) {
-                    existing.setAttribute(name, attributes.get(name));
+                for (var entry : attributes.entrySet()) {
+                    existing.setAttribute(entry.getKey(), entry.getValue());
                 }
             }
 
@@ -1725,7 +1824,6 @@ public class RepresentationToModel {
         model.setAttributes(rep.getAttributes());
         model.setDomains(ofNullable(rep.getDomains()).orElse(Set.of()).stream()
                 .filter(Objects::nonNull)
-                .filter(domain -> StringUtil.isNotBlank(domain.getName()))
                 .map(RepresentationToModel::toModel)
                 .collect(Collectors.toSet()));
 
@@ -1734,5 +1832,17 @@ public class RepresentationToModel {
 
     public static OrganizationDomainModel toModel(OrganizationDomainRepresentation domainRepresentation) {
         return new OrganizationDomainModel(domainRepresentation.getName(), domainRepresentation.isVerified());
+    }
+
+    public static IssuedVerifiableCredentialModel toModel(IssuedVerifiableCredentialRepresentation representation, String verifiableCredentialId) {
+        IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel();
+        model.setId(representation.getId());
+        model.setUserId(representation.getUserId());
+        model.setVerifiableCredentialId(verifiableCredentialId);
+        model.setIssuedAt(representation.getIssuedAt());
+        model.setExpiresAt(representation.getExpiresAt());
+        model.setClientId(representation.getClientId());
+        model.setRevision(representation.getRevision());
+        return model;
     }
 }

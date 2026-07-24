@@ -1,10 +1,11 @@
 package org.keycloak.testsuite.client;
 
-import org.junit.Test;
 import org.keycloak.validation.DefaultClientValidationProvider;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DefaultClientValidationTest {
     @Test

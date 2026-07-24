@@ -16,16 +16,17 @@
  */
 package org.keycloak.services;
 
+import java.util.LinkedList;
+import java.util.List;
+
+import jakarta.transaction.TransactionManager;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.tracing.TracingProvider;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 import org.keycloak.transaction.JtaTransactionWrapper;
-
-import jakarta.transaction.TransactionManager;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -48,6 +49,9 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
 
     @Override
     public void enlist(KeycloakTransaction transaction) {
+        if (completed) {
+            throw new IllegalStateException("Transaction already completed");
+        }
         if (active && !transaction.isActive()) {
             transaction.begin();
         }
@@ -57,6 +61,9 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
 
     @Override
     public void enlistAfterCompletion(KeycloakTransaction transaction) {
+        if (completed) {
+            throw new IllegalStateException("Transaction already completed");
+        }
         if (active && !transaction.isActive()) {
             transaction.begin();
         }
@@ -66,6 +73,9 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
 
     @Override
     public void enlistPrepare(KeycloakTransaction transaction) {
+        if (completed) {
+            throw new IllegalStateException("Transaction already completed");
+        }
         if (active && !transaction.isActive()) {
             transaction.begin();
         }
@@ -86,11 +96,12 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
 
     @Override
     public void begin() {
+        if (completed) {
+            throw new IllegalStateException("Transaction already completed");
+        }
         if (active) {
              throw new IllegalStateException("Transaction already active");
         }
-
-        completed = false;
 
         if (jtaPolicy == JTAPolicy.REQUIRES_NEW) {
             JtaTransactionManagerLookup jtaLookup = session.getProvider(JtaTransactionManagerLookup.class);
@@ -103,7 +114,21 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
         }
 
         for (KeycloakTransaction tx : transactions) {
-            tx.begin();
+            if (!tx.isActive()) {
+                tx.begin();
+            }
+        }
+
+        for (KeycloakTransaction tx : prepare) {
+            if (!tx.isActive()) {
+                tx.begin();
+            }
+        }
+
+        for (KeycloakTransaction tx : afterCompletion) {
+            if (!tx.isActive()) {
+                tx.begin();
+            }
         }
 
         active = true;

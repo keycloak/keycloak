@@ -16,10 +16,10 @@
  */
 package org.keycloak.representations.idm;
 
-import static java.util.Collections.emptyList;
-
 import java.util.List;
 import java.util.Optional;
+
+import static java.util.Collections.emptyList;
 
 /**
  * @author Vlastimil Elias <velias@redhat.com>

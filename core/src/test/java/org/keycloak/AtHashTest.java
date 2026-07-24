@@ -17,10 +17,11 @@
 
 package org.keycloak;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jws.crypto.HashUtils;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * See "at_hash" in OIDC specification

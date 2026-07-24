@@ -20,7 +20,6 @@ package org.keycloak.ipatuura_user_spi.schemas;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.annotation.Generated;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;

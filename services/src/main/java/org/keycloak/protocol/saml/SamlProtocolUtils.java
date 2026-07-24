@@ -21,25 +21,40 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.security.Key;
 import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Map;
+import java.util.Objects;
+
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.UriInfo;
-import org.jboss.logging.Logger;
+
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.ArtifactResponseType;
+import org.keycloak.dom.saml.v2.protocol.AuthnContextComparisonType;
 import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 import org.keycloak.dom.saml.v2.protocol.RequestAbstractType;
+import org.keycloak.dom.saml.v2.protocol.RequestedAuthnContextType;
 import org.keycloak.dom.saml.v2.protocol.StatusCodeType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusType;
+import org.keycloak.keys.PublicKeyLoader;
+import org.keycloak.keys.PublicKeyStorageProvider;
+import org.keycloak.keys.PublicKeyStorageUtils;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
+import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
@@ -57,6 +72,10 @@ import org.keycloak.saml.processing.core.saml.v2.writers.SAMLResponseWriter;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.saml.processing.core.util.RedirectBindingSignatureUtil;
 import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
+import org.keycloak.utils.StringUtil;
+
+import org.apache.xml.security.encryption.XMLCipher;
+import org.jboss.logging.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -73,13 +92,13 @@ public class SamlProtocolUtils {
      * Throws an exception if the client signature is expected to be present as per the client
      * settings and it is invalid, otherwise returns back to the caller.
      *
+     * @param session
      * @param client
      * @param document
      * @throws VerificationException
      */
-    public static void verifyDocumentSignature(ClientModel client, Document document) throws VerificationException {
-        PublicKey publicKey = getSignatureValidationKey(client);
-        verifyDocumentSignature(document, new HardcodedKeyLocator(publicKey));
+    public static void verifyDocumentSignature(KeycloakSession session, ClientModel client, Document document) throws VerificationException {
+        verifyDocumentSignature(document, createKeyLocatorForClient(session, new SamlClient(client), KeyUse.SIG));
     }
 
     /**
@@ -102,28 +121,79 @@ public class SamlProtocolUtils {
     }
 
     /**
-     * Returns public part of SAML signing key from the client settings.
-     * @param client
-     * @return Public key for signature validation.
-     * @throws VerificationException
-     */
-    public static PublicKey getSignatureValidationKey(ClientModel client) throws VerificationException {
-        return getPublicKey(new SamlClient(client).getClientSigningCertificate());
-    }
-
-    /**
      * Returns public part of SAML encryption key from the client settings.
+     * @param session
      * @param client
      * @return Public key for encryption.
      * @throws VerificationException
      */
-    public static PublicKey getEncryptionKey(ClientModel client) throws VerificationException {
-        return getPublicKey(client, SamlConfigAttributes.SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE);
+    public static PublicKey getEncryptionKey(KeycloakSession session, ClientModel client) throws VerificationException {
+        return getEncryptionKey(session, new SamlClient(client));
+    }
+
+    /**
+     * Returns public part of SAML encryption key from the client settings.
+     * @param session
+     * @param samlClient
+     * @return Public key for encryption.
+     * @throws VerificationException
+     */
+    public static PublicKey getEncryptionKey(KeycloakSession session, SamlClient samlClient) throws VerificationException {
+        KeyLocator locator = createKeyLocatorForClient(session, samlClient, KeyUse.ENC);
+        // get the first one that is RSA
+        for (Key key : locator) {
+            if (KeyType.RSA.equals(key.getAlgorithm())) {
+                return (PublicKey) key;
+            }
+        }
+        throw new VerificationException("Client does not have a public key for encryption");
+    }
+
+    public static void setupEncryption(KeycloakSession session, SamlClient samlClient, BaseSAML2BindingBuilder<?> bindingBuilder) throws VerificationException {
+        PublicKey publicKey = getEncryptionKey(session, samlClient);
+        bindingBuilder.encrypt(publicKey);
+        if (samlClient.getClientEncryptingAlgorithm() != null) {
+            bindingBuilder.encryptionAlgorithm(samlClient.getClientEncryptingAlgorithm());
+        }
+        if (samlClient.getClientEncryptingKeyAlgorithm() != null) {
+            bindingBuilder.keyEncryptionAlgorithm(samlClient.getClientEncryptingKeyAlgorithm());
+        }
+        if (samlClient.getClientEncryptingDigestMethod() != null &&
+                (XMLCipher.RSA_OAEP.equals(samlClient.getClientEncryptingKeyAlgorithm()) ||
+                XMLCipher.RSA_OAEP_11.equals(samlClient.getClientEncryptingKeyAlgorithm()))) {
+            // digest method is only available to rsa oaep
+            bindingBuilder.keyEncryptionDigestMethod(samlClient.getClientEncryptingDigestMethod());
+        }
+        if (samlClient.getClientEncryptingMaskGenerationFunction() != null &&
+                XMLCipher.RSA_OAEP_11.equals(samlClient.getClientEncryptingKeyAlgorithm())) {
+            // the mgf is only available for rsa oaep 11
+            bindingBuilder.keyEncryptionMgfAlgorithm(samlClient.getClientEncryptingMaskGenerationFunction());
+        }
     }
 
     public static PublicKey getPublicKey(ClientModel client, String attribute) throws VerificationException {
         String certPem = client.getAttribute(attribute);
         return getPublicKey(certPem);
+    }
+
+    public static KeyLocator createKeyLocatorForClient(KeycloakSession session, ClientModel client, KeyUse use) throws VerificationException {
+        return createKeyLocatorForClient(session, new SamlClient(client), use);
+    }
+
+    public static KeyLocator createKeyLocatorForClient(KeycloakSession session, SamlClient samlClient, KeyUse use) throws VerificationException {
+        if (StringUtil.isNotBlank(samlClient.getMetadataDescriptorUrl()) && samlClient.isUseMetadataDescriptorUrl()) {
+            // configured to use the metadata
+            String modelKey = PublicKeyStorageUtils.getClientModelCacheKey(samlClient.getClient().getRealm().getId(), samlClient.getClient().getClientId());
+            PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
+            PublicKeyLoader keyLoader = new SamlMetadataPublicKeyLoader(session, samlClient.getMetadataDescriptorUrl(), false);
+            return new SamlMetadataKeyLocator(modelKey, keyLoader, use, keyStorage);
+        } else if (KeyUse.SIG.equals(use)) {
+            // return the certificate in the client
+            return new HardcodedKeyLocator(getPublicKey(samlClient.getClientSigningCertificate()));
+        } else if (KeyUse.ENC.equals(use)) {
+            return new HardcodedKeyLocator(getPublicKey(samlClient.getClientEncryptingCertificate()));
+        }
+        throw new VerificationException("Client does not have a public key for use " + use);
     }
 
     private static PublicKey getPublicKey(String certPem) throws VerificationException {
@@ -281,5 +351,79 @@ public class SamlProtocolUtils {
         SAMLResponseWriter writer = new SAMLResponseWriter(StaxUtil.getXMLStreamWriter(bos));
         writer.write(responseType);
         return DocumentUtil.getDocument(new ByteArrayInputStream(bos.toByteArray()));
+    }
+
+    private static String checkLoAExact(String current, Map<String, Integer> acrLoaMap, int minLevel) {
+        // authentication context in the authentication statement MUST be the exact match of at least one of the authentication contexts specified
+        Integer level = acrLoaMap.get(current);
+        if (level == null) {
+            return null;
+        }
+        return level >= minLevel ? current : null;
+    }
+
+    private static String checkLoAMinimum(String current, Map<String, Integer> acrLoaMap, String minLoa, int minLevel) {
+        // authentication context in the authentication statement MUST be as strong as one of the authentication contexts specified
+        Integer level = acrLoaMap.get(current);
+        if (level == null) {
+            return null;
+        }
+        // check if current value is OK, if not return minLoa which is valid because is greater than current
+        return (level >= minLevel) ?  current : minLoa;
+    }
+
+    private static String checkLoAMaximum(String current, Map<String, Integer> acrLoaMap, int minLevel) {
+        // authentication context in the authentication statement MUST be as strong as possible without exceeding the strength of at least one of the authentication contexts specified
+        Integer level = acrLoaMap.get(current);
+        if (level == null) {
+            return null;
+        }
+        // only valid if it is better than minLoa
+        return level >= minLevel ? current : null;
+    }
+
+    private static String checkLoABetter(String current, Map<String, Integer> acrLoaMap, String minLoa, int minLevel) {
+        // authentication context in the authentication statement MUST be stronger than any one of the authentication contexts specified
+        Integer level = acrLoaMap.get(current);
+        if (level == null) {
+            return null;
+        }
+        // if minLoa is valid return minLoa
+        if (minLevel > level) {
+            return minLoa;
+        }
+        // find any level that is better than level, get the min of them
+        return acrLoaMap.entrySet().stream()
+                .filter(e -> e.getValue() > level)
+                .min((Map.Entry<String, Integer> e1, Map.Entry<String, Integer> e2) -> e1.getValue().compareTo(e2.getValue()))
+                .map(Map.Entry::getKey)
+                .orElse(null);
+    }
+
+    private static String checkLoa(AuthnContextComparisonType comparison, String current, Map<String, Integer> acrLoaMap, String minLoa, int minLevel) {
+        if (comparison == null) {
+            comparison = AuthnContextComparisonType.EXACT;
+        }
+        return switch (comparison) {
+            case EXACT -> checkLoAExact(current, acrLoaMap, minLevel);
+            case MINIMUM -> checkLoAMinimum(current, acrLoaMap, minLoa, minLevel);
+            case MAXIMUM -> checkLoAMaximum(current, acrLoaMap, minLevel);
+            case BETTER -> checkLoABetter(current, acrLoaMap, minLoa, minLevel);
+        };
+    }
+
+    public static String getSelectedLoA(ClientModel client, RequestedAuthnContextType requestedAuthnContext, Map<String, Integer> acrLoaMap) {
+        String minLoa = AcrUtils.getMinimumAcrValue(client);
+        if (minLoa != null && acrLoaMap.get(minLoa) == null) {
+            logger.warnf("Invalid value '%s' for option '%s' in client '%s' in realm '%s', no minimum value used",
+                        minLoa, Constants.MINIMUM_ACR_VALUE, client.getClientId(), client.getRealm().getName());
+        }
+        Integer minLevel = minLoa != null ? acrLoaMap.get(minLoa) : null;
+        return requestedAuthnContext.getAuthnContextClassRef().stream()
+                .map(current -> checkLoa(requestedAuthnContext.getComparison(), current, acrLoaMap,
+                        minLoa, minLevel != null ? minLevel : Integer.MIN_VALUE))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
     }
 }

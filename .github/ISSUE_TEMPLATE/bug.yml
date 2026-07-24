@@ -1,6 +1,7 @@
 name: Bug Report
 description: Report a non-security sensitive bug in Keycloak
 labels: ["kind/bug", "status/triage"]
+type: bug
 body:
   - type: checkboxes
     attributes:
@@ -48,17 +49,21 @@ body:
         - infinispan
         - ldap
         - login/ui
+        - observability
         - oidc
         - oid4vc
         - operator
         - organizations
         - saml
+        - scim
+        - ssf
         - storage
         - testsuite
         - token-exchange
         - translations
         - user-profile
         - welcome/ui
+        - workflows
     validations:
       required: true
   - type: textarea

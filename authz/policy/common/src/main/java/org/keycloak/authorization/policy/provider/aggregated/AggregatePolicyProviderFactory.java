@@ -35,6 +35,8 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
  */
 public class AggregatePolicyProviderFactory implements PolicyProviderFactory<AggregatePolicyRepresentation> {
 
+    public static final String ID = "aggregate";
+
     private AggregatePolicyProvider provider = new AggregatePolicyProvider();
 
     @Override
@@ -120,6 +122,6 @@ public class AggregatePolicyProviderFactory implements PolicyProviderFactory<Agg
 
     @Override
     public String getId() {
-        return "aggregate";
+        return ID;
     }
 }

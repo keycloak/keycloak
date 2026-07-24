@@ -16,21 +16,33 @@
  */
 package org.keycloak.testsuite.util;
 
+import java.net.URI;
+import java.util.Arrays;
+import java.util.Map;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.testsuite.util.matchers.*;
+import org.keycloak.testsuite.util.matchers.HttpResponseBodyMatcher;
+import org.keycloak.testsuite.util.matchers.HttpResponseStatusCodeMatcher;
+import org.keycloak.testsuite.util.matchers.ResponseBodyMatcher;
+import org.keycloak.testsuite.util.matchers.ResponseHeaderMatcher;
+import org.keycloak.testsuite.util.matchers.ResponseStatusCodeMatcher;
+import org.keycloak.testsuite.util.matchers.SamlLogoutRequestTypeMatcher;
+import org.keycloak.testsuite.util.matchers.SamlResponseTypeMatcher;
+import org.keycloak.testsuite.util.matchers.SamlStatusResponseTypeMatcher;
 
-import java.net.URI;
-import java.util.Arrays;
-import java.util.Map;
-import jakarta.ws.rs.core.Response;
 import org.apache.http.HttpResponse;
 import org.hamcrest.Matcher;
-import static org.hamcrest.Matchers.*;
+
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 
 /**
  * Additional hamcrest matchers for use in {@link org.junit.Assert#assertThat}.

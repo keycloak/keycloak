@@ -17,23 +17,25 @@
 
 package org.keycloak.it.cli.dist;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
-import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
+import java.nio.file.Paths;
 
-import org.junit.jupiter.api.Test;
 import org.keycloak.config.database.Database;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-
-import io.quarkus.test.junit.main.Launch;
-
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.utils.RawKeycloakDistribution;
 
-import java.nio.file.Paths;
+import io.quarkus.test.junit.main.Launch;
+import org.junit.jupiter.api.Test;
+
+import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
+import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DistributionTest
 class BuildCommandDistTest {
@@ -65,8 +67,14 @@ class BuildCommandDistTest {
 
     @Test
     @Launch({ "build", "--db=postgres", "--db-username=myuser", "--db-password=mypassword", "--http-enabled=true" })
-    void testFailRuntimeOptions(CLIResult cliResult) {
-        cliResult.assertError("Run time option: '--db-username' not usable with build");
+    void testIgnoreRuntimeOptions(CLIResult cliResult) {
+        String output = cliResult.getOutput();
+        assertTrue(output.contains("The following run time options were found, but will be ignored during build time:"));
+        assertTrue(output.contains("kc.db-username"));
+        assertTrue(output.contains("kc.http-enabled"));
+        assertTrue(output.contains("kc.db-password"));
+        assertTrue(output.contains("kc.shutdown-delay"));
+        cliResult.assertBuild();
     }
 
     @Test
@@ -78,20 +86,22 @@ class BuildCommandDistTest {
 
     @Test
     @RawDistOnly(reason = "Raw is enough and we avoid issues with including custom conf file in the container")
-    public void testFailInvalidOptionInConf(KeycloakDistribution distribution) {
-        CLIResult cliResult = distribution.run(CONFIG_FILE_LONG_NAME + "=" + Paths.get("src/test/resources/BuildCommandDistTest/keycloak.conf").toAbsolutePath().normalize(), "build");
+    public void testFailInvalidOptionInConf(KeycloakRunner runner) {
+        CLIResult cliResult = runner.run(CONFIG_FILE_LONG_NAME + "=" + Paths.get("src/test/resources/BuildCommandDistTest/keycloak.conf").toAbsolutePath().normalize(), "build");
         cliResult.assertError("Invalid value for option 'kc.db' in keycloak.conf: foo. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres");
     }
 
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void testDoNotRecordRuntimeOptionsDuringBuild(KeycloakDistribution distribution) {
-        distribution.setProperty("proxy", "edge");
-        distribution.run("build");
-        distribution.removeProperty("proxy");
+    void testDoNotRecordRuntimeOptionsDuringBuild(KeycloakRunner runner) {
+        RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
+        rawDist.setProperty("db-url", "invalid");
+        CLIResult cliResult = runner.run("build");
+        cliResult.assertBuild();
+        rawDist.removeProperty("db-url");
 
-        CLIResult result = distribution.run("start", "--hostname=mykeycloak", "--cache=local", OPTIMIZED_BUILD_OPTION_LONG);
-        result.assertError("Key material not provided to setup HTTPS");
+        CLIResult result = runner.run("start", "--hostname=mykeycloak", "--cache=local", "--http-enabled=true", OPTIMIZED_BUILD_OPTION_LONG);
+        result.assertStarted();
     }
 
     @Test
@@ -101,5 +111,54 @@ class BuildCommandDistTest {
         String dbDriver = Database.getDriver("oracle", false).orElse("");
         cliResult.assertError(String.format("ERROR: Unable to find the JDBC driver (%s). You need to install it.", dbDriver));
         cliResult.assertNoBuild();
+    }
+
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    @WithEnvVars({"KC_LOG_LEVEL", "${KEYCLOAK_LOG_LEVEL:INFO},org.keycloak.events:DEBUG"})
+    @Launch({"build", "--db=dev-file"})
+    void logLevelExpressionWithDefault(CLIResult cliResult) {
+        cliResult.assertBuild();
+    }
+
+    /**
+     * Documented as a workaround when a provider jar conflicts with built-in classes
+     */
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    @Launch({"-Dquarkus.launch.rebuild=true"})
+    void forceRebuild(CLIResult cliResult) {
+        cliResult.getOutput().contains("Quarkus augmentation completed");
+    }
+
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    @Launch({"build", "--features=clusterless"})
+    void clusterlessDoesNotRequireRuntimeOptions(CLIResult cliResult) {
+        cliResult.assertBuild();
+    }
+
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    @Launch({"build", "--features=multi-site"})
+    void multiSiteDoesNotRequireRuntimeOptions(CLIResult cliResult) {
+        cliResult.assertBuild();
+    }
+    
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    void deprecatedByDefaultWarning(KeycloakRunner runner) {
+        CLIResult cliResult = runner.run("build", "--db=dev-file");
+        cliResult.assertBuild();
+        cliResult.assertMessage("Deprecated features identity-brokering-api:v1, twitter-broker:v1 enabled by default. Check the upgrading guide for steps to use later versions if available.");
+        cliResult.assertNoMessage("Deprecated features enabled:");
+        
+        cliResult = runner.run("build", "--db=dev-file", "--features=identity-brokering-api:v2");
+        cliResult.assertBuild();
+        cliResult.assertMessage("Deprecated features twitter-broker:v1 enabled by default. Check the upgrading guide for steps to use later versions if available.");
+        
+        cliResult = runner.run("build", "--db=dev-file", "--features=identity-brokering-api");
+        cliResult.assertBuild();
+        cliResult.assertMessage("Deprecated features identity-brokering-api:v1, twitter-broker:v1 enabled by default. Check the upgrading guide for steps to use later versions if available.");
     }
 }

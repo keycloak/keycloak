@@ -32,8 +32,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -52,8 +51,8 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.events.AdminEvents;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakServerConfig;
@@ -62,17 +61,23 @@ import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.KeyUtils;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
 import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
-
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.METADATA_NSURI;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 /**
  * Test getting the installation/configuration files for OIDC and SAML.
@@ -169,7 +174,7 @@ public class InstallationTest {
         clientScopeRepresentation.setProtocolMappers(List.of(mapper));
 
         Response response = realm.admin().clientScopes().create(clientScopeRepresentation);
-        String id = ApiUtil.handleCreatedResponse(response);
+        String id = ApiUtil.getCreatedId(response);
         response.close();
 
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientScopeResourcePath(id), ResourceType.CLIENT_SCOPE);
@@ -396,8 +401,8 @@ public class InstallationTest {
         Node element = elementsByTagName.item(0);
 
         if (attrNamesAndValues != null) {
-            for (String attrName : attrNamesAndValues.keySet()) {
-                assertThat(element.getAttributes().getNamedItem(attrName).getNodeValue(), containsString(attrNamesAndValues.get(attrName)));
+            for (var entry : attrNamesAndValues.entrySet()) {
+                assertThat(element.getAttributes().getNamedItem(entry.getKey()).getNodeValue(), containsString(entry.getValue()));
             }
         }
     }
@@ -413,7 +418,7 @@ public class InstallationTest {
     public static class OidcClientConfig implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return client.clientId(OIDC_NAME)
                     .name(OIDC_NAME)
                     .protocol("openid-connect");
@@ -423,7 +428,7 @@ public class InstallationTest {
     public static class OidcBearerOnlyClientConfig implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return client.clientId(OIDC_NAME_BEARER_ONLY_NAME)
                     .name(OIDC_NAME_BEARER_ONLY_NAME)
                     .protocol("openid-connect")
@@ -435,13 +440,13 @@ public class InstallationTest {
     public static class OidcBearerOnlyWithAuthzClientConfig implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return client.clientId(OIDC_NAME_BEARER_ONLY_WITH_AUTHZ_NAME)
                     .name(OIDC_NAME_BEARER_ONLY_WITH_AUTHZ_NAME)
                     .protocol("openid-connect")
                     .bearerOnly(false)
                     .publicClient(false)
-                    .authorizationServices()
+                    .authorizationServicesEnabled(true)
                     .serviceAccountsEnabled(true);
         }
     }
@@ -449,7 +454,7 @@ public class InstallationTest {
     public static class SamlClientConfig implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return client.clientId(SAML_NAME)
                     .name(SAML_NAME)
                     .protocol("saml");

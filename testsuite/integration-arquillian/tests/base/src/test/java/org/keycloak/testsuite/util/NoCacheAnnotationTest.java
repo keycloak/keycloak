@@ -16,13 +16,16 @@
  */
 package org.keycloak.testsuite.util;
 
-import jakarta.ws.rs.core.Response;
 import java.util.List;
-import org.junit.Assert;
-import org.junit.Test;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author Réda Housni Alaoui
@@ -37,7 +40,7 @@ public class NoCacheAnnotationTest extends AbstractKeycloakTest {
 	@Test
 	public void noCacheAnnotationOverridesProgrammaticCacheControlBehaviour() {
 		Response response = getTestingClient().testing().getNoCacheAnnotatedEndpointResponse(2000L);
-		Assert.assertEquals(204, response.getStatus());
-		Assert.assertEquals("no-cache", response.getHeaderString("cache-control"));
+		Assertions.assertEquals(204, response.getStatus());
+		Assertions.assertEquals("no-cache", response.getHeaderString("cache-control"));
 	}
 }

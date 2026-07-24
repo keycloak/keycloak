@@ -17,14 +17,14 @@
 
 package org.keycloak.services.clientpolicy.context;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
-import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
 /**
  * @author <a href="mailto:ggrazian@redhat.com">Giuseppe Graziano</a>
  */
-public class TokenExchangeRequestContext implements ClientPolicyContext {
+public class TokenExchangeRequestContext implements ClientModelContext, ScopeParameterContext {
 
     private final TokenExchangeContext tokenExchangeContext;
 
@@ -40,5 +40,15 @@ public class TokenExchangeRequestContext implements ClientPolicyContext {
 
     public TokenExchangeContext getTokenExchangeContext() {
         return tokenExchangeContext;
+    }
+
+    @Override
+    public ClientModel getClient() {
+        return tokenExchangeContext.getClient();
+    }
+
+    @Override
+    public String getScopeParameter() {
+        return tokenExchangeContext.getParams().getScope();
     }
 }

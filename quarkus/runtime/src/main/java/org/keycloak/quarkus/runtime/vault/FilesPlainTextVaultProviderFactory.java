@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime.vault;
 
 import org.keycloak.Config;
+import org.keycloak.config.VaultOptions;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
@@ -33,6 +34,6 @@ public class FilesPlainTextVaultProviderFactory extends org.keycloak.vault.Files
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return getId().equals(Configuration.getRawValue("kc.vault"));
+        return getId().equals(Configuration.getConfigValue(VaultOptions.VAULT).getValue());
     }
 }

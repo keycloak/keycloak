@@ -19,11 +19,12 @@ package org.keycloak.models.cache.infinispan.events;
 
 import java.util.Set;
 
-import org.infinispan.protostream.annotations.ProtoFactory;
-import org.infinispan.protostream.annotations.ProtoTypeId;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.cache.infinispan.RealmCacheManager;
 import org.keycloak.models.cache.infinispan.UserCacheManager;
+
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 
 @ProtoTypeId(Marshalling.CACHE_KEY_INVALIDATION_EVENT)
 public class CacheKeyInvalidatedEvent extends InvalidationEvent implements RealmCacheInvalidationEvent, UserCacheInvalidationEvent {

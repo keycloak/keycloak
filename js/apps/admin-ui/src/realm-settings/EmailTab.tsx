@@ -302,6 +302,40 @@ export const RealmSettingsEmailTab = ({
                 )}
               </>
             )}
+            <SwitchControl
+              name="smtpServer.allowutf8"
+              label={t("allowutf8")}
+              labelIcon={t("allowutf8Help")}
+              data-testid="smtpServer.allowutf8"
+              defaultValue=""
+              labelOn={t("enabled")}
+              labelOff={t("disabled")}
+              stringify
+            />
+            <TextControl
+              name="smtpServer.connectionTimeout"
+              label={t("smtpConnectionTimeout")}
+              labelIcon={t("smtpConnectionTimeoutHelp")}
+              type="number"
+              defaultValue={10000}
+              min={0}
+            />
+            <TextControl
+              name="smtpServer.timeout"
+              label={t("smtpSocketReadTimeout")}
+              labelIcon={t("smtpSocketReadTimeoutHelp")}
+              type="number"
+              defaultValue={10000}
+              min={0}
+            />
+            <TextControl
+              name="smtpServer.writeTimeout"
+              label={t("smtpSocketWriteTimeout")}
+              labelIcon={t("smtpSocketWriteTimeoutHelp")}
+              type="number"
+              defaultValue={10000}
+              min={0}
+            />
             <Controller
               name="smtpServer.debug"
               control={control}
@@ -316,45 +350,43 @@ export const RealmSettingsEmailTab = ({
                 />
               )}
             />
-            {currentUser && (
-              <FormGroup id="descriptionTestConnection">
-                {currentUser.email ? (
-                  <Alert
-                    variant="info"
-                    component="h2"
-                    isInline
-                    title={t("testConnectionHint.withEmail", {
-                      email: currentUser.email,
-                    })}
-                  />
-                ) : (
-                  <Alert
-                    variant="warning"
-                    component="h2"
-                    isInline
-                    title={t("testConnectionHint.withoutEmail", {
-                      userName: currentUser.username,
-                    })}
-                    actionLinks={
-                      <AlertActionLink
-                        component={(props) => (
-                          <Link
-                            {...props}
-                            to={toUser({
-                              realm: currentUser.realm!,
-                              id: currentUser.id!,
-                              tab: "settings",
-                            })}
-                          />
-                        )}
-                      >
-                        {t("testConnectionHint.withoutEmailAction")}
-                      </AlertActionLink>
-                    }
-                  />
-                )}
-              </FormGroup>
-            )}
+            <FormGroup id="descriptionTestConnection">
+              {currentUser.email ? (
+                <Alert
+                  variant="info"
+                  component="h2"
+                  isInline
+                  title={t("testConnectionHint.withEmail", {
+                    email: currentUser.email,
+                  })}
+                />
+              ) : (
+                <Alert
+                  variant="warning"
+                  component="h2"
+                  isInline
+                  title={t("testConnectionHint.withoutEmail", {
+                    userName: currentUser.username,
+                  })}
+                  actionLinks={
+                    <AlertActionLink
+                      component={(props) => (
+                        <Link
+                          {...props}
+                          to={toUser({
+                            realm: currentUser.realm!,
+                            id: currentUser.id!,
+                            tab: "settings",
+                          })}
+                        />
+                      )}
+                    >
+                      {t("testConnectionHint.withoutEmailAction")}
+                    </AlertActionLink>
+                  }
+                />
+              )}
+            </FormGroup>
             <ActionGroup>
               <ActionListItem>
                 <Button
@@ -373,7 +405,7 @@ export const RealmSettingsEmailTab = ({
                   isDisabled={
                     !(
                       emailRegexPattern.test(watchFromValue) && watchHostValue
-                    ) || !currentUser?.email
+                    ) || !currentUser.email
                   }
                   aria-describedby="descriptionTestConnection"
                   isLoading={isTesting}

@@ -21,10 +21,11 @@ import java.util.List;
 import java.util.Set;
 import javax.naming.AuthenticationException;
 import javax.naming.ldap.LdapName;
+
 import org.keycloak.models.ModelException;
+import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 

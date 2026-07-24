@@ -20,7 +20,6 @@ package org.keycloak.services.clientpolicy;
 import java.io.IOException;
 import java.util.List;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -30,6 +29,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 import org.keycloak.util.JsonSerialization;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -102,8 +103,16 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
                     }
                 }
                 if (vote == ClientPolicyVote.ABSTAIN) {
-                    logger.tracev("CONDITION SKIP :: policy name = {0}, condition name = {1}, provider id = {2}", policy.getName(), condition.getName(), condition.getProviderId());
-                    continue;
+                    if (logger.isTraceEnabled()) {
+                        String modeMessage = policy.getMode() == ClientPolicyMode.STRICT ? "(NEGATIVE due the STRICT mode)" : "";
+                        logger.tracev("CONDITION SKIP {0}:: policy name = {1}, condition name = {2}, provider id = {3}",
+                                modeMessage, policy.getName(), condition.getName(), condition.getProviderId());
+                    }
+                    if (policy.getMode() == ClientPolicyMode.STRICT) {
+                        return false;
+                    } else {
+                        continue;
+                    }
                 } else if (vote == ClientPolicyVote.NO) {
                     logger.tracev("CONDITION NEGATIVE :: policy name = {0}, condition name = {1}, provider id = {2}", policy.getName(), condition.getName(), condition.getProviderId());
                     return false;

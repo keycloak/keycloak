@@ -17,11 +17,11 @@
 package org.keycloak.authorization.store;
 
 
-import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.model.Scope;
-
 import java.util.List;
 import java.util.Map;
+
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
 
 /**
  * A {@link ScopeStore} is responsible to manage the persistence of {@link Scope} instances.

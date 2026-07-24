@@ -1,4 +1,8 @@
-import { IconMapper, useEnvironment } from "@keycloak/keycloak-ui-shared";
+import {
+  IconMapper,
+  label,
+  useEnvironment,
+} from "@keycloak/keycloak-ui-shared";
 import {
   Button,
   DataListAction,
@@ -63,7 +67,7 @@ export const AccountRow = ({
                 </SplitItem>
                 <SplitItem className="pf-v5-u-my-xs" isFilled>
                   <span id={`${account.providerAlias}-idp-name`}>
-                    {account.displayName}
+                    {label(t, account.displayName)}
                   </span>
                 </SplitItem>
               </Split>
@@ -111,8 +115,8 @@ export const AccountRow = ({
             <Button
               id={`${account.providerAlias}-idp-link`}
               variant="link"
-              onClick={() => {
-                login({
+              onClick={async () => {
+                await login({
                   action: "idp_link:" + account.providerAlias,
                 });
               }}

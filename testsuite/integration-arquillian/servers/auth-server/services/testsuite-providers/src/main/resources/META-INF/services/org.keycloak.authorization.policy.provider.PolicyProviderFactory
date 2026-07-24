@@ -16,3 +16,9 @@
 #
 #
 org.keycloak.testsuite.authorization.TestPolicyProviderFactory
+org.keycloak.testsuite.authorization.GrantPolicyProvider
+org.keycloak.testsuite.authorization.DenyPolicyProvider
+org.keycloak.testsuite.authorization.GrantResourceOwnerPolicyProvider
+org.keycloak.testsuite.authorization.ResourceVisibilityAttributePolicyProvider
+org.keycloak.testsuite.authorization.SpecificDomainOrAdminPolicyProvider
+org.keycloak.testsuite.authorization.SpecificAddressPolicyProvider

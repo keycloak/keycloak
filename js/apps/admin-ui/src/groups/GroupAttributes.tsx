@@ -9,7 +9,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
-import { useAdminClient } from "../admin-client";
 import {
   AttributeForm,
   AttributesForm,
@@ -17,9 +16,10 @@ import {
 import { arrayToKeyValue } from "../components/key-value-form/key-value-convert";
 import { convertFormValuesToObject } from "../util";
 import { getLastId } from "./groupIdUtils";
+import { useGroupResource } from "../context/group-resource/GroupResourceContext";
 
 export const GroupAttributes = () => {
-  const { adminClient } = useAdminClient();
+  const groups = useGroupResource();
 
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
@@ -32,7 +32,7 @@ export const GroupAttributes = () => {
   const [currentGroup, setCurrentGroup] = useState<GroupRepresentation>();
 
   useFetch(
-    () => adminClient.groups.findOne({ id }),
+    () => groups.findOne({ id }),
     (group) => {
       form.reset({
         attributes: arrayToKeyValue(group?.attributes!),
@@ -45,10 +45,7 @@ export const GroupAttributes = () => {
   const save = async (attributeForm: AttributeForm) => {
     try {
       const attributes = convertFormValuesToObject(attributeForm).attributes;
-      await adminClient.groups.update(
-        { id: id! },
-        { ...currentGroup, attributes },
-      );
+      await groups.update({ id: id! }, { ...currentGroup, attributes });
 
       setCurrentGroup({ ...currentGroup, attributes });
       addAlert(t("groupUpdated"), AlertVariant.success);

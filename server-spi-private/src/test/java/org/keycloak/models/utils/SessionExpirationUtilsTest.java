@@ -20,13 +20,15 @@ package org.keycloak.models.utils;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.Assert;
-import org.junit.Test;
+
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * <p>Class to perform unit tests of the SessionExpirationUtils class.</p>

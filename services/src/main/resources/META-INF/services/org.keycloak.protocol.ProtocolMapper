@@ -26,6 +26,7 @@ org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper
 org.keycloak.protocol.oidc.mappers.GroupMembershipMapper
 org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper
 org.keycloak.organization.protocol.mappers.oidc.OrganizationMembershipMapper
+org.keycloak.organization.protocol.mappers.oidc.OrganizationGroupMembershipMapper
 org.keycloak.protocol.oidc.mappers.AudienceResolveProtocolMapper
 org.keycloak.protocol.oidc.mappers.AllowedWebOriginsProtocolMapper
 org.keycloak.protocol.oidc.mappers.AcrProtocolMapper
@@ -58,4 +59,8 @@ org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCIssuedAtTimeClaimMapper
 org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGeneratedIdMapper
 org.keycloak.protocol.oidc.mappers.SessionStateMapper
 org.keycloak.protocol.oidc.mappers.SubMapper
+org.keycloak.protocol.oidc.mappers.ParameterizedScopeMapper
+org.keycloak.protocol.oidc.mappers.ParameterizedScopeUserPropertyMapper
 org.keycloak.organization.protocol.mappers.saml.OrganizationMembershipMapper
+org.keycloak.organization.protocol.mappers.saml.OrganizationGroupMembershipMapper
+org.keycloak.protocol.saml.mappers.AuthnContextClassRefMapper

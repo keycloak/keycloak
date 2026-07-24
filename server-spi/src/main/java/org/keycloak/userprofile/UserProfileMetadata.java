@@ -19,14 +19,14 @@
 
 package org.keycloak.userprofile;
 
-import static org.keycloak.userprofile.AttributeMetadata.ALWAYS_TRUE;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static org.keycloak.userprofile.AttributeMetadata.ALWAYS_TRUE;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

@@ -17,6 +17,14 @@
 
 package org.keycloak.models.cache.infinispan.entities;
 
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.GroupModel;
@@ -27,14 +35,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
 import org.keycloak.models.cache.infinispan.LazyLoader;
 
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -43,6 +43,7 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
 
     private final String realm;
     private final Long createdTimestamp;
+    private final Long lastModifiedTimestamp;
     private final boolean emailVerified;
     private final boolean enabled;
     private final String federationLink;
@@ -55,10 +56,11 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
     private final LazyLoader<UserModel, Set<String>> groups;
     private final LazyLoader<UserModel, List<CredentialModel>> storedCredentials;
 
-    public CachedUser(Long revision, RealmModel realm, UserModel user, int notBefore) {
+    public CachedUser(long revision, RealmModel realm, UserModel user, int notBefore) {
         super(revision, user.getId());
         this.realm = realm.getId();
         this.createdTimestamp = user.getCreatedTimestamp();
+        this.lastModifiedTimestamp = user.getLastModifiedTimestamp();
         this.emailVerified = user.isEmailVerified();
         this.enabled = user.isEnabled();
         this.federationLink = user.getFederationLink();
@@ -93,6 +95,10 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
 
     public Long getCreatedTimestamp() {
         return createdTimestamp;
+    }
+
+    public Long getLastModifiedTimestamp() {
+        return lastModifiedTimestamp;
     }
 
     public String getEmail() {

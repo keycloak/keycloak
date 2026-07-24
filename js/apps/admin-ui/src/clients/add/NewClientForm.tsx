@@ -32,7 +32,7 @@ const NewClientFooter = (newClientForm: any) => {
     if (!(await trigger())) {
       return;
     }
-    onNext?.();
+    onNext();
   };
 
   return (
@@ -107,6 +107,7 @@ export default function NewClientForm() {
             onClose={() => navigate(toClients({ realm }))}
             navAriaLabel={`${title} steps`}
             onSave={save}
+            isProgressive
             footer={<NewClientFooter {...form} />}
           >
             <WizardStep

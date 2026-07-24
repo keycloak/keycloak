@@ -3,6 +3,7 @@ package org.keycloak.services.clientpolicy.context;
 import org.keycloak.models.ClientModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
+import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.utils.StringUtil;
 
 public class ClientSecretRotationContext extends AdminClientUpdateContext {
@@ -10,8 +11,8 @@ public class ClientSecretRotationContext extends AdminClientUpdateContext {
     private final String currentSecret;
 
     public ClientSecretRotationContext(ClientRepresentation proposedClientRepresentation,
-                                       ClientModel targetClient, String currentSecret) {
-        super(proposedClientRepresentation, targetClient, null);
+                                       ClientModel targetClient, String currentSecret, AdminAuth adminAuth) {
+        super(proposedClientRepresentation, targetClient, adminAuth);
         this.currentSecret = currentSecret;
     }
 

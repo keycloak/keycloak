@@ -582,6 +582,21 @@ ul#kc-totp-supported-apps {
     margin-top: 5px;
 }
 
+.kc-alert-delete-account {
+    margin-top: 0;
+    margin-bottom: 30px;
+}
+
+.kc-delete-account-list {
+    color: #72767b;
+    list-style: disc;
+    list-style-position: inside;
+}
+
+.kc-delete-account-cancel {
+    margin-left: calc(100% - 220px);
+}
+
 /* Recovery codes */
 .kc-recovery-codes-warning {
     margin-bottom: 32px;

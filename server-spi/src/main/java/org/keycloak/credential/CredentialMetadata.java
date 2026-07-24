@@ -1,10 +1,15 @@
 package org.keycloak.credential;
 
+import java.util.List;
+
 public class CredentialMetadata {
     LocalizedMessage infoMessage;
+    List<LocalizedMessage> infoProperties;
     LocalizedMessage warningMessageTitle;
     LocalizedMessage warningMessageDescription;
     CredentialModel credentialModel;
+    private String iconLight;
+    private String iconDark;
 
     public CredentialModel getCredentialModel() {
         return credentialModel;
@@ -16,6 +21,10 @@ public class CredentialMetadata {
 
     public LocalizedMessage getInfoMessage() {
         return infoMessage;
+    }
+
+    public List<LocalizedMessage> getInfoProperties() {
+        return infoProperties;
     }
 
     public LocalizedMessage getWarningMessageTitle() {
@@ -39,6 +48,26 @@ public class CredentialMetadata {
     public void setInfoMessage(String key, String... parameters) {
         LocalizedMessage message = new LocalizedMessage(key, parameters);
         this.infoMessage = message;
+    }
+
+    public void setInfoProperties(List<LocalizedMessage> infoProperties) {
+        this.infoProperties = infoProperties;
+    }
+
+    public String getIconLight() {
+        return iconLight;
+    }
+
+    public void setIconLight(String iconLight) {
+        this.iconLight = iconLight;
+    }
+
+    public String getIconDark() {
+        return iconDark;
+    }
+
+    public void setIconDark(String iconDark) {
+        this.iconDark = iconDark;
     }
 
     public static class LocalizedMessage {

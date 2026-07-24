@@ -28,7 +28,7 @@
 	<artifactId>keycloak-dependencies-server-min</artifactId>
     <packaging>pom</packaging>
     <name>Keycloak Dependencies Server Min</name>
-	<description />
+    <description>Keycloak Dependencies Server Min</description>
 
     <dependencies>
         <dependency>

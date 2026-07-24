@@ -1,11 +1,12 @@
 package org.keycloak.testsuite.util.oauth;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.http.client.methods.CloseableHttpResponse;
+import java.io.IOException;
+
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.http.client.methods.CloseableHttpResponse;
 
 public class IntrospectionResponse extends AbstractHttpResponse {
 

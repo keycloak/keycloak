@@ -16,8 +16,6 @@
  */
 package org.keycloak.userprofile.config;
 
-import static org.keycloak.common.util.ObjectUtil.isBlank;
-
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -45,9 +43,13 @@ import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.userprofile.UserProfileConstants;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationResult;
 import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.Validators;
+
+import static org.keycloak.common.util.ObjectUtil.isBlank;
+import static org.keycloak.userprofile.UserProfileUtil.isRootAttribute;
 
 /**
  * Utility methods to work with User Profile Configurations
@@ -148,7 +150,7 @@ public class UPConfigUtils {
         }
 
         List<String> errors = new ArrayList<>();
-        List<String> attributeNames = attributes.stream().map(UPAttribute::getName).collect(Collectors.toList());
+        List<String> attributeNames = attributes.stream().map(UPAttribute::getName).toList();
 
         for (String name : Arrays.asList(UserModel.USERNAME, UserModel.EMAIL)) {
             if (!attributeNames.contains(name)) {
@@ -184,6 +186,7 @@ public class UPConfigUtils {
         }
         if (attributeConfig.getValidations() != null) {
             attributeConfig.getValidations().forEach((validator, validatorConfig) -> validateValidationConfig(session, validator, validatorConfig, attributeName, errors));
+            validateDefaultValue(session, attributeConfig, errors);
         }
         if (attributeConfig.getPermissions() != null) {
             if (attributeConfig.getPermissions().getView() != null) {
@@ -209,6 +212,27 @@ public class UPConfigUtils {
 
         if (attributeConfig.getAnnotations()!=null) {
             validateAnnotations(attributeConfig.getAnnotations(), errors, attributeName);
+        }
+    }
+
+    private static void validateDefaultValue(KeycloakSession session, UPAttribute attributeConfig, List<String> errors) {
+        String defaultValue = attributeConfig.getDefaultValue();
+
+        if (defaultValue == null) {
+            return;
+        }
+
+        String attributeName = attributeConfig.getName();
+
+        if (isRootAttribute(attributeName)) {
+            errors.add("Default value not supported for attribute '" + attributeName + "'");
+        } else {
+            attributeConfig.getValidations().forEach((validator, validatorConfig) -> {
+                ValidationContext context = Validators.validator(session, validator).validate(defaultValue, attributeName, ValidatorConfig.configFromMap(validatorConfig));
+                if (!context.isValid()) {
+                    errors.add("Default value for attribute '" + attributeName + "' is invalid");
+                }
+            });
         }
     }
 
@@ -274,18 +298,18 @@ public class UPConfigUtils {
         if (isBlank(validator)) {
             errors.add("Validation without validator id is defined for attribute '" + attributeName + "'");
         } else {
-        	if(session!=null) {
-            	if(Validators.validator(session, validator) == null) {
-            		errors.add("Validator '" + validator + "' defined for attribute '" + attributeName + "' doesn't exist");
-            	} else {
-            		ValidationResult result = Validators.validateConfig(session, validator, ValidatorConfig.configFromMap(validatorConfig));
-            		if(!result.isValid()) {
-            			final StringBuilder sb = new StringBuilder();
-            			result.forEachError(err -> sb.append(err.toString()+", "));
-            			errors.add("Validator '" + validator + "' defined for attribute '" + attributeName + "' has incorrect configuration: " + sb.toString());
-            		}
-            	}
-        	}
+            if(session!=null) {
+                if(Validators.validator(session, validator) == null) {
+                    errors.add("Validator '" + validator + "' defined for attribute '" + attributeName + "' doesn't exist");
+                } else {
+                    ValidationResult result = Validators.validateConfig(session, validator, ValidatorConfig.configFromMap(validatorConfig));
+                    if(!result.isValid()) {
+                        final StringBuilder sb = new StringBuilder();
+                        result.forEachError(err -> sb.append(err.toString()+", "));
+                        errors.add("Validator '" + validator + "' defined for attribute '" + attributeName + "' has incorrect configuration: " + sb.toString());
+                    }
+                }
+            }
         }
     }
 
@@ -315,7 +339,7 @@ public class UPConfigUtils {
         try (InputStream is = new FileInputStream(configPath.toFile())) {
             return parseConfig(is);
         } catch (IOException ioe) {
-            throw new RuntimeException("Failed to reaad default user profile configuration: " + configPath, ioe);
+            throw new RuntimeException("Failed to read default user profile configuration: " + configPath, ioe);
         }
     }
 

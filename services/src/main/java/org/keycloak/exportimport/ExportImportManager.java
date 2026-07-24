@@ -17,12 +17,6 @@
 
 package org.keycloak.exportimport;
 
-import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.ProviderFactory;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -34,6 +28,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import org.keycloak.Config;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderFactory;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.exportimport.ExportImportConfig.PROVIDER;
 import static org.keycloak.exportimport.ExportImportConfig.PROVIDER_DEFAULT;

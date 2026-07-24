@@ -17,8 +17,9 @@
 
 package org.keycloak.sdjwt.consumer;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.jose.jwk.JSONWebKeySet;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * POJO for JWT VC Metadata

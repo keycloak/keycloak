@@ -17,38 +17,8 @@
 
 package org.keycloak.storage.ldap.idm.store.ldap;
 
-import javax.naming.NameAlreadyBoundException;
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.ModelException;
-import org.keycloak.storage.ldap.LDAPConfig;
-import org.keycloak.representations.idm.LDAPCapabilityRepresentation.CapabilityType;
-import org.keycloak.storage.ldap.idm.model.LDAPDn;
-import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
-import org.keycloak.storage.ldap.idm.query.Condition;
-import org.keycloak.storage.ldap.idm.query.internal.EqualCondition;
-import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
-import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
-import org.keycloak.storage.ldap.idm.store.IdentityStore;
-import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
-
-import javax.naming.AuthenticationException;
-import javax.naming.NamingEnumeration;
-import javax.naming.NamingException;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.Attributes;
-import javax.naming.directory.BasicAttribute;
-import javax.naming.directory.BasicAttributes;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.ModificationItem;
-import javax.naming.directory.SearchControls;
-import javax.naming.directory.SearchResult;
-
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -60,12 +30,42 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
+import javax.naming.AuthenticationException;
+import javax.naming.NameAlreadyBoundException;
 import javax.naming.NameNotFoundException;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
 import javax.naming.directory.AttributeInUseException;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.BasicAttribute;
+import javax.naming.directory.BasicAttributes;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.ModificationItem;
 import javax.naming.directory.NoSuchAttributeException;
 import javax.naming.directory.SchemaViolationException;
+import javax.naming.directory.SearchControls;
+import javax.naming.directory.SearchResult;
 import javax.naming.ldap.LdapName;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelException;
+import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
+import org.keycloak.representations.idm.LDAPCapabilityRepresentation.CapabilityType;
+import org.keycloak.storage.ldap.LDAPConfig;
+import org.keycloak.storage.ldap.idm.model.LDAPDn;
+import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.storage.ldap.idm.query.Condition;
+import org.keycloak.storage.ldap.idm.query.internal.EqualCondition;
+import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
+import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
+import org.keycloak.storage.ldap.idm.store.IdentityStore;
+import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
+
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Timer;
+import org.jboss.logging.Logger;
 
 /**
  * An IdentityStore implementation backed by an LDAP directory
@@ -81,10 +81,20 @@ public class LDAPIdentityStore implements IdentityStore {
 
     private final LDAPConfig config;
     private final LDAPOperationManager operationManager;
+    private final Meter.MeterProvider<Timer> requestTimer;
 
     public LDAPIdentityStore(KeycloakSession session, LDAPConfig config) {
+        this(session, config, null);
+    }
+
+    public LDAPIdentityStore(KeycloakSession session, LDAPConfig config, Meter.MeterProvider<Timer> requestTimer) {
         this.config = config;
-        this.operationManager = new LDAPOperationManager(session, config);
+        this.requestTimer = requestTimer;
+        this.operationManager = new LDAPOperationManager(session, config, requestTimer);
+    }
+
+    public Meter.MeterProvider<Timer> getRequestTimer() {
+        return requestTimer;
     }
 
     @Override
@@ -485,7 +495,7 @@ public class LDAPIdentityStore implements IdentityStore {
                         Object val = enumm.next();
 
                         if (val instanceof byte[]) { // byte[]
-                            String attrVal = Base64.encodeBytes((byte[]) val);
+                            String attrVal = Base64.getEncoder().encodeToString((byte[]) val);
                             attrValues.add(attrVal);
                         } else { // String
                             String attrVal = val.toString().trim();
@@ -523,13 +533,6 @@ public class LDAPIdentityStore implements IdentityStore {
         Set<String> rdnAttrNamesLowerCased = ldapObject.getRdnAttributeNames().stream()
                 .map(String::toLowerCase)
                 .collect(Collectors.toSet());
-
-        if (!isCreate) {
-            // for updates, assume the PWD_CHANGED_TIME attribute is an operational attribute and read-only
-            // otherwise, updates will fail when trying to modify the attribute
-            // vendors like AD, support the same type of attribute differently and using a mapper
-            ldapObject.addReadOnlyAttributeName(LDAPConstants.PWD_CHANGED_TIME);
-        }
 
         for (Map.Entry<String, Set<String>> attrEntry : ldapObject.getAttributes().entrySet()) {
             String attrName = attrEntry.getKey();
@@ -599,9 +602,9 @@ public class LDAPIdentityStore implements IdentityStore {
             }
 
             try {
-                byte[] bytes = Base64.decode(value);
+                byte[] bytes = Base64.getMimeDecoder().decode(value);
                 attr.add(bytes);
-            } catch (IOException ioe) {
+            } catch (IllegalArgumentException iae) {
                 logger.warnf("Wasn't able to Base64 decode the attribute value. Ignoring attribute update. Attribute: %s, Attribute value: %s", attrName, attrValue);
             }
         }
@@ -610,7 +613,13 @@ public class LDAPIdentityStore implements IdentityStore {
     }
 
     public String getPasswordModificationTimeAttributeName() {
-        return getConfig().isActiveDirectory() ? LDAPConstants.PWD_LAST_SET : LDAPConstants.PWD_CHANGED_TIME;
+        if (getConfig().isActiveDirectory()) {
+            return LDAPConstants.PWD_LAST_SET;
+        }
+        if (getConfig().isRHDS()) {
+            return LDAPConstants.PWD_UPDATE_TIME;
+        }
+        return LDAPConstants.PWD_CHANGED_TIME;
     }
 
 }

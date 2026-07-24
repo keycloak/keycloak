@@ -10,8 +10,7 @@
     "vg70gfzXO8HR7ERDkL46S6Ior1ey0DvZoEUHupJwoxc"
   ],
   "iss": "https://issuer.example.com",
-  "iat": 1683000000,
-  "exp": 1883000000,
+  "aud": "https://api.example.com",
   "address": {
     "_sd": [
       "IZOyJn0D17aK845iZ8i5hDloSkartiUlvp_hKjNbAt8",

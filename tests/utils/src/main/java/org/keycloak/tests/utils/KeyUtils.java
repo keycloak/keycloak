@@ -1,25 +1,5 @@
 package org.keycloak.tests.utils;
 
-import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Assertions;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.BouncyIntegration;
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.crypto.JavaAlgorithm;
-import org.keycloak.crypto.KeyStatus;
-import org.keycloak.crypto.KeyType;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.keys.AbstractEcKeyProviderFactory;
-import org.keycloak.keys.GeneratedEcdhKeyProviderFactory;
-import org.keycloak.keys.GeneratedEcdsaKeyProviderFactory;
-import org.keycloak.keys.KeyProvider;
-import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.KeysMetadataRepresentation;
-import org.keycloak.tests.utils.admin.ApiUtil;
-
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -35,6 +15,28 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.BouncyIntegration;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.crypto.KeyStatus;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.keys.AbstractEcKeyProviderFactory;
+import org.keycloak.keys.GeneratedEcdhKeyProviderFactory;
+import org.keycloak.keys.GeneratedEcdsaKeyProviderFactory;
+import org.keycloak.keys.KeyProvider;
+import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.KeysMetadataRepresentation;
+import org.keycloak.testframework.util.ApiUtil;
+
+import org.junit.jupiter.api.Assertions;
 
 
 /**
@@ -149,20 +151,21 @@ public class KeyUtils {
     /**
      * @return key sizes, which are expected to be supported by Keycloak server for {@link org.keycloak.keys.GeneratedRsaKeyProviderFactory} and {@link org.keycloak.keys.GeneratedRsaEncKeyProviderFactory}.
      */
-    public static String[] getExpectedSupportedRsaKeySizes() {
-        String expectedKeySizes = System.getProperty("auth.server.supported.rsa.key.sizes");
-        if (expectedKeySizes == null || expectedKeySizes.trim().isEmpty()) {
-            Assertions.fail("System property 'auth.server.supported.rsa.key.sizes' should be set");
-        }
-        return expectedKeySizes.split(",");
-    }
+// This doesn't work in new testsuite as we don't set these system properties
+//    public static String[] getExpectedSupportedRsaKeySizes() {
+//        String expectedKeySizes = System.getProperty("auth.server.supported.rsa.key.sizes");
+//        if (expectedKeySizes == null || expectedKeySizes.trim().isEmpty()) {
+//            Assertions.fail("System property 'auth.server.supported.rsa.key.sizes' should be set");
+//        }
+//        return expectedKeySizes.split(",");
+//    }
 
     /**
      * @return Lowest key size supported by Keycloak server for {@link org.keycloak.keys.GeneratedRsaKeyProviderFactory}.
      * It is usually 1024, but can be 2048 in some environments (typically in FIPS environments)
      */
-    public static int getLowestSupportedRsaKeySize() {
-        return Integer.parseInt(getExpectedSupportedRsaKeySizes()[0]);
-    }
+//    public static int getLowestSupportedRsaKeySize() {
+//        return Integer.parseInt(getExpectedSupportedRsaKeySizes()[0]);
+//    }
 
 }

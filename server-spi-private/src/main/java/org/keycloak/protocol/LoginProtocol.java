@@ -17,6 +17,10 @@
 
 package org.keycloak.protocol;
 
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -26,10 +30,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.sessions.AuthenticationSessionModel;
-
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriInfo;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -69,7 +69,11 @@ public interface LoginProtocol extends Provider {
          * Passive authentication mode requested, user is logged in, but some other user interaction is necessary (eg. some required login actions exist or Consent approval is necessary for logged in
          * user)
          */
-        PASSIVE_INTERACTION_REQUIRED;
+        PASSIVE_INTERACTION_REQUIRED,
+        /**
+         * Level of Authentication invalid or minimum not reached.
+         */
+        LOA_INVALID;
     }
 
     LoginProtocol setSession(KeycloakSession session);
@@ -143,4 +147,10 @@ public interface LoginProtocol extends Provider {
         return false;
     }
 
+    /**
+     * Protocol specific handling of authentication completeness
+     */
+    default void authenticationComplete(AuthenticationSessionModel authSession) {
+        // do nothing
+    }
 }

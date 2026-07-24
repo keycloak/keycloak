@@ -1,14 +1,14 @@
 package org.keycloak.protocol.docker;
 
+import java.util.Collections;
+import java.util.List;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import java.util.Collections;
-import java.util.List;
 
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement;
 

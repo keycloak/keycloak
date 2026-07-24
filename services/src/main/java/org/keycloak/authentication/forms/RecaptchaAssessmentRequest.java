@@ -17,9 +17,9 @@
 
 package org.keycloak.authentication.forms;
 
-import static java.lang.String.format;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import static java.lang.String.format;
 
 public class RecaptchaAssessmentRequest {
     @JsonProperty("event")

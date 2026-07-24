@@ -53,6 +53,9 @@ In the case of JWT signed with private key or Client secret as jwt, it is requir
 
 If the user is unauthenticated in the IDP, the client still receives a `login_required` error. If the user is authentic in the IDP, the client can still receive an `interaction_required` error if {project_name} must display authentication pages that require user interaction. This authentication includes required actions (for example, password change), consent screens, and screens set to display by the `first broker login` flow or `post broker login` flow.
 
+|Requires short state parameter
+|This switch needs to be enabled if identity provider does not support long value of the `state` parameter sent in the initial OAuth2 authorization request (EG. more than 100 characters). In this case, {project_name} will try to make shorter `state` parameter and may omit some client data to be sent in the initial request. This may result in the limited functionality in some very corner case scenarios (EG. in case that IDP redirects to {project_name} with the error in the OAuth2 authorization response, {project_name} might need to display error page instead of being able to redirect to the client in case that login session is expired).
+
 |===
 
 After the user authenticates to the identity provider and is redirected back to {project_name}, the broker will fetch the user profile information from the endpoint defined in the `User Info URL` setting. For that,

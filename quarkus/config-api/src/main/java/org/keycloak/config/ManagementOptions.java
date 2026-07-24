@@ -19,6 +19,8 @@ package org.keycloak.config;
 import java.io.File;
 import java.util.List;
 
+import static org.keycloak.config.OptionsUtil.DURATION_DESCRIPTION;
+
 /**
  * Options for the management interface that handles management endpoints (f.e. health and metrics endpoints)
  */
@@ -29,6 +31,13 @@ public class ManagementOptions {
             .description("Placeholder for resolving state of the management interface. If set, the value is ignored.")
             .buildTime(true)
             .hidden()
+            .build();
+
+    public static final Option<Boolean> HTTP_MANAGEMENT_HEALTH_ENABLED = new OptionBuilder<>("http-management-health-enabled", Boolean.class)
+            .category(OptionCategory.MANAGEMENT)
+            .description("If health endpoints should be exposed on the management interface. If false, health endpoints will be exposed on the main interface.")
+            .defaultValue(true)
+            .buildTime(true)
             .build();
 
     public static final Option<Boolean> LEGACY_OBSERVABILITY_INTERFACE = new OptionBuilder<>("legacy-observability-interface", Boolean.class)
@@ -55,13 +64,22 @@ public class ManagementOptions {
             .build();
 
     public static final Option<String> HTTP_MANAGEMENT_HOST = new OptionBuilder<>("http-management-host", String.class)
-            .hidden()
             .category(OptionCategory.MANAGEMENT)
             .description("Host of the management interface. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
-            .defaultValue("0.0.0.0")
             .build();
 
+    public enum Scheme {
+        http,
+        inherited
+    }
+
     //HTTPS
+    public static final Option<Scheme> HTTP_MANAGEMENT_SCHEME = new OptionBuilder<>("http-management-scheme", Scheme.class)
+            .category(OptionCategory.MANAGEMENT)
+            .description("Configures the management interface scheme. If 'inherited', the management interface will inherit the HTTPS settings of the main interface. If 'http', the management interface will be accessible via HTTP - it will not inherit HTTPS settings and cannot be configured for HTTPS.")
+            .defaultValue(Scheme.inherited)
+            .build();
+
     public static final Option<HttpOptions.ClientAuth> HTTPS_MANAGEMENT_CLIENT_AUTH = new OptionBuilder<>("https-management-client-auth", HttpOptions.ClientAuth.class)
             .category(OptionCategory.MANAGEMENT)
             .description("Configures the management interface to require/request client authentication. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
@@ -70,25 +88,21 @@ public class ManagementOptions {
             .build();
 
     public static final Option<String> HTTPS_MANAGEMENT_CIPHER_SUITES = new OptionBuilder<>("https-management-cipher-suites", String.class)
-            .hidden()
             .category(OptionCategory.MANAGEMENT)
             .description("The cipher suites to use for the management server. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
-            .hidden()
             .build();
 
     public static final Option<List<String>> HTTPS_MANAGEMENT_PROTOCOLS = OptionBuilder.listOptionBuilder("https-management-protocols", String.class)
-            .hidden()
             .category(OptionCategory.MANAGEMENT)
             .description("The list of protocols to explicitly enable for the management server. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
             .defaultValue(List.of("TLSv1.3,TLSv1.2"))
-            .hidden()
             .build();
 
     public static final Option<String> HTTPS_MANAGEMENT_CERTIFICATES_RELOAD_PERIOD = new OptionBuilder<>("https-management-certificates-reload-period", String.class)
             .category(OptionCategory.MANAGEMENT)
             .description("Interval on which to reload key store, trust store, and certificate files referenced by https-management-* options for the management server. " +
-                    "May be a java.time.Duration value, an integer number of seconds, or an integer followed by one of [ms, h, m, s, d]. " +
-                    "Must be greater than 30 seconds. Use -1 to disable. " +
+                    DURATION_DESCRIPTION +
+                    " Must be greater than 30 seconds. Use -1 to disable. " +
                     "If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
             .defaultValue("1h")
             .build();
@@ -115,8 +129,22 @@ public class ManagementOptions {
             .build();
 
     public static final Option<String> HTTPS_MANAGEMENT_KEY_STORE_TYPE = new OptionBuilder<>("https-management-key-store-type", String.class)
-            .hidden()
             .category(OptionCategory.MANAGEMENT)
             .description("The type of the key store file for the management server. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
+            .build();
+
+    public static final Option<File> HTTPS_MANAGEMENT_TRUST_STORE_FILE = new OptionBuilder<>("https-management-trust-store-file", File.class)
+            .category(OptionCategory.MANAGEMENT)
+            .description("The trust store which holds the certificate information of the certificates to trust for the management server. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
+            .build();
+
+    public static final Option<String> HTTPS_MANAGEMENT_TRUST_STORE_PASSWORD = new OptionBuilder<>("https-management-trust-store-password", String.class)
+            .category(OptionCategory.MANAGEMENT)
+            .description("The password of the trust store file for the management server. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
+            .build();
+
+    public static final Option<String> HTTPS_MANAGEMENT_TRUST_STORE_TYPE = new OptionBuilder<>("https-management-trust-store-type", String.class)
+            .category(OptionCategory.MANAGEMENT)
+            .description("The type of the trust store file for the management server. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
             .build();
 }

@@ -18,8 +18,6 @@
 
 package org.keycloak.authentication.authenticators.x509;
 
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY_MODE_ANY;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -55,7 +53,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
@@ -64,11 +61,6 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.security.auth.x500.X500Principal;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.util.EntityUtils;
-import org.jboss.logging.Logger;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
@@ -80,6 +72,14 @@ import org.keycloak.truststore.TruststoreProvider;
 import org.keycloak.utils.CRLUtils;
 import org.keycloak.utils.OCSPProvider;
 
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY_MODE_ANY;
+
 /**
  * @author <a href="mailto:pnalyvayko@agi.com">Peter Nalyvayko</a>
  * @version $Revision: 1 $
@@ -89,6 +89,8 @@ import org.keycloak.utils.OCSPProvider;
 public class CertificateValidator {
 
     private final static Logger logger = Logger.getLogger(CertificateValidator.class);
+
+    private PKIXCertPathBuilderResult certPathBuilderResult;
 
     enum KeyUsageBits {
         DIGITAL_SIGNATURE(0, "digitalSignature"),
@@ -136,6 +138,10 @@ public class CertificateValidator {
                     return bit;
             throw new IndexOutOfBoundsException("value");
         }
+    }
+
+    public PKIXCertPathBuilderResult getCertPathBuilderResult() {
+        return this.certPathBuilderResult;
     }
 
     public static class LdapContext {
@@ -229,6 +235,7 @@ public class CertificateValidator {
         public CRLLoaderProxy(X509CRL crl) {
             _crl = crl;
         }
+        @Override
         public Collection<X509CRL> getX509CRLs() throws GeneralSecurityException {
             return Collections.singleton(_crl);
         }
@@ -278,6 +285,7 @@ public class CertificateValidator {
                 throw new NullPointerException("Context cannot be null");
         }
 
+        @Override
         public Collection<X509CRL> getX509CRLs() throws GeneralSecurityException {
             if (cRLPath == null) {
                 throw new GeneralSecurityException("Unable to load CRL because no crl path is defined");
@@ -602,17 +610,18 @@ public class CertificateValidator {
             return this;
 
         TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
-        if (truststoreProvider == null || truststoreProvider.getTruststore() == null) {
+        if (truststoreProvider == null || truststoreProvider.getHttpsTruststore() == null) {
             throw new GeneralSecurityException("Cannot validate client certificate trust: Truststore not available. Please make sure to correctly configure truststore provider in order to be able to revalidate certificate trust");
         }
         else
         {
-            Set<X509Certificate> trustedRootCerts = truststoreProvider.getRootCertificates().entrySet().stream().flatMap(t -> t.getValue().stream()).collect(Collectors.toSet());
-            Set<X509Certificate> trustedIntermediateCerts = truststoreProvider.getIntermediateCertificates().entrySet().stream().flatMap(t -> t.getValue().stream()).collect(Collectors.toSet());
+            Set<X509Certificate> trustedRootCerts = truststoreProvider.getHttpsRootCertificates().entrySet().stream().flatMap(t -> t.getValue().stream()).collect(Collectors.toSet());
+            Set<X509Certificate> trustedIntermediateCerts = truststoreProvider.getHttpsIntermediateCertificates().entrySet().stream().flatMap(t -> t.getValue().stream()).collect(Collectors.toSet());
 
             logger.debugf("Found %d trusted root certs, %d trusted intermediate certs", trustedRootCerts.size(), trustedIntermediateCerts.size());
+            logger.debugf("Found %d trusted root certs", truststoreProvider.getHttpsTruststore().size());
 
-            verifyCertificateTrust(_certChain, trustedRootCerts, trustedIntermediateCerts);
+            this.certPathBuilderResult = verifyCertificateTrust(_certChain, trustedRootCerts, trustedIntermediateCerts);
         }
 
         return this;
@@ -735,9 +744,7 @@ public class CertificateValidator {
                     logger.warnf("Unable to check client revocation status using OCSP - continuing certificate authentication because of fail-open OCSP configuration setting");
                 else
                     throw new GeneralSecurityException("Unable to check client revocation status using OCSP");
-            }
-
-            if (rs.getRevocationStatus() == OCSPProvider.RevocationStatus.UNKNOWN) {
+            } else if (rs.getRevocationStatus() == OCSPProvider.RevocationStatus.UNKNOWN) {
                 if (_ocspFailOpen)
                     logger.warnf("Unable to determine certificate's revocation status - continuing certificate authentication because of fail-open OCSP configuration setting");
                 else

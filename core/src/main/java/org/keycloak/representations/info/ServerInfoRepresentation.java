@@ -17,13 +17,13 @@
 
 package org.keycloak.representations.info;
 
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.representations.idm.ComponentTypeRepresentation;
 import org.keycloak.representations.idm.PasswordPolicyTypeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperTypeRepresentation;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -55,6 +55,8 @@ public class ServerInfoRepresentation {
     private List<PasswordPolicyTypeRepresentation> passwordPolicies;
 
     private Map<String, List<String>> enums;
+
+    private List<ParameterizedScopeTypeRepresentation> parameterizedScopeTypes;
 
     public SystemInfoRepresentation getSystemInfo() {
         return systemInfo;
@@ -190,5 +192,13 @@ public class ServerInfoRepresentation {
 
     public void setComponentTypes(Map<String, List<ComponentTypeRepresentation>> componentTypes) {
         this.componentTypes = componentTypes;
+    }
+
+    public List<ParameterizedScopeTypeRepresentation> getParameterizedScopeTypes() {
+        return parameterizedScopeTypes;
+    }
+
+    public void setParameterizedScopeTypes(List<ParameterizedScopeTypeRepresentation> parameterizedScopeTypes) {
+        this.parameterizedScopeTypes = parameterizedScopeTypes;
     }
 }

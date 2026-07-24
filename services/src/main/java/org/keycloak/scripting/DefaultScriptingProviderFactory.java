@@ -18,13 +18,13 @@ package org.keycloak.scripting;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.script.ScriptEngine;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
-import javax.script.ScriptEngine;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>

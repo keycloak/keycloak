@@ -6,8 +6,7 @@
     <#if section = "title">
         title
     <#elseif section = "header">
-        <span class="${properties.kcWebAuthnKeyIcon!}"></span>
-        ${kcSanitize(msg("webauthn-registration-title"))?no_esc}
+        ${msg("webauthn-registration-title")}
     <#elseif section = "form">
     <div class="${properties.kcFormClass!}">
         <form id="register" action="${url.loginAction}" method="post" >
@@ -17,42 +16,46 @@
                 <input type="hidden" id="publicKeyCredentialId" name="publicKeyCredentialId"/>
                 <input type="hidden" id="authenticatorLabel" name="authenticatorLabel"/>
                 <input type="hidden" id="transports" name="transports"/>
+                <input type="hidden" id="authenticatorAttachment" name="authenticatorAttachment"/>
                 <input type="hidden" id="error" name="error"/>
                 <@passwordCommons.logoutOtherSessions/>
             </div>
         </form>
 
         <script type="module">
+            <#outputformat "JavaScript">
             import { registerByWebAuthn } from "${url.resourcesPath}/js/webauthnRegister.js";
             const registerButton = document.getElementById('registerWebAuthn');
             registerButton.addEventListener("click", function() {
                 const input = {
-                    challenge : '${challenge}',
-                    userid : '${userid}',
-                    username : '${username}',
+                    challenge : ${challenge?c},
+                    userid : ${userid?c},
+                    username : ${username?c},
                     signatureAlgorithms : [<#list signatureAlgorithms as sigAlg>${sigAlg?c},</#list>],
-                    rpEntityName : '${rpEntityName}',
-                    rpId : '${rpId}',
-                    attestationConveyancePreference : '${attestationConveyancePreference}',
-                    authenticatorAttachment : '${authenticatorAttachment}',
-                    requireResidentKey : '${requireResidentKey}',
-                    userVerificationRequirement : '${userVerificationRequirement}',
+                    rpEntityName : ${rpEntityName?c},
+                    rpId : ${rpId?c},
+                    attestationConveyancePreference : ${attestationConveyancePreference?c},
+                    authenticatorAttachment : ${authenticatorAttachment?c},
+                    requireResidentKey : ${requireResidentKey?c},
+                    residentKey : ${residentKey?c},
+                    userVerificationRequirement : ${userVerificationRequirement?c},
                     createTimeout : ${createTimeout?c},
-                    excludeCredentialIds : '${excludeCredentialIds}',
-                    initLabel : "${msg("webauthn-registration-init-label")?no_esc}",
-                    initLabelPrompt : "${msg("webauthn-registration-init-label-prompt")?no_esc}",
-                    errmsg : "${msg("webauthn-unsupported-browser-text")?no_esc}"
+                    excludeCredentialIds : ${excludeCredentialIds?c},
+                    initLabel : ${msg("webauthn-registration-init-label")?c},
+                    initLabelPrompt : ${msg("webauthn-registration-init-label-prompt")?c},
+                    errmsg : ${msg("webauthn-unsupported-browser-text")?c}
                 };
                 registerByWebAuthn(input);
-            });
+            },  { once: true });
+            </#outputformat>
         </script>
 
             <@buttons.actionGroup horizontal=true>
-                <@buttons.button id="registerWebAuthn" label="doRegisterSecurityKey" class=["kcButtonPrimaryClass","kcButtonBlockClass"]/>
+                <@buttons.button id="registerWebAuthn" label="doRegisterSecurityKey"/>
                 <#if !isSetRetry?has_content && isAppInitiatedAction?has_content>
                     <form class="${properties.kcFormClass!}" action="${url.loginAction}"
                           id="kc-webauthn-settings-form" method="post">
-                        <@buttons.button id="cancelWebAuthnAIA" name="cancel-aia" label="doCancel" class=["kcButtonSecondaryClass","kcButtonBlockClass"]/>
+                        <@buttons.button id="cancelWebAuthnAIA" name="cancel-aia" label="doCancel" type="secondary"/>
                     </form>
                 </#if>
             </@buttons.actionGroup>

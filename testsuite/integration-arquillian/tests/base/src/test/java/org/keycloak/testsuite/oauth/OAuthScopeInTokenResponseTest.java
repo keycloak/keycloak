@@ -1,10 +1,5 @@
 package org.keycloak.testsuite.oauth;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
@@ -12,8 +7,6 @@ import java.util.List;
 
 import jakarta.ws.rs.core.Response;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
@@ -24,8 +17,18 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 //OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
 public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
@@ -185,7 +188,7 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
         String userScopeId = ApiUtil.getCreatedId(response);
         getCleanup().addClientScopeId(userScopeId);
 
-        ApiUtil.findClientResourceByClientId(realmsResouce().realm("test"), "test-app").addOptionalClientScope(userScopeId);
+        AdminApiUtil.findClientResourceByClientId(realmsResouce().realm("test"), "test-app").addOptionalClientScope(userScopeId);
 
 
         String loginUser = "john-doh@localhost";
@@ -215,7 +218,7 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
         expectSuccessfulResponseFromTokenEndpoint(code, expectedScope);
 
         // Cleanup
-        ApiUtil.findClientResourceByClientId(realmsResouce().realm("test"), "test-app").removeOptionalClientScope(userScopeId);
+        AdminApiUtil.findClientResourceByClientId(realmsResouce().realm("test"), "test-app").removeOptionalClientScope(userScopeId);
     }
     
     private void expectSuccessfulResponseFromTokenEndpoint(String code, String expectedScope) throws Exception {
@@ -225,7 +228,7 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
         log.info("receivedScopes = " + response.getScope());
     	Collection<String> expectedScopes = Arrays.asList(expectedScope.split(" "));
     	Collection<String> receivedScopes = Arrays.asList(response.getScope().split(" "));
-    	Assert.assertTrue(expectedScopes.containsAll(receivedScopes) && receivedScopes.containsAll(expectedScopes));
+    	Assertions.assertTrue(expectedScopes.containsAll(receivedScopes) && receivedScopes.containsAll(expectedScopes));
 
         oauth.doLogout(response.getRefreshToken());
     }

@@ -17,13 +17,13 @@
 
 package org.keycloak.models.utils;
 
+import java.util.Collection;
+import java.util.Map;
+
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-
-import java.util.Collection;
-import java.util.Map;
 
 /**
  * @author Alexander Schwartz

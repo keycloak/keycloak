@@ -17,12 +17,25 @@
 
 package org.keycloak.testsuite.webauthn.passwordless;
 
+import org.keycloak.testsuite.util.BrowserDriverUtil;
+import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.AppInitiatedActionWebAuthnTest;
+import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
+
+import org.junit.Before;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
 public class AppInitiatedActionPwdLessTest extends AppInitiatedActionWebAuthnTest {
+
+    @Before
+    @Override
+    public void setUpVirtualAuthenticator() {
+        if (!BrowserDriverUtil.isDriverFirefox(driver)) {
+            virtualManager = AbstractWebAuthnVirtualTest.createDefaultVirtualManager(driver, DefaultVirtualAuthOptions.DEFAULT_RESIDENT_KEY.getOptions());
+        }
+    }
 
     @Override
     protected boolean isPasswordless() {

@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.federation.sync;
 
 import java.util.Date;
+
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.user.SynchronizationResult;

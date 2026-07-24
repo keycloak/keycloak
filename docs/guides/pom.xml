@@ -97,10 +97,9 @@
                             <resources>
                                 <resource>
                                     <directory>${basedir}/</directory>
-                                    <includes>
-                                        <include>**/examples/**/*.*</include>
-                                        <include>**/partials/**/*.*</include>
-                                    </includes>
+                                    <excludes>
+                                        <exclude>**/templates/**</exclude>
+                                    </excludes>
                                 </resource>
                             </resources>
                         </configuration>
@@ -212,8 +211,7 @@
                         </goals>
                         <configuration>
                             <sourceDirectory>${basedir}/target/generated-guides/high-availability</sourceDirectory>
-                            <outputDirectory>
-                                ${project.build.directory}/generated-docs/high-availability</outputDirectory>
+                            <outputDirectory>${project.build.directory}/generated-docs/high-availability</outputDirectory>
                         </configuration>
                     </execution>
                     <execution>
@@ -225,6 +223,18 @@
                         <configuration>
                             <sourceDirectory>${basedir}/target/generated-guides/securing-apps</sourceDirectory>
                             <outputDirectory>${project.build.directory}/generated-docs/securing-apps</outputDirectory>
+                            <preserveDirectories>true</preserveDirectories>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>admin-api-asciidoc-to-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${basedir}/target/generated-guides/admin-api</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/generated-docs/admin-api</outputDirectory>
                             <preserveDirectories>true</preserveDirectories>
                         </configuration>
                     </execution>
@@ -241,6 +251,7 @@
                             <preserveDirectories>true</preserveDirectories>
                         </configuration>
                     </execution>
+
                 </executions>
             </plugin>
             <plugin>

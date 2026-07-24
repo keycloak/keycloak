@@ -17,15 +17,15 @@
 
 package org.keycloak.storage.user;
 
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
+
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.utils.StringUtil;
-
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Stream;
 
 /**
  * This is an optional capability interface that is intended to be implemented by any
@@ -94,6 +94,8 @@ public interface UserQueryMethodsProvider {
      *     from idp with the given alias configured (case sensitive string)</li>
      *     <li>{@link UserModel#IDP_USER_ID} - search for users with federated identity with
      *     the given userId (case sensitive string)</li>
+     *     <li>{@link UserModel#CREATED_AFTER} - search only for users created after (inclusive) the given timestamp (epoch milliseconds)</li>
+     *     <li>{@link UserModel#CREATED_BEFORE} - search only for users created before (inclusive) the given timestamp (epoch milliseconds)</li>
      * </ul>
      * <p>
      * Any other parameters will be treated as custom user attributes.
@@ -126,6 +128,8 @@ public interface UserQueryMethodsProvider {
      *     from idp with the given alias configured (case sensitive string)</li>
      *     <li>{@link UserModel#IDP_USER_ID} - search for users with federated identity with
      *     the given userId (case sensitive string)</li>
+     *     <li>{@link UserModel#CREATED_AFTER} - search only for users created after (inclusive) the given timestamp (epoch milliseconds)</li>
+     *     <li>{@link UserModel#CREATED_BEFORE} - search only for users created before (inclusive) the given timestamp (epoch milliseconds)</li>
      * </ul>
      * <p>
      * Any other parameters will be treated as custom user attributes.

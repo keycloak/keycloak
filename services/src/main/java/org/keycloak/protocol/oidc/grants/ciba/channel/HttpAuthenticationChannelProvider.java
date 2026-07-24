@@ -24,7 +24,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response.Status;
 
-import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -78,7 +79,7 @@ public class HttpAuthenticationChannelProvider implements AuthenticationChannelP
             channelRequest.setAcrValues(request.getAcrValues());
             channelRequest.setAdditionalParameters(request.getOtherClaims());
 
-            SimpleHttp simpleHttp = SimpleHttp.doPost(httpAuthenticationChannelUri, session)
+            SimpleHttpRequest simpleHttp = SimpleHttp.create(session).doPost(httpAuthenticationChannelUri)
                     .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
                     .json(channelRequest)
                     .auth(createBearerToken(request, client));
@@ -122,7 +123,7 @@ public class HttpAuthenticationChannelProvider implements AuthenticationChannelP
     /**
      * Extension point to allow subclass to override this method in order to add data to post to decoupled server.
      */
-    protected SimpleHttp completeDecoupledAuthnRequest(SimpleHttp simpleHttp, AuthenticationChannelRequest channelRequest) {
+    protected SimpleHttpRequest completeDecoupledAuthnRequest(SimpleHttpRequest simpleHttp, AuthenticationChannelRequest channelRequest) {
         return simpleHttp;
     }
 

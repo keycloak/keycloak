@@ -17,7 +17,9 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
-import org.jboss.logging.Logger;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authentication.AbstractFormAuthenticator;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -34,11 +36,8 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-
-import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
 import static org.keycloak.services.validation.Validation.FIELD_PASSWORD;
 import static org.keycloak.services.validation.Validation.FIELD_USERNAME;
 
@@ -48,14 +47,20 @@ import static org.keycloak.services.validation.Validation.FIELD_USERNAME;
  */
 public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuthenticator {
 
-    private static final Logger logger = Logger.getLogger(AbstractUsernameFormAuthenticator.class);
-
-    public static final String REGISTRATION_FORM_ACTION = "registration_form";
     public static final String ATTEMPTED_USERNAME = "ATTEMPTED_USERNAME";
+
+    /**
+     * An authentication session not to indicate that the username field should be hidden.
+     * This note is usually set together with {@link #ATTEMPTED_USERNAME} to indicated that the
+     * user can restart the flow by choosing a different username.
+     * It should be set by authenticators that happen before this authenticator in the flow so that the original intent
+     * is kept when this authenticator is executed on subsequent requests.
+     */
+    public static final String USERNAME_HIDDEN = "USERNAME_HIDDEN";
     public static final String SESSION_INVALID = "SESSION_INVALID";
 
     // Flag is true if user was already set in the authContext before this authenticator was triggered. In this case we skip clearing of the user after unsuccessful password authentication
-    protected static final String USER_SET_BEFORE_USERNAME_PASSWORD_AUTH = "USER_SET_BEFORE_USERNAME_PASSWORD_AUTH";
+    public static final String USER_SET_BEFORE_USERNAME_PASSWORD_AUTH = "USER_SET_BEFORE_USERNAME_PASSWORD_AUTH";
 
     @Override
     public void action(AuthenticationFlowContext context) {
@@ -69,6 +74,14 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     protected Response challenge(AuthenticationFlowContext context, String error, String field) {
         LoginFormsProvider form = context.form()
                 .setExecution(context.getExecution().getId());
+
+        AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
+
+        if (Boolean.parseBoolean(authenticationSession.getAuthNote(USERNAME_HIDDEN))) {
+            // if username is hidden, shown errors in the password field instead
+            field = FIELD_PASSWORD;
+        }
+
         if (error != null) {
             if (field != null) {
                 form.addError(new FormMessage(field, error));
@@ -186,13 +199,10 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         if (!enabledUser(context, user)) {
             return false;
         }
-        String rememberMe = inputData.getFirst("rememberMe");
-        boolean remember = context.getRealm().isRememberMe() && rememberMe != null && rememberMe.equalsIgnoreCase("on");
-        if (remember) {
-            context.getAuthenticationSession().setAuthNote(Details.REMEMBER_ME, "true");
-            context.getEvent().detail(Details.REMEMBER_ME, "true");
-        } else {
-            context.getAuthenticationSession().removeAuthNote(Details.REMEMBER_ME);
+        // When the user is already set, the password form has no rememberMe checkbox,
+        // so the form data must not overwrite the authNote saved by the preceding authenticator.
+        if (!isUserAlreadySetBeforeUsernamePasswordAuth(context)) {
+            AuthenticatorUtils.processRememberMe(context, inputData);
         }
         context.setUser(user);
         return true;
@@ -219,11 +229,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         context.getEvent().user(user);
         context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
 
-        if (isUserAlreadySetBeforeUsernamePasswordAuth(context)) {
-            LoginFormsProvider form = context.form();
-            form.setAttribute(LoginFormsProvider.USERNAME_HIDDEN, true);
-            form.setAttribute(LoginFormsProvider.REGISTRATION_DISABLED, true);
-        }
+        AuthenticatorUtils.setupReauthenticationInUsernamePasswordFormError(context);
 
         Response challengeResponse = challenge(context, getDefaultChallengeMessage(context), FIELD_PASSWORD);
         if(isEmptyPassword) {
@@ -239,7 +245,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     }
 
     protected boolean isDisabledByBruteForce(AuthenticationFlowContext context, UserModel user) {
-        String bruteForceError = getDisabledByBruteForceEventError(context, user);
+        String bruteForceError = AuthenticatorUtils.getDisabledByBruteForceEventError(context, user);
         if (bruteForceError != null) {
             context.getEvent().user(user);
             context.getEvent().error(bruteForceError);
@@ -251,11 +257,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     }
 
     protected String getDefaultChallengeMessage(AuthenticationFlowContext context) {
-        if (isUserAlreadySetBeforeUsernamePasswordAuth(context)) {
-            return Messages.INVALID_PASSWORD;
-        } else {
-            return Messages.INVALID_USER;
-        }
+        return Messages.INVALID_USER;
     }
 
     protected boolean isUserAlreadySetBeforeUsernamePasswordAuth(AuthenticationFlowContext context) {

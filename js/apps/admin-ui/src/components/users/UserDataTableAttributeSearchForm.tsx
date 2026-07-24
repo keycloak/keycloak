@@ -33,6 +33,7 @@ type UserDataTableAttributeSearchFormProps = {
   profile: UserProfileConfig;
   createAttributeSearchChips: () => ReactNode;
   searchUserWithAttributes: () => void;
+  clearAllFilters: () => void;
 };
 
 type UserFilterForm = UserAttribute & { exact: boolean };
@@ -43,6 +44,7 @@ export function UserDataTableAttributeSearchForm({
   profile,
   createAttributeSearchChips,
   searchUserWithAttributes,
+  clearAllFilters,
 }: UserDataTableAttributeSearchFormProps) {
   const { t } = useTranslation();
   const { addAlert } = useAlerts();
@@ -134,9 +136,11 @@ export function UserDataTableAttributeSearchForm({
       (chip) => chip.name !== chip.name,
     );
     setActiveFilters({ ...activeFilters, userAttribute: filtered });
+    clearAllFilters();
   };
 
   const createAttributeKeyInputField = () => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- may be undefined at runtime despite the type
     if (profile) {
       return (
         <KeycloakSelect

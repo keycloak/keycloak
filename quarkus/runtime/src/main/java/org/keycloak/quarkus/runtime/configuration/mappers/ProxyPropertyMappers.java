@@ -1,19 +1,23 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import io.smallrye.common.net.Inet;
-import io.smallrye.config.ConfigSourceInterceptorContext;
+import java.util.List;
+
+import org.keycloak.config.Option;
 import org.keycloak.config.ProxyOptions;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
+import io.smallrye.common.net.Inet;
+import io.smallrye.config.ConfigSourceInterceptorContext;
+
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-final class ProxyPropertyMappers {
+final class ProxyPropertyMappers implements PropertyMapperGrouping{
 
-    private ProxyPropertyMappers(){}
-
-    public static PropertyMapper<?>[] getProxyPropertyMappers() {
-        return new PropertyMapper[] {
+    @Override
+    public List<PropertyMapper<?>> getPropertyMappers() {
+        Option<?> syntheticOption = ProxyOptions.PROXY_HEADERS.toBuilder().synthetic().build();
+        return List.of(
                 fromOption(ProxyOptions.PROXY_HEADERS)
                         .to("quarkus.http.proxy.proxy-address-forwarding")
                         .transformer((v, c) -> proxyEnabled(null, v, c))
@@ -27,19 +31,23 @@ final class ProxyPropertyMappers {
                             }
                         })
                         .build(),
-                fromOption(ProxyOptions.PROXY_FORWARDED_HOST)
+                fromOption(syntheticOption)
                         .to("quarkus.http.proxy.enable-forwarded-host")
                         .mapFrom(ProxyOptions.PROXY_HEADERS, (v, c) -> proxyEnabled(null, v, c))
                         .build(),
-                fromOption(ProxyOptions.PROXY_FORWARDED_HEADER_ENABLED)
+                fromOption(syntheticOption)
                         .to("quarkus.http.proxy.allow-forwarded")
                         .mapFrom(ProxyOptions.PROXY_HEADERS, (v, c) -> proxyEnabled(ProxyOptions.Headers.forwarded, v, c))
                         .build(),
-                fromOption(ProxyOptions.PROXY_X_FORWARDED_HEADER_ENABLED)
+                fromOption(syntheticOption)
                         .to("quarkus.http.proxy.allow-x-forwarded")
                         .mapFrom(ProxyOptions.PROXY_HEADERS, (v, c) -> proxyEnabled(ProxyOptions.Headers.xforwarded, v, c))
                         .build(),
-                fromOption(ProxyOptions.PROXY_TRUSTED_HEADER_ENABLED)
+                fromOption(syntheticOption)
+                        .to("quarkus.http.proxy.enable-forwarded-prefix")
+                        .mapFrom(ProxyOptions.PROXY_HEADERS, (v, c) -> proxyEnabled(ProxyOptions.Headers.xforwarded, v, c))
+                        .build(),
+                fromOption(syntheticOption)
                         .to("quarkus.http.proxy.enable-trusted-proxy-header")
                         .mapFrom(ProxyOptions.PROXY_HEADERS, (v, c) -> proxyEnabled(null, v, c))
                         .build(),
@@ -49,7 +57,7 @@ final class ProxyPropertyMappers {
                         .addValidateEnabled(() -> !Configuration.isBlank(ProxyOptions.PROXY_HEADERS), "proxy-headers is set")
                         .paramLabel("trusted proxies")
                         .build()
-        };
+        );
     }
 
     private static void validateAddress(String address) {

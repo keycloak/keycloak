@@ -16,9 +16,6 @@
  */
 package org.keycloak.userprofile.validator;
 
-import static org.keycloak.common.util.CollectionUtil.collectionEquals;
-import static org.keycloak.validate.BuiltinValidators.notBlankValidator;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -32,6 +29,9 @@ import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
+
+import static org.keycloak.common.util.CollectionUtil.collectionEquals;
+import static org.keycloak.validate.BuiltinValidators.notBlankValidator;
 
 /**
  * A validator that fails when the attribute is marked as read only and its value has changed.
@@ -61,8 +61,8 @@ public class ImmutableAttributeValidator implements SimpleValidator {
 
         Stream<String> rawValues = user.getAttributeStream(inputHint).filter(Objects::nonNull);
 
-        // force usernames to lower-case to avoid validation errors if the external storage is using a different format
-        if (!user.isFederated() && UserModel.USERNAME.equals(inputHint)) {
+        // force usernames and emails to lower-case to avoid validation errors if the external storage is using a different format
+        if ((!user.isFederated() && UserModel.USERNAME.equals(inputHint)) || UserModel.EMAIL.equals(inputHint)) {
             rawValues = rawValues.map(String::toLowerCase);
         }
 
@@ -71,6 +71,12 @@ public class ImmutableAttributeValidator implements SimpleValidator {
 
         if (!collectionEquals(currentValue, values) && isReadOnly(attributeContext)) {
             if (currentValue.isEmpty() && !notBlankValidator().validate(values).isValid()) {
+                return context;
+            }
+
+            // Allow default values for read-only attributes during first login when the attribute is empty
+            // and the new value matches the configured default value
+            if (currentValue.isEmpty() && isDefaultValueApplied(attributeContext, values)) {
                 return context;
             }
 
@@ -98,5 +104,19 @@ public class ImmutableAttributeValidator implements SimpleValidator {
 
     private boolean isReadOnly(AttributeContext attributeContext) {
         return attributeContext.getMetadata().isReadOnly(attributeContext);
+    }
+    
+    /**
+     * Check if the attribute value matches the configured default value.
+     */
+    private boolean isDefaultValueApplied(AttributeContext attributeContext, List<String> values) {
+        // Check if the attribute has a configured default value
+        String defaultValue = attributeContext.getMetadata().getDefaultValue();
+        if (defaultValue == null) {
+            return false;
+        }
+        
+        // Check if the current values match exactly what we'd expect from the default value
+        return collectionEquals(values, List.of(defaultValue));
     }
 }

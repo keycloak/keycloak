@@ -16,8 +16,9 @@
  */
 package org.keycloak.userprofile.validator;
 
-import jakarta.ws.rs.core.Response;
 import java.util.List;
+
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;

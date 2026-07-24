@@ -17,6 +17,10 @@
 
 package org.keycloak.exportimport.singlefile;
 
+import java.io.File;
+import java.util.List;
+import java.util.Objects;
+
 import org.keycloak.Config;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportProvider;
@@ -25,10 +29,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
-
-import java.io.File;
-import java.util.List;
-import java.util.Objects;
 
 /**
  * Construct a {@link SingleFileExportProvider} to be used to export one or more realms.

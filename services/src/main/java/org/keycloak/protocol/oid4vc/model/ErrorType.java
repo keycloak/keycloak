@@ -17,23 +17,29 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
  * Enum to handle potential errors in issuing credentials with the error types defined in OID4VCI
- * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html}
+ * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-16.html}
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
 public enum ErrorType {
 
+    INVALID_CLIENT("invalid_client"),
+    INVALID_REQUEST("invalid_request"),
+    INVALID_GRANT("invalid_grant"),
+    INVALID_CREDENTIAL_OFFER_REQUEST("invalid_credential_offer_request"),
     INVALID_CREDENTIAL_REQUEST("invalid_credential_request"),
     INVALID_TOKEN("invalid_token"),
-    UNSUPPORTED_CREDENTIAL_TYPE("unsupported_credential_type"),
-    UNSUPPORTED_CREDENTIAL_FORMAT("unsupported_credential_format"),
+    UNKNOWN_CREDENTIAL_CONFIGURATION("unknown_credential_configuration"),
+    UNKNOWN_CREDENTIAL_IDENTIFIER("unknown_credential_identifier"),
     INVALID_PROOF("invalid_proof"),
-    INVALID_ENCRYPTION_PARAMETER("invalid_encryption_parameters"),
+    INVALID_NONCE("invalid_nonce"),
+    INVALID_ENCRYPTION_PARAMETERS("invalid_encryption_parameters"),
     MISSING_CREDENTIAL_CONFIG("missing_credential_config"),
-    MISSING_CREDENTIAL_CONFIG_AND_FORMAT("missing_credential_config_format");
+    MISSING_CREDENTIAL_IDENTIFIER_AND_CONFIGURATION_ID("missing_credential_identifier_and_configuration_id");
 
     private final String value;
 
@@ -41,7 +47,13 @@ public enum ErrorType {
         this.value = value;
     }
 
+    @JsonValue
     public String getValue() {
+        return value;
+    }
+
+    @Override
+    public String toString() {
         return value;
     }
 }

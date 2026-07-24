@@ -17,11 +17,7 @@
 
 package org.keycloak.testsuite.util;
 
-import org.junit.Assert;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.representations.UserInfo;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
-import org.keycloak.utils.MediaType;
+import java.net.URI;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Invocation;
@@ -29,7 +25,13 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
-import java.net.URI;
+
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.representations.UserInfo;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.utils.MediaType;
+
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -63,20 +65,20 @@ public class UserInfoClientUtil {
     }
 
     public static UserInfo testSuccessfulUserInfoResponse(Response response, String userId, String expectedUsername, String expectedEmail) {
-        Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        Assert.assertEquals(response.getHeaderString(HttpHeaders.CONTENT_TYPE), MediaType.APPLICATION_JSON);
+        Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        Assertions.assertEquals(response.getHeaderString(HttpHeaders.CONTENT_TYPE), MediaType.APPLICATION_JSON);
 
         UserInfo userInfo = response.readEntity(UserInfo.class);
 
         response.close();
 
-        Assert.assertNotNull(userInfo);
-        Assert.assertNotNull(userInfo.getSubject());
+        Assertions.assertNotNull(userInfo);
+        Assertions.assertNotNull(userInfo.getSubject());
         if (userId != null) {
-            Assert.assertEquals(userId, userInfo.getSubject());
+            Assertions.assertEquals(userId, userInfo.getSubject());
         }
-        Assert.assertEquals(expectedEmail, userInfo.getEmail());
-        Assert.assertEquals(expectedUsername, userInfo.getPreferredUsername());
+        Assertions.assertEquals(expectedEmail, userInfo.getEmail());
+        Assertions.assertEquals(expectedUsername, userInfo.getPreferredUsername());
         return userInfo;
     }
 

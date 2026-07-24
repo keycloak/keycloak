@@ -17,16 +17,16 @@
 
 package org.keycloak.storage.jpa;
 
-import org.keycloak.crypto.HashException;
-import org.keycloak.crypto.JavaAlgorithm;
-import org.keycloak.models.jpa.entities.UserEntity;
-
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiPredicate;
+
+import org.keycloak.crypto.HashException;
+import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.models.jpa.entities.UserEntity;
 
 /**
  * Create hashes for long values stored in the database. Offers different variants for exact and lowercase search.

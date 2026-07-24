@@ -1,7 +1,13 @@
 package org.keycloak.testsuite.broker;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Test;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
@@ -16,28 +22,24 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.pages.ConsentPage;
 import org.keycloak.testsuite.util.AccountHelper;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import static org.keycloak.models.utils.DefaultAuthenticationFlows.IDP_REVIEW_PROFILE_CONFIG_ALIAS;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.models.utils.DefaultAuthenticationFlows.IDP_REVIEW_PROFILE_CONFIG_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Contains just few basic tests. This is good class to override if you're testing custom IDP configuration and you need
@@ -63,14 +65,15 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
 
     protected void loginUser() {
         oauth.client("broker-app", "password");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
-        Assert.assertTrue("We must be on correct realm right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+                "We must be on correct realm right now");
 
         log.debug("Updating info on updateAccount page");
         updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
@@ -91,14 +94,14 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
             UsersResource consumerUsers = adminClient.realm(bc.consumerRealmName()).users();
 
             int userCount = consumerUsers.count();
-            Assert.assertTrue("There must be at least one user", userCount > 0);
+            Assertions.assertTrue(userCount > 0, "There must be at least one user");
         }
 
         boolean isUserFound = getConsumerUserRepresentations()
           .anyMatch(user -> user.getUsername().equals(bc.getUserLogin()) && user.getEmail().equals(bc.getUserEmail()));
 
-        Assert.assertTrue("There must be user " + bc.getUserLogin() + " in realm " + bc.consumerRealmName(),
-          isUserFound);
+        Assertions.assertTrue(isUserFound,
+          "There must be user " + bc.getUserLogin() + " in realm " + bc.consumerRealmName());
     }
 
     protected boolean isUsingTransientSessions() {
@@ -118,9 +121,9 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
           .filter(userRep -> userName.equals(userRep.getUsername()))
           .iterator();
 
-        assertTrue("At least one user expected with username " + userName, it.hasNext());
+        assertTrue(it.hasNext(), "At least one user expected with username " + userName);
         UserRepresentation res = it.next();
-        assertFalse("At most one user expected with username " + userName, it.hasNext());
+        assertFalse(it.hasNext(), "At most one user expected with username " + userName);
 
         return res;
     }
@@ -148,8 +151,9 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
 
         Integer userCount = adminClient.realm(bc.consumerRealmName()).users().count();
 
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         if (isUsingTransientSessions()) {
             // Assert that there has been no persistent user created
@@ -170,15 +174,16 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
         oauth.client("broker-app", "secret");
         oauth.openLoginForm();
 
-        Assert.assertTrue("Should be logged in", driver.getTitle().endsWith("AUTH_RESPONSE"));
+        Assertions.assertTrue(driver.getTitle().endsWith("AUTH_RESPONSE"), "Should be logged in");
 
         logoutFromConsumerRealm();
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
-        Assert.assertTrue("Should be on " + bc.consumerRealmName() + " realm on login page",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/protocol/openid-connect/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/protocol/openid-connect/"),
+                "Should be on " + bc.consumerRealmName() + " realm on login page");
     }
 
     protected void logoutFromConsumerRealm() {
@@ -244,7 +249,7 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
         }
     }
 
-    static void disableUpdateProfileOnFirstLogin(AuthenticationExecutionInfoRepresentation execution, AuthenticationManagementResource flows) {
+    public static void disableUpdateProfileOnFirstLogin(AuthenticationExecutionInfoRepresentation execution, AuthenticationManagementResource flows) {
         if (execution.getProviderId() != null && execution.getProviderId().equals(IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID)) {
             execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE.name());
             flows.updateExecutions(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW, execution);

@@ -16,16 +16,18 @@
  */
 package org.keycloak.testsuite.forms;
 
+import org.keycloak.events.EventType;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.pages.LoginPasswordResetPage;
+import org.keycloak.testsuite.util.FlowUtil;
+
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.events.EventType;
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.LoginPasswordResetPage;
-import org.keycloak.testsuite.util.FlowUtil;
 
 
 public class ErrorEventOnCustomRegistrationFlowTest extends AbstractFlowTest {
@@ -37,7 +39,7 @@ public class ErrorEventOnCustomRegistrationFlowTest extends AbstractFlowTest {
     public void setup() {
     }
 
-        @Page
+    @Page
     protected LoginPasswordResetPage resetPasswordPage;
 
     @Rule
@@ -52,10 +54,9 @@ public class ErrorEventOnCustomRegistrationFlowTest extends AbstractFlowTest {
 
         driver.navigate().to(resetUri);
 
-        events.expect(EventType.RESET_PASSWORD)
+        EventAssertion.assertError(events.poll()).type(EventType.RESET_PASSWORD_ERROR)
                 .error(ErrorEventAuthenticator.ERROR_MESSAGE)
-                .user(ErrorEventAuthenticator.FAKE_USERID)
-                .assertEvent();
+                .userId(ErrorEventAuthenticator.FAKE_USERID);
 
         resetPasswordPage.assertCurrent();
 

@@ -96,8 +96,6 @@
         <auth.server.jgroups.mtls>false</auth.server.jgroups.mtls>
 
         <auth.server.profile/>
-        <auth.server.feature/>
-        <auth.server.feature.disable/>
 
         <auth.server.host2>${auth.server.host}</auth.server.host2> <!-- for broker and JS adapter tests; defaults to auth.server.host -->
         <app.server.host>localhost</app.server.host>
@@ -259,7 +257,7 @@
         <auth.server.quarkus.cluster.config>local</auth.server.quarkus.cluster.config>
         <auth.server.fips.mode>disabled</auth.server.fips.mode>
         <auth.server.supported.keystore.types>JKS,PKCS12,BCFKS</auth.server.supported.keystore.types>
-        <auth.server.supported.rsa.key.sizes>1024,2048,4096</auth.server.supported.rsa.key.sizes>
+        <auth.server.supported.rsa.key.sizes>1024,2048,3072,4096</auth.server.supported.rsa.key.sizes>
         <auth.server.kerberos.supported>true</auth.server.kerberos.supported>
     </properties>
 
@@ -397,7 +395,6 @@
                         <systemPropertyVariables>
                             <project.build.directory>${project.build.directory}</project.build.directory>
                             <arquillian.xml>${project.build.directory}/dependency/arquillian.xml</arquillian.xml>
-                            <log4j.configuration>file:${project.build.directory}/dependency/log4j.properties</log4j.configuration> <!-- for the logging to properly work with tests in the 'other' module -->
 
                             <auth.server>${auth.server}</auth.server>
                             <auth.server.container>${auth.server.container}</auth.server.container>
@@ -595,12 +592,6 @@
                             <!-- needed when running the embedded Quarkus auth server -->
                             <java.util.concurrent.ForkJoinPool.common.threadFactory>io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory</java.util.concurrent.ForkJoinPool.common.threadFactory>
                         </systemPropertyVariables>
-                        <properties>
-                            <property>
-                                <name>listener</name>
-                                <value>org.keycloak.testsuite.util.TestEventsLogger,org.keycloak.testsuite.util.NonIDERunListener</value>
-                            </property>
-                        </properties>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -1321,40 +1312,6 @@
             </build>
         </profile>
 
-        <profile>
-            <id>clean-jpa</id>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.liquibase</groupId>
-                            <artifactId>liquibase-maven-plugin</artifactId>
-                            <configuration>
-                                <changeLogFile>META-INF/jpa-changelog-master.xml</changeLogFile>
-
-                                <url>${keycloak.connectionsJpa.url}</url>
-                                <driver>${keycloak.connectionsJpa.driver}</driver>
-                                <username>${keycloak.connectionsJpa.user}</username>
-                                <password>${keycloak.connectionsJpa.password}</password>
-
-                                <promptOnNonLocalDatabase>false</promptOnNonLocalDatabase>
-                                <databaseClass>${keycloak.connectionsJpa.liquibaseDatabaseClass}</databaseClass>
-                            </configuration>
-                            <executions>
-                                <execution>
-                                    <id>clean-jpa</id>
-                                    <phase>clean</phase>
-                                    <goals>
-                                        <goal>dropAll</goal>
-                                    </goals>
-                                </execution>
-                            </executions>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-
         <!-- Profiles for migration tests-->
         <profile>
             <id>auth-server-migration</id>
@@ -1502,7 +1459,6 @@
                 <dependency>
                     <groupId>net.bytebuddy</groupId>
                     <artifactId>byte-buddy</artifactId>
-                    <version>${byte-buddy.version}</version>
                 </dependency>
 
                 <dependency>
@@ -1571,16 +1527,12 @@
                 </dependency>-->
 
                 <dependency>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
+                    <groupId>org.jboss.logmanager</groupId>
+                    <artifactId>jboss-logmanager</artifactId>
                 </dependency>
                 <dependency>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-api</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-reload4j</artifactId>
                 </dependency>
 
                 <dependency>
@@ -1760,10 +1712,6 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>xml-maven-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.liquibase</groupId>
-                        <artifactId>liquibase-maven-plugin</artifactId>
                     </plugin>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>

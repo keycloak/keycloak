@@ -16,9 +16,11 @@
  */
 package org.keycloak.sdjwt;
 
+import java.util.Objects;
+
 /**
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
- * 
+ *
  */
 public abstract class AbstractSdJwtClaim implements SdJwtClaim {
     private final SdJwtClaimName claimName;
@@ -35,5 +37,20 @@ public abstract class AbstractSdJwtClaim implements SdJwtClaim {
     @Override
     public String getClaimNameAsString() {
         return claimName.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof AbstractSdJwtClaim)) {
+            return false;
+        }
+
+        AbstractSdJwtClaim that = (AbstractSdJwtClaim) o;
+        return Objects.equals(claimName, that.claimName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(claimName);
     }
 }

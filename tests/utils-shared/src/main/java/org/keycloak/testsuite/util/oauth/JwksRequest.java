@@ -1,9 +1,10 @@
 package org.keycloak.testsuite.util.oauth;
 
-import org.apache.http.client.methods.HttpGet;
+import java.io.IOException;
+
 import org.keycloak.jose.jwk.JSONWebKeySet;
 
-import java.io.IOException;
+import org.apache.http.client.methods.HttpGet;
 
 public class JwksRequest {
 

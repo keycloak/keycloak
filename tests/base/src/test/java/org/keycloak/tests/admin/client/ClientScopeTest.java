@@ -17,17 +17,24 @@
 
 package org.keycloak.tests.admin.client;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+
+import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
@@ -39,35 +46,54 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.common.BasicUserConfig;
+import org.keycloak.tests.oauth.ParameterizedScopeBuilder;
+import org.keycloak.tests.suites.DatabaseTest;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
-import org.keycloak.tests.utils.admin.ApiUtil;
 import org.keycloak.tests.utils.matchers.Matchers;
-import org.keycloak.testsuite.util.RoleBuilder;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.LogoutResponse;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import static org.keycloak.tests.utils.Assert.assertNames;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.tests.utils.Assert.assertNames;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @KeycloakIntegrationTest
 public class ClientScopeTest extends AbstractClientScopeTest {
+
+    @InjectOAuthClient
+    OAuthClient oauth;
+
+    @InjectUser(config = BasicUserConfig.class)
+    ManagedUser user;
 
     @Test
     public void testAddFailureWithInvalidScopeName() {
@@ -109,6 +135,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
     }
 
     @Test
+    @DatabaseTest
     public void testAddDuplicatedClientScope() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("scope1");
@@ -139,6 +166,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
     }
 
     @Test
+    @DatabaseTest
     public void testRemoveClientScope() {
         // Create scope1
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
@@ -178,6 +206,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
 
 
     @Test
+    @DatabaseTest
     public void testUpdateScopeScope() {
         // Test creating
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
@@ -222,6 +251,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
     }
 
     @Test
+    @DatabaseTest
     public void testRenameScope() {
         // Create two scopes
         ClientScopeRepresentation scope1Rep = new ClientScopeRepresentation();
@@ -248,6 +278,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
 
 
     @Test
+    @DatabaseTest
     public void testScopes() {
         RoleRepresentation realmCompositeRole = createRealmRoleWithCleanup("realm-composite");
         RoleRepresentation realmChildRole = createRealmRoleWithCleanup("realm-child");
@@ -439,6 +470,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
     }
 
     @Test
+    @DatabaseTest
     public void testRemoveClientScopeInUse() {
         // Add client scope
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
@@ -448,10 +480,10 @@ public class ClientScopeTest extends AbstractClientScopeTest {
 
         // Add client with the clientScope
         managedRealm.updateWithCleanup(r -> {
-            r.addClient("bar-client")
+            r.clients(ClientBuilder.create("bar-client")
                     .name("bar-client")
                     .protocol("openid-connect")
-                    .defaultClientScopes("foo-scope");
+                    .defaultClientScopes("foo-scope"));
             return r;
         });
         adminEvents.skip();
@@ -616,6 +648,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
 
     // KEYCLOAK-5863
     @Test
+    @DatabaseTest
     public void testUpdateProtocolMappers() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("testUpdateProtocolMappers");
@@ -688,27 +721,55 @@ public class ClientScopeTest extends AbstractClientScopeTest {
     }
 
     @Test
-    public void testCreateDynamicScopeWithFeatureDisabledAndIsDynamicScopeTrue() {
-        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
-        scopeRep.setName("non-dynamic-scope-def2");
-        scopeRep.setProtocol("openid-connect");
-        scopeRep.setAttributes(new HashMap<>() {{
-            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "");
-        }});
-        handleExpectedCreateFailure(scopeRep, 400, "Unexpected value \"true\" for attribute is.dynamic.scope in ClientScope");
+    public void testCreateParameterizedScopeWithFeatureDisabledAndIsParameterizedScopeTrue() {
+        ClientScopeRepresentation scopeRep = ParameterizedScopeBuilder.create("dynamic-scope-def")
+                .parameterizedScopeType("string")
+                .build();
+        String scopeDefId = createClientScope(scopeRep);
+
+        // Assert updated attributes
+        ClientScopeResource scopeRes = clientScopes().get(scopeDefId);
+        scopeRep = clientScopes().get(scopeDefId).toRepresentation();
+        Assertions.assertEquals("dynamic-scope-def", scopeRep.getName());
+        Assertions.assertEquals("true", scopeRep.getAttributes().get(ClientScopeModel.IS_PARAMETERIZED_SCOPE));
+        Assertions.assertEquals("string", scopeRep.getAttributes().get(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE));
+
+        // update should work
+        scopeRes.update(scopeRep);
+
+         // assign the scope to the client as optional
+        ClientResource clientRes = AdminApiUtil.findClientByClientId(managedRealm.admin(), oauth.getClientId());
+        clientRes.addOptionalClientScope(scopeDefId);
+
+        // check it works as a normal non-parameterized scope
+        oauth.scope("dynamic-scope-def");
+        AuthorizationEndpointResponse authResponse = oauth.doLogin(user.getUsername(), user.getPassword());
+        Assertions.assertNotNull(authResponse.getCode());
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authResponse.getCode());
+        AccessToken token = oauth.parseToken(tokenResponse.getAccessToken(), AccessToken.class);
+        MatcherAssert.assertThat(Arrays.stream(token.getScope().split(" ")).toList(), org.hamcrest.Matchers.hasItem("dynamic-scope-def"));
+        LogoutResponse logoutResponse = oauth.doLogout(tokenResponse.getRefreshToken());
+        Assertions.assertTrue(logoutResponse.isSuccess());
+
+        // parameterized scope request does not work
+        oauth.scope("dynamic-scope-def:something");
+        oauth.openLoginForm();
+        authResponse = oauth.parseLoginResponse();
+        Assertions.assertEquals(OAuthErrorException.INVALID_SCOPE, authResponse.getError());
+        MatcherAssert.assertThat(authResponse.getErrorDescription(), org.hamcrest.Matchers.startsWith("Invalid scopes:"));
     }
 
     @Test
-    public void testCreateDynamicScopeWithFeatureDisabledAndNonEmptyDynamicScopeRegexp() {
+    public void testCreateNonParameterizedScopeIgnoresStaleAttributes() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("non-dynamic-scope-def3");
         scopeRep.setProtocol("openid-connect");
         scopeRep.setAttributes(new HashMap<>() {{
-            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "false");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "not-empty");
+            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "false");
+            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "[invalid");
         }});
-        handleExpectedCreateFailure(scopeRep, 400, "Unexpected value \"not-empty\" for attribute dynamic.scope.regexp in ClientScope");
+        String scopeId = createClientScope(scopeRep);
+        removeClientScope(scopeId);
     }
 
     @Test
@@ -741,7 +802,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
 
     @DisplayName("Create ClientScope with protocol:")
     @ParameterizedTest
-    @ValueSource(strings = {"openid-connect", "saml", "oid4vc"})
+    @ValueSource(strings = {"openid-connect", "saml"})
     public void createClientScopeWithOpenIdProtocol(String protocol) {
         createClientScope(protocol);
     }
@@ -762,6 +823,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
             Assertions.assertNotNull(location);
             clientScopeId = location.substring(location.lastIndexOf("/") + 1);
         } finally {
+            Assertions.assertNotNull(clientScopeId);
             // cleanup
             clientScopes().get(clientScopeId).remove();
         }

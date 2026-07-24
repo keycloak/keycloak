@@ -26,6 +26,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 
 import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.representations.account.AccountLinkUriRepresentation;
 import org.keycloak.services.Urls;

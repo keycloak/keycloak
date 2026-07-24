@@ -24,23 +24,25 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.IntStream;
 
-import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.UIUtils;
+
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test for scenarios where "Identity Provider Authenticator" is set with "default identity provider" directly redirecting to provider realm
@@ -53,7 +55,7 @@ public abstract class AbstractDefaultIdpTest extends AbstractInitializedBaseBrok
         // Require broker to show consent screen
         RealmResource brokeredRealm = adminClient.realm(bc.providerRealmName());
         List<ClientRepresentation> clients = brokeredRealm.clients().findByClientId(bc.getIDPClientIdInProviderRealm());
-        org.junit.Assert.assertEquals(1, clients.size());
+        Assertions.assertEquals(1, clients.size());
         ClientRepresentation brokerApp = clients.get(0);
         brokerApp.setConsentRequired(true);
         brokeredRealm.clients().get(brokerApp.getId()).update(brokerApp);
@@ -65,13 +67,14 @@ public abstract class AbstractDefaultIdpTest extends AbstractInitializedBaseBrok
         configureFlow(null);
 
         // Navigate to the auth page
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         waitForPage(driver, "sign in to", true);
 
-        Assert.assertTrue("Driver should be on the initial page and nothing should have happened",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+                "Driver should be on the initial page and nothing should have happened");
     }
 
     @Test
@@ -83,14 +86,15 @@ public abstract class AbstractDefaultIdpTest extends AbstractInitializedBaseBrok
         createUser(bc.providerRealmName(), username, "password", "FirstName");
 
         // Navigate to the auth page
-        oauth.clientId("broker-app");
-        loginPage.open(bc.providerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.providerRealmName());
+        oauth.openLoginForm();
 
         waitForPage(driver, "sign in to", true);
 
         // Make sure we got redirected to the remote IdP automatically
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+                "Driver should be on the provider realm page right now");
     }
 
     protected void testDefaultIdpSetTriedAndReturnedError(String expectedErrorMessageOnLoginScreen) {
@@ -101,15 +105,15 @@ public abstract class AbstractDefaultIdpTest extends AbstractInitializedBaseBrok
         createUser(bc.providerRealmName(), username, "password", "FirstName");
 
         // Navigate to the auth page
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         oauth.realm(bc.consumerRealmName());
         oauth.openLoginForm();
 
         waitForPage(driver, "sign in to", true);
 
         // Make sure we got redirected to the remote IdP automatically
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+                "Driver should be on the provider realm page right now");
 
         // Attempt login
         log.debug("Logging in");
@@ -128,10 +132,30 @@ public abstract class AbstractDefaultIdpTest extends AbstractInitializedBaseBrok
             errorElement = driver.findElement(By.className("alert-error"));
         }
 
-        assertNotNull("Page should show an error message but it's missing", errorElement);
+        assertNotNull(errorElement, "Page should show an error message but it's missing");
 
         // Login to IDP failed due consent denied. Error message is displayed on the username/password screen of the consumer realm
         assertEquals(expectedErrorMessageOnLoginScreen, UIUtils.getTextFromElement(errorElement));
+    }
+
+    protected void testLoginHintForwarded() {
+        // Set the Default Identity Provider option to the remote IdP name
+        configureFlow(getBrokerConfiguration().getIDPAlias());
+
+        String username = "all-info-set@localhost.com";
+        String urlEncodedUsername = "all-info-set%40localhost.com";
+        createUser(bc.providerRealmName(), username, "password", "FirstName");
+
+        // Navigate to the auth page of consumer realm
+        oauth.realm(bc.consumerRealmName()).client("broker-app").loginForm().loginHint(username).open();
+
+        waitForPage(driver, "sign in to", true);
+
+        // Make sure we got redirected to the remote IdP (provider) automatically
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+                "Driver should be on the provider realm page right now");
+        Assertions.assertTrue(driver.getCurrentUrl().contains("login_hint=" + urlEncodedUsername),
+                "Provider page should contain login_hint parameter");
     }
 
     protected void configureFlow(String defaultIdpValue) {
@@ -157,7 +181,7 @@ public abstract class AbstractDefaultIdpTest extends AbstractInitializedBaseBrok
                             .findFirst()
                             .orElse(-1);
 
-                    assertTrue("Identity Provider Redirector execution not found", index >= 0);
+                    assertTrue(index >= 0, "Identity Provider Redirector execution not found");
 
                     FlowUtil.inCurrentRealm(session)
                             .selectFlow(newFlowAlias)

@@ -16,23 +16,23 @@
  */
 package org.keycloak.testsuite.actions;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -49,9 +49,6 @@ public class RequiredActionMultipleActionsTest extends AbstractTestRealmKeycloak
     public AssertEvents events = new AssertEvents(this);
 
     @Page
-    protected AppPage appPage;
-
-    @Page
     protected LoginPage loginPage;
 
     @Page
@@ -62,45 +59,29 @@ public class RequiredActionMultipleActionsTest extends AbstractTestRealmKeycloak
 
     @Test
     public void updateProfileAndPassword() throws Exception {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
 
         String codeId = null;
-        if (changePasswordPage.isCurrent()) {
-            codeId = updatePassword(codeId);
+        updateProfilePage.assertCurrent();
+        codeId = updateProfile(codeId);
 
-            updateProfilePage.assertCurrent();
-            updateProfile(codeId);
-        } else if (updateProfilePage.isCurrent()) {
-            codeId = updateProfile(codeId);
+        changePasswordPage.assertCurrent();
+        updatePassword(codeId);
 
-            changePasswordPage.assertCurrent();
-            updatePassword(codeId);
-        } else {
-            Assert.fail("Expected to update password and profile before login");
-        }
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-
-        events.expectLogin().session(codeId).assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).sessionId(codeId);
     }
 
     public String updatePassword(String codeId) {
         changePasswordPage.changePassword("new-password", "new-password");
 
-        AssertEvents.ExpectedEvent expectedEvent1 = events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
-        if (codeId != null) {
-            expectedEvent1.detail(Details.CODE_ID, codeId);
-        }
-        EventRepresentation eventRep1 = expectedEvent1.assertEvent();
+        EventRepresentation eventRep1 = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).getEvent();
 
-        AssertEvents.ExpectedEvent expectedEvent2 = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
-        if (codeId != null) {
-            expectedEvent2.detail(Details.CODE_ID, codeId);
-        }
-        EventRepresentation eventRep2 = expectedEvent2.assertEvent();
+        EventRepresentation eventRep2 = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).getEvent();
 
-        Assert.assertEquals(eventRep1.getDetails().get(Details.CODE_ID), eventRep2.getDetails().get(Details.CODE_ID));
+        Assertions.assertEquals(eventRep1.getDetails().get(Details.CODE_ID), eventRep2.getDetails().get(Details.CODE_ID));
         return eventRep2.getDetails().get(Details.CODE_ID);
     }
 
@@ -108,16 +89,12 @@ public class RequiredActionMultipleActionsTest extends AbstractTestRealmKeycloak
         updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last")
                 .email("new@email.com").submit();
 
-        AssertEvents.ExpectedEvent expectedEvent = events.expectRequiredAction(EventType.UPDATE_PROFILE)
-                .detail(Details.UPDATED_FIRST_NAME, "New first")
-                .detail(Details.UPDATED_LAST_NAME, "New last")
-                .detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
-                .detail(Details.UPDATED_EMAIL, "new@email.com");
-
-        if (codeId != null) {
-            expectedEvent.detail(Details.CODE_ID, codeId);
-        }
-        return expectedEvent.assertEvent().getDetails().get(Details.CODE_ID);
+        EventRepresentation eventRep = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE)
+                .details(Details.UPDATED_FIRST_NAME, "New first")
+                .details(Details.UPDATED_LAST_NAME, "New last")
+                .details(Details.PREVIOUS_EMAIL, "test-user@localhost")
+                .details(Details.UPDATED_EMAIL, "new@email.com").getEvent();
+        return eventRep.getDetails().get(Details.CODE_ID);
     }
 
 }

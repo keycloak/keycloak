@@ -39,16 +39,14 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-import org.jboss.logging.Logger;
-import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
 import org.keycloak.authorization.common.KeycloakIdentity;
+import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
-import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.permission.Permissions;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
@@ -65,10 +63,10 @@ import org.keycloak.common.util.PathMatcher;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -95,10 +93,12 @@ import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.UserSessionManager;
+import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.services.util.DefaultClientSessionContext;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -160,6 +160,20 @@ public class AuthorizationTokenService {
                 throw new CorsErrorResponseException(request.getCors(), "unauthorized_client", "Invalid signature", Status.BAD_REQUEST);
             }
 
+            String clientId = keycloakSession.getContext().getClient().getClientId();
+
+            if (!clientId.equals(idToken.getIssuedFor())) {
+                CorsErrorResponseException exception = new CorsErrorResponseException(request.getCors(), "invalid_claim_token", "Token issued to a different client", Status.BAD_REQUEST);
+                fireErrorEvent(request.getEvent(), Errors.INVALID_REQUEST, exception);
+                throw exception;
+            }
+
+            if (idToken.isExpired()) {
+                CorsErrorResponseException exception = new CorsErrorResponseException(request.getCors(), "invalid_claim_token", "Expired token", Status.BAD_REQUEST);
+                fireErrorEvent(request.getEvent(), Errors.INVALID_REQUEST, exception);
+                throw exception;
+            }
+
             KeycloakIdentity identity;
 
             try {
@@ -213,6 +227,7 @@ public class AuthorizationTokenService {
 
             if (identity != null) {
                 event.user(identity.getId());
+                request.getKeycloakSession().getContext().setBearerToken(identity.getAccessToken());
             }
 
             ResourceServer resourceServer = getResourceServer(ticket, request);
@@ -274,7 +289,7 @@ public class AuthorizationTokenService {
 
     private Response createSuccessfulResponse(Object response, KeycloakAuthorizationRequest request) {
         return Cors.builder()
-                .allowedOrigins(request.getKeycloakSession(), request.getKeycloakSession().getContext().getClient())
+                .checkAllowedOrigins(request.getKeycloakSession(), request.getKeycloakSession().getContext().getClient())
                 .allowedMethods(HttpMethod.POST)
                 .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS)
                 .add(Response.status(Status.OK).type(MediaType.APPLICATION_JSON_TYPE).entity(response));
@@ -662,9 +677,9 @@ public class AuthorizationTokenService {
                         if (permissionScopes != null) {
                             permissionScopes.retainAll(scopes);
                         }
+                        // the permission is explicitly granted by the owner, mark this permission as granted so that we don't run the evaluation engine on it
+                        resourcePermission.setGranted(true);
                     }
-                    // the permission is explicitly granted by the owner, mark this permission as granted so that we don't run the evaluation engine on it
-                    resourcePermission.setGranted(true);
                 }
 
                 Resource serverResource = resourceStore.findByName(resourceServer, resourceId);
@@ -673,13 +688,13 @@ public class AuthorizationTokenService {
                     permission.setResourceId(serverResource.getId());
                     addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, serverResource);
                 }
-            }
-        }
 
-        if (permissionsToEvaluate.isEmpty()) {
-            CorsErrorResponseException invalidResourceException = new CorsErrorResponseException(request.getCors(), "invalid_resource", "Resource with id [" + resourceId + "] does not exist.", Status.BAD_REQUEST);
-            fireErrorEvent(request.getEvent(), Errors.INVALID_REQUEST, invalidResourceException);
-            throw invalidResourceException;
+                if (permissionsToEvaluate.isEmpty()) {
+                    CorsErrorResponseException invalidResourceException = new CorsErrorResponseException(request.getCors(), "invalid_resource", "Resource with id [" + resourceId + "] does not exist.", Status.BAD_REQUEST);
+                    fireErrorEvent(request.getEvent(), Errors.INVALID_REQUEST, invalidResourceException);
+                    throw invalidResourceException;
+                }
+            }
         }
     }
 

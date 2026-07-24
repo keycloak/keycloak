@@ -32,7 +32,7 @@ import java.util.stream.StreamSupport;
 
 import org.infinispan.client.hotrod.impl.query.RemoteQuery;
 import org.infinispan.commons.api.query.Query;
-import org.infinispan.query.dsl.QueryResult;
+import org.infinispan.commons.api.query.QueryResult;
 
 public final class QueryHelper {
 
@@ -195,7 +195,7 @@ public final class QueryHelper {
                 return;
             }
             currentOffset += resultList.size();
-            if (rsp.count().isExact() && currentOffset >= rsp.count().value()) {
+            if (rsp.count().exact() && currentOffset >= rsp.count().value()) {
                 completed = true;
                 return;
             }

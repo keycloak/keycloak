@@ -1,16 +1,20 @@
 package org.keycloak.testsuite.util.oauth;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
+import java.io.IOException;
+import java.util.List;
+
 import org.keycloak.OAuth2Constants;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
-import java.io.IOException;
+import org.apache.http.client.methods.CloseableHttpResponse;
 
 public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenRequest, AccessTokenResponse> {
 
     private final String code;
 
-    AccessTokenRequest(String code, AbstractOAuthClient<?> client) {
+    public AccessTokenRequest(AbstractOAuthClient<?> client, String code) {
         super(client);
         this.code = code;
     }
@@ -18,6 +22,12 @@ public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenReque
     @Override
     protected String getEndpoint() {
         return client.getEndpoints().getToken();
+    }
+
+    public AccessTokenRequest signedJwt(String signedJwt) {
+        parameter(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT);
+        parameter(OAuth2Constants.CLIENT_ASSERTION, signedJwt);
+        return this;
     }
 
     public AccessTokenRequest codeVerifier(PkceGenerator pkceGenerator) {
@@ -32,8 +42,23 @@ public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenReque
         return this;
     }
 
+    public AccessTokenRequest authorizationDetails(List<OID4VCAuthorizationDetail> authDetails) {
+        parameter(OAuth2Constants.AUTHORIZATION_DETAILS, JsonSerialization.valueAsString(authDetails));
+        return this;
+    }
+
     public AccessTokenRequest dpopProof(String dpopProof) {
         header(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
+        return this;
+    }
+
+    public AccessTokenRequest redirectUri(String redirectUri) {
+        parameter(OAuth2Constants.REDIRECT_URI, redirectUri);
+        return this;
+    }
+
+    public AccessTokenRequest resource(String resource) {
+        parameter(OAuth2Constants.RESOURCE, resource);
         return this;
     }
 
@@ -44,14 +69,14 @@ public class AccessTokenRequest extends AbstractHttpPostRequest<AccessTokenReque
 
     protected void initRequest() {
         parameter(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE);
-
         parameter(OAuth2Constants.CODE, code);
-        parameter(OAuth2Constants.REDIRECT_URI, client.getRedirectUri());
+        if (!hasParameter(OAuth2Constants.REDIRECT_URI)) {
+            parameter(OAuth2Constants.REDIRECT_URI, client.getRedirectUri());
+        }
     }
 
     @Override
     protected AccessTokenResponse toResponse(CloseableHttpResponse response) throws IOException {
         return new AccessTokenResponse(response);
     }
-
 }

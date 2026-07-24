@@ -17,10 +17,11 @@
 
 package org.keycloak.authentication;
 
-import org.keycloak.models.utils.FormMessage;
+import java.util.List;
 
 import jakarta.ws.rs.core.MultivaluedMap;
-import java.util.List;
+
+import org.keycloak.models.utils.FormMessage;
 
 /**
  * Interface that encapsulates the current validation that is being performed.  Calling success() or validationError()

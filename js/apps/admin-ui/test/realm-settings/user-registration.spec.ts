@@ -1,20 +1,24 @@
 import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { confirmModal } from "../utils/modal";
-import { pickRoleType, confirmModalAssign, pickRole } from "../utils/roles";
-import { goToRealm, goToRealmSettings } from "../utils/sidebar";
-import { assertRowExists, clickRowKebabItem, searchItem } from "../utils/table";
+import adminClient from "../utils/AdminClient.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { confirmModal } from "../utils/modal.ts";
+import { pickRoleType, confirmModalAssign, pickRole } from "../utils/roles.ts";
+import { goToRealm, goToRealmSettings } from "../utils/sidebar.ts";
+import {
+  assertRowExists,
+  clickRowKebabItem,
+  searchItem,
+} from "../utils/table.ts";
 import {
   goToDefaultGroupTab,
   goToUserRegistrationTab,
-} from "./user-registration";
+} from "./user-registration.ts";
 
 const groupName = "The default group";
 
-test.describe("Realm settings - User registration tab", () => {
+test.describe.serial("Realm settings - User registration tab", () => {
   const realmName = `realm-settings-user-registration-${uuid()}`;
   const roleName = "theRole";
 

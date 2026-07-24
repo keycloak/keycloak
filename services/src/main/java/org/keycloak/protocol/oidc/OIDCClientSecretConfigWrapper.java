@@ -3,22 +3,29 @@ package org.keycloak.protocol.oidc;
 import java.io.InvalidObjectException;
 import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSecretConstants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.delegate.ClientModelLazyDelegate;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.utils.StringUtil;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import static org.keycloak.models.ClientSecretConstants.CLIENT_ROTATED_SECRET;
 import static org.keycloak.models.ClientSecretConstants.CLIENT_ROTATED_SECRET_CREATION_TIME;
 import static org.keycloak.models.ClientSecretConstants.CLIENT_ROTATED_SECRET_EXPIRATION_TIME;
+import static org.keycloak.models.ClientSecretConstants.CLIENT_SECRET_AUTHENTICATION_ALLOWED_METHOD;
 import static org.keycloak.models.ClientSecretConstants.CLIENT_SECRET_CREATION_TIME;
 import static org.keycloak.models.ClientSecretConstants.CLIENT_SECRET_EXPIRATION;
 import static org.keycloak.models.ClientSecretConstants.CLIENT_SECRET_REMAINING_EXPIRATION_TIME;
@@ -27,9 +34,11 @@ import static org.keycloak.models.ClientSecretConstants.CLIENT_SECRET_REMAINING_
  * @author <a href="mailto:masales@redhat.com">Marcelo Sales</a>
  */
 public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
+    private final boolean isRotationFeatureEnabled;
 
     private OIDCClientSecretConfigWrapper(ClientModel client, ClientRepresentation clientRep) {
         super(client, clientRep);
+        this.isRotationFeatureEnabled = Profile.isFeatureEnabled(Feature.CLIENT_SECRET_ROTATION);
     }
 
     public static OIDCClientSecretConfigWrapper fromClientModel(ClientModel client) {
@@ -64,6 +73,14 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
         }
     }
 
+    public String getClientSecretAuthenticationAllowedMethod() {
+        return getAttribute(CLIENT_SECRET_AUTHENTICATION_ALLOWED_METHOD);
+    }
+
+    public void setClientSecretAuthenticationAllowedMethod(String clientSecretAuthenticationAllowedMethod) {
+        setAttribute(CLIENT_SECRET_AUTHENTICATION_ALLOWED_METHOD, clientSecretAuthenticationAllowedMethod);
+    }
+
     public void removeClientSecretRotationInfo() {
         setAttribute(CLIENT_SECRET_EXPIRATION, null);
         setAttribute(CLIENT_SECRET_REMAINING_EXPIRATION_TIME, null);
@@ -71,41 +88,51 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
     }
 
     public void removeClientSecretRotated() {
-        if (hasRotatedSecret()) {
+        if (hasRotatedSecretAttributes()) {
             setAttribute(CLIENT_ROTATED_SECRET, null);
             setAttribute(CLIENT_ROTATED_SECRET_CREATION_TIME, null);
             setAttribute(CLIENT_ROTATED_SECRET_EXPIRATION_TIME, null);
         }
     }
 
-    public int getClientSecretCreationTime() {
+    public long getClientSecretCreationTime() {
         String creationTime = getAttribute(CLIENT_SECRET_CREATION_TIME);
-        return StringUtil.isBlank(creationTime) ? 0 : Integer.parseInt(creationTime);
+        return StringUtil.isBlank(creationTime) ? 0 : Long.parseLong(creationTime);
     }
 
-    public void setClientSecretCreationTime(int creationTime) {
+    public void setClientSecretCreationTime(long creationTime) {
         setAttribute(CLIENT_SECRET_CREATION_TIME, String.valueOf(creationTime));
     }
 
     public boolean hasRotatedSecret() {
-        return StringUtil.isNotBlank(getAttribute(CLIENT_ROTATED_SECRET)) && StringUtil.isNotBlank(getAttribute(CLIENT_ROTATED_SECRET_CREATION_TIME));
+        return isRotationFeatureEnabled && hasRotatedSecretAttributes();
     }
 
-    public String getClientRotatedSecret() {
-        return getAttribute(CLIENT_ROTATED_SECRET);
+    private boolean hasRotatedSecretAttributes() {
+        return StringUtil.isNotBlank(getAttribute(CLIENT_ROTATED_SECRET))
+                && StringUtil.isNotBlank(getAttribute(CLIENT_ROTATED_SECRET_CREATION_TIME));
+    }
+
+    /**
+     * Returns the rotated client secret value resolved through the vault.
+     * Use {@link #hasRotatedSecret()} to check whether a rotated secret is effectively present before calling this method.
+     */
+    public String getClientRotatedSecret(KeycloakSession session) {
+        String secret = getAttribute(CLIENT_ROTATED_SECRET);
+        return session == null ? getAttribute(CLIENT_ROTATED_SECRET) : session.vault().getStringSecret(secret).get().orElse(secret);
     }
 
     public void setClientRotatedSecret(String secret) {
         setAttribute(CLIENT_ROTATED_SECRET, secret);
     }
 
-    public int getClientRotatedSecretCreationTime() {
+    public long getClientRotatedSecretCreationTime() {
         String rotatedCreationTime = getAttribute(CLIENT_ROTATED_SECRET_CREATION_TIME);
-        if (StringUtil.isNotBlank(rotatedCreationTime)) return Integer.parseInt(rotatedCreationTime);
+        if (StringUtil.isNotBlank(rotatedCreationTime)) return Long.parseLong(rotatedCreationTime);
         return 0;
     }
 
-    public void setClientRotatedSecretCreationTime(Integer rotatedTime) {
+    public void setClientRotatedSecretCreationTime(Long rotatedTime) {
         setAttribute(CLIENT_ROTATED_SECRET_CREATION_TIME, rotatedTime != null ? String.valueOf(rotatedTime) : null);
     }
 
@@ -113,11 +140,11 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
     Update the creation time of a secret with current date time value
      */
     public void setClientSecretCreationTime() {
-        setClientSecretCreationTime(Time.currentTime());
+        setClientSecretCreationTime(Time.currentTimeSeconds());
     }
 
     public void setClientRotatedSecretCreationTime() {
-        setClientRotatedSecretCreationTime(Time.currentTime());
+        setClientRotatedSecretCreationTime(Time.currentTimeSeconds());
     }
 
     public void updateClientRepresentationAttributes(ClientRepresentation rep) {
@@ -132,30 +159,30 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
         return getClientSecretExpirationTime() > 0;
     }
 
-    public int getClientSecretExpirationTime() {
+    public long getClientSecretExpirationTime() {
         String expiration = getAttribute(CLIENT_SECRET_EXPIRATION);
-        return expiration == null ? 0 : Integer.parseInt(expiration);
+        return expiration == null ? 0 : Long.parseLong(expiration);
     }
 
-    public void setClientSecretExpirationTime(Integer expiration) {
+    public void setClientSecretExpirationTime(Long expiration) {
         setAttribute(ClientSecretConstants.CLIENT_SECRET_EXPIRATION, expiration != null ? String.valueOf(expiration) : null);
     }
 
     public boolean isClientSecretExpired() {
         if (hasClientSecretExpirationTime()) {
-            return getClientSecretExpirationTime() < Time.currentTime();
+            return getClientSecretExpirationTime() < Time.currentTimeSeconds();
         }
         return false;
     }
 
-    public int getClientRotatedSecretExpirationTime() {
+    public long getClientRotatedSecretExpirationTime() {
         if (hasClientRotatedSecretExpirationTime()) {
-            return Integer.valueOf(getAttribute(ClientSecretConstants.CLIENT_ROTATED_SECRET_EXPIRATION_TIME));
+            return Long.parseLong(getAttribute(ClientSecretConstants.CLIENT_ROTATED_SECRET_EXPIRATION_TIME));
         }
         return 0;
     }
 
-    public void setClientRotatedSecretExpirationTime(Integer expiration) {
+    public void setClientRotatedSecretExpirationTime(Long expiration) {
         setAttribute(ClientSecretConstants.CLIENT_ROTATED_SECRET_EXPIRATION_TIME, expiration != null ? String.valueOf(expiration) : null);
     }
 
@@ -165,13 +192,35 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
 
     public boolean isClientRotatedSecretExpired() {
         if (hasClientRotatedSecretExpirationTime()) {
-            return getClientRotatedSecretExpirationTime() < Time.currentTime();
+            return getClientRotatedSecretExpirationTime() < Time.currentTimeSeconds();
         }
         return true;
     }
 
+    public boolean validateSecret(KeycloakSession session, String secret) {
+        if (isClientSecretExpired()) {
+            return false;
+        }
+
+        ClientModel wrapper = new ClientModelLazyDelegate(() -> clientModel) {
+            @Override
+            public String getSecret() {
+                final String secret = clientModel.getSecret();
+                final String result = session.vault().getStringSecret(secret).get().orElse(secret);
+                return result;
+            }
+
+            @Override
+            public boolean validateSecret(String secret) {
+                return MessageDigest.isEqual(secret.getBytes(), getSecret().getBytes());
+            }
+        };
+
+        return wrapper.validateSecret(secret);
+    }
+
     //validates the rotated secret (value and expiration)
-    public boolean validateRotatedSecret(String secret) {
+    public boolean validateRotatedSecret(KeycloakSession session, String secret) {
 
         // there must exist a rotated_secret
         if (hasRotatedSecret()) {
@@ -183,7 +232,7 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
             return false;
         }
 
-        return MessageDigest.isEqual(secret.getBytes(), getClientRotatedSecret().getBytes());
+        return MessageDigest.isEqual(secret.getBytes(), getClientRotatedSecret(session).getBytes());
 
     }
 
@@ -195,23 +244,23 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
             map.put("clientId", getId());
             map.put("clientName", getName());
             map.put("secretCreationTimeSeconds", getClientSecretCreationTime());
-            map.put("secretCreationTime", sdf.format(Time.toDate(getClientSecretCreationTime())));
+            map.put("secretCreationTime", sdf.format(new Date(TimeUnit.SECONDS.toMillis(getClientSecretCreationTime()))));
             map.put("secretExpirationTimeSeconds", getClientSecretExpirationTime());
-            map.put("secretExpirationTime", sdf.format(Time.toDate(getClientSecretExpirationTime())));
+            map.put("secretExpirationTime", sdf.format(new Date(TimeUnit.SECONDS.toMillis(getClientSecretExpirationTime()))));
             map.put("rotatedSecretCreationTimeSeconds", getClientRotatedSecretCreationTime());
-            map.put("rotatedSecretCreationTime", sdf.format(Time.toDate(getClientRotatedSecretCreationTime())));
+            map.put("rotatedSecretCreationTime", sdf.format(new Date(TimeUnit.SECONDS.toMillis(getClientRotatedSecretCreationTime()))));
             map.put("rotatedSecretExpirationTimeSeconds", getClientRotatedSecretExpirationTime());
-            map.put("rotatedSecretExpirationTime", sdf.format(Time.toDate(getClientRotatedSecretExpirationTime())));
+            map.put("rotatedSecretExpirationTime", sdf.format(new Date(TimeUnit.SECONDS.toMillis(getClientRotatedSecretExpirationTime()))));
             return mapper.writeValueAsString(map);
         } catch (JsonProcessingException e) {
             return "";
         }
     }
 
-    public ReadOnlyRotatedSecretClientModel toRotatedClientModel() throws InvalidObjectException {
+    public ReadOnlyRotatedSecretClientModel toRotatedClientModel(KeycloakSession session) throws InvalidObjectException {
         if (Objects.isNull(this.clientModel))
             throw new InvalidObjectException(getClass().getCanonicalName() + " does not have an attribute of type " + ClientModel.class.getCanonicalName());
-        return new ReadOnlyRotatedSecretClientModel(clientModel);
+        return new ReadOnlyRotatedSecretClientModel(session, clientModel);
     }
 
     /**
@@ -219,13 +268,16 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
      */
     public class ReadOnlyRotatedSecretClientModel extends ClientModelLazyDelegate {
 
-        private ReadOnlyRotatedSecretClientModel(ClientModel clientModel) {
+        private final KeycloakSession session;
+
+        private ReadOnlyRotatedSecretClientModel(KeycloakSession session, ClientModel clientModel) {
             super(() -> clientModel);
+            this.session = session;
         }
 
         @Override
         public String getSecret() {
-            return OIDCClientSecretConfigWrapper.this.getClientRotatedSecret();
+            return OIDCClientSecretConfigWrapper.this.getClientRotatedSecret(session);
         }
 
     }

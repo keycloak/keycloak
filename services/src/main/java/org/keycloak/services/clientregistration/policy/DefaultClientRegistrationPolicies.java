@@ -34,6 +34,7 @@ import org.keycloak.services.clientregistration.policy.impl.ClientScopesClientRe
 import org.keycloak.services.clientregistration.policy.impl.ConsentRequiredClientRegistrationPolicyFactory;
 import org.keycloak.services.clientregistration.policy.impl.MaxClientsClientRegistrationPolicyFactory;
 import org.keycloak.services.clientregistration.policy.impl.ProtocolMappersClientRegistrationPolicyFactory;
+import org.keycloak.services.clientregistration.policy.impl.RegistrationWebOriginsPolicyFactory;
 import org.keycloak.services.clientregistration.policy.impl.ScopeClientRegistrationPolicyFactory;
 import org.keycloak.services.clientregistration.policy.impl.TrustedHostClientRegistrationPolicyFactory;
 
@@ -110,8 +111,10 @@ public class DefaultClientRegistrationPolicies {
         clientTemplatesModel.getConfig().put(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES, Collections.emptyList());
         clientTemplatesModel.put(ClientScopesClientRegistrationPolicyFactory.ALLOW_DEFAULT_SCOPES, true);
         realm.addComponentModel(clientTemplatesModel);
+
+        ComponentModel allowedRegistrationWebOrigins = createModelInstance("Allowed Registration Web Origins", realm, RegistrationWebOriginsPolicyFactory.PROVIDER_ID, policyTypeKey);
+        allowedRegistrationWebOrigins.getConfig().put(RegistrationWebOriginsPolicyFactory.WEB_ORIGINS, Collections.emptyList());
+        realm.addComponentModel(allowedRegistrationWebOrigins);
     }
-
-
 
 }

@@ -16,11 +16,12 @@
  */
 package org.keycloak.connections.jpa.updater.liquibase.custom;
 
+import org.keycloak.theme.DefaultThemeSelectorProvider;
+
 import liquibase.exception.CustomChangeException;
 import liquibase.statement.core.DeleteStatement;
 import liquibase.statement.core.UpdateStatement;
 import liquibase.structure.core.Table;
-import org.keycloak.theme.DefaultThemeSelectorProvider;
 
 /**
  * <p>Migration class to remove old <em>rh-sso</em> themes.</p>

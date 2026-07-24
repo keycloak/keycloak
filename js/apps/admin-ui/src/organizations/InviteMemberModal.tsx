@@ -44,7 +44,7 @@ export const InviteMemberModal = ({
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t("inviteMember")}
+      title={t("inviteNewUser")}
       isOpen
       onClose={onClose}
       actions={[

@@ -17,54 +17,7 @@
 
 package org.keycloak.models.utils;
 
-import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.Config.Scope;
-import org.keycloak.broker.social.SocialIdentityProvider;
-import org.keycloak.broker.social.SocialIdentityProviderFactory;
-import org.keycloak.common.util.CertificateUtils;
-import org.keycloak.common.util.KeyUtils;
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.common.util.SecretGenerator;
-import org.keycloak.common.util.Time;
-import org.keycloak.component.ComponentModel;
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.deployment.DeployedConfigurationsManager;
-import org.keycloak.models.AccountRoles;
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.AuthenticationFlowModel;
-import org.keycloak.models.AuthenticatorConfigModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.ClientSecretConstants;
-import org.keycloak.models.Constants;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.GroupProvider;
-import org.keycloak.models.GroupProviderFactory;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakContext;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.KeycloakSessionTask;
-import org.keycloak.models.KeycloakSessionTaskWithResult;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.ScopeContainerModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.protocol.oidc.OIDCConfigAttributes;
-import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.representations.idm.CertificateRepresentation;
-import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.sessions.RootAuthenticationSessionModel;
-import org.keycloak.transaction.JtaTransactionManagerLookup;
-import org.keycloak.transaction.RequestContextHelper;
-import org.keycloak.utils.KeycloakSessionUtil;
-
-import jakarta.transaction.InvalidTransactionException;
-import jakarta.transaction.SystemException;
-import jakarta.transaction.Transaction;
-import javax.crypto.spec.SecretKeySpec;
+import java.math.BigInteger;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -72,9 +25,11 @@ import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -85,6 +40,63 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.crypto.spec.SecretKeySpec;
+
+import jakarta.transaction.InvalidTransactionException;
+import jakarta.transaction.SystemException;
+import jakarta.transaction.Transaction;
+
+import org.keycloak.Config;
+import org.keycloak.Config.Scope;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.broker.provider.ConfigConstants;
+import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.broker.social.SocialIdentityProviderFactory;
+import org.keycloak.cache.AlternativeLookupProvider;
+import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.common.util.Time;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.constants.OID4VCIConstants;
+import org.keycloak.deployment.DeployedConfigurationsManager;
+import org.keycloak.models.AccountRoles;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ClientSecretConstants;
+import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupProvider;
+import org.keycloak.models.GroupProviderFactory;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakContext;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSessionTask;
+import org.keycloak.models.KeycloakSessionTaskWithResult;
+import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.ScopeContainerModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.AccessToken.Access;
+import org.keycloak.representations.idm.CertificateRepresentation;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.transaction.JtaTransactionManagerLookup;
+import org.keycloak.transaction.RequestContextHelper;
+import org.keycloak.utils.KeycloakSessionUtil;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.utils.StreamsUtil.closing;
 
@@ -103,9 +115,14 @@ public final class KeycloakModelUtils {
 
     public static final String GROUP_PATH_SEPARATOR = "/";
     public static final String GROUP_PATH_ESCAPE = "~";
-    private static final char CLIENT_ROLE_SEPARATOR = '.';
+    public static final char CLIENT_ROLE_SEPARATOR = '.';
 
     public static final int MAX_CLIENT_LOOKUPS_DURING_ROLE_RESOLVE = 25;
+
+    public static final int DEFAULT_RSA_KEY_SIZE = 4096;
+    public static final int DEFAULT_CERTIFICATE_VALIDITY_YEARS = 3;
+
+    private static final ThreadLocal<Integer> timeouts = new ThreadLocal<Integer>();
 
     private KeycloakModelUtils() {
     }
@@ -218,8 +235,14 @@ public final class KeycloakModelUtils {
     }
 
     public static CertificateRepresentation generateKeyPairCertificate(String subject) {
-        KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
-        X509Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, subject);
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.YEAR, DEFAULT_CERTIFICATE_VALIDITY_YEARS);
+        return generateKeyPairCertificate(subject, DEFAULT_RSA_KEY_SIZE, calendar);
+    }
+
+    public static CertificateRepresentation generateKeyPairCertificate(String subject, int keysize, Calendar endDate) {
+        KeyPair keyPair = KeyUtils.generateRsaKeyPair(keysize);
+        X509Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, subject, BigInteger.valueOf(System.currentTimeMillis()), endDate.getTime());
 
         String privateKeyPem = PemUtils.encodeKey(keyPair.getPrivate());
         String certPem = PemUtils.encodeCertificate(certificate);
@@ -231,11 +254,19 @@ public final class KeycloakModelUtils {
     }
 
     public static String generateSecret(ClientModel client) {
-        int secretLength = getSecretLengthByAuthenticationType(client.getClientAuthenticatorType(), client.getAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG));
+        int secretLength = getRequiredClientSecretLength();
         String secret = SecretGenerator.getInstance().randomString(secretLength);
         client.setSecret(secret);
         client.setAttribute(ClientSecretConstants.CLIENT_SECRET_CREATION_TIME, String.valueOf(Time.currentTime()));
         return secret;
+    }
+
+    /**
+     * Returns the required length for a client secret in alphanumeric characters.
+     * Always generated at HS512-level entropy to cover all HMAC signature use cases.
+     */
+    public static int getRequiredClientSecretLength() {
+        return SecretGenerator.equivalentEntropySize(SecretGenerator.SECRET_LENGTH_512_BITS, SecretGenerator.ALPHANUM.length);
     }
 
     public static String getDefaultClientAuthenticatorType() {
@@ -450,9 +481,9 @@ public final class KeycloakModelUtils {
             } catch (Throwable t) {
                 session.getTransactionManager().setRollbackOnly();
                 throw t;
-            } finally {
-                KeycloakSessionUtil.setKeycloakSession(existing);
             }
+        } finally {
+            KeycloakSessionUtil.setKeycloakSession(existing);
         }
         return result;
     }
@@ -481,12 +512,22 @@ public final class KeycloakModelUtils {
                 try {
                     // If timeout is set to 0, reset to default transaction timeout
                     lookup.getTransactionManager().setTransactionTimeout(timeoutInSeconds);
+
+                    if (timeoutInSeconds == 0) {
+                        timeouts.remove();
+                    } else {
+                        timeouts.set(timeoutInSeconds);
+                    }
                 } catch (SystemException e) {
                     // Shouldn't happen for Wildfly transaction manager
                     throw new RuntimeException(e);
                 }
             }
         }
+    }
+
+    public static Optional<Integer> getTransactionLimit() {
+        return Optional.ofNullable(timeouts.get());
     }
 
     public static Function<KeycloakSessionFactory, ComponentModel> componentModelGetter(String realmId, String componentId) {
@@ -680,7 +721,7 @@ public final class KeycloakModelUtils {
 
     public static Collection<String> resolveAttribute(UserModel user, String name, boolean aggregateAttrs) {
         List<String> values = user.getAttributeStream(name).collect(Collectors.toList());
-        Set<String> aggrValues = new HashSet<String>();
+        Set<String> aggrValues = new HashSet<>();
         if (!values.isEmpty()) {
             if (!aggregateAttrs) {
                 return values;
@@ -702,70 +743,13 @@ public final class KeycloakModelUtils {
     }
 
 
-    private static GroupModel findSubGroup(String[] segments, int index, GroupModel parent) {
-        return parent.getSubGroupsStream().map(group -> {
-            String groupName = group.getName();
-            String[] pathSegments = formatPathSegments(segments, index, groupName);
-
-            if (groupName.equals(pathSegments[index])) {
-                if (pathSegments.length == index + 1) {
-                    return group;
-                } else {
-                    if (index + 1 < pathSegments.length) {
-                        GroupModel found = findSubGroup(pathSegments, index + 1, group);
-                        if (found != null) return found;
-                    }
-                }
-            }
-            return null;
-        }).filter(Objects::nonNull).findFirst().orElse(null);
-    }
-
-    /**
-     * Given the {@code pathParts} of a group with the given {@code groupName}, format the {@code segments} in order to ignore
-     * group names containing a {@code /} character.
-     *
-     * @param segments  the path segments
-     * @param index     the index pointing to the position to start looking for the group name
-     * @param groupName the groupName
-     * @return a new array of strings with the correct segments in case the group has a name containing slashes
-     */
-    private static String[] formatPathSegments(String[] segments, int index, String groupName) {
-        String[] nameSegments = groupName.split(GROUP_PATH_SEPARATOR);
-
-        if (nameSegments.length > 1 && segments.length >= nameSegments.length) {
-            for (int i = 0; i < nameSegments.length; i++) {
-                if (!nameSegments[i].equals(segments[index + i])) {
-                    return segments;
-                }
-            }
-
-            int numMergedIndexes = nameSegments.length - 1;
-            String[] newPath = new String[segments.length - numMergedIndexes];
-
-            for (int i = 0; i < newPath.length; i++) {
-                if (i == index) {
-                    newPath[i] = groupName;
-                } else if (i > index) {
-                    newPath[i] = segments[i + numMergedIndexes];
-                } else {
-                    newPath[i] = segments[i];
-                }
-            }
-
-            return newPath;
-        }
-
-        return segments;
-    }
-
     /**
      * Helper to get from the session if group path slashes should be escaped or not.
      * @param session The session
      * @return true or false
      */
     public static boolean escapeSlashesInGroupPath(KeycloakSession session) {
-        GroupProviderFactory fact = (GroupProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(GroupProvider.class);
+        GroupProviderFactory<?> fact = (GroupProviderFactory<?>) session.getKeycloakSessionFactory().getProviderFactory(GroupProvider.class);
         return fact.escapeSlashesInGroupPath();
     }
 
@@ -788,7 +772,7 @@ public final class KeycloakModelUtils {
         }
         String[] split = splitPath(path, escapeSlashesInGroupPath(session));
         if (split.length == 0) return null;
-        return getGroupModel(session.groups(), realm, null, split, 0);
+        return getGroupModel(session, realm, null, split, 0);
     }
 
     /**
@@ -805,17 +789,39 @@ public final class KeycloakModelUtils {
         if (path == null || path.length == 0) {
             return null;
         }
-        return getGroupModel(session.groups(), realm, null, path, 0);
+        return getGroupModel(session, realm, null, path, 0);
     }
 
-    private static GroupModel getGroupModel(GroupProvider groupProvider, RealmModel realm, GroupModel parent, String[] split, int index) {
+    private static GroupModel getGroupModel(KeycloakSession session, RealmModel realm, GroupModel parent, String[] split, int index) {
         StringBuilder nameBuilder = new StringBuilder();
         for (int i = index; i < split.length; i++) {
             nameBuilder.append(split[i]);
-            GroupModel group = groupProvider.getGroupByName(realm, parent, nameBuilder.toString());
+
+            GroupModel group;
+            if (parent != null && GroupModel.Type.ORGANIZATION.equals(parent.getType())) {
+                // For organization groups, use OrganizationProvider.searchGroupsByName
+                OrganizationModel org = parent.getOrganization();
+                if (org == null) {
+                    return null;
+                }
+                OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+                if (orgProvider == null) {
+                    // Organization feature disabled, cannot resolve organization group paths
+                    return null;
+                }
+                String parentId = parent.getId();
+                group = orgProvider.searchGroupsByName(org, nameBuilder.toString(), true, null, null)
+                    .filter(g -> parentId.equals(g.getParentId()))
+                    .findFirst()
+                    .orElse(null);
+            } else {
+                // For realm groups (or null parent), use GroupProvider.getGroupByName
+                group = session.groups().getGroupByName(realm, parent, nameBuilder.toString());
+            }
+
             if (group != null) {
                 if (i < split.length-1) {
-                    return getGroupModel(groupProvider, realm, group, split, i+1);
+                    return getGroupModel(session, realm, group, split, i+1);
                 } else {
                     return group;
                 }
@@ -879,23 +885,41 @@ public final class KeycloakModelUtils {
         return sb.toString();
     }
 
-    private static void buildGroupPath(StringBuilder sb, String groupName, GroupModel parent, boolean escapeSlashes) {
+    /**
+     * Unified recursive helper to build group paths for both realm and organization groups.
+     * For organization groups, stops recursion at the internal organization group (whose name equals the org UUID).
+     * For realm groups, organizationId is null so recursion continues to the root.
+     */
+    private static void buildGroupPath(StringBuilder sb, String groupName, GroupModel parent, boolean escapeSlashes, String organizationId) {
         if (parent != null) {
-            buildGroupPath(sb, parent.getName(), parent.getParent(), escapeSlashes);
+            // For org groups: stop recursion at internal org group (name equals org UUID)
+            // For realm groups: organizationId is null, so this check never triggers
+            if (organizationId == null || !organizationId.equals(parent.getName())) {
+                buildGroupPath(sb, parent.getName(), parent.getParent(), escapeSlashes, organizationId);
+            }
         }
-        sb.append(GROUP_PATH_SEPARATOR).append(escapeSlashes? escapeGroupNameForPath(groupName) : groupName);
+        sb.append(GROUP_PATH_SEPARATOR).append(escapeSlashes ? escapeGroupNameForPath(groupName) : groupName);
     }
 
     public static String buildGroupPath(GroupModel group) {
+        if (group == null) return null;
+
         StringBuilder sb = new StringBuilder();
-        buildGroupPath(sb, group.getName(), group.getParent(), group.escapeSlashesInGroupPath());
+        buildGroupPath(sb, group.getName(), group.getParent(), group.escapeSlashesInGroupPath(), getOrgId(group));
         return sb.toString();
     }
 
     public static String buildGroupPath(GroupModel group, GroupModel otherParentGroup) {
+        if (group == null) return null;
+
         StringBuilder sb = new StringBuilder();
-        buildGroupPath(sb, group.getName(), otherParentGroup, group.escapeSlashesInGroupPath());
+        buildGroupPath(sb, group.getName(), otherParentGroup, group.escapeSlashesInGroupPath(), getOrgId(group));
         return sb.toString();
+    }
+
+    private static String getOrgId(GroupModel group) {
+        OrganizationModel organization = group.getOrganization();
+        return organization != null ? organization.getId() : null;
     }
 
     public static String normalizeGroupPath(final String groupPath) {
@@ -915,14 +939,146 @@ public final class KeycloakModelUtils {
         return normalized;
     }
 
+    /**
+     * Finds an organization group by its user-friendly path (without the organization UUID prefix).
+     * <p />
+     * This method searches for a group within the specified organization using a path that does not include
+     * the internal organization group UUID. For example, to find a group at internal path
+     * {@code /8855824f-3b7b-4f49-ac80-8777d547c9fb/MyGroupName/lvl2}, you would pass {@code /MyGroupName/lvl2}
+     * as the path parameter.
+     * <p />
+     * The organization context is used to determine the internal organization group, and the search is performed
+     * relative to that group.
+     *
+     * @param session the Keycloak session
+     * @param realm the realm
+     * @param organization the organization context
+     * @param path the user-facing path (without organization UUID prefix)
+     * @return the {@code GroupModel} corresponding to the given path within the organization, or {@code null} if not found
+     */
+    public static GroupModel findGroupByPath(KeycloakSession session, RealmModel realm, OrganizationModel organization, String path) {
+        if (path == null || organization == null) {
+            return null;
+        }
+
+        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+        GroupModel orgInternalGroup = orgProvider.getOrganizationGroup(organization);
+
+        // Split the path
+        String[] split = splitPath(path, escapeSlashesInGroupPath(session));
+        if (split.length == 0) {
+            return null;
+        }
+
+        // Search for the group starting from the internal organization group as parent
+        return getGroupModel(session, realm, orgInternalGroup, split, 0);
+    }
+
+    /**
+     * Validates and retrieves the organization for an Identity Provider mapper.
+     * This performs all necessary checks to ensure the IdP-organization relationship is valid:
+     * - Organizations feature is enabled
+     * - Organization exists and is enabled
+     * - Bidirectional link exists (organization still has this IdP)
+     *
+     * @param session the Keycloak session
+     * @param idpModel the identity provider model
+     * @return the validated organization if all checks pass, null otherwise
+     */
+    public static OrganizationModel getOrganizationForIdpMapper(KeycloakSession session, IdentityProviderModel idpModel) {
+        String idpOrgId = idpModel.getOrganizationId();
+        if (idpOrgId == null) {
+            return null;
+        }
+
+        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+        if (orgProvider != null && orgProvider.isEnabled()) {
+            OrganizationModel organization = orgProvider.getById(idpOrgId);
+
+            if (organization != null && organization.isEnabled() && organization.getIdentityProviders().anyMatch(idp -> idp.getAlias().equals(idpModel.getAlias()))) {
+                return organization;
+            }
+        }
+
+        logger.warnf("Cannot obtain organization '%s' linked to IdP '%s'", idpModel.getAlias(), idpOrgId);
+
+        return null;
+    }
+
+    /**
+     * Retrieves and validates a group for use in an Identity Provider mapper.
+     * The lookup strategy is determined by the {@code groupType} config value:
+     * <ul>
+     *   <li>{@code "ORGANIZATION"} — searches within the organization groups linked to the IdP</li>
+     *   <li>{@code "REALM"} or missing — searches realm groups</li>
+     * </ul>
+     *
+     * @param session the Keycloak session
+     * @param realm the realm
+     * @param mapperModel the mapper model configuration containing the group path and group type
+     * @param context the brokered identity context containing the IdP configuration
+     * @return the group if found and valid, null otherwise (mapper should be skipped)
+     */
+    public static GroupModel getGroupForIdpMapper(KeycloakSession session,
+                                                   RealmModel realm,
+                                                   IdentityProviderMapperModel mapperModel,
+                                                   BrokeredIdentityContext context) {
+        String groupPath = mapperModel.getConfig().get(ConfigConstants.GROUP);
+        String groupTypeStr = mapperModel.getConfig().get(ConfigConstants.GROUP_TYPE);
+        GroupModel group = null;
+
+        // Parse the group type from config
+        GroupModel.Type groupType = null;
+        if (groupTypeStr != null) {
+            try {
+                groupType = GroupModel.Type.valueOf(groupTypeStr);
+            } catch (IllegalArgumentException e) {
+                // Invalid group type, treat as null
+            }
+        }
+
+        if (groupType == GroupModel.Type.ORGANIZATION) {
+            OrganizationModel organization = getOrganizationForIdpMapper(session, context.getIdpConfig());
+            if (organization != null) {
+                group = findGroupByPath(session, realm, organization, groupPath);
+            }
+        } else {
+            // GroupModel.Type.REALM or null → search realm groups
+            group = findGroupByPath(session, realm, groupPath);
+        }
+
+        if (group == null) {
+            logger.warnf("Unable to find group by path '%s' referenced by mapper '%s' on realm '%s'.", groupPath, mapperModel.getName(), realm.getName());
+            return null;
+        }
+
+        return group;
+    }
+
     public static Stream<RoleModel> getClientScopeMappingsStream(ClientModel client, ScopeContainerModel container) {
         return container.getScopeMappingsStream()
                 .filter(role -> role.getContainer() instanceof ClientModel &&
                         Objects.equals(client.getId(), role.getContainer().getId()));
     }
 
-    // Used in various role mappers
+    /**
+     * @deprecated for removal. Use {@link #getRoleFromString(KeycloakSession, RealmModel, String)} instead.
+     */
+    @Deprecated(forRemoval = true, since = "26.6")
     public static RoleModel getRoleFromString(RealmModel realm, String roleName) {
+        return getRoleFromString(KeycloakSessionUtil.getKeycloakSession(), realm, roleName);
+    }
+
+    public static RoleModel getRoleFromString(KeycloakSession session, RealmModel realm, String roleName) {
+        if (session == null) {
+            return getRoleFromStringNoCaching(realm, roleName);
+        }
+        return session.getProvider(AlternativeLookupProvider.class)
+                .lookupRoleFromString(realm, roleName);
+    }
+
+    // Used in various role mappers
+    private static RoleModel getRoleFromStringNoCaching(RealmModel realm, String roleName) {
         if (roleName == null) {
             return null;
         }
@@ -956,11 +1112,9 @@ public final class KeycloakModelUtils {
         if (scopeIndex > -1) {
             String appName = role.substring(0, scopeIndex);
             role = role.substring(scopeIndex + 1);
-            String[] rtn = {appName, role};
-            return rtn;
+            return new String[]{appName, role};
         } else {
-            String[] rtn = {null, role};
-            return rtn;
+            return new String[]{null, role};
 
         }
     }
@@ -971,6 +1125,38 @@ public final class KeycloakModelUtils {
         }
 
         return clientId + CLIENT_ROLE_SEPARATOR + roleName;
+    }
+
+    public static RoleModel getRoleByName(RealmModel realm, String clientId, String name) {
+        if (clientId == null) {
+            return realm.getRole(name);
+        } else {
+            ClientModel client = realm.getClientByClientId(clientId);
+
+            if (client == null) {
+                return null;
+            }
+
+            return client.getRole(name);
+        }
+    }
+
+    public static void removeTransientAdminRoles(RealmModel realm, String clientId, UserModel user, Access access) {
+        if (access == null || access.getRoles() == null) {
+            return;
+        }
+
+        Set<String> roles = access.getRoles();
+        Iterator<String> roleIterator = roles.iterator();
+
+        while (roleIterator.hasNext()) {
+            String role = roleIterator.next();
+            RoleModel adminRole = getRoleByName(realm, clientId, role);
+
+            if (AdminRoles.containsAdminRole(adminRole) && !user.hasRole(adminRole)) {
+                roleIterator.remove();
+            }
+        }
     }
 
     /**
@@ -1014,17 +1200,17 @@ public final class KeycloakModelUtils {
      * @param flowUnavailableHandler Will be executed when flow, sub-flow or executor is null
      * @param builtinFlowHandler will be executed when flow is built-in flow
      */
-    public static void deepDeleteAuthenticationFlow(KeycloakSession session, RealmModel realm, AuthenticationFlowModel authFlow, Runnable flowUnavailableHandler, Runnable builtinFlowHandler) {
+    public static void deepDeleteAuthenticationFlow(KeycloakSession session, RealmModel realm, AuthenticationFlowModel authFlow, Runnable flowUnavailableHandler, Runnable builtinFlowHandler, boolean isParentBuiltInFlow) {
         if (authFlow == null) {
             flowUnavailableHandler.run();
             return;
         }
-        if (authFlow.isBuiltIn()) {
+        if (isParentBuiltInFlow) {
             builtinFlowHandler.run();
         }
 
         realm.getAuthenticationExecutionsStream(authFlow.getId())
-                .forEachOrdered(authExecutor -> deepDeleteAuthenticationExecutor(session, realm, authExecutor, flowUnavailableHandler, builtinFlowHandler));
+                .forEachOrdered(authExecutor -> deepDeleteAuthenticationExecutor(session, realm, authExecutor, flowUnavailableHandler, builtinFlowHandler, isParentBuiltInFlow));
 
         realm.removeAuthenticationFlow(authFlow);
     }
@@ -1038,7 +1224,7 @@ public final class KeycloakModelUtils {
      * @param flowUnavailableHandler Handler that will be executed when flow, sub-flow or executor is null
      * @param builtinFlowHandler Handler that will be executed when flow is built-in flow
      */
-    public static void deepDeleteAuthenticationExecutor(KeycloakSession session, RealmModel realm, AuthenticationExecutionModel authExecutor, Runnable flowUnavailableHandler, Runnable builtinFlowHandler) {
+    public static void deepDeleteAuthenticationExecutor(KeycloakSession session, RealmModel realm, AuthenticationExecutionModel authExecutor, Runnable flowUnavailableHandler, Runnable builtinFlowHandler, boolean isParentBuiltInFlow) {
         if (authExecutor == null) {
             flowUnavailableHandler.run();
             return;
@@ -1047,7 +1233,7 @@ public final class KeycloakModelUtils {
         // recursively remove sub flows
         if (authExecutor.getFlowId() != null) {
             AuthenticationFlowModel authFlow = realm.getAuthenticationFlowById(authExecutor.getFlowId());
-            deepDeleteAuthenticationFlow(session, realm, authFlow, flowUnavailableHandler, builtinFlowHandler);
+            deepDeleteAuthenticationFlow(session, realm, authFlow, flowUnavailableHandler, builtinFlowHandler, isParentBuiltInFlow);
         }
 
         // remove the config if not shared
@@ -1085,8 +1271,8 @@ public final class KeycloakModelUtils {
         ClientScopeModel clientScope = realm.getClientScopeById(clientScopeId);
 
         if (clientScope == null) {
-            // as fallback we try to resolve dynamic scopes
-            clientScope = client.getDynamicClientScope(clientScopeId);
+            // as fallback we try to resolve parameterized scopes
+            clientScope = client.getParameterizedClientScope(clientScopeId);
         }
 
         if (clientScope != null) {
@@ -1150,7 +1336,7 @@ public final class KeycloakModelUtils {
             return displayName;
         }
 
-        SocialIdentityProviderFactory providerFactory = (SocialIdentityProviderFactory) session.getKeycloakSessionFactory()
+        SocialIdentityProviderFactory<?> providerFactory = (SocialIdentityProviderFactory<?>) session.getKeycloakSessionFactory()
                 .getProviderFactory(SocialIdentityProvider.class, provider.getProviderId());
         if (providerFactory != null) {
             return providerFactory.getName();
@@ -1160,22 +1346,12 @@ public final class KeycloakModelUtils {
     }
 
     /**
-     * @param clientAuthenticatorType
-     * @return secret size based on authentication type
+     * @param clientAuthenticatorType ignored, kept for backwards compatibility
+     * @param signingAlg ignored, kept for backwards compatibility
+     * @return secret size in alphanumeric characters with HS512-level entropy
      */
     public static int getSecretLengthByAuthenticationType(String clientAuthenticatorType, String signingAlg) {
-        if (clientAuthenticatorType != null)
-            switch (clientAuthenticatorType) {
-                case AUTH_TYPE_CLIENT_SECRET_JWT: {
-                    if (Algorithm.HS384.equals(signingAlg))
-                        return SecretGenerator.equivalentEntropySize(SecretGenerator.SECRET_LENGTH_384_BITS, SecretGenerator.ALPHANUM.length);
-                    else if (Algorithm.HS512.equals(signingAlg))
-                        return SecretGenerator.equivalentEntropySize(SecretGenerator.SECRET_LENGTH_512_BITS, SecretGenerator.ALPHANUM.length);
-                    else
-                        return SecretGenerator.equivalentEntropySize(SecretGenerator.SECRET_LENGTH_256_BITS, SecretGenerator.ALPHANUM.length);
-                }
-            }
-        return SecretGenerator.SECRET_LENGTH_256_BITS;
+        return getRequiredClientSecretLength();
     }
 
     /**
@@ -1186,7 +1362,7 @@ public final class KeycloakModelUtils {
      * @throws RuntimeException if a group does not exist
      */
     public static void setDefaultGroups(KeycloakSession session, RealmModel realm, Stream<String> groups) {
-        realm.getDefaultGroupsStream().collect(Collectors.toList()).forEach(realm::removeDefaultGroup);
+        realm.getDefaultGroupsStream().toList().forEach(realm::removeDefaultGroup);
         groups.forEach(path -> {
             GroupModel found = KeycloakModelUtils.findGroupByPath(session, realm, path);
             if (found == null) throw new RuntimeException("default group in realm rep doesn't exist: " + path);
@@ -1219,5 +1395,18 @@ public final class KeycloakModelUtils {
         } finally {
             context.setRealm(currentRealm);
         }
+    }
+
+    /**
+     * @return the list of protocols accepted for the given client.
+     */
+    public static List<String> getAcceptedClientScopeProtocols(ClientModel client) {
+        List<String> acceptedClientProtocols;
+        if (client.getProtocol() == null || "openid-connect".equals(client.getProtocol())) {
+            acceptedClientProtocols = List.of("openid-connect", OID4VCIConstants.OID4VC_PROTOCOL);
+        }else {
+            acceptedClientProtocols = List.of(client.getProtocol());
+        }
+        return acceptedClientProtocols;
     }
 }

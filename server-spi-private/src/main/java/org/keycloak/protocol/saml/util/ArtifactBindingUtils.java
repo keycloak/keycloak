@@ -11,6 +11,9 @@ public class ArtifactBindingUtils {
     }
     
     public static String byteArrayToResolverProviderId(byte[] ar) {
+        if (ar.length < 4) {
+            throw new IllegalArgumentException("SAML artifact must be at least 4 bytes (TypeCode + EndpointIndex)");
+        }
         return String.format("%02X%02X", ar[0], ar[1]);
     }
 

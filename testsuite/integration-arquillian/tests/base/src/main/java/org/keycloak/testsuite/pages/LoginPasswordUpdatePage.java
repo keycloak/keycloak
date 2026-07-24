@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.pages;
 
 import org.keycloak.testsuite.util.UIUtils;
+
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -56,8 +57,9 @@ public class LoginPasswordUpdatePage extends LogoutSessionsPage {
         UIUtils.clickLink(cancelAIAButton);
     }
 
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).equals("Update password");
+    @Override
+    public String getExpectedPageId() {
+        return "login-login-update-password";
     }
 
     public String getError() {

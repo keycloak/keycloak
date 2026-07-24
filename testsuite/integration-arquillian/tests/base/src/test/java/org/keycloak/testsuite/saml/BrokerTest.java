@@ -16,7 +16,19 @@
  */
 package org.keycloak.testsuite.saml;
 
+import java.io.IOException;
+import java.net.URI;
+import java.security.KeyPair;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
+import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.namespace.QName;
+
+import jakarta.ws.rs.core.Response.Status;
+
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -49,39 +61,30 @@ import org.keycloak.saml.processing.core.parsers.saml.xmldsig.XmlDSigQNames;
 import org.keycloak.saml.processing.core.parsers.util.HasQName;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testsuite.updaters.IdentityProviderCreator;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.SamlClientBuilder;
+import org.keycloak.testsuite.util.saml.SamlBackchannelArtifactResolveReceiver;
 
-import java.io.IOException;
-import java.net.URI;
-import java.security.KeyPair;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
-import jakarta.ws.rs.core.Response.Status;
-import javax.xml.datatype.XMLGregorianCalendar;
-import javax.xml.namespace.QName;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.testsuite.util.saml.SamlBackchannelArtifactResolveReceiver;
+import org.junit.jupiter.api.Assertions;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.fail;
 import static org.keycloak.saml.SignatureAlgorithm.RSA_SHA1;
 import static org.keycloak.testsuite.util.Matchers.isSamlStatusResponse;
 import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
 import static org.keycloak.testsuite.util.SamlClient.Binding.REDIRECT;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  *
@@ -94,14 +97,14 @@ public class BrokerTest extends AbstractSamlTest {
           .providerId(SAMLIdentityProviderFactory.PROVIDER_ID)
           .alias(SAML_BROKER_ALIAS)
           .displayName("SAML")
-          .setAttribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, samlEndpoint)
-          .setAttribute(SAMLIdentityProviderConfig.ARTIFACT_RESOLUTION_SERVICE_URL, samlEndpoint)
-          .setAttribute(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL, samlEndpoint)
-          .setAttribute(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get())
-          .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "false")
-          .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "false")
-          .setAttribute(SAMLIdentityProviderConfig.BACKCHANNEL_SUPPORTED, "false")
-          .setAttribute(SAMLIdentityProviderConfig.ARTIFACT_BINDING_RESPONSE, "false")
+          .attribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, samlEndpoint)
+          .attribute(SAMLIdentityProviderConfig.ARTIFACT_RESOLUTION_SERVICE_URL, samlEndpoint)
+          .attribute(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL, samlEndpoint)
+          .attribute(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get())
+          .attribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "false")
+          .attribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "false")
+          .attribute(SAMLIdentityProviderConfig.BACKCHANNEL_SUPPORTED, "false")
+          .attribute(SAMLIdentityProviderConfig.ARTIFACT_BINDING_RESPONSE, "false")
           .build();
         return identityProvider;
     }
@@ -153,7 +156,7 @@ public class BrokerTest extends AbstractSamlTest {
             reviewProfileAuthenticator = executions.stream()
               .filter(ex -> Objects.equals(ex.getProviderId(), IdpReviewProfileAuthenticatorFactory.PROVIDER_ID))
               .findFirst()
-              .orElseGet(() -> { Assert.fail("Could not find update profile in first broker login flow"); return null; });
+              .orElseGet(() -> { Assertions.fail("Could not find update profile in first broker login flow"); return null; });
 
             reviewProfileAuthenticator.setRequirement(Requirement.DISABLED.name());
             realm.flows().updateExecutions(firstBrokerLoginFlowAlias, reviewProfileAuthenticator);
@@ -478,6 +481,10 @@ public class BrokerTest extends AbstractSamlTest {
 
                 // simulate IdP response (artifact as query param)
                 samlClientBuilder.processSamlResponse(REDIRECT)
+                        .transformDocument(doc -> {
+                            samlBackchannelArtifactResolveReceiver.setInResponseTo(doc.getDocumentElement().getAttribute("ID"));
+                            return doc;
+                        })
                         .targetAttributeSamlArtifact()
                         .targetUri(getSamlBrokerUrl(REALM_NAME))
                         .build();

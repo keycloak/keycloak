@@ -19,8 +19,9 @@
 
 package org.keycloak.testsuite.pages;
 
-import org.junit.Assert;
 import org.keycloak.testsuite.util.UIUtils;
+
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -39,8 +40,8 @@ public class DeleteCredentialPage extends AbstractPage {
     private WebElement message;
 
     @Override
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).startsWith("Delete ");
+    public String getExpectedPageId() {
+        return "login-delete-credential";
     }
 
     public void confirm() {
@@ -51,6 +52,6 @@ public class DeleteCredentialPage extends AbstractPage {
     }
 
     public void assertCredentialInMessage(String expectedLabel) {
-        Assert.assertEquals("Do you want to delete " + expectedLabel + "?", message.getText());
+        Assertions.assertEquals("Do you want to delete " + expectedLabel + "?", message.getText());
     }
 }

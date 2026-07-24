@@ -1,18 +1,20 @@
 package org.keycloak.testsuite.broker;
 
-import static org.junit.Assert.assertEquals;
-import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.removeBrokerExpiredSessions;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+
+import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.removeBrokerExpiredSessions;
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTest {
 
@@ -30,7 +32,7 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
         // Require broker to show consent screen
         RealmResource brokeredRealm = adminClient.realm(bc.providerRealmName());
         List<ClientRepresentation> clients = brokeredRealm.clients().findByClientId("brokerapp");
-        org.junit.Assert.assertEquals(1, clients.size());
+        Assertions.assertEquals(1, clients.size());
         ClientRepresentation brokerApp = clients.get(0);
         brokerApp.setConsentRequired(true);
         brokeredRealm.clients().get(brokerApp.getId()).update(brokerApp);
@@ -50,8 +52,9 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
      */
     @Test
     public void testConsentDeniedWithExpiredClientSession() {
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
@@ -60,17 +63,17 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
         // Set time offset
-        invokeTimeOffset(60);
+        timeOffSet.set(60);
         try {
             // User rejected consent
             grantPage.assertCurrent();
             grantPage.cancel();
 
             // Assert login page with "You took too long to login..." message
-            org.junit.Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
+            Assertions.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
 
         } finally {
-            invokeTimeOffset(0);
+            timeOffSet.set(0);
         }
     }
 
@@ -79,13 +82,14 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
      */
     @Test
     public void testConsentDeniedWithExpiredAndClearedClientSession() {
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
         // Set time offset
-        invokeTimeOffset(60);
+        timeOffSet.set(60);
         try {
             testingClient.server(bc.providerRealmName()).run(removeBrokerExpiredSessions());
 
@@ -94,9 +98,9 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
             grantPage.cancel();
 
             // Assert login page with "You took too long to login..." message
-            Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
+            Assertions.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
         } finally {
-            invokeTimeOffset(0);
+            timeOffSet.set(0);
         }
     }
 
@@ -107,8 +111,9 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
     public void testLoginCancelConsent() {
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
 
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 

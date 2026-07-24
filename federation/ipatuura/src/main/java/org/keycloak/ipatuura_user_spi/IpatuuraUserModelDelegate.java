@@ -17,16 +17,16 @@
 
 package org.keycloak.ipatuura_user_spi;
 
-import org.jboss.logging.Logger;
-import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.component.ComponentModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.UserModelDelegate;
-
 import java.io.IOException;
 import java.util.List;
 
+import org.keycloak.component.ComponentModel;
+import org.keycloak.http.simple.SimpleHttpResponse;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.UserModelDelegate;
+
 import org.apache.http.HttpStatus;
+import org.jboss.logging.Logger;
 
 public class IpatuuraUserModelDelegate extends UserModelDelegate {
 
@@ -44,7 +44,7 @@ public class IpatuuraUserModelDelegate extends UserModelDelegate {
 
     @Override
     public void setAttribute(String attr, List<String> values) {
-        SimpleHttp.Response resp = this.ipatuura.updateUser(ipatuura, this.getUsername(), attr, values);
+        SimpleHttpResponse resp = this.ipatuura.updateUser(ipatuura, this.getUsername(), attr, values);
         try {
             if (resp.getStatus() != HttpStatus.SC_OK && resp.getStatus() != HttpStatus.SC_NO_CONTENT) {
                 logger.warn("Unexpected PUT status code returned");

@@ -18,20 +18,20 @@
 package org.keycloak.testsuite.util;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.KeyManagementException;
-import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.KeycloakBuilder;
+import org.keycloak.models.Constants;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import javax.net.ssl.HostnameVerifier;
 import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.conn.HttpClientConnectionManager;
@@ -42,15 +42,11 @@ import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.engines.ClientHttpEngineBuilder43;
 import org.jboss.resteasy.plugins.providers.jackson.ResteasyJackson2Provider;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.KeycloakBuilder;
-import org.keycloak.models.Constants;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
-import static org.keycloak.testsuite.utils.io.IOUtil.PROJECT_BUILD_DIRECTORY;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
+import static org.keycloak.testsuite.utils.io.IOUtil.PROJECT_BUILD_DIRECTORY;
 
 
 public class AdminClientUtil {
@@ -59,18 +55,18 @@ public class AdminClientUtil {
 
     public static Keycloak createAdminClient(boolean ignoreUnknownProperties, String authServerContextRoot) throws Exception {
         return createAdminClient(ignoreUnknownProperties, authServerContextRoot, MASTER, ADMIN, ADMIN,
-            Constants.ADMIN_CLI_CLIENT_ID, null, null);
+            Constants.ADMIN_CLI_CLIENT_ID, null, null, false);
 
     }
 
     public static Keycloak createAdminClient(boolean ignoreUnknownProperties, String realmName, String username,
         String password, String clientId, String clientSecret) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
         return createAdminClient(ignoreUnknownProperties, getAuthServerContextRoot(), realmName, username, password,
-            clientId, clientSecret, null);
+            clientId, clientSecret, null, false);
     }
 
     public static Keycloak createAdminClient(boolean ignoreUnknownProperties, String authServerContextRoot, String realmName,
-        String username, String password, String clientId, String clientSecret, String scope)
+        String username, String password, String clientId, String clientSecret, String scope, boolean useDPoP)
         throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
 
         ResteasyClient resteasyClient = createResteasyClient(ignoreUnknownProperties, null);
@@ -83,47 +79,9 @@ public class AdminClientUtil {
                 .clientId(clientId)
                 .clientSecret(clientSecret)
                 .resteasyClient(resteasyClient)
-                .scope(scope).build();
-    }
-
-    public static Keycloak createAdminClientWithClientCredentials(String realmName, String clientId, String clientSecret, String scope)
-        throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
-
-        boolean ignoreUnknownProperties = false;
-        ResteasyClient resteasyClient = createResteasyClient(ignoreUnknownProperties, null);
-
-        return KeycloakBuilder.builder()
-                .serverUrl(getAuthServerContextRoot() + "/auth")
-                .realm(realmName)
-                .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
-                .clientId(clientId)
-                .clientSecret(clientSecret)
-                .resteasyClient(resteasyClient)
-                .scope(scope).build();
-    }
-
-    public static Keycloak createMTlsAdminClientWithClientCredentialsWithoutSecret(
-        final String realmName, String clientId, String scope)
-        throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
-
-        boolean ignoreUnknownProperties = false;
-        ResteasyClient resteasyClient = createResteasyClientWithKeystoreAndTruststore();
-
-        return KeycloakBuilder.builder()
-                .serverUrl(getAuthServerContextRoot() + "/auth")
-                .realm(realmName)
-                .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
-                .clientId(clientId)
-                .resteasyClient(resteasyClient)
-                .scope(scope).build();
-  }
-
-    public static Keycloak createAdminClient() throws Exception {
-        return createAdminClient(false, getAuthServerContextRoot());
-    }
-
-    public static Keycloak createAdminClient(boolean ignoreUnknownProperties) throws Exception {
-        return createAdminClient(ignoreUnknownProperties, getAuthServerContextRoot());
+                .scope(scope)
+                .useDPoP(useDPoP)
+                .build();
     }
 
     public static ResteasyClient createResteasyClient() {
@@ -159,30 +117,6 @@ public class AdminClientUtil {
         return resteasyClientBuilder.build();
     }
 
-    public static ResteasyClient createResteasyClientWithKeystoreAndTruststore() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
-        ResteasyClientBuilder resteasyClientBuilder = (ResteasyClientBuilder) ResteasyClientBuilder.newBuilder();
-
-        if ("true".equals(System.getProperty("auth.server.ssl.required"))) {
-            File truststore = new File(PROJECT_BUILD_DIRECTORY, "dependency/keystore/keycloak.truststore");
-            try {
-                resteasyClientBuilder.sslContext(getSSLContextWithTruststoreAndKeystore(
-                  truststore, "secret",
-                  new File(PROJECT_BUILD_DIRECTORY, "dependency/keystore/keycloak.jks"), "secret"));
-            } catch (UnrecoverableKeyException e) {
-                throw new RuntimeException(e);
-            }
-
-            System.setProperty("javax.net.ssl.trustStore", truststore.getAbsolutePath());
-        }
-
-        resteasyClientBuilder
-            .hostnameVerification(ResteasyClientBuilder.HostnameVerificationPolicy.WILDCARD)
-            .connectionPoolSize(NUMBER_OF_CONNECTIONS)
-            .httpEngine(getCustomClientHttpEngine(resteasyClientBuilder, 1, null));
-
-        return resteasyClientBuilder.build();
-    }
-
     private static SSLContext getSSLContextWithTruststore(File file, String password) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
         if (!file.isFile()) {
             throw new RuntimeException("Truststore file not found: " + file.getAbsolutePath());
@@ -205,27 +139,6 @@ public class AdminClientUtil {
             throw new RuntimeException(e);
         }
         return null;
-    }
-
-    private static SSLContext getSSLContextWithTruststoreAndKeystore(
-        File trustStore, String truststorePassword, File keystore, String keystorePassword)
-        throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException, UnrecoverableKeyException {
-        if (!trustStore.isFile()) {
-            throw new RuntimeException("Truststore file not found: " + trustStore.getAbsolutePath());
-        }
-        if (!keystore.isFile()) {
-            throw new RuntimeException("Keystore file not found: " + keystore.getAbsolutePath());
-        }
-
-        KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(new FileInputStream(keystore), keystorePassword.toCharArray());
-
-        SSLContext theContext = SSLContexts.custom()
-            .setProtocol("TLS")
-            .loadTrustMaterial(trustStore, truststorePassword == null ? null : truststorePassword.toCharArray())
-            .loadKeyMaterial(ks, keystorePassword.toCharArray())
-            .build();
-        return theContext;
     }
 
     public static ClientHttpEngine getCustomClientHttpEngine(ResteasyClientBuilder resteasyClientBuilder, int validateAfterInactivity, Boolean followRedirects) {

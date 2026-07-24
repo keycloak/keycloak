@@ -17,26 +17,26 @@
 
 package org.keycloak.models.cache.infinispan.idp;
 
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
-import org.keycloak.models.cache.infinispan.entities.InRealm;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.cache.infinispan.entities.AbstractRevisioned;
+import org.keycloak.models.cache.infinispan.entities.InRealm;
 
 public class IdentityProviderListQuery extends AbstractRevisioned implements InRealm {
     private final String realmId;
     private final Map<String, Set<String>> searchKeys;
 
-    public IdentityProviderListQuery(Long revision, String id, RealmModel realm, String searchKey, Set<String> result) {
+    public IdentityProviderListQuery(long revision, String id, RealmModel realm, String searchKey, Set<String> result) {
         super(revision, id);
         this.realmId = realm.getId();
         this.searchKeys = new HashMap<>();
         this.searchKeys.put(searchKey, result);
     }
 
-    public IdentityProviderListQuery(Long revision, String id, RealmModel realm, String searchKey, Set<String> result, IdentityProviderListQuery previous) {
+    public IdentityProviderListQuery(long revision, String id, RealmModel realm, String searchKey, Set<String> result, IdentityProviderListQuery previous) {
         super(revision, id);
         this.realmId = realm.getId();
         this.searchKeys = new HashMap<>();

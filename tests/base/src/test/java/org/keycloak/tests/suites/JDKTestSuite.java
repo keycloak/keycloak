@@ -1,11 +1,35 @@
 package org.keycloak.tests.suites;
 
+import org.keycloak.tests.account.AccountRestServiceTest;
+import org.keycloak.tests.admin.client.CredentialsTest;
+import org.keycloak.tests.client.MutualTLSClientTest;
+import org.keycloak.tests.exportimport.ExportImportTest;
+import org.keycloak.tests.forms.LoginTest;
+import org.keycloak.tests.forms.SSOTest;
+import org.keycloak.tests.keys.GeneratedRsaKeyProviderTest;
+import org.keycloak.tests.keys.JavaKeystoreKeyProviderTest;
+import org.keycloak.tests.oauth.AuthorizationCodeTest;
+import org.keycloak.tests.policy.PasswordPolicyTest;
+import org.keycloak.tests.saml.SamlClientTest;
+import org.keycloak.tests.transactions.TransactionsTest;
+
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
-import org.keycloak.tests.admin.AdminHeadersTest;
 
 @Suite
-// TODO: Select relevant test classes or packages once they have been migrated
-@SelectClasses(AdminHeadersTest.class)
+@SelectClasses({
+        AccountRestServiceTest.class,
+        CredentialsTest.class,
+        ExportImportTest.class,
+        GeneratedRsaKeyProviderTest.class,
+        JavaKeystoreKeyProviderTest.class,
+        PasswordPolicyTest.class,
+        SSOTest.class,
+        TransactionsTest.class,
+        MutualTLSClientTest.class,
+        LoginTest.class,
+        AuthorizationCodeTest.class,
+        SamlClientTest.class
+})
 public class JDKTestSuite {
 }

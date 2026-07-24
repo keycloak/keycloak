@@ -27,7 +27,7 @@
 
     <artifactId>keycloak-ipatuura-federation</artifactId>
     <name>Keycloak Ipatuura Federation</name>
-    <description />
+    <description>Keycloak Ipatuura Federation</description>
 
     <dependencies>
         <dependency>

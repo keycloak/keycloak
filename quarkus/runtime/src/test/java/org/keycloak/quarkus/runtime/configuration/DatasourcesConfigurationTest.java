@@ -1,5 +1,14 @@
 package org.keycloak.quarkus.runtime.configuration;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMappers;
+
 import io.smallrye.config.Expressions;
 import io.smallrye.config.SmallRyeConfig;
 import org.h2.jdbcx.JdbcDataSource;
@@ -7,17 +16,16 @@ import org.hibernate.dialect.H2Dialect;
 import org.hibernate.dialect.MariaDBDialect;
 import org.hibernate.dialect.PostgreSQLDialect;
 import org.junit.Test;
-import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.mariadb.jdbc.MariaDbDataSource;
+import org.postgresql.ssl.DefaultJavaSSLFactory;
 import org.postgresql.xa.PGXADataSource;
 
-import java.util.Map;
-
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
@@ -85,7 +93,7 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         ConfigArgsConfigSource.setCliArgs("--db-kind-store=mysql");
         SmallRyeConfig config = createConfig();
         String value = Expressions.withoutExpansion(() -> config.getConfigValue("quarkus.datasource.\"store\".jdbc.url").getValue());
-        assertEquals("jdbc:mysql://${kc.db-url-host-store:localhost}:${kc.db-url-port-store:3306}/${kc.db-url-database-store:keycloak}${kc.db-url-properties-store:}", value);
+        assertEquals("mysql", value);
 
         assertExternalConfig("quarkus.datasource.\"store\".jdbc.url", "jdbc:mysql://localhost:3306/keycloak");
     }
@@ -97,7 +105,6 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         assertConfig("db-dialect-store", H2Dialect.class.getName());
         // XA datasource is the default
         assertExternalConfig("quarkus.datasource.\"store\".jdbc.driver", JdbcDataSource.class.getName());
-        assertExternalConfig("quarkus.datasource.\"store\".jdbc.url", "jdbc:h2:file:" + Environment.getHomeDir() + "/data/h2/keycloakdb-store;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0");
         onAfter();
 
         ConfigArgsConfigSource.setCliArgs("--db-kind-store=dev-mem");
@@ -139,13 +146,13 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
     public void datasourceEnabled() {
         ConfigArgsConfigSource.setCliArgs("");
         initConfig();
-        assertConfig("db-active-store", "true");
+        assertConfig("db-enabled-store", "true");
         assertExternalConfig("quarkus.datasource.\"store\".active", "true");
         onAfter();
 
-        ConfigArgsConfigSource.setCliArgs("--db-active-store=false");
+        ConfigArgsConfigSource.setCliArgs("--db-enabled-store=false");
         initConfig();
-        assertConfig("db-active-store", "false");
+        assertConfig("db-enabled-store", "false");
         assertExternalConfig("quarkus.datasource.\"store\".active", "false");
     }
 
@@ -179,6 +186,14 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         assertExternalConfig(Map.of(
                 "quarkus.datasource.\"asdf\".jdbc.url", "jdbc:postgresql://myhost:5432/kcdb?foo=bar",
                 "quarkus.datasource.\"asdf\".db-kind", "postgresql"
+        ));
+        onAfter();
+
+        ConfigArgsConfigSource.setCliArgs("--db-kind-asdf=dev-file", "--db-url-properties-asdf=;DB_CLOSE_ON_EXIT=true");
+        initConfig();
+        assertExternalConfig(Map.of(
+                "quarkus.datasource.\"asdf\".jdbc.url", "jdbc:h2:file:" + Environment.getHomeDir().orElseThrow() + "/data/h2-asdf/keycloakdb-asdf;DB_CLOSE_ON_EXIT=true;NON_KEYWORDS=VALUE;DB_CLOSE_DELAY=0",
+                "quarkus.datasource.\"asdf\".db-kind", "h2"
         ));
         onAfter();
     }
@@ -229,14 +244,14 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
 
         assertConfig("db-dialect-clients", H2Dialect.class.getName());
         assertExternalConfig(Map.of(
-                "quarkus.datasource.\"clients\".jdbc.url", "jdbc:h2:file:test-dir/data/h2/keycloakdb-clients;;test=test;test1=test1;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0",
+                "quarkus.datasource.\"clients\".jdbc.url", "jdbc:h2:file:test-dir/data/h2-clients/keycloakdb-clients;;test=test;test1=test1;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0",
                 "quarkus.datasource.\"clients\".jdbc.transactions", "xa"
         ));
 
         ConfigArgsConfigSource.setCliArgs("");
         initConfig();
-        assertConfig("db-dialect-clients", H2Dialect.class.getName());
-        assertExternalConfig("quarkus.datasource.\"clients\".jdbc.url", "jdbc:h2:file:test-dir/data/h2/keycloakdb-clients;;test=test;test1=test1;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0");
+        assertConfigNull("db-dialect-clients");
+        assertConfigNull("quarkus.datasource.\"clients\".jdbc.url", true);
         onAfter();
 
         System.setProperty("kc.db-url-properties-users", "?test=test&test1=test1");
@@ -272,7 +287,7 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
     @Test
     public void nestedDatasourceProperties() {
         initConfig();
-        assertExternalConfig("quarkus.datasource.foo", "jdbc:h2:file:" + Environment.getHomeDir() + "/data/keycloakdb");
+        assertExternalConfig("quarkus.datasource.foo", "jdbc:h2:file:" + Environment.getHomeDir().orElseThrow() + "/data/keycloakdb");
         assertExternalConfig("quarkus.datasource.bar", "foo-def-suffix");
 
         System.setProperty("kc.prop5", "val5");
@@ -291,6 +306,13 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
     @Test
     public void poolSizeDefault() {
         ConfigArgsConfigSource.setCliArgs("");
+        initConfig();
+
+        assertConfigNull("db-pool-initial-size-clients");
+        assertConfigNull("db-pool-min-size-clients");
+        assertConfig("db-pool-max-size-clients", "100");
+
+        ConfigArgsConfigSource.setCliArgs("--db-kind-clients=dev-mem");
         initConfig();
 
         assertConfigNull("db-pool-initial-size-clients");
@@ -325,6 +347,12 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         onAfter();
 
         ConfigArgsConfigSource.setCliArgs("--db-pool-initial-size-clients=10");
+        initConfig();
+        assertConfigNull("db-pool-min-size-clients");
+        assertConfig("db-pool-initial-size-clients", "10");
+        onAfter();
+
+        ConfigArgsConfigSource.setCliArgs("--db-pool-initial-size-clients=10", "--db-kind-clients=dev-file");
         initConfig();
         assertConfig(Map.of(
                 "db-pool-min-size-clients", "1", // set 1 for H2
@@ -386,5 +414,381 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
                 "quarkus.datasource.jdbc.max-size", "115",
                 "quarkus.datasource.\"users\".jdbc.max-size", "115"
         ));
+    }
+
+    @Test
+    public void envVarsHandling() {
+        putEnvVars(Map.of(
+                "KC_DB_KIND_USER_STORE", "postgres",
+                "KC_DB_URL_FULL_USER_STORE", "jdbc:postgresql://localhost/KEYCLOAK",
+                "KC_DB_USERNAME_USER_STORE", "my-username",
+                "KC_DB_KIND_MY_STORE", "mariadb"
+        ));
+        initConfig();
+
+        assertConfig(Map.of(
+                "db-kind-user-store", "postgres",
+                "db-url-full-user-store", "jdbc:postgresql://localhost/KEYCLOAK",
+                "db-username-user-store", "my-username",
+                "db-kind-my-store", "mariadb"
+        ));
+
+        assertExternalConfig(Map.of(
+                "quarkus.datasource.\"user-store\".db-kind", "postgresql",
+                "quarkus.datasource.\"user-store\".jdbc.url", "jdbc:postgresql://localhost/KEYCLOAK",
+                "quarkus.datasource.\"user-store\".username", "my-username",
+                "quarkus.datasource.\"my-store\".db-kind", "mariadb"
+        ));
+
+        assertThat(Configuration.getPropertyNames(), hasItem("quarkus.datasource.\"my-store\".db-kind"));
+        assertThat(Configuration.getPropertyNames(), not(hasItem("quarkus.datasource.\"my.store\".db-kind")));
+    }
+
+    @Test
+    public void envVarsSpecialChars() {
+        putEnvVars(Map.of(
+                "KC_USER_STORE_DB_KIND", "mariadb",
+                "KCKEY_USER_STORE_DB_KIND", "db-kind-user_store$something",
+                "KC_CLIENT_STORE_PW", "password",
+                "KCKEY_CLIENT_STORE_PW", "db-password-client.store_123"
+        ));
+        initConfig();
+
+        assertConfig(Map.of(
+                "db-kind-user_store$something", "mariadb",
+                "db-password-client.store_123", "password"
+        ));
+
+        assertExternalConfig(Map.of(
+                "quarkus.datasource.\"user_store$something\".db-kind", "mariadb",
+                "quarkus.datasource.\"client.store_123\".password", "password"
+        ));
+    }
+
+    @Test
+    public void sqlParameters() {
+        ConfigArgsConfigSource.setCliArgs("--db-kind-my-store=dev-mem");
+        initConfig();
+
+        assertConfig(Map.of(
+                "db-kind-my-store", "dev-mem",
+                "db-debug-jpql-my-store", "false",
+                "db-log-slow-queries-threshold-my-store", "10000"
+        ));
+        onAfter();
+
+        ConfigArgsConfigSource.setCliArgs("--db-kind-my-store=dev-mem", "--db-debug-jpql-my-store=true", "--db-log-slow-queries-threshold-my-store=5000");
+        initConfig();
+
+        assertConfig(Map.of(
+                "db-kind-my-store", "dev-mem",
+                "db-debug-jpql-my-store", "true",
+                "db-log-slow-queries-threshold-my-store", "5000"
+        ));
+    }
+
+    @Test
+    public void propagatedPropertyNames() {
+        ConfigArgsConfigSource.setCliArgs("--db-kind-user-store=mysql");
+
+        var config = createConfig();
+
+        List<String> propertyNames = StreamSupport
+                .stream(config.getPropertyNames().spliterator(), false)
+                .collect(Collectors.toList());
+
+        List<String> expectedNames = List.of("kc.db-kind-user-store",
+                "quarkus.datasource.\"user-store\".db-kind",
+                "quarkus.datasource.\"user-store\".jdbc.url",
+                "quarkus.datasource.\"user-store\".jdbc.transactions",
+                "quarkus.datasource.\"user-store\".jdbc.max-size",
+                "quarkus.datasource.\"user-store\".jdbc.driver",
+                "quarkus.datasource.jdbc.min-size",
+                "quarkus.datasource.jdbc.driver",
+                "quarkus.datasource.jdbc.url");
+
+        expectedNames.forEach(n -> assertThat(propertyNames, hasItem(n)));
+
+        Stream.of("quarkus.datasource.\"user-store\".username"
+                        , "quarkus.datasource.\"user-store\".password")
+                .forEach(n -> assertThat(propertyNames, not(hasItem(n))));
+    }
+
+    @Test
+    public void testPostgresTLSOptions() {
+        doDatabaseTlsOptionTest("postgres",
+                "jdbc:postgresql://myhost:5432/keycloak",
+                Map.of("sslmode", "verify-full"),
+                Map.of("sslfactory", DefaultJavaSSLFactory.class.getName()),
+                "sslrootcert",
+                null,
+                null);
+    }
+
+    @Test
+    public void testMysqlTLSOptions() {
+        doDatabaseTlsOptionTest("mysql",
+                "jdbc:mysql://myhost:3306/keycloak",
+                Map.of("sslMode", "VERIFY_IDENTITY"),
+                Map.of(),
+                "trustCertificateKeyStoreUrl",
+                "trustCertificateKeyStorePassword",
+                null);
+    }
+
+    @Test
+    public void testMssqlTLSOptions() {
+        doDatabaseTlsOptionTest("mssql",
+                "jdbc:sqlserver://myhost:1433;databaseName=keycloak",
+                Map.of("encrypt", "true", "trustServerCertificate", "false"),
+                Map.of(),
+                "trustStore",
+                "trustStorePassword",
+                null);
+    }
+
+    @Test
+    public void testMariadbTLSOptions() {
+        doDatabaseTlsOptionTest("mariadb",
+                "jdbc:mariadb://myhost:3306/keycloak",
+                Map.of("sslMode", "verify-full"),
+                Map.of(),
+                "serverSslCert",
+                null,
+                null);
+    }
+
+    @Test
+    public void testOracleTLSOptions() {
+        doDatabaseTlsOptionTest("oracle",
+                "jdbc:oracle:thin:@//myhost:1521/keycloak",
+                Map.of("ssl_server_dn_match", "true"),
+                Map.of(),
+                "javax.net.ssl.trustStore",
+                "javax.net.ssl.trustStorePassword",
+                "javax.net.ssl.trustStoreType");
+    }
+
+    @Test public void testDbConnectTimeout() {
+        var config = createConfigFromCliArguments("--db=mysql", "--db-kind-users=postgresql", "--db-connect-timeout=15");
+
+        assertEquals("15000", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
+
+        // uses the default value, rather than the primary timeout
+        assertEquals("10", config.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.connectTimeout").getValue());
+
+        config = createConfigFromCliArguments("--db=mysql", "--db-kind-users=postgresql", "--db-connect-timeout-users=15");
+
+        assertEquals("10000", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
+        assertEquals("15", config.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.connectTimeout").getValue());
+        // the to mapping for other source types should not be set
+        assertNull(config.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.loginTimeout").getValue());
+
+        // Oracle named datasource in XA mode
+        config = createConfigFromCliArguments("--db=postgres", "--db-kind-users=oracle", "--transaction-xa-enabled-users=true");
+        assertEquals("oracle.net.CONNECT_TIMEOUT=10000", config.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.ConnectionProperties").getValue());
+        assertNull(config.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.oracle.net.CONNECT_TIMEOUT").getValue());
+
+        // Oracle named datasource in XA mode — user sets ConnectionProperties directly
+        setSystemProperty("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.ConnectionProperties", "oracle.net.keepAlive=true", () -> {
+            SmallRyeConfig xaConfig = createConfigFromCliArguments("--db=postgres", "--db-kind-users=oracle", "--transaction-xa-enabled-users=true");
+            assertEquals("oracle.net.keepAlive=true", xaConfig.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.ConnectionProperties").getValue());
+        });
+        setSystemProperty("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.ConnectionProperties", "oracle.net.keepAlive=true", () -> {
+            SmallRyeConfig xaConfig = createConfigFromCliArguments("--db=postgres", "--db-kind-users=oracle", "--transaction-xa-enabled-users=true", "--db-connect-timeout-users=30s");
+            assertEquals("oracle.net.keepAlive=true", xaConfig.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.ConnectionProperties").getValue());
+        });
+    }
+
+    private static void doDatabaseTlsOptionTest(String dbKind, String dbUrl,
+                                                // common property with or without --db-tls-truststore-file
+                                                Map<String, String> tlsJdbcProperties,
+                                                // other properties available when --db-tls-truststore-file is not set
+                                                Map<String, String> withJavaTrustStoreJdbcProperties,
+                                                String truststoreFileProperty,
+                                                String trustStorePasswordProperty,
+                                                String trustStoreTypeProperty) {
+        // default DB configured to H2 memory file
+        var h2Url = "jdbc:h2:mem:keycloakdb;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0";
+
+        var config = createConfigFromCliArguments("--db=dev-mem", "--db-kind-users=" + dbKind, "--db-url-host-users=myhost", "--db-tls-mode-users=disabled");
+        assertEquals(h2Url, config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals(dbUrl, config.getConfigValue("quarkus.datasource.\"users\".jdbc.url").getValue());
+
+        assertNullAllAdditionalJdbcProperty(config, null, tlsJdbcProperties.keySet());
+        assertNullAllAdditionalJdbcProperty(config, null, withJavaTrustStoreJdbcProperties.keySet());
+        assertNullAdditionalJdbcProperty(config, null, truststoreFileProperty);
+        assertNullAdditionalJdbcProperty(config, null, trustStorePasswordProperty);
+        assertNullAdditionalJdbcProperty(config, null, trustStoreTypeProperty);
+
+
+        assertNullAllAdditionalJdbcProperty(config, "users", tlsJdbcProperties.keySet());
+        assertNullAllAdditionalJdbcProperty(config, "users", withJavaTrustStoreJdbcProperties.keySet());
+        assertNullAdditionalJdbcProperty(config, "users", truststoreFileProperty);
+        assertNullAdditionalJdbcProperty(config, "users", trustStorePasswordProperty);
+        assertNullAdditionalJdbcProperty(config, "users", trustStoreTypeProperty);
+
+        // MSSQL-specific property should not leak into non-MSSQL named datasources
+        if (!"mssql".equals(dbKind)) {
+            assertNullAdditionalJdbcProperty(config, "users", "sendStringParametersAsUnicode");
+        }
+
+        // oracle has a different protocol for TLS
+        if ("oracle".equals(dbKind)) {
+            dbUrl = dbUrl.replace("jdbc:oracle:thin:@//", "jdbc:oracle:thin:@tcps://");
+        }
+
+        // check defaults
+        config = createConfigFromCliArguments("--db=dev-mem", "--db-kind-users=" + dbKind, "--db-url-host-users=myhost", "--db-tls-mode-users=verify-server");
+        assertEquals(h2Url, config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals(dbUrl, config.getConfigValue("quarkus.datasource.\"users\".jdbc.url").getValue());
+
+        assertNullAllAdditionalJdbcProperty(config, null, tlsJdbcProperties.keySet());
+        assertNullAllAdditionalJdbcProperty(config, null, withJavaTrustStoreJdbcProperties.keySet());
+        assertNullAdditionalJdbcProperty(config, null, truststoreFileProperty);
+        assertNullAdditionalJdbcProperty(config, null, trustStorePasswordProperty);
+        assertNullAdditionalJdbcProperty(config, null, trustStoreTypeProperty);
+
+        assertAllAdditionalJdbcProperty(config, "users", tlsJdbcProperties);
+        assertAllAdditionalJdbcProperty(config, "users", withJavaTrustStoreJdbcProperties);
+        assertNullAdditionalJdbcProperty(config, "users", truststoreFileProperty);
+        assertNullAdditionalJdbcProperty(config, "users", trustStorePasswordProperty);
+        assertNullAdditionalJdbcProperty(config, "users", trustStoreTypeProperty);
+
+        // make sure we don't overwrite anything from the user input
+        var property = tlsJdbcProperties.keySet().iterator().next();
+        var urlProperty = "?%s=bar".formatted(property);
+        var arg = "--db-url-properties-users=%s".formatted(urlProperty);
+
+        config = createConfigFromCliArguments("--db=dev-mem", "--db-kind-users=" + dbKind, "--db-url-host-users=myhost", "--db-tls-mode-users=verify-server", arg);
+        assertEquals(h2Url, config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals(dbUrl + urlProperty, config.getConfigValue("quarkus.datasource.\"users\".jdbc.url").getValue());
+
+        assertNullAllAdditionalJdbcProperty(config, null, tlsJdbcProperties.keySet());
+        assertNullAllAdditionalJdbcProperty(config, null, withJavaTrustStoreJdbcProperties.keySet());
+        assertNullAdditionalJdbcProperty(config, null, truststoreFileProperty);
+        assertNullAdditionalJdbcProperty(config, null, trustStorePasswordProperty);
+        assertNullAdditionalJdbcProperty(config, null, trustStoreTypeProperty);
+
+        for (var entry : tlsJdbcProperties.entrySet()) {
+            if (entry.getKey().equals(property)) {
+                assertNullAdditionalJdbcProperty(config, "users", entry.getKey());
+            } else {
+                assertAdditionalJdbcProperty(config, "users", entry.getKey(), entry.getValue());
+            }
+        }
+        assertAllAdditionalJdbcProperty(config, "users", withJavaTrustStoreJdbcProperties);
+        assertNullAdditionalJdbcProperty(config, "users", truststoreFileProperty);
+        assertNullAdditionalJdbcProperty(config, "users", trustStorePasswordProperty);
+        assertNullAdditionalJdbcProperty(config, "users", trustStoreTypeProperty);
+
+        config = createConfigFromCliArguments("--db=dev-mem", "--db-kind-users=" + dbKind, "--db-url-host-users=myhost", "--db-tls-mode-users=verify-server", "--db-tls-trust-store-file-users=cert.pem", "--db-tls-trust-store-password-users=no-secret", "--db-tls-trust-store-type-users=pem");
+
+        assertEquals(h2Url, config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals(dbUrl, config.getConfigValue("quarkus.datasource.\"users\".jdbc.url").getValue());
+
+        assertNullAllAdditionalJdbcProperty(config, null, tlsJdbcProperties.keySet());
+        assertNullAllAdditionalJdbcProperty(config, null, withJavaTrustStoreJdbcProperties.keySet());
+        assertNullAdditionalJdbcProperty(config, null, truststoreFileProperty);
+        assertNullAdditionalJdbcProperty(config, null, trustStorePasswordProperty);
+        assertNullAdditionalJdbcProperty(config, null, trustStoreTypeProperty);
+
+        assertAllAdditionalJdbcProperty(config, "users", tlsJdbcProperties);
+        assertNullAllAdditionalJdbcProperty(config, "users", withJavaTrustStoreJdbcProperties.keySet());
+        assertAdditionalJdbcProperty(config, "users", truststoreFileProperty, "cert.pem");
+        assertAdditionalJdbcProperty(config, "users", trustStorePasswordProperty, "no-secret");
+        assertAdditionalJdbcProperty(config, "users", trustStoreTypeProperty, "pem");
+    }
+
+    @Test
+    public void testPostgresMTLSOptions() {
+        doDatabaseMtlsOptionTest("postgres",
+                "sslkey",
+                "sslpassword",
+                null);
+    }
+
+    @Test
+    public void testMysqlMTLSOptions() {
+        doDatabaseMtlsOptionTest("mysql",
+                "clientCertificateKeyStoreUrl",
+                "clientCertificateKeyStorePassword",
+                "clientCertificateKeyStoreType");
+    }
+
+    @Test
+    public void testMariadbMTLSOptions() {
+        doDatabaseMtlsOptionTest("mariadb",
+                "keyStore",
+                "keyStorePassword",
+                null);
+    }
+
+    @Test
+    public void testOracleMTLSOptions() {
+        var dbKind = "oracle";
+        doDatabaseMtlsOptionTest(dbKind,
+                "javax.net.ssl.keyStore",
+                "javax.net.ssl.keyStorePassword",
+                "javax.net.ssl.keyStoreType");
+
+        // when TLS is disabled, mTLS properties should not be set on the named datasource
+        var config = configNoMTLS(dbKind);
+        assertNullAdditionalJdbcProperty(config, null, "oracle.net.authentication_services");
+        assertNullAdditionalJdbcProperty(config, "users", "oracle.net.authentication_services");
+
+        // when TLS is enabled and mTLS options are set on the named datasource
+        config = configWithMTLS(dbKind);
+
+        assertNullAdditionalJdbcProperty(config, null, "oracle.net.authentication_services");
+        assertAdditionalJdbcProperty(config, "users", "oracle.net.authentication_services", "(TCPS)");
+    }
+
+    private static void doDatabaseMtlsOptionTest(String dbKind,
+                                                  String keyStoreFileProperty,
+                                                  String keyStorePasswordProperty,
+                                                  String keyStoreTypeProperty) {
+        var h2Url = "jdbc:h2:mem:keycloakdb;NON_KEYWORDS=VALUE;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=0";
+
+        // when TLS is disabled, mTLS properties should not be set on the named datasource
+        var config = configNoMTLS(dbKind);
+        assertNullAdditionalJdbcProperty(config, null, keyStoreFileProperty);
+        assertNullAdditionalJdbcProperty(config, "users", keyStoreFileProperty);
+        assertNullAdditionalJdbcProperty(config, "users", keyStorePasswordProperty);
+        assertNullAdditionalJdbcProperty(config, "users", keyStoreTypeProperty);
+
+        // when TLS is enabled and mTLS options are set on the named datasource
+        config = configWithMTLS(dbKind);
+        assertEquals(h2Url, config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+
+        // main datasource should not have mTLS properties
+        assertNullAdditionalJdbcProperty(config, null, keyStoreFileProperty);
+        assertNullAdditionalJdbcProperty(config, null, keyStorePasswordProperty);
+        assertNullAdditionalJdbcProperty(config, null, keyStoreTypeProperty);
+
+        // named datasource should have mTLS properties
+        assertAdditionalJdbcProperty(config, "users", keyStoreFileProperty, "keystore.p12");
+        assertAdditionalJdbcProperty(config, "users", keyStorePasswordProperty, "secret");
+        assertAdditionalJdbcProperty(config, "users", keyStoreTypeProperty, "PKCS12");
+    }
+
+    private static SmallRyeConfig configNoMTLS(String dbKind) {
+        return createConfigFromCliArguments("--db=dev-mem", "--db-kind-users=" + dbKind, "--db-url-host-users=myhost", "--db-tls-mode-users=disabled",
+              "--db-mtls-key-store-file-users=keystore.p12", "--db-mtls-key-store-password-users=secret", "--db-mtls-key-store-type-users=PKCS12");
+    }
+
+    private static SmallRyeConfig configWithMTLS(String dbKind) {
+        return createConfigFromCliArguments("--db=dev-mem", "--db-kind-users=" + dbKind, "--db-url-host-users=myhost", "--db-tls-mode-users=verify-server",
+              "--db-mtls-key-store-file-users=keystore.p12", "--db-mtls-key-store-password-users=secret", "--db-mtls-key-store-type-users=PKCS12");
+    }
+
+    @Test
+    public void testRawDatabasePassword() {
+        putEnvVar("KCRAW_DB_PASSWORD", "p@ss$$w0rd${special}");
+        ConfigArgsConfigSource.setCliArgs("--db=postgres");
+        SmallRyeConfig config = createConfig();
+        // The raw password should be preserved exactly as-is, with no expression evaluation
+        assertEquals("p@ss$$w0rd${special}", config.getConfigValue("kc.db-password").getValue());
+        assertEquals("p@ss$$w0rd${special}", config.getConfigValue("quarkus.datasource.password").getValue());
     }
 }

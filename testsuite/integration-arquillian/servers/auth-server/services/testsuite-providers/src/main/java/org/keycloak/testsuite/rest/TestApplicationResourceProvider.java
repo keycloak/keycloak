@@ -17,10 +17,24 @@
 
 package org.keycloak.testsuite.rest;
 
-import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.http.HttpRequest;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.HtmlUtils;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
@@ -35,19 +49,7 @@ import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelReque
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.utils.MediaType;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
+import org.jboss.resteasy.reactive.NoCache;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -106,15 +108,6 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
         backChannelLogoutTokens.add(request.getDecodedFormParameters().getFirst(OAuth2Constants.LOGOUT_TOKEN));
     }
 
-    @GET
-    @Path("/admin/frontchannelLogout")
-    public void frontchannelLogout(@QueryParam("sid") String sid, @QueryParam("iss") String issuer) {
-        LogoutToken token = new LogoutToken();
-        token.setSid(sid);
-        token.issuer(issuer);
-        frontChannelLogoutTokens.add(token);
-    }
-
     @POST
     @Consumes(MediaType.TEXT_PLAIN_UTF_8)
     @Path("/admin/k_push_not_before")
@@ -148,13 +141,6 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     @Path("/poll-backchannel-raw-logout")
     public String getBackChanneRawlLogoutAction() throws InterruptedException {
         return backChannelLogoutTokens.poll(20, TimeUnit.SECONDS);
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("/poll-frontchannel-logout")
-    public LogoutToken getFrontChannelLogoutAction() throws InterruptedException {
-        return frontChannelLogoutTokens.poll(20, TimeUnit.SECONDS);
     }
 
     @GET

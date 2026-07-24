@@ -18,14 +18,16 @@
 package org.keycloak.models.jpa;
 
 import jakarta.persistence.EntityManager;
+
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_ID;
-import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_PRIORITY;
 import org.keycloak.models.DeploymentStateProvider;
 import org.keycloak.models.DeploymentStateProviderFactory;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+
+import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_ID;
+import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_PRIORITY;
 
 public class JpaDeploymentStateProviderFactory implements DeploymentStateProviderFactory {
 

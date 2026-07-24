@@ -17,15 +17,16 @@
 
 package org.keycloak.testframework.remote.providers.runonserver;
 
-import org.keycloak.models.KeycloakSession;
-
+import java.io.IOException;
 import java.io.Serializable;
+
+import org.keycloak.models.KeycloakSession;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public interface FetchOnServer extends Serializable {
 
-    Object run(KeycloakSession session);
+    Object run(KeycloakSession session) throws IOException;
 
 }

@@ -17,10 +17,11 @@
 
 package org.keycloak.models.sessions.infinispan.entities;
 
-import org.infinispan.api.annotations.indexing.Basic;
-import org.infinispan.protostream.annotations.ProtoField;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
+
+import org.infinispan.api.annotations.indexing.Basic;
+import org.infinispan.protostream.annotations.ProtoField;
 
 /**
  * Represents an entity containing data about a session, i.e. an object that is stored in infinispan cache.
@@ -55,6 +56,8 @@ public abstract class SessionEntity {
         this.realmId = realmId;
     }
 
+    @Deprecated(since = "26.4", forRemoval = true)
+    //no longer used
     public SessionEntityWrapper mergeRemoteEntityWithLocalEntity(SessionEntityWrapper localEntityWrapper) {
         if (localEntityWrapper == null) {
             return new SessionEntityWrapper<>(this);

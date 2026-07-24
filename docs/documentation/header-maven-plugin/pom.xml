@@ -13,7 +13,8 @@
     <version>999.0.0-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
-    <name>github-maven-plugin</name>
+    <name>header-maven-plugin</name>
+    <description>header-maven-plugin</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -35,11 +36,6 @@
             <artifactId>maven-plugin-annotations</artifactId>
             <version>${maven.plugins.version}</version>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.codehaus.plexus</groupId>
-            <artifactId>plexus-utils</artifactId>
-            <version>${version.plexus.utils}</version>
         </dependency>
     </dependencies>
 

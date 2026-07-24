@@ -19,7 +19,6 @@ package org.keycloak.testsuite.cluster;
 
 import java.util.concurrent.ThreadLocalRandom;
 
-import org.apache.commons.lang.RandomStringUtils;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -28,7 +27,9 @@ import org.keycloak.representations.idm.authorization.PermissionTicketRepresenta
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 
-import static org.junit.Assert.assertEquals;
+import org.apache.commons.lang.RandomStringUtils;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class PermissionTicketInvalidationClusterTest extends AbstractInvalidationClusterTestWithTestRealm<PermissionTicketRepresentation, Object> {
 

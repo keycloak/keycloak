@@ -17,13 +17,15 @@
 
 package org.keycloak.services.scheduled;
 
-import org.jboss.logging.Logger;
+import org.keycloak.logging.MappedDiagnosticContextUtil;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.timer.ScheduledTask;
 import org.keycloak.timer.TaskRunner;
 import org.keycloak.tracing.TracingProvider;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -76,6 +78,7 @@ public class ScheduledTaskRunner implements TaskRunner {
             logger.errorf(t, "Failed to run scheduled task %s", task.getTaskName());
         } finally {
             tracing.close();
+            MappedDiagnosticContextUtil.clearMdc();
         }
     }
 

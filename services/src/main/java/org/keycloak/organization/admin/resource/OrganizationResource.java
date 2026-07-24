@@ -17,6 +17,8 @@
 
 package org.keycloak.organization.admin.resource;
 
+import java.util.Objects;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -26,14 +28,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
-import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.resteasy.reactive.NoCache;
+
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
@@ -48,8 +43,16 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
-import java.util.Objects;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.resteasy.reactive.NoCache;
 
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class OrganizationResource {
@@ -58,21 +61,28 @@ public class OrganizationResource {
     private final OrganizationProvider provider;
     private final AdminEventBuilder adminEvent;
     private final OrganizationModel organization;
+    private final AdminPermissionEvaluator auth;
 
-    public OrganizationResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent) {
+    public OrganizationResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent, AdminPermissionEvaluator auth) {
         this.session = session;
         this.provider = session == null ? null : session.getProvider(OrganizationProvider.class);
         this.organization = organization;
         this.adminEvent = adminEvent.resource(ResourceType.ORGANIZATION);
+        this.auth = auth;
     }
 
+    /**
+     * Precondition: caller must have passed through {@link OrganizationsResource#get(String)}
+     * which enforces {@code auth.orgs().requireView(organization)}.
+     */
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Returns the organization representation")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = OrganizationRepresentation.class)))
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = OrganizationRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public OrganizationRepresentation get() {
         return ModelToRepresentation.toRepresentation(organization, false);
@@ -83,9 +93,11 @@ public class OrganizationResource {
     @Operation(summary = "Deletes the organization")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
-        @APIResponse(responseCode = "400", description = "Bad Request")
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Response delete() {
+        auth.orgs().requireManage(organization);
         boolean removed = provider.remove(organization);
         if (removed) {
             adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
@@ -102,9 +114,11 @@ public class OrganizationResource {
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "409", description = "Conflict")
     })
     public Response update(OrganizationRepresentation organizationRep) {
+        auth.orgs().requireManage(organization);
         // attempt to change organization name to an existing organization name
         if (!Objects.equals(organization.getName(), organizationRep.getName()) &&
                 provider.getAllStream(organizationRep.getName(), true, -1, -1).findAny().isPresent()) {
@@ -123,11 +137,21 @@ public class OrganizationResource {
 
     @Path("members")
     public OrganizationMemberResource members() {
-        return new OrganizationMemberResource(session, organization, adminEvent);
+        return new OrganizationMemberResource(session, organization, adminEvent, auth);
+    }
+
+    @Path("invitations")
+    public OrganizationInvitationResource invitations() {
+        return new OrganizationInvitationResource(session, organization, adminEvent, auth);
     }
 
     @Path("identity-providers")
     public OrganizationIdentityProvidersResource identityProvider() {
-        return new OrganizationIdentityProvidersResource(session, organization, adminEvent);
+        return new OrganizationIdentityProvidersResource(session, organization, adminEvent, auth);
+    }
+
+    @Path("groups")
+    public OrganizationGroupsResource groups() {
+        return new OrganizationGroupsResource(session, organization, adminEvent, auth);
     }
 }

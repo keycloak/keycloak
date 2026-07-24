@@ -16,6 +16,10 @@ import { FormAccess } from "../../components/form/FormAccess";
 import { convertAttributeNameToForm } from "../../util";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { FormFields } from "../ClientDetails";
+import { IdentityProviderSelect } from "../../components/identity-provider/IdentityProviderSelect";
+import { IdentityProviderType } from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import { useAccess } from "../../context/access/Access";
+import { useRealm } from "../../context/realm-context/RealmContext";
 
 type CapabilityConfigProps = {
   unWrap?: boolean;
@@ -31,8 +35,31 @@ export const CapabilityConfig = ({
   const protocol = type || watch("protocol");
   const clientAuthentication = watch("publicClient");
   const authorization = watch("authorizationServicesEnabled");
+  const pkceCodeChallengeMethodField = convertAttributeNameToForm<FormFields>(
+    "attributes.pkce.code.challenge.method",
+  );
+  const pkceEnabled = watch(pkceCodeChallengeMethodField);
+  const jwtAuthorizationGrantEnabled = watch(
+    convertAttributeNameToForm<FormFields>(
+      "attributes.oauth2.jwt.authorization.grant.enabled",
+    ),
+    false,
+  );
+  const externalTokenEnabled = watch(
+    convertAttributeNameToForm<FormFields>("attributes.external.token.enabled"),
+    false,
+  );
   const isFeatureEnabled = useIsFeatureEnabled();
-
+  const { hasSomeAccess } = useAccess();
+  const { realmRepresentation } = useRealm();
+  const showIdentityProviders = hasSomeAccess("view-identity-providers");
+  // Mirror the gate in ClientDetails: only expose the SSF capability
+  // toggle when both the server feature is enabled and the realm has
+  // opted in. Otherwise enabling the toggle would just render a tab
+  // that crashes on its first API call.
+  const showSsfReceiverToggle =
+    isFeatureEnabled(Feature.Ssf) &&
+    realmRepresentation.attributes?.["ssf.transmitterEnabled"] === "true";
   return (
     <FormAccess
       isHorizontal
@@ -79,6 +106,18 @@ export const CapabilityConfig = ({
                       setValue(
                         convertAttributeNameToForm<FormFields>(
                           "attributes.standard.token.exchange.enabled",
+                        ),
+                        false,
+                      );
+                      setValue(
+                        convertAttributeNameToForm<FormFields>(
+                          "attributes.oauth2.jwt.authorization.grant.enabled",
+                        ),
+                        false,
+                      );
+                      setValue(
+                        convertAttributeNameToForm<FormFields>(
+                          "attributes.ssf.enabled",
                         ),
                         false,
                       );
@@ -275,6 +314,41 @@ export const CapabilityConfig = ({
                   />
                 </GridItem>
               )}
+              {isFeatureEnabled(Feature.JWTAuthorizationGrant) && (
+                <GridItem lg={8} sm={6}>
+                  <Controller
+                    name={convertAttributeNameToForm<
+                      Required<ClientRepresentation["attributes"]>
+                    >("attributes.oauth2.jwt.authorization.grant.enabled")}
+                    defaultValue={false}
+                    control={control}
+                    render={({ field }) => (
+                      <InputGroup>
+                        <InputGroupItem>
+                          <Checkbox
+                            data-testid="jwt-authorization-grant-enabled"
+                            label={t("jwtAuthorizationGrantEnabled")}
+                            id="kc-jwt-authorization-grant-enabled"
+                            name="jwt-authorization-grant-enabled"
+                            isChecked={
+                              field.value.toString() === "true" &&
+                              !clientAuthentication
+                            }
+                            onChange={field.onChange}
+                            isDisabled={clientAuthentication}
+                          />
+                        </InputGroupItem>
+                        <InputGroupItem>
+                          <HelpItem
+                            helpText={t("jwtAuthorizationGrantEnabledHelp")}
+                            fieldLabelId="jwtAuthorizationGrantEnabled"
+                          />
+                        </InputGroupItem>
+                      </InputGroup>
+                    )}
+                  />
+                </GridItem>
+              )}
               {isFeatureEnabled(Feature.DeviceFlow) && (
                 <GridItem lg={8} sm={6}>
                   <Controller
@@ -338,20 +412,117 @@ export const CapabilityConfig = ({
               </GridItem>
             </Grid>
           </FormGroup>
-          <SelectControl
-            id="keyForCodeExchange"
-            label={t("keyForCodeExchange")}
-            labelIcon={t("keyForCodeExchangeHelp")}
-            controller={{ defaultValue: "" }}
-            name={convertAttributeNameToForm<FormFields>(
-              "attributes.pkce.code.challenge.method",
+          <FormGroup
+            hasNoPaddingTop
+            label={t("pkceRequired")}
+            fieldId="kc-pkce-enabled"
+            labelIcon={
+              <HelpItem
+                helpText={t("clientPkceRequiredHelp")}
+                fieldLabelId="pkceRequired"
+                isRecommendation={
+                  clientAuthentication && (!pkceEnabled || pkceEnabled === "")
+                }
+              />
+            }
+          >
+            <Controller
+              name={pkceCodeChallengeMethodField}
+              control={control}
+              render={({ field }) => (
+                <Switch
+                  data-testid="pkce-required"
+                  id="kc-pkce-required-switch"
+                  label={t("on")}
+                  labelOff={t("off")}
+                  isChecked={field.value !== "" && field.value !== undefined}
+                  onChange={(_event, checked) =>
+                    field.onChange(checked ? "S256" : "")
+                  }
+                  aria-label={t("pkceRequired")}
+                />
+              )}
+            />
+          </FormGroup>
+          {pkceEnabled && pkceEnabled !== "" && (
+            <SelectControl
+              id="keyForCodeExchange"
+              label={t("keyForCodeExchange")}
+              labelIcon={t("keyForCodeExchangeHelp")}
+              controller={{ control }}
+              name={pkceCodeChallengeMethodField}
+              options={[
+                { key: "S256", value: "S256" },
+                { key: "plain", value: "plain" },
+              ]}
+              isFullWidth={false}
+            />
+          )}
+          {isFeatureEnabled(Feature.JWTAuthorizationGrant) &&
+            showIdentityProviders &&
+            jwtAuthorizationGrantEnabled.toString() === "true" && (
+              <IdentityProviderSelect
+                name={convertAttributeNameToForm<FormFields>(
+                  "attributes.oauth2.jwt.authorization.grant.idp",
+                )}
+                label={t("jwtAuthorizationGrantIdp")}
+                helpText={t("jwtAuthorizationGrantIdpHelp")}
+                convertToName={convertAttributeNameToForm}
+                identityProviderType={
+                  IdentityProviderType.JWT_AUTHORIZATION_GRANT
+                }
+                isDisabled={clientAuthentication}
+                realmOnly
+                stringify
+              />
             )}
-            options={[
-              { key: "", value: t("choose") },
-              { key: "S256", value: "S256" },
-              { key: "plain", value: "plain" },
-            ]}
-          />
+          {isFeatureEnabled(Feature.DPoP) && (
+            <DefaultSwitchControl
+              name={convertAttributeNameToForm<FormFields>(
+                "attributes.dpop.bound.access.tokens",
+              )}
+              label={t("oAuthDPoP")}
+              labelIcon={t("oAuthDPoPHelp")}
+              stringify
+            />
+          )}
+          {isFeatureEnabled(Feature.IdentityBrokeringAPIV2) &&
+            !clientAuthentication && (
+              <>
+                <DefaultSwitchControl
+                  name={convertAttributeNameToForm<FormFields>(
+                    "attributes.external.token.enabled",
+                  )}
+                  label={t("externalTokenEnabled")}
+                  labelIcon={t("externalTokenEnabledHelp")}
+                  stringify
+                />
+                {showIdentityProviders &&
+                  externalTokenEnabled?.toString() === "true" && (
+                    <IdentityProviderSelect
+                      name={convertAttributeNameToForm<FormFields>(
+                        "attributes.external.token.idp",
+                      )}
+                      label={t("externalTokenIdp")}
+                      helpText={t("externalTokenIdpHelp")}
+                      convertToName={convertAttributeNameToForm}
+                      identityProviderType={IdentityProviderType.ANY}
+                      realmOnly
+                      stringify
+                    />
+                  )}
+              </>
+            )}
+          {!clientAuthentication && showSsfReceiverToggle && (
+            <DefaultSwitchControl
+              name={convertAttributeNameToForm<FormFields>(
+                "attributes.ssf.enabled",
+              )}
+              label={t("ssfReceiverEnabled")}
+              labelIcon={t("ssfReceiverEnabledHelp")}
+              stringify
+            />
+          )}
         </>
       )}
       {protocol === "saml" && (

@@ -16,11 +16,11 @@
  */
 package org.keycloak.client.registration.cli.commands;
 
-import org.keycloak.client.cli.common.BaseGlobalOptionsCmd;
-import org.keycloak.client.registration.cli.KcRegMain;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
+
+import org.keycloak.client.cli.common.BaseGlobalOptionsCmd;
+import org.keycloak.client.registration.cli.KcRegMain;
 
 import picocli.CommandLine.Command;
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euxo pipefail
 
 # Ex: 21.0.0
@@ -68,6 +68,9 @@ yq ea -i '.spec.install.spec.deployments[0].spec.template.metadata.labels.name =
 
 yq ea -i '.spec.install.spec.deployments[0].spec.template.spec.containers[0].env += [{"name": "POD_NAME", "valueFrom": {"fieldRef": {"fieldPath": "metadata.name"}}}]' "$CSV_PATH"
 yq ea -i '.spec.install.spec.deployments[0].spec.template.spec.containers[0].env += [{"name": "OPERATOR_NAME", "value": "keycloak-operator"}]' "$CSV_PATH"
+
+# Create v2alpha1 entries for CRDs that have v2beta1 as their primary version
+yq ea -i '.spec.customresourcedefinitions.owned += [.spec.customresourcedefinitions.owned[] | select(.version == "v2beta1") | .version = "v2alpha1"]' "$CSV_PATH"
 
 { set +x; } 2>/dev/null
 echo ""

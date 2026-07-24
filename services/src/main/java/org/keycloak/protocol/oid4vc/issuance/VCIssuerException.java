@@ -17,6 +17,8 @@
 
 package org.keycloak.protocol.oid4vc.issuance;
 
+import org.keycloak.protocol.oid4vc.model.ErrorType;
+
 /**
  * Exception to be thrown in case credentials issuance fails.
  *
@@ -24,11 +26,19 @@ package org.keycloak.protocol.oid4vc.issuance;
  */
 public class VCIssuerException extends RuntimeException {
 
-    public VCIssuerException(String message) {
+    private final ErrorType errorType;
+
+    public VCIssuerException(ErrorType errorType, String message) {
         super(message);
+        this.errorType = errorType;
     }
 
-    public VCIssuerException(String message, Throwable cause) {
+    public VCIssuerException(ErrorType errorType, String message, Throwable cause) {
         super(message, cause);
+        this.errorType = errorType;
+    }
+
+    public ErrorType getErrorType() {
+        return errorType;
     }
 }

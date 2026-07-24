@@ -17,11 +17,12 @@
 
 package org.keycloak.crl.infinispan;
 
-import org.infinispan.Cache;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.cache.CacheCrlProvider;
 import org.keycloak.models.cache.infinispan.ClearCacheEvent;
+
+import org.infinispan.Cache;
 
 public class InfinispanCacheCrlProvider implements CacheCrlProvider {
 

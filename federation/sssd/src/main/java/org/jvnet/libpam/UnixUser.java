@@ -23,14 +23,14 @@
  */
 package org.jvnet.libpam;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 import com.sun.jna.Memory;
 import com.sun.jna.ptr.IntByReference;
 import org.jvnet.libpam.impl.CLibrary.group;
 import org.jvnet.libpam.impl.CLibrary.passwd;
-
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 
 import static org.jvnet.libpam.impl.CLibrary.libc;
 

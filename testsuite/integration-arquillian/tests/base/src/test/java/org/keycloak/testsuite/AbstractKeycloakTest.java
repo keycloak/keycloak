@@ -16,59 +16,6 @@
  */
 package org.keycloak.testsuite;
 
-import jakarta.ws.rs.core.Response;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.jboss.arquillian.container.test.api.RunAsClient;
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.jboss.logging.Logger;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.FixMethodOrder;
-import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
-import org.junit.runners.model.TestTimedOutException;
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.resource.AuthenticationManagementResource;
-import org.keycloak.admin.client.resource.RealmsResource;
-import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.common.util.SecretGenerator;
-import org.keycloak.common.util.Time;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.KcArquillian;
-import org.keycloak.testsuite.arquillian.SuiteContext;
-import org.keycloak.testsuite.arquillian.TestContext;
-import org.keycloak.testsuite.auth.page.AuthRealm;
-import org.keycloak.testsuite.auth.page.AuthServer;
-import org.keycloak.testsuite.auth.page.AuthServerContextRoot;
-import org.keycloak.testsuite.auth.page.WelcomePage;
-import org.keycloak.testsuite.auth.page.login.OIDCLogin;
-import org.keycloak.testsuite.auth.page.login.UpdatePassword;
-import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
-import org.keycloak.testsuite.util.BrowserTabUtil;
-import org.keycloak.testsuite.util.CryptoInitRule;
-import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
-import org.keycloak.testsuite.util.TestCleanup;
-import org.keycloak.testsuite.util.TestEventsLogger;
-import org.keycloak.testsuite.util.WaitUtils;
-import org.openqa.selenium.WebDriver;
-
-import jakarta.ws.rs.NotFoundException;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PipedInputStream;
@@ -93,13 +40,67 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.AuthenticationManagementResource;
+import org.keycloak.admin.client.resource.RealmsResource;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.common.util.Time;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
+import org.keycloak.testsuite.admin.AdminApiUtil;
+import org.keycloak.testsuite.arquillian.KcArquillian;
+import org.keycloak.testsuite.arquillian.SuiteContext;
+import org.keycloak.testsuite.arquillian.TestContext;
+import org.keycloak.testsuite.auth.page.AuthRealm;
+import org.keycloak.testsuite.auth.page.AuthServer;
+import org.keycloak.testsuite.auth.page.AuthServerContextRoot;
+import org.keycloak.testsuite.auth.page.WelcomePage;
+import org.keycloak.testsuite.auth.page.login.UpdatePassword;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.util.BrowserTabUtil;
+import org.keycloak.testsuite.util.CryptoInitRule;
+import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.TestCleanup;
+import org.keycloak.testsuite.util.TestEventsLogger;
+import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.jboss.arquillian.container.test.api.RunAsClient;
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.jboss.arquillian.graphene.page.Page;
+import org.jboss.arquillian.test.api.ArquillianResource;
+import org.jboss.logging.Logger;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.FixMethodOrder;
+import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
+import org.junit.runners.model.TestTimedOutException;
+import org.openqa.selenium.WebDriver;
+
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
+
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SCHEME;
@@ -107,10 +108,16 @@ import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
 import static org.keycloak.testsuite.util.URLUtils.navigateToUri;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
  *
  * @author tkyjovsk
  */
+@Deprecated(forRemoval = true)
 @RunWith(KcArquillian.class)
 @RunAsClient
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -132,6 +139,11 @@ public abstract class AbstractKeycloakTest {
 
     protected KeycloakTestingClient testingClient;
 
+    protected KeycloakTestingClient.Server runOnServerMaster;
+    protected KeycloakTestingClient.Server runOnServer;
+
+    protected TimeOffSet timeOffSet = new TimeOffSet(this);
+
     @ArquillianResource
     protected OAuthClient oauth;
 
@@ -149,7 +161,7 @@ public abstract class AbstractKeycloakTest {
     protected AuthRealm masterRealmPage;
 
     @Page
-    protected OIDCLogin loginPage;
+    protected LoginPage loginPage;
 
     @Page
     protected UpdatePassword updatePasswordPage;
@@ -177,6 +189,8 @@ public abstract class AbstractKeycloakTest {
         }
 
         getTestingClient();
+        runOnServerMaster = testingClient.server();
+        runOnServer = testingClient.server(TEST);
 
         setDefaultPageUriParameters();
 
@@ -229,7 +243,7 @@ public abstract class AbstractKeycloakTest {
     @After
     public void afterAbstractKeycloakTest() throws Exception {
         if (resetTimeOffset) {
-            resetTimeOffset();
+            timeOffSet.set(0);
         }
 
         if (isImportAfterEachMethod()) {
@@ -240,7 +254,10 @@ public abstract class AbstractKeycloakTest {
         } else {
             log.info("calling all TestCleanup");
             // Remove all sessions
-            testContext.getTestRealmReps().stream().forEach((r)->testingClient.testing().removeUserSessions(r.getRealm()));
+            testContext.getTestRealmReps().stream().map(RealmRepresentation::getRealm).forEach((r)-> runOnServerMaster.run(session -> {
+                RealmModel realm = session.realms().getRealmByName(r);
+                session.sessions().removeUserSessions(realm);
+            }));
 
             // Cleanup objects
             for (TestCleanup cleanup : testContext.getCleanups().values()) {
@@ -320,7 +337,6 @@ public abstract class AbstractKeycloakTest {
 
     public void setDefaultPageUriParameters() {
         masterRealmPage.setAuthRealm(MASTER);
-        loginPage.setAuthRealm(MASTER);
     }
 
     public KeycloakTestingClient getTestingClient() {
@@ -552,18 +568,18 @@ public abstract class AbstractKeycloakTest {
         UserRepresentation homer = createUserRepresentation(username, password);
         homer.setRequiredActions(Arrays.asList(requiredActions));
 
-        return ApiUtil.createUserWithAdminClient(adminClient.realm(realm), homer);
+        return AdminApiUtil.createUserWithAdminClient(adminClient.realm(realm), homer);
     }
 
     public String createUser(String realm, String username, String password, String firstName, String lastName, String email, Consumer<UserRepresentation> customizer) {
         UserRepresentation user = createUserRepresentation(username, email, firstName, lastName, true, password);
         customizer.accept(user);
-        return ApiUtil.createUserWithAdminClient(adminClient.realm(realm), user);
+        return AdminApiUtil.createUserWithAdminClient(adminClient.realm(realm), user);
     }
 
     public String createUser(String realm, String username, String password, String firstName, String lastName, String email) {
         UserRepresentation homer = createUserRepresentation(username, email, firstName, lastName, true, password);
-        return ApiUtil.createUserWithAdminClient(adminClient.realm(realm), homer);
+        return AdminApiUtil.createUserWithAdminClient(adminClient.realm(realm), homer);
     }
 
     public static UserRepresentation createUserRepresentation(String id, String username, String email, String firstName, String lastName, List<String> groups, boolean enabled) {
@@ -666,29 +682,15 @@ public abstract class AbstractKeycloakTest {
         now.set(Calendar.SECOND, second);
         int offset = (int) ((now.getTime().getTime() - System.currentTimeMillis()) / 1000);
 
-        setTimeOffset(offset + addSeconds);
+        timeOffSet.set(offset + addSeconds);
     }
 
-    /**
-     * Sets time offset in seconds that will be added to Time.currentTime() and Time.currentTimeMillis() both for client and server.
-     * Moves time on the remote Infinispan server as well if the HotRod storage is used.
-     *
-     * @param offset
-     */
-    public void setTimeOffset(int offset) {
-        String response = invokeTimeOffset(offset);
-        resetTimeOffset = offset != 0;
-        log.debugv("Set time offset, response {0}", response);
-    }
-
-    public void resetTimeOffset() {
-        String response = invokeTimeOffset(0);
-        resetTimeOffset = false;
-        log.debugv("Reset time offset, response {0}", response);
+    public void shouldResetTimeOffset(boolean resetTimeOffset) {
+        this.resetTimeOffset = resetTimeOffset;
     }
 
     public void setOtpTimeOffset(int offsetSeconds, TimeBasedOTP otp) {
-        setTimeOffset(offsetSeconds);
+        timeOffSet.set(offsetSeconds);
         final Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.SECOND, offsetSeconds);
         otp.setCalendar(calendar);
@@ -696,18 +698,6 @@ public abstract class AbstractKeycloakTest {
 
     public int getCurrentTime() {
         return Time.currentTime();
-    }
-
-    protected String invokeTimeOffset(int offset) {
-        // adminClient depends on Time.offset for auto-refreshing tokens
-        Time.setOffset(offset);
-        Map result = testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(offset)));
-
-        // force getting new token after time offset has changed
-        adminClient.tokenManager().grantToken();
-
-
-        return String.valueOf(result);
     }
 
     private void loadConstantsProperties() throws ConfigurationException {
@@ -780,7 +770,7 @@ public abstract class AbstractKeycloakTest {
             } while (expectedEndTime - System.nanoTime() > 0);
 
             //last attempt
-            assertEquals(message, expected, actual.get());
+            assertEquals(expected, actual.get(), message);
         } catch (Exception e) {
             throw new RuntimeException("Unexpected!", e);
         }

@@ -1,53 +1,37 @@
 package org.keycloak.testframework.server;
 
-import io.quarkus.maven.dependency.Dependency;
+import java.util.concurrent.TimeoutException;
+
 import org.keycloak.Keycloak;
 import org.keycloak.common.Version;
-import org.keycloak.platform.Platform;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Set;
-import java.util.concurrent.TimeoutException;
+import org.keycloak.testframework.util.MavenProjectUtil;
 
 public class EmbeddedKeycloakServer implements KeycloakServer {
 
+    private final long startTimeout;
     private Keycloak keycloak;
-    private Path homeDir;
+    private boolean tlsEnabled = false;
+
+    public EmbeddedKeycloakServer(long startTimeout) {
+        this.startTimeout = startTimeout;
+    }
 
     @Override
-    public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder) {
+    public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder, boolean tlsEnabled) {
         Keycloak.Builder builder = Keycloak.builder().setVersion(Version.VERSION);
+        this.tlsEnabled = tlsEnabled;
 
-        for(Dependency dependency : keycloakServerConfigBuilder.toDependencies()) {
-            builder.addDependency(dependency.getGroupId(), dependency.getArtifactId(), "");
+        for(KeycloakDependency dependency : keycloakServerConfigBuilder.toDependencies()) {
+            KeycloakDependency updatedDependency = MavenProjectUtil.updateDependencyDetails(dependency);
+            builder.addDependency(updatedDependency.getGroupId(), updatedDependency.getArtifactId(), updatedDependency.getVersion());
         }
 
-        Set<Path> configFiles = keycloakServerConfigBuilder.toConfigFiles();
-        if (!configFiles.isEmpty()) {
-            if (homeDir == null) {
-                homeDir = Platform.getPlatform().getTmpDirectory().toPath();
-            }
-
-            Path conf = homeDir.resolve("conf");
-
-            if (!conf.toFile().exists()) {
-                conf.toFile().mkdirs();
-            }
-
-            for (Path configFile : configFiles) {
-                try {
-                    Files.copy(configFile, conf.resolve(configFile.getFileName()));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-        }
-
-        builder.setHomeDir(homeDir);
         keycloak = builder.start(keycloakServerConfigBuilder.toArgs());
+        if (!isRunning()) {
+            throw new RuntimeException("Keycloak failed to start");
+        }
+
+        ReadinessProbe.waitUntilReady(this, startTimeout);
     }
 
     @Override
@@ -61,11 +45,31 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
 
     @Override
     public String getBaseUrl() {
-        return "http://localhost:8080";
+        if (tlsEnabled) {
+            return "https://localhost:8443";
+        } else {
+            return "http://localhost:8080";
+        }
     }
 
     @Override
     public String getManagementBaseUrl() {
-        return "http://localhost:9001";
+        if (tlsEnabled) {
+            return "https://localhost:9001";
+        } else {
+            return "http://localhost:9001";
+        }
     }
+
+    private boolean isRunning() {
+        Thread[] threads = new Thread[Thread.activeCount()];
+        Thread.enumerate(threads);
+        for (Thread t : threads) {
+            if (t.getName().equals("Quarkus Main Thread")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

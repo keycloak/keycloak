@@ -1,0 +1,89 @@
+name: Scan dependencies
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  define-refs:
+    runs-on: ubuntu-latest
+    outputs:
+      refs: ${{ steps.refs.outputs.refs }}
+    steps:
+      - id: refs
+        run: |
+          BRANCHES=($(gh api --cache 1h --paginate /repos/${{ github.repository }}/branches -q '.[] | .name | select(startswith("release"))' | sort -V -r))
+          LATEST_REL_BRANCH=$(echo ${BRANCHES[0]} | sed 's|release/||') 
+          TAGS=($(gh api --cache 1h /repos/${{ github.repository }}/tags --paginate -q ".[] | .name | select(startswith(\"$LATEST_REL_BRANCH\"))" | sort -V -r))
+          LATEST_TAG=$(echo ${TAGS[0]}) 
+          
+          REFS='['
+          REFS+="\"refs/heads/main\""
+          for BRANCH in "${BRANCHES[@]}"; do
+              REFS+=", "
+              REFS+="\"refs/heads/$BRANCH\""
+          done
+
+          REFS+=", \"refs/tags/$LATEST_TAG\""
+          
+          REFS+=']'
+
+          echo "refs=$REFS" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  scan-dependencies:
+    name: Scan dependencies
+    runs-on: ubuntu-latest
+    needs: define-refs
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      matrix:
+        ref: ${{ fromJSON(needs.define-refs.outputs.refs) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ matrix.ref }}
+      - name: Get head commit
+        run: echo "CURRENT_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+      - name: Trivy setup
+        uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # v0.3.1
+        with:
+          cache: true
+          version: v0.70.0 # There's an issue in v0.71.0 that makes it not work with Keycloak
+      - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+          cache: 'maven'
+      - name: Resolve Maven dependencies
+        run: |
+          ./mvnw dependency:tree -DskipTestsuite -DexcludeGroupIds=org.keycloak
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'json'
+          output: 'trivy-report.json'
+          scanners: 'vuln'          
+          skip-setup-trivy: true
+      - name: Display report
+        run: |
+          cat trivy-report.json | jq -r '"| ID | PKG | INSTALLED | FIXED | SEVERITY |", "| -- | -- | -- | -- | -- |", ([.Results[] | select(.Vulnerabilities != null) | .Vulnerabilities[]] | unique_by(.VulnerabilityID) | .[] | "| \(.VulnerabilityID) | \(.PkgName) | \(.InstalledVersion) | \(.FixedVersion) | \(.Severity) |")' >> $GITHUB_STEP_SUMMARY
+      - name: Convert to sarif
+        run: |
+          trivy convert --format sarif -o trivy-report.sarif --scanners vuln trivy-report.json
+      - name: Upload report
+        uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+        with:
+          sarif_file: 'trivy-report.sarif'
+          category: 'dependencies'
+          ref: ${{ matrix.ref }}
+          sha: ${{ env.CURRENT_SHA }}

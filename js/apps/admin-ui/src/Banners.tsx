@@ -37,7 +37,7 @@ const WarnBanner = ({ msg, className }: WarnBannerProps) => {
 export const Banners = () => {
   const { whoAmI } = useWhoAmI();
 
-  if (whoAmI.isTemporary()) return <WarnBanner msg="loggedInAsTempAdminUser" />;
+  if (whoAmI.temporary) return <WarnBanner msg="loggedInAsTempAdminUser" />;
 };
 
 export const EventsBanners = ({ type }: { type: EventsBannerType }) => {

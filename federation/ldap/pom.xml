@@ -27,7 +27,7 @@
 
     <artifactId>keycloak-ldap-federation</artifactId>
     <name>Keycloak LDAP UserStoreProvider</name>
-    <description />
+    <description>Keycloak LDAP UserStoreProvider</description>
 
     <dependencies>
         <dependency>
@@ -63,6 +63,11 @@
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

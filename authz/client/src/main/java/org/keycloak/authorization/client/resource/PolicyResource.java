@@ -19,13 +19,15 @@ package org.keycloak.authorization.client.resource;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.util.Http;
 import org.keycloak.authorization.client.util.Throwables;
 import org.keycloak.authorization.client.util.TokenCallable;
 import org.keycloak.representations.idm.authorization.UmaPermissionRepresentation;
 import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+
 import static org.keycloak.common.util.Encode.encodePathAsIs;
 
 /**

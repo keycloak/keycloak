@@ -18,6 +18,7 @@ package org.keycloak.saml.processing.core.parsers.saml.protocol;
 
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.events.StartElement;
+
 import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.StaxParserUtil;

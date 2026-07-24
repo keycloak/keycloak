@@ -74,9 +74,9 @@ public class VaultTranscriberTest {
 
         // attempt to obtain a secret using a proper vault expressions. The key may or may not exist in the vault, so we
         // check both cases using the returned optional and comparing against the expected secret.
-        for (String key : validExpressions.keySet()) {
-            String expectedSecret = validExpressions.get(key);
-            try (VaultRawSecret secret = transcriber.getRawSecret(key)) {
+        for (var entry : validExpressions.entrySet()) {
+            String expectedSecret = entry.getValue();
+            try (VaultRawSecret secret = transcriber.getRawSecret(entry.getKey())) {
                 Optional<ByteBuffer> optional = secret.get();
                 Optional<byte[]> optionalArray = secret.getAsArray();
                 if (expectedSecret != null) {
@@ -163,9 +163,9 @@ public class VaultTranscriberTest {
 
         // attempt to obtain a secret using a proper vault expressions. The key may or may not exist in the vault, so we
         // check both cases using the returned optional and comparing against the expected secret.
-        for (String key : validExpressions.keySet()) {
-            String expectedSecret = validExpressions.get(key);
-            try (VaultCharSecret secret = transcriber.getCharSecret(key)) {
+        for (var entry : validExpressions.entrySet()) {
+            String expectedSecret = entry.getValue();
+            try (VaultCharSecret secret = transcriber.getCharSecret(entry.getKey())) {
                 Optional<CharBuffer> optional = secret.get();
                 Optional<char[]> optionalArray = secret.getAsArray();
                 if (expectedSecret != null) {
@@ -249,9 +249,9 @@ public class VaultTranscriberTest {
 
         // attempt to obtain a secret using a proper vault expressions. The key may or may not exist in the vault, so we
         // check both cases using the returned optional and comparing against the expected secret.
-        for (String key : validExpressions.keySet()) {
-            String expectedSecret = validExpressions.get(key);
-            try (VaultStringSecret secret = transcriber.getStringSecret(key)) {
+        for (var entry : validExpressions.entrySet()) {
+            String expectedSecret = entry.getValue();
+            try (VaultStringSecret secret = transcriber.getStringSecret(entry.getKey())) {
                 Optional<String> optional = secret.get();
                 if (expectedSecret != null) {
                     Assert.assertTrue(optional.isPresent());

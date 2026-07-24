@@ -21,11 +21,10 @@ import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.util.concurrent.BlockingManager;
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.marshalling.Marshalling;
@@ -38,11 +37,17 @@ import org.keycloak.models.sessions.infinispan.changes.remote.updater.authsessio
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.remote.transaction.AuthenticationSessionChangeLogTransaction;
 import org.keycloak.models.sessions.infinispan.remote.transaction.RemoteChangeLogTransaction;
+import org.keycloak.models.sessions.infinispan.transaction.InfinispanTransactionProvider;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import org.keycloak.sessions.AuthenticationSessionProviderFactory;
+
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.util.concurrent.BlockingManager;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory.DEFAULT_AUTH_SESSIONS_LIMIT;
@@ -61,7 +66,7 @@ public class RemoteInfinispanAuthenticationSessionProviderFactory implements Aut
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return InfinispanUtils.isRemoteInfinispan();
+        return !Profile.isFeatureEnabled(Profile.Feature.STATELESS) && InfinispanUtils.isRemoteInfinispan();
     }
 
     @Override
@@ -93,7 +98,6 @@ public class RemoteInfinispanAuthenticationSessionProviderFactory implements Aut
 
     @Override
     public List<ProviderConfigProperty> getConfigMetadata() {
-
         ProviderConfigurationBuilder builder = ProviderConfigurationBuilder.create();
         InfinispanUtils.configureMaxRetries(builder);
         InfinispanUtils.configureRetryBaseTime(builder);
@@ -144,9 +148,15 @@ public class RemoteInfinispanAuthenticationSessionProviderFactory implements Aut
         return InfinispanUtils.PROVIDER_ORDER;
     }
 
+    @Override
+    public Set<Class<? extends Provider>> dependsOn() {
+        return Set.of(InfinispanTransactionProvider.class);
+    }
+
     private AuthenticationSessionChangeLogTransaction createAndEnlistTransaction(KeycloakSession session) {
+        var provider = session.getProvider(InfinispanTransactionProvider.class);
         var tx = new AuthenticationSessionChangeLogTransaction(this, this, new ByRealmIdQueryConditionalRemover<>(PROTO_ENTITY));
-        session.getTransactionManager().enlistAfterCompletion(tx);
+        provider.registerTransaction(tx);
         return tx;
     }
 

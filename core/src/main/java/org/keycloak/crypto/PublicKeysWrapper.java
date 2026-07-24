@@ -32,12 +32,22 @@ import java.util.stream.Stream;
 public class PublicKeysWrapper {
 
     private final List<KeyWrapper> keys;
+    private final Long expirationTime;
 
     public static final PublicKeysWrapper EMPTY = new PublicKeysWrapper(Collections.emptyList());
 
     public PublicKeysWrapper(List<KeyWrapper> keys) {
-        this.keys = keys;
+        this(keys, null);
     }
+
+    public PublicKeysWrapper(List<KeyWrapper> keys, Long expirationTime) {
+        this.keys = keys;
+        this.expirationTime = expirationTime;
+    }
+
+    public Long getExpirationTime() {
+        return expirationTime;
+     }
 
     public List<KeyWrapper> getKeys() {
         return keys;

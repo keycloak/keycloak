@@ -16,30 +16,29 @@
  */
 package org.keycloak.services.resources;
 
-import org.jboss.logging.Logger;
-import org.keycloak.Config;
+import java.io.File;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
+import jakarta.ws.rs.core.Application;
+
+import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.config.ConfigProviderFactory;
+import org.keycloak.common.util.Time;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
-import org.keycloak.platform.Platform;
-import org.keycloak.platform.PlatformProvider;
+import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.managers.ApplianceBootstrap;
-import org.keycloak.transaction.JtaTransactionManagerLookup;
 
-import java.util.NoSuchElementException;
-import java.util.ServiceLoader;
-
-import jakarta.transaction.SystemException;
-import jakarta.transaction.Transaction;
-import jakarta.ws.rs.core.Application;
+import io.quarkus.runtime.Quarkus;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -48,138 +47,148 @@ import jakarta.ws.rs.core.Application;
  */
 public abstract class KeycloakApplication extends Application {
 
+    private static final String KC_TMPDIR = "kc.io.tmpdir";
+
     private static final Logger logger = Logger.getLogger(KeycloakApplication.class);
 
-    protected final PlatformProvider platform = Platform.getPlatform();
+    private static volatile DefaultKeycloakSessionFactory sessionFactory;
 
-    private static KeycloakSessionFactory sessionFactory;
+    /**
+     * Get the temp directory as initialized by the current KeycloakApplication.
+     * <br>
+     * The directory is not guaranteed to exist
+     */
+    public static String getTmpDirectory() {
+        return Optional.ofNullable(System.getProperty(KC_TMPDIR)).orElseThrow(() -> new RuntimeException("No temporary directory was configured."));
+    }
 
-    public KeycloakApplication() {
-        try {
-
-            logger.debugv("PlatformProvider: {0}", platform.getClass().getName());
-
-            loadConfig();
-
-            platform.onStartup(this::startup);
-            platform.onShutdown(this::shutdown);
-
-        } catch (Throwable t) {
-            platform.exit(t);
+    protected void initTmpDirectory() {
+        String dataDir = getDataDir();
+        if (dataDir != null) {
+            File tmpDir = new File(dataDir, "tmp");
+            System.setProperty(KC_TMPDIR, tmpDir.getAbsolutePath());
         }
     }
 
-    protected void startup() {
+    protected abstract String getDataDir();
+
+    // synchronized to prevent shutdown while running bootstrapping
+    protected synchronized void startup() {
+        logger.debugv("Application: {0}", this.getClass().getName());
+        initTmpDirectory();
+        Profile.getInstance().logUnsupportedFeatures();
         CryptoIntegration.init(KeycloakApplication.class.getClassLoader());
         KeycloakApplication.sessionFactory = createSessionFactory();
+        runBootstrap(KeycloakApplication.sessionFactory);
+    }
 
-        ExportImportManager[] exportImportManager = new ExportImportManager[1];
+    private void runBootstrap(DefaultKeycloakSessionFactory keycloakSessionFactory) {
+        var startTime = System.nanoTime();
 
-        KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
-            @Override
-            public void run(KeycloakSession session) {
-                DBLockManager dbLockManager = new DBLockManager(session);
-                dbLockManager.checkForcedUnlock();
-                DBLockProvider dbLock = dbLockManager.getDBLock();
-                dbLock.waitForLock(DBLockProvider.Namespace.KEYCLOAK_BOOT);
-                try {
-                    exportImportManager[0] = bootstrap();
-                } finally {
-                    dbLock.releaseLock();
-                }
+        keycloakSessionFactory.init();
+
+        if ("exit_before_bootstrap".equals(System.getProperty("kc.launch.mode"))) {
+            Quarkus.asyncExit(0);
+            return;
+        }
+
+        setTransactionTimeout(keycloakSessionFactory);
+        var exportImportManager = KeycloakModelUtils.runJobInTransactionWithResult(keycloakSessionFactory, session -> {
+            DBLockManager dbLockManager = new DBLockManager(session);
+            dbLockManager.checkForcedUnlock();
+            DBLockProvider dbLock = dbLockManager.getDBLock();
+            dbLock.waitForLock(DBLockProvider.Namespace.KEYCLOAK_BOOT);
+            try {
+                return bootstrap(session);
+            } finally {
+                dbLock.releaseLock();
             }
         });
 
-        if (exportImportManager[0].isRunExport()) {
-            exportImportManager[0].runExport();
+        if (exportImportManager.isRunExport()) {
+            // the transaction timeout is stored in a thread-local, when exports creates a new transaction, it should fetch it.
+            exportImportManager.runExport();
         }
 
-        sessionFactory.publish(new PostMigrationEvent(sessionFactory));
+        resetTransactionTimeout(keycloakSessionFactory);
+        keycloakSessionFactory.publish(new PostMigrationEvent(keycloakSessionFactory));
+        keycloakSessionFactory.setBootstrapCompleted();
+
+        var duration = Duration.ofNanos(System.nanoTime() - startTime);
+        logger.infof("Bootstrap completed in %f seconds", (double) duration.toMillis() / 1000);
     }
 
-    protected void shutdown() {
+    protected int getTransactionTimeout(DefaultKeycloakSessionFactory sessionFactory) {
+        return Math.toIntExact(TimeUnit.MINUTES.toSeconds(5));
+    }
+
+    // synchronized to prevent shutdown while running bootstrapping
+    protected synchronized void shutdown() {
         if (sessionFactory != null) {
             sessionFactory.close();
+            sessionFactory = null;
         }
     }
 
-    private static class BootstrapState {
-        ExportImportManager exportImportManager;
-        boolean newInstall;
+    protected synchronized void shutdownDelayInitiated() {
+        if (sessionFactory == null) {
+            return;
+        }
+        sessionFactory.publish(new ShutdownDelayInitiatedEvent(Instant.ofEpochMilli(Time.currentTimeMillis())));
     }
 
     // Bootstrap master realm, import realms and create admin user.
-    protected ExportImportManager bootstrap() {
-        BootstrapState bootstrapState = new BootstrapState();
-
+    protected ExportImportManager bootstrap(KeycloakSession session) {
         logger.debug("bootstrap");
-        KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
-            @Override
-            public void run(KeycloakSession session) {
-                // TODO what is the purpose of following piece of code? Leaving it as is for now.
-                JtaTransactionManagerLookup lookup = (JtaTransactionManagerLookup) sessionFactory.getProviderFactory(JtaTransactionManagerLookup.class);
-                if (lookup != null) {
-                    if (lookup.getTransactionManager() != null) {
-                        try {
-                            Transaction transaction = lookup.getTransactionManager().getTransaction();
-                            logger.debugv("bootstrap current transaction? {0}", transaction != null);
-                            if (transaction != null) {
-                                logger.debugv("bootstrap current transaction status? {0}", transaction.getStatus());
-                            }
-                        } catch (SystemException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
+        boolean existing = ExportImportConfig.isSingleTransaction();
+        ExportImportConfig.setSingleTransaction(true);
+        try {
+            ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
+            var exportImportManager = new ExportImportManager(session);
+            var newInstall = applianceBootstrap.isNewInstall();
+            if (newInstall) {
+                if (!exportImportManager.isImportMasterIncluded()) {
+                    applianceBootstrap.createMasterRealm();
                 }
-                // TODO up here ^^
-
-                ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
-                var exportImportManager = bootstrapState.exportImportManager = new ExportImportManager(session);
-                bootstrapState.newInstall = applianceBootstrap.isNewInstall();
-                if (bootstrapState.newInstall) {
-                    boolean existing = ExportImportConfig.isSingleTransaction();
-                    ExportImportConfig.setSingleTransaction(true);
-                    try {
-                        if (!exportImportManager.isImportMasterIncluded()) {
-                            applianceBootstrap.createMasterRealm();
-                        }
-                        // these are also running in the initial bootstrap transaction - if there is a problem, the server won't be initialized at all
-                        exportImportManager.runImport();
-                        createTemporaryAdmin(session);
-                    } finally {
-                        ExportImportConfig.setSingleTransaction(existing);
-                    }
-                }
+                // these are also running in the initial bootstrap transaction - if there is a problem, the server won't be initialized at all
+                exportImportManager.runImport();
+                createTemporaryAdmin(session);
+            } else {
+                exportImportManager.runImport();
             }
-        });
-
-        if (!bootstrapState.newInstall) {
-            bootstrapState.exportImportManager.runImport();
+            return exportImportManager;
+        } finally {
+            ExportImportConfig.setSingleTransaction(existing);
         }
-
-        return bootstrapState.exportImportManager;
     }
 
     protected abstract void createTemporaryAdmin(KeycloakSession session);
 
-    protected void loadConfig() {
+    protected abstract DefaultKeycloakSessionFactory createSessionFactory();
 
-        ServiceLoader<ConfigProviderFactory> loader = ServiceLoader.load(ConfigProviderFactory.class, KeycloakApplication.class.getClassLoader());
-
-        try {
-            ConfigProviderFactory factory = loader.iterator().next();
-            logger.debugv("ConfigProvider: {0}", factory.getClass().getName());
-            Config.init(factory.create().orElseThrow(() -> new RuntimeException("Failed to load Keycloak configuration")));
-        } catch (NoSuchElementException e) {
-            throw new RuntimeException("No valid ConfigProvider found");
-        }
-
+    /**
+     * WARNING: This method is for use by test logic. Will return null if there is no current KeycloakApplication, or if the
+     * startup has not yet reached the point of setting this value.
+     */
+    public static DefaultKeycloakSessionFactory getSessionFactory() {
+        return sessionFactory;
     }
 
-    protected abstract KeycloakSessionFactory createSessionFactory();
+    private void setTransactionTimeout(DefaultKeycloakSessionFactory keycloakSessionFactory) {
+        try {
+            var transactionTimeoutSeconds = getTransactionTimeout(keycloakSessionFactory);
+            KeycloakModelUtils.setTransactionLimit(keycloakSessionFactory, transactionTimeoutSeconds);
+        } catch (Exception e) {
+            logger.debug("Failed to set the transaction timeout, using the default value");
+        }
+    }
 
-    public static KeycloakSessionFactory getSessionFactory() {
-        return sessionFactory;
+    private void resetTransactionTimeout(DefaultKeycloakSessionFactory keycloakSessionFactory) {
+        try {
+            KeycloakModelUtils.setTransactionLimit(keycloakSessionFactory, 0);
+        } catch (Exception e) {
+            logger.debug("Failed to reset the transaction timeout");
+        }
     }
 
 }

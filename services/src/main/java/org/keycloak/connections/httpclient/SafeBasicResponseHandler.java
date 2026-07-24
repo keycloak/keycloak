@@ -17,10 +17,10 @@
 
 package org.keycloak.connections.httpclient;
 
+import java.io.IOException;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.impl.client.BasicResponseHandler;
-
-import java.io.IOException;
 
 /**
  * Limit the amount of data read to prevent a {@link OutOfMemoryError}.

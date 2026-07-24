@@ -1,13 +1,15 @@
 package org.keycloak.cookie;
 
+import java.util.Map;
+
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.NewCookie;
-import org.jboss.logging.Logger;
+
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.utils.SecureContextResolver;
 
-import java.util.Map;
+import org.jboss.logging.Logger;
 
 public class DefaultCookieProvider implements CookieProvider {
 
@@ -77,7 +79,7 @@ public class DefaultCookieProvider implements CookieProvider {
             StringBuilder warning = new StringBuilder("Non-secure context detected; cookies are not secured, and will not be available in cross-origin POST requests.");
 
             String forwarded = session.getContext().getRequestHeaders().getHeaderString("Forwarded");
-            String xForwarded = session.getContext().getRequestHeaders().getHeaderString("X-Forwarded");
+            String xForwarded = session.getContext().getRequestHeaders().getHeaderString("X-Forwarded-Proto");
 
             // if we are getting here then:
             //   if passthrough or reencrypt, proxy-headers may be misconfigured

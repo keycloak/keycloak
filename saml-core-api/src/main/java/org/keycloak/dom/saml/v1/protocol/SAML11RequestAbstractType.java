@@ -16,13 +16,13 @@
  */
 package org.keycloak.dom.saml.v1.protocol;
 
-import org.keycloak.dom.saml.common.CommonRequestAbstractType;
-
-import javax.xml.datatype.XMLGregorianCalendar;
-import javax.xml.namespace.QName;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.namespace.QName;
+
+import org.keycloak.dom.saml.common.CommonRequestAbstractType;
 
 /**
  * <complexType name="RequestAbstractType" abstract="true">

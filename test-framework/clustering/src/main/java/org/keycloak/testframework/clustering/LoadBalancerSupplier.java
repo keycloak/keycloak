@@ -1,20 +1,27 @@
 package org.keycloak.testframework.clustering;
 
+import java.util.List;
+
 import org.keycloak.testframework.annotations.InjectLoadBalancer;
+import org.keycloak.testframework.injection.DependenciesBuilder;
+import org.keycloak.testframework.injection.Dependency;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
+import org.keycloak.testframework.injection.SupplierOrder;
 import org.keycloak.testframework.server.ClusteredKeycloakServer;
 import org.keycloak.testframework.server.KeycloakServer;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.testframework.server.KeycloakServerConfigInterceptor;
 
-public class LoadBalancerSupplier implements Supplier<LoadBalancer, InjectLoadBalancer> {
+public class LoadBalancerSupplier implements Supplier<LoadBalancer, InjectLoadBalancer>, KeycloakServerConfigInterceptor<LoadBalancer, InjectLoadBalancer> {
 
     @Override
     public LoadBalancer getValue(InstanceContext<LoadBalancer, InjectLoadBalancer> instanceContext) {
         KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
 
         if (server instanceof ClusteredKeycloakServer clusteredKeycloakServer) {
-            return new LoadBalancer(clusteredKeycloakServer);
+            return clusteredKeycloakServer.getLoadBalancer();
         }
 
         throw new IllegalStateException("Load balancer can only be used with ClusteredKeycloakServer");
@@ -23,5 +30,20 @@ public class LoadBalancerSupplier implements Supplier<LoadBalancer, InjectLoadBa
     @Override
     public boolean compatible(InstanceContext<LoadBalancer, InjectLoadBalancer> a, RequestedInstance<LoadBalancer, InjectLoadBalancer> b) {
         return true;
+    }
+
+    @Override
+    public int order() {
+        return SupplierOrder.BEFORE_REALM;
+    }
+
+    @Override
+    public KeycloakServerConfigBuilder intercept(KeycloakServerConfigBuilder serverConfig, InstanceContext<LoadBalancer, InjectLoadBalancer> instanceContext) {
+        return serverConfig.option("hostname", LoadBalancer.HOSTNAME);
+    }
+
+    @Override
+    public List<Dependency> getDependencies(RequestedInstance<LoadBalancer, InjectLoadBalancer> instanceContext) {
+        return DependenciesBuilder.create(KeycloakServer.class).build();
     }
 }

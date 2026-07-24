@@ -9,7 +9,9 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <name>Authorization Services</name>
+    <name>Authorization Services Documentation</name>
+    <description>Authorization Services Documentation</description>
+
     <artifactId>authorization-services</artifactId>
     <packaging>pom</packaging>
 

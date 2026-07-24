@@ -17,45 +17,48 @@
 
 package org.keycloak.testsuite.organization.mapper;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.util.SamlStreams.assertionsUnencrypted;
-import static org.keycloak.testsuite.util.SamlStreams.attributeStatements;
-
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.UriBuilder;
-import org.junit.Assert;
-import org.junit.Test;
+
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType.ASTChoiceType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
+import org.keycloak.organization.protocol.mappers.saml.OrganizationMembershipMapper;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
-import org.keycloak.organization.protocol.mappers.saml.OrganizationMembershipMapper;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.saml.RoleMapperTest;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
+
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+
+import static org.keycloak.testsuite.util.SamlStreams.assertionsUnencrypted;
+import static org.keycloak.testsuite.util.SamlStreams.attributeStatements;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class OrganizationSAMLProtocolMapperTest extends AbstractOrganizationTest {
 
     @Test
     public void testAttribute() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         IdentityProviderRepresentation broker = organization.identityProviders().getIdentityProviders().get(0);
         organization.identityProviders().get(broker.getAlias()).delete().close();
         addMember(organization);
         String clientId = "saml-client";
-        testRealm().clients().create(ClientBuilder.create()
+        managedRealm.admin().clients().create(ClientBuilder.create()
                 .protocol(SamlProtocol.LOGIN_PROTOCOL)
                 .clientId(clientId)
                 .redirectUris("*")
@@ -78,9 +81,9 @@ public class OrganizationSAMLProtocolMapperTest extends AbstractOrganizationTest
                 .filter(attribute -> OrganizationMembershipMapper.ORGANIZATION_ATTRIBUTE_NAME.equals(attribute.getName()))
                 .findAny()
                 .orElse(null);
-        Assert.assertNotNull(orgAttribute);
+        Assertions.assertNotNull(orgAttribute);
         List<Object> values = orgAttribute.getAttributeValue();
-        Assert.assertEquals(1, values.size());
-        Assert.assertEquals(organizationName, values.get(0));
+        Assertions.assertEquals(1, values.size());
+        Assertions.assertEquals(organizationName, values.get(0));
     }
 }

@@ -1,6 +1,6 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
+import java.util.List;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
@@ -9,17 +9,18 @@ import org.keycloak.config.SecurityOptions;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 
-final class SecurityPropertyMappers {
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-    private SecurityPropertyMappers() {
-    }
+final class SecurityPropertyMappers implements PropertyMapperGrouping {
 
-    public static PropertyMapper<?>[] getMappers() {
-        return new PropertyMapper[] {
+
+    @Override
+    public List<PropertyMapper<?>> getPropertyMappers() {
+        return List.of(
                 fromOption(SecurityOptions.FIPS_MODE).transformer(SecurityPropertyMappers::resolveFipsMode)
                         .paramLabel("mode")
-                        .build(),
-        };
+                        .build()
+        );
     }
 
     private static String resolveFipsMode(String value, ConfigSourceInterceptorContext context) {

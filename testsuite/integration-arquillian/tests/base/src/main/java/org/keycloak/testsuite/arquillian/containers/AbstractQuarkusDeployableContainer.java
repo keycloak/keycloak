@@ -40,13 +40,21 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature.Type;
+import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.arquillian.SuiteContext;
+import org.keycloak.testsuite.auth.page.AuthRealm;
+import org.keycloak.testsuite.model.StoreProvider;
+import org.keycloak.utils.StringUtil;
 
 import org.apache.commons.lang3.SystemUtils;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
@@ -60,14 +68,6 @@ import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.descriptor.api.Descriptor;
-import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature.Type;
-import org.keycloak.common.crypto.FipsMode;
-import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.arquillian.SuiteContext;
-import org.keycloak.testsuite.auth.page.AuthRealm;
-import org.keycloak.testsuite.model.StoreProvider;
-import org.keycloak.utils.StringUtil;
 
 public abstract class AbstractQuarkusDeployableContainer implements DeployableContainer<KeycloakQuarkusConfiguration> {
 
@@ -172,10 +172,12 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         commands.add("--http-relative-path=/auth");
         commands.add("--health-enabled=true"); // expose something to management interface to turn it on
 
+
         if (suiteContext.get().isAuthServerMigrationEnabled()) {
             commands.add("--hostname-strict=false");
         } else { // Do not set management port for older versions of Keycloak for migration tests - available since Keycloak 25
             commands.add("--http-management-port=" + configuration.getManagementPort());
+            commands.add("--shutdown-delay=0");
         }
 
         if (suiteContext.get().getMigrationContext().isRunningMigrationTest()) {
@@ -191,7 +193,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         }
 
         if (System.getProperty("auth.server.host") != null) {
-            commands.add("-Dauth.server.host=" + System.getProperty("auth.server.host"));
+//            commands.add("-Dauth.server.host=" + System.getProperty("auth.server.host"));
         }
 
         commands.addAll(getAdditionalBuildArgs());
@@ -204,7 +206,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         if ("local".equals(cacheMode)) {
             commands.add("--cache=local");
             // Save ~2s for each Quarkus startup, when we know ISPN cluster is empty. See https://github.com/keycloak/keycloak/issues/21033
-            commands.add("-Djgroups.join_timeout=10");
+//            commands.add("-Djgroups.join_timeout=10");
         } else {
             commands.add("--cache=ispn");
             commands.add("--cache-config-file=cluster-" + cacheMode + ".xml");
@@ -233,8 +235,6 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             commands.add("--cache-remote-password=Password1!");
             commands.add("--cache-remote-tls-enabled=false");
             commands.add("--spi-cache-embedded-default-site-name=test");
-            configuration.appendJavaOpts("-Dkc.cache-remote-create-caches=true");
-            System.setProperty("kc.cache-remote-create-caches", "true");
         }
 
         if (!suiteContext.get().isAuthServerMigrationEnabled()) {

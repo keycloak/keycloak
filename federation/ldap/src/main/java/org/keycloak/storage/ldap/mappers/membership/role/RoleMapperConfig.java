@@ -17,13 +17,13 @@
 
 package org.keycloak.storage.ldap.mappers.membership.role;
 
+import java.util.Collection;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.mappers.membership.CommonLDAPGroupMapperConfig;
-
-import java.util.Collection;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

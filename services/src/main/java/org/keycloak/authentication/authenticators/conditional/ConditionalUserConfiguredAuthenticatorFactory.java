@@ -3,8 +3,8 @@ package org.keycloak.authentication.authenticators.conditional;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
-import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 

@@ -12,9 +12,9 @@ const UsersSection = lazy(() => import("../UsersSection"));
 export const UsersRoute: AppRouteObject = {
   path: "/:realm/users",
   element: <UsersSection />,
-  breadcrumb: (t) => t("titleUsers"),
   handle: {
     access: "query-users",
+    breadcrumb: (t) => t("titleUsers"),
   },
 };
 

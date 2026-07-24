@@ -7,15 +7,21 @@ public class ClusteredKeycloakServerSupplier extends AbstractKeycloakServerSuppl
 
     private static final Logger LOGGER = Logger.getLogger(ClusteredKeycloakServerSupplier.class);
 
+    @ConfigProperty(name = "start.timeout", defaultValue = "300")
+    long startTimeout;
+
     @ConfigProperty(name = "numContainer", defaultValue = "2")
     int numContainers = 2;
 
     @ConfigProperty(name = "images", defaultValue = ClusteredKeycloakServer.SNAPSHOT_IMAGE)
     String images = ClusteredKeycloakServer.SNAPSHOT_IMAGE;
 
+    @ConfigProperty(name = "stateless", defaultValue = "false")
+    boolean stateless;
+
     @Override
     public KeycloakServer getServer() {
-        return new ClusteredKeycloakServer(numContainers, images);
+        return new ClusteredKeycloakServer(numContainers, images, startTimeout, stateless);
     }
 
     @Override
@@ -32,11 +38,4 @@ public class ClusteredKeycloakServerSupplier extends AbstractKeycloakServerSuppl
     public Logger getLogger() {
         return LOGGER;
     }
-
-    @Override
-    protected String cache() {
-        return "ispn";
-    }
-
-
 }

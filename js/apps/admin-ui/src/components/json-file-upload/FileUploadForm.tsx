@@ -38,6 +38,7 @@ export type FileUploadFormProps = Omit<FileUploadProps, "onChange"> & {
   helpText?: string;
   unWrap?: boolean;
   language?: string;
+  previewMaxLength?: number;
 };
 
 export const FileUploadForm = ({
@@ -45,6 +46,7 @@ export const FileUploadForm = ({
   onChange,
   helpText = "helpFileUpload",
   unWrap = false,
+  previewMaxLength = 102400, // 100KB
   language,
   extension,
   ...rest
@@ -57,19 +59,20 @@ export const FileUploadForm = ({
     modal: false,
   };
   const [fileUpload, setFileUpload] = useState<FileUploadType>(defaultUpload);
-  const removeDialog = () => setFileUpload({ ...fileUpload, modal: false });
+  const removeDialog = () =>
+    setFileUpload((prev) => ({ ...prev, modal: false }));
 
   const handleFileInputChange = (_event: DropEvent, file: File) => {
-    setFileUpload({ ...fileUpload, filename: file.name });
+    setFileUpload((prev) => ({ ...prev, filename: file.name }));
   };
 
   const handleTextOrDataChange = (value: string) => {
-    setFileUpload({ ...fileUpload, value });
+    setFileUpload((prev) => ({ ...prev, value }));
     onChange(value);
   };
 
   const handleClear = () => {
-    setFileUpload({ ...fileUpload, modal: true });
+    setFileUpload((prev) => ({ ...prev, modal: true }));
   };
 
   return (
@@ -117,10 +120,10 @@ export const FileUploadForm = ({
           onTextChange={(_, value) => handleTextOrDataChange(value)}
           onClearClick={handleClear}
           onReadStarted={() =>
-            setFileUpload({ ...fileUpload, isLoading: true })
+            setFileUpload((prev) => ({ ...prev, isLoading: true }))
           }
           onReadFinished={() =>
-            setFileUpload({ ...fileUpload, isLoading: false })
+            setFileUpload((prev) => ({ ...prev, isLoading: false }))
           }
           isLoading={fileUpload.isLoading}
           dropzoneProps={{
@@ -142,23 +145,31 @@ export const FileUploadForm = ({
             onTextChange={(_, value) => handleTextOrDataChange(value)}
             onClearClick={handleClear}
             onReadStarted={() =>
-              setFileUpload({ ...fileUpload, isLoading: true })
+              setFileUpload((prev) => ({ ...prev, isLoading: true }))
             }
             onReadFinished={() =>
-              setFileUpload({ ...fileUpload, isLoading: false })
+              setFileUpload((prev) => ({ ...prev, isLoading: false }))
             }
             isLoading={fileUpload.isLoading}
             hideDefaultPreview
           >
-            {!rest.hideDefaultPreview && (
-              <CodeEditor
-                aria-label="File content"
-                value={fileUpload.value}
-                language={language}
-                onChange={(value) => handleTextOrDataChange(value)}
-                readOnly={!rest.allowEditingUploadedText}
-              />
-            )}
+            {!rest.hideDefaultPreview &&
+              (!fileUpload.value ||
+              fileUpload.value.length < previewMaxLength ? (
+                <CodeEditor
+                  aria-label="File content"
+                  value={fileUpload.value}
+                  language={language}
+                  onChange={(value) => handleTextOrDataChange(value)}
+                  readOnly={!rest.allowEditingUploadedText}
+                />
+              ) : (
+                <CodeEditor
+                  aria-label="File content"
+                  value={t("fileUploadPreviewDisabled")}
+                  readOnly
+                />
+              ))}
           </FileUpload>
           <FormHelperText>
             <HelperText>

@@ -17,11 +17,11 @@
 
 package org.keycloak.federation.sssd;
 
+import java.util.List;
+
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.storage.ReadOnlyException;
-
-import java.util.List;
 
 /**
  * Readonly proxy for a SSSD UserModel that prevents attributes from being updated.

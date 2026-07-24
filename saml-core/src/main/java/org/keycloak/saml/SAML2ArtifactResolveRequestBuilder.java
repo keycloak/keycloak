@@ -17,6 +17,10 @@
 
 package org.keycloak.saml;
 
+import java.net.URI;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.ArtifactResolveType;
 import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
@@ -24,11 +28,8 @@ import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
-import org.w3c.dom.Document;
 
-import java.net.URI;
-import java.util.LinkedList;
-import java.util.List;
+import org.w3c.dom.Document;
 
 public class SAML2ArtifactResolveRequestBuilder implements SamlProtocolExtensionsAwareBuilder<SAML2ArtifactResolveRequestBuilder> {
     protected String artifact;

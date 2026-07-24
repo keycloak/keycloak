@@ -17,19 +17,24 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
-import jakarta.ws.rs.core.MultivaluedHashMap;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
+import static org.keycloak.authentication.authenticators.resetcred.ResetCredentialChooseUser.RESET_CREDENTIAL_USER_CHOSEN;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -37,7 +42,7 @@ import jakarta.ws.rs.core.Response;
  */
 public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator implements Authenticator {
 
-    private final WebAuthnConditionalUIAuthenticator webauthnAuth;
+    protected final WebAuthnConditionalUIAuthenticator webauthnAuth;
 
     public UsernamePasswordForm() {
         webauthnAuth = null;
@@ -62,11 +67,21 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
             // normal username and form authenticator
             return;
         }
-        context.success();
+        context.success(PasswordCredentialModel.TYPE);
     }
 
     protected boolean validateForm(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
         return validateUserAndPassword(context, formData);
+    }
+
+    protected boolean alreadyAuthenticatedUsingPasswordlessCredential(AuthenticationFlowContext context) {
+        return alreadyAuthenticatedUsingPasswordlessCredential(context.getAuthenticationSession());
+    }
+
+    protected boolean alreadyAuthenticatedUsingPasswordlessCredential(AuthenticationSessionModel authSession) {
+        // check if the authentication was already done using passwordless via passkeys
+        return webauthnAuth != null && webauthnAuth.isPasskeysEnabled()
+                && AuthenticatorUtil.getAuthnCredentials(authSession).contains(webauthnAuth.getCredentialType());
     }
 
     @Override
@@ -74,9 +89,16 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
         MultivaluedMap<String, String> formData = new MultivaluedHashMap<>();
         String loginHint = context.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
 
+        clearUserIfComingFromResetPassword(context);
         String rememberMeUsername = AuthenticationManager.getRememberMeUsername(context.getSession());
 
         if (context.getUser() != null) {
+            if (alreadyAuthenticatedUsingPasswordlessCredential(context)) {
+                // if already authenticated using passwordless webauthn just success
+                context.success();
+                return;
+            }
+
             LoginFormsProvider form = context.form();
             form.setAttribute(LoginFormsProvider.USERNAME_HIDDEN, true);
             form.setAttribute(LoginFormsProvider.REGISTRATION_DISABLED, true);
@@ -91,13 +113,20 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
                     formData.add("rememberMe", "on");
                 }
             }
-            // setup webauthn data when the user is not already selected
-            if (webauthnAuth != null && webauthnAuth.isPasskeysEnabled()) {
-                webauthnAuth.fillContextForm(context);
-            }
+        }
+        // setup webauthn data when passkeys enabled
+        if (isConditionalPasskeysEnabled(context.getUser())) {
+            webauthnAuth.fillContextForm(context);
         }
         Response challengeResponse = challenge(context, formData);
         context.challenge(challengeResponse);
+    }
+
+    private void clearUserIfComingFromResetPassword(AuthenticationFlowContext context) {
+        if ("true".equals(context.getAuthenticationSession().getAuthNote(RESET_CREDENTIAL_USER_CHOSEN))) {
+            context.clearUser();
+            context.getAuthenticationSession().removeAuthNote(RESET_CREDENTIAL_USER_CHOSEN);
+        }
     }
 
     @Override
@@ -107,7 +136,6 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
 
     protected Response challenge(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
         LoginFormsProvider forms = context.form();
-
         if (!formData.isEmpty()) forms.setFormData(formData);
 
         return forms.createLoginUsernamePassword();
@@ -115,8 +143,8 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
 
     @Override
     protected Response challenge(AuthenticationFlowContext context, String error, String field) {
-        if (context.getUser() == null && webauthnAuth != null && webauthnAuth.isPasskeysEnabled()) {
-            // setup webauthn data when the user is not already selected
+        if (isConditionalPasskeysEnabled(context.getUser())) {
+            // setup webauthn data when possible
             webauthnAuth.fillContextForm(context);
         }
         return super.challenge(context, error, field);
@@ -136,6 +164,11 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
     @Override
     public void close() {
 
+    }
+
+    protected boolean isConditionalPasskeysEnabled(UserModel currentUser) {
+        return webauthnAuth != null && webauthnAuth.isPasskeysEnabled() &&
+                (currentUser == null || currentUser.credentialManager().isConfiguredFor(webauthnAuth.getCredentialType()));
     }
 
 }

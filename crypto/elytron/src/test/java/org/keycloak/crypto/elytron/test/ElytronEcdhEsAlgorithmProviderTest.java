@@ -26,12 +26,6 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 
-import org.jose4j.keys.EcKeyUtil;
-import org.jose4j.keys.EllipticCurves;
-import org.jose4j.lang.JoseException;
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Test;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.elytron.ElytronEcdhEsAlgorithmProvider;
@@ -40,6 +34,13 @@ import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.rule.CryptoInitRule;
+
+import org.jose4j.keys.EcKeyUtil;
+import org.jose4j.keys.EllipticCurves;
+import org.jose4j.lang.JoseException;
+import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 public class ElytronEcdhEsAlgorithmProviderTest {
     @ClassRule

@@ -28,7 +28,7 @@
 
     <artifactId>keycloak-adapter-spi</artifactId>
     <name>Keycloak Adapter SPI</name>
-    <description/>
+    <description>Keycloak Adapter SPI</description>
 
     <properties>
         <!-- We still need to support EAP 8, set the Java version to 11. -->

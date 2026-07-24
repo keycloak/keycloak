@@ -16,11 +16,11 @@
  */
 package org.keycloak.dom.xmlsec.w3.xmlenc;
 
-import javax.xml.namespace.QName;
 import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import javax.xml.namespace.QName;
 
 /**
  * <p>

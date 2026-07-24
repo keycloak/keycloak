@@ -17,6 +17,10 @@
 
 package org.keycloak.testsuite.components.amphibian;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.Config;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -27,10 +31,6 @@ import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
-import java.util.HashMap;
-import java.util.List;
-
-import java.util.Map;
 import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
 
 public class TestAmphibianProviderFactoryImpl implements TestAmphibianProviderFactory {

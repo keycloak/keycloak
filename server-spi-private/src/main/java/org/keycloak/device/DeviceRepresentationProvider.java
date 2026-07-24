@@ -1,6 +1,5 @@
 package org.keycloak.device;
 
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.account.DeviceRepresentation;
 

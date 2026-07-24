@@ -17,22 +17,25 @@
 
 package org.keycloak.storage.ldap;
 
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.storage.UserStorageProvider;
-
-import javax.naming.directory.SearchControls;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
+import javax.naming.directory.SearchControls;
+
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.storage.UserStorageProvider;
+
+import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  *
  */
 public class LDAPConfig {
+
+    public static final String DEFAULT_CONNECTION_TIMEOUT = "5000";
 
     private final MultivaluedHashMap<String, String> config;
     private final Set<String> binaryAttributeNames = new HashSet<>();
@@ -123,6 +126,11 @@ public class LDAPConfig {
         return vendor != null && vendor.equals(LDAPConstants.VENDOR_ACTIVE_DIRECTORY);
     }
 
+    public boolean isRHDS() {
+        String vendor = getVendor();
+        return vendor != null && vendor.equals(LDAPConstants.VENDOR_RHDS);
+    }
+
     public boolean isValidatePasswordPolicy() {
         String validatePPolicy = config.getFirst(LDAPConstants.VALIDATE_PASSWORD_POLICY);
         return Boolean.parseBoolean(validatePPolicy);
@@ -142,7 +150,8 @@ public class LDAPConfig {
     }
 
     public String getConnectionTimeout() {
-        return config.getFirst(LDAPConstants.CONNECTION_TIMEOUT);
+        return config.getFirstOrDefault(LDAPConstants.CONNECTION_TIMEOUT,
+                System.getProperty("com.sun.jndi.ldap.connect.timeout", DEFAULT_CONNECTION_TIMEOUT));
     }
 
     public String getReadTimeout() {
@@ -253,6 +262,11 @@ public class LDAPConfig {
         return config.getFirst(LDAPConstants.REFERRAL);
     }
 
+    public boolean isEnableLdapPasswordPolicy() {
+        String enableLdapPasswordPolicy = config.getFirst(LDAPConstants.ENABLE_LDAP_PASSWORD_POLICY);
+        return Boolean.parseBoolean(enableLdapPasswordPolicy);
+    }
+
     public void addBinaryAttribute(String attrName) {
         binaryAttributeNames.add(attrName);
     }
@@ -279,6 +293,10 @@ public class LDAPConfig {
 
     public boolean isEdirectory() {
         return LDAPConstants.VENDOR_NOVELL_EDIRECTORY.equalsIgnoreCase(getVendor());
+    }
+
+    public boolean isImportEnabled() {
+        return Boolean.parseBoolean(config.getFirstOrDefault(IMPORT_ENABLED, Boolean.TRUE.toString())) ;
     }
 
     @Override

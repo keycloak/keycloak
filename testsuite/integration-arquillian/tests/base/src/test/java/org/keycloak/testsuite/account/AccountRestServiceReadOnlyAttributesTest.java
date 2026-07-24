@@ -26,13 +26,9 @@ import java.util.Set;
 
 import jakarta.ws.rs.BadRequestException;
 
-import org.jboss.logging.Logger;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
@@ -40,16 +36,21 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.userprofile.UserProfileConstants;
 
+import org.jboss.logging.Logger;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -60,7 +61,7 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
 
     @Before
     public void configureUserProfile() {
-        UserProfileResource userProfileRes = testRealm().users().userProfile();
+        UserProfileResource userProfileRes = managedRealm.admin().users().userProfile();
         UPConfig cfg = userProfileRes.getConfiguration();
         //cfg.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ENABLED);
         cfg.addOrReplaceAttribute(createUpAttribute("someOtherAttr"));
@@ -148,25 +149,25 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
 
     @Test
     public void testUpdateProfileCannotUpdateReadOnlyAttributesUnmanagedEnabled() throws IOException {
-        UPConfig configuration = testRealm().users().userProfile().getConfiguration();
+        UPConfig configuration = managedRealm.admin().users().userProfile().getConfiguration();
         UnmanagedAttributePolicy unmanagedAttributePolicy = configuration.getUnmanagedAttributePolicy();
         configuration.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
         getCleanup().addCleanup(() -> {
             configuration.setUnmanagedAttributePolicy(unmanagedAttributePolicy);
-            testRealm().users().userProfile().update(configuration);
+            managedRealm.admin().users().userProfile().update(configuration);
         });
-        testRealm().users().userProfile().update(configuration);
+        managedRealm.admin().users().userProfile().update(configuration);
         UserRepresentation user = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
-        UserResource adminUserResource = ApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
+        UserResource adminUserResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), user.getUsername());
         org.keycloak.representations.idm.UserRepresentation adminUserRep = adminUserResource.toRepresentation();
         adminUserRep.singleAttribute("deniedFoo", "foo");
         adminUserResource.update(adminUserRep);
-        adminUserResource = ApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
+        adminUserResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), user.getUsername());
         adminUserRep = adminUserResource.toRepresentation();
         assertEquals("foo", adminUserRep.getAttributes().get("deniedFoo").get(0));
         assertNull(user.getAttributes());
         updateAndGet(user);
-        adminUserResource = ApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
+        adminUserResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), user.getUsername());
         adminUserRep = adminUserResource.toRepresentation();
         assertEquals("foo", adminUserRep.getAttributes().get("deniedFoo").get(0));
     }
@@ -188,23 +189,23 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
         UserResource adminUserResource = null;
         org.keycloak.representations.idm.UserRepresentation adminUserRep = null;
         try {
-            adminUserResource = ApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
+            adminUserResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), user.getUsername());
             adminUserRep = adminUserResource.toRepresentation();
             adminUserRep.singleAttribute(attrName, "foo");
             adminUserResource.update(adminUserRep);
             if (deniedForAdminAsWell) {
-                Assert.fail("Not expected to update attribute " + attrName + " by admin REST API");
+                Assertions.fail("Not expected to update attribute " + attrName + " by admin REST API");
             }
         } catch (BadRequestException bre) {
             if (!deniedForAdminAsWell) {
-                Assert.fail("Was expected to update attribute " + attrName + " by admin REST API");
+                Assertions.fail("Was expected to update attribute " + attrName + " by admin REST API");
             }
             return;
         }
 
         // Update attribute of the user with account REST to the same value (Case when we are updating existing attribute) - should be fine as our attribute is not changed
         user = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
-        Assert.assertEquals("foo", user.getAttributes().get(attrName).get(0));
+        Assertions.assertEquals("foo", user.getAttributes().get(attrName).get(0));
         user.singleAttribute("someOtherAttr", "foo");
         user = updateAndGet(user);
 
@@ -235,7 +236,7 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
 
         // Update attribute of the user with account REST to the same value (Case when we are updating existing attribute) - should be fine as our attribute is not changed
         user = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
-        Assert.assertEquals("foo", user.getAttributes().get(attrName).get(0));
+        Assertions.assertEquals("foo", user.getAttributes().get(attrName).get(0));
         user.singleAttribute("someOtherAttr", "foo");
         user = updateAndGet(user);
 
@@ -265,7 +266,7 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
 
 
     private void updateError(UserRepresentation user, int expectedStatus, String expectedMessage) throws IOException {
-        SimpleHttp.Response response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
+        SimpleHttpResponse response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
         assertEquals(expectedStatus, response.getStatus());
         assertEquals(expectedMessage, response.asJson(ErrorRepresentation.class).getErrorMessage());
     }

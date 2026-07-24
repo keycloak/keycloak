@@ -1,10 +1,10 @@
 package org.keycloak.testframework.database;
 
-public class MySQLDatabaseSupplier extends AbstractDatabaseSupplier {
+public class MySQLDatabaseSupplier extends AbstractContainerDatabaseSupplier {
 
     @Override
     public String getAlias() {
-        return "mysql";
+        return MySQLTestDatabase.NAME;
     }
 
     @Override

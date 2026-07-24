@@ -17,7 +17,12 @@
 
 package org.keycloak.protocol.oidc.endpoints.request;
 
-import org.jboss.logging.Logger;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.constants.AdapterConstants;
@@ -27,12 +32,9 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCProviderConfig;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.utils.StringUtil;
 
-import jakarta.ws.rs.core.Response;
-
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import org.jboss.logging.Logger;
 
 /**
  * This endpoint parser supports, per default, up to
@@ -60,6 +62,7 @@ public abstract class AuthzEndpointRequestParser {
 
     private static final Logger logger = Logger.getLogger(AuthzEndpointRequestParser.class);
 
+    protected final OIDCProviderConfig config;
     protected final int additionalReqParamsMaxNumber;
     protected final int additionalReqParamsMaxSize;
     protected final boolean additionalReqParamsFailFast;
@@ -77,6 +80,7 @@ public abstract class AuthzEndpointRequestParser {
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.REDIRECT_URI_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.STATE_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.SCOPE_PARAM);
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.RESOURCE_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.LOGIN_HINT_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.PROMPT_PARAM);
         KNOWN_REQ_PARAMS.add(AdapterConstants.KC_IDP_HINT);
@@ -104,15 +108,15 @@ public abstract class AuthzEndpointRequestParser {
 
     protected AuthzEndpointRequestParser(KeycloakSession keycloakSession) {
         OIDCLoginProtocol loginProtocol = (OIDCLoginProtocol) keycloakSession.getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
-        OIDCProviderConfig config = loginProtocol.getConfig();
+        this.config = loginProtocol.getConfig();
         this.additionalReqParamsMaxNumber = config.getAdditionalReqParamsMaxNumber();
         this.additionalReqParamsMaxSize = config.getAdditionalReqParamsMaxSize();
-        this.additionalReqParamsFailFast = config.isAdditionalReqParamsFailFast();
+        this.additionalReqParamsFailFast = config.isAdditionalReqParamsFailFast(false);
         this.additionalReqParamsMaxOverallSize = config.getAdditionalReqParamsMaxOverallSize();
     }
 
     public void parseRequest(AuthorizationEndpointRequest request) {
-        String clientId = getParameter(OIDCLoginProtocol.CLIENT_ID_PARAM);
+        String clientId = getAndValidateParameter(OIDCLoginProtocol.CLIENT_ID_PARAM);
         if (clientId != null && request.clientId != null && !request.clientId.equals(clientId)) {
             throw new IllegalArgumentException("The client_id parameter doesn't match the one from OIDC 'request' or 'request_uri'");
         }
@@ -120,32 +124,33 @@ public abstract class AuthzEndpointRequestParser {
             request.clientId = clientId;
         }
 
-        String responseType = getParameter(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
+        String responseType = getAndValidateParameter(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
         validateResponseTypeParameter(responseType, request);
         if (responseType != null) {
             request.responseType = responseType;
         }
 
-        request.responseMode = replaceIfNotNull(request.responseMode, getParameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM));
-        request.redirectUriParam = replaceIfNotNull(request.redirectUriParam, getParameter(OIDCLoginProtocol.REDIRECT_URI_PARAM));
-        request.state = replaceIfNotNull(request.state, getParameter(OIDCLoginProtocol.STATE_PARAM));
-        request.scope = replaceIfNotNull(request.scope, getParameter(OIDCLoginProtocol.SCOPE_PARAM));
-        request.loginHint = replaceIfNotNull(request.loginHint, getParameter(OIDCLoginProtocol.LOGIN_HINT_PARAM));
-        request.prompt = replaceIfNotNull(request.prompt, getParameter(OIDCLoginProtocol.PROMPT_PARAM));
-        request.idpHint = replaceIfNotNull(request.idpHint, getParameter(AdapterConstants.KC_IDP_HINT));
-        request.action = replaceIfNotNull(request.action, getParameter(Constants.KC_ACTION));
-        request.nonce = replaceIfNotNull(request.nonce, getParameter(OIDCLoginProtocol.NONCE_PARAM));
+        request.responseMode = replaceIfNotNull(request.responseMode, getAndValidateParameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM));
+        request.redirectUri = replaceIfNotNull(request.redirectUri, getAndValidateParameter(OIDCLoginProtocol.REDIRECT_URI_PARAM));
+        request.state = replaceIfNotNull(request.state, getAndValidateParameter(OIDCLoginProtocol.STATE_PARAM));
+        request.scope = replaceIfNotNull(request.scope, getAndValidateParameter(OIDCLoginProtocol.SCOPE_PARAM));
+        request.resource = replaceIfNotNull(request.resource, getAndValidateParameter(OIDCLoginProtocol.RESOURCE_PARAM));
+        request.loginHint = replaceIfNotNull(request.loginHint, getAndValidateParameter(OIDCLoginProtocol.LOGIN_HINT_PARAM));
+        request.prompt = replaceIfNotNull(request.prompt, getAndValidateParameter(OIDCLoginProtocol.PROMPT_PARAM));
+        request.idpHint = replaceIfNotNull(request.idpHint, getAndValidateParameter(AdapterConstants.KC_IDP_HINT));
+        request.action = replaceIfNotNull(request.action, getAndValidateParameter(Constants.KC_ACTION));
+        request.nonce = replaceIfNotNull(request.nonce, getAndValidateParameter(OIDCLoginProtocol.NONCE_PARAM));
         request.maxAge = replaceIfNotNull(request.maxAge, getIntParameter(OIDCLoginProtocol.MAX_AGE_PARAM));
-        request.claims = replaceIfNotNull(request.claims, getParameter(OIDCLoginProtocol.CLAIMS_PARAM));
-        request.acr = replaceIfNotNull(request.acr, getParameter(OIDCLoginProtocol.ACR_PARAM));
-        request.display = replaceIfNotNull(request.display, getParameter(OAuth2Constants.DISPLAY));
-        request.uiLocales = replaceIfNotNull(request.uiLocales, getParameter(OAuth2Constants.UI_LOCALES_PARAM));
+        request.claims = replaceIfNotNull(request.claims, getAndValidateParameter(OIDCLoginProtocol.CLAIMS_PARAM));
+        request.acr = replaceIfNotNull(request.acr, getAndValidateParameter(OIDCLoginProtocol.ACR_PARAM));
+        request.display = replaceIfNotNull(request.display, getAndValidateParameter(OAuth2Constants.DISPLAY));
+        request.uiLocales = replaceIfNotNull(request.uiLocales, getAndValidateParameter(OAuth2Constants.UI_LOCALES_PARAM));
 
         // https://tools.ietf.org/html/rfc7636#section-6.1
-        request.codeChallenge = replaceIfNotNull(request.codeChallenge, getParameter(OIDCLoginProtocol.CODE_CHALLENGE_PARAM));
-        request.codeChallengeMethod = replaceIfNotNull(request.codeChallengeMethod, getParameter(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM));
+        request.codeChallenge = replaceIfNotNull(request.codeChallenge, getAndValidateParameter(OIDCLoginProtocol.CODE_CHALLENGE_PARAM));
+        request.codeChallengeMethod = replaceIfNotNull(request.codeChallengeMethod, getAndValidateParameter(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM));
 
-        request.dpopJkt = replaceIfNotNull(request.dpopJkt, getParameter(OIDCLoginProtocol.DPOP_JKT));
+        request.dpopJkt = replaceIfNotNull(request.dpopJkt, getAndValidateParameter(OIDCLoginProtocol.DPOP_JKT));
 
         extractAdditionalReqParams(request.additionalReqParams);
     }
@@ -173,6 +178,8 @@ public abstract class AuthzEndpointRequestParser {
             continue;
           }
 
+          final String sanitizedValue = StringUtil.removeControlCharacters(value);
+
           // Compare with ">=", as the currently processed parameter will be added at the END of this method.
           if (additionalReqParams.size() >= additionalReqParamsMaxNumber) {
 
@@ -186,38 +193,57 @@ public abstract class AuthzEndpointRequestParser {
 
           }
 
-          if (value.length() + currentAdditionalReqParamMaxOverallSize > additionalReqParamsMaxOverallSize) {
+          if (sanitizedValue.length() + currentAdditionalReqParamMaxOverallSize > additionalReqParamsMaxOverallSize) {
 
             if (additionalReqParamsFailFast) {
-              logger.debugv("The OIDC additional parameter '{0}''s size ({1}) exceeds the maximum allowed size of all parameters ({2}).", paramName, value.length(), additionalReqParamsMaxOverallSize);
-              throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "The OIDC additional parameter '" + paramName + "'s size (" + value.length() + ") exceeds the maximum allowed size of all parameters (" + additionalReqParamsMaxOverallSize + ").", Response.Status.BAD_REQUEST);
+              logger.debugv("The OIDC additional parameter '{0}''s size ({1}) exceeds the maximum allowed size of all parameters ({2}).", paramName, sanitizedValue.length(), additionalReqParamsMaxOverallSize);
+              throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "The OIDC additional parameter '" + paramName + "'s size (" + sanitizedValue.length() + ") exceeds the maximum allowed size of all parameters (" + additionalReqParamsMaxOverallSize + ").", Response.Status.BAD_REQUEST);
             } else {
-              logger.debugv("The OIDC additional parameter '{0}''s size exceeds ({1}) the maximum allowed size of all parameters ({2}).", paramName, value.length(), additionalReqParamsMaxOverallSize);
+              logger.debugv("The OIDC additional parameter '{0}''s size exceeds ({1}) the maximum allowed size of all parameters ({2}).", paramName, sanitizedValue.length(), additionalReqParamsMaxOverallSize);
               break;
             }
 
           }
 
-          if (value.length() > additionalReqParamsMaxSize) {
+          if (sanitizedValue.length() > additionalReqParamsMaxSize) {
 
             if (additionalReqParamsFailFast) {
-              logger.debugv("The OIDC additional parameter '{0}''s size is longer ({1}) than allowed ({2}).", paramName, value.length(), additionalReqParamsMaxSize);
-              throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "The OIDC additional parameter '" + paramName + "'s size is longer (" + value.length() + ") than allowed (" + additionalReqParamsMaxSize + ").", Response.Status.BAD_REQUEST);
+              logger.debugv("The OIDC additional parameter '{0}''s size is longer ({1}) than allowed ({2}).", paramName, sanitizedValue.length(), additionalReqParamsMaxSize);
+              throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "The OIDC additional parameter '" + paramName + "'s size is longer (" + sanitizedValue.length() + ") than allowed (" + additionalReqParamsMaxSize + ").", Response.Status.BAD_REQUEST);
             } else {
-              logger.debugv("The OIDC additional parameter '{0}''s size is longer ({1}) than allowed ({2}).", paramName, value.length(), additionalReqParamsMaxSize);
+              logger.debugv("The OIDC additional parameter '{0}''s size is longer ({1}) than allowed ({2}).", paramName, sanitizedValue.length(), additionalReqParamsMaxSize);
               break;
             }
 
           }
 
           logger.debugv("Adding OIDC additional parameter ''{0}'' as additional parameter.", paramName);
-          currentAdditionalReqParamMaxOverallSize += value.length();
-          additionalReqParams.put(paramName, value);
+          currentAdditionalReqParamMaxOverallSize += sanitizedValue.length();
+          additionalReqParams.put(paramName, sanitizedValue);
         }
     }
 
     protected <T> T replaceIfNotNull(T previousVal, T newVal) {
         return newVal==null ? previousVal : newVal;
+    }
+
+    protected String getAndValidateParameter(String paramName) {
+        String paramValue = getParameter(paramName);
+
+        if (paramValue != null) {
+            paramValue = StringUtil.removeControlCharacters(paramValue);
+            int maxLength = config.getMaxLengthForTheParameter(paramName, false);
+            if (paramValue.length() > maxLength) {
+                logger.warnf("The size of OIDC parameter '%s' size is longer (%d) than allowed (%d). %s", paramName, paramValue.length(), maxLength, additionalReqParamsFailFast ? "Request not allowed." : "Ignoring the parameter.");
+                if (additionalReqParamsFailFast) {
+                    throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "The size of OIDC parameter '" + paramName + "' is longer than allowed.", Response.Status.BAD_REQUEST);
+                } else {
+                    return null;
+                }
+            }
+        }
+
+        return paramValue;
     }
 
     protected abstract String getParameter(String paramName);

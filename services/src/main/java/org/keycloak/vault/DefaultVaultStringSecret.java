@@ -1,6 +1,5 @@
 package org.keycloak.vault;
 
-import java.lang.ref.WeakReference;
 import java.util.Optional;
 
 /**

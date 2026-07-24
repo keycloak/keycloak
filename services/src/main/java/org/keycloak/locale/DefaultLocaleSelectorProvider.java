@@ -16,7 +16,13 @@
  */
 package org.keycloak.locale;
 
-import org.jboss.logging.Logger;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
+
+import jakarta.enterprise.context.ContextNotActiveException;
+import jakarta.ws.rs.core.HttpHeaders;
+
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.models.KeycloakSession;
@@ -24,12 +30,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import jakarta.ws.rs.core.HttpHeaders;
-import org.keycloak.theme.Theme;
-
-import java.util.List;
-import java.util.Locale;
-import java.util.stream.Collectors;
+import org.jboss.logging.Logger;
 
 public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
 
@@ -48,7 +49,14 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
 
     @Override
     public Locale resolveLocale(RealmModel realm, UserModel user, boolean ignoreAcceptLanguageHeader) {
-        HttpHeaders requestHeaders = session.getContext().getRequestHeaders();
+        HttpHeaders requestHeaders = null;
+
+        try {
+            requestHeaders = session.getContext().getRequestHeaders();
+        } catch (ContextNotActiveException e) {
+            logger.debug("No active request, can't obtain locale from request");
+        }
+
         AuthenticationSessionModel session = this.session.getContext().getAuthenticationSession();
 
         if (!realm.isInternationalizationEnabled()) {

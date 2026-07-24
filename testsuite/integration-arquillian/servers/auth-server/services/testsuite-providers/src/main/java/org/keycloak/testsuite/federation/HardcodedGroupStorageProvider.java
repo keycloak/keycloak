@@ -16,9 +16,13 @@
  */
 package org.keycloak.testsuite.federation;
 
-import org.jboss.logging.Logger;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.storage.ReadOnlyException;
@@ -26,9 +30,7 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.group.GroupStorageProvider;
 import org.keycloak.storage.group.GroupStorageProviderModel;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
+import org.jboss.logging.Logger;
 
 public class HardcodedGroupStorageProvider implements GroupStorageProvider {
     private final GroupStorageProviderModel component;
@@ -165,6 +167,11 @@ public class HardcodedGroupStorageProvider implements GroupStorageProvider {
 
         @Override
         public String getParentId() {
+            return null;
+        }
+
+        @Override
+        public OrganizationModel getOrganization() {
             return null;
         }
 

@@ -1,13 +1,19 @@
 package org.keycloak.testsuite.util.oauth;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
+import java.io.IOException;
+import java.util.List;
+
 import org.keycloak.OAuth2Constants;
+import org.keycloak.constants.AdapterConstants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
-import java.io.IOException;
+import org.apache.http.client.methods.CloseableHttpResponse;
 
 public class ParRequest extends AbstractHttpPostRequest<ParRequest, ParResponse> {
+
+    private boolean scopeExplicitlySet = false;
 
     public ParRequest(AbstractOAuthClient<?> client) {
         super(client);
@@ -57,6 +63,11 @@ public class ParRequest extends AbstractHttpPostRequest<ParRequest, ParResponse>
         return this;
     }
 
+    public ParRequest authorizationDetails(List<?> authDetails) {
+        parameter(OAuth2Constants.AUTHORIZATION_DETAILS, JsonSerialization.valueAsString(authDetails));
+        return this;
+    }
+
     public ParRequest request(String request) {
         parameter(OIDCLoginProtocol.REQUEST_PARAM, request);
         return this;
@@ -67,12 +78,30 @@ public class ParRequest extends AbstractHttpPostRequest<ParRequest, ParResponse>
         return this;
     }
 
+    public ParRequest prompt(String prompt) {
+        parameter(OIDCLoginProtocol.PROMPT_PARAM, prompt);
+        return this;
+    }
+
+    public ParRequest scopeParam(String scope) {
+        scopeExplicitlySet = true;
+        parameter(OAuth2Constants.SCOPE, scope);
+        return this;
+    }
+
+    public ParRequest idpHint(String idpHint) {
+        parameter(AdapterConstants.KC_IDP_HINT, idpHint);
+        return this;
+    }
+
     @Override
     protected void initRequest() {
         parameter(OAuth2Constants.RESPONSE_TYPE, client.config().getResponseType());
         parameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM, client.config().getResponseMode());
         parameter(OAuth2Constants.REDIRECT_URI, client.config().getRedirectUri());
-        parameter(OAuth2Constants.SCOPE, client.config().getScope());
+        if (!scopeExplicitlySet) {
+            parameter(OAuth2Constants.SCOPE, client.config().getScope());
+        }
     }
 
     @Override

@@ -17,6 +17,15 @@
 
 package org.keycloak.services;
 
+import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.net.URI;
+import javax.naming.NamingException;
+
+import org.keycloak.email.EmailException;
+import org.keycloak.events.EventListenerProvider;
+import org.keycloak.models.ModelDuplicateException;
+
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
 import org.jboss.logging.annotations.Cause;
@@ -24,14 +33,6 @@ import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 import org.jboss.logging.annotations.Once;
-import org.keycloak.email.EmailException;
-import org.keycloak.events.EventListenerProvider;
-import org.keycloak.models.ModelDuplicateException;
-
-import javax.naming.NamingException;
-import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.net.URI;
 
 import static org.jboss.logging.Logger.Level.DEBUG;
 import static org.jboss.logging.Logger.Level.ERROR;
@@ -468,5 +469,9 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id=110, value="Environment variable '%s' is deprecated, use '%s' instead")
     void usingDeprecatedEnvironmentVariable(String deprecated, String supported);
+
+    @LogMessage(level = INFO)
+    @Message(id=111, value="Created initial admin user with username %s")
+    void createdInitialAdminUser(String userName);
 
 }

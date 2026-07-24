@@ -16,15 +16,6 @@
  */
 package org.keycloak.services.resources.account.resources;
 
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Response;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -34,18 +25,26 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.keycloak.http.HttpRequest;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.utils.MediaType;
-
-import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -103,11 +102,33 @@ public class ResourceService extends AbstractResourceService {
     @Produces(MediaType.APPLICATION_JSON)
     public Response user(@QueryParam("value") String value) {
         try {
-            final UserModel user = getUser(value);
-            return Response.ok(toRepresentation(provider.getKeycloakSession(), provider.getRealm(), user)).build();
+            final UserModel queriedUser = getUser(value);
+            final UserModel authenticatedUser = auth.getUser();
+
+            if (!queriedUser.getId().equals(authenticatedUser.getId()) && !hasPermissionRequest(queriedUser.getId())) {
+                return Response.status(Response.Status.FORBIDDEN).build();
+            }
+
+            UserRepresentation minimalUserRep = new UserRepresentation();
+            minimalUserRep.setId(queriedUser.getId());
+            minimalUserRep.setUsername(queriedUser.getUsername());
+            minimalUserRep.setFirstName(queriedUser.getFirstName());
+            minimalUserRep.setLastName(queriedUser.getLastName());
+            minimalUserRep.setEmail(queriedUser.getEmail());
+
+            return Response.ok(minimalUserRep).build();
         } catch (NotFoundException e) {
             return Response.noContent().build();
         }
+    }
+
+    private boolean hasPermissionRequest(String userId) {
+        Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
+
+        filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
+        filters.put(PermissionTicket.FilterOption.REQUESTER, userId);
+
+        return !ticketStore.find(resourceServer, filters, null, null).isEmpty();
     }
 
     /**
@@ -223,11 +244,15 @@ public class ResourceService extends AbstractResourceService {
 
     private UserModel getUser(String requester) {
         UserProvider users = provider.getKeycloakSession().users();
-        UserModel user = users.getUserByUsername(provider.getRealm(), requester);
+        UserModel userByUsername = users.getUserByUsername(provider.getRealm(), requester);
+        UserModel userByEmail = users.getUserByEmail(provider.getRealm(), requester);
 
-        if (user == null) {
-            user = users.getUserByEmail(provider.getRealm(), requester);
+        if (userByUsername != null && userByEmail != null
+                && !userByUsername.getId().equals(userByEmail.getId())) {
+            throw new BadRequestException("ambiguous_user");
         }
+
+        UserModel user = userByUsername != null ? userByUsername : userByEmail;
 
         if (user == null) {
             throw new NotFoundException(requester);

@@ -25,7 +25,7 @@ public class PermissionTicketScopeListQuery extends PermissionTicketListQuery im
 
     private final String scopeId;
 
-    public PermissionTicketScopeListQuery(Long revision, String id, String scopeId, Set<String> permissions, String serverId) {
+    public PermissionTicketScopeListQuery(long revision, String id, String scopeId, Set<String> permissions, String serverId) {
         super(revision, id, permissions, serverId);
         this.scopeId = scopeId;
     }

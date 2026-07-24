@@ -1,5 +1,6 @@
 package org.keycloak.test.migration;
 
+import java.util.Arrays;
 import java.util.List;
 
 public abstract class TestRewrite {
@@ -10,6 +11,15 @@ public abstract class TestRewrite {
 
     protected int findLine(String regex) {
         for (int i = 0; i < content.size(); i++) {
+            if (content.get(i).matches(regex)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    protected int findLine(String regex, int startLine) {
+        for (int i = startLine; i < content.size(); i++) {
             if (content.get(i).matches(regex)) {
                 return i;
             }
@@ -38,6 +48,14 @@ public abstract class TestRewrite {
     public void replaceLine(int line, String updated) {
         content.remove(line);
         content.add(line, updated);
+    }
+
+    public void insertContent(int start, List<String> lines) {
+        content.addAll(start, lines);
+    }
+
+    public void insertContent(int start, String... lines) {
+        insertContent(start, Arrays.stream(lines).toList());
     }
 
     public void addImport(String clazzName) {

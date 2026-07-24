@@ -134,6 +134,7 @@ public enum JBossSAMLURIConstants {
     XMLSCHEMA_NSURI("http://www.w3.org/2001/XMLSchema"),
     XMLDSIG_NSURI("http://www.w3.org/2000/09/xmldsig#"),
     XMLENC_NSURI("http://www.w3.org/2001/04/xmlenc#"),
+    XMLENC11_NSURI("http://www.w3.org/2009/xmlenc11#"),
     XSI_NSURI("http://www.w3.org/2001/XMLSchema-instance"),
     ;
 

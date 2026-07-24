@@ -1,9 +1,9 @@
 package org.keycloak.testsuite.broker;
 
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-
 import org.junit.After;
 import org.junit.Before;
+
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 public abstract class AbstractNestedBrokerTest extends AbstractBaseBrokerTest {
 
@@ -29,8 +29,9 @@ public abstract class AbstractNestedBrokerTest extends AbstractBaseBrokerTest {
     /** Logs in subconsumer realm via consumer IDP via provider IDP and updates account information */
     protected void logInAsUserInNestedIDPForFirstTime() {
         String redirectUri = getAuthServerRoot() + "realms/" + nbc.subConsumerRealmName() + "/account";
-        oauth.clientId("account").redirectUri(redirectUri);
-        loginPage.open(nbc.subConsumerRealmName());
+        oauth.client("account").redirectUri(redirectUri);
+        oauth.realm(nbc.subConsumerRealmName());
+        oauth.openLoginForm();
 
         waitForPage(driver, "sign in to", true);
         log.debug("Clicking social " + nbc.getSubConsumerIDPDisplayName());

@@ -1,24 +1,24 @@
 import { test } from "@playwright/test";
-import adminClient from "../utils/AdminClient";
-import { login } from "../utils/login";
-import { assertNotificationMessage } from "../utils/masthead";
-import { cancelModal } from "../utils/modal";
-import { goToGroups } from "../utils/sidebar";
+import adminClient from "../utils/AdminClient.ts";
+import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { cancelModal } from "../utils/modal.ts";
+import { goToGroups } from "../utils/sidebar.ts";
 import {
   assertRowExists,
   clickRowKebabItem,
   clickSelectRow,
   clickTableRowItem,
-} from "../utils/table";
+} from "../utils/table.ts";
 import {
   addMember,
   goToMembersTab,
   leaveGroup,
   toggleIncludeSubGroupUsers,
-} from "./members";
-import { goToChildGroupsTab } from "./util";
+} from "./members.ts";
+import { goToChildGroupsTab } from "./util.ts";
 
-test.describe("Members", () => {
+test.describe.serial("Members", () => {
   const predefinedGroups = ["level", "level1", "level2", "level3"];
   const emptyGroup = "empty-group";
   const users: { id: string; username: string }[] = [];

@@ -1,11 +1,11 @@
 package org.keycloak.services.ui.extend;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public interface UiTabProviderFactory<T> extends ComponentFactory<T, UiTabProvider> {
     default T create(KeycloakSession session, ComponentModel model) {
@@ -16,7 +16,7 @@ public interface UiTabProviderFactory<T> extends ComponentFactory<T, UiTabProvid
     default Map<String, Object> getTypeMetadata() {
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("path", getPath());
-        metadata.put("params", getParams());
+        metadata.put("params", new HashMap<>(getParams()));
         return metadata;
     }
 

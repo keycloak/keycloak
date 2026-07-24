@@ -1,10 +1,10 @@
-import { expect, Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import {
   pickRoleType,
   confirmModalAssign,
   pickRole,
-  RoleType,
-} from "../utils/roles";
+  type RoleType,
+} from "../utils/roles.ts";
 
 export async function goToRolesTab(page: Page) {
   await page.getByTestId("rolesTab").click();

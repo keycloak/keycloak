@@ -17,7 +17,8 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
-import org.jboss.logging.Logger;
+import java.util.List;
+
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.models.ClientSessionContext;
@@ -39,7 +40,7 @@ import org.keycloak.scripting.EvaluatableScriptAdapter;
 import org.keycloak.scripting.ScriptCompilationException;
 import org.keycloak.scripting.ScriptingProvider;
 
-import java.util.List;
+import org.jboss.logging.Logger;
 
 /**
  * OIDC {@link org.keycloak.protocol.ProtocolMapper} that uses a provided JavaScript fragment to compute the token claim value.

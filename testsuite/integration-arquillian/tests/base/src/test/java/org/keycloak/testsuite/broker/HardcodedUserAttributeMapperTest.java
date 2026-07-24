@@ -1,14 +1,7 @@
 package org.keycloak.testsuite.broker;
 
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.models.IdentityProviderMapperSyncMode.FORCE;
-import static org.keycloak.models.IdentityProviderMapperSyncMode.IMPORT;
-
 import java.util.HashMap;
 
-import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.broker.provider.HardcodedAttributeMapper;
 import org.keycloak.models.IdentityProviderMapperModel;
@@ -16,9 +9,17 @@ import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.util.AccountHelper;
 
 import com.google.common.collect.ImmutableMap;
-import org.keycloak.testsuite.util.AccountHelper;
+import org.junit.Test;
+
+import static org.keycloak.models.IdentityProviderMapperSyncMode.FORCE;
+import static org.keycloak.models.IdentityProviderMapperSyncMode.IMPORT;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.not;
 
 /**
  * <a href="mailto:external.martin.idel@bosch.io">Martin Idel</a>,

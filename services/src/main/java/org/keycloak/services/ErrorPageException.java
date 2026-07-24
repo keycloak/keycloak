@@ -17,11 +17,12 @@
 
 package org.keycloak.services;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.sessions.AuthenticationSessionModel;
-
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.utils.KeycloakSessionUtil;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -38,5 +39,15 @@ public class ErrorPageException extends WebApplicationException {
 
     public ErrorPageException(Response response) {
         super((Throwable) null, response);
+    }
+
+    @Override
+    public Response getResponse() {
+        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
+        if (session != null) {
+            // set rollback if exception is thrown to not commit changes into database
+            session.getTransactionManager().setRollbackOnly();
+        }
+        return super.getResponse();
     }
 }

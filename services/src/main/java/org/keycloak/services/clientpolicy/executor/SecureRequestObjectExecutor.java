@@ -17,15 +17,12 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import static org.keycloak.OAuthErrorException.INVALID_REQUEST_OBJECT;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
@@ -39,6 +36,9 @@ import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.OAuthErrorException.INVALID_REQUEST_OBJECT;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -47,8 +47,8 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
 
     private static final Logger logger = Logger.getLogger(SecureRequestObjectExecutor.class);
 
-    public static final Integer DEFAULT_AVAILABLE_PERIOD = Integer.valueOf(3600); // (sec) from FAPI 1.0 Advanced requirement
-    public static final Integer DEAULT_ALLOWED_CLOCK_SKEW = Integer.valueOf(15); // (sec) from FAPI 2.0 requirement
+    public static final Integer DEFAULT_AVAILABLE_PERIOD = 3600; // (sec) from FAPI 1.0 Advanced requirement
+    public static final Integer DEFAULT_ALLOWED_CLOCK_SKEW = 15; // (sec) from FAPI 2.0 requirement
 
     private final KeycloakSession session;
     private Configuration configuration;
@@ -64,7 +64,7 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
             configuration.setVerifyNbf(Boolean.TRUE);
             configuration.setAvailablePeriod(DEFAULT_AVAILABLE_PERIOD);
             configuration.setEncryptionRequired(Boolean.FALSE);
-            configuration.setAllowedClockSkew(DEAULT_ALLOWED_CLOCK_SKEW);
+            configuration.setAllowedClockSkew(DEFAULT_ALLOWED_CLOCK_SKEW);
         } else {
             configuration = config;
             if (config.isVerifyNbf() == null) {
@@ -77,7 +77,7 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
                 configuration.setEncryptionRequired(Boolean.FALSE);
             }
             if (config.getAllowedClockSkew() == null) {
-                configuration.setAllowedClockSkew(DEAULT_ALLOWED_CLOCK_SKEW);
+                configuration.setAllowedClockSkew(DEFAULT_ALLOWED_CLOCK_SKEW);
             }
         }
     }

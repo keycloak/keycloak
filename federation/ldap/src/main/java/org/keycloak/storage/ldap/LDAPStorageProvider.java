@@ -33,12 +33,12 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import javax.naming.AuthenticationException;
+import javax.naming.CommunicationException;
+import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
 import javax.naming.directory.SearchControls;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialAuthentication;
@@ -64,15 +64,16 @@ import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.CachedUserModel;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
-import org.keycloak.models.cache.UserCache;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.DatastoreProvider;
-import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
+import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -85,6 +86,7 @@ import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
+import org.keycloak.storage.ldap.idm.store.ldap.control.PasswordPolicyPasswordChangeException;
 import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.storage.ldap.mappers.LDAPMappersComparator;
 import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
@@ -100,9 +102,10 @@ import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
 import org.keycloak.userprofile.UserProfileUtil;
-
 import org.keycloak.utils.StreamsUtil;
 import org.keycloak.utils.StringUtil;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -327,23 +330,32 @@ public class LDAPStorageProvider implements UserStorageProvider,
             user = new InMemoryUserAdapter(session, realm, new StorageId(model.getId(), username).getId());
             user.setUsername(username);
         }
+        List<Runnable> onCreatedActions = new ArrayList<>();
+
         LDAPObject ldapUser = LDAPUtils.addUserToLDAP(this, realm, user, ldapObject -> {
             LDAPUtils.checkUuid(ldapObject, ldapIdentityStore.getConfig());
             user.setSingleAttribute(LDAPConstants.LDAP_ID, ldapObject.getUuid());
             user.setSingleAttribute(LDAPConstants.LDAP_ENTRY_DN, ldapObject.getDn().toString());
+            onCreatedActions.forEach(Runnable::run);
         });
 
-        // Add the user to the default groups and add default required actions
         UserModel proxy = proxy(realm, user, ldapUser, true);
-        proxy.grantRole(realm.getDefaultRole());
 
-        realm.getDefaultGroupsStream().forEach(proxy::joinGroup);
+        Runnable assignDefaults = () -> {
+            proxy.grantRole(realm.getDefaultRole());
+            realm.getDefaultGroupsStream().forEach(proxy::joinGroup);
+            realm.getRequiredActionProvidersStream()
+                    .filter(RequiredActionProviderModel::isEnabled)
+                    .filter(RequiredActionProviderModel::isDefaultAction)
+                    .map(RequiredActionProviderModel::getAlias)
+                    .forEachOrdered(proxy::addRequiredAction);
+        };
 
-        realm.getRequiredActionProvidersStream()
-                .filter(RequiredActionProviderModel::isEnabled)
-                .filter(RequiredActionProviderModel::isDefaultAction)
-                .map(RequiredActionProviderModel::getAlias)
-                .forEachOrdered(proxy::addRequiredAction);
+        if (ldapUser.isWaitingForExecutionOnMandatoryAttributesComplete()) {
+            onCreatedActions.add(assignDefaults);
+        } else {
+            assignDefaults.run();
+        }
 
         return proxy;
     }
@@ -667,15 +679,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
     private void doImportUser(final RealmModel realm, final UserModel user, final LDAPObject ldapUser) {
         user.setEnabled(true);
-        realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
-                .sorted(ldapMappersComparator.sortDesc())
-                .forEachOrdered(mapperModel -> {
-                    if (logger.isTraceEnabled()) {
-                        logger.tracef("Using mapper %s during import user from LDAP", mapperModel);
-                    }
-                    LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
-                    ldapMapper.onImportUserFromLDAP(ldapUser, user, realm, true);
-                });
+
+        importUserAttributes(realm, user, ldapUser);
 
         String userDN = ldapUser.getDn().toString();
         if (model.isImportEnabled()) user.setFederationLink(model.getId());
@@ -784,6 +789,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
             LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
             // If email attribute mapper is set to "Always Read Value From LDAP" the user may be in Keycloak DB with an old email address
             if (ldapUser.getUuid().equals(user.getFirstAttribute(LDAPConstants.LDAP_ID))) {
+                importUserAttributes(realm, user, ldapUser);
                 return proxy(realm, user, ldapUser, false);
             }
             throw new ModelDuplicateException("User with username '" + ldapUsername + "' already exists in Keycloak. It conflicts with LDAP user with email '" + email + "'");
@@ -826,6 +832,30 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
             try {
                 ldapIdentityStore.validatePassword(ldapUser, password);
+                return true;
+            } catch (PasswordPolicyPasswordChangeException e) {
+                // LDAP password policy requires a forced password change.
+                // Check for edit mode writable, so that user can modify LDAP password.
+                if (editMode != EditMode.WRITABLE) {
+                    logger.debugf("User '%s' in realm '%s' is forced to change password but editMode is not writable. Failing login.", user.getUsername(), realm.getName());
+                    return false;
+                }
+                if (user.getRequiredActionsStream()
+                        .noneMatch(action -> Objects.equals(action, UserModel.RequiredAction.UPDATE_PASSWORD.name()))) {
+                    AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
+                    if (authSession != null) {
+                        if (authSession.getRequiredActions().stream().noneMatch(action -> Objects.equals(action, UserModel.RequiredAction.UPDATE_PASSWORD.name()))) {
+                            logger.debugf("Adding requiredAction UPDATE_PASSWORD to the authenticationSession of user %s", user.getUsername());
+                            authSession.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                        }
+                    } else {
+                        // Just a fallback. It should not happen during normal authentication process
+                        logger.debugf("Adding requiredAction UPDATE_PASSWORD to the user %s", user.getUsername());
+                        user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                    }
+                } else {
+                    logger.tracef("Skip adding required action UPDATE_PASSWORD. It was already set on user '%s' in realm '%s'", user.getUsername(), realm.getName());
+                }
                 return true;
             } catch (AuthenticationException ae) {
                 AtomicReference<Boolean> processed = new AtomicReference<>(false);
@@ -1129,19 +1159,36 @@ public class LDAPStorageProvider implements UserStorageProvider,
             return Stream.iterate(ldapQuery,
                     query -> {
                         //the very 1st page - Pagination context might not yet be present
-                        if (query.getPaginationContext() == null) try {
-                            query.initPagination();
-                            //returning true for first iteration as the LDAP was not queried yet
-                            return true;
-                        } catch (NamingException e) {
-                            throw new ModelException("Querying of LDAP failed " + query, e);
+                        if (query.getPaginationContext() == null) {
+                            try {
+                                query.initPagination();
+                                //returning true for first iteration as the LDAP was not queried yet
+                                return true;
+                            } catch (NameNotFoundException | CommunicationException e) {
+                                logger.errorf(e, "Failed to init LDAP query pagination %s", query);
+                                return false;
+                            } catch (NamingException e) {
+                                throw new ModelException("Querying of LDAP failed " + query, e);
+                            }
                         }
                         return query.getPaginationContext().hasNextPage();
                     },
                     query -> query
             ).flatMap(query -> {
                         query.setLimit(limit);
-                        List<LDAPObject> ldapObjects = query.getResultList();
+                        List<LDAPObject> ldapObjects;
+
+                        try {
+                            ldapObjects = query.getResultList();
+                        } catch (ModelException mde) {
+                            if (mde.isCausedBy(NameNotFoundException.class, CommunicationException.class)) {
+                                logger.errorf(mde, "Failed to query LDAP %s", query);
+                                return Stream.empty();
+                            } else {
+                                throw mde;
+                            }
+                        }
+
                         if (ldapObjects.isEmpty()) {
                             return Stream.empty();
                         }
@@ -1192,9 +1239,11 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
         for (String attrName : metadataAttributes) {
             AttributeMetadata attributeAdded = UserProfileUtil.createAttributeMetadata(attrName, metadata, metadataGroup, guiOrder++, getModel().getName());
+
             if (attributeAdded == null) {
                 guiOrder--;
             } else {
+                attributeAdded.setDefault(true);
                 metadatas.add(attributeAdded);
             }
         }
@@ -1239,5 +1288,17 @@ public class LDAPStorageProvider implements UserStorageProvider,
             return (Long.parseLong(value) / 10000L) - 11644473600000L;
         }
         return LDAPUtils.generalizedTimeToDate(value).getTime();
+    }
+
+    private void importUserAttributes(RealmModel realm, UserModel user, LDAPObject ldapUser) {
+        realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
+                .sorted(ldapMappersComparator.sortDesc())
+                .forEachOrdered(mapperModel -> {
+                    if (logger.isTraceEnabled()) {
+                        logger.tracef("Using mapper %s during import user from LDAP", mapperModel);
+                    }
+                    LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
+                    ldapMapper.onImportUserFromLDAP(ldapUser, user, realm, true);
+                });
     }
 }

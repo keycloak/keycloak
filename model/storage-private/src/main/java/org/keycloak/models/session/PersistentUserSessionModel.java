@@ -48,4 +48,8 @@ public interface PersistentUserSessionModel {
 
     void setBrokerSessionId(String brokerSessionId);
 
+    boolean isRememberMe();
+
+    void setRememberMe(boolean rememberMe);
+
 }

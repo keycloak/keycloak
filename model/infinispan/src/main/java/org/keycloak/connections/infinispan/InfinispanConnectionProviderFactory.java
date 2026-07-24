@@ -23,4 +23,51 @@ import org.keycloak.provider.ProviderFactory;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public interface InfinispanConnectionProviderFactory extends ProviderFactory<InfinispanConnectionProvider> {
+
+    /**
+     * Detects network split in the cluster.
+     * <p>
+     * If a possible network split is detected and this node does not belong to the winning partition, this method will
+     * return {@code false}, and should not continue handling requests, to keep data safety.
+     *
+     * @return {@code true} if the cluster is healthy and this node can continue processing requests. When
+     * {@code false}, this node must reject any work.
+     */
+    default boolean isClusterHealthy() {
+        return true;
+    }
+
+    /**
+     * Checks if the cluster health check is supported.
+     * <p>
+     * Not all JGroups configurations support discovering network splits and this method signals if the current in use
+     * configuration can detect those.
+     *
+     * @return {@code true} if the cluster health check is supported.
+     */
+    default boolean isClusterHealthSupported() {
+        return false;
+    }
+
+    /**
+     * Checks if the current node is the coordinator of the JGroups cluster.
+     *
+     * @return {@code true} if this node is the coordinator.
+     */
+    default boolean isCoordinator() {
+        return false;
+    }
+
+    /**
+     * Checks if the coordinator check is supported.
+     * <p>
+     * Not all configurations use an embedded cache manager with JGroups clustering,
+     * so this method signals whether {@link #isCoordinator()} returns meaningful results.
+     *
+     * @return {@code true} if the coordinator check is supported.
+     */
+    default boolean isCoordinatorSupported() {
+        return false;
+    }
+
 }

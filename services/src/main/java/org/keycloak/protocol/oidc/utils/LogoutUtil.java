@@ -26,6 +26,7 @@ import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.SystemClientUtil;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -39,14 +40,20 @@ public class LogoutUtil {
 
     public static Response sendResponseAfterLogoutFinished(KeycloakSession session, AuthenticationSessionModel logoutSession) {
         String redirectUri = logoutSession.getAuthNote(OIDCLoginProtocol.LOGOUT_REDIRECT_URI);
-        if (redirectUri != null) {
-            URI finalRedirectUri = getRedirectUriWithAttachedState(redirectUri, logoutSession);
-            return Response.status(302).location(finalRedirectUri).build();
+        URI finalRedirectUri = getRedirectUriWithAttachedState(redirectUri, logoutSession);
+        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientModel(logoutSession.getClient());
+        LoginFormsProvider loginFormsProvider = session.getProvider(LoginFormsProvider.class);
+
+        if (finalRedirectUri != null) {
+            if (!config.isLogoutConfirmationEnabled()) {
+                return Response.status(302).location(finalRedirectUri).build();
+            }
+            loginFormsProvider.setAttribute("pageRedirectUri", finalRedirectUri.toString());
         }
 
         SystemClientUtil.checkSkipLink(session, logoutSession);
 
-        return session.getProvider(LoginFormsProvider.class)
+        return loginFormsProvider
                 .setSuccess(Messages.SUCCESS_LOGOUT)
                 .setDetachedAuthSession()
                 .createInfoPage();

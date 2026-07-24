@@ -22,6 +22,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.ClientScopeModel;
@@ -88,7 +89,12 @@ public class ClientScopesClientRegistrationPolicyFactory extends AbstractClientR
         if (realm == null) {
             return Collections.emptyList();
         } else {
-            return realm.getClientScopesStream().map(ClientScopeModel::getName).collect(Collectors.toList());
+            List<String> scopes = realm.getClientScopesStream().map(ClientScopeModel::getName).collect(Collectors.toList());
+            //add openid scope if not exists
+            if (!scopes.contains(OAuth2Constants.SCOPE_OPENID)) {
+                scopes.add(OAuth2Constants.SCOPE_OPENID);
+            }
+            return scopes;
         }
     }
 
@@ -99,7 +105,7 @@ public class ClientScopesClientRegistrationPolicyFactory extends AbstractClientR
 
     @Override
     public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config) throws ComponentValidationException {
-        List<String> allowedScopesConfig = config.getConfig().getList(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES);
+        List<String> allowedScopesConfig = config.getConfig().getOrDefault(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES, Collections.emptyList());
         if (!getClientScopes(session).containsAll(allowedScopesConfig)) {
             throw new ComponentValidationException("Client scopes not allowed: " + allowedScopesConfig);
         }

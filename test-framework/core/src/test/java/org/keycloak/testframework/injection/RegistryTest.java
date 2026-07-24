@@ -1,10 +1,11 @@
 package org.keycloak.testframework.injection;
 
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import java.lang.reflect.Method;
+import java.util.List;
+
+import org.keycloak.testframework.FatalTestClassException;
+import org.keycloak.testframework.annotations.TestCleanup;
+import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.injection.mocks.MockChildAnnotation;
 import org.keycloak.testframework.injection.mocks.MockChildSupplier;
@@ -15,7 +16,12 @@ import org.keycloak.testframework.injection.mocks.MockParentAnnotation;
 import org.keycloak.testframework.injection.mocks.MockParentSupplier;
 import org.keycloak.testframework.injection.mocks.MockParentValue;
 
-import java.util.List;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.opentest4j.TestAbortedException;
 
 public class RegistryTest {
 
@@ -26,6 +32,7 @@ public class RegistryTest {
         MockInstances.reset();
         MockParentSupplier.reset();
         MockChildSupplier.reset();
+        Extensions.reset();
         registry = new Registry();
     }
 
@@ -34,7 +41,7 @@ public class RegistryTest {
         MockParentSupplier.DEFAULT_LIFECYCLE = LifeCycle.GLOBAL;
         ParentTest test = new ParentTest();
 
-        registry.beforeEach(test);
+        runBeforeEach(test);
         MockParentValue value1 = test.parent;
         assertRunning(value1);
 
@@ -43,7 +50,7 @@ public class RegistryTest {
         assertRunning(value1);
 
         ParentTest test2 = new ParentTest();
-        registry.beforeEach(test2);
+        runBeforeEach(test2);
         MockParentValue value2 = test2.parent;
 
         Assertions.assertSame(value1, value2);
@@ -57,14 +64,14 @@ public class RegistryTest {
     public void testClassLifeCycle() {
         ParentTest test = new ParentTest();
 
-        registry.beforeEach(test);
+        runBeforeEach(test);
         MockParentValue value1 = test.parent;
         assertRunning(value1);
 
         registry.afterEach();
         assertRunning(value1);
 
-        registry.beforeEach(test);
+        runBeforeEach(test);
         MockParentValue value2 = test.parent;
         Assertions.assertSame(value1, value2);
 
@@ -75,10 +82,34 @@ public class RegistryTest {
         assertClosed(value1);
 
         ParentTest test2 = new ParentTest();
-        registry.beforeEach(test2);
+        runBeforeEach(test2);
         MockParentValue value3 = test2.parent;
 
         Assertions.assertNotSame(value1, value3);
+    }
+
+    @Test
+    public void testTestSetup() {
+        SetupTest setupTest = new SetupTest();
+        runBeforeEach(setupTest);
+        Assertions.assertEquals("anothervalue", setupTest.parent.getStringOption());
+        setupTest.test();
+
+        registry.afterEach();
+
+        Assertions.assertEquals("anothervalue", setupTest.parent.getStringOption());
+
+        // JUnit creates new instances for each test method
+        setupTest = new SetupTest();
+        runBeforeEach(setupTest);
+        Assertions.assertEquals("anothervalue", setupTest.parent.getStringOption());
+        setupTest.test();
+
+        registry.afterEach();
+
+        registry.afterAll();
+
+        Assertions.assertEquals("myvalue", setupTest.parent.getStringOption());
     }
 
     @Test
@@ -87,14 +118,14 @@ public class RegistryTest {
 
         ParentTest test = new ParentTest();
 
-        registry.beforeEach(test);
+        runBeforeEach(test);
         MockParentValue value1 = test.parent;
         assertRunning(value1);
 
         registry.afterEach();
         assertClosed(value1);
 
-        registry.beforeEach(test);
+        runBeforeEach(test);
         MockParentValue value2 = test.parent;
         Assertions.assertNotSame(value1, value2);
     }
@@ -107,14 +138,14 @@ public class RegistryTest {
         ParentAndChildTest parentAndChildTest = new ParentAndChildTest();
         MockChildValue child1 = parentAndChildTest.child;
 
-        registry.beforeEach(parentAndChildTest);
+        runBeforeEach(parentAndChildTest);
         assertRunning(parentAndChildTest.parent, parentAndChildTest.child);
         Assertions.assertSame(parentAndChildTest.parent, parentAndChildTest.child.getParent());
 
         registry.afterEach();
         assertClosed(parentAndChildTest.parent, parentAndChildTest.child);
 
-        registry.beforeEach(parentAndChildTest);
+        runBeforeEach(parentAndChildTest);
         Assertions.assertNotSame(child1, parentAndChildTest.child);
     }
 
@@ -124,7 +155,7 @@ public class RegistryTest {
 
         ParentTest parentTest = new ParentTest();
 
-        registry.beforeEach(parentTest);
+        runBeforeEach(parentTest);
         registry.afterEach();
         registry.afterAll();
         assertRunning(parentTest.parent);
@@ -132,7 +163,7 @@ public class RegistryTest {
         MockParentSupplier.DEFAULT_LIFECYCLE = LifeCycle.CLASS;
 
         ParentTest parentTest2 = new ParentTest();
-        registry.beforeEach(parentTest2);
+        runBeforeEach(parentTest2);
 
         assertRunning(parentTest2.parent);
         assertClosed(parentTest.parent);
@@ -143,13 +174,13 @@ public class RegistryTest {
     public void testRecreateIfNotCompatible() {
         ParentTest parentTest = new ParentTest();
 
-        registry.beforeEach(parentTest);
+        runBeforeEach(parentTest);
         MockParentValue parent1 = parentTest.parent;
         registry.afterEach();
 
         MockParentSupplier.COMPATIBLE = false;
 
-        registry.beforeEach(parentTest);
+        runBeforeEach(parentTest);
         registry.afterEach();
 
         MockParentValue parent2 = parentTest.parent;
@@ -173,6 +204,7 @@ public class RegistryTest {
         try {
             Config.initConfig();
 
+            Extensions.reset();
             registry = new Registry();
             List<Supplier<?, ?>> suppliers = registry.getSuppliers();
             Assertions.assertEquals(1, suppliers.stream().filter(s -> s.getValueType().equals(MockParentValue.class)).count());
@@ -188,7 +220,7 @@ public class RegistryTest {
     public void testDependencyCreatedOnDemand() {
         ChildTest childTest = new ChildTest();
 
-        registry.beforeEach(childTest);
+        runBeforeEach(childTest);
         assertRunning(childTest.child, childTest.child.getParent());
     }
 
@@ -196,7 +228,7 @@ public class RegistryTest {
     public void testDependencyRequestedBefore() {
         ParentAndChildTest test = new ParentAndChildTest();
 
-        registry.beforeEach(test);
+        runBeforeEach(test);
         assertRunning(test.child, test.child.getParent());
     }
 
@@ -204,14 +236,14 @@ public class RegistryTest {
     public void testDependencyRequestedAfter() {
         ChildAndParentTest test = new ChildAndParentTest();
 
-        registry.beforeEach(test);
+        runBeforeEach(test);
         assertRunning(test.child, test.child.getParent());
     }
 
     @Test
-    public void testMultiplRef() {
+    public void testMultipleRef() {
         MultipleRefTest refTest = new MultipleRefTest();
-        registry.beforeEach(refTest);
+        runBeforeEach(refTest);
 
         MockParentValue def1 = refTest.def;
         MockParentValue a1 = refTest.a;
@@ -225,7 +257,7 @@ public class RegistryTest {
 
         registry.afterEach();
 
-        registry.beforeEach(refTest);
+        runBeforeEach(refTest);
         assertRunning(refTest.def, refTest.a2, refTest.b);
 
         Assertions.assertSame(def1, refTest.def);
@@ -241,7 +273,7 @@ public class RegistryTest {
     @Test
     public void testRealmRef() {
         RealmRefTest test = new RealmRefTest();
-        registry.beforeEach(test);
+        runBeforeEach(test);
 
         assertRunning(test.childABC, test.childABC.getParent(), test.child123, test.parent123);
         Assertions.assertNotSame(test.childABC.getParent(), test.parent123);
@@ -251,7 +283,7 @@ public class RegistryTest {
     @Test
     public void testConfigurableSupplier() {
         ParentTest parentTest = new ParentTest();
-        registry.beforeEach(parentTest);
+        runBeforeEach(parentTest);
 
         Assertions.assertNull(parentTest.parent.getStringOption());
         Assertions.assertTrue(parentTest.parent.isBooleanOption());
@@ -261,9 +293,10 @@ public class RegistryTest {
 
         try {
             Config.initConfig();
+            Extensions.reset();
             registry = new Registry();
             parentTest = new ParentTest();
-            registry.beforeEach(parentTest);
+            runBeforeEach(parentTest);
 
             Assertions.assertEquals("some string", parentTest.parent.getStringOption());
             Assertions.assertFalse(parentTest.parent.isBooleanOption());
@@ -278,7 +311,7 @@ public class RegistryTest {
     public void testIncompatibleParent() {
         MockParentSupplier.COMPATIBLE = false;
         RealmIncompatibleParentTest test = new RealmIncompatibleParentTest();
-        registry.beforeEach(test);
+        runBeforeEach(test);
 
         MockParentValue parent1 = test.parent;
         MockChildValue child1 = test.child;
@@ -288,12 +321,36 @@ public class RegistryTest {
 
         registry.afterEach();
 
-        registry.beforeEach(test);
+        runBeforeEach(test);
 
         Assertions.assertNotNull(test.parent);
         Assertions.assertNotEquals(parent1, test.parent);
         Assertions.assertNotNull(test.child);
         Assertions.assertNotEquals(child1, test.child);
+    }
+
+    @Test
+    public void testAnnotationValueTypeMismatch() {
+        AnnotationValueTypeMismatchTest test = new AnnotationValueTypeMismatchTest();
+
+        Assertions.assertThrows(
+                TestAbortedException.class,
+                () -> runBeforeEach(test)
+        );
+
+        Assertions.assertThrows(
+                FatalTestClassException.class,
+                () -> registry.afterAll()
+        );
+    }
+
+    private <T extends AbstractTest> void runBeforeEach(T testInstance) {
+        try {
+            Method testMethod = testInstance.getClass().getMethod("test");
+            registry.beforeEach(testInstance, testMethod);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static void assertRunning(Object... values) {
@@ -306,7 +363,13 @@ public class RegistryTest {
         MatcherAssert.assertThat(MockInstances.CLOSED_INSTANCES, Matchers.hasSize(values.length));
     }
 
-    public static final class ParentAndChildTest {
+    public static abstract class AbstractTest {
+        @Test
+        public void test() {
+        }
+    }
+
+    public static final class ParentAndChildTest extends AbstractTest {
         @MockParentAnnotation
         MockParentValue parent;
 
@@ -314,17 +377,17 @@ public class RegistryTest {
         MockChildValue child;
     }
 
-    public static final class ParentTest {
+    public static final class ParentTest extends AbstractTest {
         @MockParentAnnotation
         MockParentValue parent;
     }
 
-    public static final class ChildTest {
+    public static final class ChildTest extends AbstractTest {
         @MockChildAnnotation
         MockChildValue child;
     }
 
-    public static final class ChildAndParentTest {
+    public static final class ChildAndParentTest extends AbstractTest {
         @MockChildAnnotation
         MockChildValue child;
 
@@ -332,7 +395,7 @@ public class RegistryTest {
         MockParentValue parent;
     }
 
-    public static final class MultipleRefTest {
+    public static final class MultipleRefTest extends AbstractTest {
         @MockParentAnnotation()
         MockParentValue def;
 
@@ -346,7 +409,7 @@ public class RegistryTest {
         MockParentValue b;
     }
 
-    public static final class RealmRefTest {
+    public static final class RealmRefTest extends AbstractTest {
         @MockParentAnnotation(ref = "123")
         MockParentValue parent123;
 
@@ -357,7 +420,7 @@ public class RegistryTest {
         MockChildValue childABC;
     }
 
-    public static final class RealmIncompatibleParentTest {
+    public static final class RealmIncompatibleParentTest extends AbstractTest {
 
         @MockChildAnnotation
         MockChildValue child;
@@ -365,6 +428,38 @@ public class RegistryTest {
         @MockParentAnnotation
         MockParentValue parent;
 
+    }
+
+    public static final class SetupTest extends AbstractTest {
+
+        @MockParentAnnotation(stringOption = "myvalue")
+        MockParentValue parent;
+
+        @MockChildAnnotation
+        MockChildValue child;
+
+        @TestSetup
+        public void setup() {
+            Assertions.assertEquals("myvalue", parent.getStringOption());
+            parent.setStringOption("anothervalue");
+        }
+
+        @Test
+        public void test() {
+            Assertions.assertEquals("anothervalue", parent.getStringOption());
+        }
+
+        @TestCleanup
+        public void cleanup() {
+            Assertions.assertEquals("anothervalue", parent.getStringOption());
+            parent.setStringOption("myvalue");
+        }
+
+    }
+
+    public static final class AnnotationValueTypeMismatchTest extends AbstractTest {
+        @MockParentAnnotation
+        MockChildValue child;
     }
 
 }

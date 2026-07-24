@@ -1,5 +1,7 @@
 package org.keycloak.testsuite.broker;
 
+import java.io.Closeable;
+
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.saml.common.util.DocumentUtil;
@@ -9,12 +11,12 @@ import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
-import java.io.Closeable;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
@@ -50,7 +52,7 @@ public final class KcSamlCustomEntityIdBrokerTest extends AbstractBrokerTest {
 
                         // Find the Issuer element
                         Element issuerElement = DocumentUtil.getDirectChildElement(document.getDocumentElement(), ASSERTION_NSURI.get(), "Issuer");
-                        Assert.assertEquals("Unexpected Issuer element value", getAuthServerRoot() + "realms/consumer", issuerElement.getTextContent());
+                        Assertions.assertEquals(getAuthServerRoot() + "realms/consumer", issuerElement.getTextContent(), "Unexpected Issuer element value");
                     }
                     catch (Exception ex)
                     {
@@ -85,7 +87,7 @@ public final class KcSamlCustomEntityIdBrokerTest extends AbstractBrokerTest {
 
                         // Find the Issuer element
                         Element issuerElement = DocumentUtil.getDirectChildElement(document.getDocumentElement(), ASSERTION_NSURI.get(), "Issuer");
-                        Assert.assertEquals("Unexpected Issuer element value", "http://my.custom.entity.id", issuerElement.getTextContent());
+                        Assertions.assertEquals("http://my.custom.entity.id", issuerElement.getTextContent(), "Unexpected Issuer element value");
                     }
                     catch (Exception ex)
                     {

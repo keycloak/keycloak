@@ -19,11 +19,12 @@ package org.keycloak.protocol.oidc.client.authentication;
 
 import java.util.Map;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.util.BasicAuthHelper;
+
+import org.jboss.logging.Logger;
 
 /**
  * Traditional OAuth2 authentication of clients based on client_id and client_secret

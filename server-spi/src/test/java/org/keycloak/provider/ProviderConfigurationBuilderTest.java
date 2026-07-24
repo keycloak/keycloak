@@ -1,6 +1,7 @@
 package org.keycloak.provider;
 
 import java.util.List;
+
 import org.junit.Assert;
 import org.junit.Test;
 

@@ -14,6 +14,10 @@ type MemberModalProps = {
   membersQuery: (first?: number, max?: number) => Promise<UserRepresentation[]>;
   onAdd: (users: UserRepresentation[]) => Promise<void>;
   onClose: () => void;
+  orgId?: string;
+  titleKey?: string;
+  confirmLabelKey?: string;
+  filterEmptyEmail?: boolean;
 };
 
 const UserDetail = (user: UserRepresentation) => {
@@ -34,6 +38,10 @@ export const MemberModal = ({
   membersQuery,
   onAdd,
   onClose,
+  orgId,
+  titleKey = "addMember",
+  confirmLabelKey = "add",
+  filterEmptyEmail = false,
 }: MemberModalProps) => {
   const { adminClient } = useAdminClient();
 
@@ -49,9 +57,23 @@ export const MemberModal = ({
       search: search || "",
     };
 
+    const usersQuery = orgId
+      ? async (params: { [name: string]: string | number }) => {
+          return await adminClient.organizations.listMembers({
+            orgId,
+            ...params,
+          });
+        }
+      : async (params: { [name: string]: string | number }) => {
+          return await adminClient.users.find({ ...params });
+        };
+
     try {
-      const users = await adminClient.users.find({ ...params });
-      return differenceBy(users, members, "id").slice(0, max);
+      const users = await usersQuery(params);
+      const filtered = differenceBy(users, members, "id");
+      return (
+        filterEmptyEmail ? filtered.filter((u) => u.email) : filtered
+      ).slice(0, max);
     } catch (error) {
       addError("noUsersFoundError", error);
       return [];
@@ -61,7 +83,7 @@ export const MemberModal = ({
   return (
     <Modal
       variant={ModalVariant.large}
-      title={t("addMember")}
+      title={t(titleKey)}
       isOpen
       onClose={onClose}
       actions={[
@@ -74,7 +96,7 @@ export const MemberModal = ({
             onClose();
           }}
         >
-          {t("add")}
+          {t(confirmLabelKey)}
         </Button>,
         <Button
           data-testid="cancel"

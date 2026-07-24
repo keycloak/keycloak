@@ -16,20 +16,20 @@
  */
 package org.keycloak.client.admin.cli.commands;
 
-import org.keycloak.client.cli.config.ConfigData;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
+
+import org.keycloak.client.cli.config.ConfigData;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
+import static org.keycloak.client.admin.cli.KcAdmMain.CMD;
 import static org.keycloak.client.admin.cli.operations.UserOperations.getIdFromUsername;
 import static org.keycloak.client.admin.cli.operations.UserOperations.resetUserPassword;
 import static org.keycloak.client.cli.util.ConfigUtil.credentialsAvailable;
 import static org.keycloak.client.cli.util.ConfigUtil.loadConfig;
 import static org.keycloak.client.cli.util.OsUtil.PROMPT;
-import static org.keycloak.client.admin.cli.KcAdmMain.CMD;
 import static org.keycloak.common.util.IoUtils.readPasswordFromConsole;
 
 /**

@@ -17,13 +17,15 @@
 
 package org.keycloak;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.jose.jwk.JWK;
@@ -35,12 +37,11 @@ import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -107,8 +108,8 @@ public abstract class RSAVerifierTest {
 
         List<String> x5c = tokenVerifier.getHeader().getX5c();
         Assert.assertEquals(2, x5c.size());
-        Assert.assertEquals(Base64.encodeBytes(idpCertificate.getEncoded()), x5c.get(0));
-        Assert.assertEquals(Base64.encodeBytes(caCertificate.getEncoded()), x5c.get(1));
+        Assert.assertEquals(Base64.getEncoder().encodeToString(idpCertificate.getEncoded()), x5c.get(0));
+        Assert.assertEquals(Base64.getEncoder().encodeToString(caCertificate.getEncoded()), x5c.get(1));
         Assert.assertEquals(JsonSerialization.mapper.convertValue(jwk, Map.class),
                             JsonSerialization.mapper.convertValue(tokenVerifier.getHeader().getKey(), Map.class));
     }

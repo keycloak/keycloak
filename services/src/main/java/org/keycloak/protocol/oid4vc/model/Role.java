@@ -17,11 +17,11 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
-import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCTargetRoleMapper;
-
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
+
+import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCTargetRoleMapper;
 
 /**
  * Pojo representation of a role to be added by the {@link OID4VCTargetRoleMapper}

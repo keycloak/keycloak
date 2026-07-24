@@ -18,8 +18,9 @@
 
 package org.keycloak.component;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.keycloak.provider.Provider;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Component model backed by JSON configuration. Useful for providers, which rely on JSON configuration rather than on ComponentModel, which is directly

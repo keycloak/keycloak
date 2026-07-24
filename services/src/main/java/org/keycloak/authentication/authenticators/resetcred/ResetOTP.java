@@ -17,6 +17,10 @@
 
 package org.keycloak.authentication.authenticators.resetcred;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
@@ -33,10 +37,6 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.messages.Messages;
-
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 

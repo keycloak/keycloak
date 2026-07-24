@@ -17,15 +17,16 @@
 
 package org.keycloak.models.cache.infinispan;
 
-import org.infinispan.Cache;
-import org.jboss.logging.Logger;
-import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
+import java.util.Map;
+import java.util.Set;
+
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
+import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.models.cache.infinispan.events.UserCacheInvalidationEvent;
 import org.keycloak.models.cache.infinispan.stream.InRealmPredicate;
 
-import java.util.Map;
-import java.util.Set;
+import org.infinispan.Cache;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -42,13 +43,6 @@ public class UserCacheManager extends CacheManager {
     protected Logger getLogger() {
         return logger;
     }
-
-    @Override
-    public void clear() {
-        cache.clear();
-        revisions.clear();
-    }
-
 
     public void userUpdatedInvalidations(String userId, String username, String email, String realmId, Set<String> invalidations) {
         invalidations.add(userId);
@@ -73,6 +67,9 @@ public class UserCacheManager extends CacheManager {
 
         // Consents
         invalidations.add(UserCacheSession.getConsentCacheKey(userId));
+
+        // Verifiable credentials
+        invalidations.add(UserCacheSession.getVerifiableCredentialsCacheKey(userId));
     }
 
     public void federatedIdentityLinkUpdatedInvalidation(String userId, Set<String> invalidations) {
@@ -88,6 +85,10 @@ public class UserCacheManager extends CacheManager {
 
     public void consentInvalidation(String userId, Set<String> invalidations) {
         invalidations.add(UserCacheSession.getConsentCacheKey(userId));
+    }
+
+    public void verifiableCredentialsInvalidation(String userId, Set<String> invalidations) {
+        invalidations.add(UserCacheSession.getVerifiableCredentialsCacheKey(userId));
     }
 
 

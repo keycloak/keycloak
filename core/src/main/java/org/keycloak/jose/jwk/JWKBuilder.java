@@ -17,8 +17,6 @@
 
 package org.keycloak.jose.jwk;
 
-import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
-
 import java.security.Key;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
@@ -33,6 +31,8 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
+
+import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -81,6 +81,19 @@ public class JWKBuilder {
     public JWK rs256(PublicKey key) {
         this.algorithm = Algorithm.RS256;
         return rsa(key);
+    }
+
+    public JWK akp(PublicKey key) {
+        AKPPublicJWK k = new AKPPublicJWK();
+
+        String kid = this.kid != null ? this.kid : KeyUtils.createKeyId(key);
+        k.setKeyId(kid);
+        k.setKeyType(KeyType.AKP);
+        k.setAlgorithm(algorithm);
+        k.setPub(AKPUtils.toEncodedPub(key, algorithm));
+        k.setPublicKeyUse(KeyUse.SIG.getSpecName());
+
+        return k;
     }
 
     public JWK rsa(Key key) {

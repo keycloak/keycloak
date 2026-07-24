@@ -19,12 +19,8 @@
 package org.keycloak.services.clientpolicy;
 
 
-import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -32,7 +28,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.jboss.logging.Logger;
+
 import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.JsonConfigComponentModel;
@@ -54,6 +50,10 @@ import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvide
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProviderFactory;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.FileUtils;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.jboss.logging.Logger;
 
 /**
  * Utilities for treating client policies/profiles
@@ -66,16 +66,7 @@ public class ClientPoliciesUtil {
 
     public static InputStream getJsonFileFromClasspathOrConfFolder(String name) throws IOException {
         final String fileName = name + ".json";
-        // first try to read the json configuration file from classpath
-        InputStream is = ClientPoliciesUtil.class.getResourceAsStream("/" + fileName);
-        if (is == null) {
-            Path path = Paths.get(System.getProperty("jboss.server.config.dir")).resolve(fileName);
-            if (!Files.isReadable(path)) {
-                throw new IOException(String.format("File \"%s\" does not exists under the config folder", path));
-            }
-            is = Files.newInputStream(path);
-        }
-        return is;
+        return FileUtils.getJsonFileFromClasspathOrConfFolder(fileName);
     }
 
     public static List<ClientProfileRepresentation> readGlobalClientProfilesRepresentation(KeycloakSession session, String name) throws ClientPolicyException {
@@ -426,6 +417,10 @@ public class ClientPoliciesUtil {
             policyModel.setName(policyRep.getName());
             policyModel.setDescription(policyRep.getDescription());
             policyModel.setEnable(true);
+            ClientPolicyMode mode = policyRep.getMode() == null
+                    ? ClientPolicyMode.DEFAULT
+                    : Enum.valueOf(ClientPolicyMode.class, policyRep.getMode().toUpperCase());
+            policyModel.setMode(mode);
 
             List<ClientPolicyConditionProvider> conditions = new ArrayList<>();
             if (policyRep.getConditions() != null) {
@@ -527,6 +522,16 @@ public class ClientPoliciesUtil {
             policyRep.setName(proposedPolicyRep.getName());
             policyRep.setDescription(proposedPolicyRep.getDescription());
             policyRep.setEnabled(proposedPolicyRep.isEnabled() != null ? proposedPolicyRep.isEnabled() : Boolean.FALSE);
+
+            // Check if mode is valid
+            try {
+                if (proposedPolicyRep.getMode() != null) {
+                    Enum.valueOf(ClientPolicyMode.class, proposedPolicyRep.getMode());
+                }
+                policyRep.setMode(proposedPolicyRep.getMode());
+            } catch (IllegalArgumentException iae) {
+                throw new ClientPolicyException("Policy " + proposedPolicyRep.getName() + " has invalid mode");
+            }
 
             policyRep.setConditions(new ArrayList<>());
             if (proposedPolicyRep.getConditions() != null) {

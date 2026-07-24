@@ -17,15 +17,15 @@
 
 package org.keycloak.truststore;
 
-import org.keycloak.common.enums.HostnameVerificationPolicy;
-import org.keycloak.provider.Provider;
-
-import java.security.cert.X509Certificate;
 import java.security.KeyStore;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 import javax.net.ssl.SSLSocketFactory;
 import javax.security.auth.x500.X500Principal;
+
+import org.keycloak.common.enums.HostnameVerificationPolicy;
+import org.keycloak.provider.Provider;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -47,4 +47,14 @@ public interface TruststoreProvider extends Provider {
      * @return intermediate certificates from the configured truststore as a map where the key is the X500Principal of the corresponding X509Certificate
      */
     Map<X500Principal, List<X509Certificate>> getIntermediateCertificates();
+
+    /**
+     * Returns the truststore used for mTLS
+     * @return The mTLS truststore
+     */
+    KeyStore getHttpsTruststore();
+
+    Map<X500Principal, List<X509Certificate>> getHttpsRootCertificates();
+
+    Map<X500Principal, List<X509Certificate>> getHttpsIntermediateCertificates();
 }

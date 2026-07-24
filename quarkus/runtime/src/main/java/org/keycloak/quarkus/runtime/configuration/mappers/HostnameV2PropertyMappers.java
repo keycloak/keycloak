@@ -1,7 +1,5 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
-
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
@@ -11,20 +9,23 @@ import java.util.stream.Stream;
 
 import org.keycloak.common.Profile;
 import org.keycloak.config.HostnameV2Options;
+import org.keycloak.config.HttpOptions;
+import org.keycloak.config.ProxyOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
-import org.keycloak.config.ProxyOptions;
+import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.utils.SecureContextResolver;
 
-public final class HostnameV2PropertyMappers {
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
+
+public final class HostnameV2PropertyMappers implements PropertyMapperGrouping {
 
     private static final String CONTEXT_WARNING = "the server is running in an insecure context. Secure contexts are required for full functionality, including cross-origin cookies.";
     private static final List<String> REMOVED_OPTIONS = Arrays.asList("hostname-admin-url", "hostname-path", "hostname-port", "hostname-strict-backchannel", "hostname-url", "proxy", "hostname-strict-https");
 
-    private HostnameV2PropertyMappers(){}
-
-    public static PropertyMapper<?>[] getHostnamePropertyMappers() {
+    @Override
+    public List<? extends PropertyMapper<?>> getPropertyMappers() {
         return Stream.of(
                 fromOption(HostnameV2Options.HOSTNAME)
                         .to("kc.spi-hostname--v2--hostname")
@@ -39,11 +40,14 @@ public final class HostnameV2PropertyMappers {
                 fromOption(HostnameV2Options.HOSTNAME_DEBUG)
         )
         .map(b -> b.isEnabled(() -> Profile.isFeatureEnabled(Profile.Feature.HOSTNAME_V2), "hostname:v2 feature is enabled").build())
-        .toArray(s -> new PropertyMapper<?>[s]);
+        .toList();
     }
 
-    public static void validateConfig(Picocli picocli) {
-        validateConfig(picocli::warn);
+    @Override
+    public void validateConfig(Picocli picocli) {
+        if (picocli.getParsedCommand().filter(AbstractCommand::isServing).isPresent()) {
+            validateConfig(picocli::warn);
+        }
     }
 
     public static void validateConfig(Consumer<String> warn) {
@@ -100,10 +104,28 @@ public final class HostnameV2PropertyMappers {
                 // else might be allowable if HOST is overwritten
             }
 
+            if (proxyHeaders == null && !url.getPath().isEmpty() && !normalizePath(url.getPath()).equals(
+                            normalizePath(Configuration.getConfigValue(HttpOptions.HTTP_RELATIVE_PATH).getValue()))) {
+                warn.accept("Likely misconfiguration detected. When using a `hostname` that includes a path that does not match the `http-relative-path` you must use `proxy-headers`");
+            }
+
             return true;
         } catch (MalformedURLException e) {
             return false;
         }
+    }
+
+    private static String normalizePath(String path) {
+        if (path == null) {
+            return path;
+        }
+        if (!path.startsWith("/")) {
+            path = "/" + path;
+        }
+        if (path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1);
+        }
+        return path;
     }
 
 }

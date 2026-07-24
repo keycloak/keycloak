@@ -16,26 +16,9 @@
  */
 package org.keycloak.services.resources;
 
-import org.jboss.logging.Logger;
-import org.keycloak.http.HttpRequest;
-import jakarta.ws.rs.NotAuthorizedException;
-import org.keycloak.OAuthErrorException;
-import org.keycloak.common.ClientConnection;
-import org.keycloak.common.util.Time;
-import org.keycloak.constants.AdapterConstants;
-import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
-import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
-
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ForbiddenException;
-import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -44,6 +27,23 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
+
+import org.keycloak.OAuthErrorException;
+import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Time;
+import org.keycloak.constants.AdapterConstants;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -90,14 +90,12 @@ public class ClientsManagementService {
     /**
      * URL invoked by adapter to register new client cluster node. Each application cluster node will invoke this URL once it joins cluster
      *
-     * @param authorizationHeader
-     * @param formData
      * @return
      */
     @Path("register-node")
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    public Response registerNode(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader, final MultivaluedMap<String, String> formData) {
+    public Response registerNode() {
         if (!checkSsl()) {
             throw new ForbiddenException("HTTPS required");
         }
@@ -109,6 +107,7 @@ public class ClientsManagementService {
             throw new NotAuthorizedException("Realm not enabled");
         }
 
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
         ClientModel client = authorizeClient();
         String nodeHost = getClientClusterHost(formData);
 
@@ -131,14 +130,12 @@ public class ClientsManagementService {
     /**
      * URL invoked by adapter to register new client cluster node. Each application cluster node will invoke this URL once it joins cluster
      *
-     * @param authorizationHeader
-     * @param formData
      * @return
      */
     @Path("unregister-node")
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    public Response unregisterNode(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader, final MultivaluedMap<String, String> formData) {
+    public Response unregisterNode() {
         if (!checkSsl()) {
             throw new ForbiddenException("HTTPS required");
         }
@@ -150,6 +147,7 @@ public class ClientsManagementService {
             throw new NotAuthorizedException("Realm not enabled");
         }
 
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
         ClientModel client = authorizeClient();
         String nodeHost = getClientClusterHost(formData);
 

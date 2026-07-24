@@ -17,20 +17,20 @@
 
 package org.keycloak.exportimport.dir;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.List;
+
 import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.exportimport.util.MultipleStepsExportProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.platform.Platform;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.util.JsonSerialization;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -49,7 +49,7 @@ public class DirExportProvider extends MultipleStepsExportProvider<DirExportProv
     private File getRootDirectory() {
         if (rootDirectory == null) {
             if (dir == null) {
-                rootDirectory = new File(Platform.getPlatform().getTmpDirectory(), "keycloak-export");
+                rootDirectory = new File(KeycloakApplication.getTmpDirectory(), "keycloak-export");
             } else {
                 rootDirectory = new File(dir);
             }

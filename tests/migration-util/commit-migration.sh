@@ -31,51 +31,19 @@ get_deleted_and_created_files() {
 }
 
 get_test_names_string() {
-  local file_names_string=""
   local -a test_names
-  local file_name
-  readarray -t test_names < <(git diff --cached --name-status --diff-filter=MR | grep -E ".*Test.java" | awk '{print $2}' | xargs -I {} basename {})
-  for file_name in "${test_names[@]}"; do
-    if [ -z "$file_names_string" ]; then
-      file_names_string="$file_name"
-    else
-      file_names_string+=", $file_name"
-    fi
-  done
-  echo "$file_names_string"
-}
+  readarray -t test_names < <(git diff --cached --name-status --diff-filter=MR | grep -E ".*Test.java" | awk '{print $2}' | xargs -I {} basename {} .java)
 
-get_default_commit_message() {
-  local test_names
-  test_names=$(get_test_names_string)
-  echo "Move $test_names to the new testsuite"
+  ( IFS=$', '; echo "${test_names[*]}" )
 }
 
 read_commit_message() {
   local default_commit_message
-  default_commit_message=$(get_default_commit_message)
-  default_commit_message+=$'\n\n'"Part of: #34494"
+  default_commit_message="Move $(get_test_names_string) to the new testsuite"
 
   echo ""
-  echo "Provide a different commit message (optional)"
-  echo "============================================="
-  echo "$default_commit_message"
-  echo "============================================="
-  COMMIT_MESSAGE=""
-  read -r COMMIT_MESSAGE
-  if [ -n "$COMMIT_MESSAGE" ]; then
-    COMMIT_MESSAGE+=$'\n'
-    while IFS= read -r line; do
-      if [ -z "$line" ]; then
-        COMMIT_MESSAGE+=$'\n'
-      else
-        COMMIT_MESSAGE+="$line"$'\n'
-      fi
-    done
-  else
-    echo "Default commit message will be used"
-    COMMIT_MESSAGE="$default_commit_message"
-  fi
+  echo "Edit commit message (Press Enter to confirm):"
+  read -r -e -i "$default_commit_message" COMMIT_MESSAGE
 }
 
 commit_stage() {
@@ -86,7 +54,11 @@ commit_stage() {
 
   local confirm
   echo ""
-  read -p "Commit? [y/n]: " -r confirm
+  echo "Summary of action:"
+  git --no-pager diff --cached --name-status
+  echo "Message: $COMMIT_MESSAGE"
+
+  read -p "Confirm commit? [Y/n]: " -r confirm
   if [[ -z "$confirm" || "$confirm" == [yY] || "$confirm" == [yY][eE][sS] ]]; then
     git commit --signoff -m "$COMMIT_MESSAGE"
   else

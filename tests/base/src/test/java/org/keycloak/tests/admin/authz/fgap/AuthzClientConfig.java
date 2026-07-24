@@ -16,15 +16,15 @@
  */
 package org.keycloak.tests.admin.authz.fgap;
 
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 
 public class AuthzClientConfig implements ClientConfig {
 
     @Override
-    public ClientConfigBuilder configure(ClientConfigBuilder client) {
+    public ClientBuilder configure(ClientBuilder client) {
         return client.serviceAccountsEnabled(true)
-                .authorizationServices();
+                .authorizationServicesEnabled(true);
     }
 
 }

@@ -17,9 +17,9 @@
 
 package org.keycloak.connections.jpa;
 
-import org.keycloak.provider.Provider;
-
 import jakarta.persistence.EntityManager;
+
+import org.keycloak.provider.Provider;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

@@ -19,6 +19,7 @@
 package org.keycloak.testsuite.pages;
 
 import org.keycloak.testsuite.util.UIUtils;
+
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -36,12 +37,8 @@ public class LogoutConfirmPage extends LanguageComboboxAwarePage {
     private WebElement backToApplicationLink;
 
     @Override
-    public boolean isCurrent() {
-        return isCurrent(driver);
-    }
-
-    public boolean isCurrent(WebDriver driver1) {
-        return "Logging out".equals(PageUtils.getPageTitle(driver1));
+    public String getExpectedPageId() {
+        return "login-logout-confirm";
     }
 
     public void confirmLogout() {

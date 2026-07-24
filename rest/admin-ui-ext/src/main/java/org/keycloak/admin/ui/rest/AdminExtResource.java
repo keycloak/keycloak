@@ -1,11 +1,11 @@
 package org.keycloak.admin.ui.rest;
 
+import jakarta.ws.rs.Path;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
-
-import jakarta.ws.rs.Path;
 
 public final class AdminExtResource {
     private KeycloakSession session;
@@ -43,6 +43,21 @@ public final class AdminExtResource {
     @Path("/effective-roles")
     public EffectiveRoleMappingResource effectiveRoles() {
         return new EffectiveRoleMappingResource(session, realm, auth);
+    }
+
+    @Path("/effective-roles-all")
+    public AllEffectiveRoleMappingResource allEffectiveRoles() {
+        return new AllEffectiveRoleMappingResource(session, realm, auth);
+    }
+
+    @Path("/role-mappings")
+    public RoleCompositeResource roleMappings() {
+        return new RoleCompositeResource(session, realm, auth);
+    }
+
+    @Path("/role-mapping-delete")
+    public RoleMappingDeleteResource roleMappingDelete() {
+        return new RoleMappingDeleteResource(session, realm, auth, adminEvent);
     }
 
     @Path("/sessions")

@@ -17,8 +17,13 @@
 
 package org.keycloak.models.session;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -27,11 +32,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -245,20 +247,22 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || !(o instanceof AuthenticatedClientSessionModel)) return false;
+        if (!(o instanceof AuthenticatedClientSessionModel that)) return false;
 
-        AuthenticatedClientSessionModel that = (AuthenticatedClientSessionModel) o;
-        return that.getId().equals(getId());
+        return Objects.equals(getId(), that.getId());
     }
 
     @Override
     public int hashCode() {
-        return getId().hashCode();
+        return Objects.hashCode(getId());
     }
 
     @Override
     public String toString() {
-        return getId();
+        return "PersistentAuthenticatedClientSessionAdapter{" +
+                "userSessionId=" + model.getUserSessionId() +
+                "clientId=" + model.getClientId() +
+                "}";
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

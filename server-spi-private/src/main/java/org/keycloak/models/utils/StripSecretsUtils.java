@@ -17,6 +17,16 @@
 
 package org.keycloak.models.utils;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.KeycloakSession;
@@ -28,16 +38,6 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.BiConsumer;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -64,7 +64,11 @@ public class StripSecretsUtils {
     }
 
     public static <T> T stripSecrets(KeycloakSession session, T representation) {
-        BiConsumer<KeycloakSession, Object> formatter = REPRESENTATION_FORMATTER.get(representation.getClass());
+        return stripSecrets(session, representation, REPRESENTATION_FORMATTER);
+    }
+
+    protected static <T> T stripSecrets(KeycloakSession session, T representation, Map<Class<?>, BiConsumer<KeycloakSession, Object>> formatters) {
+        BiConsumer<KeycloakSession, Object> formatter = formatters.get(representation.getClass());
 
         if (formatter == null) {
             return representation;
@@ -75,7 +79,7 @@ public class StripSecretsUtils {
         return representation;
     }
 
-    private static String maskNonVaultValue(String value) {
+    protected static String maskNonVaultValue(String value) {
         return value == null
           ? null
           : (VAULT_VALUE.matcher(value).matches()

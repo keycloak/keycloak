@@ -16,17 +16,6 @@
  */
 package org.keycloak.testsuite.authz;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.util.oauth.OAuthClient.AUTH_SERVER_ROOT;
-
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -43,19 +32,14 @@ import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.UriBuilder;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.message.BasicNameValuePair;
-import org.junit.Before;
-import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.representation.TokenIntrospectionResponse;
+import org.keycloak.authorization.client.util.HttpResponseException;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -63,18 +47,40 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
-import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.message.BasicNameValuePair;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_REQ_PARAMS_DEFAULT_MAX_SIZE;
+import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE;
+import static org.keycloak.testsuite.util.oauth.OAuthClient.AUTH_SERVER_ROOT;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -82,34 +88,25 @@ import org.keycloak.util.JsonSerialization;
 public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
     private ResourceRepresentation resourceA;
+    private PolicyRepresentation grantPolicy;
+    private PolicyRepresentation denyPolicy;
 
     @Before
     public void configureAuthorization() throws Exception {
         ClientResource client = getClient(getRealm());
         AuthorizationResource authorization = client.authorization();
-
-        JSPolicyRepresentation policy = new JSPolicyRepresentation();
-
-        policy.setName("Default Policy");
-        policy.setType("script-scripts/default-policy.js");
-
-        authorization.policies().js().create(policy).close();
+        grantPolicy = createAlwaysGrantPolicy(authorization);
 
         ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
         resourceA = addResource("Resource A", null, Collections.singleton("/resource"), false, "ScopeA", "ScopeB", "ScopeC");
 
         permission.setName(resourceA.getName() + " Permission");
         permission.addResource(resourceA.getName());
-        permission.addPolicy(policy.getName());
+        permission.addPolicy(grantPolicy.getName());
 
         authorization.permissions().resource().create(permission).close();
 
-        policy = new JSPolicyRepresentation();
-
-        policy.setName("Deny Policy");
-        policy.setType("script-scripts/always-deny-policy.js");
-
-        authorization.policies().js().create(policy).close();
+        denyPolicy = createAlwaysDenyPolicy(authorization);
     }
 
     @Test
@@ -186,7 +183,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         permission.setName(resourceB.getName() + " Permission");
         permission.addResource(resourceB.getName());
-        permission.addPolicy("Deny Policy");
+        permission.addPolicy(denyPolicy.getName());
 
         getClient(getRealm()).authorization().permissions().resource().create(permission).close();
 
@@ -205,7 +202,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         permissionA.setName(resourceA.getName() + " Permission");
         permissionA.addResource(resourceA.getName());
-        permissionA.addPolicy("Default Policy");
+        permissionA.addPolicy(grantPolicy.getName());
 
         AuthorizationResource authzResource = getClient(getRealm()).authorization();
 
@@ -225,7 +222,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         permissionB.setName(resourceB.getName() + " Permission");
         permissionB.addResource(resourceB.getName());
-        permissionB.addPolicy("Default Policy");
+        permissionB.addPolicy(grantPolicy.getName());
 
         authzResource.permissions().resource().create(permissionB).close();
         response = authorize("marta", "password", resourceB.getId(), new String[] {"ScopeC"}, rpt);
@@ -240,8 +237,8 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         assertTrue(permissions.isEmpty());
 
         permissionB = authzResource.permissions().resource().findByName(permissionB.getName());
-        permissionB.removePolicy("Default Policy");
-        permissionB.addPolicy("Deny Policy");
+        permissionB.removePolicy(grantPolicy.getName());
+        permissionB.addPolicy(denyPolicy.getName());
 
         authzResource.permissions().resource().findById(permissionB.getId()).update(permissionB);
 
@@ -263,7 +260,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         permissionA.setName(KeycloakModelUtils.generateId());
         permissionA.addScope("READ");
-        permissionA.addPolicy("Default Policy");
+        permissionA.addPolicy(grantPolicy.getName());
 
         AuthorizationResource authzResource = getClient(getRealm()).authorization();
 
@@ -273,7 +270,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         permissionB.setName(KeycloakModelUtils.generateId());
         permissionB.addScope("WRITE");
-        permissionB.addPolicy("Deny Policy");
+        permissionB.addPolicy(denyPolicy.getName());
 
         authzResource.permissions().scope().create(permissionB).close();
 
@@ -305,7 +302,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         permission.setName(resourceA.getName() + " Permission");
         permission.addResource(resourceA.getId());
-        permission.addPolicy("Default Policy");
+        permission.addPolicy(grantPolicy.getName());
 
         getClient(getRealm()).authorization().permissions().resource().create(permission).close();
 
@@ -313,7 +310,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         permission.setName(resourceB.getName() + " Permission");
         permission.addResource(resourceB.getId());
-        permission.addPolicy("Default Policy");
+        permission.addPolicy(grantPolicy.getName());
 
         getClient(getRealm()).authorization().permissions().resource().create(permission).close();
 
@@ -400,7 +397,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         permission.setName(resourceB.getName() + " Permission");
         permission.addResource(resourceB.getName());
-        permission.addPolicy("Default Policy");
+        permission.addPolicy(grantPolicy.getName());
 
         getClient(getRealm()).authorization().permissions().resource().create(permission).close();
 
@@ -431,7 +428,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
 
         UserRepresentation userRepresentation = getRealm().users().search("marta").get(0);
-        UserRepresentation updatedUser = UserBuilder.edit(userRepresentation).enabled(false).build();
+        UserRepresentation updatedUser = UserBuilder.update(userRepresentation).enabled(false).build();
         getRealm().users().get(userRepresentation.getId()).update(updatedUser);
 
         PermissionRequest permissions = new PermissionRequest("Resource A", "ScopeA", "ScopeB");
@@ -449,8 +446,67 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         post.setEntity(formEntity);
 
         try (CloseableHttpResponse response = oauth.httpClient().get().execute(post)) {
-            assertEquals(401, response.getStatusLine().getStatusCode());
+            assertEquals(400, response.getStatusLine().getStatusCode());
+            // Signature is valid (token was issued by Keycloak), so CORS headers should be set
+            // even though token validation failed due to the user being disabled (KEYCLOAK-15429)
             assertEquals("http://localhost", response.getFirstHeader("Access-Control-Allow-Origin").getValue());
+        }
+    }
+
+    @Test
+    public void testCORSHeadersSetForExpiredToken() throws Exception {
+        AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
+
+        PermissionRequest permissions = new PermissionRequest("Resource A", "ScopeA", "ScopeB");
+        String ticket = getAuthzClient().protection().permission().create(Arrays.asList(permissions)).getTicket();
+
+        String tokenEndpoint = getAuthzClient().getServerConfiguration().getTokenEndpoint();
+        HttpPost post = new HttpPost(tokenEndpoint);
+        post.addHeader("Origin", "http://localhost");
+        post.addHeader("Authorization", "Bearer " + accessTokenResponse.getToken());
+        List<NameValuePair> parameters = new LinkedList<>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.UMA_GRANT_TYPE));
+        parameters.add(new BasicNameValuePair("ticket", ticket));
+
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
+        post.setEntity(formEntity);
+
+        // Advance server time past access token lifespan to force expiration
+        try {
+            timeOffSet.set(600);
+
+            try (CloseableHttpResponse response = oauth.httpClient().get().execute(post)) {
+                assertEquals(400, response.getStatusLine().getStatusCode());
+                // Signature is still valid on expired tokens, so CORS headers should be set (KEYCLOAK-15429)
+                assertEquals("http://localhost", response.getFirstHeader("Access-Control-Allow-Origin").getValue());
+            }
+        } finally {
+            timeOffSet.set(0);
+        }
+    }
+
+    @Test
+    public void testCORSHeadersNotSetForForgedToken() throws Exception {
+        // CVE-2026-37977: CORS headers must not be set when the JWT signature is invalid
+        PermissionRequest permissions = new PermissionRequest("Resource A", "ScopeA", "ScopeB");
+        String ticket = getAuthzClient().protection().permission().create(Arrays.asList(permissions)).getTicket();
+
+        String tokenEndpoint = getAuthzClient().getServerConfiguration().getTokenEndpoint();
+        HttpPost post = new HttpPost(tokenEndpoint);
+        post.addHeader("Origin", "http://localhost");
+        // Forged token: valid structure but signed with an unknown key
+        post.addHeader("Authorization", "Bearer eyJhbGciOiJSUzI1NiJ9.eyJhenAiOiJyZXNvdXJjZS1zZXJ2ZXItdGVzdCJ9.invalidsignature");
+        List<NameValuePair> parameters = new LinkedList<>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.UMA_GRANT_TYPE));
+        parameters.add(new BasicNameValuePair("ticket", ticket));
+
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
+        post.setEntity(formEntity);
+
+        try (CloseableHttpResponse response = oauth.httpClient().get().execute(post)) {
+            assertEquals(400, response.getStatusLine().getStatusCode());
+            // Invalid signature: CORS headers must not be set based on unverified claims
+            assertNull(response.getFirstHeader("Access-Control-Allow-Origin"));
         }
     }
 
@@ -535,7 +591,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
     }
 
     @Test
-    public void testObtainRptWithIDToken() throws Exception {
+    public void testObtainRptWithIDToken() {
         String idToken = getIdToken("marta", "password");
         AuthorizationResponse response = authorize("Resource A", new String[] {"ScopeA", "ScopeB"}, idToken, "http://openid.net/specs/openid-connect-core-1_0.html#IDToken");
         String rpt = response.getToken();
@@ -626,13 +682,55 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         client.update(clientRepresentation);
     }
 
+    @Test
+    public void testUsingBigSubjectToken() {
+        AuthzClient authzClient = getAuthzClient();
+
+        // Request 1: Using service-account credentials works
+        AuthorizationRequest request = new AuthorizationRequest();
+        AuthorizationResponse response = authzClient.authorization().authorize(request);
+        assertNotNull(response.getToken());
+
+        // Request 2: Using invalid subject_token should fail
+        request = new AuthorizationRequest();
+        request.setSubjectToken(SecretGenerator.getInstance().randomString(10));
+        try {
+            authzClient.authorization().authorize(request);
+            fail("should fail, invalid subject_token");
+        } catch (Exception e) {
+            Throwable expected = e.getCause();
+            assertEquals(400, HttpResponseException.class.cast(expected).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected).toString().contains("unauthorized_client"));
+        }
+
+        // Request 3: Using invalid subject_token with length bigger than 4000 characters should fail
+        request = new AuthorizationRequest();
+        request.setSubjectToken(SecretGenerator.getInstance().randomString(DEFAULT_REQ_PARAMS_DEFAULT_MAX_SIZE + 10));
+        try {
+            authzClient.authorization().authorize(request);
+            fail("should fail, invalid subject_token of length " + DEFAULT_REQ_PARAMS_DEFAULT_MAX_SIZE + 10);
+        } catch (Exception e) {
+            Throwable expected = e.getCause();
+            assertEquals(400, HttpResponseException.class.cast(expected).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected).toString().contains("unauthorized_client"));
+        }
+
+        // Request 4: Using invalid subject_token with length bigger than 20000 characters should fail
+        request = new AuthorizationRequest();
+        request.setSubjectToken(SecretGenerator.getInstance().randomString(DEFAULT_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE + 10));
+        try {
+            authzClient.authorization().authorize(request);
+            fail("should fail, invalid subject_token of length " + DEFAULT_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE + 10);
+        } catch (Exception e) {
+            Throwable expected = e.getCause();
+            assertEquals(400, HttpResponseException.class.cast(expected).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected).toString().contains("invalid_request"));
+        }
+    }
+
     private String getIdToken(String username, String password) {
         oauth.realm("authz-test");
-        oauth.client("test-app");
-        oauth.openLoginForm();
-        AuthorizationEndpointResponse resp = oauth.doLogin(username, password);
-        String code = resp.getCode();
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code);
-        return response.getIdToken();
+        oauth.client(getAuthzClient().getConfiguration().getResource(), getAuthzClient().getConfiguration().getCredentials().get("secret").toString());
+        return oauth.doPasswordGrantRequest(username, password).getIdToken();
     }
 }

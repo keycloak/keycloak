@@ -17,12 +17,12 @@
 
 package org.keycloak.util.ldap;
 
+import java.io.File;
+
 import org.apache.directory.api.ldap.model.schema.SchemaManager;
 import org.apache.directory.server.core.api.DnFactory;
 import org.apache.directory.server.core.factory.JdbmPartitionFactory;
 import org.apache.directory.server.core.partition.impl.btree.jdbm.JdbmPartition;
-
-import java.io.File;
 
 /**
  * @author Alexander Schwartz

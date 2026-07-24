@@ -24,12 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
-import org.infinispan.Cache;
-import org.infinispan.commons.api.BasicCache;
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -39,6 +36,7 @@ import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.SingleUseObjectProviderFactory;
 import org.keycloak.models.session.RevokedTokenPersisterProvider;
 import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
+import org.keycloak.models.sessions.infinispan.transaction.InfinispanTransactionProvider;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.Provider;
@@ -46,7 +44,9 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 
-import static org.keycloak.storage.datastore.DefaultDatastoreProviderFactory.setupClearExpiredRevokedTokensScheduledTask;
+import org.infinispan.commons.api.BasicCache;
+
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -57,8 +57,6 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
     public static final boolean DEFAULT_PERSIST_REVOKED_TOKENS = true;
     public static final String LOADED = "loaded" + SingleUseObjectProvider.REVOKED_KEY;
 
-    private static final Logger LOG = Logger.getLogger(InfinispanSingleUseObjectProviderFactory.class);
-
     protected BasicCache<String, SingleUseObjectValueEntity> singleUseObjectCache;
 
     private volatile boolean initialized;
@@ -66,19 +64,13 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
 
     @Override
     public Set<Class<? extends Provider>> dependsOn() {
-        return Set.of(InfinispanConnectionProvider.class);
+        return Set.of(InfinispanConnectionProvider.class, InfinispanTransactionProvider.class);
     }
 
     @Override
     public InfinispanSingleUseObjectProvider create(KeycloakSession session) {
         initialize(session);
-        return new InfinispanSingleUseObjectProvider(session, singleUseObjectCache, persistRevokedTokens);
-    }
-
-    static Supplier<BasicCache<String, SingleUseObjectValueEntity>> getSingleUseObjectCache(KeycloakSession session) {
-        InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
-        Cache cache = connections.getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE);
-        return () -> cache;
+        return new InfinispanSingleUseObjectProvider(session, singleUseObjectCache, persistRevokedTokens, createTransaction(session));
     }
 
     @Override
@@ -113,15 +105,16 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
         // It is necessary to put the cache initialization here, otherwise the cache would be initialized lazily, that
         // means also listeners will start only after first cache initialization - that would be too late
         if (singleUseObjectCache == null) {
-            InfinispanConnectionProvider connections = factory.create().getProvider(InfinispanConnectionProvider.class);
-            singleUseObjectCache = connections.getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE);
+            try (var session = factory.create()) {
+                InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
+                singleUseObjectCache = connections.getCache(ACTION_TOKEN_CACHE);
+            }
         }
 
         if (persistRevokedTokens) {
             factory.register(event -> {
                 if (event instanceof PostMigrationEvent pme) {
                     KeycloakSessionFactory sessionFactory = pme.getFactory();
-                    setupClearExpiredRevokedTokensScheduledTask(sessionFactory);
                     try (KeycloakSession session = sessionFactory.create()) {
                         // load sessions during startup, not on first request to avoid congestion
                         initialize(session);
@@ -148,7 +141,7 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return InfinispanUtils.isEmbeddedInfinispan();
+        return !Profile.isFeatureEnabled(Profile.Feature.STATELESS) && InfinispanUtils.isEmbeddedInfinispan();
     }
 
     @Override
@@ -172,5 +165,11 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
         return builder.build();
     }
 
-}
+    private static InfinispanKeycloakTransaction createTransaction(KeycloakSession session) {
+        InfinispanTransactionProvider transactionProvider = session.getProvider(InfinispanTransactionProvider.class);
+        InfinispanKeycloakTransaction tx = new InfinispanKeycloakTransaction();
+        transactionProvider.registerTransaction(tx);
+        return tx;
+    }
 
+}

@@ -20,6 +20,7 @@ package org.keycloak.models.jpa.entities;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -30,8 +31,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
-import org.hibernate.annotations.Nationalized;
 import org.keycloak.models.jpa.converter.MapStringConverter;
+
+import org.hibernate.annotations.Nationalized;
 
 @Entity
 @IdClass(RealmLocalizationTextsEntity.RealmLocalizationTextEntityKey.class)

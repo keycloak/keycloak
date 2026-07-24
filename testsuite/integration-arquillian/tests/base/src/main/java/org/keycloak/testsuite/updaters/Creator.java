@@ -16,6 +16,13 @@
  */
 package org.keycloak.testsuite.updaters;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -38,16 +45,13 @@ import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
-import jakarta.ws.rs.core.Response;
+
 import org.hamcrest.Matchers;
 import org.jboss.logging.Logger;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  *  Creates a temporary realm object and makes sure it is removed when used within try-with-resources.

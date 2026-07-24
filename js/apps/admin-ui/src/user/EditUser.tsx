@@ -49,6 +49,8 @@ import { UserIdentityProviderLinks } from "./UserIdentityProviderLinks";
 import { UserRoleMapping } from "./UserRoleMapping";
 import { UserSessions } from "./UserSessions";
 import { UserEvents } from "../events/UserEvents";
+import { UserVerifiableCredentials } from "./UserVerifiableCredentials";
+import { UserWorkflows } from "./UserWorkflows";
 import {
   UIUserRepresentation,
   UserFormFields,
@@ -59,6 +61,7 @@ import {
 import { UserParams, UserTab, toUser } from "./routes/User";
 import { toUsers } from "./routes/Users";
 import { isLightweightUser } from "./utils";
+import { extractUserProfileErrorMessages } from "./utils/user-profile";
 
 import "./user-section.css";
 import { AdminEvents } from "../events/AdminEvents";
@@ -95,7 +98,9 @@ export default function EditUser() {
   const [realmHasOrganizations, setRealmHasOrganizations] = useState(false);
   const isFeatureEnabled = useIsFeatureEnabled();
   const showOrganizations =
-    isFeatureEnabled(Feature.Organizations) && realm?.organizationsEnabled;
+    isFeatureEnabled(Feature.Organizations) && realm.organizationsEnabled;
+  const showVerifiableCredentials =
+    isFeatureEnabled(Feature.OpenId4VCI) && realm.verifiableCredentialsEnabled;
 
   const toTab = (tab: UserTab) =>
     toUser({
@@ -118,6 +123,10 @@ export default function EditUser() {
   );
   const sessionsTab = useRoutableTab(toTab("sessions"));
   const eventsTab = useRoutableTab(toTab("events"));
+  const workflowsTab = useRoutableTab(toTab("workflows"));
+  const verifiableCredentialsTab = useRoutableTab(
+    toTab("verifiable-credentials"),
+  );
 
   useFetch(
     async () =>
@@ -140,7 +149,7 @@ export default function EditUser() {
       upConfig,
       organizations,
     ]) => {
-      if (!userData || !realm || !attackDetection) {
+      if (!userData || !attackDetection) {
         throw new Error(t("notFound"));
       }
 
@@ -193,20 +202,27 @@ export default function EditUser() {
             (field, params) => {
               if (field.startsWith("attributes.")) {
                 const attributeName = field.substring("attributes.".length);
-                (data.unmanagedAttributes as KeyValueType[]).forEach(
-                  (attr, index) => {
-                    if (attr.key === attributeName) {
-                      unmanagedAttributeErrors[index] = params;
-                      someUnmanagedAttributeError = true;
-                    }
-                  },
-                );
+                const unmanagedAttrs =
+                  data.unmanagedAttributes as KeyValueType[];
+                let isUnmanagedAttribute = false;
+                unmanagedAttrs.forEach((attr, index) => {
+                  if (attr.key === attributeName) {
+                    unmanagedAttributeErrors[index] = params;
+                    someUnmanagedAttributeError = true;
+                    isUnmanagedAttribute = true;
+                  }
+                });
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- mutated in forEach above
+                if (!isUnmanagedAttribute) {
+                  form.setError(field, params);
+                }
               } else {
                 form.setError(field, params);
               }
             },
             ((key, param) => t(key as string, param as any)) as TFunction,
           );
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- mutated in callback above
           if (someUnmanagedAttributeError) {
             form.setError(
               "unmanagedAttributes",
@@ -219,7 +235,8 @@ export default function EditUser() {
             param,
           ) => t(key as string, param as any)) as TFunction);
         }
-        addError("userNotSaved", "");
+        const errorMessage = extractUserProfileErrorMessages(error, t);
+        addError("userNotSaved", errorMessage);
       } else {
         addError("userCreateError", error);
       }
@@ -230,8 +247,8 @@ export default function EditUser() {
     titleKey: "disableConfirmUserTitle",
     messageKey: "disableConfirmUser",
     continueButtonLabel: "disable",
-    onConfirm: () => {
-      save({
+    onConfirm: async () => {
+      await save({
         ...toUserFormFields(user!),
         enabled: false,
       });
@@ -326,11 +343,11 @@ export default function EditUser() {
             {t("delete")}
           </DropdownItem>,
         ]}
-        onToggle={(value) => {
+        onToggle={async (value) => {
           if (!value) {
             toggleDisableDialog();
           } else {
-            save({
+            await save({
               ...toUserFormFields(user),
               enabled: value,
             });
@@ -381,6 +398,17 @@ export default function EditUser() {
               >
                 <UserCredentials user={user} setUser={setUser} />
               </Tab>
+              {showVerifiableCredentials && (
+                <Tab
+                  data-testid="verifiable-credentials-tab"
+                  title={
+                    <TabTitleText>{t("verifiableCredentials")}</TabTitleText>
+                  }
+                  {...verifiableCredentialsTab}
+                >
+                  <UserVerifiableCredentials user={user} />
+                </Tab>
+              )}
               <Tab
                 data-testid="role-mapping-tab"
                 isHidden={!user.access?.view}
@@ -450,9 +478,18 @@ export default function EditUser() {
                       eventKey="adminEvents"
                       title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
                     >
-                      <AdminEvents resourcePath={`users/${user.id}`} />
+                      <AdminEvents resourcePath={`users/${user.id}*`} />
                     </Tab>
                   </Tabs>
+                </Tab>
+              )}
+              {isFeatureEnabled(Feature.Workflows) && (
+                <Tab
+                  data-testid="workflows-tab"
+                  title={<TabTitleText>{t("workflows")}</TabTitleText>}
+                  {...workflowsTab}
+                >
+                  <UserWorkflows user={user.id} />
                 </Tab>
               )}
             </RoutableTabs>

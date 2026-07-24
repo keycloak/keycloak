@@ -16,14 +16,14 @@
  */
 package org.keycloak.broker.oidc;
 
+import java.io.IOException;
+import java.util.Map;
+
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.util.JsonSerialization;
-
-import java.io.IOException;
-import java.util.Map;
 
 /**
  * @author Pedro Igor
@@ -74,6 +74,12 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
             config.setValidateSignature(true);
             config.setUseJwksUrl(true);
             config.setJwksUrl(rep.getJwksUri());
+        }
+
+        // Introspection URL may or may not be available in the configuration. It is available in RFC8414 , but not in the OIDC discovery specification.
+        // Hence some servers may not add it to their well-known responses
+        if (rep.getIntrospectionEndpoint() != null) {
+            config.setTokenIntrospectionUrl(rep.getIntrospectionEndpoint());
         }
         return config.getConfig();
     }

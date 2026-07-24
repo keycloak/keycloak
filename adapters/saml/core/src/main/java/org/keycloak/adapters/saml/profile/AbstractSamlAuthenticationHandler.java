@@ -17,12 +17,11 @@
 
 package org.keycloak.adapters.saml.profile;
 
-import static org.keycloak.adapters.saml.SamlPrincipal.DEFAULT_ROLE_ATTRIBUTE_NAME;
-
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -30,8 +29,7 @@ import java.util.Objects;
 import java.util.Set;
 import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.datatype.XMLGregorianCalendar;
-import javax.xml.namespace.QName;
-import org.jboss.logging.Logger;
+
 import org.keycloak.adapters.saml.AbstractInitiateLogin;
 import org.keycloak.adapters.saml.AdapterConstants;
 import org.keycloak.adapters.saml.OnSessionCreated;
@@ -46,7 +44,6 @@ import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.dom.saml.v2.SAML2Object;
@@ -56,6 +53,8 @@ import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.StatementAbstractType;
+import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationDataType;
+import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
@@ -70,24 +69,28 @@ import org.keycloak.saml.SAML2AuthnRequestBuilder;
 import org.keycloak.saml.SAMLRequestParser;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
+import org.keycloak.saml.processing.api.util.DeflateUtil;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.saml.processing.core.util.RedirectBindingSignatureUtil;
-import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
 import org.keycloak.saml.validators.ConditionsValidator;
 import org.keycloak.saml.validators.DestinationValidator;
+import org.keycloak.saml.validators.SubjectConfirmationDataValidator;
+
+import org.jboss.logging.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import static org.keycloak.adapters.saml.SamlPrincipal.DEFAULT_ROLE_ATTRIBUTE_NAME;
 
 /**
  *
@@ -95,6 +98,8 @@ import org.w3c.dom.NodeList;
  */
 public abstract class AbstractSamlAuthenticationHandler implements SamlAuthenticationHandler {
 
+    public static final String MAX_INFLAFING_SIZE_PROP = "org.keycloak.adapters.saml.maxInflatingSize";
+    private static final long MAX_INFLAFING_SIZE = Long.getLong(MAX_INFLAFING_SIZE_PROP, DeflateUtil.DEFAULT_MAX_INFLATING_SIZE);
     protected static Logger log = Logger.getLogger(WebBrowserSsoAuthenticationHandler.class);
 
     protected final HttpFacade facade;
@@ -172,7 +177,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
             if (index > -1) {
                 requestUri = requestUri.substring(0, index);
             }
-            holder = SAMLRequestParser.parseRequestRedirectBinding(samlRequest);
+            holder = SAMLRequestParser.parseRequestRedirectBinding(samlRequest, MAX_INFLAFING_SIZE);
         } else {
             postBinding = true;
             holder = SAMLRequestParser.parseRequestPostBinding(samlRequest);
@@ -369,20 +374,31 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
         } else if (!isSuccessfulSamlResponse(responseType) || responseType.getAssertions() == null || responseType.getAssertions().isEmpty()) {
             return failed(createAuthChallenge403(responseType));
         }
+
+        Element assertionElement = null;
+        boolean isAssertionEncrypted = false;
         try {
-            assertion = AssertionUtil.getAssertion(responseHolder, responseType, deployment.getDecryptionKey());
+            isAssertionEncrypted = AssertionUtil.isAssertionEncrypted(responseType);
+            assertionElement = isAssertionEncrypted
+                    ? AssertionUtil.decryptAssertion(responseType, deployment.getDecryptionKey())
+                    : AssertionUtil.getAssertionElement(responseHolder);
+            assertion = responseType.getAssertions().get(0).getAssertion();
             ConditionsValidator.Builder cvb = new ConditionsValidator.Builder(assertion.getID(), assertion.getConditions(), destinationValidator);
+            SubjectConfirmationDataValidator.Builder scdvb = new SubjectConfirmationDataValidator.Builder(assertion.getID(), getSubjectConfirmationData(assertion), destinationValidator)
+                    .clockSkewInMillis(deployment.getIDP().getAllowedClockSkew());
             try {
                 cvb.clockSkewInMillis(deployment.getIDP().getAllowedClockSkew());
                 cvb.addAllowedAudience(URI.create(deployment.getEntityID()));
                 if (responseType.getDestination() != null) {
                   // getDestination has been validated to match request URL already so it matches SAML endpoint
                   cvb.addAllowedAudience(URI.create(responseType.getDestination()));
+                  scdvb.allowedRecipient(responseType.getDestination());
                 }
+
             } catch (IllegalArgumentException ex) {
                 // warning has been already emitted in DeploymentBuilder
             }
-            if (! cvb.build().isValid()) {
+            if (!cvb.build().isValid() || !scdvb.build().isValid()) {
                 // initiate the login but do not save the request cos it's /saml
                 return initiateLogin(false);
             }
@@ -391,10 +407,11 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
             return failed(CHALLENGE_EXTRACTION_FAILURE);
         }
 
-        Element assertionElement = null;
-        if (deployment.getIDP().getSingleSignOnService().validateAssertionSignature()) {
+        if (deployment.getIDP().getSingleSignOnService().validateAssertionSignature()
+                || (deployment.getIDP().getSingleSignOnService().validateResponseSignature()
+                && postBinding && isAssertionEncrypted
+                && !AssertionUtil.isSignedElement(responseHolder.getSamlDocument().getDocumentElement()))) {
             try {
-                assertionElement = getAssertionFromResponse(responseHolder);
                 if (!AssertionUtil.isSignatureValid(assertionElement, deployment.getIDP().getSignatureValidationKeyLocator())) {
                     log.error("Failed to verify saml assertion signature");
                     return failed(CHALLENGE_INVALID_SIGNATURE);
@@ -480,10 +497,6 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
 
         URI nameFormat = subjectNameID == null ? null : subjectNameID.getFormat();
         String nameFormatString = nameFormat == null ? JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get() : nameFormat.toString();
-        if (deployment.isKeepDOMAssertion() && assertionElement == null) {
-            // obtain the assertion from the response to add the DOM document to the principal
-            assertionElement = getAssertionFromResponseNoException(responseHolder);
-        }
         final SamlPrincipal principal = new SamlPrincipal(assertion,
                 deployment.isKeepDOMAssertion()? getAssertionDocumentFromElement(assertionElement) : null,
                 principalName, principalName, nameFormatString, attributes, friendlyAttributes);
@@ -521,6 +534,19 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
         return failed(null);
     }
 
+    private SubjectConfirmationDataType getSubjectConfirmationData(AssertionType assertion) {
+        if (assertion != null
+                && assertion.getSubject() != null
+                && assertion.getSubject().getConfirmation() != null) {
+            return assertion.getSubject().getConfirmation().stream()
+                    .filter(c -> JBossSAMLURIConstants.SUBJECT_CONFIRMATION_BEARER.get().equals(c.getMethod()))
+                    .findFirst()
+                    .map(SubjectConfirmationType::getSubjectConfirmationData)
+                    .orElse(null);
+        }
+        return null;
+    }
+
     private boolean isSuccessfulSamlResponse(ResponseType responseType) {
         return responseType != null
           && responseType.getStatus() != null
@@ -542,28 +568,6 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
           && status.getStatusCode().getStatusCode() != null
           && status.getStatusCode().getStatusCode().getValue() != null
           && Objects.equals(status.getStatusCode().getStatusCode().getValue().toString(), JBossSAMLURIConstants.STATUS_AUTHNFAILED.get());
-    }
-
-    private Element getAssertionFromResponse(final SAMLDocumentHolder responseHolder) throws ConfigurationException, ProcessingException {
-        Element encryptedAssertion = DocumentUtil.getElement(responseHolder.getSamlDocument(), new QName(JBossSAMLConstants.ENCRYPTED_ASSERTION.get()));
-        if (encryptedAssertion != null) {
-            // encrypted assertion.
-            // We'll need to decrypt it first.
-            Document encryptedAssertionDocument = DocumentUtil.createDocument();
-            encryptedAssertionDocument.appendChild(encryptedAssertionDocument.importNode(encryptedAssertion, true));
-
-            return XMLEncryptionUtil.decryptElementInDocument(encryptedAssertionDocument, data -> Collections.singletonList(deployment.getDecryptionKey()));
-        }
-        return DocumentUtil.getElement(responseHolder.getSamlDocument(), new QName(JBossSAMLConstants.ASSERTION.get()));
-    }
-
-    private Element getAssertionFromResponseNoException(final SAMLDocumentHolder responseHolder) {
-        try {
-            return getAssertionFromResponse(responseHolder);
-        } catch (ConfigurationException|ProcessingException e) {
-            log.warn("Cannot obtain DOM assertion element", e);
-            return null;
-        }
     }
 
     private Document getAssertionDocumentFromElement(final Element assertionElement) {
@@ -612,7 +616,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
     }
 
     protected SAMLDocumentHolder extractRedirectBindingResponse(String response) {
-        return SAMLRequestParser.parseRequestRedirectBinding(response);
+        return SAMLRequestParser.parseRequestRedirectBinding(response, MAX_INFLAFING_SIZE);
     }
 
 
@@ -689,7 +693,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
 
         try {
             //byte[] decodedSignature = RedirectBindingUtil.urlBase64Decode(signature);
-            byte[] decodedSignature = Base64.decode(signature);
+            byte[] decodedSignature = Base64.getMimeDecoder().decode(signature);
             byte[] rawQueryBytes = rawQuery.getBytes(StandardCharsets.UTF_8);
 
             SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.getFromXmlMethod(decodedAlgorithm);

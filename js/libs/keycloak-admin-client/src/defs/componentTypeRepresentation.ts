@@ -7,5 +7,6 @@ export default interface ComponentTypeRepresentation {
   id: string;
   helpText: string;
   properties: ConfigPropertyRepresentation[];
+  clientProperties: ConfigPropertyRepresentation[];
   metadata: { [index: string]: any };
 }

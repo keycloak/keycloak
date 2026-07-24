@@ -1,0 +1,22 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Deploying AWS Aurora in multiple availability zones"
+summary="Deploy an AWS Aurora as the database building block in a single-cluster deployment."
+tileVisible="false" >
+
+This topic describes how to deploy an Aurora regional deployment of a PostgreSQL instance across multiple availability zones to tolerate one or more availability zone failures in a given AWS region.
+
+This deployment is intended to be used with the setup described in the <@links.ha id="single-cluster-concepts"/> {section}.
+Use this deployment with the other building blocks outlined in the <@links.ha id="single-cluster-building-blocks"/> {section}.
+
+include::../partials/blueprint-disclaimer.adoc[]
+
+<#include "/high-availability/partials/aurora/aurora-single-site.adoc" />
+
+== Next steps
+
+After successful deployment of the Aurora database continue with <@links.ha id="single-cluster-deploy-keycloak" />
+
+</@tmpl.guide>

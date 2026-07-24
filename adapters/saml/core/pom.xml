@@ -28,7 +28,7 @@
 
     <artifactId>keycloak-saml-adapter-core</artifactId>
     <name>Keycloak SAML Client Adapter Core</name>
-    <description/>
+    <description>Keycloak SAML Client Adapter Core</description>
 
     <properties>
         <timestamp>${maven.build.timestamp}</timestamp>

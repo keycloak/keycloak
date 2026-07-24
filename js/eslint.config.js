@@ -14,12 +14,15 @@ const compat = new FlatCompat({
   baseDirectory: import.meta.dirname,
 });
 
+// eslint-disable-next-line @typescript-eslint/no-deprecated -- defineConfig() not yet available in this version
 export default tseslint.config(
   {
     ignores: [
       "**/dist/",
       "**/lib/",
       "**/target/",
+      "**/.wireit/",
+      "**/src/generated/doc-examples/",
       "./apps/keycloak-server/server/",
     ],
   },
@@ -66,7 +69,6 @@ export default tseslint.config(
       "@typescript-eslint/no-dynamic-delete": "off",
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-extraneous-class": "off",
-      "@typescript-eslint/no-floating-promises": "off",
       "@typescript-eslint/no-inferrable-types": "off",
       "@typescript-eslint/no-invalid-void-type": "off",
       "@typescript-eslint/no-misused-promises": "off",
@@ -74,7 +76,7 @@ export default tseslint.config(
       "@typescript-eslint/no-non-null-assertion": "off",
       "@typescript-eslint/no-redundant-type-constituents": "off",
       "@typescript-eslint/no-unnecessary-boolean-literal-compare": "off",
-      "@typescript-eslint/no-unnecessary-condition": "off",
+      "@typescript-eslint/no-unnecessary-condition": "error",
       "@typescript-eslint/no-unnecessary-type-arguments": "off",
       "@typescript-eslint/no-unnecessary-type-assertion": "off",
       "@typescript-eslint/no-unnecessary-type-parameters": "off",

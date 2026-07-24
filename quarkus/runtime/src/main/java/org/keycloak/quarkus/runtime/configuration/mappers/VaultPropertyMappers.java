@@ -1,16 +1,16 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import java.util.List;
+
 import org.keycloak.config.VaultOptions;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-final class VaultPropertyMappers {
+final class VaultPropertyMappers implements PropertyMapperGrouping {
 
-    private VaultPropertyMappers() {
-    }
-
-    public static PropertyMapper<?>[] getVaultPropertyMappers() {
-        return new PropertyMapper[] {
+    @Override
+    public List<PropertyMapper<?>> getPropertyMappers() {
+        return List.of(
                 fromOption(VaultOptions.VAULT)
                         .paramLabel("provider")
                         .build(),
@@ -30,7 +30,7 @@ final class VaultPropertyMappers {
                         .to("kc.spi-vault--keystore--type")
                         .paramLabel("type")
                         .build()
-        };
+        );
     }
 
 }

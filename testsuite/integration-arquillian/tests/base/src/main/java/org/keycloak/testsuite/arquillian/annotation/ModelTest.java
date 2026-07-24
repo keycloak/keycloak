@@ -31,7 +31,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  */
 @Documented
 @Retention(RUNTIME)
-@Target({ElementType.METHOD}) // TODO: Maybe ElementClass.TYPE too? That way it will be possible to add the annotation on the the test class and not need to add on all the test methods inside the class
+@Target({ElementType.METHOD}) // TODO: Maybe ElementClass.TYPE too? That way it will be possible to add the annotation on the test class and not need to add on all the test methods inside the class
 public @interface ModelTest {
 
     /**

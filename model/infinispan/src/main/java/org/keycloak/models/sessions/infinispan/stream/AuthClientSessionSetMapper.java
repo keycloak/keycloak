@@ -21,12 +21,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
-import org.infinispan.CacheStream;
-import org.infinispan.protostream.annotations.ProtoFactory;
-import org.infinispan.protostream.annotations.ProtoTypeId;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+
+import org.infinispan.CacheStream;
+import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoTypeId;
 
 /**
  * A {@link Function} to be used by {@link CacheStream} to extract the client's ID from the client sessions associated
@@ -49,6 +50,6 @@ public class AuthClientSessionSetMapper implements Function<Map.Entry<String, Se
 
     @Override
     public Set<String> apply(Map.Entry<String, SessionEntityWrapper<UserSessionEntity>> entry) {
-        return entry.getValue().getEntity().getAuthenticatedClientSessions().keySet();
+        return entry.getValue().getEntity().getClientSessions();
     }
 }

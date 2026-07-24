@@ -28,6 +28,7 @@ public class CertificateRepresentation {
     protected String publicKey;
     protected String certificate;
     protected String kid;
+    protected String jwks;
 
     public String getPrivateKey() {
         return privateKey;
@@ -59,5 +60,13 @@ public class CertificateRepresentation {
 
     public void setKid(String kid) {
         this.kid = kid;
+    }
+
+    public String getJwks() {
+        return jwks;
+    }
+
+    public void setJwks(String jwks) {
+        this.jwks = jwks;
     }
 }

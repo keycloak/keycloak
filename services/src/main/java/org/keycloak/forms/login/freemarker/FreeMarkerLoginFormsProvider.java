@@ -16,12 +16,26 @@
  */
 package org.keycloak.forms.login.freemarker;
 
+import java.io.IOException;
+import java.net.URI;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.function.Function;
+
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
-import org.jboss.logging.Logger;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -81,29 +95,21 @@ import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
+import org.keycloak.theme.ThemeResources;
+import org.keycloak.theme.ThemeResourcesParser;
 import org.keycloak.theme.beans.AdvancedMessageFormatterMethod;
 import org.keycloak.theme.beans.LocaleBean;
 import org.keycloak.theme.beans.MessageBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.theme.beans.MessagesPerFieldBean;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
+import org.keycloak.tracing.TracingProvider;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.MediaTypeMatcher;
 
-import java.io.IOException;
-import java.net.URI;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.function.Function;
+import io.opentelemetry.api.trace.SpanContext;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PASSWORD;
 import static org.keycloak.organization.utils.Organizations.resolveOrganization;
@@ -139,6 +145,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     protected UriInfo uriInfo;
 
     protected FreeMarkerProvider freeMarker;
+    protected TracingProvider tracing;
 
     protected UserModel user;
 
@@ -150,6 +157,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     public FreeMarkerLoginFormsProvider(KeycloakSession session) {
         this.session = session;
         this.freeMarker = session.getProvider(FreeMarkerProvider.class);
+        this.tracing = session.getProvider(TracingProvider.class);
         this.attributes.put("scripts", new LinkedList<>());
         this.realm = session.getContext().getRealm();
         this.client = session.getContext().getClient();
@@ -331,9 +339,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 break;
             case FRONTCHANNEL_LOGOUT:
                 attributes.put("logout", new FrontChannelLogoutBean(session));
+                attributes.put("title", getMessage("frontchannel-logout.title"));
                 break;
             case LOGOUT_CONFIRM:
                 attributes.put("logoutConfirm", new LogoutConfirmBean(accessCode, authenticationSession));
+                attributes.put("title", getMessage("logoutConfirmTitle"));
                 break;
         }
 
@@ -432,10 +442,12 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         try {
             Properties properties = theme.getProperties();
             attributes.put("properties", properties);
+            attributes.put("themeResources", ThemeResourcesParser.parse(properties));
             attributes.put("darkMode", "true".equals(properties.getProperty("darkMode"))
                     && realm.getAttribute("darkMode", true));
         } catch (IOException e) {
             logger.warn("Failed to load properties", e);
+            attributes.put("themeResources", ThemeResources.empty());
         }
 
         return messagesBundle;
@@ -468,8 +480,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
-    public String getMessage(String message) {
-        return formatMessage(new FormMessage(null, message));
+    public String getMessage(String message, Object... parameters) {
+        return formatMessage(new FormMessage(null, message, parameters));
     }
 
     /**
@@ -493,7 +505,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
 
         if (realm != null) {
-            attributes.put("realm", new RealmBean(realm));
+            RealmBean realmBean = new RealmBean(realm);
+            attributes.put("realm", realmBean);
+            attributes.put("title", formatMessage(new FormMessage(null, "loginTitle", realmBean.getDisplayName()), messagesBundle, locale));
 
             IdentityProviderBean idpBean = new IdentityProviderBean(session, realm, baseUriWithCodeAndClientId, context);
 
@@ -505,6 +519,12 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
             attributes.put("requiredActionUrl", new RequiredActionUrlFormatterMethod(realm, baseUri));
             attributes.put("auth", new AuthenticationContextBean(context, page));
+            if (authenticationSession != null && Boolean.parseBoolean(authenticationSession.getAuthNote(OrganizationModel.ORGANIZATION_SWITCHABLE_ATTRIBUTE))) {
+                attributes.put("switchOrganizationEnabled", true);
+            }
+            if (authenticationSession != null && Boolean.parseBoolean(authenticationSession.getAuthNote(AbstractUsernameFormAuthenticator.USERNAME_HIDDEN))) {
+                attributes.put(LoginFormsProvider.USERNAME_HIDDEN, Boolean.TRUE.toString());
+            }
             setAttribute(Constants.EXECUTION, execution);
 
             if (realm.isInternationalizationEnabled()) {
@@ -523,6 +543,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                         case LOGOUT_CONFIRM:
                             b = UriBuilder.fromUri(Urls.logoutConfirm(baseUri, realm.getName()));
                             break;
+                        case LOGIN_PAGE_EXPIRED:
+                            b = UriBuilder.fromUri(baseUri).path(uriInfo.getPath());
+                            break;
                         case INFO:
                         case ERROR:
                             if (isDetachedAuthenticationSession()) {
@@ -540,12 +563,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                                 break;
                             }
                         default:
-                            b = UriBuilder.fromUri(baseUri).path(uriInfo.getPath());
+                            b = getDefaultPageUriForLocale(baseUri);
                             break;
                     }
                 } else {
-                    b = UriBuilder.fromUri(baseUri)
-                            .path(uriInfo.getPath());
+                    b = getDefaultPageUriForLocale(baseUri);
                 }
 
                 if (execution != null) {
@@ -589,6 +611,17 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
 
         attributes.put("lang", lang);
+
+        SpanContext spanContext = tracing.getCurrentSpan().getSpanContext();
+        if (spanContext.isValid()) {
+            attributes.put("traceId", spanContext.getTraceId());
+        }
+    }
+
+    private UriBuilder getDefaultPageUriForLocale(URI baseUri) {
+        // Using "actionUri" by default in the language combobox when available
+        return actionUri != null ? UriBuilder.fromUri(actionUri.getPath()).replaceQuery(baseUri.getQuery()) :
+                UriBuilder.fromUri(baseUri).path(uriInfo.getPath());
     }
 
     /**

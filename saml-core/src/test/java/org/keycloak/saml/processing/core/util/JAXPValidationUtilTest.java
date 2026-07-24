@@ -18,10 +18,12 @@ package org.keycloak.saml.processing.core.util;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.xml.sax.SAXException;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**

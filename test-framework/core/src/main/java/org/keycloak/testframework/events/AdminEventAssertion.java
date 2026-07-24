@@ -1,8 +1,12 @@
 package org.keycloak.testframework.events;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.Assertions;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -11,12 +15,9 @@ import org.keycloak.representations.idm.AuthDetailsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
 
 public class AdminEventAssertion {
 
@@ -30,6 +31,12 @@ public class AdminEventAssertion {
         this.expectSuccess = expectSuccess;
     }
 
+    /**
+     * Assert an expected successfull event
+     *
+     * @param event the event to assert
+     * @return
+     */
     public static AdminEventAssertion assertSuccess(AdminEventRepresentation event) {
         Assertions.assertFalse(event.getOperationType().endsWith("_ERROR"), "Expected successful event");
         return new AdminEventAssertion(event, true)
@@ -37,6 +44,12 @@ public class AdminEventAssertion {
                 .assertValidOperationType();
     }
 
+    /**
+     * Assert an expected error event
+     *
+     * @param event the event to assert
+     * @return
+     */
     public static AdminEventAssertion assertError(AdminEventRepresentation event) {
         Assertions.assertTrue(event.getOperationType().endsWith("_ERROR"), "Expected error event");
         return new AdminEventAssertion(event, false)
@@ -44,6 +57,17 @@ public class AdminEventAssertion {
                 .assertValidOperationType();
     }
 
+    /**
+     * Assert an expected successfull event, with the additional expected parameters. This method should be avoided,
+     * use method chaining instead.
+     *
+     * @param event
+     * @param operationType
+     * @param resourcePath
+     * @param representation
+     * @param resourceType
+     * @return
+     */
     public static AdminEventAssertion assertEvent(AdminEventRepresentation event, OperationType operationType, String resourcePath, Object representation, ResourceType resourceType) {
         return assertSuccess(event)
                 .operationType(operationType)
@@ -52,6 +76,16 @@ public class AdminEventAssertion {
                 .resourceType(resourceType);
     }
 
+    /**
+     * Assert an expected successfull event, with the additional expected parameters. This method should be avoided,
+     * use method chaining instead.
+     *
+     * @param event
+     * @param operationType
+     * @param resourcePath
+     * @param resourceType
+     * @return
+     */
     public static AdminEventAssertion assertEvent(AdminEventRepresentation event, OperationType operationType, String resourcePath, ResourceType resourceType) {
         return assertSuccess(event)
                 .operationType(operationType)
@@ -59,11 +93,24 @@ public class AdminEventAssertion {
                 .resourceType(resourceType);
     }
 
+    /**
+     * Assert the operation type of the event
+     * @param operationType the expected operation type
+     * @return
+     */
     public AdminEventAssertion operationType(OperationType operationType) {
         Assertions.assertEquals(operationType.name(), getOperationType());
         return this;
     }
 
+    /**
+     * Assert the authentication details for the event
+     *
+     * @param expectedRealmId the expected authentication realmId
+     * @param expectedClientId the expected authentication clientId
+     * @param expectedUserId the expected authentication userId
+     * @return
+     */
     public AdminEventAssertion auth(String expectedRealmId, String expectedClientId, String expectedUserId) {
         AuthDetailsRepresentation authDetails = event.getAuthDetails();
         Assertions.assertEquals(expectedRealmId, authDetails.getRealmId());
@@ -72,16 +119,34 @@ public class AdminEventAssertion {
         return this;
     }
 
+    /**
+     * Assert the type of resource for the event
+     *
+     * @param expectedResourceType the expected resource type
+     * @return
+     */
     public AdminEventAssertion resourceType(ResourceType expectedResourceType) {
         Assertions.assertEquals(expectedResourceType.name(), event.getResourceType());
         return this;
     }
 
+    /**
+     * Assert the resource path for the event
+     *
+     * @param expectedResourcePath the expected resource path
+     * @return
+     */
     public AdminEventAssertion resourcePath(String... expectedResourcePath) {
         Assertions.assertEquals(String.join("/", expectedResourcePath), event.getResourcePath());
         return this;
     }
 
+    /**
+     * Assert the representation attached to the event
+     *
+     * @param expectedRep the expected representation
+     * @return
+     */
     public AdminEventAssertion representation(Object expectedRep) {
         String actualRepresentation = event.getRepresentation();
         if (expectedRep == null) {

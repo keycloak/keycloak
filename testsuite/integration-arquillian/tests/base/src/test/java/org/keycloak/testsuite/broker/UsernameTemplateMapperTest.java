@@ -1,9 +1,5 @@
 package org.keycloak.testsuite.broker;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import org.junit.Before;
-import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
@@ -12,8 +8,14 @@ import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
-import static org.junit.Assert.assertEquals;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import org.junit.Before;
+import org.junit.Test;
+
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class UsernameTemplateMapperTest extends AbstractBaseBrokerTest {
 
@@ -82,9 +84,9 @@ public class UsernameTemplateMapperTest extends AbstractBaseBrokerTest {
 
         UserRepresentation user = adminClient.realm(bc.consumerRealmName()).users().search(bc.getUserEmail(), 0, 1).get(0);
 
-        assertEquals("Should render idpSub as mappedSub attribute", idpUserId, user.getAttributes().get("mappedSub").get(0));
+        assertEquals(idpUserId, user.getAttributes().get("mappedSub").get(0), "Should render idpSub as mappedSub attribute");
 
         String username = user.getUsername();
-        assertEquals("Should render alias:sub as Username", bc.getIDPAlias() + "_" + idpUserId, username);
+        assertEquals(bc.getIDPAlias() + "_" + idpUserId, username, "Should render alias:sub as Username");
     }
 }

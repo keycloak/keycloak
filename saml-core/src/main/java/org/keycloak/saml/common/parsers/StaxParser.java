@@ -16,9 +16,9 @@
  */
 package org.keycloak.saml.common.parsers;
 
-import org.keycloak.saml.common.exceptions.ParsingException;
-
 import javax.xml.stream.XMLEventReader;
+
+import org.keycloak.saml.common.exceptions.ParsingException;
 
 /**
  * Interface to indicate the parser.

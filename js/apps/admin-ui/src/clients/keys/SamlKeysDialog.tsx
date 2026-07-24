@@ -32,6 +32,7 @@ import type { KeyTypes } from "./SamlKeys";
 type SamlKeysDialogProps = {
   id: string;
   attr: KeyTypes;
+  localeKey: string;
   onClose: () => void;
   onCancel: () => void;
 };
@@ -68,6 +69,7 @@ export const submitForm = async (
 export const SamlKeysDialog = ({
   id,
   attr,
+  localeKey,
   onClose,
   onCancel,
 }: SamlKeysDialogProps) => {
@@ -84,8 +86,8 @@ export const SamlKeysDialog = ({
 
   const { addAlert, addError } = useAlerts();
 
-  const submit = (form: SamlKeysDialogForm) => {
-    submitForm(adminClient, form, id, attr, (error) => {
+  const submit = async (form: SamlKeysDialogForm) => {
+    await submitForm(adminClient, form, id, attr, (error) => {
       if (error) {
         addError("importError", error);
       } else {
@@ -120,8 +122,16 @@ export const SamlKeysDialog = ({
       aria-label={t("enableClientSignatureRequiredModal")}
       header={
         <TextContent>
-          <Title headingLevel="h1">{t("enableClientSignatureRequired")}</Title>
-          <Text>{t("enableClientSignatureRequiredExplain")}</Text>
+          <Title headingLevel="h1">
+            {t("enableClientSignatureRequired", {
+              key: t(localeKey),
+            })}
+          </Title>
+          <Text>
+            {t("enableClientSignatureRequiredExplain", {
+              key: t(localeKey),
+            })}
+          </Text>
         </TextContent>
       }
       isOpen={true}
@@ -133,9 +143,9 @@ export const SamlKeysDialog = ({
           data-testid="confirm"
           variant="primary"
           isDisabled={!isValid && !keys}
-          onClick={() => {
+          onClick={async () => {
             if (type) {
-              handleSubmit(submit)();
+              await handleSubmit(submit)();
             }
             onClose();
           }}
@@ -187,7 +197,7 @@ export const SamlKeysDialog = ({
               fieldId="certificate"
               labelIcon={
                 <HelpItem
-                  helpText={t("certificateHelp")}
+                  helpText={t(`saml${localeKey}CertificateHelp`)}
                   fieldLabelId="certificate"
                 />
               }

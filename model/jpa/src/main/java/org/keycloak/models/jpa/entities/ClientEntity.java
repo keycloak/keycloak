@@ -17,7 +17,12 @@
 
 package org.keycloak.models.jpa.entities;
 
-import org.hibernate.annotations.Nationalized;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
 
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
@@ -32,14 +37,14 @@ import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Set;
+
+import org.keycloak.common.util.Time;
+
+import org.hibernate.annotations.Nationalized;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -93,6 +98,12 @@ public class ClientEntity {
 
     @Column(name = "REALM_ID")
     protected String realmId;
+
+    @Column(name = "CREATED_TIMESTAMP")
+    private Long createdTimestamp;
+
+    @Column(name = "LAST_MODIFIED_TIMESTAMP")
+    private Long lastModifiedTimestamp;
 
     @ElementCollection
     @Column(name="VALUE")
@@ -166,6 +177,30 @@ public class ClientEntity {
 
     public void setRealmId(String realmId) {
         this.realmId = realmId;
+    }
+
+    public Long getCreatedTimestamp() {
+        return createdTimestamp;
+    }
+
+    public Long getLastModifiedTimestamp() {
+        return lastModifiedTimestamp;
+    }
+
+    @PrePersist
+    public void updateTimestampsOnCreate() {
+        long now = Time.currentTimeMillis();
+        if (createdTimestamp == null) {
+            createdTimestamp = now;
+        }
+        if (lastModifiedTimestamp == null) {
+            lastModifiedTimestamp = createdTimestamp;
+        }
+    }
+
+    @PreUpdate
+    public void updateLastModifiedTimestamp() {
+        lastModifiedTimestamp = Time.currentTimeMillis();
     }
 
     public String getId() {

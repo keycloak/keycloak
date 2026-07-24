@@ -32,8 +32,11 @@ public interface PermissionTicket {
         REQUESTER("requester"),
         REQUESTER_IS_NULL("requester_is_null"),
         POLICY_IS_NOT_NULL("policy_is_not_null"),
-        POLICY_ID("policy.id")
-        ;
+        POLICY_ID("policy.id"),
+        /** a special filter option to ignore owner and requester checks in order to return any ticket, including those
+         * that the user is not the owner or requester
+         */
+        IS_ADMIN("is_admin");
 
         private final String name;
 

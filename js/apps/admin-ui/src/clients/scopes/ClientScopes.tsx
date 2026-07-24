@@ -30,6 +30,8 @@ import {
   ClientScope,
   addClientScope,
   changeClientScope,
+  ParameterizedScopeLabel,
+  isParameterizedScope,
   removeClientScope,
 } from "../../components/client-scope/ClientScopeTypes";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
@@ -41,6 +43,8 @@ import { translationFormatter } from "../../utils/translationFormatter";
 import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
 import { toDedicatedScope } from "../routes/DedicatedScopeDetails";
 import { AddScopeDialog } from "./AddScopeDialog";
+import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
+import { PROTOCOL_OIDC, PROTOCOL_OID4VC } from "../constants";
 
 import "./client-scopes.css";
 
@@ -111,6 +115,7 @@ export const ClientScopes = ({
   fineGrainedAccess,
 }: ClientScopesProps) => {
   const { adminClient } = useAdminClient();
+  const isFeatureEnabled = useIsFeatureEnabled();
 
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
@@ -155,6 +160,7 @@ export const ClientScopes = ({
         ...c,
         type: ClientScope.optional,
         description: scope?.description,
+        attributes: scope?.attributes,
       };
       return row;
     });
@@ -165,6 +171,7 @@ export const ClientScopes = ({
         ...c,
         type: ClientScope.default,
         description: scope?.description,
+        attributes: scope?.attributes,
       };
       return row;
     });
@@ -172,10 +179,22 @@ export const ClientScopes = ({
     let rows = [...optional, ...defaultScopes];
     const names = rows.map((row) => row.name);
 
+    const allowedProtocols = (() => {
+      if (protocol === PROTOCOL_OIDC) {
+        return isFeatureEnabled(Feature.OpenId4VCI)
+          ? [PROTOCOL_OIDC, PROTOCOL_OID4VC]
+          : [PROTOCOL_OIDC];
+      }
+      return [protocol];
+    })();
+
     setRest(
       clientScopes
         .filter((scope) => !names.includes(scope.name))
-        .filter((scope) => scope.protocol === protocol),
+        .filter(
+          (scope) =>
+            scope.protocol && allowedProtocols.includes(scope.protocol),
+        ),
     );
 
     rows = localeSort(rows, mapByKey("name"));
@@ -253,7 +272,7 @@ export const ClientScopes = ({
       <KeycloakDataTable
         key={key}
         loader={loader}
-        ariaLabelKey={`clientScopeList-${key}`}
+        ariaLabelKey="clientScopeList"
         searchPlaceholderKey={
           searchType === "name" ? "searchByName" : undefined
         }
@@ -357,7 +376,12 @@ export const ClientScopes = ({
                   </Link>
                 );
               }
-              return row.name!;
+              return (
+                <>
+                  {row.name}{" "}
+                  {isParameterizedScope(row) && <ParameterizedScopeLabel />}
+                </>
+              );
             },
           },
           {

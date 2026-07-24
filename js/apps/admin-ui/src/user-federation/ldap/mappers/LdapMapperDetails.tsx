@@ -33,7 +33,11 @@ import {
 import { FormAccess } from "../../../components/form/FormAccess";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";
 import { useRealm } from "../../../context/realm-context/RealmContext";
-import { convertFormValuesToObject, convertToFormValues } from "../../../util";
+import {
+  beerify,
+  convertFormValuesToObject,
+  convertToFormValues,
+} from "../../../util";
 import { useParams } from "../../../utils/useParams";
 import { toUserFederationLdap } from "../../routes/UserFederationLdap";
 import { UserFederationLdapMapperParams } from "../../routes/UserFederationLdapMapper";
@@ -165,6 +169,21 @@ export default function LdapMapperDetails() {
     name: "providerId",
   });
 
+  const config = useWatch({
+    control: form.control,
+    name: "config",
+  });
+
+  const mapper = components?.find((c) => c.id === mapperType);
+
+  const realmRolesValue = config?.[beerify("use.realm.roles.mapping")];
+  const isRealmMapping =
+    realmRolesValue === undefined || realmRolesValue === "true";
+  const visibleProperties =
+    mapperType === "role-ldap-mapper" && isRealmMapping
+      ? (mapper?.properties ?? []).filter((p) => p.name !== "client.id")
+      : (mapper?.properties ?? []);
+
   const selectItems = () =>
     (components || [])
       .filter((c) => c.id.includes(mapperTypeFilter))
@@ -179,7 +198,6 @@ export default function LdapMapperDetails() {
   }
 
   const isNew = mapperId === "new";
-  const mapper = components.find((c) => c.id === mapperType);
 
   return (
     <>
@@ -208,8 +226,8 @@ export default function LdapMapperDetails() {
                   ? [
                       <DropdownItem
                         key="ldapSync"
-                        onClick={() => {
-                          sync("keycloakToFed");
+                        onClick={async () => {
+                          await sync("keycloakToFed");
                         }}
                       >
                         {t(mapper.metadata.keycloakToFedSyncMessage)}
@@ -311,7 +329,7 @@ export default function LdapMapperDetails() {
             )}
 
             {!!mapperType && (
-              <DynamicComponents properties={mapper?.properties!} />
+              <DynamicComponents properties={visibleProperties} />
             )}
             <ActionGroup>
               <Button

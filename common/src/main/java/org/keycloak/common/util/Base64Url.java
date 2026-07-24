@@ -18,23 +18,24 @@
 package org.keycloak.common.util;
 
 
+import java.util.Base64;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class Base64Url {
+  
+    // Initialize only once, avoiding repeated creation by the factory method.
+    public static final Base64.Encoder BASE64_URL_ENCODER_WITHOUT_PADDING = Base64.getUrlEncoder().withoutPadding();
+    
     public static String encode(byte[] bytes) {
-        String s = Base64.encodeBytes(bytes);
-        return encodeBase64ToBase64Url(s);
+        return BASE64_URL_ENCODER_WITHOUT_PADDING.encodeToString(bytes);
     }
 
     public static byte[] decode(String s) {
-        s = encodeBase64UrlToBase64(s);
-        try {
-            return Base64.decode(s);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        // some places invoke this without a Base64 url encoding! ugh!
+        return Base64.getUrlDecoder().decode(encodeBase64ToBase64Url(s));
     }
 
 
@@ -54,6 +55,7 @@ public class Base64Url {
      * @param base64Url String in base64Url encoding
      * @return String in base64 encoding
      */
+    @Deprecated
     public static String encodeBase64UrlToBase64(String base64Url) {
         String s = base64Url.replace('-', '+'); // 62nd char of encoding
         s = s.replace('_', '/'); // 63rd char of encoding

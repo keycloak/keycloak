@@ -1,11 +1,12 @@
 package org.keycloak.testsuite.util.oauth;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.keycloak.util.TokenUtil;
-
 import java.io.IOException;
 
-public class UserInfoRequest extends AbstractHttpGetRequest<UserInfoResponse> {
+import org.keycloak.util.TokenUtil;
+
+import org.apache.http.client.methods.CloseableHttpResponse;
+
+public class UserInfoRequest extends AbstractHttpGetRequest<UserInfoRequest, UserInfoResponse> {
 
     private final String token;
 

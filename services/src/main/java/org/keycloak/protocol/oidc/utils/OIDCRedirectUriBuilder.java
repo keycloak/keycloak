@@ -17,6 +17,13 @@
 
 package org.keycloak.protocol.oidc.utils;
 
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
+
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Encode;
 import org.keycloak.common.util.HtmlUtils;
@@ -30,12 +37,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.services.Urls;
-
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -240,14 +241,14 @@ public abstract class OIDCRedirectUriBuilder {
         }
 
         private Response buildQueryResponse() {
-            uriBuilder.queryParam("response", session.tokens().encodeAndEncrypt(responseJWT));
+            uriBuilder.queryParam(OAuth2Constants.RESPONSE, session.tokens().encodeAndEncrypt(responseJWT));
             URI redirectUri = uriBuilder.build();
             Response.ResponseBuilder location = Response.status(302).location(redirectUri);
             return location.build();
         }
 
         private Response buildFragmentResponse() {
-            uriBuilder.encodedFragment("response=" + Encode.encodeQueryParamAsIs(session.tokens().encodeAndEncrypt(responseJWT)));
+            uriBuilder.encodedFragment(OAuth2Constants.RESPONSE + "=" + Encode.encodeQueryParamAsIs(session.tokens().encodeAndEncrypt(responseJWT)));
             URI redirectUri = uriBuilder.build();
             Response.ResponseBuilder location = Response.status(302).location(redirectUri);
             return location.build();
@@ -267,7 +268,9 @@ public abstract class OIDCRedirectUriBuilder {
                     .append(HtmlUtils.escapeAttribute(redirectUri.toString()))
                     .append("\">");
 
-            builder.append("  <INPUT TYPE=\"HIDDEN\" NAME=\"response\" VALUE=\"")
+            builder.append("  <INPUT TYPE=\"HIDDEN\" NAME=\"")
+                    .append(OAuth2Constants.RESPONSE)
+                    .append("\" VALUE=\"")
                     .append(HtmlUtils.escapeAttribute(session.tokens().encodeAndEncrypt(responseJWT)))
                     .append("\" />");
 

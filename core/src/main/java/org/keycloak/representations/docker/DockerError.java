@@ -1,9 +1,9 @@
 package org.keycloak.representations.docker;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
 import java.util.Objects;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * JSON Representation of a Docker Error in the following format:

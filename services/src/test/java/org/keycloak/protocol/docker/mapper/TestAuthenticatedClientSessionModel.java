@@ -1,12 +1,12 @@
 package org.keycloak.protocol.docker.mapper;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
-
-import java.util.HashMap;
-import java.util.Map;
 
 class TestAuthenticatedClientSessionModel implements AuthenticatedClientSessionModel {
 

@@ -17,11 +17,11 @@
 
 package org.keycloak.protocol.oidc.utils;
 
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

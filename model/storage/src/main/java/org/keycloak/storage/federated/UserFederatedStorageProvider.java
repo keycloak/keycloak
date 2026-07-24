@@ -17,6 +17,8 @@
 
 package org.keycloak.storage.federated;
 
+import java.util.stream.Stream;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -26,8 +28,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
-
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -41,7 +41,8 @@ public interface UserFederatedStorageProvider extends Provider,
         UserGroupMembershipFederatedStorage,
         UserRequiredActionsFederatedStorage,
         UserRoleMappingsFederatedStorage,
-        UserFederatedUserCredentialStore {
+        UserFederatedUserCredentialStore,
+        UserVerifiableCredentialFederatedStorage {
 
     /**
      * Obtains the ids of all federated users in the realm.

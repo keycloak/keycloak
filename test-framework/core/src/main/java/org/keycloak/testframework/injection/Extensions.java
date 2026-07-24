@@ -1,16 +1,20 @@
 package org.keycloak.testframework.injection;
 
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.keycloak.testframework.TestFrameworkExtension;
-import org.keycloak.testframework.config.Config;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.Set;
+
+import org.keycloak.testframework.TestFrameworkExecutor;
+import org.keycloak.testframework.TestFrameworkExtension;
+import org.keycloak.testframework.config.Config;
+
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 public class Extensions {
 
@@ -19,8 +23,22 @@ public class Extensions {
     private final List<Supplier<?, ?>> suppliers;
     private final List<Class<?>> alwaysEnabledValueTypes;
 
-    public Extensions() {
-        List<TestFrameworkExtension> extensions = loadExtensions();
+    private static Extensions INSTANCE;
+    private final List<TestFrameworkExtension> extensions;
+
+    public static Extensions getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new Extensions();
+        }
+        return INSTANCE;
+    }
+
+    public static void reset() {
+        INSTANCE = null;
+    }
+
+    private Extensions() {
+        extensions = loadExtensions();
         valueTypeAlias = loadValueTypeAlias(extensions);
         Config.registerValueTypeAlias(valueTypeAlias);
         logger = new RegistryLogger(valueTypeAlias);
@@ -38,6 +56,19 @@ public class Extensions {
 
     public List<Class<?>> getAlwaysEnabledValueTypes() {
         return alwaysEnabledValueTypes;
+    }
+
+    public List<TestFrameworkExecutor> getTestFrameworkExecutors() {
+        return extensions.stream()
+                .filter(e -> e instanceof TestFrameworkExecutor)
+                .map(e -> (TestFrameworkExecutor) e)
+                .toList();
+    }
+
+    public List<Class<?>> getMethodValueTypes(Method method) {
+        return getTestFrameworkExecutors()
+                .stream()
+                .flatMap(e -> e.getMethodValueTypes(method).stream()).toList();
     }
 
     @SuppressWarnings("unchecked")
@@ -71,7 +102,7 @@ public class Extensions {
             for (var supplier : extension.suppliers()) {
                 Class<?> valueType = supplier.getValueType();
                 String requestedSupplier = Config.getSelectedSupplier(valueType);
-                if (supplier.getAlias().equals(requestedSupplier) || (requestedSupplier == null && !loadedValueTypes.contains(valueType))) {
+                if (isSupplierIncluded(supplier) && (supplier.getAlias().equals(requestedSupplier) || (requestedSupplier == null && !loadedValueTypes.contains(valueType)))) {
                     configureSupplier(supplier);
                     suppliers.add(supplier);
                     loadedValueTypes.add(valueType);
@@ -84,6 +115,22 @@ public class Extensions {
         logger.logSuppliers(suppliers, skippedSuppliers);
 
         return suppliers;
+    }
+
+    private boolean isSupplierIncluded(Supplier<?, ?> supplier) {
+        String includedSuppliers = Config.getIncludedSuppliers(supplier.getValueType());
+        if (includedSuppliers != null) {
+            if (Arrays.stream(includedSuppliers.split(",")).noneMatch(s -> s.equals(supplier.getAlias()))) {
+                return false;
+            }
+        }
+
+        String excludedSuppliers = Config.getExcludedSuppliers(supplier.getValueType());
+        if (excludedSuppliers != null) {
+            return Arrays.stream(excludedSuppliers.split(",")).noneMatch(s -> s.equals(supplier.getAlias()));
+        }
+
+        return true;
     }
 
     private List<Class<?>> loadAlwaysEnabledValueTypes(List<TestFrameworkExtension> extensions) {

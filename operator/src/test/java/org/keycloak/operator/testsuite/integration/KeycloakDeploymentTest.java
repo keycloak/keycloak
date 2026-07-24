@@ -17,6 +17,35 @@
 
 package org.keycloak.operator.testsuite.integration;
 
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
+
+import jakarta.inject.Inject;
+
+import org.keycloak.operator.Config;
+import org.keycloak.operator.Constants;
+import org.keycloak.operator.controllers.KeycloakAdminSecretDependentResource;
+import org.keycloak.operator.controllers.KeycloakDistConfigurator;
+import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2beta1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.BootstrapAdminSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.FeatureSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
+import org.keycloak.operator.testsuite.unit.WatchedResourcesTest;
+import org.keycloak.operator.testsuite.utils.CRAssert;
+import org.keycloak.operator.testsuite.utils.K8sUtils;
+
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
@@ -31,52 +60,27 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecBuilder;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
-
+import org.assertj.core.api.Condition;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import org.keycloak.operator.Config;
-import org.keycloak.operator.Constants;
-import org.keycloak.operator.controllers.KeycloakAdminSecretDependentResource;
-import org.keycloak.operator.controllers.KeycloakDistConfigurator;
-import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.BootstrapAdminSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.ProbeSpec;
-import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
-import org.keycloak.operator.testsuite.unit.WatchedResourcesTest;
-import org.keycloak.operator.testsuite.utils.CRAssert;
-import org.keycloak.operator.testsuite.utils.K8sUtils;
-
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
-
-import jakarta.inject.Inject;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import static org.keycloak.operator.testsuite.utils.CRAssert.assertKeycloakStatusCondition;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.disableHttps;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.enableHttp;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.waitForKeycloakToBeReady;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisabledIfApiServerTest
 @Tag(BaseOperatorTest.SLOW)
@@ -111,6 +115,30 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         k8sclient.resource(kc).delete();
         Awaitility.await()
                 .untilAsserted(() -> assertThat(k8sclient.apps().statefulSets().inNamespace(namespace).withName(deploymentName).get()).isNull());
+
+        // check that the operator is not attempting to use telemetry
+        if (operatorDeployment == OperatorDeployment.remote) {
+            String log = k8sclient.apps().deployments().withName(BaseOperatorTest.KEYCLOAK_OPERATOR).getLog();
+            if (log != null) {
+                assertFalse(log.contains("opentelemetry"), "Should not mention opentelemetry " + log);
+            }
+        }
+    }
+
+    /**
+     * Currently, when using the JDBC_PING cache stack, we need at least 4 DB connecdtions to avoid dead lock.
+     * This value is documented as the minimal acceptable value.
+     *
+     * @see <a href="https://github.com/keycloak/keycloak/issues/46673">Issue #46673</a>
+     */
+    @Test
+    public void testDocumentedMinimalPoolMaxSizeWorks() {
+        var kc = getTestKeycloakDeployment(false);
+        kc.getSpec().getDatabaseSpec().setPoolMaxSize(4);
+        deployKeycloak(k8sclient, kc, true);
+
+        assertThat(k8sclient.apps().statefulSets().inNamespace(namespace)
+                .withName(kc.getMetadata().getName()).get().getStatus().getReadyReplicas()).isEqualTo(1);
     }
 
     @Test
@@ -118,6 +146,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         // CR
         var kc = getTestKeycloakDeployment(true);
         var deploymentName = kc.getMetadata().getName();
+        k8sclient.resource(K8sUtils.getDefaultTlsSecret()).withTimeout(30, SECONDS).delete();
         deployKeycloak(k8sclient, kc, false, false);
 
         // Check Operator has deployed Keycloak and the statefulset exists, this allows for the watched secret to be picked up
@@ -128,7 +157,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         Awaitility.await().ignoreExceptions().untilAsserted(() -> {
             assertThat(stsResource.get()).isNotNull();
             Keycloak keycloak = keycloakResource.get();
-            CRAssert.assertKeycloakStatusCondition(keycloak, KeycloakStatusCondition.HAS_ERRORS, false);
+            CRAssert.assertKeycloakStatusCondition(keycloak, KeycloakStatusCondition.HAS_ERRORS, false, "example-tls-secret");
             CRAssert.assertKeycloakStatusCondition(keycloak, KeycloakStatusCondition.READY, false);
         });
     }
@@ -213,6 +242,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     @Test
     public void testDeploymentDurability() {
         var kc = getTestKeycloakDeployment(true);
+        KeycloakDeploymentTest.initCustomBootstrapAdminUser(kc);
         var deploymentName = kc.getMetadata().getName();
 
         // create a dummy StatefulSet representing the pre-multiinstance state that we'll be forced to delete
@@ -395,14 +425,19 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     @Test
     public void testCustomBootstrapAdminUser() {
         var kc = getTestKeycloakDeployment(true);
+        String secretName = initCustomBootstrapAdminUser(kc);
+        assertInitialAdminUser(secretName, kc, true);
+    }
+
+    static String initCustomBootstrapAdminUser(Keycloak kc) {
         String secretName = "my-secret";
         // fluents don't seem to work here because of the inner classes
         kc.getSpec().setBootstrapAdminSpec(new BootstrapAdminSpec());
         kc.getSpec().getBootstrapAdminSpec().setUser(new BootstrapAdminSpec.User());
         kc.getSpec().getBootstrapAdminSpec().getUser().setSecret(secretName);
         k8sclient.resource(new SecretBuilder().withNewMetadata().withName(secretName).endMetadata()
-                .addToStringData("username", "user").addToStringData("password", "pass20rd").build()).create();
-        assertInitialAdminUser(secretName, kc, true);
+                .addToStringData("username", "user").addToStringData("password", "pass20rd").build()).serverSideApply();
+        return secretName;
     }
 
     // Reference curl command:
@@ -537,6 +572,26 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
             CRAssert.assertKeycloakStatusCondition(current, KeycloakStatusCondition.HAS_ERRORS, true,
                     String.format("Waiting for %s/%s-0 due to ErrImage", k8sclient.getNamespace(),
                             kc.getMetadata().getName()));
+        });
+    }
+
+    @Test
+    public void testConfigErrorLogUnoptimized() {
+        var kc = getTestKeycloakDeployment(true);
+        kc.getSpec().setStartOptimized(false);
+        kc.getSpec().setFeatureSpec(new FeatureSpecBuilder().addToEnabledFeatures("feature doesn't exist").build());
+
+        deployKeycloak(k8sclient, kc, false);
+
+        var crSelector = k8sclient.resource(kc);
+
+        Awaitility.await().atMost(3, MINUTES).pollDelay(1, SECONDS).ignoreExceptions().untilAsserted(() -> {
+            Keycloak current = crSelector.get();
+            CRAssert.assertKeycloakStatusCondition(current, KeycloakStatusCondition.READY, false);
+            CRAssert.assertKeycloakStatusCondition(current, KeycloakStatusCondition.HAS_ERRORS, true, null).has(new Condition<>(
+                    c -> c.getMessage().contains(String.format("Waiting for %s/%s-0 due to CrashLoopBackOff", k8sclient.getNamespace(), kc.getMetadata().getName()))
+                     && c.getMessage().contains("'feature doesn't exist' is an unrecognized feature"), "message"
+                    ));
         });
     }
 
@@ -720,7 +775,16 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         assertThat(limits).isNotNull();
         assertThat(limits.get("memory")).isEqualTo(config.keycloak().resources().limits().memory());
     }
-
+    @Test
+    public void testNoAutoMountServiceAccount() {
+        var kc = getTestKeycloakDeployment(true);
+        kc.getSpec().setAutomountServiceAccountToken(Boolean.FALSE);
+        deployKeycloak(k8sclient, kc, true);
+        var pods = k8sclient.pods().inNamespace(namespace).withLabels(Constants.DEFAULT_LABELS).list().getItems();
+        assertThat(pods).isNotNull();
+        assertThat(pods).isNotEmpty();
+        assertThat(pods.get(0).getSpec().getAutomountServiceAccountToken()).isEqualTo(Boolean.FALSE);
+    }
     private void handleFakeImagePullSecretCreation(Keycloak keycloakCR,
                                                    String secretDescriptorFilename) {
 

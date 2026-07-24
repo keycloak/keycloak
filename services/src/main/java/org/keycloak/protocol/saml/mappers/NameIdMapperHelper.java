@@ -1,10 +1,10 @@
 package org.keycloak.protocol.saml.mappers;
 
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 
 public class NameIdMapperHelper {
 

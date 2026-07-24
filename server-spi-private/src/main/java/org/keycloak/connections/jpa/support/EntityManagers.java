@@ -24,10 +24,11 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import org.hibernate.Session;
+import jakarta.persistence.EntityManager;
+
 import org.keycloak.models.KeycloakSession;
 
-import jakarta.persistence.EntityManager;
+import org.hibernate.Session;
 
 public class EntityManagers {
 
@@ -47,7 +48,7 @@ public class EntityManagers {
         }
     }
 
-    static boolean isBatchMode() {
+    public static boolean isBatchMode() {
         return Boolean.TRUE.equals(batchMode.get());
     }
 
@@ -102,6 +103,9 @@ public class EntityManagers {
         // create a localized entitymanager with a shared transaction coordinator, so nothing is left behind
         if (nestedEntityManagers) {
             getEntityManagerProxies(session).forEach(p -> {
+                if (!p.getEntityManager().isOpen()) {
+                    return;
+                }
                 Session em = p.getEntityManager().unwrap(Session.class);
                 Session derived = em.sessionWithOptions().connection().openSession();
                 previous.put(p, em);

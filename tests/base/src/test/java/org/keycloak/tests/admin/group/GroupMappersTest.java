@@ -17,11 +17,12 @@
 
 package org.keycloak.tests.admin.group;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
 import jakarta.ws.rs.core.Response;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -39,18 +40,20 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.GroupConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.tests.utils.admin.ApiUtil;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -75,7 +78,7 @@ public class GroupMappersTest extends AbstractGroupTest {
     @SuppressWarnings("unchecked")
     public void testGroupMappers() {
         {
-            UserRepresentation user = ApiUtil.findUserByUsername(managedRealm.admin(), TOP_GROUP_USER);
+            UserRepresentation user = AdminApiUtil.findUserByUsername(managedRealm.admin(), TOP_GROUP_USER);
 
             AccessToken token = login(user.getUsername(), CLIENT_ID, CLIENT_SECRET);
             Assertions.assertTrue(token.getRealmAccess().getRoles().contains("user"));
@@ -85,7 +88,7 @@ public class GroupMappersTest extends AbstractGroupTest {
             Assertions.assertEquals("true", token.getOtherClaims().get(TOP_ATTRIBUTE));
         }
         {
-            UserRepresentation user = ApiUtil.findUserByUsername(managedRealm.admin(), LEVEL_2_GROUP_USER);
+            UserRepresentation user = AdminApiUtil.findUserByUsername(managedRealm.admin(), LEVEL_2_GROUP_USER);
 
             AccessToken token = login(user.getUsername(), CLIENT_ID, CLIENT_SECRET);
             Assertions.assertTrue(token.getRealmAccess().getRoles().contains("user"));
@@ -110,10 +113,10 @@ public class GroupMappersTest extends AbstractGroupTest {
         Response response = realm.groups().group(topGroup.getId()).subGroup(childSlash);
         childSlash.setId(ApiUtil.getCreatedId(response));
 
-        UserRepresentation user = ApiUtil.findUserByUsername(managedRealm.admin(), LEVEL_2_GROUP_USER);
+        UserRepresentation user = AdminApiUtil.findUserByUsername(managedRealm.admin(), LEVEL_2_GROUP_USER);
         realm.users().get(user.getId()).joinGroup(childSlash.getId());
 
-        ClientResource client = ApiUtil.findClientByClientId(realm, CLIENT_ID);
+        ClientResource client = AdminApiUtil.findClientByClientId(realm, CLIENT_ID);
         ProtocolMappersResource protocolMappers = client.getProtocolMappers();
         ProtocolMapperRepresentation groupsMapper = ProtocolMapperUtil.getMapperByNameAndProtocol(
                 protocolMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, "groups");
@@ -139,8 +142,8 @@ public class GroupMappersTest extends AbstractGroupTest {
 
     private static class GroupMappersTestRealmConfig implements RealmConfig {
 
-        private List<ProtocolMapperRepresentation> createMappers() {
-            List<ProtocolMapperRepresentation> mappers = new LinkedList<>();
+        private ProtocolMapperRepresentation[] createMappers() {
+            ProtocolMapperRepresentation[] mappers = new ProtocolMapperRepresentation[3];
             ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
             mapper.setName("groups");
             mapper.setProtocolMapper(GroupMembershipMapper.PROVIDER_ID);
@@ -150,7 +153,7 @@ public class GroupMappersTest extends AbstractGroupTest {
             config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
             config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
             mapper.setConfig(config);
-            mappers.add(mapper);
+            mappers[0] = mapper;
 
             mapper = new ProtocolMapperRepresentation();
             mapper.setName(TOP_ATTRIBUTE);
@@ -163,7 +166,7 @@ public class GroupMappersTest extends AbstractGroupTest {
             config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
             config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
             mapper.setConfig(config);
-            mappers.add(mapper);
+            mappers[1] = mapper;
 
             mapper = new ProtocolMapperRepresentation();
             mapper.setName(LEVEL_2_ATTRIBUTE);
@@ -176,24 +179,24 @@ public class GroupMappersTest extends AbstractGroupTest {
             config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
             config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
             mapper.setConfig(config);
-            mappers.add(mapper);
+            mappers[2] = mapper;
             return mappers;
         }
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            List<ProtocolMapperRepresentation> mappers = createMappers();
+        public RealmBuilder configure(RealmBuilder realm) {
+            ProtocolMapperRepresentation[] mappers = createMappers();
 
-            realm.addClient(CLIENT_ID)
+            realm.clients(ClientBuilder.create(CLIENT_ID)
                     .enabled(true)
                     .secret(CLIENT_SECRET)
-                    .directAccessGrants()
-                    .protocolMappers(mappers);
+                    .directAccessGrantsEnabled(true)
+                    .protocolMappers(mappers));
 
             realm.eventsEnabled(true)
                     .clientRoles(CLIENT_ID, CLIENT_ROLE);
 
-            GroupRepresentation subGroup = GroupConfigBuilder.create()
+            GroupRepresentation subGroup = GroupBuilder.create()
                     .name(LEVEL_2_GROUP)
                     .realmRoles("admin")
                     .clientRoles(CLIENT_ID, CLIENT_ROLE)
@@ -201,31 +204,31 @@ public class GroupMappersTest extends AbstractGroupTest {
                     .build();
 
 
-            GroupRepresentation subGroup2 = GroupConfigBuilder.create()
+            GroupRepresentation subGroup2 = GroupBuilder.create()
                     .name("level2group2")
                     .realmRoles("admin")
                     .clientRoles(CLIENT_ID, CLIENT_ROLE)
                     .attribute(LEVEL_2_ATTRIBUTE, "true")
                     .build();
 
-            realm.addGroup(TOP_GROUP)
+            realm.groups(GroupBuilder.create(TOP_GROUP)
                     .attribute(TOP_ATTRIBUTE, "true")
                     .realmRoles("user")
-                    .subGroups(subGroup, subGroup2);
+                    .subGroups(subGroup, subGroup2));
 
-            realm.addUser(TOP_GROUP_USER)
+            realm.users(UserBuilder.create(TOP_GROUP_USER)
                     .name("John", "Doe")
                     .enabled(true)
                     .email("top@redhat.com")
                     .password("password")
-                    .groups(TOP_GROUP);
+                    .groups(TOP_GROUP));
 
-            realm.addUser(LEVEL_2_GROUP_USER)
+            realm.users(UserBuilder.create(LEVEL_2_GROUP_USER)
                     .name("Jane", "Doe")
                     .enabled(true)
                     .email("level2@redhat.com")
                     .password("password")
-                    .groups("topGroup/level2group");
+                    .groups("topGroup/level2group"));
 
             return realm;
         }

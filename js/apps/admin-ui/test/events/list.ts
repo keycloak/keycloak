@@ -1,5 +1,5 @@
-import { Page, expect } from "@playwright/test";
-import { selectItem, switchOn } from "../utils/form";
+import { type Page, expect } from "@playwright/test";
+import { selectItem, switchOn } from "../utils/form.ts";
 
 export async function goToEventsConfig(page: Page) {
   await page.getByRole("link", { name: "Event configs" }).click();
@@ -38,6 +38,11 @@ type SearchParam = {
   eventType?: string;
 };
 
+type AdminEventsSearchParam = {
+  resourceType?: string;
+  operationType?: string;
+};
+
 export async function fillSearchPanel(
   page: Page,
   { userId, client, eventType }: SearchParam,
@@ -47,11 +52,29 @@ export async function fillSearchPanel(
   if (eventType) await selectItem(page, page.getByLabel("Select"), eventType);
 }
 
+export async function fillAdminEventsSearchPanel(
+  page: Page,
+  { resourceType, operationType }: AdminEventsSearchParam,
+) {
+  if (resourceType)
+    await selectItem(
+      page,
+      page.getByLabel("select-resourceTypes"),
+      resourceType,
+    );
+  if (operationType)
+    await selectItem(
+      page,
+      page.getByLabel("select-operationTypes"),
+      operationType,
+    );
+}
+
 export async function assertSearchButtonDisabled(page: Page, disabled = true) {
   if (disabled) {
     await expect(page.getByTestId("search-events-btn")).toBeDisabled();
   } else {
-    await expect(page.getByTestId("search-events-btn")).not.toBeDisabled();
+    await expect(page.getByTestId("search-events-btn")).toBeEnabled();
   }
 }
 
@@ -68,7 +91,7 @@ export async function assertSearchChipGroupItemExist(
   if (exist) {
     await expect(locator).toHaveText(`User ID${itemName}`);
   } else {
-    await expect(locator).not.toBeVisible();
+    await expect(locator).toBeHidden();
   }
 }
 

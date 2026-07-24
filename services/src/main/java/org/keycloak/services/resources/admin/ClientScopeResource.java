@@ -16,17 +16,21 @@
  */
 package org.keycloak.services.resources.admin;
 
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
-import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.common.Profile;
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientScopeModel;
@@ -40,28 +44,25 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
-import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
+import org.keycloak.protocol.oidc.scope.CustomRegexScopeType;
+import org.keycloak.protocol.oidc.scope.ParameterizedScopeTypeProvider;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.utils.RegexUtils;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.Set;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.NoCache;
 
 
 /**
@@ -79,7 +80,6 @@ public class ClientScopeResource {
     private AdminEventBuilder adminEvent;
     protected ClientScopeModel clientScope;
     protected KeycloakSession session;
-    protected static Pattern dynamicScreenPattern = Pattern.compile("[^\\s\\*]*\\*{1}[^\\s\\*]*");
     protected final static Pattern scopeNamePattern = Pattern.compile("[\\x21\\x23-\\x5B\\x5D-\\x7E]+");
 
     public ClientScopeResource(RealmModel realm, AdminPermissionEvaluator auth, ClientScopeModel clientScope, KeycloakSession session, AdminEventBuilder adminEvent) {
@@ -126,8 +126,13 @@ public class ClientScopeResource {
     })
     public Response update(final ClientScopeRepresentation rep) {
         auth.clients().requireManageClientScopes();
-        validateDynamicScopeUpdate(rep);
+        ClientScopeResource.validateClientScope(session, rep);
+        validateParameterizedScopeUpdate(rep);
         try {
+            LoginProtocolFactory loginProtocolFactory = //
+                    (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class,
+                                                                                                  clientScope.getProtocol());
+            Optional.ofNullable(loginProtocolFactory).ifPresent(lp -> lp.addClientScopeDefaults(rep));
             RepresentationToModel.updateClientScope(rep, clientScope);
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
 
@@ -194,37 +199,33 @@ public class ClientScopeResource {
 
     /**
      * Performs some validation based on attributes combinations and format.
-     * Validations differ based on whether the DYNAMIC_SCOPES feature is enabled or not
+     * Validations differ based on whether the PARAMETERIZED_SCOPES feature is enabled or not
      * @param clientScope
      * @throws ErrorResponseException
      */
-    public static void validateDynamicClientScope(ClientScopeRepresentation clientScope) throws ErrorResponseException {
+    public static void validateParameterizedClientScope(KeycloakSession session, ClientScopeRepresentation clientScope) throws ErrorResponseException {
         if (clientScope.getAttributes() == null) {
             return;
         }
-        boolean isDynamic = Boolean.parseBoolean(clientScope.getAttributes().get(ClientScopeModel.IS_DYNAMIC_SCOPE));
-        String regexp = clientScope.getAttributes().get(ClientScopeModel.DYNAMIC_SCOPE_REGEXP);
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            // if the scope is dynamic but the regexp is empty, it's not considered valid
-            if (isDynamic && StringUtil.isNullOrEmpty(regexp)) {
-                throw ErrorResponse.error("Dynamic scope regexp must not be null or empty", Response.Status.BAD_REQUEST);
+        boolean isParameterized = Boolean.parseBoolean(clientScope.getAttributes().get(ClientScopeModel.IS_PARAMETERIZED_SCOPE));
+        String regexp = clientScope.getAttributes().get(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP);
+        String parameterType = clientScope.getAttributes().get(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE);
+
+        if (isParameterized) {
+            if (StringUtil.isNullOrEmpty(parameterType)) {
+                throw ErrorResponse.error("Parameterized scope must have a parameter type", Response.Status.BAD_REQUEST);
             }
-            // Always validate the dynamic scope regexp to avoid inserting a wrong value even when the feature is disabled
-            if (!StringUtil.isNullOrEmpty(regexp) && !dynamicScreenPattern.matcher(regexp).matches()) {
-                throw ErrorResponse.error(String.format("Invalid format for the Dynamic Scope regexp %1s", regexp), Response.Status.BAD_REQUEST);
+
+            if (session.getProvider(ParameterizedScopeTypeProvider.class, parameterType) == null) {
+                throw ErrorResponse.error(String.format("Invalid parameter type '%s'", parameterType), Response.Status.BAD_REQUEST);
             }
-        } else {
-            // if the value is not null or empty we won't accept the request as the feature is disabled
-            Optional.ofNullable(regexp).ifPresent(s -> {
-                if (!s.isEmpty()) {
-                    throw ErrorResponse.error(String.format("Unexpected value \"%1s\" for attribute %2s in ClientScope",
-                            regexp, ClientScopeModel.DYNAMIC_SCOPE_REGEXP), Response.Status.BAD_REQUEST);
-                }
-            });
-            // If isDynamic is true, we won't accept the request as the feature is disabled
-            if (isDynamic) {
-                throw ErrorResponse.error(String.format("Unexpected value \"%1s\" for attribute %2s in ClientScope",
-                        isDynamic, ClientScopeModel.IS_DYNAMIC_SCOPE), Response.Status.BAD_REQUEST);
+
+            if (CustomRegexScopeType.TYPE.equals(parameterType) && StringUtil.isNullOrEmpty(regexp)) {
+                throw ErrorResponse.error("Custom parameterized scope type requires a regex pattern", Response.Status.BAD_REQUEST);
+            }
+
+            if (!StringUtil.isNullOrEmpty(regexp) && !RegexUtils.isValidRegex(regexp, RegexUtils.DEFAULT_MAX_LENGTH, false)) {
+                throw ErrorResponse.error(String.format("Invalid regex for the Parameterized Scope regexp %1s", regexp), Response.Status.BAD_REQUEST);
             }
         }
     }
@@ -243,8 +244,6 @@ public class ClientScopeResource {
                                                       .map(type -> (LoginProtocolFactory) type)
                                                       .map(LoginProtocolFactory::getId)
                                                       .collect(Collectors.toSet());
-        // the OID4VC protocol is not registered to prevent it from being displayed in the client-details ui
-        acceptedProtocols.add(OID4VCLoginProtocolFactory.PROTOCOL_ID);
 
         if (protocol == null || !acceptedProtocols.contains(protocol)) {
             throw ErrorResponse.error("Unexpected protocol", Response.Status.BAD_REQUEST);
@@ -252,27 +251,54 @@ public class ClientScopeResource {
     }
 
     /**
-     * Makes sure that an update that makes a Client Scope Dynamic is rejected if the Client Scope is assigned to a client
-     * as a default scope.
+     * Validates client scope during creation or update
+     *
+     * @param session  the Keycloak session
+     * @param clientScope clientScope to validate
+     * @throws ErrorResponseException if error happens during client-scope validation
+     */
+    public static void validateClientScope(KeycloakSession session, ClientScopeRepresentation clientScope)
+            throws ErrorResponseException {
+        LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, clientScope.getProtocol());
+        if (factory != null) {
+            factory.validateClientScope(session, clientScope);
+        }
+    }
+
+    /**
+     * Makes sure that an update that makes a Client Scope Parameterized is rejected if the Client Scope is assigned
+     * as a default scope — either to a client or as a realm-level default.
      * @param rep the {@link ClientScopeRepresentation} with the changes from the frontend.
      */
-    public void validateDynamicScopeUpdate(ClientScopeRepresentation rep) {
+    public void validateParameterizedScopeUpdate(ClientScopeRepresentation rep) {
         validateClientScopeName(rep.getName());
 
         // Only check this if the representation has been sent to make it dynamic
-        if (rep.getAttributes() != null && rep.getAttributes().getOrDefault(ClientScopeModel.IS_DYNAMIC_SCOPE, "false").equalsIgnoreCase("true")) {
+        if (rep.getAttributes() != null
+                && rep.getAttributes().getOrDefault(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "false").equalsIgnoreCase("true")
+                && !clientScope.isParameterizedScope()) {
             Optional<String> scopeModelOpt = realm.getClientsStream()
                     .flatMap(clientModel -> clientModel.getClientScopes(true).values().stream())
                     .map(ClientScopeModel::getId)
                     .filter(scopeId -> scopeId.equalsIgnoreCase(this.clientScope.getId()))
                     .findAny();
-            // if it's present, it means that a client has this scope assigned as a default scope, so this scope can't be made dynamic
+            // if it's present, it means that a client has this scope assigned as a default scope, so this scope can't be made parameterized
             if (scopeModelOpt.isPresent()) {
-                throw ErrorResponse.error("This Client Scope can't be made dynamic as it's assigned to a Client as a Default Scope",
+                throw ErrorResponse.error("This Client Scope can't be made parameterized as it's assigned to a Client as a Default Scope",
+                        Response.Status.BAD_REQUEST);
+            }
+
+            // Also check realm-level default scopes — a scope that is a realm default would be automatically
+            // assigned to new clients as a default scope, which is incompatible with parameterized scopes.
+            boolean isRealmDefault = realm.getDefaultClientScopesStream(true)
+                    .map(ClientScopeModel::getId)
+                    .anyMatch(scopeId -> scopeId.equalsIgnoreCase(this.clientScope.getId()));
+            if (isRealmDefault) {
+                throw ErrorResponse.error("This Client Scope can't be made parameterized as it's assigned as a Realm Default Scope",
                         Response.Status.BAD_REQUEST);
             }
         }
-        // after the previous validation, run the usual Dynamic Scope validations.
-        validateDynamicClientScope(rep);
+        // after the previous validation, run the usual Parameterized Scope validations.
+        validateParameterizedClientScope(session, rep);
     }
 }

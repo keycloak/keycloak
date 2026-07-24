@@ -17,26 +17,27 @@
 package org.keycloak.storage;
 
 import java.util.Map;
-import org.jboss.logging.Logger;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Stream;
+
 import org.keycloak.common.util.reflections.Types;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientProvider;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.StorageProviderRealmModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.StorageProviderRealmModel;
 import org.keycloak.storage.client.ClientLookupProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderFactory;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 import org.keycloak.utils.ServicesUtils;
 
-import java.util.Objects;
-import java.util.function.Function;
-import java.util.Set;
-import java.util.stream.Stream;
-import org.keycloak.models.ClientScopeModel;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 

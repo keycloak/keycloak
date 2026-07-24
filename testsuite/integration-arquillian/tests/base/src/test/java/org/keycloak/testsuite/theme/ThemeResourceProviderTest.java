@@ -1,24 +1,5 @@
 package org.keycloak.testsuite.theme;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
-import org.hamcrest.CoreMatchers;
-import org.hamcrest.MatcherAssert;
-import org.junit.Assert;
-import org.junit.Test;
-import org.keycloak.common.Profile;
-import org.keycloak.common.Version;
-import org.keycloak.platform.Platform;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeatures;
-import org.keycloak.theme.Theme;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,10 +10,27 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.keycloak.common.Version;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.theme.Theme;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.MatcherAssert;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
 
@@ -46,9 +44,9 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
         testingClient.server().run(session -> {
             try {
                 Theme theme = session.theme().getTheme("base", Theme.Type.LOGIN);
-                Assert.assertNotNull(theme.getTemplate("test.ftl"));
+                Assertions.assertNotNull(theme.getTemplate("test.ftl"));
             } catch (IOException e) {
-                Assert.fail(e.getMessage());
+                Assertions.fail(e.getMessage());
             }
         });
     }
@@ -59,10 +57,10 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
             try {
                 // Fallback to default theme when requested theme don't exists
                 Theme theme = session.theme().getTheme("address", Theme.Type.ADMIN);
-                Assert.assertNotNull(theme);
-                Assert.assertEquals("keycloak.v2", theme.getName());
+                Assertions.assertNotNull(theme);
+                Assertions.assertEquals("keycloak.v2", theme.getName());
             } catch (IOException e) {
-                Assert.fail(e.getMessage());
+                Assertions.fail(e.getMessage());
             }
         });
     }
@@ -72,9 +70,9 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
         testingClient.server().run(session -> {
             try {
                 Theme theme = session.theme().getTheme("base", Theme.Type.LOGIN);
-                Assert.assertNotNull(theme.getResourceAsStream("test.js"));
+                Assertions.assertNotNull(theme.getResourceAsStream("test.js"));
             } catch (IOException e) {
-                Assert.fail(e.getMessage());
+                Assertions.fail(e.getMessage());
             }
         });
     }
@@ -84,10 +82,10 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
         testingClient.server().run(session -> {
             try {
                 Theme theme = session.theme().getTheme("base", Theme.Type.LOGIN);
-                Assert.assertNotNull(theme.getMessages("messages", Locale.ENGLISH).get("test.keycloak-8818"));
-                Assert.assertNotEquals("Full name (Theme-resources)", theme.getMessages("messages", Locale.ENGLISH).get("fullName"));
+                Assertions.assertNotNull(theme.getMessages("messages", Locale.ENGLISH).get("test.keycloak-8818"));
+                Assertions.assertNotEquals("Full name (Theme-resources)", theme.getMessages("messages", Locale.ENGLISH).get("fullName"));
             } catch (IOException e) {
-                Assert.fail(e.getMessage());
+                Assertions.fail(e.getMessage());
             }
         });
     }
@@ -97,9 +95,9 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
         testingClient.server().run(session -> {
             try {
                 Theme theme = session.theme().getTheme("base", Theme.Type.LOGIN);
-                Assert.assertNull(theme.getResourceAsStream("../templates/test.ftl"));
+                Assertions.assertNull(theme.getResourceAsStream("../templates/test.ftl"));
             } catch (IOException e) {
-                Assert.fail(e.getMessage());
+                Assertions.fail(e.getMessage());
             }
         });
     }
@@ -131,7 +129,7 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
         }
 
         testingClient.server().run(session -> {
-            String serverTmpDir = Platform.getPlatform().getTmpDirectory().toString();
+            String serverTmpDir = KeycloakApplication.getTmpDirectory().toString();
             assertTrue(Paths.get(serverTmpDir, "kc-gzip-cache", resourcesVersion, "welcome", "keycloak", "css", "welcome.css.gz").toFile().isFile());
         });
     }
@@ -143,16 +141,22 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @EnableFeatures(@EnableFeature(Profile.Feature.ROLLING_UPDATES_V2))
     public void fetchStaticResourceShouldRedirectOnUnknownVersion() throws IOException {
         final String resourcesVersion = testingClient.server().fetch(session -> Version.RESOURCES_VERSION, String.class);
         assertFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/login/keycloak.v2/css/styles.css");
-        assertRedirect(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unknown" + "/login/keycloak.v2/css/styles.css");
+        assertFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/login/keycloak.v2/css%2Fstyles.css");
+        assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkno" + "/login/keycloak.v2/css%2Fstyles.css");
+        assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkn%2F" + "/login/keycloak.v2/css/styles.css");
+        assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkno" + "/login/keycloak.v2/css/unknown.css");
+        // This on check will fail on Quarkus as Quarkus will normalize the URL before handing it to the REST endpoint
+        // It will succeed on Undertow
+        // assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkno" + "/login/keycloak.v2/css/../css/styles.css");
+        assertRedirectAndValidateRedirect(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkno" + "/login/keycloak.v2/css/styles.css?name=%2Fvalue",
+                suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/login/keycloak.v2/css/styles.css");
     }
 
 
     @Test
-    @EnableFeatures(@EnableFeature(Profile.Feature.ROLLING_UPDATES_V2))
     public void fetchResourceWithContentHashShouldReturnContentIfVersionIsUnknown() throws IOException {
         final String resourcesVersion = testingClient.server().fetch(session -> Version.RESOURCES_VERSION, String.class);
 
@@ -162,11 +166,10 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
         assertNoRedirect(suiteContext.getAuthServerInfo().getContextRoot().toString() + resource);
 
         // The unknown resource should be accessible without a redirect.
-        assertNoRedirect(suiteContext.getAuthServerInfo().getContextRoot().toString() + resource.replaceAll(Pattern.quote(resourcesVersion), "unknown"));
+        assertNoRedirect(suiteContext.getAuthServerInfo().getContextRoot().toString() + resource.replaceAll(Pattern.quote(resourcesVersion), "unkno"));
     }
 
     @Test
-    @EnableFeatures(@EnableFeature(Profile.Feature.ROLLING_UPDATES_V2))
     public void fetchResourceWithContentHashShouldHonorEtag() throws IOException {
         String resource = getResourceWithContentHash();
 
@@ -222,14 +225,18 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
-    private void assertRedirect(String url) throws IOException {
+    private void assertRedirectAndValidateRedirect(String url, String redirect) throws IOException {
+        assertRedirect(url, redirect);
+        assertFound(url);
+    }
+
+    private void assertRedirect(String url, String redirect) throws IOException {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().disableRedirectHandling().build()) {
             HttpGet get = new HttpGet(url);
             CloseableHttpResponse response = httpClient.execute(get);
 
             MatcherAssert.assertThat(response.getStatusLine().getStatusCode(), CoreMatchers.equalTo(307));
-
-            assertFound(url);
+            MatcherAssert.assertThat(response.getFirstHeader("Location").getValue(), CoreMatchers.equalTo(redirect));
         }
     }
 
@@ -311,7 +318,7 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
                 assertNull(theme.getMessages("messages", Locale.ENGLISH).get("fallback en"));
 
             } catch (IOException e) {
-                Assert.fail(e.getMessage());
+                Assertions.fail(e.getMessage());
             }
         });
     }

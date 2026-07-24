@@ -16,13 +16,13 @@
  */
 package org.keycloak.testsuite.util;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  *

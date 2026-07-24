@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.util.oauth;
 
-import org.apache.http.impl.client.CloseableHttpClient;
+import java.io.IOException;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessToken;
@@ -10,6 +11,10 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.testsuite.util.oauth.ciba.CibaClient;
 import org.keycloak.testsuite.util.oauth.device.DeviceClient;
+import org.keycloak.testsuite.util.oauth.oid4vc.OID4VCClient;
+
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.openqa.selenium.WebDriver;
 
 public abstract class AbstractOAuthClient<T> {
@@ -109,8 +114,20 @@ public abstract class AbstractOAuthClient<T> {
         return passwordGrantRequest(username, password).send();
     }
 
+    public JWTAuthorizationGrantRequest jwtAuthorizationGrantRequest(String assertion) {
+        return new JWTAuthorizationGrantRequest(assertion, this);
+    }
+
+    public AccessTokenResponse doJWTAuthorizationGrantRequest(String assertion) {
+        return jwtAuthorizationGrantRequest(assertion).send();
+    }
+
+    public PermissionGrantRequest permissionGrantRequest() {
+        return new PermissionGrantRequest(this);
+    }
+
     public AccessTokenRequest accessTokenRequest(String code) {
-        return new AccessTokenRequest(code, this);
+        return new AccessTokenRequest(this, code);
     }
 
     public AccessTokenResponse doAccessTokenRequest(String code) {
@@ -141,12 +158,12 @@ public abstract class AbstractOAuthClient<T> {
         logoutForm().open();
     }
 
-    public LogoutRequest logoutRequest(String refreshToken) {
-        return new LogoutRequest(refreshToken, this);
+    public LogoutRequest logoutRequest() {
+        return new LogoutRequest(this);
     }
 
     public LogoutResponse doLogout(String refreshToken) {
-        return logoutRequest(refreshToken).send();
+        return logoutRequest().refreshToken(refreshToken).send();
     }
 
     public BackchannelLogoutRequest backchannelLogoutRequest(String logoutToken) {
@@ -209,6 +226,28 @@ public abstract class AbstractOAuthClient<T> {
         return tokenExchangeRequest(subjectToken).send();
     }
 
+    public AccessTokenResponse doFetchExternalIdpToken(String providerAlias, String accessToken) {
+        return new FetchExternalIdpTokenRequest<AccessTokenResponse>(providerAlias, accessToken, this) {
+            @Override
+            protected AccessTokenResponse toResponse(CloseableHttpResponse response) throws IOException {
+                return new AccessTokenResponse(response);
+            }
+        }.send();
+    }
+
+    public PlainStringResponse doFetchExternalIdpTokenString(String providerAlias, String accessToken) {
+        return new FetchExternalIdpTokenRequest<PlainStringResponse>(providerAlias, accessToken, this) {
+            @Override
+            protected PlainStringResponse toResponse(CloseableHttpResponse response) throws IOException {
+                return new PlainStringResponse(response);
+            }
+        }.send();
+    }
+
+    public AccessTokenResponse doFetchExternalIdpTokenPost(String providerAlias, String accessToken) {
+        return new FetchExternalIdpTokenPostRequest(providerAlias, accessToken, this).send();
+    }
+
     public CibaClient ciba() {
         return new CibaClient(this);
     }
@@ -217,12 +256,24 @@ public abstract class AbstractOAuthClient<T> {
         return new DeviceClient(this);
     }
 
+    public OID4VCClient oid4vc() {
+        return new OID4VCClient(this);
+    }
+
     public ParRequest pushedAuthorizationRequest() {
         return new ParRequest(this);
     }
 
     public ParResponse doPushedAuthorizationRequest() {
         return pushedAuthorizationRequest().send();
+    }
+
+    public RegisterNodeRequest registerNodeRequest() {
+        return new RegisterNodeRequest(this);
+    }
+
+    public UnregisterNodeRequest unregisterNodeRequest() {
+        return new UnregisterNodeRequest(this);
     }
 
     public <J extends JsonWebToken> J parseToken(String token, Class<J> clazz) {
@@ -263,6 +314,10 @@ public abstract class AbstractOAuthClient<T> {
         return client();
     }
 
+    public WebDriver getDriver() {
+        return driver;
+    }
+
     public HttpClientManager httpClient() {
         return httpClientManager;
     }
@@ -273,6 +328,10 @@ public abstract class AbstractOAuthClient<T> {
 
     public Endpoints getEndpoints() {
         return new Endpoints(baseUrl, config.getRealm());
+    }
+
+    public String getBaseUrl() {
+        return baseUrl;
     }
 
     public String getRealm() {

@@ -17,15 +17,18 @@
 
 package org.keycloak.services.scheduled;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.session.RevokedTokenPersisterProvider;
 import org.keycloak.timer.ScheduledTask;
 
+import org.jboss.logging.Logger;
+
 /**
  * Clear all expired revoked tokens.
+ * @deprecated The new {@link org.keycloak.models.RevokedTokenProvider} cleanups the expired events internally
  */
+@Deprecated(since = "26.7", forRemoval = true)
 public class ClearExpiredRevokedTokens implements ScheduledTask {
 
     protected static final Logger logger = Logger.getLogger(ClearExpiredRevokedTokens.class);

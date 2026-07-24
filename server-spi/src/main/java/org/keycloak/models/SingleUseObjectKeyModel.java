@@ -16,10 +16,11 @@
  */
 package org.keycloak.models;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.keycloak.common.util.Base64;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.UUID;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  *
@@ -58,7 +59,7 @@ public interface SingleUseObjectKeyModel {
 
     default String serializeKey() {
         String userId = getUserId();
-        String encodedUserId = userId == null ? "" : Base64.encodeBytes(userId.getBytes(StandardCharsets.UTF_8));
+        String encodedUserId = userId == null ? "" : Base64.getEncoder().encodeToString(userId.getBytes(StandardCharsets.UTF_8));
         return String.format("%s.%d.%s.%s", encodedUserId, getExp(), getActionVerificationNonce(), getActionId());
     }
 }

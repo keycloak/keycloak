@@ -17,13 +17,18 @@
 
 package org.keycloak.broker.provider;
 
-import org.jboss.logging.Logger;
+import java.util.Set;
+
 import org.keycloak.broker.provider.mappersync.ConfigSyncEventListener;
+import org.keycloak.cache.AlternativeLookupProvider;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.provider.Provider;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -90,5 +95,10 @@ public abstract class AbstractIdentityProviderMapper implements IdentityProvider
     @Override
     public void updateBrokeredUserLegacy(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         updateBrokeredUser(session, realm, user, mapperModel, context);
+    }
+
+    @Override
+    public Set<Class<? extends Provider>> dependsOn() {
+        return Set.of(AlternativeLookupProvider.class); //for caching
     }
 }

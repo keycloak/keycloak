@@ -16,14 +16,6 @@
  */
 package org.keycloak.crypto.def.test;
 
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.crypto.def.BCECDSACryptoProvider;
-import org.keycloak.rule.CryptoInitRule;
-
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -33,6 +25,15 @@ import java.security.interfaces.ECPrivateKey;
 import java.security.spec.ECGenParameterSpec;
 import java.util.Arrays;
 import java.util.Collection;
+
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.crypto.def.BCECDSACryptoProvider;
+import org.keycloak.rule.CryptoInitRule;
+
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import static org.junit.Assert.assertEquals;
 

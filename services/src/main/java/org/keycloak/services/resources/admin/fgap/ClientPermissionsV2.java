@@ -16,10 +16,11 @@
  */
 package org.keycloak.services.resources.admin.fgap;
 
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE;
+import java.util.Map;
+import java.util.Set;
 
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.models.AdminRoles;
@@ -30,8 +31,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.resources.admin.fgap.ModelRecord.ClientModelRecord;
 
-import java.util.Map;
-import java.util.Set;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE;
 
 class ClientPermissionsV2 extends ClientPermissions {
 
@@ -61,6 +61,9 @@ class ClientPermissionsV2 extends ClientPermissions {
 
     @Override
     public boolean canManage(ClientModel client) {
+        if (isInternal(client)) {
+            return false;
+        }
         if (root.hasOneAdminRole(AdminRoles.MANAGE_CLIENTS)) {
             return true;
         }
@@ -140,7 +143,9 @@ class ClientPermissionsV2 extends ClientPermissions {
 
     @Override
     public boolean canExchangeTo(ClientModel authorizedClient, ClientModel to, AccessToken token) {
-        throw new UnsupportedOperationException("Not supported in V2");
+        // V2 does not support configuring token-exchange permissions.
+        // Deny gracefully instead of failing with an uncaught exception.
+        return false;
     }
 
     @Override

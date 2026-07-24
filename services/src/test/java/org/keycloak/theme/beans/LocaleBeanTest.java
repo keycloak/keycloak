@@ -17,12 +17,12 @@
 
 package org.keycloak.theme.beans;
 
+import java.util.Locale;
+import java.util.Set;
+
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Test;
-
-import java.util.Locale;
-import java.util.Set;
 
 /**
  * @author Alexander Schwartz

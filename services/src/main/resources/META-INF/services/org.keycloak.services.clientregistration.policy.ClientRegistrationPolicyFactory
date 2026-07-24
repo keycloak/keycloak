@@ -22,3 +22,4 @@ org.keycloak.services.clientregistration.policy.impl.ClientScopesClientRegistrat
 org.keycloak.services.clientregistration.policy.impl.ScopeClientRegistrationPolicyFactory
 org.keycloak.services.clientregistration.policy.impl.ClientDisabledClientRegistrationPolicyFactory
 org.keycloak.services.clientregistration.policy.impl.MaxClientsClientRegistrationPolicyFactory
+org.keycloak.services.clientregistration.policy.impl.RegistrationWebOriginsPolicyFactory

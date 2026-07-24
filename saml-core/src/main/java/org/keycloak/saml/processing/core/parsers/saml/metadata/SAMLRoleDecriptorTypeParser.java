@@ -1,12 +1,13 @@
 package org.keycloak.saml.processing.core.parsers.saml.metadata;
 
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.events.StartElement;
+
 import org.keycloak.dom.saml.v2.metadata.RoleDescriptorType;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.StaxParserUtil;
-import org.w3c.dom.Element;
 
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.events.StartElement;
+import org.w3c.dom.Element;
 
 /**
  * @author mhajas

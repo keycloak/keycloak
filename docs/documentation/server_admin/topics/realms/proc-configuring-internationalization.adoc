@@ -43,5 +43,5 @@ user has actively switched the locale through the locale selector on the login p
 this point.
 
 If you want to change the logic for selecting the locale, you have an option to create custom `LocaleSelectorProvider`. For details, please refer to the
-link:{developerguide_link}#_locale_selector[{developerguide_name}].
+link:https://www.keycloak.org/ui-customization/themes[Working with themes: Locale selector].
 

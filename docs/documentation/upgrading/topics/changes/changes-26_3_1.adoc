@@ -1,0 +1,8 @@
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
+
+=== Options for additional datasources marked as preview
+
+In the 26.3.0 release, the newly added options for configuring additional datasources were missing a preview label. This has been now corrected as the work on this feature continues over a few next releases.

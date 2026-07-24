@@ -1,5 +1,5 @@
-import { Page, expect } from "@playwright/test";
-import { goToRealm, goToRealms } from "../utils/sidebar";
+import { type Page, expect } from "@playwright/test";
+import { goToRealm, goToRealms } from "../utils/sidebar.ts";
 
 function getCurrentRealmItem(page: Page) {
   return page.getByTestId("currentRealm");
@@ -41,4 +41,12 @@ export async function assertCurrentRealm(
   } else {
     await expect(getCurrentRealmItem(page)).not.toContainText(realmName);
   }
+}
+
+export function getTextArea(page: Page) {
+  return page.getByRole("textbox", { name: "File content" });
+}
+
+export async function assertTextAreaContains(page: Page, content: string) {
+  await expect(getTextArea(page)).toContainText(content);
 }

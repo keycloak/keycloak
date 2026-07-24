@@ -1,12 +1,12 @@
 package org.keycloak.saml.processing.core.parsers.saml.metadata;
 
+import java.net.URI;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.events.StartElement;
+
 import org.keycloak.dom.saml.v2.metadata.IndexedEndpointType;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.StaxParserUtil;
-
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.events.StartElement;
-import java.net.URI;
 
 /**
  * @author mhajas

@@ -33,6 +33,12 @@ public class KcOidcDefaultIdpTest extends AbstractDefaultIdpTest {
         testDefaultIdpSetTriedAndReturnedError("Access denied when authenticating with kc-oidc-idp");
     }
 
+    // Issue 36396
+    @Test
+    public void testLoginHintIsForwarded() {
+        testLoginHintForwarded();
+    }
+
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
         return new KcOidcBrokerConfiguration();

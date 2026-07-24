@@ -17,13 +17,13 @@
 
 package org.keycloak.events;
 
-import org.keycloak.events.admin.AdminEvent;
-import org.keycloak.models.AbstractKeycloakTransaction;
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.models.AbstractKeycloakTransaction;
 
 public class EventListenerTransaction extends AbstractKeycloakTransaction {
 

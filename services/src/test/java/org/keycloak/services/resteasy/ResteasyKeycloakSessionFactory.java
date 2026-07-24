@@ -17,10 +17,29 @@
 
 package org.keycloak.services.resteasy;
 
+import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.KeycloakDeploymentInfo;
+import org.keycloak.provider.ProviderManager;
+import org.keycloak.provider.Spi;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 
 public class ResteasyKeycloakSessionFactory extends DefaultKeycloakSessionFactory {
+
+    @Override
+    public void init() {
+        ProviderManager pm = new ProviderManager(KeycloakDeploymentInfo.create().services(), getClass().getClassLoader(), Config.scope().getArray("providers"));
+        for (Spi spi : pm.loadSpis()) {
+            if (spi.isEnabled()) {
+                spis.add(spi);
+            }
+        }
+
+        factoriesMap = loadFactories(pm);
+
+        checkProvider();
+        super.init();
+    }
 
     @Override
     public KeycloakSession create() {

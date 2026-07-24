@@ -17,16 +17,6 @@
 
 package org.keycloak.client.registration.cli.commands;
 
-import org.keycloak.client.registration.cli.CmdStdinContext;
-import org.keycloak.client.registration.cli.EndpointType;
-import org.keycloak.client.registration.cli.EndpointTypeConverter;
-import org.keycloak.client.cli.common.AttributeOperation;
-import org.keycloak.client.cli.config.ConfigData;
-import org.keycloak.client.cli.util.HttpUtil;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.oidc.OIDCClientRepresentation;
-import org.keycloak.util.JsonSerialization;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -34,8 +24,17 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import org.keycloak.client.cli.common.AttributeOperation;
+import org.keycloak.client.cli.config.ConfigData;
+import org.keycloak.client.cli.util.HttpUtil;
+import org.keycloak.client.registration.cli.CmdStdinContext;
+import org.keycloak.client.registration.cli.EndpointType;
+import org.keycloak.client.registration.cli.EndpointTypeConverter;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
+import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 

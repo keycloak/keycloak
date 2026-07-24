@@ -17,6 +17,11 @@
 
 package org.keycloak.testsuite.domainextension.spi.impl;
 
+import java.util.LinkedList;
+import java.util.List;
+
+import jakarta.persistence.EntityManager;
+
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -24,10 +29,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.testsuite.domainextension.CompanyRepresentation;
 import org.keycloak.testsuite.domainextension.jpa.Company;
 import org.keycloak.testsuite.domainextension.spi.ExampleService;
-
-import jakarta.persistence.EntityManager;
-import java.util.LinkedList;
-import java.util.List;
 
 public class ExampleServiceImpl implements ExampleService {
 

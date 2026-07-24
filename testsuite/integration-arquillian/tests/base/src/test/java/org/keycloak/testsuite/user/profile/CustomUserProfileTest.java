@@ -19,31 +19,32 @@
 
 package org.keycloak.testsuite.user.profile;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
-import org.junit.Test;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
-import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.config.UPConfigUtils;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import org.junit.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:joerg.matysiak@bosch.io">Jörg Matysiak</a>
  */
 @SetDefaultProvider(spi="userProfile", providerId="custom-user-profile", defaultProvider="declarative-user-profile", onlyUpdateDefault = true)
 public class CustomUserProfileTest extends AbstractUserProfileTest {
-    
+
     @Test
     public void testCustomUserProfileProviderIsActive() {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) CustomUserProfileTest::testCustomUserProfileProviderIsActive);

@@ -1,12 +1,12 @@
 package org.keycloak.protocol;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class TestAuthenticatedClientSessionModel implements AuthenticatedClientSessionModel {
 

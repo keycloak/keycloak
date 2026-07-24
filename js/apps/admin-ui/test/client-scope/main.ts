@@ -1,6 +1,6 @@
-import { Page, expect } from "@playwright/test";
-import { assertSwitchIsChecked, selectItem, switchOff } from "../utils/form";
-import { clickTableToolbarItem, getTableData } from "../utils/table";
+import { type Page, expect } from "@playwright/test";
+import { assertSwitchIsChecked, selectItem, switchOff } from "../utils/form.ts";
+import { clickTableToolbarItem, getTableData } from "../utils/table.ts";
 
 export async function selectClientScopeFilter(page: Page, value: string) {
   await page.getByTestId("clientScopeSearch").click();
@@ -79,7 +79,7 @@ export async function assertSwitchDisplayOnConsentScreenIsChecked(page: Page) {
 
 export async function assertConsentInputIsVisible(page: Page, not = false) {
   if (not) {
-    await expect(getConsentScreenTextInput(page)).not.toBeVisible();
+    await expect(getConsentScreenTextInput(page)).toBeHidden();
   } else {
     await expect(getConsentScreenTextInput(page)).toBeVisible();
   }

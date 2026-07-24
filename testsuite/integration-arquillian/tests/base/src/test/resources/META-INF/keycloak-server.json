@@ -167,6 +167,12 @@
         }
     },
 
+    "datastore": {
+        "legacy": {
+            "allowMigrateExistingDatabaseToSnapshot": "${keycloak.datastore.allowMigrateExistingDatabaseToSnapshot:false}"
+        }
+    },
+
     "realmCache": {
         "default" : {
             "enabled": "${keycloak.realmCache.enabled:true}"
@@ -243,6 +249,11 @@
             "enabled": true,
             "sslClientCert": "x-ssl-client-cert",
             "sslCertChainPrefix": "x-ssl-client-cert-chain",
+            "certificateChainLength": 1
+        },
+        "rfc9440": {
+            "sslClientCert": "x-ssl-client-cert",
+            "sslCertChain": "x-ssl-client-cert-chain",
             "certificateChainLength": 1
         }
     },

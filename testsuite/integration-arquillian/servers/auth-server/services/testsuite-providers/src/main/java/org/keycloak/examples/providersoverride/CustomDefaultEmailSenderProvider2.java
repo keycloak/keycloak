@@ -19,11 +19,11 @@
 
 package org.keycloak.examples.providersoverride;
 
+import java.util.Map;
+
 import org.keycloak.email.DefaultEmailSenderProvider;
 import org.keycloak.email.EmailAuthenticator;
 import org.keycloak.models.KeycloakSession;
-
-import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

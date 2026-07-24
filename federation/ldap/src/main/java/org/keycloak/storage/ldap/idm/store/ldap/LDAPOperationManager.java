@@ -17,21 +17,14 @@
 
 package org.keycloak.storage.ldap.idm.store.ldap;
 
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.Time;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.ModelException;
-import org.keycloak.storage.ldap.LDAPConfig;
-import org.keycloak.storage.ldap.idm.model.LDAPDn;
-import org.keycloak.storage.ldap.idm.query.Condition;
-import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
-import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
-import org.keycloak.storage.ldap.idm.store.ldap.extended.PasswordModifyRequest;
-import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
-import org.keycloak.tracing.TracingProvider;
-import org.keycloak.truststore.TruststoreProvider;
-
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import javax.naming.AuthenticationException;
 import javax.naming.Binding;
 import javax.naming.Context;
@@ -44,6 +37,7 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.ModificationItem;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
+import javax.naming.ldap.BasicControl;
 import javax.naming.ldap.Control;
 import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
@@ -53,13 +47,26 @@ import javax.naming.ldap.PagedResultsResponseControl;
 import javax.naming.ldap.StartTlsResponse;
 import javax.net.ssl.SSLSocketFactory;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Set;
+import org.keycloak.common.util.Time;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelException;
+import org.keycloak.storage.ldap.LDAPConfig;
+import org.keycloak.storage.ldap.idm.model.LDAPDn;
+import org.keycloak.storage.ldap.idm.query.Condition;
+import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
+import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
+import org.keycloak.storage.ldap.idm.store.ldap.control.PasswordPolicyControl;
+import org.keycloak.storage.ldap.idm.store.ldap.control.PasswordPolicyControlFactory;
+import org.keycloak.storage.ldap.idm.store.ldap.control.PasswordPolicyPasswordChangeException;
+import org.keycloak.storage.ldap.idm.store.ldap.extended.PasswordModifyRequest;
+import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
+import org.keycloak.tracing.TracingProvider;
+import org.keycloak.truststore.TruststoreProvider;
+
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Timer;
+import org.jboss.logging.Logger;
 
 /**
  * <p>This class provides a set of operations to manage LDAP trees.</p>
@@ -75,10 +82,29 @@ public class LDAPOperationManager {
 
     private final KeycloakSession session;
     private final LDAPConfig config;
+    private final Meter.MeterProvider<Timer> requestTimer;
 
+    @Deprecated(since = "26.8", forRemoval = true)
     public LDAPOperationManager(KeycloakSession session, LDAPConfig config) {
+        this(session, config, null);
+    }
+
+    public LDAPOperationManager(KeycloakSession session, LDAPConfig config, Meter.MeterProvider<Timer> requestTimer) {
         this.session = session;
         this.config = config;
+        this.requestTimer = requestTimer;
+    }
+
+    private void recordLdapRequest(String operation, boolean success, long startTimeNanos) {
+        if (requestTimer == null) {
+            logger.debugf("LDAP request timer is null, skipping metric recording for operation: %s", operation);
+            return;
+        }
+        long durationNanos = System.nanoTime() - startTimeNanos;
+        logger.debugf("Recording LDAP metric - operation: %s, outcome: %s, duration: %d ns",
+                operation, success ? "success" : "error", durationNanos);
+        requestTimer.withTags("operation", operation, "outcome", success ? "success" : "error")
+                .record(durationNanos, TimeUnit.NANOSECONDS);
     }
 
     /**
@@ -491,19 +517,23 @@ public class LDAPOperationManager {
         var tracing = session.getProvider(TracingProvider.class);
         tracing.startSpan(LDAPOperationManager.class, "authenticate");
 
+        long startTimeNanos = System.nanoTime();
+        boolean success = false;
+
         try {
             Hashtable<Object, Object> env = LDAPContextManager.getNonAuthConnectionProperties(config);
 
             // Never use connection pool to prevent password caching
             env.put("com.sun.jndi.ldap.connect.pool", "false");
 
-            if(!this.config.isStartTls()) {
-                env.put(Context.SECURITY_AUTHENTICATION, "simple");
-                env.put(Context.SECURITY_PRINCIPAL, dn.toString());
-                env.put(Context.SECURITY_CREDENTIALS, password);
-            }
+            // Prepare to receive password policy response control.
+            env.put(LdapContext.CONTROL_FACTORIES, PasswordPolicyControlFactory.class.getName());
 
+            // Create connection but avoid triggering automatic bind request by not setting security principal and credentials yet.
+            // That allows us to send optional StartTLS request before binding.
             authCtx = new InitialLdapContext(env, null);
+
+            // Send StartTLS request and setup SSL context if needed.
             if (config.isStartTls()) {
                 SSLSocketFactory sslSocketFactory = null;
                 if (LDAPUtil.shouldUseTruststoreSpi(config)) {
@@ -511,13 +541,37 @@ public class LDAPOperationManager {
                     sslSocketFactory = provider.getSSLSocketFactory();
                 }
 
-                tlsResponse = LDAPContextManager.startTLS(authCtx, "simple", dn.toString(), password, sslSocketFactory);
+                tlsResponse = LDAPContextManager.startTLS(authCtx, sslSocketFactory);
 
                 // Exception should be already thrown by LDAPContextManager.startTLS if "startTLS" could not be established, but rather do some additional check
                 if (tlsResponse == null) {
                     throw new AuthenticationException("Null TLS Response returned from the authentication");
                 }
             }
+
+            // Configure given credentials.
+            authCtx.addToEnvironment(Context.SECURITY_AUTHENTICATION, "simple");
+            authCtx.addToEnvironment(Context.SECURITY_PRINCIPAL, dn.toString());
+            authCtx.addToEnvironment(Context.SECURITY_CREDENTIALS, password);
+
+            // Send bind request. Throws AuthenticationException when authentication fails.
+            authCtx.reconnect(getControls());
+
+            // Check for password policy response control in the response.
+            // If present and forced password change is required, throw an exception.
+            Control[] responseControls = authCtx.getResponseControls();
+            if (responseControls != null) {
+                for (Control control : responseControls) {
+                    if (control instanceof PasswordPolicyControl) {
+                        PasswordPolicyControl response = (PasswordPolicyControl) control;
+                        if (response.changeAfterReset()) {
+                            throw new PasswordPolicyPasswordChangeException();
+                        }
+                    }
+                }
+            }
+            success = true;
+
         } catch (AuthenticationException ae) {
             if (logger.isDebugEnabled()) {
                 logger.debugf(ae, "Authentication failed for DN [%s]", dn);
@@ -535,6 +589,7 @@ public class LDAPOperationManager {
             tracing.error(e);
             throw new AuthenticationException("Unexpected exception when validating password of user");
         } finally {
+            recordLdapRequest("authenticate", success, startTimeNanos);
             if (tlsResponse != null) {
                 try {
                     tlsResponse.close();
@@ -660,6 +715,14 @@ public class LDAPOperationManager {
         }
     }
 
+    private Control[] getControls() {
+        // If enabled, send a passwordPolicyRequest control as non-critical.
+        if (config.isEnableLdapPasswordPolicy()) {
+            return new Control[] { new BasicControl(PasswordPolicyControl.OID, false, null) };
+        }
+        return null;
+    }
+
     private String getUuidAttributeName() {
         return this.config.getUuidLDAPAttributeName();
     }
@@ -710,7 +773,7 @@ public class LDAPOperationManager {
     }
 
     private <R> R execute(LdapOperation<R> operation, LDAPOperationDecorator decorator) throws NamingException {
-        try (LDAPContextManager ldapContextManager = LDAPContextManager.create(session, config)) {
+        try (LDAPContextManager ldapContextManager = LDAPContextManager.create(session, config, requestTimer)) {
             return execute(operation, ldapContextManager.getLdapContext(), decorator);
         }
     }
@@ -726,6 +789,9 @@ public class LDAPOperationManager {
             start = Time.currentTimeMillis();
         }
 
+        long startTimeNanos = System.nanoTime();
+        boolean success = false;
+
         var tracing = session.getProvider(TracingProvider.class);
         var span = tracing.startSpan(LDAPOperationManager.class, "execute");
 
@@ -739,11 +805,14 @@ public class LDAPOperationManager {
                 decorator.beforeLDAPOperation(context, operation);
             }
 
-            return operation.execute(context);
+            R execute = operation.execute(context);
+            success = true;
+            return execute;
         } catch (NamingException e) {
             tracing.error(e);
             throw e;
         } finally {
+            recordLdapRequest("execute", success, startTimeNanos);
             tracing.endSpan();
             if (perfLogger.isDebugEnabled()) {
                 long took = Time.currentTimeMillis() - start;

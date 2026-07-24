@@ -1,9 +1,10 @@
 package org.keycloak.testsuite.util.oauth;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
+import java.io.IOException;
+
 import org.keycloak.utils.MediaType;
 
-import java.io.IOException;
+import org.apache.http.client.methods.CloseableHttpResponse;
 
 public class IntrospectionRequest extends AbstractHttpPostRequest<IntrospectionRequest, IntrospectionResponse> {
 

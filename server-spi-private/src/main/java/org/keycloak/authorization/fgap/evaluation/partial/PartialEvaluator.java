@@ -17,8 +17,6 @@
 
 package org.keycloak.authorization.fgap.evaluation.partial;
 
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.isSkipEvaluation;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,6 +28,7 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
+
 import org.keycloak.Config;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.Policy;
@@ -45,6 +44,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ResourceType;
 
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.isSkipEvaluation;
+
 public final class PartialEvaluator {
 
     private static final String NO_ID = "none";
@@ -57,6 +58,12 @@ public final class PartialEvaluator {
             return storage == null ? List.of() : storage.getFilters(new PartialEvaluationContext(storage, builder, queryBuilder, path));
         }
 
+        // check before getUser() to avoid infinite recursion when called from a runWithoutAuthorization block
+        // (e.g. isReadOnlyOrganizationMember -> getByMember -> applyAuthorizationFilters -> getPredicates -> getUser -> getUserById -> validateUser -> isReadOnlyOrganizationMember -> ...)
+        if (isSkipEvaluation(session)) {
+            return List.of();
+        }
+
         UserModel adminUser = session.getContext().getUser();
 
         if (shouldSkipPartialEvaluation(session, adminUser, resourceType)) {
@@ -65,12 +72,12 @@ public final class PartialEvaluator {
         }
 
         // collect the result from the partial evaluation so that the filters can be applied
-        PartialEvaluationContext context = runEvaluation(session, adminUser, resourceType, storage, builder, queryBuilder, path);
+        PartialEvaluationContext context = runEvaluation(session, adminUser, resourceType, null, storage, builder, queryBuilder, path);
 
         return buildPredicates(context);
     }
 
-    private PartialEvaluationContext runEvaluation(KeycloakSession session, UserModel adminUser, ResourceType resourceType, PartialEvaluationStorageProvider storage, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
+    private PartialEvaluationContext runEvaluation(KeycloakSession session, UserModel adminUser, ResourceType resourceType, ResourceType groupResourceType, PartialEvaluationStorageProvider storage, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
         Map<String, Map<String, PartialEvaluationContext>> cache = session.getAttributeOrDefault(PARTIAL_EVALUATION_CONTEXT_CACHE, Map.of());
 
         if (cache.getOrDefault(adminUser.getId(), Map.of()).containsKey(resourceType.getType())) {
@@ -87,7 +94,7 @@ public final class PartialEvaluator {
         List<PartialEvaluationPolicyProvider> policyProviders = getPartialEvaluationPolicyProviders(session);
 
         for (PartialEvaluationPolicyProvider policyProvider : policyProviders) {
-            policyProvider.getPermissions(session, resourceType, adminUser).forEach(permission -> {
+            policyProvider.getPermissions(session, resourceType, groupResourceType, adminUser).forEach(permission -> {
                 Set<String> ids = permission.getResourceNames();
                 Set<Policy> policies = permission.getAssociatedPolicies();
 
@@ -198,7 +205,7 @@ public final class PartialEvaluator {
                 return context;
             }
 
-            PartialEvaluationContext evaluateGroups = runEvaluation(session, adminUser, groupResourceType, storage, builder, queryBuilder, path);
+            PartialEvaluationContext evaluateGroups = runEvaluation(session, adminUser, groupResourceType, groupResourceType, storage, builder, queryBuilder, path);
             context.setAllowedGroups(evaluateGroups.getAllowedResources());
             context.setDeniedGroups(evaluateGroups.getDeniedResources());
         }
@@ -253,6 +260,8 @@ public final class PartialEvaluator {
             return user.hasRole(client.getRole(AdminRoles.VIEW_USERS)) || user.hasRole(client.getRole(AdminRoles.MANAGE_USERS)) || !hasAnyQueryAdminRole(client, user);
         } else if (resourceType.equals(AdminPermissionsSchema.CLIENTS)) {
             return user.hasRole(client.getRole(AdminRoles.VIEW_CLIENTS)) || user.hasRole(client.getRole(AdminRoles.MANAGE_CLIENTS)) || !hasAnyQueryAdminRole(client, user);
+        } else if (resourceType.equals(AdminPermissionsSchema.ORGANIZATIONS)) {
+            return user.hasRole(client.getRole(AdminRoles.VIEW_ORGANIZATIONS)) || user.hasRole(client.getRole(AdminRoles.MANAGE_ORGANIZATIONS)) || !hasAnyQueryAdminRole(client, user);
         }
 
         return false;
@@ -273,8 +282,7 @@ public final class PartialEvaluator {
     }
 
     private boolean hasAnyQueryAdminRole(ClientModel client, UserModel user) {
-        boolean result = false;
-        for (String adminRole : List.of(AdminRoles.QUERY_CLIENTS, AdminRoles.QUERY_GROUPS, AdminRoles.QUERY_USERS)) {
+        for (String adminRole : List.of(AdminRoles.QUERY_CLIENTS, AdminRoles.QUERY_GROUPS, AdminRoles.QUERY_USERS, AdminRoles.QUERY_ORGANIZATIONS)) {
             RoleModel role = client.getRole(adminRole);
 
             if (role == null) {
@@ -282,11 +290,10 @@ public final class PartialEvaluator {
             }
 
             if (user.hasRole(role)) {
-                result = true;
-                break;
+                return true;
             }
         }
 
-        return result;
+        return false;
     }
 }

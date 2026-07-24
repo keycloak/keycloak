@@ -17,17 +17,20 @@
 package org.keycloak.testsuite.policy;
 
 import java.util.function.Consumer;
+
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
@@ -76,6 +79,8 @@ public class PasswordHistoryPolicyTest extends AbstractAuthTest {
         newCredential.setValue(newPassword);
         newCredential.setTemporary(false);
         userResource.resetPassword(newCredential);
+        CredentialRepresentation cr = userResource.credentials().stream().filter(credentialRepresentation -> credentialRepresentation.getType().equals(PASSWORD)).findFirst().get();
+        userResource.setCredentialUserLabel(cr.getId(), "My Password");
     }
 
     private void expectBadRequestException(Consumer<Void> f) {

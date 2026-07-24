@@ -14,6 +14,10 @@ then
     sed -i '/^services/ s/$/, ifp/' $SSSD_FILE
   fi
 
+  if ! grep -q ^\[ifp\] $SSSD_FILE; then
+    sed -i $'$a\\\n\\\n\[ifp\]' $SSSD_FILE
+  fi
+
   if ! grep -q ^allowed_uids $SSSD_FILE; then
     sed -i '/^\[ifp\]/a allowed_uids = root' $SSSD_FILE
   fi

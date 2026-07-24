@@ -16,6 +16,9 @@
  */
 package org.keycloak.testsuite.util;
 
+import java.util.Objects;
+import java.util.stream.Stream;
+
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
@@ -24,10 +27,9 @@ import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.assertion.ConditionAbstractType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType.RTChoiceType;
-import java.util.Objects;
-import java.util.stream.Stream;
-import static org.hamcrest.Matchers.instanceOf;
+
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 
 /**
  *

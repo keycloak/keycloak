@@ -17,17 +17,19 @@
 
 package org.keycloak.tests.admin.event;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import java.util.Collections;
+import java.util.List;
+
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 
-import java.util.List;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test updates to the events configuration.
@@ -69,13 +71,13 @@ public class EventConfigTest {
 
     @Test
     public void addRemoveListenerTest() {
-        configRealm.updateWithCleanup(r -> r.eventsEnabled(false).adminEventsEnabled(false).overwriteEventsListeners());
+        configRealm.updateWithCleanup(r -> r.eventsEnabled(false).adminEventsEnabled(false).setEventsListeners(Collections.emptyList()));
 
         configRep = configRealm.admin().getRealmEventsConfig();
 
         Assertions.assertEquals(0, configRep.getEventsListeners().size());
 
-        configRealm.updateWithCleanup(r -> r.overwriteEventsListeners("email"));
+        configRealm.updateWithCleanup(r -> r.setEventsListeners(List.of("email")));
         configRep = configRealm.admin().getRealmEventsConfig();
         List<String> eventListeners = configRep.getEventsListeners();
         Assertions.assertEquals(1, eventListeners.size());
@@ -96,7 +98,7 @@ public class EventConfigTest {
         Assertions.assertEquals(2, enabledEventTypes.size());
 
         // remove all event types
-        configRealm.updateWithCleanup(RealmConfigBuilder::overwriteEnabledEventTypes);
+        configRealm.updateWithCleanup(realm -> realm.setEnabledEventTypes(Collections.emptyList()));
 
         // removing all event types restores default events
         Assertions.assertEquals(defaultEventCount, configRealm.admin().getRealmEventsConfig().getEnabledEventTypes().size());
@@ -135,7 +137,7 @@ public class EventConfigTest {
     public static class EventConfigRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             return realm.eventsEnabled(true).adminEventsEnabled(true);
         }
     }

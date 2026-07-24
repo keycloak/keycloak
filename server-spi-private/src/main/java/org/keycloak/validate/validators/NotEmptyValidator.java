@@ -16,13 +16,13 @@
  */
 package org.keycloak.validate.validators;
 
+import java.util.Collection;
+import java.util.Map;
+
 import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
-
-import java.util.Collection;
-import java.util.Map;
 
 /**
  * Check that input value is not empty. It means it is not null for all data types. For String it also have to be

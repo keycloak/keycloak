@@ -10,13 +10,18 @@ import { Groups } from "./resources/groups.js";
 import { IdentityProviders } from "./resources/identityProviders.js";
 import { Realms } from "./resources/realms.js";
 import { Organizations } from "./resources/organizations.js";
+import { Workflows } from "./resources/workflows.js";
 import { Roles } from "./resources/roles.js";
 import { ServerInfo } from "./resources/serverInfo.js";
+import { Ssf } from "./resources/ssf.js";
 import { Users } from "./resources/users.js";
 import { UserStorageProvider } from "./resources/userStorageProvider.js";
 import { WhoAmI } from "./resources/whoAmI.js";
-import { Credentials, getToken } from "./utils/auth.js";
+import { Credentials, getToken, Settings } from "./utils/auth.js";
 import { defaultBaseUrl, defaultRealm } from "./utils/constants.js";
+import { DecodedToken, decodeToken } from "./utils/decode.js";
+
+export type RequestOptions = Omit<RequestInit, "signal">;
 
 export interface TokenProvider {
   getAccessToken: () => Promise<string | undefined>;
@@ -25,9 +30,18 @@ export interface TokenProvider {
 export interface ConnectionConfig {
   baseUrl?: string;
   realmName?: string;
-  requestOptions?: RequestInit;
+  requestOptions?: RequestOptions;
   requestArgOptions?: Pick<RequestArgs, "catchNotFound">;
+  timeout?: number;
+  /**
+   * Enable experimental APIs (e.g., v2 API).
+   * These APIs are not yet stable and may change without notice.
+   * @default false
+   */
+  enableExperimentalApis?: boolean;
 }
+
+const MIN_VALIDITY = 5; // in seconds
 
 export class KeycloakAdminClient {
   // Resources
@@ -36,6 +50,7 @@ export class KeycloakAdminClient {
   public groups: Groups;
   public roles: Roles;
   public organizations: Organizations;
+  public workflows: Workflows;
   public clients: Clients;
   public realms: Realms;
   public clientScopes: ClientScopes;
@@ -47,6 +62,7 @@ export class KeycloakAdminClient {
   public attackDetection: AttackDetection;
   public authenticationManagement: AuthenticationManagement;
   public cache: Cache;
+  public ssf: Ssf;
 
   // Members
   public baseUrl: string;
@@ -54,14 +70,22 @@ export class KeycloakAdminClient {
   public scope?: string;
   public accessToken?: string;
   public refreshToken?: string;
+  public timeout?: number;
+  public enableExperimentalApis: boolean;
 
-  #requestOptions?: RequestInit;
+  #requestOptions?: RequestOptions;
   #globalRequestArgOptions?: Pick<RequestArgs, "catchNotFound">;
   #tokenProvider?: TokenProvider;
+  #accessTokenDecoded?: DecodedToken;
+  #refreshTokenDecoded?: DecodedToken;
+  #credentials?: Credentials;
 
   constructor(connectionConfig?: ConnectionConfig) {
     this.baseUrl = connectionConfig?.baseUrl || defaultBaseUrl;
     this.realmName = connectionConfig?.realmName || defaultRealm;
+    this.timeout = connectionConfig?.timeout;
+    this.enableExperimentalApis =
+      connectionConfig?.enableExperimentalApis ?? false;
     this.#requestOptions = connectionConfig?.requestOptions;
     this.#globalRequestArgOptions = connectionConfig?.requestArgOptions;
 
@@ -71,6 +95,7 @@ export class KeycloakAdminClient {
     this.groups = new Groups(this);
     this.roles = new Roles(this);
     this.organizations = new Organizations(this);
+    this.workflows = new Workflows(this);
     this.clients = new Clients(this);
     this.realms = new Realms(this);
     this.clientScopes = new ClientScopes(this);
@@ -82,18 +107,29 @@ export class KeycloakAdminClient {
     this.whoAmI = new WhoAmI(this);
     this.attackDetection = new AttackDetection(this);
     this.cache = new Cache(this);
+    this.ssf = new Ssf(this);
   }
 
   public async auth(credentials: Credentials) {
-    const { accessToken, refreshToken } = await getToken({
+    const { accessToken, refreshToken } = await getToken(
+      this.#getTokenSettings(credentials),
+    );
+    this.#credentials = credentials;
+    this.setAccessToken(accessToken);
+    this.setRefreshToken(refreshToken);
+  }
+
+  #getTokenSettings(credentials: Credentials): Settings {
+    return {
       baseUrl: this.baseUrl,
       realmName: this.realmName,
       scope: this.scope,
       credentials,
-      requestOptions: this.#requestOptions,
-    });
-    this.accessToken = accessToken;
-    this.refreshToken = refreshToken;
+      requestOptions: {
+        ...this.#requestOptions,
+        ...(this.timeout ? { signal: AbortSignal.timeout(this.timeout) } : {}),
+      },
+    };
   }
 
   public registerTokenProvider(provider: TokenProvider) {
@@ -106,6 +142,12 @@ export class KeycloakAdminClient {
 
   public setAccessToken(token: string) {
     this.accessToken = token;
+    this.#accessTokenDecoded = decodeToken(token);
+  }
+
+  public setRefreshToken(token: string) {
+    this.refreshToken = token;
+    this.#refreshTokenDecoded = decodeToken(token);
   }
 
   public async getAccessToken() {
@@ -113,7 +155,52 @@ export class KeycloakAdminClient {
       return this.#tokenProvider.getAccessToken();
     }
 
+    if (this.isTokenExpired()) {
+      await this.#refreshAccessToken();
+    }
+
     return this.accessToken;
+  }
+
+  async #refreshAccessToken() {
+    if (!this.refreshToken || !this.#credentials) {
+      throw new Error(
+        "Cannot refresh token: missing refresh token or credentials",
+      );
+    }
+
+    if (this.isRefreshTokenExpired()) {
+      throw new Error("Cannot refresh token: refresh token has expired");
+    }
+
+    const { accessToken, refreshToken } = await getToken(
+      this.#getTokenSettings({
+        grantType: "refresh_token",
+        clientId: this.#credentials.clientId,
+        clientSecret: this.#credentials.clientSecret,
+        refreshToken: this.refreshToken,
+      }),
+    );
+
+    this.setAccessToken(accessToken);
+    this.setRefreshToken(refreshToken);
+  }
+
+  public isTokenExpired(): boolean {
+    return this.#isExpired(this.#accessTokenDecoded);
+  }
+
+  public isRefreshTokenExpired(): boolean {
+    return this.#isExpired(this.#refreshTokenDecoded);
+  }
+
+  #isExpired(token?: DecodedToken): boolean {
+    if (typeof token?.exp !== "number") {
+      return false;
+    }
+    const expiresIn =
+      token.exp - Math.ceil(new Date().getTime() / 1000) - MIN_VALIDITY;
+    return expiresIn < 0;
   }
 
   public getRequestOptions() {

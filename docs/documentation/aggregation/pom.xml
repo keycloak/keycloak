@@ -9,7 +9,9 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <name>Aggregation</name>
+    <name>Documentation Aggregation</name>
+    <description>Documentation Aggregation</description>
+
     <artifactId>aggregation</artifactId>
     <packaging>pom</packaging>
 

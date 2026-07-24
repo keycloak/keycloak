@@ -17,7 +17,11 @@
 
 package org.keycloak.testsuite.model.session;
 
-import org.junit.Test;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
+
+import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -29,13 +33,11 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.stream.IntStream;
+import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
 
 @RequireProvider(UserSessionProvider.class)
@@ -43,8 +45,6 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
 
     private String realmId;
     private static final int CLIENTS_COUNT = 10;
-
-    private static final ThreadLocal<Boolean> wasWriting = ThreadLocal.withInitial(() -> false);
 
     @Override
     public void createEnvironment(KeycloakSession s) {
@@ -83,6 +83,21 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
 
         // Create/Update client session's notes concurrently
         CountDownLatch cdl = new CountDownLatch(20 * CLIENTS_COUNT);
+        if (Profile.Feature.STATELESS.isAvailable()) {
+            // In stateless mode, the authentication sessions are pessimistically locked,
+            // therefore there can be no concurrency with the when creating client sessions.
+            IntStream.range(0, CLIENTS_COUNT)
+                    .forEach(i -> inComittedTransaction(i, (session, n) -> {
+                        RealmModel realm = session.realms().getRealm(realmId);
+                        session.getContext().setRealm(realm);
+                        ClientModel client = realm.getClientByClientId("client" + n);
+
+                        UserSessionModel uSession = session.sessions().getUserSession(realm, uId);
+                        session.sessions().createClientSession(realm, client, uSession);
+
+                        return null;
+                    }));
+        }
         IntStream.range(0, 20 * CLIENTS_COUNT).parallel()
                 .forEach(i -> inComittedTransaction(i, (session, n) -> { try {
                     RealmModel realm = session.realms().getRealm(realmId);
@@ -92,7 +107,6 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
                     UserSessionModel uSession = session.sessions().getUserSession(realm, uId);
                     AuthenticatedClientSessionModel cSession = uSession.getAuthenticatedClientSessionByClient(client.getId());
                     if (cSession == null) {
-                        wasWriting.set(true);
                         cSession = session.sessions().createClientSession(realm, client, uSession);
                     }
 
@@ -103,7 +117,8 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
                     cdl.countDown();
                 }}));
 
-        cdl.await(10, TimeUnit.SECONDS);
+        assertThat(cdl.await(10, TimeUnit.SECONDS), is(true));
+
         withRealm(this.realmId, (session, realm) -> {
             UserSessionModel uSession = session.sessions().getUserSession(realm, uId);
             assertThat(uSession.getAuthenticatedClientSessions(), aMapWithSize(CLIENTS_COUNT));
@@ -118,7 +133,7 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
             return null;
         });
 
-        inComittedTransaction((Consumer<KeycloakSession>) session -> {
+        inComittedTransaction(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
             session.getContext().setRealm(realm);
             session.realms().removeRealm(realmId);

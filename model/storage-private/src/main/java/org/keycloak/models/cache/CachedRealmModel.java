@@ -16,12 +16,12 @@
  */
 package org.keycloak.models.cache;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.StorageProviderRealmModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.provider.ProviderEvent;
-
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.StorageProviderRealmModel;
+import org.keycloak.provider.ProviderEvent;
 
 /**
  * Cached realms will implement this interface

@@ -27,14 +27,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
 import javax.naming.directory.SearchControls;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -54,6 +53,8 @@ import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.storage.ldap.mappers.LDAPMappersComparator;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.membership.MembershipType;
+
+import org.jboss.logging.Logger;
 
 /**
  * Allow to directly call some operations against LDAPIdentityStore.
@@ -153,12 +154,11 @@ public class LDAPUtils {
             ldapQuery.addReturningReadOnlyLdapAttribute(kerberosPrincipalAttr);
         }
 
-        if (config.isActiveDirectory()) {
-            ldapQuery.addReturningLdapAttribute(LDAPConstants.PWD_LAST_SET);
-        } else {
-            // https://datatracker.ietf.org/doc/html/draft-behera-ldap-password-policy
-            ldapQuery.addReturningLdapAttribute(LDAPConstants.PWD_CHANGED_TIME);
-        }
+        // Mark the password modification time attribute as read-only so it is not sent back on updates — it is an
+        // operational attribute managed by the LDAP server. Mappers that need to write it (e.g. the MSAD mapper writes
+        // pwdLastSet to force password expiration) can call removeReadOnlyAttributeName to override this default.
+        ldapQuery.addReturningLdapAttribute(ldapProvider.getLdapIdentityStore().getPasswordModificationTimeAttributeName());
+        ldapQuery.addReturningReadOnlyLdapAttribute(ldapProvider.getLdapIdentityStore().getPasswordModificationTimeAttributeName());
 
         return ldapQuery;
     }
@@ -185,7 +185,11 @@ public class LDAPUtils {
                     config.getUsernameLdapAttribute() + ", user DN: " + ldapUser.getDn() + ", attributes from LDAP: " + ldapUser.getAttributes());
         }
 
-        return ldapUsername;
+        if (config.isImportEnabled()) {
+            return Optional.of(ldapUsername).map(String::toLowerCase).orElse(null);
+        }
+
+        return  ldapUsername;
     }
 
     public static void checkUuid(LDAPObject ldapUser, LDAPConfig config) {

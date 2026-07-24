@@ -1,7 +1,9 @@
 package org.keycloak.saml.processing.core.saml.v2.writers;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.io.ByteArrayOutputStream;
+import java.net.URI;
+import javax.xml.datatype.XMLGregorianCalendar;
+
 import org.keycloak.dom.saml.v2.assertion.AuthnContextClassRefType;
 import org.keycloak.dom.saml.v2.assertion.AuthnContextDeclType;
 import org.keycloak.dom.saml.v2.assertion.AuthnContextType;
@@ -11,9 +13,8 @@ import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.StaxUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 
-import javax.xml.datatype.XMLGregorianCalendar;
-import java.io.ByteArrayOutputStream;
-import java.net.URI;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class SAMLAssertionWriterTest {
     @Test

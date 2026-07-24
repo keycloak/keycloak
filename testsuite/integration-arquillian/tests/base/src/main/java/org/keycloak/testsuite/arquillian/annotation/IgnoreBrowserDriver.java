@@ -17,13 +17,13 @@
 
 package org.keycloak.testsuite.arquillian.annotation;
 
-import org.openqa.selenium.WebDriver;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+
+import org.openqa.selenium.WebDriver;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 

@@ -19,7 +19,6 @@
 package org.keycloak.storage.adapter;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.keycloak.models.GroupModel;

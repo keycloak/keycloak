@@ -16,10 +16,13 @@
  */
 package org.keycloak.quarkus.runtime.configuration;
 
-import org.junit.Test;
-import org.keycloak.quarkus.runtime.configuration.mappers.ManagementPropertyMappers;
-
 import java.util.Map;
+
+import org.keycloak.quarkus.runtime.cli.command.Build;
+import org.keycloak.quarkus.runtime.configuration.mappers.ManagementPropertyMappers;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+
+import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -32,8 +35,7 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
 
         assertConfig(Map.of(
                 "http-management-port", "9000",
-                "http-management-relative-path", "/",
-                "http-management-host", "0.0.0.0"
+                "http-management-relative-path", "/"
         ));
 
         assertManagementEnabled(false);
@@ -150,6 +152,11 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
                 "KC_HTTPS_KEY_STORE_PASSWORD", "ultra-password",
                 "KC_HTTPS_KEY_STORE_TYPE", "BCFKS"
         ));
+        putEnvVars(Map.of(
+                "KC_HTTPS_TRUST_STORE_FILE", "truststore.p12",
+                "KC_HTTPS_TRUST_STORE_PASSWORD", "trust-password",
+                "KC_HTTPS_TRUST_STORE_TYPE", "PKCS12"
+        ));
 
         initConfig();
 
@@ -164,8 +171,42 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
                 "https-management-key-store-password", "ultra-password",
                 "https-management-key-store-type", "BCFKS"
         ));
+        assertConfig(Map.of(
+                "https-management-trust-store-file", "truststore.p12",
+                "https-management-trust-store-password", "trust-password",
+                "https-management-trust-store-type", "PKCS12"
+        ));
+        assertExternalConfig(Map.of(
+                "quarkus.management.ssl.certificate.trust-store-file", "truststore.p12",
+                "quarkus.management.ssl.certificate.trust-store-password", "trust-password",
+                "quarkus.management.ssl.certificate.trust-store-file-type", "PKCS12"
+        ));
         assertManagementEnabled(true);
         assertManagementHttpsEnabled(true);
+    }
+
+    @Test
+    public void managementMappedTrustStoreValues() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_MANAGEMENT_TRUST_STORE_FILE", "management-truststore.p12",
+                "KC_HTTPS_MANAGEMENT_TRUST_STORE_PASSWORD", "management-trust-password",
+                "KC_HTTPS_MANAGEMENT_TRUST_STORE_TYPE", "JKS"
+        ));
+
+        initConfig();
+
+        assertConfig(Map.of(
+                "https-management-trust-store-file", "management-truststore.p12",
+                "https-management-trust-store-password", "management-trust-password",
+                "https-management-trust-store-type", "JKS"
+        ));
+        assertExternalConfig(Map.of(
+                "quarkus.management.ssl.certificate.trust-store-file", "management-truststore.p12",
+                "quarkus.management.ssl.certificate.trust-store-password", "management-trust-password",
+                "quarkus.management.ssl.certificate.trust-store-file-type", "JKS"
+        ));
+        assertManagementEnabled(true);
     }
 
     @Test
@@ -186,6 +227,27 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
         ));
         assertManagementEnabled(true);
         assertManagementHttpsEnabled(true);
+    }
+
+    @Test
+    public void managementSchemeHttp() {
+        makeInterfaceOccupied();
+        putEnvVars(Map.of(
+                "KC_HTTPS_CERTIFICATE_FILE", "/some/path/srv.crt.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE", "/some/path/srv.key.pem",
+                "KC_HTTP_MANAGEMENT_SCHEME", "http"
+        ));
+
+        initConfig();
+        PropertyMappers.sanitizeDisabledMappers(new Build());
+
+        assertConfig(Map.of(
+                "https-certificate-file", "/some/path/srv.crt.pem",
+                "https-certificate-key-file", "/some/path/srv.key.pem"
+        ));
+        assertConfigNull("https-management-certificate-file");
+        assertManagementEnabled(true);
+        assertManagementHttpsEnabled(false);
     }
 
     @Test
@@ -326,6 +388,8 @@ public class ManagementConfigurationTest extends AbstractConfigurationTest {
         for (var env : envVarChangeState) {
             putEnvVar(env, "true");
         }
+
+        putEnvVar("KC_HTTP_HOST", "0.0.0.0");
 
         initConfig();
 

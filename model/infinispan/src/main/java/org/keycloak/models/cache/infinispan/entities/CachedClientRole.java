@@ -28,7 +28,7 @@ public class CachedClientRole extends CachedRole implements InClient {
 
     private final String clientId;
 
-    public CachedClientRole(Long revision, String clientId, RoleModel model, RealmModel realm) {
+    public CachedClientRole(long revision, String clientId, RoleModel model, RealmModel realm) {
         super(revision, model, realm);
         this.clientId = clientId;
 

@@ -16,9 +16,9 @@
  */
 package org.keycloak.authorization.model;
 
-import org.keycloak.authorization.store.StoreFactory;
-
 import java.util.Objects;
+
+import org.keycloak.authorization.store.StoreFactory;
 
 public abstract class AbstractAuthorizationModel {
 

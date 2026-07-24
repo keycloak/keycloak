@@ -1,8 +1,5 @@
 package org.keycloak.testframework.injection;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -10,11 +7,23 @@ import java.lang.annotation.Target;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 public class DefaultAnnotationProxyTest {
 
     @Test
     public void testGetField() {
         MockAnnotation proxy = DefaultAnnotationProxy.proxy(MockAnnotation.class, "");
+        Assertions.assertEquals(LifeCycle.CLASS, proxy.lifecycle());
+        Assertions.assertEquals(LinkedList.class, proxy.config());
+        Assertions.assertEquals("", proxy.ref());
+        Assertions.assertEquals("else", proxy.something());
+    }
+
+    @Test
+    public void testEmptyRefConvertedToEmptyString() {
+        MockAnnotation proxy = DefaultAnnotationProxy.proxy(MockAnnotation.class, null);
         Assertions.assertEquals(LifeCycle.CLASS, proxy.lifecycle());
         Assertions.assertEquals(LinkedList.class, proxy.config());
         Assertions.assertEquals("", proxy.ref());

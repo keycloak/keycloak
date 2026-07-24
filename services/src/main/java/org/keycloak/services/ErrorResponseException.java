@@ -17,13 +17,13 @@
 
 package org.keycloak.services;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
-import org.keycloak.utils.KeycloakSessionUtil;
-
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+import org.keycloak.utils.KeycloakSessionUtil;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -48,6 +48,10 @@ public class ErrorResponseException extends WebApplicationException {
         this.error = null;
         this.errorDescription = null;
         this.status = null;
+    }
+
+    public String getError() {
+        return error;
     }
 
     public String getErrorDescription() {

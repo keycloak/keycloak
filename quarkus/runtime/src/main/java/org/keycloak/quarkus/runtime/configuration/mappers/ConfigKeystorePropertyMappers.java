@@ -1,24 +1,24 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import io.smallrye.config.ConfigSourceInterceptorContext;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+
 import org.keycloak.config.ConfigKeystoreOptions;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
+import io.smallrye.config.ConfigSourceInterceptorContext;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-public final class ConfigKeystorePropertyMappers {
+public final class ConfigKeystorePropertyMappers implements PropertyMapperGrouping {
     private static final String SMALLRYE_KEYSTORE_PATH = "smallrye.config.source.keystore.kc-default.path";
     private static final String SMALLRYE_KEYSTORE_PASSWORD = "smallrye.config.source.keystore.kc-default.password";
 
 
-    private ConfigKeystorePropertyMappers() {
-    }
-
-    public static PropertyMapper<?>[] getConfigKeystorePropertyMappers() {
-        return new PropertyMapper[] {
+    @Override
+    public List<PropertyMapper<?>> getPropertyMappers() {
+        return List.of(
                 fromOption(ConfigKeystoreOptions.CONFIG_KEYSTORE)
                         .to(SMALLRYE_KEYSTORE_PATH)
                         .transformer(ConfigKeystorePropertyMappers::validatePath)
@@ -34,7 +34,7 @@ public final class ConfigKeystorePropertyMappers {
                         .to("smallrye.config.source.keystore.kc-default.type")
                         .paramLabel("config-keystore-type")
                         .build()
-        };
+        );
     }
 
     private static String validatePath(String option, ConfigSourceInterceptorContext context) {

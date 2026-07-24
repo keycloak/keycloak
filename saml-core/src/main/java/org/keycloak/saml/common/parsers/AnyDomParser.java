@@ -16,15 +16,16 @@
  */
 package org.keycloak.saml.common.parsers;
 
-import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.util.StaxParserUtil;
-import org.w3c.dom.Element;
-
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.events.StartElement;
 import java.util.LinkedList;
 import java.util.List;
 import javax.xml.namespace.QName;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.events.StartElement;
+
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.util.StaxParserUtil;
+
+import org.w3c.dom.Element;
 
 /**
  * Parses any DOM tree to a list of DOM representations.

@@ -16,16 +16,17 @@
  */
 package org.keycloak.component;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+
 import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.InvalidationHandler.ObjectType;
-import java.util.Collections;
-import java.util.List;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
-import java.util.Objects;
 
 /**
  * Ancestor for a provider factory for both a standalone {@link ProviderFactory} and a {@link ComponentFactory}. It

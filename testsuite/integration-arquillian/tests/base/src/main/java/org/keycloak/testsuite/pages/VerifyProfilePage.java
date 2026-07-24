@@ -17,9 +17,10 @@
 
 package org.keycloak.testsuite.pages;
 
-import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.auth.page.AccountFields;
 import org.keycloak.testsuite.util.UIUtils;
+
+import org.jboss.arquillian.graphene.page.Page;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
@@ -44,7 +45,6 @@ public class VerifyProfilePage extends AbstractPage {
 
     @FindBy(name = "department")
     private WebElement departmentInput;
-
 
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
@@ -161,8 +161,9 @@ public class VerifyProfilePage extends AbstractPage {
         return emailInput.getAttribute("value");
     }
 
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).equals("Update Account Information");
+    @Override
+    public String getExpectedPageId() {
+        return "login-login-update-profile";
     }
 
     public AccountFields.AccountErrors getInputAccountErrors(){

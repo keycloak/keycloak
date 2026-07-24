@@ -16,15 +16,16 @@
  */
 package org.keycloak.forms.login.freemarker.model;
 
-import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.realmOAuth2DeviceVerificationAction;
+import java.io.IOException;
+import java.net.URI;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.Urls;
 import org.keycloak.theme.Theme;
 
-import java.io.IOException;
-import java.net.URI;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.realmOAuth2DeviceVerificationAction;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -122,6 +123,14 @@ public class UrlBean {
 
     public String getResourcesCommonPath() {
         URI uri = getThemeRootUri();
+        return uri.getPath() + "/" + getCommonPath();
+    }
+
+    public String getResourcesCommonUrl() {
+        return getThemeRootUri().toString() + "/" + getCommonPath();
+    }
+
+    private String getCommonPath() {
         String commonPath = "";
         try {
             commonPath = theme.getProperties().getProperty("common");
@@ -131,7 +140,7 @@ public class UrlBean {
         if (commonPath == null || commonPath.isEmpty()) {
             commonPath = "common/keycloak";
         }
-        return uri.getPath() + "/" + commonPath;
+        return commonPath;
     }
 
     private URI getThemeRootUri() {

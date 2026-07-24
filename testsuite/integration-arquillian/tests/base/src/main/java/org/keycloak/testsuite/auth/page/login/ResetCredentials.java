@@ -16,14 +16,14 @@
  */
 package org.keycloak.testsuite.auth.page.login;
 
+import jakarta.ws.rs.core.UriBuilder;
+
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-import jakarta.ws.rs.core.UriBuilder;
-
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
-import static org.keycloak.testsuite.util.UIUtils.setTextInputValue;
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
+import static org.keycloak.testsuite.util.UIUtils.setTextInputValue;
 
 
 /**

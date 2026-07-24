@@ -79,7 +79,7 @@ restarting {project_name}.
 +
 [source,bash]
 ----
-bin/kc.[sh|bat] start --spi-theme-static-max-age=-1 --spi-theme-cache-themes=false --spi-theme--cache-templates=false
+bin/kc.[sh|bat] start --spi-theme--static-max-age=-1 --spi-theme--cache-themes=false --spi-theme--cache-templates=false
 ----
 
 . Create a directory in the `themes` directory.
@@ -130,9 +130,16 @@ Theme properties are set in the file `<THEME TYPE>/theme.properties` in the them
 
 * parent - Parent theme to extend
 * import - Import resources from another theme
-* common - Override the common resource path. The default value is `common/keycloak` when not specified. This value would be used as value of suffix of ${r"`${url.resourcesCommonPath}`"}, which is used typically in freemarker templates (prefix of ${r"`${url.resoucesCommonPath}`"} value is theme root uri).
+* abstract - Boolean that, when present and `true`, marks the theme is only used as base for other extensions and is not displayed to be selected in the admin console on the realm themes page. Examples of this are the `base` themes described on this guide.
+* common - Override the common resource path. The default value is `common/keycloak` when not specified. This value would be used as value of suffix of ${r"`${url.resourcesCommonPath}`"} and ${r"`${url.resourcesCommonUrl}`"}, which are used typically in freemarker templates. ${r"`${url.resourcesCommonPath}`"} returns only the path, while ${r"`${url.resourcesCommonUrl}`"} returns the full URL including scheme and host, which is required for email templates.
 * styles - Space-separated list of styles to include
+* stylesCommon - Space-separated list of common styles to include
+* scripts - Space-separated list of scripts to include
+* favicons - Space-separated list of favicons to include, or dot-notation entries (see below)
 * locales - Comma-separated list of supported locales
+* contentHashPattern - Regex pattern of a file path in the theme where files have a content hash as part of their file name.
+A content hash is usually an abbreviated hash of the file's contents.
+The hash will change when the contents of the file have changed, and is usually created using the bundling process of the JavaScript application bundling.
 
 There are a list of properties that can be used to change the css class used for certain element types. For a list of these properties look at the theme.properties
 file in the corresponding type of the keycloak theme (`themes/keycloak/<THEME TYPE>/theme.properties`).
@@ -198,6 +205,52 @@ styles=css/login.css css/styles.css
 +
 NOTE: To override styles from the parent stylesheets, ensure that your stylesheet is listed last.
 
+[[_theme_resource_attributes]]
+=== Advanced CSS, script, and favicon imports
+
+In addition to the space-separated `styles`, `stylesCommon`, `scripts`, and `favicons` properties, you can configure individual resources with HTML attributes using dot notation:
+
+[source,properties]
+----
+styles.file1=css/file1.css
+styles.file1.media=(prefers-color-scheme: light)
+styles.file2=css/file2.css
+styles.file2.media=(prefers-color-scheme: dark)
+
+scripts.analytics=js/analytics.js
+scripts.analytics.integrity=sha384-abc...
+scripts.analytics.defer=true
+scripts.analytics.type=module
+
+favicons.svg=favicon/favicon.svg
+favicons.light=favicon/favicon-light.png
+favicons.light.media=(prefers-color-scheme: light)
+favicons.dark=favicon/favicon-dark.png
+favicons.dark.media=(prefers-color-scheme: dark)
+favicons.ico=favicon/favicon.ico
+----
+
+Each resource is defined with `<type>.<id>=<path>`, where `<id>` is an arbitrary label. Optional attributes are set with `<type>.<id>.<attribute>=<value>`.
+
+Supported attributes:
+
+* styles / stylesCommon: `media`, `integrity`, `crossorigin`
+* scripts: `integrity`, `defer`, `async`, `type`, `crossorigin`, `blocking`
+* favicons: `media`, `type`, `rel`
+
+Favicon MIME types are inferred from the file extension when `type` is not set.
+
+You can combine the legacy space-separated lists with dot-notation entries. Legacy entries are included first, followed by dot-notation entries. To control the order of dot-notation entries, use numeric ids (for example, `styles.1`, `styles.2`) or an explicit order property:
+
+[source,properties]
+----
+styles.order=dark,light
+styles.light=css/light.css
+styles.dark=css/dark.css
+----
+
+NOTE: Resource ids must not contain dots, because dots separate the id from attribute names. The id `order` is reserved for explicit ordering via `<type>.order`.
+
 === Adding a script to a theme
 
 You can add one or more scripts to a theme.
@@ -252,7 +305,10 @@ Or to use directly in HTML templates add the following to a custom HTML template
 In order to use a custom footer, create a `footer.ftl` file in your custom login theme with the desired content.
 
 An example for a custom `footer.ftl` may look like this:
-```
+
+[source]
+----
+<#noparse>
 <#macro content>
 <#-- footer at the end of the login box -->
 <div>
@@ -263,7 +319,8 @@ An example for a custom `footer.ftl` may look like this:
     </ul>
 </div>
 </#macro>
-```
+</#noparse>
+----
 
 === Adding an image to an email theme
 
@@ -277,6 +334,15 @@ To use directly in HTML templates add the following to a custom HTML template:
 ----
 <img src="${r"${url.resourcesUrl}"}/img/image.jpg" alt="My image description">
 ----
+
+To reference images from common theme resources in email templates, use `url.resourcesCommonUrl` which provides the full URL (including scheme and host) required by email clients:
+
+[source,html]
+----
+<img src="${r"${url.resourcesCommonUrl}"}/img/logo.png" alt="My logo">
+----
+
+NOTE: Email clients require absolute URLs for images since they cannot resolve relative paths. Use `url.resourcesCommonUrl` or `url.resourcesUrl` instead of their `Path` counterparts (`url.resourcesCommonPath`, `url.resourcesPath`) in email templates.
 
 [[custom-identity-providers-icons]]
 === Adding custom Identity Providers icons
@@ -305,7 +371,7 @@ Although it is possible to create custom templates to change completely how page
 templates as much as possible. The reasons are:
 
 * During upgrades, you might be forced to update your custom templates to get the latest updates from newer versions
-* link:#_theme_stylesheet[Configuring CSS styles] to your themes allows you to adapt the UI to match your UI design standards and guidelines.
+* <<_theme_stylesheet,Configuring CSS styles>> to your themes allows you to adapt the UI to match your UI design standards and guidelines.
 * link:{adminguide_link}#user-profile[User Profile] allows you to support custom user attributes and configure how they are rendered.
 
 In most cases, you won't need to change templates to adapt {project_name} to your needs, but you can override individual
@@ -322,13 +388,15 @@ For a list of templates in other theme types look at the `theme/base/<THEME_TYPE
 +
 For example, to create a custom login form for the `mytheme` theme, copy `themes/base/login/login.ftl` to `themes/mytheme/login` and open it in an editor.
 +
-${r"After the first line (<#import ...>), add `<h1>HELLO WORLD!</h1>` as shown here:"}
+After the first line (`+<#noparse><#import ...></#noparse>+`), add `<h1>HELLO WORLD!</h1>` as shown here:
 +
 [source,html]
 ----
-${r"<#import"} "template.ftl" as layout>
+<#noparse>
+<#import "template.ftl" as layout>
 <h1>HELLO WORLD!</h1>
 ...
+</#noparse>
 ----
 
 . Back up the modified template. When upgrading to a new version of {project_name} you may need to update your custom templates to apply changes to the original template if applicable.
@@ -357,6 +425,9 @@ passwordResetBodyHtml=<a href="{0}">Reset password</a>
 Themes can be deployed to {project_name} by copying the theme directory to `themes` or it can be deployed as an archive. During development you can copy the
 theme to the `themes` directory, but in production you may want to consider using an `archive`. An `archive` makes it simpler to have a versioned copy of
 the theme, especially when you have multiple instances of {project_name} for example with clustering.
+
+WARNING: Themes contain FreeMarker templates that the server renders at runtime, so a malicious template can run code as the {project_name} process. Install themes only from trusted sources, and restrict write access to the `themes` directory and to theme JARs under `providers/` to trusted operators.
+
 
 .Procedure
 
@@ -409,3 +480,47 @@ If enabled, the dark variant of the theme will be applied based on user preferen
 * For more inspiration, see <<_default-themes,Default Themes>> bundled inside {project_name}.
 * {quickstartRepo_link}[{quickstartRepo_name}] - Directory `extension` of the quickstarts repository contains some theme examples, which can be also used as an inspiration.
 </@tmpl.guide>
+
+== Theme SPIs
+
+The following sections show how to achieve finer grained control over your themes.
+
+=== Theme selector
+
+By default the theme configured for the realm is used, with the exception of clients being able to override the login
+theme. This behavior can be changed through the Theme Selector SPI.
+
+This could be used to select different themes for desktop and mobile devices by looking at the user agent
+header, for example.
+
+To create a custom theme selector you need to implement `ThemeSelectorProviderFactory` and `ThemeSelectorProvider`.
+
+=== Theme resources
+
+When implementing custom providers there may often be a need to add additional templates, resources and messages bundles.
+
+ifeval::[{project_product}!=true]
+An example use-case would be a https://www.keycloak.org/docs/latest/server_development/index.html#_auth_spi[custom authenticator] that requires additional templates and resources.
+endif::[]
+
+The easiest way to load additional theme resources is to create a JAR with templates in `theme-resources/templates`
+resources in `theme-resources/resources` and messages bundles in `theme-resources/messages`.
+
+If you want a more flexible way to load templates and resources that can be achieved through the ThemeResourceSPI.
+By implementing `ThemeResourceProviderFactory` and `ThemeResourceProvider` you can decide exactly how to load templates
+and resources.
+
+=== Locale selector
+
+By default, the locale is selected using the `DefaultLocaleSelectorProvider` which implements the `LocaleSelectorProvider` interface. English is the default language when internationalization is disabled.
+
+With internationalization enabled, the locale is resolved according to the logic described in the https://www.keycloak.org/docs/latest/server_admin/#_user_locale_selection[Server Administration documentation].
+
+This behavior can be changed through the `LocaleSelectorSPI` by implementing the `LocaleSelectorProvider` and `LocaleSelectorProviderFactory`.
+
+The `LocaleSelectorProvider` interface has a single method, `resolveLocale`, which must return a locale given a `RealmModel` and a nullable `UserModel`. The actual request is available from the `KeycloakSession#getContext` method.
+
+Custom implementations can extend the `DefaultLocaleSelectorProvider` in order to reuse parts of the default behavior. For example to ignore the `Accept-Language` request header, a custom implementation could extend the default provider, override it's `getAcceptLanguageHeaderLocale`, and return a null value. As a result the locale selection will fall back on the realm's default language.
+
+=== Additional resources for Locale selector
+* For more details on creating and deploying a custom provider, see https://www.keycloak.org/docs/latest/server_development/index.html#_providers[Service Provider Interfaces].

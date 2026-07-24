@@ -1,5 +1,5 @@
-import { Page } from "@playwright/test";
-import { clickSelectRow, clickTableToolbarItem } from "../utils/table";
+import type { Page } from "@playwright/test";
+import { clickSelectRow, clickTableToolbarItem } from "../utils/table.ts";
 
 export async function goToMembersTab(page: Page) {
   await page.getByTestId("members").click();
@@ -25,6 +25,10 @@ export async function addMember(
 
 export async function toggleIncludeSubGroupUsers(page: Page) {
   await page.getByTestId("includeSubGroupsCheck").click();
+}
+
+export async function assertIncludeSubGroupUsersNotVisible(page: Page) {
+  await page.getByTestId("includeSubGroupsCheck").waitFor({ state: "hidden" });
 }
 
 export async function leaveGroup(page: Page) {

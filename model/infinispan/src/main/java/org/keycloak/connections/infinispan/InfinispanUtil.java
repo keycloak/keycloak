@@ -21,6 +21,10 @@ import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.keycloak.common.util.Time;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.spi.infinispan.impl.embedded.CacheConfigurator;
+
 import org.infinispan.commons.time.TimeService;
 import org.infinispan.commons.util.FileLookup;
 import org.infinispan.commons.util.FileLookupFactory;
@@ -36,9 +40,6 @@ import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.infinispan.util.EmbeddedTimeService;
 import org.jboss.logging.Logger;
 import org.jgroups.JChannel;
-import org.keycloak.common.util.Time;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.spi.infinispan.impl.embedded.CacheConfigurator;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -49,6 +50,11 @@ public class InfinispanUtil {
 
     public static final int MAXIMUM_REPLACE_RETRIES = 25;
 
+    /**
+     * @deprecated For removal. Use {@link InfinispanConnectionProvider#getNodeInfo()} instead.
+     * @see TopologyInfo
+     */
+    @Deprecated
     public static TopologyInfo getTopologyInfo(KeycloakSession session) {
         return session.getProvider(InfinispanConnectionProvider.class).getTopologyInfo();
     }

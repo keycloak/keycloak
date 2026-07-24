@@ -1,0 +1,13 @@
+
+=== Accessing the new entity manager
+
+In order to simply access your data in your {project_name} extension, you can obtain the link:https://jakarta.ee/specifications/persistence/3.2/apidocs/jakarta.persistence/jakarta/persistence/entitymanager[EntityManager] for the additional datasources used in these quickstarts.
+It helps you to interact with entities specified for your datasource, as it provides some kind of bridge between your JPA entities and the database.
+
+You can use the new entity manager (for the `user-store` datasource) as follows:
+
+[source,java]
+----
+EntityManager em = session.getProvider(JpaConnectionProvider.class, "user-store").getEntityManager();
+var user = em.find(org.your.extension.UserEntity.class, 123L);
+----

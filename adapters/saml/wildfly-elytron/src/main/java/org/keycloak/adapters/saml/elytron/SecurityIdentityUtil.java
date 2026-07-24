@@ -19,13 +19,13 @@ package org.keycloak.adapters.saml.elytron;
 
 import java.io.IOException;
 import java.security.Principal;
-
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.sasl.AuthorizeCallback;
 
 import org.keycloak.adapters.saml.SamlPrincipal;
+
 import org.wildfly.security.auth.callback.AuthenticationCompleteCallback;
 import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
 import org.wildfly.security.auth.callback.SecurityIdentityCallback;

@@ -27,7 +27,7 @@
     <artifactId>keycloak-client-cli-dist</artifactId>
     <packaging>pom</packaging>
     <name>Keycloak Client CLI Distribution</name>
-    <description/>
+    <description>Keycloak Client CLI Distribution</description>
 
     <dependencies>
         <dependency>

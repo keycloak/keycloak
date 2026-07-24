@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
@@ -30,6 +29,11 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
+import org.keycloak.services.clientpolicy.context.ClientModelContext;
+
+import org.jboss.logging.Logger;
+
+import static org.keycloak.services.clientpolicy.ClientPolicyEvent.REGISTER;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -67,33 +71,19 @@ public class ClientAccessTypeCondition extends AbstractClientPolicyConditionProv
 
     @Override
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
-        switch (context.getEvent()) {
-            case AUTHORIZATION_REQUEST:
-            case TOKEN_REQUEST:
-            case TOKEN_RESPONSE:
-            case SERVICE_ACCOUNT_TOKEN_REQUEST:
-            case SERVICE_ACCOUNT_TOKEN_RESPONSE:
-            case TOKEN_REFRESH:
-            case TOKEN_REFRESH_RESPONSE:
-            case TOKEN_REVOKE:
-            case TOKEN_INTROSPECT:
-            case USERINFO_REQUEST:
-            case LOGOUT_REQUEST:
-            case UPDATE:
-            case UPDATED:
-            case REGISTERED:
-                if (isClientAccessTypeMatched()) return ClientPolicyVote.YES;
-                return ClientPolicyVote.NO;
-            case REGISTER:
-                if (isProposedClientAccessTypeMatched((ClientCRUDContext)context)) return ClientPolicyVote.YES;
-                return ClientPolicyVote.NO;
-            default:
-                return ClientPolicyVote.ABSTAIN;
+        if (context instanceof ClientModelContext) {
+            ClientModel client = ((ClientModelContext) context).getClient();
+            if (isClientAccessTypeMatched(client)) return ClientPolicyVote.YES;
+            return ClientPolicyVote.NO;
+        } else if (context.getEvent() == REGISTER) {
+            if (isProposedClientAccessTypeMatched((ClientCRUDContext)context)) return ClientPolicyVote.YES;
+            return ClientPolicyVote.NO;
+        } else {
+            return ClientPolicyVote.ABSTAIN;
         }
     }
 
-    private String getClientAccessType() {
-        ClientModel client = session.getContext().getClient();
+    private String getClientAccessType(ClientModel client) {
         if (client == null) return null;
         return getClientAccessType(client.isPublicClient(), client.isBearerOnly());
     }
@@ -111,8 +101,8 @@ public class ClientAccessTypeCondition extends AbstractClientPolicyConditionProv
         else return ClientAccessTypeConditionFactory.TYPE_CONFIDENTIAL;
     }
 
-    private boolean isClientAccessTypeMatched() {
-        return isClientAccessTypeMatched(getClientAccessType());
+    private boolean isClientAccessTypeMatched(ClientModel client) {
+        return isClientAccessTypeMatched(getClientAccessType(client));
     }
 
     private boolean isProposedClientAccessTypeMatched(ClientCRUDContext context) {

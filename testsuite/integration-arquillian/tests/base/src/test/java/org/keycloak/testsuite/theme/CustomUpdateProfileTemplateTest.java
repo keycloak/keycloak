@@ -19,13 +19,6 @@
 
 package org.keycloak.testsuite.theme;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
-import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
-
 import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
 import java.util.Map;
@@ -35,9 +28,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.Response;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Before;
-import org.junit.Test;
+
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -45,12 +36,23 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
-import org.keycloak.testsuite.util.UserBuilder;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class CustomUpdateProfileTemplateTest extends AbstractTestRealmKeycloakTest {
 
@@ -66,9 +68,6 @@ public class CustomUpdateProfileTemplateTest extends AbstractTestRealmKeycloakTe
 
     @Page
     protected LoginUpdateProfilePage updateProfilePage;
-
-    @Page
-    protected AppPage appPage;
 
     private UPConfig upConfig;
 
@@ -87,9 +86,9 @@ public class CustomUpdateProfileTemplateTest extends AbstractTestRealmKeycloakTe
                 .password("password")
                 .firstName("Tom")
                 .lastName("Brady")
-                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name())
+                .requiredActions(UserModel.RequiredAction.UPDATE_PROFILE.name())
                 .build();
-        Response resp = testRealm().users().create(user);
+        Response resp = managedRealm.admin().users().create(user);
         String userId = ApiUtil.getCreatedId(resp);
         resp.close();
         getCleanup().addUserId(userId);
@@ -112,7 +111,7 @@ public class CustomUpdateProfileTemplateTest extends AbstractTestRealmKeycloakTe
         for (String name : CUSTOM_ATTRIBUTES.keySet()) {
             upConfig.removeAttribute(name);
         }
-        testRealm().users().userProfile().update(upConfig);
+        managedRealm.admin().users().userProfile().update(upConfig);
         testUpdateProfile();
     }
 
@@ -122,7 +121,7 @@ public class CustomUpdateProfileTemplateTest extends AbstractTestRealmKeycloakTe
         for (String name : CUSTOM_ATTRIBUTES.keySet()) {
             upConfig.removeAttribute(name);
         }
-        testRealm().users().userProfile().update(upConfig);
+        managedRealm.admin().users().userProfile().update(upConfig);
         UserRepresentation user = updateProfile();
         assertNull(user.getAttributes());
     }
@@ -132,7 +131,7 @@ public class CustomUpdateProfileTemplateTest extends AbstractTestRealmKeycloakTe
         for (String name : CUSTOM_ATTRIBUTES.keySet()) {
             upConfig.removeAttribute(name);
         }
-        testRealm().users().userProfile().update(upConfig);
+        managedRealm.admin().users().userProfile().update(upConfig);
         UserRepresentation user = updateProfile();
         assertNull(user.getAttributes());
     }
@@ -157,26 +156,26 @@ public class CustomUpdateProfileTemplateTest extends AbstractTestRealmKeycloakTe
     }
 
     protected UserRepresentation getUser(String username) {
-        List<UserRepresentation> users = testRealm().users().search(username);
+        List<UserRepresentation> users = managedRealm.admin().users().search(username);
         assertFalse(users.isEmpty());
-        return testRealm().users().get(users.get(0).getId()).toRepresentation();
+        return managedRealm.admin().users().get(users.get(0).getId()).toRepresentation();
     }
 
     private void navigateToUpdateProfilePage() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("tom@keycloak.org", "password");
         updateProfilePage.assertCurrent();
     }
 
     private UPConfig updateUserProfileConfiguration() {
-        UPConfig upCOnfig = testRealm().users().userProfile().getConfiguration();
+        UPConfig upCOnfig = managedRealm.admin().users().userProfile().getConfiguration();
         upCOnfig.setUnmanagedAttributePolicy(null);
         upCOnfig.addOrReplaceAttribute(new UPAttribute("street", new UPAttributePermissions(Set.of(ROLE_ADMIN), Set.of(ROLE_USER))));
         upCOnfig.addOrReplaceAttribute(new UPAttribute("locality", new UPAttributePermissions(Set.of(ROLE_ADMIN), Set.of(ROLE_USER))));
         upCOnfig.addOrReplaceAttribute(new UPAttribute("region", new UPAttributePermissions(Set.of(ROLE_ADMIN), Set.of(ROLE_USER))));
         upCOnfig.addOrReplaceAttribute(new UPAttribute("postal_code", new UPAttributePermissions(Set.of(ROLE_ADMIN), Set.of(ROLE_USER))));
         upCOnfig.addOrReplaceAttribute(new UPAttribute("country", new UPAttributePermissions(Set.of(ROLE_ADMIN), Set.of(ROLE_USER))));
-        testRealm().users().userProfile().update(upCOnfig);
+        managedRealm.admin().users().userProfile().update(upCOnfig);
         return upCOnfig;
     }
 }

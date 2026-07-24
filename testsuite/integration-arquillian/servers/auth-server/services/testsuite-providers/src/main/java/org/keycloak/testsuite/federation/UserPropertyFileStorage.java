@@ -16,10 +16,21 @@
  */
 package org.keycloak.testsuite.federation;
 
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputValidator;
-import org.keycloak.credential.UserCredentialManager;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -34,18 +45,6 @@ import org.keycloak.storage.adapter.AbstractUserAdapter;
 import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
-
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
@@ -155,7 +154,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
 
                 @Override
                 public SubjectCredentialManager credentialManager() {
-                    return new UserCredentialManager(session, realm, this);
+                    return session.users().getUserCredentialManager(this);
                 }
             };
         }

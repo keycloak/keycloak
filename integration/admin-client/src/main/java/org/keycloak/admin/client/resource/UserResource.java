@@ -17,11 +17,8 @@
 
 package org.keycloak.admin.client.resource;
 
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.FederatedIdentityRepresentation;
-import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.representations.idm.UserSessionRepresentation;
+import java.util.List;
+import java.util.Map;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -35,8 +32,12 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.util.List;
-import java.util.Map;
+
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.UserSessionRepresentation;
 
 /**
  * @author rodrigo.sasaki@icarros.com.br
@@ -324,6 +325,13 @@ public interface UserResource {
     @DELETE
     @Path("consents/{client}")
     void revokeConsent(@PathParam("client") String clientId);
+
+    /**
+     * @since Keycloak server 26.7.0
+     * @return {@link UserVerifiableCredentialResource} with further methods to deal with credentials and issued credentials of the user
+     */
+    @Path("vc")
+    UserVerifiableCredentialResource verifiableCredentials();
 
     @POST
     @Path("impersonation")

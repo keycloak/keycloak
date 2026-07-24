@@ -16,11 +16,11 @@
  */
 package org.keycloak.dom.saml.v2.metadata;
 
-import org.keycloak.dom.saml.v2.assertion.AttributeType;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import org.keycloak.dom.saml.v2.assertion.AttributeType;
 
 /**
  * <p>

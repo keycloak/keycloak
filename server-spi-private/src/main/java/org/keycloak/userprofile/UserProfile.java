@@ -17,8 +17,6 @@
 
 package org.keycloak.userprofile;
 
-import java.util.List;
-import java.util.Map;
 
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.AbstractUserRepresentation;
@@ -73,6 +71,18 @@ public interface UserProfile {
     UserModel create() throws ValidationException;
 
     /**
+     * Creates a new {@link UserModel} based on the attributes associated with this instance.
+     *
+     * @param validate if {@code true}, execute validations on create. Otherwise, validation should be done programmatically by calling {@link #validate()}
+     *
+     * @throws ValidationException in case validation fails
+     * @return the {@link UserModel} instance created from this profile
+     */
+    default UserModel create(boolean validate) throws ValidationException {
+        return create();
+    }
+
+    /**
      * <p>Updates the {@link UserModel} associated with this instance. If no {@link UserModel} is associated with this instance, this operation has no effect.
      *
      * <p>Before updating the {@link UserModel}, this method first checks whether the {@link #validate()} method was previously
@@ -103,5 +113,20 @@ public interface UserProfile {
      */
     Attributes getAttributes();
 
-    <R extends AbstractUserRepresentation> R toRepresentation();
+    /**
+     * Returns the full user representation
+     *
+     * @return the user representation
+     */
+    default <R extends AbstractUserRepresentation> R toRepresentation() {
+        return toRepresentation(true);
+    }
+
+    /**
+     * Returns the user representation
+     *
+     * @param full if the full representation should be returned
+     * @return the user representation
+     */
+    <R extends AbstractUserRepresentation> R toRepresentation(boolean full);
 }

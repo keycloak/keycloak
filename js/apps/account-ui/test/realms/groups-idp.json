@@ -6,7 +6,7 @@
   "enabled": true,
   "clientAuthenticatorType": "client-secret",
   "secret": "H0JaTc7VBu3HJR26vrzMxgidfJmgI5Dw",
-  "redirectUris": [ "/realms/groups/*" ],
+  "redirectUris": [ "/realms/*" ],
   "webOrigins": [ "${authAdminUrl}" ],
   "notBefore": 0,
   "bearerOnly": false,

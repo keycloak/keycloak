@@ -17,21 +17,24 @@
 
 package org.keycloak.models.cache.infinispan;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.infinispan.entities.CachedGroup;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
+import org.keycloak.organization.OrganizationProvider;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -122,6 +125,36 @@ public class GroupAdapter implements GroupModel {
     public void setDescription(String description) {
         getDelegateForUpdate();
         updated.setDescription(description);
+    }
+
+    @Override
+    public Long getCreatedTimestamp() {
+        if (isUpdated()) return updated.getCreatedTimestamp();
+        return cached.getCreatedTimestamp();
+    }
+
+    @Override
+    public void setCreatedTimestamp(Long timestamp) {
+        if (updated == null && Objects.equals(cached.getCreatedTimestamp(), timestamp)) {
+            return;
+        }
+        getDelegateForUpdate();
+        updated.setCreatedTimestamp(timestamp);
+    }
+
+    @Override
+    public Long getLastModifiedTimestamp() {
+        if (isUpdated()) return updated.getLastModifiedTimestamp();
+        return cached.getLastModifiedTimestamp();
+    }
+
+    @Override
+    public void setLastModifiedTimestamp(Long timestamp) {
+        if (updated == null && Objects.equals(cached.getLastModifiedTimestamp(), timestamp)) {
+            return;
+        }
+        getDelegateForUpdate();
+        updated.setLastModifiedTimestamp(timestamp);
     }
 
     @Override
@@ -271,7 +304,8 @@ public class GroupAdapter implements GroupModel {
     @Override
     public Long getSubGroupsCount() {
         if (isUpdated()) return updated.getSubGroupsCount();
-        return getGroupModel().getSubGroupsCount();
+        GroupModel model = modelSupplier.get();
+        return model == null ? null : model.getSubGroupsCount();
     }
 
     @Override
@@ -307,5 +341,24 @@ public class GroupAdapter implements GroupModel {
     public Type getType() {
         if (isUpdated()) return updated.getType();
         return cached.getType();
+    }
+
+    @Override
+    public OrganizationModel getOrganization() {
+        if (isUpdated()) return updated.getOrganization();
+
+        // Use cached organization ID
+        String orgId = cached.getOrganizationId();
+        if (orgId == null) {
+            return null;
+        }
+
+        // Fetch organization from cached OrganizationProvider
+        OrganizationProvider orgProvider = keycloakSession.getProvider(OrganizationProvider.class);
+        if (orgProvider == null) {
+            return null;
+        }
+
+        return orgProvider.getById(orgId);
     }
 }

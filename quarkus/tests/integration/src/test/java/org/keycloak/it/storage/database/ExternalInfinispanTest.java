@@ -17,20 +17,21 @@
 
 package org.keycloak.it.storage.database;
 
-import io.quarkus.test.junit.main.Launch;
-
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.Retry;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.InfinispanContainer;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.WithExternalInfinispan;
+
+import io.quarkus.test.junit.main.Launch;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.when;
 
-@DistributionTest(keepAlive = true)
+@DistributionTest(stopServer = Mode.MANUAL)
 @WithExternalInfinispan
 @Tag(DistributionTest.STORAGE)
 public class ExternalInfinispanTest {
@@ -46,7 +47,6 @@ public class ExternalInfinispanTest {
             "--cache-remote-tls-enabled=false",
             "--spi-cache-embedded-default-site-name=ISPN",
             "--spi-load-balancer-check-remote-poll-interval=500",
-            "-Dkc.cache-remote-create-caches=true",
             "--verbose"
     })
     void testLoadBalancerCheckFailureWithMultiSite() {
@@ -64,7 +64,6 @@ public class ExternalInfinispanTest {
             "--cache-remote-tls-enabled=false",
             "--spi-cache-embedded-default-site-name=ISPN",
             "--spi-load-balancer-check-remote-poll-interval=500",
-            "-Dkc.cache-remote-create-caches=true",
             "--verbose"
     })
     void testLoadBalancerCheckFailureWithRemoteOnlyCaches() {

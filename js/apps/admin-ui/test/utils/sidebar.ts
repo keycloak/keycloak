@@ -1,5 +1,5 @@
-import { Page } from "@playwright/test";
-import { clickTableRowItem } from "./table";
+import type { Page } from "@playwright/test";
+import { clickTableRowItem } from "./table.ts";
 
 export async function goToRealm(page: Page, realmName: string) {
   const currentRealm = await page.getByTestId("currentRealm").textContent();
@@ -14,7 +14,7 @@ export async function goToRealms(page: Page) {
 }
 
 export async function goToOrganizations(page: Page) {
-  page.getByTestId("nav-item-organizations").click();
+  await page.getByTestId("nav-item-organizations").click();
 }
 
 export async function goToClients(page: Page) {
@@ -59,4 +59,8 @@ export async function goToIdentityProviders(page: Page) {
 
 export async function goToUserFederation(page: Page) {
   await page.getByTestId("nav-item-user-federation").click();
+}
+
+export async function goToWorkflows(page: Page) {
+  await page.getByTestId("nav-item-workflows").click();
 }

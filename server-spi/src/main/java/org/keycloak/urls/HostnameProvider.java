@@ -16,17 +16,22 @@
  */
 package org.keycloak.urls;
 
+import java.net.URI;
+
+import jakarta.enterprise.context.ContextNotActiveException;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.provider.Provider;
-
-import jakarta.ws.rs.core.UriInfo;
 
 /**
  * The Hostname provider is used by Keycloak to decide URLs for frontend and backend requests. A provider can either
  * base the URL on the request (Host header for example) or based on hard-coded URLs. Further, it is possible to have
  * different URLs on frontend requests and backend requests.
- *
+ * <p>
  * Note: Do NOT use {@link KeycloakContext#getUri()} within a Hostname provider. It will result in an infinite loop.
+ * <p>
+ * Note: the {@link UriInfo} provided to these methods will throw {@link ContextNotActiveException} rather than {@link IllegalStateException} as described in the javadoc.
  */
 public interface HostnameProvider extends Provider {
 
@@ -117,6 +122,21 @@ public interface HostnameProvider extends Provider {
 
     @Override
     default void close() {
+    }
+
+    /**
+     * Returns the base URI for Keycloak with the scheme, host, port, and context-path set for the given UrlType
+     *
+     * @param originalUriInfo the original URI
+     * @param type type of the request
+     * @return the base URI
+     */
+    default URI getBaseUri(UriInfo originalUriInfo, UrlType type) {
+        String scheme = getScheme(originalUriInfo, type);
+        String hostname = getHostname(originalUriInfo, type);
+        int port = getPort(originalUriInfo, type);
+        String contextPath = getContextPath(originalUriInfo, type);
+        return originalUriInfo.getBaseUriBuilder().scheme(scheme).host(hostname).port(port).replacePath(contextPath).build();
     }
 
 }

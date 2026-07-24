@@ -20,9 +20,10 @@ import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.ForbiddenException;
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.identity.UserModelIdentity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -145,6 +146,24 @@ class UserPermissionsV2 extends UserPermissions {
         }
 
         return eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP);
+    }
+
+    @Override
+    public boolean canResetPassword(UserModel user) {
+        // admin roles has the precedence over permissions
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
+            return true;
+        }
+
+        return eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.RESET_PASSWORD,
+                () -> eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.MANAGE));
+    }
+
+    @Override
+    public void requireResetPassword(UserModel user) {
+        if (!canResetPassword(user)) {
+            throw new ForbiddenException();
+        }
     }
 
     // todo this method should be removed and replaced by canImpersonate(user, client); once V1 is removed

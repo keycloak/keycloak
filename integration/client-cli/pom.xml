@@ -24,7 +24,7 @@
     </parent>
 
     <name>Keycloak Client CLI</name>
-    <description/>
+    <description>Keycloak Client CLI</description>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-client-cli-parent</artifactId>

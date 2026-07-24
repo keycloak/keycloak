@@ -1,5 +1,9 @@
 :project_name: Keycloak
 :project_images: keycloak-images
+
+:jdk_version_latest: 25
+:jdk_version_container: 21
+
 :project_doc_base_url: https://www.keycloak.org/docs/latest
 :project_doc_base_url_latest: https://www.keycloak.org/docs/{version}
 :project_dirref: KEYCLOAK_HOME
@@ -30,5 +34,13 @@
 :quickstartRepo_dir: keycloak-quickstarts
 :securing_apps_link: https://www.keycloak.org/guides#securing-apps
 :upgrading_guide_link: {project_doc_base_url}/upgrading/
+:developerguide_userstoragespi_link: {developerguide_link}#_user-storage-spi
+:developerguide_userstoragespi_name: User Storage SPI
 :kc_js_path: /js
 :kc_realms_path: /realms
+:kubernetes: Kubernetes
+:keycloak_benchmark_link: https://www.keycloak.org/keycloak-benchmark/
+:keycloak_benchmark_name: Keycloak Benchmark Project
+:ui_customization_guide_name: UI Customization Guide
+:ui_customization_guide_link: {project_doc_base_url}/ui-customization/
+

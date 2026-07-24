@@ -19,7 +19,8 @@ package org.keycloak.crypto;
 public enum KeyUse {
 
     SIG("sig"),
-    ENC("enc");
+    ENC("enc"),
+    JWT_SVID("jwt-svid");
 
     private String specName;
 

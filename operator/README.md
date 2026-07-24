@@ -48,7 +48,7 @@ Vanilla minikube does not support Network Policies, and Cilium implements the CN
 Another CNI implementation may work too.
 
 ```bash
-minikube start --addons ingress --cni cilium
+minikube start --addons ingress --cni cilium --cpus=max
 ```
 
 Enable the Minikube Docker daemon:
@@ -67,13 +67,7 @@ Install the CRD definition and the operator in the cluster in the `keycloak` nam
 
 ```bash
 kubectl create namespace keycloak
-kubectl apply -k target
-```
-
-to install in the `default` namespace:
-
-```bash
-kubectl apply -k overlays/default-namespace
+kubectl apply -k target/kubernetes
 ```
 
 Remove the created resources with:
@@ -113,7 +107,7 @@ minikube addons enable ingress
 To avoid skipping tests that are depending on custom Keycloak images, you need to build those first:
 
 ```bash
-./build-testing-docker-images.sh [SOURCE KEYCLOAK IMAGE TAG] [SOURCE KEYCLOAK IMAGE]
+./scripts/build-testing-docker-images.sh [SOURCE KEYCLOAK IMAGE TAG] [SOURCE KEYCLOAK IMAGE]
 ```
 
 And run the tests passing an extra Java property:

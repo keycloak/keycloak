@@ -38,6 +38,7 @@ div.kc-logo-text {
     width: var(--keycloak-logo-width);
     background-repeat: no-repeat;
     background-size: contain;
+    background-position: center;
     margin: 0 auto;
 }
 
@@ -109,27 +110,61 @@ div.kc-logo-text span {
     text-align: center;
 }
 
+#kc-code pre code {
+    word-break: break-all;
+}
+
 hr {
     margin-top: var(--pf-v5-global--spacer--sm);
     margin-bottom: var(--pf-v5-global--spacer--md);
 }
 
-#kc-social-providers svg:not(.google) {
-    filter: invert(47%) sepia(88%) saturate(7486%) hue-rotate(199deg) brightness(91%) contrast(101%);
-}
+/* Social/identity providers */
 
-#kc-social-providers svg {
+#kc-social-providers img,
+#kc-social-providers picture {
     height: var(--pf-v5-global--FontSize--xl);
+    width: var(--pf-v5-global--FontSize--xl);
+    object-fit: contain;
 }
 
-@media (prefers-color-scheme: dark) {
-    #kc-social-providers svg:not(.google) {
-        filter: invert(54%) sepia(96%) saturate(2028%) hue-rotate(174deg) brightness(99%) contrast(97%);
-    }
+/* Remove bottom padding when no info section follows (e.g. registration disabled) */
+#kc-social-providers:last-child .pf-v5-c-login__main-body {
+    padding-bottom: 0 !important;
+}
+
+/* Use a gray border instead of the tertiary default (near-black in light theme) */
+#kc-social-providers .pf-v5-c-button.pf-m-tertiary {
+    --pf-v5-c-button--m-tertiary--after--BorderColor: var(--pf-v5-global--BorderColor--100);
+    --pf-v5-c-button--m-tertiary--hover--after--BorderColor: var(--pf-v5-global--BorderColor--200);
+}
+
+#kc-social-providers ul > li:last-child {
+    padding-bottom: 0 !important;
+}
+
+/* Named divider */
+
+.kc-social-providers-divider {
+    display: flex;
+    align-items: center;
+    gap: var(--pf-v5-global--spacer--md);
+    margin: var(--pf-v5-global--spacer--md) 0 var(--pf-v5-global--spacer--md);
+}
+
+.kc-social-providers-divider::before,
+.kc-social-providers-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--pf-v5-global--BorderColor--100);
 }
 
 @media (min-width: 768px) {
-    div.pf-v5-c-login__main-header {
+    div.pf-v5-c-login__main-header:has(.pf-v5-c-login__main-header-utilities) {
         grid-template-columns: 70% 30%;
     }
+}
+
+#kc-form-webauthn {
+    gap: 0.875rem;
 }

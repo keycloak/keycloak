@@ -2,15 +2,17 @@
 <#import "buttons.ftl" as buttons>
 <@layout.registrationLayout ; section>
     <#if section = "header">
-        ${kcSanitize(msg("webauthn-error-title"))?no_esc}
+        ${msg("webauthn-error-title")}
     <#elseif section = "form">
 
         <script type="text/javascript">
+            <#outputformat "JavaScript">
             refreshPage = () => {
                 document.getElementById('isSetRetry').value = 'retry';
-                document.getElementById('executionValue').value = '${execution}';
+                document.getElementById('executionValue').value = ${execution?c};
                 document.getElementById('kc-error-credential-form').requestSubmit();
             }
+            </#outputformat>
         </script>
 
         <form id="kc-error-credential-form" class="${properties.kcFormClass!}" action="${url.loginAction}"
@@ -19,12 +21,12 @@
             <input type="hidden" id="isSetRetry" name="isSetRetry"/>
 
             <@buttons.actionGroup horizontal=true>
-                <@buttons.button id="kc-try-again" name="try-again" label="doTryAgain" class=["kcButtonPrimaryClass","kcButtonBlockClass"] onclick="refreshPage()" />
+                <@buttons.button id="kc-try-again" name="try-again" label="doTryAgain" onclick="refreshPage()" />
 
                 <#if isAppInitiatedAction??>
                     <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-webauthn-settings-form"
                           method="post">
-                        <@buttons.button id="cancelWebAuthnAIA" name="cancel-aia" label="doCancel" class=["kcButtonSecondaryClass","kcButtonBlockClass"]/>
+                        <@buttons.button id="cancelWebAuthnAIA" name="cancel-aia" label="doCancel" type="secondary"/>
                     </form>
                 </#if>
             </@buttons.actionGroup>

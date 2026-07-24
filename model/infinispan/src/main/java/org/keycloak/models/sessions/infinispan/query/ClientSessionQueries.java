@@ -17,11 +17,17 @@
 
 package org.keycloak.models.sessions.infinispan.query;
 
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.commons.api.query.Query;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.sessions.infinispan.entities.ClientSessionKey;
 import org.keycloak.models.sessions.infinispan.entities.RemoteAuthenticatedClientSessionEntity;
+
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.commons.api.query.Query;
 
 /**
  * Util class with Infinispan Ickle Queries for {@link RemoteAuthenticatedClientSessionEntity}.
@@ -34,9 +40,11 @@ public final class ClientSessionQueries {
     public static final String CLIENT_SESSION = Marshalling.protoEntity(RemoteAuthenticatedClientSessionEntity.class);
 
     private static final String FETCH_USER_SESSION_ID = "SELECT e.userSessionId FROM %s as e WHERE e.realmId = :realmId && e.clientId = :clientId ORDER BY e.userSessionId".formatted(CLIENT_SESSION);
-    private static final String PER_CLIENT_COUNT = "SELECT e.clientId, count(e.clientId) FROM %s as e GROUP BY e.clientId ORDER BY e.clientId".formatted(CLIENT_SESSION);
+    private static final String PER_CLIENT_COUNT = "SELECT e.clientId, count(e.clientId) FROM %s as e WHERE e.realmId = :realmId GROUP BY e.clientId ORDER BY e.clientId".formatted(CLIENT_SESSION);
     private static final String CLIENT_SESSION_COUNT = "SELECT count(e) FROM %s as e WHERE e.realmId = :realmId && e.clientId = :clientId".formatted(CLIENT_SESSION);
     private static final String FROM_USER_SESSION = "FROM %s as e WHERE e.userSessionId = :userSessionId ORDER BY e.clientId".formatted(CLIENT_SESSION);
+    private static final String FROM_MULTI_USER_SESSION = "FROM %s as e WHERE e.userSessionId IN (%s) ORDER BY e.clientId";
+    private static final String IDS_FROM_USER_SESSION = "SELECT e.clientId FROM %s as e WHERE e.userSessionId = :userSessionId ORDER BY e.clientId".formatted(CLIENT_SESSION);
 
     /**
      * Returns a projection with the user session ID for client sessions from the client {@code clientId}.
@@ -50,12 +58,13 @@ public final class ClientSessionQueries {
     /**
      * Returns a projection with the client ID and its number of active client sessions.
      */
-    public static Query<Object[]> activeClientCount(RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> cache) {
-        return cache.query(PER_CLIENT_COUNT);
+    public static Query<Object[]> activeClientCount(RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> cache, String realmId) {
+        return cache.<Object[]>query(PER_CLIENT_COUNT)
+                .setParameter("realmId", realmId);
     }
 
     /**
-     * Returns a projection with the sum of all client session belonging to the client ID.
+     * Returns a projection with the sum of all client sessions belonging to the client ID.
      */
     public static Query<Object[]> countClientSessions(RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> cache, String realmId, String clientId) {
         return cache.<Object[]>query(CLIENT_SESSION_COUNT)
@@ -64,13 +73,45 @@ public final class ClientSessionQueries {
     }
 
     /**
-     * Returns a projection with the client session, and the version of all client sessions belonging to the user
-     * session ID.
+     * Returns the client sessions belonging to the user session ID.
      */
     public static Query<RemoteAuthenticatedClientSessionEntity> fetchClientSessions(RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> cache, String userSessionId) {
         return cache.<RemoteAuthenticatedClientSessionEntity>query(FROM_USER_SESSION)
                 .setParameter("userSessionId", userSessionId);
     }
 
+    /**
+     * Returns a projection with the client IDs belonging to the user session.
+     * <p>
+     * The returned array contains a single {@link String} element with the client ID.
+     */
+    public static Query<Object[]> fetchClientSessionsIds(RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> cache, String userSessionId) {
+        return cache.<Object[]>query(IDS_FROM_USER_SESSION)
+                .setParameter("userSessionId", userSessionId);
+    }
+
+    /**
+     * Returns all the client sessions belonging to all user session IDs.
+     */
+    public static Query<RemoteAuthenticatedClientSessionEntity> fetchClientSessions(RemoteCache<ClientSessionKey, RemoteAuthenticatedClientSessionEntity> cache, Collection<String> userSessionIds) {
+        var size = userSessionIds.size();
+        if (size == 0) {
+            throw new IllegalArgumentException("userSessionIds must not be empty");
+        }
+        if (size == 1) {
+            return fetchClientSessions(cache, userSessionIds.iterator().next());
+        }
+        var count = new AtomicInteger();
+        var params = new HashMap<String, Object>();
+        String parameterNames = userSessionIds.stream()
+                .map(sessionId -> {
+                    String paramName = "p" + count.incrementAndGet();
+                    params.put(paramName, sessionId);
+                    return ":" + paramName;
+                })
+                .collect(Collectors.joining(","));
+        return cache.<RemoteAuthenticatedClientSessionEntity>query(FROM_MULTI_USER_SESSION.formatted(CLIENT_SESSION, parameterNames))
+                .setParameters(params);
+    }
 
 }

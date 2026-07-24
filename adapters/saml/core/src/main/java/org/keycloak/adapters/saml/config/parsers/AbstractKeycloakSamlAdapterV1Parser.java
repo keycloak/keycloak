@@ -17,15 +17,15 @@
 
 package org.keycloak.adapters.saml.config.parsers;
 
-import org.keycloak.saml.common.parsers.AbstractStaxParser;
-
-import org.keycloak.saml.common.util.StaxParserUtil;
-import org.keycloak.saml.processing.core.parsers.util.QNameEnumLookup;
 import java.util.Collections;
 import java.util.Set;
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import javax.xml.stream.events.StartElement;
+
+import org.keycloak.saml.common.parsers.AbstractStaxParser;
+import org.keycloak.saml.common.util.StaxParserUtil;
+import org.keycloak.saml.processing.core.parsers.util.QNameEnumLookup;
 
 /**
  * 

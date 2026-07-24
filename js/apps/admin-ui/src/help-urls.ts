@@ -10,6 +10,7 @@ export default {
   realmRolesUrl: `${adminGuide}#assigning-permissions-using-roles-and-groups`,
   usersUrl: `${adminGuide}#assembly-managing-users_server_administration_guide`,
   groupsUrl: `${adminGuide}#proc-managing-groups_server_administration_guide`,
+  orgGroupsUrl: `${adminGuide}#proc-managing-organization-groups_server_administration_guide`,
   sessionsUrl: `${adminGuide}#managing-user-sessions`,
   eventsUrl: `${adminGuide}#configuring-auditing-to-track-events`,
   realmSettingsUrl: `${adminGuide}#configuring-realms`,
@@ -20,4 +21,5 @@ export default {
   guides: `${keycloakHomepageURL}/guides`,
   community: `${keycloakHomepageURL}/community`,
   blog: `${keycloakHomepageURL}/blog`,
+  workflowsUrl: `${adminGuide}#_managing_workflows`,
 };

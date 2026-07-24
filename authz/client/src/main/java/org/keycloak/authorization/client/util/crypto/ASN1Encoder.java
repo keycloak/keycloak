@@ -98,4 +98,3 @@ class ASN1Encoder {
         return tmp.toByteArray();
     }
 }
-

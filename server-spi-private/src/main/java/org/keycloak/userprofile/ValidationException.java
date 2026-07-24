@@ -19,7 +19,6 @@
 
 package org.keycloak.userprofile;
 
-import jakarta.ws.rs.core.Response;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.validate.ValidationError;
 

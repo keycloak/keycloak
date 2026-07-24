@@ -22,14 +22,14 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.resources.admin.AdminAuth;
 
-public class AdminClientUpdatedContext extends AbstractAdminClientCRUDContext {
+public class AdminClientUpdatedContext extends AbstractAdminClientCRUDContext implements ClientCRUDClientAvailableContext {
 
     private final ClientRepresentation proposedClientRepresentation;
     private final ClientModel updatedClient;
 
-    public AdminClientUpdatedContext(ClientRepresentation roposedClientRepresentation, ClientModel updatedClient, AdminAuth adminAuth) {
+    public AdminClientUpdatedContext(ClientRepresentation proposedClientRepresentation, ClientModel updatedClient, AdminAuth adminAuth) {
         super(adminAuth);
-        this.proposedClientRepresentation = roposedClientRepresentation;
+        this.proposedClientRepresentation = proposedClientRepresentation;
         this.updatedClient = updatedClient;
     }
 

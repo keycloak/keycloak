@@ -17,6 +17,7 @@
 package org.keycloak.authorization.protection.policy;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,7 +33,6 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-import org.jboss.resteasy.reactive.NoCache;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.admin.PermissionService;
@@ -47,6 +47,8 @@ import org.keycloak.representations.idm.authorization.UmaPermissionRepresentatio
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.util.JsonSerialization;
+
+import org.jboss.resteasy.reactive.NoCache;
 
 /**
  * @author <a href="mailto:federico@martel-innovate.com">Federico M. Facca</a>
@@ -95,9 +97,16 @@ public class UserManagedPermissionService {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Failed to parse representation", Status.BAD_REQUEST);
         }
 
-        checkRequest(getAssociatedResourceId(policyId), representation);
+        String resourceId = getAssociatedResourceId(policyId);
+        Set<String> resources = Optional.ofNullable(representation.getResources()).orElse(Set.of());
 
-        return PolicyTypeResourceService.class.cast(delegate.getResource(policyId)).update(payload);
+        if (resources.isEmpty() || (resources.size() == 1 && resources.contains(resourceId))) {
+            checkRequest(resourceId, representation);
+
+            return PolicyTypeResourceService.class.cast(delegate.getResource(policyId)).update(payload);
+        }
+
+        throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Uma permission resource cannot be changed", Response.Status.BAD_REQUEST);
     }
 
     @Path("{policyId}")
@@ -168,6 +177,12 @@ public class UserManagedPermissionService {
 
             if (!resourceScopes.containsAll(scopes)) {
                 throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Some of the scopes [" + scopes + "] are not valid for resource [" + resourceId + "]", Response.Status.BAD_REQUEST);
+            }
+
+            Set<String> resources = Optional.ofNullable(representation.getResources()).orElse(Set.of());
+
+            if (!resources.isEmpty() && (resources.size() != 1 || !resources.contains(resource.getId()))) {
+                throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Invalid resource", Response.Status.BAD_REQUEST);
             }
         }
     }

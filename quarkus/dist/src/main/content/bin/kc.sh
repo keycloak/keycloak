@@ -41,22 +41,21 @@ SERVER_OPTS="$SERVER_OPTS -Dpicocli.disable.closures=true"
 SERVER_OPTS="$SERVER_OPTS -Dquarkus-log-max-startup-records=10000"
 CLASSPATH_OPTS="'$(abs_path "../lib/quarkus-run.jar")'"
 
-DEBUG_MODE="${DEBUG:-false}"
-DEBUG_PORT="${DEBUG_PORT:-8787}"
-DEBUG_SUSPEND="${DEBUG_SUSPEND:-n}"
+DEBUG_MODE="${KC_DEBUG:-${DEBUG:-false}}"
+DEBUG_ADDRESS="${KC_DEBUG_PORT:-${DEBUG_PORT:-8787}}"
+DEBUG_SUSPEND="${KC_DEBUG_SUSPEND:-${DEBUG_SUSPEND:-n}}"
 
 esceval() {
     printf '%s\n' "$1" | sed "s/'/'\\\\''/g; 1 s/^/'/; $ s/$/'/"
 }
 
-PRE_BUILD=true
 while [ "$#" -gt 0 ]
 do
     case "$1" in
       --debug)
           DEBUG_MODE=true
-          if [ -n "$2" ] && expr "$2" : '[0-9]\{0,\}$' >/dev/null; then
-              DEBUG_PORT=$2
+          if echo "$2" | grep -Eq '^([0-9]|\[)'; then
+              DEBUG_ADDRESS=$2
               shift
           fi
           ;;
@@ -67,13 +66,8 @@ do
       *)
           OPT=$(esceval "$1")
           case "$1" in
-            start-dev) CONFIG_ARGS="$CONFIG_ARGS --profile=dev $1";;
             -D*) SERVER_OPTS="$SERVER_OPTS ${OPT}";;
-            *) case "$1" in
-                 --optimized | --help | --help-all | -h) PRE_BUILD=false;;
-                 build) if [ -z "$CONFIG_ARGS" ]; then PRE_BUILD=false; fi;;
-               esac 
-               CONFIG_ARGS="$CONFIG_ARGS ${OPT}"
+            *) CONFIG_ARGS="$CONFIG_ARGS ${OPT}"
                ;;
           esac
           ;;
@@ -97,7 +91,7 @@ if [ -z "$JAVA_OPTS" ]; then
    # If the memory is not used, it will be freed. See https://developers.redhat.com/blog/2017/04/04/openjdk-and-containers for details.
    # To optimize for large heap sizes or for throughput and better response time due to shorter GC pauses, consider ZGC and Shenandoah GC.
    # As of KC25 and JDK17, G1GC, ZGC and Shenandoah GC seem to be eager to claim the maximum heap size. Tests showed that ZGC might need additional tuning in reclaiming dead objects.
-   JAVA_OPTS="-XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/urandom -XX:+UseG1GC -XX:FlightRecorderOptions=stackdepth=512"
+   JAVA_OPTS="-XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/urandom -XX:+UseG1GC -XX:FlightRecorderOptions=stackdepth=512 -Djdk.tls.rejectClientInitiatedRenegotiation=true"
 
    if [ -z "$JAVA_OPTS_KC_HEAP" ]; then
       if [ "$KC_RUN_IN_CONTAINER" = "true" ]; then
@@ -118,8 +112,10 @@ else
 fi
 
 # See also https://github.com/wildfly/wildfly-core/blob/7e5624cf92ebe4b64a4793a8c0b2a340c0d6d363/core-feature-pack/common/src/main/resources/content/bin/common.sh#L57-L60
+# java.base/java.lang=ALL-UNNAMED is required for JBoss Threads, see e.g. https://github.com/quarkusio/quarkus/pull/47637 and relevant https://github.com/quarkusio/quarkus/discussions/51041
+# --enable-native-access=ALL-UNNAMED is required for Infinispan: https://github.com/infinispan/infinispan/issues/15765#issuecomment-3839985807
 if [ -z "$JAVA_ADD_OPENS" ]; then
-   JAVA_ADD_OPENS="--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.security=ALL-UNNAMED"
+   JAVA_ADD_OPENS="--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.security=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --enable-native-access=ALL-UNNAMED"
 else
    echo "JAVA_ADD_OPENS already set in environment; overriding default settings"
 fi
@@ -142,7 +138,7 @@ fi
 if [ "$DEBUG_MODE" = "true" ]; then
     DEBUG_OPT="$(echo "$JAVA_OPTS" | $GREP "\-agentlib:jdwp")"
     if [ -z "$DEBUG_OPT" ]; then
-        JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,address=$DEBUG_PORT,server=y,suspend=$DEBUG_SUSPEND"
+        JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,address=$DEBUG_ADDRESS,server=y,suspend=$DEBUG_SUSPEND"
     else
         echo "Debug already enabled in JAVA_OPTS, ignoring --debug argument"
     fi
@@ -152,22 +148,33 @@ esceval_args() {
   while IFS= read -r entry; do
     result="$result $(esceval "$entry")"
   done
-  echo $result
+  echo "$result"
 }
 
 JAVA_RUN_OPTS=$(echo "$JAVA_OPTS" | xargs printf '%s\n' | esceval_args)
 
+# Capture the pid so that we can warn if running in a container without being PID 1, as signals may not be forwarded correctly and graceful shutdown may not work
 # The property 'java.util.concurrent.ForkJoinPool.common.threadFactory' is set here, as a Java Agent or enabling JMX might initialize the factory before Quarkus can set the property in JDK21+.
-JAVA_RUN_OPTS="-Djava.util.concurrent.ForkJoinPool.common.threadFactory=io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory $JAVA_RUN_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint ${CONFIG_ARGS#?}"
+JAVA_RUN_OPTS="-Dkc.script.pid=$$ -Djava.util.concurrent.ForkJoinPool.common.threadFactory=io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory $JAVA_RUN_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint ${CONFIG_ARGS#?}"
 
 if [ "$PRINT_ENV" = "true" ]; then
   echo "Using JAVA_OPTS: $JAVA_OPTS"
   echo "Using JAVA_RUN_OPTS: $JAVA_RUN_OPTS"
 fi
 
-if [ "$PRE_BUILD" = "true" ]; then
-  eval "'$JAVA'" -Dkc.config.build-and-exit=true $JAVA_RUN_OPTS || exit $?
+# trap the signals that should be forwarded to the java process
+trap 'status=143; while [ -z "$PID" ]; do sleep 0.1; done; kill -TERM $PID; wait $PID' TERM INT
+# run the java process in the background using the current stdin
+eval "{ '$JAVA' $JAVA_RUN_OPTS <&3 3<&- & } 3<&0"
+# obtain the pid, and await the exit status
+PID=$!; wait $PID; status=$?
+# remove the trap as signals can be directly handled
+trap - TERM INT
+# only exit code 10 means that implicit reaugmentation occurred and a relaunch is needed 
+if [ $status = 10 ]; then
   JAVA_RUN_OPTS="-Dkc.config.built=true $JAVA_RUN_OPTS"
-fi
 
-eval exec "'$JAVA'" $JAVA_RUN_OPTS
+  eval exec "'$JAVA'" "$JAVA_RUN_OPTS"
+else
+  exit $status
+fi 

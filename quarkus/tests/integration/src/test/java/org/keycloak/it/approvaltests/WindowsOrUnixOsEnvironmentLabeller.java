@@ -17,9 +17,9 @@
 
 package org.keycloak.it.approvaltests;
 
-import org.lambda.functions.Function0;
-
 import java.util.Locale;
+
+import org.lambda.functions.Function0;
 
 public class WindowsOrUnixOsEnvironmentLabeller implements Function0<String> {
 

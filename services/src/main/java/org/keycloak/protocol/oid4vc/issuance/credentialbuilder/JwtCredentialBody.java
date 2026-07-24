@@ -17,10 +17,11 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
-import org.jboss.logging.Logger;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSBuilder;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>

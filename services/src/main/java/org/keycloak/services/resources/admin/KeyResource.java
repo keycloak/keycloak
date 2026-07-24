@@ -17,11 +17,17 @@
 
 package org.keycloak.services.resources.admin;
 
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.common.util.Base64;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.KeycloakSession;
@@ -30,15 +36,10 @@ import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
-
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.X509Certificate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.stream.Collectors;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.resteasy.reactive.NoCache;
 
 /**
  * @resource Key
@@ -97,10 +98,10 @@ public class KeyResource {
             try {
                 final String base64Certificate;
                 if (key.getCertificate() != null) {
-                    base64Certificate = Base64.encodeBytes(key.getCertificate().getEncoded());
+                    base64Certificate = Base64.getEncoder().encodeToString(key.getCertificate().getEncoded());
                 }
                 else {
-                    base64Certificate = Base64.encodeBytes(key.getCertificateChain().get(0).getEncoded());
+                    base64Certificate = Base64.getEncoder().encodeToString(key.getCertificateChain().get(0).getEncoded());
                 }
                 r.setCertificate(base64Certificate);
             } catch (CertificateEncodingException e) {

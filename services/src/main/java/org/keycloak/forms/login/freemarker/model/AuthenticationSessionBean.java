@@ -19,11 +19,11 @@
 
 package org.keycloak.forms.login.freemarker.model;
 
-import org.keycloak.crypto.JavaAlgorithm;
-import org.keycloak.jose.jws.crypto.HashUtils;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+
+import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.jose.jws.crypto.HashUtils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -36,7 +36,7 @@ public class AuthenticationSessionBean {
 
     public AuthenticationSessionBean(String authSessionId, String tabId) {
         this.authSessionId = authSessionId;
-        this.authSessionIdHash = Base64.getEncoder().withoutPadding().encodeToString(HashUtils.hash(JavaAlgorithm.SHA256, authSessionId.getBytes(StandardCharsets.UTF_8)));
+        this.authSessionIdHash = Base64.getEncoder().withoutPadding().encodeToString(HashUtils.hash(JavaAlgorithm.SHA384, authSessionId.getBytes(StandardCharsets.UTF_8)));
         this.tabId = tabId;
     }
 

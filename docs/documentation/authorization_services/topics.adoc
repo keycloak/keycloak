@@ -12,8 +12,6 @@ include::topics/resource-server-create-client.adoc[leveloffset=+2]
 
 include::topics/resource-server-enable-authorization.adoc[leveloffset=+2]
 
-include::topics/resource-server-default-config.adoc[leveloffset=+2]
-
 include::topics/resource-server-import-config.adoc[leveloffset=+2]
 
 include::topics/resource-overview.adoc[leveloffset=+1]

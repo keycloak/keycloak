@@ -33,15 +33,17 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-
 import javax.security.auth.x500.X500Principal;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.crypto.CertificateUtilsProvider;
+
+import org.jboss.logging.Logger;
 import org.wildfly.security.asn1.ASN1;
 import org.wildfly.security.asn1.DERDecoder;
 import org.wildfly.security.x500.GeneralName;
 import org.wildfly.security.x500.X500;
+import org.wildfly.security.x500.X500AttributeTypeAndValue;
+import org.wildfly.security.x500.X500PrincipalBuilder;
 import org.wildfly.security.x500.cert.AuthorityKeyIdentifierExtension;
 import org.wildfly.security.x500.cert.BasicConstraintsExtension;
 import org.wildfly.security.x500.cert.CertificatePoliciesExtension;
@@ -82,7 +84,7 @@ public class ElytronCertificateUtilsProvider implements CertificateUtilsProvider
             String subject) throws Exception {
         try {
 
-            X500Principal subjectdn = subjectToX500Principle(subject);
+            X500Principal subjectdn = cnToX500Principal(subject);
             X500Principal issuerdn = caCert.getSubjectX500Principal();
 
             // Validity
@@ -175,7 +177,7 @@ public class ElytronCertificateUtilsProvider implements CertificateUtilsProvider
     public X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber, Date validityEndDate) {
         try {
 
-            X500Principal subjectdn = subjectToX500Principle(subject);
+            X500Principal subjectdn = cnToX500Principal(subject);
 
             ZonedDateTime notBefore = ZonedDateTime.ofInstant(
                     (new Date(System.currentTimeMillis() - 100000)).toInstant(),
@@ -217,6 +219,21 @@ public class ElytronCertificateUtilsProvider implements CertificateUtilsProvider
             subject = "CN="+subject;
         }
         return new X500Principal(subject);
+    }
+
+    /**
+     * Builds an {@link X500Principal} with a single CN RDN, encoding the given value directly as the
+     * RDN's attribute value rather than parsing it as part of an RFC 2253 DN string. This allows the
+     * value (e.g. a client ID) to contain characters that would otherwise need escaping, such as '=' or ','.
+     *
+     * @param commonName the raw CN value
+     *
+     * @return the X500Principal with a single CN RDN set to the given value
+     */
+    private static X500Principal cnToX500Principal(String commonName) {
+        return new X500PrincipalBuilder()
+                .addItem(X500AttributeTypeAndValue.createUtf8(X500.OID_AT_COMMON_NAME, commonName))
+                .build();
     }
 
     @Override

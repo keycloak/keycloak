@@ -18,8 +18,16 @@
 
 package org.keycloak.protocol.oidc.grants.ciba.endpoints.request;
 
+import java.util.HashSet;
+import java.util.List;
+
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OAuthErrorException;
 import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientModel;
@@ -28,11 +36,7 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ErrorResponseException;
-
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import java.util.HashSet;
-import java.util.List;
+import org.keycloak.services.ServicesLogger;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -75,6 +79,9 @@ public class BackchannelAuthenticationEndpointRequestParserProcessor {
             return request;
 
         } catch (Exception e) {
+            ServicesLogger.LOGGER.invalidRequest(e);
+            event.detail(Details.REASON, e.getMessage());
+            event.error(Errors.INVALID_REQUEST);
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, e.getMessage(), Response.Status.BAD_REQUEST);
         }
     }

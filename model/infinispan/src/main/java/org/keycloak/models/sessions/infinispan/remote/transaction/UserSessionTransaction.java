@@ -17,9 +17,13 @@
 
 package org.keycloak.models.sessions.infinispan.remote.transaction;
 
-import org.infinispan.commons.util.concurrent.CompletionStages;
-import org.keycloak.models.AbstractKeycloakTransaction;
+import java.util.function.Consumer;
+
 import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.sessions.infinispan.transaction.DatabaseUpdate;
+import org.keycloak.models.sessions.infinispan.transaction.NonBlockingTransaction;
+
+import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 
 /**
  * A {@link KeycloakTransaction} implementation that wraps all the user and client session transactions.
@@ -27,7 +31,7 @@ import org.keycloak.models.KeycloakTransaction;
  * This implementation commits all modifications asynchronously and concurrently in both user and client sessions
  * transactions. Waits for all them to complete. This is an optimization to reduce the response time.
  */
-public class UserSessionTransaction extends AbstractKeycloakTransaction {
+public class UserSessionTransaction implements NonBlockingTransaction {
 
     private final UserSessionChangeLogTransaction userSessions;
     private final ClientSessionChangeLogTransaction clientSessions;
@@ -41,32 +45,20 @@ public class UserSessionTransaction extends AbstractKeycloakTransaction {
         this.offlineClientSessions = offlineClientSessions;
     }
 
-
     @Override
-    public void begin() {
-        super.begin();
-        userSessions.begin();
-        clientSessions.begin();
-        offlineUserSessions.begin();
-        offlineClientSessions.begin();
+    public void asyncCommit(AggregateCompletionStage<Void> stage, Consumer<DatabaseUpdate> databaseUpdates) {
+        userSessions.asyncCommit(stage, databaseUpdates);
+        clientSessions.asyncCommit(stage, databaseUpdates);
+        offlineUserSessions.asyncCommit(stage, databaseUpdates);
+        offlineClientSessions.asyncCommit(stage, databaseUpdates);
     }
 
     @Override
-    protected void commitImpl() {
-        var stage = CompletionStages.aggregateCompletionStage();
-        userSessions.commitAsync(stage);
-        clientSessions.commitAsync(stage);
-        offlineUserSessions.commitAsync(stage);
-        offlineClientSessions.commitAsync(stage);
-        CompletionStages.join(stage.freeze());
-    }
-
-    @Override
-    protected void rollbackImpl() {
-        userSessions.rollback();
-        clientSessions.rollback();
-        offlineUserSessions.rollback();
-        offlineClientSessions.rollback();
+    public void asyncRollback(AggregateCompletionStage<Void> stage) {
+        userSessions.asyncRollback(stage);
+        clientSessions.asyncRollback(stage);
+        offlineUserSessions.asyncRollback(stage);
+        offlineClientSessions.asyncRollback(stage);
     }
 
     public ClientSessionChangeLogTransaction getClientSessions(boolean offline) {

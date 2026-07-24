@@ -1,0 +1,208 @@
+// Release notes should contain only headline-worthy new features,
+// assuming that people who migrate will read the upgrading guide anyway.
+
+This release features new capabilities focused on security enhancements, deeper integration, and improved server administration. The highlights of this release are:
+
+* Passkeys for seamless, passwordless authentication of users.
+* Federated Client Authentication to use SPIFFE or Kubernetes service account tokens for client authentication.
+* Simplified deployments across multiple availability zones to boost availability.
+* FAPI 2 Final: Keycloak now supports the final specifications of FAPI 2.0 Security Profile and FAPI 2.0 Message Signing.
+* DPoP: The OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP) is now fully supported. Improvements include the ability to bind only refresh tokens for public clients, and securing all Keycloak endpoints with DPoP tokens.
+
+
+Read on to learn more about each new feature. If you are upgrading from a previous release, https://www.keycloak.org/docs/latest/upgrading/index.html[review also the changes listed in the upgrading guide].
+
+= Security and Standards
+
+== Passkeys integration (supported)
+
+Passkeys are now seamlessly integrated in the {project_name} login forms using both conditional and modal UIs. To activate the integration in the realm, go to *Authentication*, *Policies*, *Webauthn Passwordless Policy* and switch *Enable Passkeys* to enabled.
+
+For more information, see link:{adminguide_link}#passkeys_server_administration_guide[Passkeys].
+
+== FAPI 2 Final (supported)
+
+{project_name} has support for the latest versions of FAPI 2 specifications. Specifications *FAPI 2.0 Security Profile* and *FAPI 2.0 Message Signing* are already promoted to Final and {project_name} supports them.
+{project_name} client policies support
+the final versions and corresponding client profiles for FAPI 2 are passing the FAPI conformance test suite.
+
+Apart from some very minor polishing of existing policies, {project_name} has new client profiles (`fapi-2-dpop-security-profile` and `fapi-2-dpop-message-signing`) for the clients that use DPoP and are intended to be FAPI 2 compliant.
+
+ifeval::[{project_community}==true]
+Thank you to https://github.com/tnorimat[Takashi Norimatsu] for contributing this.
+endif::[]
+
+For more details, see the link:{securing_apps_base_link}/oidc-layers#_fapi-support[{securing_apps_name}].
+
+== DPoP (supported)
+
+{project_name} has support for OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP), which was a preview feature since {project_name} 23. Also, the supported version includes some improvements and minor capabilities of the DPoP feature such as the following:
+
+* Possibility to make only refresh tokens of a public client to be DPoP bound and omit the binding of an access token.
+* All {project_name} endpoints that are secured by bearer token can now handle DPoP tokens. This includes, for example, the Admin REST API and Account REST API.
+* Possibility to require the `dpop_jkt` parameter in the OIDC authentication request.
+
+ifeval::[{project_community}==true]
+Thanks to
+https://github.com/tnorimat[Takashi Norimatsu] and https://github.com/dteleguin[Dmitry Telegin] for their contributions to the DPoP feature.
+endif::[]
+
+For more information, see the link:{adminguide_link}#_dpop-bound-tokens[DPoP section] in the documentation.
+
+== FIPS 140-2 mode now supports EdDSA
+
+With the upgrade to Bouncy Castle 2.1.x, the algorithm EdDSA can now be used.
+
+== Listing supported OAuth standards on one page
+
+A new guide lists https://www.keycloak.org/securing-apps/specifications[all implemented OpenID Connect related specifications].
+ifeval::[{project_community}==true]
+Thank you to https://github.com/tnorimat[Takashi Norimatsu] for contributing this.
+endif::[]
+
+= Integration
+
+
+== Federated client authentication (preview)
+
+Identity providers are now able to federate client authentication. This allows clients to authenticate with SPIFFE JWT SVIDs,
+Kubernetes service account tokens, or tokens issued by an OpenID Connect identity provider.
+
+ifeval::[{project_community}==true]
+This feature is currently preview, and expected to become supported in 26.5.
+endif::[]
+
+== Automatic certificate management for SAML clients
+
+The SAML clients can now be configured to automatically download the signing and encrypting certificates from the SP entity metadata descriptor endpoint. In order to use this new feature, in the client *Settings* tab, section *Signature and Encryption*, configure the *Metadata descriptor URL* option (the URL where the SP metadata information with the certificates is published) and activate *Use metadata descriptor URL*. The certificates will be automatically downloaded and cached in the `public-key-storage` SPI from that URL.
+This also allows for seamless rotation of certificates.
+
+For more information, see link:{adminguide_link}#_client-saml-configuration[Creating a SAML client] in the {adminguide_name}.
+
+== Serving as an authorization server in MCP
+
+MCP (Model Context Protocol) is an open-source standard for connecting AI applications to external systems. Using MCP, AI applications can connect to data sources, tools and workflows enabling them to access key information and perform tasks.
+
+To comply with MCP specification, this version provides its OAuth 2.0 Server Metadata via a well-known URI whose format complies with RFC 8414 OAuth 2.0 Authorization Server Metadata specification. Therefore, Keycloak users can now use Keycloak as an authorization server for MCP.
+
+The latest MCP specification 2025-06-18 additionally requires support for resource indicators which are currently not implemented in {project_name}.
+
+= Administration
+
+== Update Email Workflow (supported)
+
+Users can now update their email addresses in a more secure and consistent flow. Accounts are forced to both re-authenticate and verify their emails before any account updates.
+
+For more information, see link:{adminguide_link}#_update-email-workflow[Update Email Workflow].
+
+== Optional email domain for organizations
+
+In earlier versions, each organization required at least one email domain, which was a limitation for some scenarios.
+Starting with this release, an email domain is optional.
+ifeval::[{project_community}==true]
+Thank you to https://github.com/SferaDev[Alexis Rico] for contributing this.
+endif::[]
+
+When no domain is specified, organization members will not be validated against domain restrictions during authentication and profile validation.
+
+== Hiding identity providers from the Account Console
+
+You can now control which identity providers appear in the Account Console based on different options using
+the `Show in Account console` setting. You can choose to show only those linked with a user or hide them completely.
+
+For more information, see link:{adminguide_link}#_general-idp-config[General configuration].
+
+== Enforce recovery codes setup after setting up OTP
+
+If you have enabled OTPs and recovery codes as a second factor for authentication, you can configure the OTP required action to ask users to set up recovery codes once they set up an OTP.
+ifeval::[{project_community}==true]
+Thank you to https://github.com/dasniko[Niko Köbler] for contributing this.
+endif::[]
+
+== New conditional authenticator
+
+The *Conditional - credential* is a new authenticator that checks if a specific credential type has been used (or not used) during the authentication process. This condition is related to the Passkeys feature. It is added by {project_name} to the default browser flow to skip 2FA in case a passkey was used to log in as the primary credential.
+
+For more information about conditional flows, see link:{adminguide_link}#conditions-in-conditional-flows[Conditions in conditional flows].
+
+ifeval::[{project_community}==true]
+== Translations managed by Weblate
+
+The {project_name} distribution now includes 35 community translations, with Kazakh, Azerbaijani and Slovenian added in this release.
+Community volunteers now maintain some of the translations in https://hosted.weblate.org/projects/keycloak/[Weblate] to keep them up to date.
+
+If you want to volunteer to maintain an existing or a new translation via Weblate, you can find the necessary steps in the https://github.com/keycloak/keycloak/blob/main/docs/translation.md[translation guidelines].
+endif::[]
+
+= Configuring and Running
+
+== Enhancements for single-cluster and multi-cluster setups
+
+This release renamed multi-site to multi-cluster.
+The updated documentation describes
+how {project_name} clusters can be optionally distributed across multiple availability-zones within a region for increased availability.
+The {project_name} Operator now deploys {project_name} across multiple availability zones within a Kubernetes cluster by default. {project_name} also detects split-brains within a cluster.
+
+This change should provide better availability for users who are running {project_name} in Kubernetes clusters that span multiple availability zones.
+
+== Support for additional databases and versions
+
+With this release, we added support for the following new database vendors:
+
+* EnterpriseDB (EDB) Advanced 17.6
+* Azure SQL Database and Azure SQL Managed Instance
+
+Where the previous documentation stated only tested database version, it now states all the supported database versions as well.
+
+== Expose management interface via HTTP
+
+Previous versions exposed the management endpoint only via HTTPS when the main interface was using HTTPS.
+
+Set the new option `http-management-scheme` to `http` to have the management interface use HTTP rather than inheriting the HTTPS settings of the main interface.
+This allows monitoring those endpoints in environments where no TLS client is available.
+
+== Expose health endpoints on the main HTTP(S) port
+
+With `health-enabled` set to true, you may set the `http-management-health-enabled` to `false` to indicate that health endpoints should be exposed on the main HTTP(s) port instead of the
+management port. When this option is `false` you should block unwanted external traffic to `/health` at your proxy.
+
+This allows using the health endpoints in environments where the load balancer might need access to those ports to direct traffic to the correct nodes.
+
+== Specify a `tlsSecret` on the Keycloak CR `ingress` spec
+
+To support basic TLS termination (edge) deployments by the operator, you may now set the Keycloak CR `spec.ingress.tlsSecret` field to a TLS Secret name in the namespace.
+
+== Additional datasources configuration (supported)
+
+Some {project_name} use cases like User Federation might require connecting to additional databases.
+This was possible only through specifying unsupported raw Quarkus properties in previous {project_name} versions. In this release, there are now dedicated server options for additional datasources. This allows users to leverage additional databases in their extensions in a supported and user-friendly way.
+
+Read more about it in the link:https://www.keycloak.org/server/db#multiple-datasources[Configure multiple datasources] guide.
+
+= Observability
+
+== Operator creates a ServiceMonitor automatically
+
+The Operator now provisions a `ServiceMonitor` for the management endpoint if metrics are enabled and the
+`monitoring.coreos.com/v1:ServiceMonitor` Custom Resource Definition is present on the Kubernetes cluster. The
+specification of the `ServiceMonitor` takes into account the various management endpoint configurations, to ensure that
+metrics can be scraped without any additional configuration. If you do not want a `ServiceMonitor` to be created, you can disable
+this by setting `spec.serviceMonitor.enabled: false`. For more details, see the link:{operatorguide_link}[{operatorguide_name}].
+
+== HTTP access logging of incoming HTTP requests
+
+{project_name} supports HTTP access logging to record details of incoming HTTP requests.
+While access logs are often used for debugging and traffic analysis, they are also important for security auditing and compliance monitoring.
+
+For more information, see https://www.keycloak.org/server/logging#http-access-logging[Configuring logging].
+
+== Showing context information in log messages (preview)
+
+You can now add context information via the mapped diagnostic context (MDC) to each log message like the realm or the client that initiated the request.
+This helps you to track down a warning or error message in the log to a specific caller or environment
+ifeval::[{project_community}==true]
+Thank you to https://github.com/eicki[Björn Eickvonder] for contributing this.
+endif::[]
+
+For more details on this opt-in feature, see https://www.keycloak.org/server/logging#mdc[Configuring logging].
+

@@ -17,13 +17,13 @@
 
 package org.keycloak.policy;
 
-import org.keycloak.models.KeycloakContext;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+
+import org.keycloak.models.KeycloakContext;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

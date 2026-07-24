@@ -1,5 +1,5 @@
-import { Page } from "@playwright/test";
-import { clickSelectRow } from "../utils/table";
+import type { Page } from "@playwright/test";
+import { clickSelectRow } from "../utils/table.ts";
 
 export async function goToRealmEventsTab(page: Page) {
   await page.getByTestId("rs-realm-events-tab").click();

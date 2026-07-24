@@ -16,6 +16,11 @@
  */
 package org.keycloak.authorization.jpa.store;
 
+import java.util.List;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
+
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.jpa.entities.PermissionTicketEntity;
 import org.keycloak.authorization.jpa.entities.PolicyEntity;
@@ -24,13 +29,9 @@ import org.keycloak.authorization.jpa.entities.ResourceServerEntity;
 import org.keycloak.authorization.jpa.entities.ScopeEntity;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.ResourceServerStore;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.StorageId;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.TypedQuery;
-import java.util.List;
-import org.keycloak.models.ClientModel;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -65,6 +66,21 @@ public class JPAResourceServerStore implements ResourceServerStore {
         String id = client.getId();
         ResourceServerEntity entity = entityManager.find(ResourceServerEntity.class, id);
         if (entity == null) return;
+
+        // reordering deletions to avoid FK issues, but it is not a fix, but only a workaround
+        // proper fix would be to refactor the whole mess with bidirectional relationships with proper cascade-on-delete behavior.
+        // this method would become just a one-liner entityManager.remove(entity);
+        {
+            TypedQuery<String> query = entityManager.createNamedQuery("findPermissionTicketIdByServerId", String.class);
+
+            query.setParameter("serverId", id);
+
+            List<String> result = query.getResultList();
+            for (String permissionId : result) {
+                entityManager.remove(entityManager.getReference(PermissionTicketEntity.class, permissionId));
+            }
+        }
+
         //This didn't work, had to loop through and remove each policy individually
         //entityManager.createNamedQuery("deletePolicyByResourceServer")
         //        .setParameter("serverId", id).executeUpdate();
@@ -77,17 +93,6 @@ public class JPAResourceServerStore implements ResourceServerStore {
                 PolicyEntity policyEntity = entityManager.find(PolicyEntity.class, policyId);
                 policyEntity.getAssociatedPolicies().clear();
                 entityManager.remove(policyEntity);
-            }
-        }
-
-        {
-            TypedQuery<String> query = entityManager.createNamedQuery("findPermissionTicketIdByServerId", String.class);
-
-            query.setParameter("serverId", id);
-
-            List<String> result = query.getResultList();
-            for (String permissionId : result) {
-                entityManager.remove(entityManager.getReference(PermissionTicketEntity.class, permissionId));
             }
         }
 

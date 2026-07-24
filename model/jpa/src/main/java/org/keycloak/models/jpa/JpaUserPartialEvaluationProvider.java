@@ -17,9 +17,6 @@
 
 package org.keycloak.models.jpa;
 
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -34,15 +31,19 @@ import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
+
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
-import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationContext;
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationStorageProvider;
+import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
+
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
 
 /**
  * A {@link PartialEvaluationStorageProvider} that provides support for partial evaluation when querying {@link UserModel}.

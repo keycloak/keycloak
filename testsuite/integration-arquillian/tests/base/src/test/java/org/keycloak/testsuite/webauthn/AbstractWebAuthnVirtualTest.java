@@ -17,10 +17,16 @@
 
 package org.keycloak.testsuite.webauthn;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAuthenticatorFactory;
@@ -34,11 +40,11 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.AbstractAdminTest;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.admin.AdminApiUtil;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
@@ -55,28 +61,26 @@ import org.keycloak.testsuite.webauthn.updaters.AbstractWebAuthnRealmUpdater;
 import org.keycloak.testsuite.webauthn.updaters.PasswordLessRealmAttributeUpdater;
 import org.keycloak.testsuite.webauthn.updaters.WebAuthnRealmAttributeUpdater;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.virtualauthenticator.Credential;
 import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 
-import jakarta.ws.rs.core.Response;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverFirefox;
+import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverInstanceOf;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverFirefox;
-import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverInstanceOf;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Abstract class for WebAuthn tests which use Virtual Authenticators
@@ -92,6 +96,9 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
     protected LoginPage loginPage;
 
     @Page
+    protected ErrorPage errorPage;
+
+    @Page
     protected RegisterPage registerPage;
 
     @Page
@@ -104,9 +111,6 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
     protected WebAuthnLoginPage webAuthnLoginPage;
 
     @Page
-    protected AppPage appPage;
-
-    @Page
     protected LogoutConfirmPage logoutConfirmPage;
 
     @Page
@@ -114,6 +118,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
 
     protected static final String ALL_ZERO_AAGUID = "00000000-0000-0000-0000-000000000000";
     protected static final String ALL_ONE_AAGUID = "11111111-1111-1111-1111-111111111111";
+    protected static final String CHROME_AAGUID = "01020304-0506-0708-0102-030405060708";
     protected static final String USERNAME = "UserWebAuthn";
     protected static final String EMAIL = "UserWebAuthn@email";
 
@@ -159,16 +164,16 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
 
     @Override
     protected void postAfterAbstractKeycloak() {
-        List<UserRepresentation> defaultUser = testRealm().users().search(USERNAME, true);
+        List<UserRepresentation> defaultUser = managedRealm.admin().users().search(USERNAME, true);
         if (defaultUser != null && !defaultUser.isEmpty()) {
-            Response response = testRealm().users().delete(defaultUser.get(0).getId());
+            Response response = managedRealm.admin().users().delete(defaultUser.get(0).getId());
             assertThat(response, notNullValue());
             assertThat(response.getStatus(), is(204));
         }
     }
 
     public UserResource userResource() {
-        return ApiUtil.findUserByUsernameId(testRealm(), USERNAME);
+        return AdminApiUtil.findUserByUsernameId(managedRealm.admin(), USERNAME);
     }
 
     public VirtualAuthenticatorOptions getDefaultAuthenticatorOptions() {
@@ -185,7 +190,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
     }
 
     public AbstractWebAuthnRealmUpdater<?> getWebAuthnRealmUpdater() {
-        return isPasswordless() ? new PasswordLessRealmAttributeUpdater(testRealm()) : new WebAuthnRealmAttributeUpdater(testRealm());
+        return isPasswordless() ? new PasswordLessRealmAttributeUpdater(managedRealm.admin()) : new WebAuthnRealmAttributeUpdater(managedRealm.admin());
     }
 
     public String getCredentialType() {
@@ -225,7 +230,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
     }
 
     protected void registerUser(String username, String password, String email, String authenticatorLabel, boolean shouldSuccess) {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
 
         waitForPageToLoad();
@@ -293,8 +298,8 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
     }
 
     protected void authenticateUser(String username, String password, boolean shouldSuccess) {
-        loginPage.open();
-        loginPage.assertCurrent(TEST_REALM_NAME);
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
         loginPage.login(username, password);
 
         waitForPageToLoad();
@@ -304,19 +309,10 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
 
         if (shouldSuccess) {
             waitForPageToLoad();
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         } else {
-            displayErrorMessageIfPresent();
+            webAuthnErrorPage.assertCurrent();
         }
-    }
-
-    protected String displayErrorMessageIfPresent() {
-        if (webAuthnErrorPage.isCurrent()) {
-            final String msg = webAuthnErrorPage.getError();
-            log.info("Error message from Error Page: " + msg);
-            return msg;
-        }
-        return null;
     }
 
     protected Credential getDefaultResidentKeyCredential() {
@@ -447,7 +443,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
     }
 
     protected void checkWebAuthnConfiguration(String residentKey, String userVerification) {
-        WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+        WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
         assertThat(realmData, notNullValue());
         assertThat(realmData.getRpEntityName(), is("localhost"));
         assertThat(realmData.getRequireResidentKey(), is(residentKey));

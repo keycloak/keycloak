@@ -16,6 +16,9 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.factories;
 
+import java.net.URI;
+import javax.xml.datatype.XMLGregorianCalendar;
+
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.EncryptedAssertionType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
@@ -29,10 +32,8 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.processing.core.saml.v2.holders.IssuerInfoHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
-import org.w3c.dom.Element;
 
-import javax.xml.datatype.XMLGregorianCalendar;
-import java.net.URI;
+import org.w3c.dom.Element;
 
 /**
  * Factory for the SAML v2 Authn Response

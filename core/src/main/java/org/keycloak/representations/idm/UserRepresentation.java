@@ -21,6 +21,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
+import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -30,7 +33,6 @@ public class UserRepresentation extends AbstractUserRepresentation{
     protected String self; // link
     protected String origin;
     protected Long createdTimestamp;
-    protected Boolean enabled;
     protected Boolean totp;
     protected String federationLink;
     protected String serviceAccountClientId; // For rep, it points to clientId (not DB ID)
@@ -43,6 +45,9 @@ public class UserRepresentation extends AbstractUserRepresentation{
     protected Map<String, List<String>> clientRoles;
     protected List<UserConsentRepresentation> clientConsents;
     protected Integer notBefore;
+
+    protected List<UserVerifiableCredentialRepresentation> verifiableCredentials;
+    protected List<IssuedVerifiableCredentialRepresentation> issuedVerifiableCredentials;
 
     @Deprecated
     protected Map<String, List<String>> applicationRoles;
@@ -80,6 +85,8 @@ public class UserRepresentation extends AbstractUserRepresentation{
         this.clientRoles = rep.getClientRoles();
         this.clientConsents = rep.getClientConsents();
         this.notBefore = rep.getNotBefore();
+        this.verifiableCredentials = rep.getVerifiableCredentials();
+        this.issuedVerifiableCredentials = rep.getIssuedVerifiableCredentials();
 
         this.applicationRoles = rep.getApplicationRoles();
         this.socialLinks = rep.getSocialLinks();
@@ -102,14 +109,6 @@ public class UserRepresentation extends AbstractUserRepresentation{
 
     public void setCreatedTimestamp(Long createdTimestamp) {
         this.createdTimestamp = createdTimestamp;
-    }
-
-    public Boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(Boolean enabled) {
-        this.enabled = enabled;
     }
 
     @Deprecated
@@ -184,6 +183,22 @@ public class UserRepresentation extends AbstractUserRepresentation{
 
     public void setNotBefore(Integer notBefore) {
         this.notBefore = notBefore;
+    }
+
+    public List<UserVerifiableCredentialRepresentation> getVerifiableCredentials() {
+        return verifiableCredentials;
+    }
+
+    public void setVerifiableCredentials(List<UserVerifiableCredentialRepresentation> verifiableCredentials) {
+        this.verifiableCredentials = verifiableCredentials;
+    }
+
+    public List<IssuedVerifiableCredentialRepresentation> getIssuedVerifiableCredentials() {
+        return issuedVerifiableCredentials;
+    }
+
+    public void setIssuedVerifiableCredentials(List<IssuedVerifiableCredentialRepresentation> issuedVerifiableCredentials) {
+        this.issuedVerifiableCredentials = issuedVerifiableCredentials;
     }
 
     @Deprecated

@@ -9,7 +9,7 @@ public class ResourceScopeListQuery extends ResourceListQuery implements InScope
 
     private final String scopeId;
 
-    public ResourceScopeListQuery(Long revision, String id, String scopeId, Set<String> resources, String serverId) {
+    public ResourceScopeListQuery(long revision, String id, String scopeId, Set<String> resources, String serverId) {
         super(revision, id, resources, serverId);
         this.scopeId = scopeId;
     }

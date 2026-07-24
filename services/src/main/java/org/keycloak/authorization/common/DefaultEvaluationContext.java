@@ -18,12 +18,6 @@
 
 package org.keycloak.authorization.common;
 
-import org.keycloak.authorization.attribute.Attributes;
-import org.keycloak.authorization.identity.Identity;
-import org.keycloak.authorization.policy.evaluation.EvaluationContext;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.representations.AccessToken;
-
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
@@ -32,6 +26,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import org.keycloak.authorization.attribute.Attributes;
+import org.keycloak.authorization.identity.Identity;
+import org.keycloak.authorization.policy.evaluation.EvaluationContext;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.AccessToken;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

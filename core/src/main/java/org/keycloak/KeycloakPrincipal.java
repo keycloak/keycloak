@@ -17,12 +17,12 @@
 
 package org.keycloak;
 
-import org.keycloak.common.util.DelegatingSerializationFilter;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.security.Principal;
+
+import org.keycloak.common.util.DelegatingSerializationFilter;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

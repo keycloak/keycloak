@@ -1,14 +1,14 @@
 package org.keycloak.testframework.remote.runonserver;
 
-import com.sun.net.httpserver.Headers;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
+
+import com.sun.net.httpserver.Headers;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 
 public class TestClassServer {
 
@@ -48,7 +48,7 @@ public class TestClassServer {
             Headers respHeaders = httpExchange.getResponseHeaders();
             respHeaders.set("Content-Type", "application/x-java-applet;charset=utf-8");
 
-            if (!isPermittedPackage(resource) || !resource.endsWith(".class")) {
+            if (!isPermittedPackage(resource) || !(resource.endsWith(".class") || resource.endsWith(".json"))) {
                 httpExchange.sendResponseHeaders(403, 0);
             } else {
                 try (InputStream resourceStream = TestClassServer.class.getResourceAsStream(resource)) {

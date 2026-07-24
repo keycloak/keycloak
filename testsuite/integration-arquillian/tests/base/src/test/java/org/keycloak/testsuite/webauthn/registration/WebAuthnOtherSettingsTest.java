@@ -17,13 +17,12 @@
 
 package org.keycloak.testsuite.webauthn.registration;
 
-import com.webauthn4j.data.AttestationConveyancePreference;
-import com.webauthn4j.data.attestation.authenticator.COSEKey;
-import com.webauthn4j.data.attestation.statement.COSEAlgorithmIdentifier;
-import com.webauthn4j.data.attestation.statement.COSEKeyType;
-import org.hamcrest.Matchers;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Test;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
@@ -31,38 +30,38 @@ import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.credential.dto.WebAuthnCredentialData;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnDataWrapper;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
+
+import com.webauthn4j.data.AttestationConveyancePreference;
+import com.webauthn4j.data.attestation.authenticator.COSEKey;
+import com.webauthn4j.data.attestation.statement.COSEAlgorithmIdentifier;
+import com.webauthn4j.data.attestation.statement.COSEKeyType;
+import org.hamcrest.Matchers;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverFirefox;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
-import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverFirefox;
-import static org.keycloak.testsuite.util.WaitUtils.pause;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
 public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
 
-    @Page
-    protected AppPage appPage;
 
     @Test
     @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
@@ -70,7 +69,7 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
         registerDefaultUser("webauthn");
 
         WaitUtils.waitForPageToLoad();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         final String userId = Optional.ofNullable(userResource().toRepresentation())
                 .map(UserRepresentation::getId)
@@ -78,22 +77,20 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
 
         assertThat(userId, notNullValue());
 
-        events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION)
-                .user(userId)
-                .detail(Details.CUSTOM_REQUIRED_ACTION, isPasswordless()
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION)
+                .userId(userId)
+                .details(Details.CUSTOM_REQUIRED_ACTION, isPasswordless()
                         ? WebAuthnPasswordlessRegisterFactory.PROVIDER_ID
                         : WebAuthnRegisterFactory.PROVIDER_ID)
-                .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, "webauthn")
-                .detail(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, ALL_ZERO_AAGUID)
-                .assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
-                .user(userId)
-                .detail(Details.CUSTOM_REQUIRED_ACTION, isPasswordless()
+                .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, "webauthn")
+                .details(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, ALL_ZERO_AAGUID);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL)
+                .userId(userId)
+                .details(Details.CUSTOM_REQUIRED_ACTION, isPasswordless()
                         ? WebAuthnPasswordlessRegisterFactory.PROVIDER_ID
                         : WebAuthnRegisterFactory.PROVIDER_ID)
-                .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, "webauthn")
-                .detail(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, ALL_ZERO_AAGUID)
-                .assertEvent();
+                .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, "webauthn")
+                .details(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, ALL_ZERO_AAGUID);
 
         final String credentialType = getCredentialType();
         // Soft token in Firefox does not increment counter
@@ -130,10 +127,10 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
 
         try (Closeable u = getWebAuthnRealmUpdater().setWebAuthnPolicyCreateTimeout(TIMEOUT).update()) {
 
-            WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
             assertThat(realmData.getCreateTimeout(), is(TIMEOUT));
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
@@ -154,32 +151,79 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
             webAuthnRegisterPage.assertCurrent();
             webAuthnRegisterPage.clickRegister();
 
-            assertThat(webAuthnErrorPage.isCurrent(), is(false));
+            webAuthnErrorPage.assertCurrent();
         }
     }
 
     @Test
     public void acceptableAaguidsShouldBeEmptyOrNullByDefault() {
-        WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+        WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
         assertThat(realmData.getAcceptableAaguids(), anyOf(nullValue(), Matchers.empty()));
     }
 
     @Test
     @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
     public void excludeCredentials() throws IOException {
-        List<String> acceptableAaguids = Collections.singletonList(ALL_ONE_AAGUID);
+        List<String> acceptableAaguids = Collections.singletonList(ALL_ZERO_AAGUID);
+
+        try (Closeable u = getWebAuthnRealmUpdater()
+                .setWebAuthnPolicyAcceptableAaguids(acceptableAaguids)
+                .setWebAuthnPolicyAttestationConveyancePreference(AttestationConveyancePreference.DIRECT.getValue())
+                .update()) {
+            // webauthn virtual emulator in chrome sets a self signed certificate every time, truststore needs to be disabled
+            testingClient.testing().disableTruststoreSpi();
+
+            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
+            assertThat(realmData.getAcceptableAaguids(), Matchers.contains(ALL_ZERO_AAGUID));
+
+            registerDefaultUser();
+
+            webAuthnErrorPage.assertCurrent();
+            assertThat(webAuthnErrorPage.getError(), containsString("Not acceptable authenticator model"));
+        } finally {
+            testingClient.testing().reenableTruststoreSpi();
+        }
+    }
+
+    @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
+    public void excludeCredentialsSuccess() throws IOException {
+        List<String> acceptableAaguids = Collections.singletonList(CHROME_AAGUID);
+
+        try (Closeable u = getWebAuthnRealmUpdater()
+                .setWebAuthnPolicyAcceptableAaguids(acceptableAaguids)
+                .setWebAuthnPolicyAttestationConveyancePreference(AttestationConveyancePreference.DIRECT.getValue())
+                .update()) {
+            // webauthn virtual emulator in chrome sets a self signed certificate every time, truststore needs to be disabled
+            testingClient.testing().disableTruststoreSpi();
+
+            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
+            assertThat(realmData.getAcceptableAaguids(), Matchers.contains(CHROME_AAGUID));
+
+            registerDefaultUser();
+
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+        } finally {
+            testingClient.testing().reenableTruststoreSpi();
+        }
+    }
+
+    @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
+    public void excludeCredentialsUsingNone() throws IOException {
+        List<String> acceptableAaguids = Collections.singletonList(ALL_ZERO_AAGUID);
 
         try (Closeable u = getWebAuthnRealmUpdater()
                 .setWebAuthnPolicyAcceptableAaguids(acceptableAaguids)
                 .update()) {
 
-            WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
-            assertThat(realmData.getAcceptableAaguids(), Matchers.contains(ALL_ONE_AAGUID));
+            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
+            assertThat(realmData.getAcceptableAaguids(), Matchers.contains(ALL_ZERO_AAGUID));
 
             registerDefaultUser();
 
             webAuthnErrorPage.assertCurrent();
-            assertThat(webAuthnErrorPage.getError(), allOf(containsString("not acceptable aaguid"), containsString(ALL_ZERO_AAGUID)));
+            assertThat(webAuthnErrorPage.getError(), containsString("Acceptable AAGUIDs require an attestation format other than 'none'."));
         }
     }
 }

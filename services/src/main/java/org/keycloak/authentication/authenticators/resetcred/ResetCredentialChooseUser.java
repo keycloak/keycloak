@@ -17,16 +17,23 @@
 
 package org.keycloak.authentication.authenticators.resetcred;
 
-import org.keycloak.models.DefaultActionTokenKey;
-import org.jboss.logging.Logger;
+import java.util.List;
+
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.Config;
-import org.keycloak.authentication.*;
+import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.DefaultActionTokenKey;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -37,9 +44,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import java.util.List;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -50,6 +55,7 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
     private static final Logger logger = Logger.getLogger(ResetCredentialChooseUser.class);
 
     public static final String PROVIDER_ID = "reset-credentials-choose-user";
+    public static final String RESET_CREDENTIAL_USER_CHOSEN = "RESET_CREDENTIAL_USER_CHOSEN";
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
@@ -79,8 +85,8 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
         AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(context.getSession(), context.getRealm(), true);
         //skip user choice if sso session exists
         if (authResult != null) {
-            context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, authResult.getUser().getUsername());
-            context.setUser(authResult.getUser());
+            context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, authResult.user().getUsername());
+            context.setUser(authResult.user());
             context.success();
             return;
         }
@@ -104,7 +110,7 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
         }
 
         username = username.trim();
-        
+
         RealmModel realm = context.getRealm();
         UserModel user = context.getSession().users().getUserByUsername(realm, username);
         if (user == null && realm.isLoginWithEmailAllowed() && username.contains("@")) {
@@ -126,6 +132,7 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
                     .user(user).error(Errors.USER_DISABLED);
             context.clearUser();
         } else {
+            context.getAuthenticationSession().setAuthNote(RESET_CREDENTIAL_USER_CHOSEN, "true");
             context.setUser(user);
         }
 

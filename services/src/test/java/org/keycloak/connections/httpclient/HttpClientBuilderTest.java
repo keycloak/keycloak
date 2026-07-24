@@ -1,12 +1,17 @@
 package org.keycloak.connections.httpclient;
 
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.protocol.HttpContext;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.lang.reflect.Field;
-import java.util.concurrent.TimeUnit;
+import static org.junit.Assert.assertNotNull;
 
 public class HttpClientBuilderTest {
 
@@ -18,6 +23,24 @@ public class HttpClientBuilderTest {
 
         Assert.assertEquals("Default socket timeout is -1 and can be converted by TimeUnit", -1, requestConfig.getSocketTimeout());
         Assert.assertEquals("Default connect timeout is -1 and can be converted by TimeUnit", -1, requestConfig.getConnectTimeout());
+        Assert.assertEquals("Default connection request timeout is " + HttpClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS, HttpClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS, requestConfig.getConnectionRequestTimeout());
+    }
+
+    @Test
+    public void testRepeatedApacheBuilderUse() throws Exception {
+        HttpClientBuilder httpClientBuilder = new HttpClientBuilder();
+        httpClientBuilder.getApacheHttpClientBuilder().setRetryHandler(new HttpRequestRetryHandler() {
+
+            @Override
+            public boolean retryRequest(IOException exception, int executionCount, HttpContext context) {
+                return true;
+            }
+        });
+        var builder = httpClientBuilder.getApacheHttpClientBuilder(); // should not clear the retry handler
+
+        Field retryHandler = builder.getClass().getDeclaredField("retryHandler");
+        retryHandler.setAccessible(true);
+        assertNotNull(retryHandler.get(builder));
     }
 
     @Test
@@ -25,13 +48,15 @@ public class HttpClientBuilderTest {
         HttpClientBuilder httpClientBuilder = new HttpClientBuilder();
         httpClientBuilder
                 .socketTimeout(2, TimeUnit.SECONDS)
-                .establishConnectionTimeout(1, TimeUnit.SECONDS);
+                .establishConnectionTimeout(1, TimeUnit.SECONDS)
+                .connectionRequestTimeout(3, TimeUnit.SECONDS);
         CloseableHttpClient httpClient = httpClientBuilder.build();
 
         RequestConfig requestConfig = getRequestConfig(httpClient);
 
         Assert.assertEquals("Socket timeout is converted to milliseconds", 2000, requestConfig.getSocketTimeout());
         Assert.assertEquals("Connect timeout is converted to milliseconds", 1000, requestConfig.getConnectTimeout());
+        Assert.assertEquals("Connection request timeout is converted to milliseconds", 3000, requestConfig.getConnectionRequestTimeout());
     }
 
     @Test
@@ -53,4 +78,5 @@ public class HttpClientBuilderTest {
         defaultConfig.setAccessible(true);
         return (RequestConfig) defaultConfig.get(httpClient);
     }
+
 }

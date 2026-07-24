@@ -17,6 +17,8 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
+import java.util.List;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
@@ -26,8 +28,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import java.util.List;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -35,11 +35,10 @@ import java.util.List;
 public class PasswordFormFactory implements AuthenticatorFactory {
 
     public static final String PROVIDER_ID = "auth-password-form";
-    public static final PasswordForm SINGLETON = new PasswordForm();
 
     @Override
     public Authenticator create(KeycloakSession session) {
-        return SINGLETON;
+        return new PasswordForm(session);
     }
 
     @Override

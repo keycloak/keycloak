@@ -17,6 +17,12 @@
 
 package org.keycloak.protocol.saml;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.xml.crypto.dsig.CanonicalizationMethod;
+
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
@@ -27,25 +33,23 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.organization.protocol.mappers.saml.OrganizationMembershipMapper;
 import org.keycloak.protocol.AbstractLoginProtocolFactory;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
-import org.keycloak.organization.protocol.mappers.saml.OrganizationMembershipMapper;
+import org.keycloak.protocol.saml.mappers.AuthnContextClassRefMapper;
 import org.keycloak.protocol.saml.mappers.RoleListMapper;
 import org.keycloak.protocol.saml.mappers.UserPropertyAttributeStatementMapper;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.processing.api.util.DeflateUtil;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
-
 import org.keycloak.saml.validators.DestinationValidator;
-import javax.xml.crypto.dsig.CanonicalizationMethod;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -54,13 +58,15 @@ import java.util.Map;
 public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
 
     public static final String SCOPE_ROLE_LIST = "role_list";
+    public static final String SCOPE_AUTHN_CONTEXT_CLASS_REF = "AuthnContextClassRef";
     private static final String ROLE_LIST_CONSENT_TEXT = "${samlRoleListScopeConsentText}";
 
     private DestinationValidator destinationValidator;
+    private long maxInflatingSize;
 
     @Override
     public Object createProtocolEndpoint(KeycloakSession session, EventBuilder event) {
-        return new SamlService(session, event, destinationValidator);
+        return new SamlService(session, event, maxInflatingSize, destinationValidator);
     }
 
     @Override
@@ -97,12 +103,18 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
         model = RoleListMapper.create("role list", "Role", AttributeStatementHelper.BASIC, null, false);
         builtins.put("role list", model);
         defaultBuiltins.add(model);
+        if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION_SAML)) {
+            model = AuthnContextClassRefMapper.create(SCOPE_AUTHN_CONTEXT_CLASS_REF);
+            builtins.put(SCOPE_AUTHN_CONTEXT_CLASS_REF, model);
+            defaultBuiltins.add(model);
+        }
         if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
             model = OrganizationMembershipMapper.create();
             builtins.put("organization", model);
             defaultBuiltins.add(model);
         }
         this.destinationValidator = DestinationValidator.forProtocolMap(config.getArray("knownProtocols"));
+        this.maxInflatingSize = config.getLong("maxInflatingSize", DeflateUtil.DEFAULT_MAX_INFLATING_SIZE);
     }
 
     @Override
@@ -127,6 +139,7 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
         roleListScope.setProtocol(getId());
         roleListScope.addProtocolMapper(builtins.get("role list"));
         newRealm.addDefaultClientScope(roleListScope, true);
+
         if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
             ClientScopeModel organizationScope = newRealm.addClientScope("saml_organization");
             organizationScope.setDescription("Organization Membership");
@@ -135,6 +148,8 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
             organizationScope.addProtocolMapper(builtins.get("organization"));
             newRealm.addDefaultClientScope(organizationScope, true);
         }
+
+        addSamlAuthnContextClassRefClientScope(newRealm);
     }
 
     @Override
@@ -180,7 +195,8 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
             client.setRequiresClientSignature(true);
         }
 
-        if (client.requiresClientSignature() && client.getClientSigningCertificate() == null) {
+        if (client.requiresClientSignature() && client.getClientSigningCertificate() == null
+                && (!client.isUseMetadataDescriptorUrl() || client.getMetadataDescriptorUrl() != null)) {
             CertificateRepresentation info = KeycloakModelUtils.generateKeyPairCertificate(newClient.getClientId());
             client.setClientSigningCertificate(info.getCertificate());
             client.setClientSigningPrivateKey(info.getPrivateKey());
@@ -200,5 +216,40 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
     @Override
     public int order() {
         return OIDCLoginProtocolFactory.UI_ORDER - 10;
+    }
+
+    /**
+     * Getter for the max inflating size
+     * @return
+     */
+    public long getMaxInflatingSize() {
+        return maxInflatingSize;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("maxInflatingSize")
+                .type("long")
+                .helpText("The maximum inflating size in bytes for the REDIRECT binding.")
+                .defaultValue(DeflateUtil.DEFAULT_MAX_INFLATING_SIZE)
+                .add()
+                .build();
+    }
+
+    public ClientScopeModel addSamlAuthnContextClassRefClientScope(RealmModel newRealm) {
+        if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION_SAML)) {
+            ClientScopeModel authnContextClassRefScope = KeycloakModelUtils.getClientScopeByName(newRealm, SCOPE_AUTHN_CONTEXT_CLASS_REF);
+            if (authnContextClassRefScope == null) {
+                authnContextClassRefScope = newRealm.addClientScope(SCOPE_AUTHN_CONTEXT_CLASS_REF);
+                authnContextClassRefScope.setDescription("AuthnContextClassRef Level of Authentiation");
+                authnContextClassRefScope.setProtocol(getId());
+                authnContextClassRefScope.addProtocolMapper(builtins.get(SCOPE_AUTHN_CONTEXT_CLASS_REF));
+                newRealm.addDefaultClientScope(authnContextClassRefScope, true);
+            }
+            return authnContextClassRefScope;
+        }
+        return null;
     }
 }

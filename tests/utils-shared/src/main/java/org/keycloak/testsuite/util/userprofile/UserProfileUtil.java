@@ -1,5 +1,8 @@
 package org.keycloak.testsuite.util.userprofile;
 
+import java.io.IOException;
+import java.util.Set;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.models.UserModel;
@@ -8,9 +11,6 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.util.JsonSerialization;
-
-import java.io.IOException;
-import java.util.Set;
 
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
@@ -59,11 +59,18 @@ public class UserProfileUtil {
     }
 
     public static UPConfig enableUnmanagedAttributes(UserProfileResource upResource) {
+        return setUnmanagedAttributesPolicy(upResource, UPConfig.UnmanagedAttributePolicy.ENABLED);
+    }
+
+    public static UPConfig disableUnmanagedAttributes(UserProfileResource upResource) {
+        return setUnmanagedAttributesPolicy(upResource, null);
+    }
+
+    public static UPConfig setUnmanagedAttributesPolicy(UserProfileResource upResource, UPConfig.UnmanagedAttributePolicy policy) {
         UPConfig cfg = upResource.getConfiguration();
-        cfg.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ENABLED);
+        cfg.setUnmanagedAttributePolicy(policy);
         upResource.update(cfg);
         return cfg;
     }
 
 }
-

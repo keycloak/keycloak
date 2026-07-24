@@ -1,0 +1,387 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Shared Signals Framework (SSF)"
+priority=170
+summary="Using {project_name} as a Shared Signals Framework (SSF) Transmitter to deliver security event signals to downstream receivers.">
+
+<#include "/templates/experimental-feature.adoc">
+
+https://openid.net/specs/openid-sharedsignals-framework-1_0-final.html[The OpenID Shared Signals Framework (SSF) 1.0]
+defines a standard way for one identity system to push security-relevant signals, e.g. a session was revoked, a credential
+changed, an account was disabled, an assurance level changed etc. to other relying parties in near real time. The signals
+are encoded as JWS-signed https://www.rfc-editor.org/rfc/rfc8417[Security Event Tokens (SETs)] whose payloads are described by
+profiles such as https://openid.net/specs/openid-caep-1_0-final.html[CAEP] (Continuous Access Evaluation Profile) and
+https://openid.net/specs/openid-risc-1_0-final.html[RISC] (Risk Incident Sharing and Coordination). Receivers verify
+each SET against the transmitter's JWKS and act on it locally, e.g. for example, by terminating cached sessions when
+{project_name} signals a logout.
+
+{project_name} plays the *Transmitter* role: it observes user, session, and credential events, maps them to typed
+SETs, signs them, and delivers them to registered *Receivers* over the wire formats defined by
+https://www.rfc-editor.org/rfc/rfc8935[RFC 8935] (PUSH) and https://www.rfc-editor.org/rfc/rfc8936[RFC 8936] (POLL).
+
+== Overview
+
+The {project_name} SSF Transmitter exposes four moving parts that an administrator works with:
+
+* *Realm-level transmitter capability* a per-realm switch that turns SSF on for a single realm. Discovery metadata
+  is published at `/.well-known/ssf-configuration/realms/{realm}` (and the alternative
+  `/realms/{realm}/.well-known/ssf-configuration`).
+* *SSF Receivers* regular OAuth/OIDC clients marked as SSF receivers. Each receiver describes how it wants
+  events delivered (PUSH or POLL), which event types it supports, and which subjects it is interested in.
+* *Streams* one stream per receiver, representing the active subscription. The stream carries the delivery
+  method, endpoint URL (for PUSH), the event types currently requested, and the stream status
+  (`enabled`/`paused`/`disabled`).
+* *Subjects* the users (or organizations) that the receiver is notified about. Selection combines a transmitter-wide
+  default policy with per-user/per-organization overrides.
+
+Behind the scenes, every dispatched event is persisted to a durable outbox before the user's request returns,
+so no signal is lost across restarts and slow or unreachable receivers never block user-facing flows. A
+cluster-aware background drainer task handles retries, exponential backoff, and dead-lettering for PUSH delivery.
+
+== Enabling the SSF feature
+
+SSF is an experimental feature and must be explicitly enabled when starting {project_name}:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --features=ssf
+----
+
+This enables the SSF code paths server-wide. Each realm that wishes to act as an SSF Transmitter must then
+opt in individually (see the next section).
+
+=== Optional SPI configuration
+
+The `ssf-transmitter` SPI category exposes the transmitter-wide defaults. The most commonly tuned options are
+shown below; the rest keep sensible defaults and rarely need adjustment.
+
+[cols="2,1,3",options="header"]
+|===
+|Option |Default |Purpose
+
+|`signature-algorithm`
+|`RS256`
+|JWS algorithm used to sign SETs.
+
+|`user-subject-format`
+|`iss_sub`
+|Default user-subject shape. Can be overridden per receiver.
+
+|`default-subjects`
+|`NONE`
+|Default subscription policy: `ALL` delivers events for every user unless explicitly excluded; `NONE` delivers
+only for users that have been explicitly subscribed.
+
+|`min-verification-interval-seconds`
+|`60`
+|Minimum interval between receiver-initiated verification requests.
+
+|`outbox-drainer-interval`
+|`30s`
+|How often the PUSH outbox drainer runs.
+
+|`sse-caep-enabled`
+|`true`
+|Advertise the legacy RISC delivery URIs alongside the SSF 1.0 URIs, for interop with Apple Business Manager and other pre-SSF 1.0 receivers.
+
+|`allow-insecure-push-targets`
+|`false`
+|Relaxes the scheme/host class check on receiver-supplied PUSH URLs (allows `http://` and loopback/private
+hosts). Intended for closed-network deployments and integration tests; never auto-enabled in `start-dev`.
+The per-receiver `ssf.validPushUrls` allow-list still applies.
+|===
+
+== Enabling the SSF Transmitter for a realm
+
+With the feature flag on, individual realms must enable the transmitter via the realm attribute
+`ssf.transmitterEnabled=true`. When this attribute is unset, the realm's SSF endpoints return `404` and no events
+are produced, even though SSF is on at the server level.
+
+The setting is surfaced in the {project_name} admin console under *Realm settings* -> *SSF*. After enabling the
+transmitter, the realm's discovery metadata becomes available at the host-rooted location defined by SSF 1.0 §7.2,
+formed by inserting `/.well-known/ssf-configuration` between the host and path components of the issuer:
+
+[source,bash]
+----
+GET /.well-known/ssf-configuration/realms/{realm}
+----
+
+This primary form requires {project_name} to be deployed at the web root (i.e. `KC_HTTP_RELATIVE_PATH` is empty),
+because the host-rooted `/.well-known` path must be served from the root of the host. The same document is also
+published at the OIDC-discovery-style alternative location, which works regardless of the deployment path:
+
+[source,bash]
+----
+GET /realms/{realm}/.well-known/ssf-configuration
+----
+
+The realm-level SSF page also exposes transmitter-wide defaults that override the SPI defaults for this realm:
+signature algorithm, default user-subject format, `default_subjects` policy, minimum verification interval, and
+default push HTTP timeouts.
+
+== Creating a Client representing an SSF Receiver
+
+An SSF receiver is a regular OAuth/OIDC client with the client attribute `ssf.enabled=true`. To create one:
+
+. Create a normal *OpenID Connect* client in the realm (typical client-credentials configuration if the receiver
+authenticates with a service account).
+. Open the client and toggle *SSF enabled* on. An *SSF* tab appears in the client editor.
+. Configure the receiver on the *Receiver* sub-tab (see <<receiver-configuration, Receiver configuration>>).
+. Hand the receiver its credentials and let it register its own stream against the SSF management API. This is
+the default flow: the receiver discovers the transmitter via `/.well-known/ssf-configuration`, calls
+`POST /realms/{realm}/ssf/transmitter/streams` with the delivery method and event types it wants, and continues
+to manage the subscription itself. Streams registered this way are marked as <<managed-by, *RECEIVER-managed*>>.
+
+The receiver authenticates SSF management API calls using a bearer token issued for this client. Required scopes
+and roles can be tightened with `ssf.requireServiceAccount` and `ssf.requiredRole` (see the *Authentication*
+section on the Receiver sub-tab).
+
+Alternatively, an administrator can pre-provision the stream from the *Stream* sub-tab in the admin console
+before the receiver software is running. The receiver then picks up the existing stream via `GET /streams` once
+it comes online. Streams created this way are marked as <<managed-by, *KEYCLOAK-managed*>>.
+
+[[receiver-configuration]]
+=== Receiver configuration
+
+The *Receiver* sub-tab groups configuration into sections. Frequently used knobs:
+
+[cols="1,3",options="header"]
+|===
+|Setting |Purpose
+
+|*Profile*
+|`SSF_1_0` (default) or `SSE_CAEP` (legacy wire format used by Apple Business Manager / Apple School Manager).
+
+|*Default subjects*
+|Per-receiver override of the realm-wide `default_subjects` policy (`ALL` / `NONE`).
+
+|*User subject format*
+|How the user identity is encoded in the SET's `sub_id`: `iss_sub`, `email`,
+`complex.iss_sub+tenant`, or `complex.email+tenant`.
+
+|*Supported events*
+|Multi-select of the SSF event types this receiver wishes to support. Native event types are badged as
+*built-in*; custom event types contributed by extensions appear here automatically.
+
+|*Auto notify on login*
+|Auto-subscribe the user as a subject the first time they log in via this receiver client.
+
+|*Allowed delivery methods*
+|Two checkboxes (*Push delivery*, *Poll delivery*) gating which delivery families this receiver may use.
+Empty means both are allowed.
+
+|*Valid push URLs*
+|`##`-separated allow-list of URL patterns the receiver may register as its push endpoint. Required when PUSH
+is allowed. Each entry is matched as either an exact URL or a trailing-`*` suffix wildcard
+(e.g. `\https://receiver.example.com/ssf/*`). Bare `*` is not honoured, this is the SSRF defence on outbound
+PUSH delivery.
+
+|*Allow synthetic events* / *Emit events role*
+|Opt-in path for trusted external systems (LDAP-change notifier, MDM, risk engine) to inject supported SSF events for
+this receiver via the admin emit endpoint, gated by a client role the caller's service account must hold.
+|===
+
+== Configuring delivery (PUSH or POLL)
+
+A receiver picks exactly one delivery method per stream. Both methods deliver the same signed SETs; they differ
+only in who initiates the HTTP call.
+
+=== PUSH delivery (RFC 8935)
+
+In PUSH mode {project_name} performs an outbound HTTP `POST` to a receiver-supplied URL whenever a SET is ready
+for delivery. To configure PUSH:
+
+. On the *Receiver* sub-tab, make sure *Push delivery* is allowed and add at least one entry to *Valid push URLs*
+matching the receiver's endpoint.
+. On the *Stream* sub-tab, select *Push* as the delivery method and enter the receiver's endpoint URL.
+. Optionally, provide an *Authorization header* value the transmitter must send on each delivery (e.g.
+`Bearer <token>` issued by the receiver). Vault expressions like `${r"${vault.my-secret}"}` are resolved at dispatch time.
+
+Receiver-supplied URLs are validated against the per-receiver `ssf.validPushUrls` allow-list, and after a
+successful match the URL itself must use the `https` scheme and must not resolve to a loopback/link-local/
+site-local/unique-local/multicast address. Rejections are reported as HTTP `400` with a generic message;
+the operator-facing log entry contains the rejected URL and a suggested allow-list entry.
+
+PUSH delivery uses exponential backoff (8 attempts by default). After the attempt budget is exhausted, the row
+transitions to `DEAD_LETTER` and is retained for 30 days for inspection in the *Event Search* sub-tab.
+
+=== POLL delivery (RFC 8936)
+
+In POLL mode {project_name} hosts the endpoint and the receiver fetches events on its own cadence. To configure POLL:
+
+. On the *Receiver* sub-tab, make sure *Poll delivery* is allowed.
+. On the *Stream* sub-tab, select *Poll* as the delivery method. A copy-to-clipboard field appears with the
+transmitter-owned poll URL of the form:
+
+[source]
+----
+POST /realms/{realm}/ssf/transmitter/receivers/{clientId}/streams/{streamId}/poll
+----
+
+The receiver authenticates to this endpoint with the same bearer-token mechanism it would use for the SSF
+management API. A poll request carries `maxEvents`, optional `ack` (jti list to acknowledge), and optional
+`setErrs` (jti list to negative-acknowledge). The response delivers up to `maxEvents` signed SETs and a
+`moreAvailable` flag.
+
+NOTE: HTTP long-polling (`returnImmediately=false`, `maxWait`) is parsed but not yet honoured. This means every poll
+returns immediately. Receivers should configure their own polling cadence accordingly.
+
+=== Switching delivery method
+
+Flipping the delivery method on an existing stream re-routes already-queued events between the PUSH and POLL
+outbox kinds without losing them. The stream status is preserved.
+
+== Stream configuration
+
+Each receiver owns exactly one stream. The stream is what receivers manage via the SSF spec endpoints, and what
+operators see on the *Stream* sub-tab.
+
+=== Receiver-managed stream lifecycle
+
+Receivers may use the standard SSF §8.1 management endpoints to create, read, update, and delete their stream:
+
+[source]
+----
+POST   /realms/{realm}/ssf/transmitter/streams
+GET    /realms/{realm}/ssf/transmitter/streams
+PATCH  /realms/{realm}/ssf/transmitter/streams
+PUT    /realms/{realm}/ssf/transmitter/streams
+DELETE /realms/{realm}/ssf/transmitter/streams
+----
+
+Transmitter-controlled fields such as `stream_id`, `iss`, `aud`, and `events_supported` are stamped by
+{project_name} and rejected if the receiver tries to supply them. Multi-stream per receiver is not supported in
+this release, a second `POST /streams` returns `409 Conflict`.
+
+=== Stream status transitions
+
+The stream has three statuses, transitioned via `POST /streams/status` (receiver-driven) or the admin
+*Stream* sub-tab:
+
+[cols="1,3",options="header"]
+|===
+|Status |Effect
+
+|`enabled`
+|Default. Events flow through the dispatcher to the outbox and are delivered.
+
+|`paused`
+|New events are enqueued as `HELD` instead of being delivered. Existing pending events transition to `HELD`.
+Re-enabling the stream releases held events back to delivery.
+
+|`disabled`
+|All pending and held events for this stream are discarded per the SSF specification's MUST-NOT-hold rule.
+Re-enabling starts from an empty queue.
+|===
+
+A `stream-updated` SET is dispatched on every status transition, including auto-pauses triggered by the
+inactivity timeout.
+
+=== Verification
+
+A verification SET (containing only an opaque `sub_id = stream_id`) can be triggered:
+
+* By the receiver via `POST /realms/{realm}/ssf/transmitter/verify`, rate-limited per receiver via the
+  `min_verification_interval` setting; over-frequent calls receive `429 Too Many Requests`.
+* By an administrator via the *Verify* button on the *Stream* sub-tab, bypasses the rate limit.
+* Automatically by the transmitter shortly after stream creation.
+
+[[managed-by]]
+== Receiver-managed vs. {project_name}-managed streams
+
+Every stream is marked at creation time with a *ManagedBy* attribute that records which surface originally
+registered it:
+
+* *RECEIVER* the stream was registered through the receiver-facing `POST /streams` endpoint. The receiver
+  client is the conceptual owner of the configuration; the admin UI flags admin edits as overrides. This is
+  also the implicit value for streams that pre-date the introduction of the marker.
+* *KEYCLOAK* the stream was registered through the admin-facing
+  `POST /admin/realms/{realm}/ssf/clients/{clientId}/stream` endpoint, driven by the *Stream* sub-tab in the
+  admin console. The receiver never called the SSF management endpoints; the operator drives the stream lifecycle.
+
+The marker is purely informational. Both modes accept both admin-driven and receiver-driven updates; the
+dispatcher gate does not consider it. The value is set at stream creation and is immutable thereafter, it
+exists so the admin UI can render which surface conceptually owns the configuration and warn operators before
+they overwrite a receiver-managed stream.
+
+This distinction matters in practice for two scenarios:
+
+* *Pre-provisioned integrations*, an operator can configure the receiver's stream completely from the admin UI
+  before the receiver software is even running, and the receiver picks up the existing stream via
+  `GET /streams` once it comes online. These streams are marked `KEYCLOAK`.
+* *Self-service receivers*, a receiver application registers and updates its own stream via the SSF spec
+  endpoints. These streams are marked `RECEIVER`.
+
+== Configuring subjects
+
+Not every {project_name} user event is interesting to every receiver. The transmitter applies a *subject-selection
+gate* before signing and enqueueing a SET: for each stream it decides whether the user that the event is about
+should produce a notification.
+
+The gate combines a transmitter-wide default with per-user and per-organization overrides.
+
+=== Default subscription policy
+
+The `default_subjects` setting, realm-wide on the transmitter, optionally overridden per receiver, which controls
+the default outcome:
+
+* `ALL`: automatic delivery. Every user in the realm is an implicit subject for every receiver, unless an
+  explicit override says otherwise.
+* `NONE`: opt-in delivery. A user is *not* a subject for any receiver unless explicitly subscribed.
+
+=== Subject management endpoints
+
+Receivers manage their own subject list via SSF §8.1.3:
+
+[source]
+----
+POST /realms/{realm}/ssf/transmitter/subjects/add
+POST /realms/{realm}/ssf/transmitter/subjects/remove
+----
+
+For privacy, both endpoints respond with their normal success status, `200 OK` for add and `204 No Content` for
+remove, even when the supplied subject does not resolve to an existing user, so they do not act as an existence
+oracle for the realm's user store.
+
+Administrators can manage subjects from the *Subjects* sub-tab in the admin console. The sub-tab also exposes
+an *ignore* operation that explicitly excludes a subject (distinct from removing them from the subscription
+list), and a *check* action that surfaces what the gate would decide for a given user without emitting an event.
+
+== Synthetic event emitter
+
+Some security signals do not originate inside {project_name}: an LDAP password change against a federated
+directory, a device-compliance change from an MDM, a fraud signal from a risk engine. The synthetic event emitter
+lets an authorized caller produce an SSF event over REST as if {project_name} had observed it. Receivers see a
+normal signed SET on the wire; they cannot tell whether the signal came from a native event or from a synthetic
+emit.
+
+Two authorized call paths exist:
+
+* *Administrator emit* -- callers with permission to manage the receiver client may emit any registered event
+  type via the *Emit Events* sub-tab in the admin console, or via
+  `POST /admin/realms/{realm}/ssf/clients/{clientId}/events/emit`.
+* *Trusted-emitter service account* -- with `ssf.allowEmitEvents=true` and `ssf.emitEventsRole=<role>` set on
+  the receiver, an external system can post events to the same endpoint using its own OAuth service-account
+  credentials, provided the service account holds the configured role.
+
+Stream-internal lifecycle event types (`stream-verification`, `stream-updated`) cannot be emitted, as they are
+reserved to the transmitter so external callers cannot forge transmitter behaviour towards a receiver.
+
+== Specifications
+
+The {project_name} SSF Transmitter targets conformance with:
+
+* https://openid.net/specs/openid-sharedsignals-framework-1_0-final.html[OpenID Shared Signals Framework 1.0 (Final)]
+  -- stream / subject management, verification, delivery negotiation, metadata.
+* https://www.rfc-editor.org/rfc/rfc8417[RFC 8417] Security Event Tokens (SETs).
+* https://www.rfc-editor.org/rfc/rfc8935[RFC 8935] SET delivery via HTTP PUSH.
+* https://www.rfc-editor.org/rfc/rfc8936[RFC 8936] SET delivery via HTTP POLL.
+* https://www.rfc-editor.org/rfc/rfc9493[RFC 9493] Subject Identifiers (`iss_sub`, `email`, `opaque`,
+  `complex`).
+* https://openid.net/specs/openid-caep-interoperability-profile-1_0.html[CAEP Interoperability Profile 1.0 (draft)]
+  -- `session-revoked` and `credential-change` event types.
+* Legacy SSE CAEP profile for Apple Business Manager interop (gated behind the `sse-caep-enabled` SPI flag).
+
+</@tmpl.guide>

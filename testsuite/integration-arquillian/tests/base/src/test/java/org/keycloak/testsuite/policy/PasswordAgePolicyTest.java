@@ -17,32 +17,32 @@
 
 package org.keycloak.testsuite.policy;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.function.Consumer;
+
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testsuite.AbstractAuthTest;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.function.Consumer;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
@@ -55,9 +55,6 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
 
     @Page
     private RegisterPage registerPage;
-
-    @Page
-    private AppPage appPage;
 
     private UserResource user;
 
@@ -132,7 +129,7 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(RealmBuilder.create()
                 .name(AuthRealm.TEST)
-                .client(ClientBuilder.create()
+                .clients(ClientBuilder.create()
                         .clientId("test-app")
                         .redirectUris(
                                 "http://localhost:8180/auth/realms/master/app/auth/*",
@@ -161,10 +158,10 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
     public void testPasswordHistoryRetrySamePassword() {
         setPasswordAgePolicyValue(1);
         //set offset to 12h ago
-        setTimeOffset(-12 * 60 * 60);
+        timeOffSet.set(-12 * 60 * 60);
         resetUserPassword(user, "secret");
         //try to set again same password
-        setTimeOffset(0);
+        timeOffSet.set(0);
         expectBadRequestException(f -> resetUserPassword(user, "secret"));
     }
 
@@ -172,13 +169,13 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
     public void testPasswordHistoryWithTwoPasswordsErrorThrown() {
         setPasswordAgePolicyValue(1);
         //set offset to 12h ago
-        setTimeOffset(-12 * 60 * 60);
+        timeOffSet.set(-12 * 60 * 60);
         resetUserPassword(user, "secret");
-        setTimeOffset(-10 * 60 * 60);
+        timeOffSet.set(-10 * 60 * 60);
         resetUserPassword(user, "secret1");
 
         //try to set again same password after 12h
-        setTimeOffset(0);
+        timeOffSet.set(0);
         expectBadRequestException(f -> resetUserPassword(user, "secret"));
     }
 
@@ -186,13 +183,13 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
     public void testPasswordHistoryWithTwoPasswords() {
         setPasswordAgePolicyValue(1);
         //set offset to more than a day ago
-        setTimeOffset(-24 * 60 * 60 * 2);
+        timeOffSet.set(-24 * 60 * 60 * 2);
         resetUserPassword(user, "secret");
-        setTimeOffset(-10 * 60 * 60);
+        timeOffSet.set(-10 * 60 * 60);
         resetUserPassword(user, "secret1");
 
         //try to set again same password after 48h
-        setTimeOffset(0);
+        timeOffSet.set(0);
         resetUserPassword(user, "secret");
     }
 
@@ -200,17 +197,17 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
     public void testPasswordHistoryWithMultiplePasswordsErrorThrown() {
         setPasswordAgePolicyValue(30);
         //set offset to 29 days, 23:45:00
-        setTimeOffset(-30 * 24 * 60 * 60 + 15 * 60);
+        timeOffSet.set(-30 * 24 * 60 * 60 + 15 * 60);
         resetUserPassword(user, "secret");
-        setTimeOffset(-25 * 24 * 60 * 60);
+        timeOffSet.set(-25 * 24 * 60 * 60);
         resetUserPassword(user, "secret1");
-        setTimeOffset(-20 * 24 * 60 * 60);
+        timeOffSet.set(-20 * 24 * 60 * 60);
         resetUserPassword(user, "secret2");
-        setTimeOffset(-10 * 24 * 60 * 60);
+        timeOffSet.set(-10 * 24 * 60 * 60);
         resetUserPassword(user, "secret3");
 
         //try to set again same password after 30 days, should throw error, 15 minutes too early
-        setTimeOffset(0);
+        timeOffSet.set(0);
         expectBadRequestException(f -> resetUserPassword(user, "secret"));
     }
 
@@ -218,17 +215,17 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
     public void testPasswordHistoryWithMultiplePasswords() {
         setPasswordAgePolicyValue(30);
         //set offset to 30 days and 15 minutes
-        setTimeOffset(-30 * 24 * 60 * 60 - 5 * 60);
+        timeOffSet.set(-30 * 24 * 60 * 60 - 5 * 60);
         resetUserPassword(user, "secret");
-        setTimeOffset(-25 * 24 * 60 * 60);
+        timeOffSet.set(-25 * 24 * 60 * 60);
         resetUserPassword(user, "secret1");
-        setTimeOffset(-20 * 24 * 60 * 60);
+        timeOffSet.set(-20 * 24 * 60 * 60);
         resetUserPassword(user, "secret2");
-        setTimeOffset(-10 * 24 * 60 * 60);
+        timeOffSet.set(-10 * 24 * 60 * 60);
         resetUserPassword(user, "secret3");
         //try to set again same password after 30 days and 15 minutes
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
         resetUserPassword(user, "secret");
     }
 
@@ -275,12 +272,12 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
         setPasswordAgePolicyValue(1);
         //last 3 passwords
         setPasswordHistoryValue(3);
-        setTimeOffset(daysToSeconds(-2));
+        timeOffSet.set(daysToSeconds(-2));
         resetUserPassword(user, "secret");
         resetUserPassword(user, "secret1");
         resetUserPassword(user, "secret2");
 
-        setTimeOffset(daysToSeconds(0));
+        timeOffSet.set(daysToSeconds(0));
         //password history takes precedence
         expectBadRequestException(f -> setPasswordAgePolicyValue("secret"));
     }
@@ -291,12 +288,12 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
         setPasswordAgePolicyValue(2);
         //last 10 passwords
         setPasswordHistoryValue(10);
-        setTimeOffset(daysToSeconds(-1));
+        timeOffSet.set(daysToSeconds(-1));
         resetUserPassword(user, "secret");
         resetUserPassword(user, "secret1");
         resetUserPassword(user, "secret2");
 
-        setTimeOffset(daysToSeconds(0));
+        timeOffSet.set(daysToSeconds(0));
         //password age takes precedence
         expectBadRequestException(f -> setPasswordAgePolicyValue("secret"));
     }
@@ -316,12 +313,12 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
 
             registerPage.register("firstName", "lastName", "registration-user@localhost", "registration-user", "password", "password");
 
-            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             AuthorizationEndpointResponse response = oauth.parseLoginResponse();
-            Assert.assertNull(response.getError());
-            Assert.assertNotNull(response.getCode());
+            Assertions.assertNull(response.getError());
+            Assertions.assertNotNull(response.getCode());
 
-            ApiUtil.findUserByUsernameId(testRealmResource(), "registration-user").remove();
+            AdminApiUtil.findUserByUsernameId(testRealmResource(), "registration-user").remove();
         }
     }
 }

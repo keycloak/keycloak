@@ -1,19 +1,20 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
-  FormPanel,
   HelpItem,
   KeycloakSelect,
   SelectVariant,
+  ScrollForm,
+  useAlerts,
+  SelectControl,
+  NumberControl,
 } from "@keycloak/keycloak-ui-shared";
 import {
-  ActionGroup,
-  Button,
+  AlertVariant,
   FormGroup,
   FormHelperText,
   HelperText,
   HelperTextItem,
   NumberInput,
-  PageSection,
   SelectOption,
   Switch,
   Text,
@@ -24,10 +25,14 @@ import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { FormAccess } from "../components/form/FormAccess";
+import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
+import { DefaultSwitchControl } from "../components/SwitchControl";
+import { convertAttributeNameToForm } from "../util";
 import {
   TimeSelector,
   toHumanFormat,
 } from "../components/time-selector/TimeSelector";
+import { TimeSelectorControl } from "../components/time-selector/TimeSelectorControl";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { beerify, sortProviders } from "../util";
@@ -35,7 +40,7 @@ import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 
 import "./realm-settings-section.css";
 
-type RealmSettingsSessionsTabProps = {
+type RealmSettingsTokensTabProps = {
   realm: RealmRepresentation;
   save: (realm: RealmRepresentation) => void;
 };
@@ -43,11 +48,14 @@ type RealmSettingsSessionsTabProps = {
 export const RealmSettingsTokensTab = ({
   realm,
   save,
-}: RealmSettingsSessionsTabProps) => {
+}: RealmSettingsTokensTabProps) => {
   const { t } = useTranslation();
+  const { addAlert } = useAlerts();
   const serverInfo = useServerInfo();
   const isFeatureEnabled = useIsFeatureEnabled();
   const { whoAmI } = useWhoAmI();
+  const openId4vciEnabled =
+    isFeatureEnabled(Feature.OpenId4VCI) && realm.verifiableCredentialsEnabled;
 
   const [defaultSigAlgDrpdwnIsOpen, setDefaultSigAlgDrpdwnOpen] =
     useState(false);
@@ -56,8 +64,18 @@ export const RealmSettingsTokensTab = ({
     serverInfo.providers!["signature"].providers,
   );
 
+  const asymmetricSigAlgOptions =
+    serverInfo.cryptoInfo?.clientSignatureAsymmetricAlgorithms ?? [];
+
   const { control, register, reset, formState, handleSubmit } =
     useFormContext<RealmRepresentation>();
+  const credentialOfferLifespanDefaultValue =
+    realm.attributes?.["credentialOfferLifespanS"] ?? 300;
+
+  // Show a global error notification if validation fails
+  const onError = () => {
+    addAlert(t("oid4vciFormValidationError"), AlertVariant.danger);
+  };
 
   const offlineSessionMaxEnabled = useWatch({
     control,
@@ -77,9 +95,24 @@ export const RealmSettingsTokensTab = ({
     defaultValue: false,
   });
 
-  return (
-    <PageSection variant="light">
-      <FormPanel title={t("general")} className="kc-sso-session-template">
+  const requestEncryptionRequired = useWatch({
+    control,
+    name: convertAttributeNameToForm(
+      "attributes.oid4vci.request.encryption.required",
+    ),
+    defaultValue: realm.attributes?.["oid4vci.request.encryption.required"],
+  });
+
+  const strategy = useWatch({
+    control,
+    name: convertAttributeNameToForm("attributes.oid4vci.time.claims.strategy"),
+    defaultValue: realm.attributes?.["oid4vci.time.claims.strategy"] ?? "off",
+  });
+
+  const sections = [
+    {
+      title: t("general"),
+      panel: (
         <FormAccess
           isHorizontal
           role="manage-realm"
@@ -175,12 +208,10 @@ export const RealmSettingsTokensTab = ({
                       id="oAuthDevicePollingInterval"
                       value={field.value}
                       min={0}
-                      onPlus={() => field.onChange(Number(field?.value) + 1)}
+                      onPlus={() => field.onChange(Number(field.value) + 1)}
                       onMinus={() =>
                         field.onChange(
-                          Number(field?.value) > 0
-                            ? Number(field?.value) - 1
-                            : 0,
+                          Number(field.value) > 0 ? Number(field.value) - 1 : 0,
                         )
                       }
                       onChange={(event) => {
@@ -236,11 +267,11 @@ export const RealmSettingsTokensTab = ({
             </>
           )}
         </FormAccess>
-      </FormPanel>
-      <FormPanel
-        title={t("refreshTokens")}
-        className="kc-client-session-template"
-      >
+      ),
+    },
+    {
+      title: t("refreshTokens"),
+      panel: (
         <FormAccess
           isHorizontal
           role="manage-realm"
@@ -308,11 +339,11 @@ export const RealmSettingsTokensTab = ({
             </FormGroup>
           )}
         </FormAccess>
-      </FormPanel>
-      <FormPanel
-        title={t("accessTokens")}
-        className="kc-offline-session-template"
-      >
+      ),
+    },
+    {
+      title: t("accessTokens"),
+      panel: (
         <FormAccess
           isHorizontal
           role="manage-realm"
@@ -352,10 +383,7 @@ export const RealmSettingsTokensTab = ({
               <HelperText>
                 <HelperTextItem>
                   {t("recommendedSsoTimeout", {
-                    time: toHumanFormat(
-                      ssoSessionIdleTimeout!,
-                      whoAmI.getLocale(),
-                    ),
+                    time: toHumanFormat(ssoSessionIdleTimeout!, whoAmI.locale),
                   })}
                 </HelperTextItem>
               </HelperText>
@@ -440,11 +468,11 @@ export const RealmSettingsTokensTab = ({
             </FormGroup>
           )}
         </FormAccess>
-      </FormPanel>
-      <FormPanel
-        className="kc-login-settings-template"
-        title={t("actionTokens")}
-      >
+      ),
+    },
+    {
+      title: t("actionTokens"),
+      panel: (
         <FormAccess
           isHorizontal
           role="manage-realm"
@@ -621,21 +649,199 @@ export const RealmSettingsTokensTab = ({
               )}
             />
           </FormGroup>
-          <ActionGroup>
-            <Button
-              variant="primary"
-              type="submit"
-              data-testid="tokens-tab-save"
+          {!openId4vciEnabled && (
+            <FixedButtonsGroup
+              name="tokens-tab"
+              isSubmit
               isDisabled={!formState.isDirty}
-            >
-              {t("save")}
-            </Button>
-            <Button variant="link" onClick={() => reset(realm)}>
-              {t("revert")}
-            </Button>
-          </ActionGroup>
+              reset={() => reset(realm)}
+            />
+          )}
         </FormAccess>
-      </FormPanel>
-    </PageSection>
+      ),
+    },
+    {
+      title: t("oid4vciAttributes"),
+      isHidden: !openId4vciEnabled,
+      panel: (
+        <FormAccess
+          isHorizontal
+          role="manage-realm"
+          className="pf-v5-u-mt-lg"
+          onSubmit={handleSubmit(save, onError)}
+        >
+          <TimeSelectorControl
+            name={convertAttributeNameToForm(
+              "attributes.vc.c-nonce-lifetime-seconds",
+            )}
+            label={t("oid4vciNonceLifetime")}
+            labelIcon={t("oid4vciNonceLifetimeHelp")}
+            className="c-nonce-lifetime"
+            controller={{
+              defaultValue: 60,
+              rules: { min: 30 },
+            }}
+            min={30}
+            units={["second", "minute", "hour"]}
+          />
+          <TimeSelectorControl
+            name={convertAttributeNameToForm(
+              "attributes.credentialOfferLifespanS",
+            )}
+            label={t("credentialOfferLifespan")}
+            labelIcon={t("credentialOfferLifespanHelp")}
+            className="credential-offer-lifespan"
+            controller={{
+              defaultValue: credentialOfferLifespanDefaultValue,
+              rules: { min: 30 },
+            }}
+            min={30}
+            units={["second", "minute", "hour"]}
+          />
+          <TimeSelectorControl
+            name={convertAttributeNameToForm(
+              "attributes.oid4vci.signed_metadata.lifespan",
+            )}
+            label={t("signedMetadataLifespan")}
+            labelIcon={t("signedMetadataLifespanHelp")}
+            className="signed-metadata-lifespan"
+            controller={{
+              defaultValue: 60,
+            }}
+            units={["second", "minute", "hour"]}
+            data-testid="signed-metadata-lifespan"
+          />
+          <SelectControl
+            name={convertAttributeNameToForm(
+              "attributes.oid4vci.signed_metadata.alg",
+            )}
+            label={t("signedMetadataSigningAlgorithm")}
+            labelIcon={t("signedMetadataSigningAlgorithmHelp")}
+            controller={{
+              defaultValue: "RS256",
+            }}
+            options={asymmetricSigAlgOptions.map((p) => ({
+              key: p,
+              value: p,
+            }))}
+            data-testid="signed-metadata-signing-algorithm"
+          />
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm(
+              "attributes.oid4vci.request.encryption.required",
+            )}
+            label={t("requireRequestEncryption")}
+            labelIcon={t("requireRequestEncryptionHelp")}
+            stringify
+            data-testid="require-request-encryption-switch"
+          />
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm(
+              "attributes.oid4vci.response.encryption.required",
+            )}
+            label={t("requireResponseEncryption")}
+            labelIcon={t("requireResponseEncryptionHelp")}
+            stringify
+            data-testid="require-response-encryption-switch"
+          />
+          {requestEncryptionRequired === "true" && (
+            <DefaultSwitchControl
+              name={convertAttributeNameToForm(
+                "attributes.oid4vci.request.zip.algorithms",
+              )}
+              label={t("enableDeflateCompression")}
+              labelIcon={t("enableDeflateCompressionHelp")}
+              data-testid="deflate-compression-switch"
+              stringify
+            />
+          )}
+          <NumberControl
+            name={convertAttributeNameToForm(
+              "attributes.oid4vci.batch_credential_issuance.batch_size",
+            )}
+            label={t("batchIssuanceSize")}
+            labelIcon={t("batchIssuanceSizeHelp")}
+            min={2}
+            controller={{
+              defaultValue: 2,
+              rules: { min: 2 },
+            }}
+            data-testid="batch-issuance-size"
+          />
+
+          <Text
+            className="kc-override-action-tokens-subtitle"
+            component={TextVariants.h1}
+          >
+            {t("timeClaimCorrelationMitigation")}
+          </Text>
+          <SelectControl
+            name={convertAttributeNameToForm(
+              "attributes.oid4vci.time.claims.strategy",
+            )}
+            label={t("timeClaimsStrategy")}
+            labelIcon={t("timeClaimsStrategyHelp")}
+            controller={{
+              defaultValue: "off",
+            }}
+            options={[
+              { key: "off", value: t("off") },
+              { key: "randomize", value: t("randomize") },
+              { key: "round", value: t("round") },
+            ]}
+            data-testid="time-claims-strategy"
+          />
+          {strategy === "randomize" && (
+            <NumberControl
+              name={convertAttributeNameToForm(
+                "attributes.oid4vci.time.randomize.window.seconds",
+              )}
+              label={t("randomizeWindow")}
+              labelIcon={t("randomizeWindowHelp")}
+              min={1}
+              controller={{
+                defaultValue: 86400,
+                rules: { min: 1 },
+              }}
+              data-testid="randomize-window"
+              widthChars={6}
+            />
+          )}
+          {strategy === "round" && (
+            <SelectControl
+              name={convertAttributeNameToForm(
+                "attributes.oid4vci.time.round.unit",
+              )}
+              label={t("roundUnit")}
+              labelIcon={t("roundUnitHelp")}
+              controller={{
+                defaultValue: "SECOND",
+              }}
+              options={[
+                { key: "SECOND", value: t("times.seconds") },
+                { key: "MINUTE", value: t("times.minutes") },
+                { key: "HOUR", value: t("times.hours") },
+                { key: "DAY", value: t("times.days") },
+              ]}
+              data-testid="round-unit"
+            />
+          )}
+          <FixedButtonsGroup
+            name="tokens-tab"
+            isSubmit
+            isDisabled={!formState.isDirty}
+            reset={() => reset(realm)}
+          />
+        </FormAccess>
+      ),
+    },
+  ];
+
+  return (
+    <ScrollForm
+      label={t("jumpToSection")}
+      className="pf-v5-u-px-lg pf-v5-u-pb-lg"
+      sections={sections}
+    />
   );
 };

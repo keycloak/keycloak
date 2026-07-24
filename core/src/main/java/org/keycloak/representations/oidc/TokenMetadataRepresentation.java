@@ -16,8 +16,9 @@
  */
 package org.keycloak.representations.oidc;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.representations.AccessToken;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

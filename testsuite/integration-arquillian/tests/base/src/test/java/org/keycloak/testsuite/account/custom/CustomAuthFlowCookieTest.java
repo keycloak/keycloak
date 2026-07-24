@@ -16,10 +16,12 @@
  */
 package org.keycloak.testsuite.account.custom;
 
-import org.junit.Test;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
+import org.keycloak.representations.idm.CredentialRepresentation;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 /**
@@ -33,7 +35,7 @@ public class CustomAuthFlowCookieTest extends AbstractCustomAccountManagementTes
         //test default setting of cookie provider
         //login
         oauth.openLoginForm();
-        testRealmLoginPage.form().login(testUser);
+        testRealmLoginPage.login(testUser.getUsername(), CredentialRepresentation.PASSWORD);
         
         //check SSO is working
         //navigate to different client of the same realm and verify user is logged in
@@ -48,7 +50,7 @@ public class CustomAuthFlowCookieTest extends AbstractCustomAccountManagementTes
         
         //login
         oauth.openLoginForm();
-        testRealmLoginPage.form().login(testUser);
+        testRealmLoginPage.login(testUser.getUsername(), CredentialRepresentation.PASSWORD);
         
         //SSO shouldn't work
         //navigate to different client of the same realm and verify user is not logged in

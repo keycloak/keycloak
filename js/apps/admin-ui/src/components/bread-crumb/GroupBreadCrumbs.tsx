@@ -5,12 +5,19 @@ import { Breadcrumb, BreadcrumbItem } from "@patternfly/react-core";
 
 import { useSubGroups } from "../../groups/SubGroupsContext";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { useGroupResource } from "../../context/group-resource/GroupResourceContext";
 
 export const GroupBreadCrumbs = () => {
   const { t } = useTranslation();
   const { clear, remove, subGroups } = useSubGroups();
   const { realm } = useRealm();
   const location = useLocation();
+
+  const isOrgGroups = useGroupResource().isOrgGroups();
+  const orgId = useGroupResource().getOrgId();
+  const homePath = isOrgGroups
+    ? `/${realm}/organizations/${orgId}/groups`
+    : `/${realm}/groups`;
 
   useEffect(() => {
     const { pathname } = location;
@@ -23,7 +30,7 @@ export const GroupBreadCrumbs = () => {
   return subGroups.length !== 0 ? (
     <Breadcrumb>
       <BreadcrumbItem key="home">
-        <Link to={`/${realm}/groups`}>{t("groups")}</Link>
+        <Link to={homePath}>{t("groups")}</Link>
       </BreadcrumbItem>
       {subGroups.map((group, i) => {
         const isLastGroup = i === subGroups.length - 1;

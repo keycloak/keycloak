@@ -17,13 +17,14 @@
 package org.keycloak.testsuite.pages;
 
 import org.keycloak.testsuite.util.UIUtils;
+
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class TermsAndConditionsPage extends AbstractPage {
+public class TermsAndConditionsPage extends LanguageComboboxAwarePage {
 
     @FindBy(id = "kc-accept")
     private WebElement submitButton;
@@ -32,8 +33,8 @@ public class TermsAndConditionsPage extends AbstractPage {
     private WebElement cancelButton;
 
     @Override
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).equals("Terms and Conditions");
+    public String getExpectedPageId() {
+        return "login-terms";
     }
 
     public void acceptTerms() {

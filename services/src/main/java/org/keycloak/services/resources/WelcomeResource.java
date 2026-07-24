@@ -16,6 +16,15 @@
  */
 package org.keycloak.services.resources;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
@@ -32,13 +41,16 @@ import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.ext.Provider;
 
-import org.jboss.logging.Logger;
+import org.keycloak.Config;
+import org.keycloak.Config.Scope;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.Environment;
 import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.config.ProxyOptions;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.http.HttpRequest;
@@ -48,20 +60,13 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.theme.Theme;
+import org.keycloak.theme.ThemeResourcesParser;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.SecureContextResolver;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -72,9 +77,7 @@ public class WelcomeResource {
 
     protected static final Logger logger = Logger.getLogger(WelcomeResource.class);
 
-    private static final String KEYCLOAK_STATE_CHECKER = "WELCOME_STATE_CHECKER";
-
-    private AtomicBoolean shouldBootstrap;
+    private volatile Boolean shouldBootstrap;
 
     @Context
     KeycloakSession session;
@@ -116,9 +119,24 @@ public class WelcomeResource {
             String username = formData.getFirst("username");
             String password = formData.getFirst("password");
             String passwordConfirmation = formData.getFirst("passwordConfirmation");
+            String firstName = formData.getFirst("firstName");
+            String lastName = formData.getFirst("lastName");
+            String email = formData.getFirst("email");
 
             if (username != null) {
                 username = username.trim();
+            }
+
+            if (firstName != null) {
+                firstName = firstName.trim();
+            }
+
+            if (lastName != null) {
+                lastName = lastName.trim();
+            }
+
+            if (email != null) {
+                email = email.trim();
             }
 
             if (username == null || username.length() == 0) {
@@ -133,9 +151,10 @@ public class WelcomeResource {
                 return createWelcomePage(null, "Password and confirmation doesn't match");
             }
 
+
             try {
                 ApplianceBootstrap applianceBootstrap = new ApplianceBootstrap(session);
-                applianceBootstrap.createMasterRealmUser(username, password);
+                applianceBootstrap.createMasterRealmUser(username, password, firstName, lastName, email, false);
             } catch (ModelException e) {
                 session.getTransactionManager().rollback();
                 logger.error("Error creating the administrative user", e);
@@ -144,8 +163,7 @@ public class WelcomeResource {
 
             expireCsrfCookie();
 
-            shouldBootstrap.set(false);
-            ServicesLogger.LOGGER.createdTemporaryAdminUser(username);
+            shouldBootstrap = false;
             return createWelcomePage("User created", null);
         }
     }
@@ -179,7 +197,7 @@ public class WelcomeResource {
             Theme theme = getTheme();
 
             if(Objects.isNull(theme)) {
-                logger.error("Theme is null please check the \"--spi-theme-default\" parameter");
+                logger.error("Theme is null please check the \"--spi-theme--default\" parameter");
                 errorMessage = "The theme is null";
                 ResponseBuilder rb = Response.status(Status.BAD_REQUEST)
                         .entity(errorMessage)
@@ -204,6 +222,7 @@ public class WelcomeResource {
             map.put("bootstrap", bootstrap);
             map.put("adminConsoleEnabled", adminConsoleEnabled);
             map.put("properties", themeProperties);
+            map.put("themeResources", ThemeResourcesParser.parse(themeProperties));
             map.put("adminUrl", adminUrl);
             map.put("baseUrl", session.getContext().getUri(UrlType.FRONTEND).getBaseUri());
             map.put("productName", Version.NAME);
@@ -262,14 +281,24 @@ public class WelcomeResource {
         if (shouldBootstrap == null) {
             synchronized (this) {
                 if (shouldBootstrap == null) {
-                    shouldBootstrap = new AtomicBoolean(new ApplianceBootstrap(session).isNoMasterUser());
+                    shouldBootstrap = new ApplianceBootstrap(session).isNoMasterUser();
                 }
             }
         }
-        return shouldBootstrap.get();
+        return shouldBootstrap;
     }
 
     public static boolean isLocal(KeycloakSession session) {
+        // if proxy-headers and proxy-protocol aren't set, then we can't properly tell if we're behind a local proxy, so don't consider this local
+        Scope rootConfig = Config.scope().root();
+        if (rootConfig.get(ProxyOptions.PROXY_HEADERS.getKey()) == null
+                && !rootConfig.getBoolean(ProxyOptions.PROXY_PROTOCOL_ENABLED.getKey())
+                && "https".equals(session.getContext().getHttpRequest().getUri().getRequestUri().getScheme())
+                && !Environment.isDevMode()) {
+            logger.debugf("proxy-headers, nor proxy-protocol enabled, won't consider the https access local for non-dev mode");
+            return false;
+        }
+
         ClientConnection clientConnection = session.getContext().getConnection();
         String remoteAddress = clientConnection.getRemoteAddr();
         String localAddress = clientConnection.getLocalAddr();
@@ -301,5 +330,4 @@ public class WelcomeResource {
             throw new ForbiddenException();
         }
     }
-
 }

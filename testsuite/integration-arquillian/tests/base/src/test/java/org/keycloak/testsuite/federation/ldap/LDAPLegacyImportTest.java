@@ -17,12 +17,8 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
-import org.keycloak.OAuth2Constants;
+import java.util.List;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -30,15 +26,18 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
-import java.util.List;
+import org.junit.ClassRule;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.runners.MethodSorters;
 
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 /**
  * Tests that legacy UserFederationProvider json export is converted to ComponentModel
@@ -98,27 +97,23 @@ public class LDAPLegacyImportTest extends AbstractLDAPTest {
 
     @Test
     public void loginClassic() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("marykeycloak", "password-app");
-
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
-
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     @Test
     public void loginLdap() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
 
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
-        UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(testRealm(), "johnkeycloak");
+        UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(managedRealm.admin(), "johnkeycloak");
 
-        Assert.assertEquals("John", userRepresentation.getFirstName());
-        Assert.assertEquals("Doe", userRepresentation.getLastName());
-        Assert.assertEquals("john@email.org", userRepresentation.getEmail());
+        Assertions.assertEquals("John", userRepresentation.getFirstName());
+        Assertions.assertEquals("Doe", userRepresentation.getLastName());
+        Assertions.assertEquals("john@email.org", userRepresentation.getEmail());
     }
 
 

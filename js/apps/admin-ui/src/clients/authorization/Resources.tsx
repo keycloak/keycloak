@@ -1,5 +1,5 @@
+import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
-import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import {
   ListEmptyState,
   PaginatingTableToolbar,
@@ -67,8 +67,7 @@ export const AuthorizationResources = ({
     useState<ExpandableResourceRepresentation[]>();
   const [selectedResource, setSelectedResource] =
     useState<ResourceRepresentation>();
-  const [permissions, setPermission] =
-    useState<ResourceServerRepresentation[]>();
+  const [permissions, setPermission] = useState<PolicyRepresentation[]>();
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -136,7 +135,14 @@ export const AuthorizationResources = ({
           resourceId: selectedResource?._id!,
         });
         addAlert(t("resourceDeletedSuccess"), AlertVariant.success);
-        refresh();
+
+        if (resources?.length === 1 && first > 0) {
+          // Go back one page. Changing 'first' will automatically re-trigger
+          // the useFetch hook, so we don't need to call refresh() here.
+          setFirst(first - max);
+        } else {
+          refresh();
+        }
       } catch (error) {
         addError("resourceDeletedError", error);
       }
@@ -208,7 +214,7 @@ export const AuthorizationResources = ({
                   )}
                 </Tr>
               </Thead>
-              {resources.map((resource, rowIndex) => (
+              {resources.slice(0, max).map((resource, rowIndex) => (
                 <Tbody key={resource._id} isExpanded={resource.isExpanded}>
                   <Tr>
                     <Td

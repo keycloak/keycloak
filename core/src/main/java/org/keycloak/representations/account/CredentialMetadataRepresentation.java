@@ -1,14 +1,19 @@
 package org.keycloak.representations.account;
 
+import java.util.List;
+
 import org.keycloak.representations.idm.CredentialRepresentation;
 
 public class CredentialMetadataRepresentation {
 
     LocalizedMessage infoMessage;
+    List<LocalizedMessage> infoProperties;
     LocalizedMessage warningMessageTitle;
     LocalizedMessage warningMessageDescription;
 
     private CredentialRepresentation credential;
+    private String iconLight;
+    private String iconDark;
 
 
     public CredentialRepresentation getCredential() {
@@ -27,6 +32,14 @@ public class CredentialMetadataRepresentation {
         this.infoMessage = infoMessage;
     }
 
+    public List<LocalizedMessage> getInfoProperties() {
+        return infoProperties;
+    }
+
+    public void setInfoProperties(List<LocalizedMessage> infoProperties) {
+        this.infoProperties = infoProperties;
+    }
+
     public LocalizedMessage getWarningMessageTitle() {
         return warningMessageTitle;
     }
@@ -41,5 +54,21 @@ public class CredentialMetadataRepresentation {
 
     public void setWarningMessageDescription(LocalizedMessage warningMessageDescription) {
         this.warningMessageDescription = warningMessageDescription;
+    }
+
+    public String getIconLight() {
+        return iconLight;
+    }
+
+    public void setIconLight(String iconLight) {
+        this.iconLight = iconLight;
+    }
+
+    public String getIconDark() {
+        return iconDark;
+    }
+
+    public void setIconDark(String iconDark) {
+        this.iconDark = iconDark;
     }
 }

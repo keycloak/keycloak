@@ -17,11 +17,6 @@
  */
 package org.keycloak.authorization.admin;
 
-import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
-
-import java.util.Collections;
-import java.util.HashMap;
-
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -32,10 +27,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
-import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -44,15 +37,15 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.representations.idm.authorization.DecisionStrategy;
-import org.keycloak.representations.idm.authorization.Logic;
-import org.keycloak.representations.idm.authorization.PolicyRepresentation;
-import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
-import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+
+import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -89,7 +82,6 @@ public class ResourceServerService {
 
         if (this.resourceServer == null) {
             this.resourceServer = RepresentationToModel.createResourceServer(client, session, true);
-            createDefaultPermission(createDefaultResource(), createDefaultPolicy());
             audit(ModelToRepresentation.toRepresentation(resourceServer, client), OperationType.CREATE, session.getContext().getUri(), newClient);
         }
 
@@ -173,53 +165,6 @@ public class ResourceServerService {
     public PermissionService getPermissionTypeResource() {
         this.auth.realm().requireViewAuthorization(resourceServer);
         return new PermissionService(this.resourceServer, this.authorization, this.auth, adminEvent);
-    }
-
-    private void createDefaultPermission(ResourceRepresentation resource, PolicyRepresentation policy) {
-        ResourcePermissionRepresentation defaultPermission = new ResourcePermissionRepresentation();
-
-        defaultPermission.setName("Default Permission");
-        defaultPermission.setDescription("A permission that applies to the default resource type");
-        defaultPermission.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
-        defaultPermission.setLogic(Logic.POSITIVE);
-
-        defaultPermission.setResourceType(resource.getType());
-        defaultPermission.addPolicy(policy.getName());
-
-        getPolicyResource().create(defaultPermission);
-    }
-
-    private PolicyRepresentation createDefaultPolicy() {
-        PolicyRepresentation defaultPolicy = new PolicyRepresentation();
-
-        defaultPolicy.setName("Default Policy");
-        defaultPolicy.setDescription("A policy that grants access only for users within this realm");
-        defaultPolicy.setType("js");
-        defaultPolicy.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
-        defaultPolicy.setLogic(Logic.POSITIVE);
-
-        HashMap<String, String> defaultPolicyConfig = new HashMap<>();
-
-        defaultPolicyConfig.put("code", "// by default, grants any permission associated with this policy\n$evaluation.grant();\n");
-
-        defaultPolicy.setConfig(defaultPolicyConfig);
-        
-        session.setAttribute("ALLOW_CREATE_POLICY", true);
-
-        getPolicyResource().create(defaultPolicy);
-
-        return defaultPolicy;
-    }
-
-    private ResourceRepresentation createDefaultResource() {
-        ResourceRepresentation defaultResource = new ResourceRepresentation();
-
-        defaultResource.setName("Default Resource");
-        defaultResource.setUris(Collections.singleton("/*"));
-        defaultResource.setType("urn:" + this.client.getClientId() + ":resources:default");
-
-        getResourceSetResource().create(defaultResource);
-        return defaultResource;
     }
 
     private void audit(ResourceServerRepresentation rep, OperationType operation, UriInfo uriInfo, boolean newClient) {

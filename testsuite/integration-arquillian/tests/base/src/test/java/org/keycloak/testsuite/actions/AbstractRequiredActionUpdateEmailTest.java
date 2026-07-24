@@ -16,32 +16,36 @@
  */
 package org.keycloak.testsuite.actions;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-
 import java.util.Arrays;
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.auth.page.login.UpdateEmailPage;
-import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.util.SecondBrowser;
-import org.keycloak.testsuite.util.UserBuilder;
+
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.WebDriver;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @EnableFeature(Profile.Feature.UPDATE_EMAIL)
 public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTestRealmKeycloakTest {
@@ -55,34 +59,38 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 	@Page
 	protected UpdateEmailPage updateEmailPage;
 
-	@Page
-	protected AppPage appPage;
+    @Page
+    protected LoginUpdateProfilePage updateProfilePage;
 
-        @Drone
-        @SecondBrowser
-        protected WebDriver driver2;
+    @Page
+    protected ErrorPage errorPage;
+
+    @Drone
+    @SecondBrowser
+    protected WebDriver driver2;
 
 	@Before
 	public void beforeTest() {
-		ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, true);
+		AdminApiUtil.removeUserByUsername(managedRealm.admin(), "test-user@localhost");
 		UserRepresentation user = UserBuilder.create().enabled(true)
 				.username("test-user@localhost")
 				.email("test-user@localhost")
 				.firstName("Tom")
 				.lastName("Brady")
-				.requiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name()).build();
+				.requiredActions(UserModel.RequiredAction.UPDATE_EMAIL.name()).build();
 		prepareUser(user);
-		ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+		AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, "password");
 
-		ApiUtil.removeUserByUsername(testRealm(), "john-doh@localhost");
+		AdminApiUtil.removeUserByUsername(managedRealm.admin(), "john-doh@localhost");
 		user = UserBuilder.create().enabled(true)
 				.username("john-doh@localhost")
 				.email("john-doh@localhost")
 				.firstName("John")
 				.lastName("Doh")
-				.requiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name()).build();
+				.requiredActions(UserModel.RequiredAction.UPDATE_EMAIL.name()).build();
 		prepareUser(user);
-		ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+		AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, "password");
 	}
 
 	private void setRegistrationEmailAsUsername(RealmResource realmResource, boolean enabled) {
@@ -92,7 +100,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 	}
 
         protected void configureRequiredActionsToUser(String username, String... actions) {
-                UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), username);
+                UserResource userResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), username);
                 UserRepresentation userRepresentation = userResource.toRepresentation();
                 userRepresentation.setRequiredActions(Arrays.asList(actions));
                 userResource.update(userRepresentation);
@@ -109,7 +117,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 
 	@Test
 	public void cancelIsNotDisplayed() {
-		loginPage.open();
+		oauth.openLoginForm();
 
 		loginPage.login("test-user@localhost", "password");
 
@@ -119,7 +127,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 
 	@Test
 	public void updateEmailMissing() {
-		loginPage.open();
+		oauth.openLoginForm();
 
 		loginPage.login("test-user@localhost", "password");
 
@@ -130,16 +138,16 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 		updateEmailPage.assertCurrent();
 
 		// assert that form holds submitted values during validation error
-		Assert.assertEquals("", updateEmailPage.getEmail());
+		Assertions.assertEquals("", updateEmailPage.getEmail());
 
-		Assert.assertTrue(updateEmailPage.getEmailInputError().contains("Please specify email."));
+		Assertions.assertTrue(updateEmailPage.getEmailInputError().contains("Please specify email."));
 
-		events.assertEmpty();
+		Assertions.assertNull(events.poll());
 	}
 
 	@Test
 	public void updateEmailDuplicate() {
-		loginPage.open();
+		oauth.openLoginForm();
 
 		loginPage.login("john-doh@localhost", "password");
 
@@ -150,16 +158,16 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 		updateEmailPage.assertCurrent();
 
 		// assert that form holds submitted values during validation error
-		Assert.assertEquals("test-user@localhost", updateEmailPage.getEmail());
+		Assertions.assertEquals("test-user@localhost", updateEmailPage.getEmail());
 
-		Assert.assertEquals("Email already exists.", updateEmailPage.getEmailInputError());
+		Assertions.assertEquals("Email already exists.", updateEmailPage.getEmailInputError());
 
-		events.assertEmpty();
+		Assertions.assertNull(events.poll());
 	}
 
 	@Test
 	public void updateEmailInvalid() {
-		loginPage.open();
+		oauth.openLoginForm();
 
 		loginPage.login("test-user@localhost", "password");
 
@@ -170,37 +178,37 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 		updateEmailPage.assertCurrent();
 
 		// assert that form holds submitted values during validation error
-		Assert.assertEquals("invalid", updateEmailPage.getEmail());
+		Assertions.assertEquals("invalid", updateEmailPage.getEmail());
 
-		Assert.assertEquals("Invalid email address.", updateEmailPage.getEmailInputError());
+		Assertions.assertEquals("Invalid email address.", updateEmailPage.getEmailInputError());
 
-		events.assertEmpty();
+		Assertions.assertNull(events.poll());
 	}
 
 	@Test
 	public void updateEmailWithEmailAsUsernameEnabled() throws Exception {
-		Boolean genuineRegistrationEmailAsUsername = testRealm()
+		Boolean genuineRegistrationEmailAsUsername = managedRealm.admin()
 				.toRepresentation()
 				.isRegistrationEmailAsUsername();
 
-		setRegistrationEmailAsUsername(testRealm(), true);
+		setRegistrationEmailAsUsername(managedRealm.admin(), true);
 		try {
 			UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
 			String firstName = user.getFirstName();
 			String lastName = user.getLastName();
 			assertNotNull(firstName);
 			assertNotNull(lastName);
-			changeEmailUsingRequiredAction("new@localhost", true);
+			changeEmailUsingRequiredAction("new@localhost", true, true);
 			user = ActionUtil.findUserWithAdminClient(adminClient, "new@localhost");
-			Assert.assertNotNull(user);
+			Assertions.assertNotNull(user);
 			firstName = user.getFirstName();
 			lastName = user.getLastName();
 			assertNotNull(firstName);
 			assertNotNull(lastName);
 		} finally {
-			setRegistrationEmailAsUsername(testRealm(), genuineRegistrationEmailAsUsername);
+			setRegistrationEmailAsUsername(managedRealm.admin(), genuineRegistrationEmailAsUsername);
 		}
 	}
 
-	protected abstract void changeEmailUsingRequiredAction(String newEmail, boolean logoutOtherSessions) throws Exception;
+	protected abstract void changeEmailUsingRequiredAction(String newEmail, boolean logoutOtherSessions, boolean newEmailAsUsername) throws Exception;
 }

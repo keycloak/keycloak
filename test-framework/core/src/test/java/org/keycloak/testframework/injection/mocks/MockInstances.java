@@ -1,8 +1,8 @@
 package org.keycloak.testframework.injection.mocks;
 
-import io.vertx.core.impl.ConcurrentHashSet;
-
 import java.util.Set;
+
+import io.vertx.core.impl.ConcurrentHashSet;
 
 public class MockInstances {
 

@@ -17,19 +17,31 @@
 
 package org.keycloak.authentication.authenticators.util;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.jboss.logging.Logger;
+import java.io.IOException;
+import java.util.Map;
+
+import jakarta.ws.rs.core.MultivaluedMap;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.hash.PasswordHashProvider;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.models.*;
+import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.util.Map;
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator.USER_SET_BEFORE_USERNAME_PASSWORD_AUTH;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -114,6 +126,37 @@ public final class AuthenticatorUtils {
             authSession.setUserSessionNote(Constants.AUTHENTICATORS_COMPLETED, updated);
         } catch (IOException e) {
             throw new IllegalStateException(e);
+        }
+    }
+
+
+    // Make sure that form is setup for "re-authentication" rather than regular authentication if some error happens during re-authentication
+    public static void setupReauthenticationInUsernamePasswordFormError(AuthenticationFlowContext context) {
+        String userAlreadySetBeforeUsernamePasswordAuth = context.getAuthenticationSession().getAuthNote(USER_SET_BEFORE_USERNAME_PASSWORD_AUTH);
+
+        if (Boolean.parseBoolean(userAlreadySetBeforeUsernamePasswordAuth)) {
+            LoginFormsProvider form = context.form();
+            form.setAttribute(LoginFormsProvider.USERNAME_HIDDEN, true);
+            form.setAttribute(LoginFormsProvider.REGISTRATION_DISABLED, true);
+        }
+    }
+
+    /**
+     * Process the <em>rememberMe</em> input for authentication. If the inputData contains
+     * the <em>rememberMe</em> attribute set to <em>on</em> and the realm is
+     * configured with the rememberMe option, the auth note is added to the
+     * authentication session; otherwise, the note is removed from the auth session.
+     * @param context The flow context
+     * @param inputData The form data
+     */
+    public static void processRememberMe(AuthenticationFlowContext context, MultivaluedMap<String, String> inputData) {
+        String rememberMe = inputData.getFirst("rememberMe");
+        boolean remember = context.getRealm().isRememberMe() && rememberMe != null && rememberMe.equalsIgnoreCase("on");
+        if (remember) {
+            context.getAuthenticationSession().setAuthNote(Details.REMEMBER_ME, "true");
+            context.getEvent().detail(Details.REMEMBER_ME, "true");
+        } else {
+            context.getAuthenticationSession().removeAuthNote(Details.REMEMBER_ME);
         }
     }
 }

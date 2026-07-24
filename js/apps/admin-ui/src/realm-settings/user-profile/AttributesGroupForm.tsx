@@ -58,7 +58,7 @@ const defaultValues: FormFields = {
 
 export default function AttributesGroupForm() {
   const { adminClient } = useAdminClient();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { realm: realmName, realmRepresentation: realm } = useRealm();
   const { config, save } = useUserProfile();
   const navigate = useNavigate();
@@ -106,13 +106,14 @@ export default function AttributesGroupForm() {
     const success = await save({ ...config, groups });
 
     if (success) {
-      if (realm?.internationalizationEnabled) {
+      if (realm.internationalizationEnabled) {
         try {
           await saveTranslations({
             adminClient,
             realmName,
             translationsData: { translation },
           });
+          await i18n.reloadResources();
         } catch (error) {
           addError(t("errorSavingTranslations"), error);
         }

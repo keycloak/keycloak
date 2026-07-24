@@ -16,8 +16,16 @@
  */
 package org.keycloak.models.jpa;
 
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64;
+import java.util.Base64;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.TypedQuery;
+
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.UserCredentialStore;
 import org.keycloak.models.KeycloakSession;
@@ -28,15 +36,7 @@ import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.TypedQuery;
-
-import java.util.List;
-import jakarta.persistence.LockModeType;
-
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.utils.StreamsUtil.closing;
 
@@ -63,7 +63,11 @@ public class JpaUserCredentialStore implements UserCredentialStore {
     public void updateCredential(RealmModel realm, UserModel user, CredentialModel cred) {
         CredentialEntity entity = em.find(CredentialEntity.class, cred.getId());
         if (!checkCredentialEntity(entity, user)) return;
-        validateDuplicateCredential(realm, user, cred.getUserLabel(), cred.getId());
+        if (!Objects.equals(cred.getUserLabel(), entity.getUserLabel())) {
+            // For legacy entries in the credentials, there might be a duplicate for historical reasons.
+            // Ignore them when the credential is updated, which might happen when credentials are verified.
+            validateDuplicateCredential(realm, user, cred.getType(), cred.getUserLabel(), cred.getId());
+        }
         entity.setCreatedDate(cred.getCreatedDate());
         entity.setUserLabel(cred.getUserLabel());
         entity.setType(cred.getType());
@@ -101,7 +105,7 @@ public class JpaUserCredentialStore implements UserCredentialStore {
         // Backwards compatibility - users from previous version still have "salt" in the DB filled.
         // We migrate it to new secretData format on-the-fly
         if (entity.getSalt() != null) {
-            String newSecretData = entity.getSecretData().replace("__SALT__", Base64.encodeBytes(entity.getSalt()));
+            String newSecretData = entity.getSecretData().replace("__SALT__", Base64.getEncoder().encodeToString(entity.getSalt()));
             entity.setSecretData(newSecretData);
             entity.setSalt(null);
         }
@@ -131,7 +135,7 @@ public class JpaUserCredentialStore implements UserCredentialStore {
     @Override
     public CredentialModel getStoredCredentialByNameAndType(RealmModel realm, UserModel user, String name, String type) {
         return getStoredCredentialsStream(realm, user).filter(credential ->
-                Objects.equals(type, credential.getType()) && Objects.equals(name, credential.getUserLabel()))
+                        Objects.equals(type, credential.getType()) && Objects.equals(name, credential.getUserLabel()))
                 .findFirst().orElse(null);
     }
 
@@ -140,12 +144,13 @@ public class JpaUserCredentialStore implements UserCredentialStore {
 
     }
 
-    private void validateDuplicateCredential(RealmModel realm, UserModel user, String userLabel, String credentialId) {
+    private void validateDuplicateCredential(RealmModel realm, UserModel user, String credType, String userLabel, String credentialId) {
         if (userLabel != null) {
             boolean exists = getStoredCredentialEntities(realm, user)
                     .anyMatch(existing -> existing.getUserLabel() != null
                             && existing.getUserLabel().equalsIgnoreCase(userLabel.trim())
-                            && (credentialId == null || !existing.getId().equals(credentialId))); // Exclude self in update
+                            && existing.getType().equals(credType)
+                            && !existing.getId().equals(credentialId)); // Exclude self in update
 
             if (exists) {
                 throw new ModelDuplicateException("Device already exists with the same name", CredentialModel.USER_LABEL);
@@ -154,7 +159,7 @@ public class JpaUserCredentialStore implements UserCredentialStore {
     }
 
     CredentialEntity createCredentialEntity(RealmModel realm, UserModel user, CredentialModel cred) {
-        validateDuplicateCredential(realm, user, cred.getUserLabel(), null);
+        validateDuplicateCredential(realm, user, cred.getType(), cred.getUserLabel(), null);
         CredentialEntity entity = new CredentialEntity();
         String id = cred.getId() == null ? KeycloakModelUtils.generateId() : cred.getId();
         entity.setId(id);

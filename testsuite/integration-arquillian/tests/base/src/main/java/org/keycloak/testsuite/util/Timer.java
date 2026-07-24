@@ -16,15 +16,6 @@
  */
 package org.keycloak.testsuite.util;
 
-import org.apache.commons.io.IOUtils;
-import org.jboss.logging.Logger;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartUtilities;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
-
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,6 +27,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
+import org.apache.commons.io.IOUtils;
+import org.jboss.logging.Logger;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartUtilities;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
 
 import static org.keycloak.testsuite.utils.io.IOUtil.PROJECT_BUILD_DIRECTORY;
 
@@ -103,12 +103,12 @@ public class Timer {
     public void clearStats(boolean logStats, boolean saveData, boolean saveCharts) {
         if (logStats) {
             log.info("Timer Statistics:");
-            for (String op : stats.keySet()) {
+            for (var entry : stats.entrySet()) {
                 long sum = 0;
-                for (Long duration : stats.get(op)) {
+                for (Long duration : entry.getValue()) {
                     sum += duration;
                 }
-                log.info(String.format("Operation '%s' average: %s ms", op, sum / stats.get(op).size()));
+                log.info(String.format("Operation '%s' average: %s ms", entry.getKey(), sum / entry.getValue().size()));
             }
         }
         if (PROJECT_BUILD_DIRECTORY.exists()) {

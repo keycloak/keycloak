@@ -153,6 +153,7 @@ import java.io.IOException;
  * @author rob@iharder.net
  * @version 2.3.7
  */
+@Deprecated
 public class Base64
 {
 

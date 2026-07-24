@@ -1,0 +1,143 @@
+package org.keycloak.representations.workflows;
+
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.Objects;
+
+import org.keycloak.common.util.MultivaluedHashMap;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_PRIORITY;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_SCHEDULED_AT;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STATUS;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_USES;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
+
+@JsonPropertyOrder({CONFIG_USES, CONFIG_AFTER, CONFIG_PRIORITY, CONFIG_WITH, CONFIG_SCHEDULED_AT, CONFIG_STATUS})
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class WorkflowStepRepresentation extends AbstractWorkflowComponentRepresentation {
+
+    private final String uses;
+    private Long scheduledAt;
+    private StepExecutionStatus executionStatus;
+
+    public static Builder create() {
+        return new Builder();
+    }
+
+    public WorkflowStepRepresentation() {
+        this(null, null, null);
+    }
+
+    public WorkflowStepRepresentation(String uses) {
+        this(null, uses, null);
+    }
+
+    public WorkflowStepRepresentation(String id, String uses, MultivaluedHashMap<String, String> config) {
+        this(id, uses, config, null);
+    }
+
+    public WorkflowStepRepresentation(String id, String uses, MultivaluedHashMap<String, String> config, Long scheduledAt) {
+        super(id, config);
+        this.uses = uses;
+        this.scheduledAt = scheduledAt;
+    }
+
+    public String getUses() {
+        return this.uses;
+    }
+
+    @JsonSerialize(using = MultivaluedHashMapValueSerializer.class)
+    @JsonDeserialize(using = MultivaluedHashMapValueDeserializer.class)
+    @JsonInclude(value=JsonInclude.Include.NON_EMPTY, content=JsonInclude.Include.NON_NULL)
+    public MultivaluedHashMap<String, String> getConfig() {
+        return super.getConfig();
+    }
+
+    public String getAfter() {
+        return getConfigValue(CONFIG_AFTER, String.class);
+    }
+
+    public void setAfter(String after) {
+        setConfig(CONFIG_AFTER, after);
+    }
+
+    @JsonIgnore
+    public String getPriority() {
+        return getConfigValue(CONFIG_PRIORITY, String.class);
+    }
+
+    public void setPriority(long ms) {
+        setConfig(CONFIG_PRIORITY, String.valueOf(ms));
+    }
+
+    @JsonProperty(CONFIG_SCHEDULED_AT)
+    public Long getScheduledAt() {
+        return this.scheduledAt;
+    }
+
+    public void setScheduledAt(Long scheduledAt) {
+        this.scheduledAt = scheduledAt;
+    }
+
+    @JsonProperty(CONFIG_STATUS)
+    public StepExecutionStatus getExecutionStatus() {
+        return this.executionStatus;
+    }
+
+    public void setExecutionStatus(StepExecutionStatus executionStatus) {
+        this.executionStatus = executionStatus;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (!(obj instanceof WorkflowStepRepresentation)) {
+            return false;
+        }
+        WorkflowStepRepresentation that = (WorkflowStepRepresentation) obj;
+        return Objects.equals(getUses(), that.getUses()) && Objects.equals(getConfig(), that.getConfig());
+    }
+
+    public static class Builder {
+
+        private WorkflowStepRepresentation step;
+
+        public Builder of(String providerId) {
+            this.step = new WorkflowStepRepresentation(providerId);
+            return this;
+        }
+
+        public Builder after(Duration duration) {
+            return after(String.valueOf(duration.getSeconds()));
+        }
+
+        public Builder after(String after) {
+            step.setAfter(after);
+            return this;
+        }
+
+        public Builder withConfig(String key, String value) {
+            step.setConfig(key, value);
+            return this;
+        }
+
+        public Builder withConfig(String key, String... value) {
+            step.setConfig(key, Arrays.asList(value));
+            return this;
+        }
+
+        public WorkflowStepRepresentation build() {
+            return step;
+        }
+    }
+}

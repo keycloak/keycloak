@@ -16,33 +16,43 @@
  */
 package org.keycloak.testsuite.client.policies;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
-import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureRedirectUrisEnforcerExecutorConfig;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.client.registration.ClientRegistrationException;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientProtocolConditionFactory;
 import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
+import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.keycloak.testsuite.util.ServerURLs;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientProtocolConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureRedirectUrisEnforcerExecutorConfig;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPoliciesTest {
 
@@ -99,10 +109,10 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         try {
             updateClientByAdmin(cId, (ClientRepresentation clientRep) -> {
                 clientRep.setAttributes(new HashMap<>());
-                clientRep.setRedirectUris(List.of("")); // nomally, vacant redirect uri is not allowed.
+                clientRep.setRedirectUris(List.of("")); // empty redirect uris are filtered out before persistence.
             });
             ClientRepresentation cRep = getClientByAdmin(cId);
-            assertEquals(new HashSet<>(List.of("")), new HashSet<>(cRep.getRedirectUris()));
+            assertEquals(Collections.emptySet(), new HashSet<>(cRep.getRedirectUris()));
         } catch (ClientPolicyException cpe) {
             fail();
         }
@@ -472,7 +482,7 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
     }
 
     @Test
-    public void testSecureRedirectUrisEnforcerExecutor_OAuth2_1Complient() throws Exception {
+    public void testSecureRedirectUrisEnforcerExecutor_OAuth2_1Compliant() throws Exception {
         // register profiles
         String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
                 (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
@@ -518,6 +528,62 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         // authorization request - fail
         // redirect_uri not match with registered redirect uris
         testSecureRedirectUrisEnforcerExecutor_failAuthorizationRequest(alphaClientId, "com.example.app:/oauth3redirect/example-provider");
+    }
+
+    @Test
+    public void testSecureRedirectUrisEnforcerExecutor_OAuth2_0Compliant() throws Exception {
+        // register profiles - OAuth 2.0 compliant rejects fragments and wildcards
+        // but is less strict than OAuth 2.1 (allows localhost, HTTP, single-word schemes)
+        String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
+                (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
+                        .addExecutor(SecureRedirectUrisEnforcerExecutorFactory.PROVIDER_ID,
+                                createSecureRedirectUrisEnforcerExecutorConfig(it->{
+                                    it.setAllowIPv4LoopbackAddress(true);
+                                    it.setAllowIPv6LoopbackAddress(true);
+                                    it.setAllowHttpScheme(true);
+                                    it.setOAuth2_0Compliant(true);}))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
+                                createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // register - fail
+        // fragment in redirect URI not allowed per RFC 6749
+        testSecureRedirectUrisEnforcerExecutor_failRegisterByAdmin(List.of("https://example.com/callback#fragment"));
+
+        // register - fail
+        // wildcard in redirect URI not allowed
+        testSecureRedirectUrisEnforcerExecutor_failRegisterByAdmin(List.of("https://example.com/*"));
+
+        // register - success
+        // localhost is still allowed (unlike OAuth 2.1)
+        List<String> registerResultList = testSecureRedirectUrisEnforcerExecutor_successRegisterByAdmin(
+                List.of("http://localhost/auth/admin"));
+        String alphaClientId = registerResultList.get(0);
+        String alphaCid = registerResultList.get(1);
+
+        // update - fail
+        // fragment not allowed
+        testSecureRedirectUrisEnforcerExecutor_failUpdateByAdmin(alphaCid,
+                List.of("http://localhost/auth/admin#frag"));
+
+        // update - success
+        // HTTP scheme and localhost are allowed under OAuth 2.0 (unlike OAuth 2.1)
+        testSecureRedirectUrisEnforcerExecutor_successUpdateByAdmin(alphaCid,
+                List.of("http://localhost/auth/redirect", "http://127.0.0.1:8080/callback"));
+
+        // authorization request - fail
+        // redirect_uri not match with registered redirect uris
+        testSecureRedirectUrisEnforcerExecutor_failAuthorizationRequest(alphaClientId, "http://localhost/auth/other");
     }
 
     @Test
@@ -579,8 +645,8 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
                 clientRep.setPostLogoutRedirectUris(List.of("+"));
         });
         OIDCClientRepresentation clientRepp = reg.oidc().get(clientId);
-        Assert.assertEquals(List.of("https://oauth.redirect/some"), clientRepp.getRedirectUris());
-        Assert.assertEquals(List.of("https://oauth.redirect/some"), clientRepp.getPostLogoutRedirectUris());
+        Assertions.assertEquals(List.of("https://oauth.redirect/some"), clientRepp.getRedirectUris());
+        Assertions.assertEquals(List.of("https://oauth.redirect/some"), clientRepp.getPostLogoutRedirectUris());
 
         // Fail - incorrect domain for post-logout redirect uri
         try {
@@ -599,10 +665,44 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
             clientRep.setPostLogoutRedirectUris(List.of("https://oauth.redirect/some-post-logout"));
         });
         clientRepp = reg.oidc().get(clientId);
-        Assert.assertEquals(List.of("https://oauth.redirect/some"), clientRepp.getRedirectUris());
-        Assert.assertEquals(List.of("https://oauth.redirect/some-post-logout"), clientRepp.getPostLogoutRedirectUris());
+        Assertions.assertEquals(List.of("https://oauth.redirect/some"), clientRepp.getRedirectUris());
+        Assertions.assertEquals(List.of("https://oauth.redirect/some-post-logout"), clientRepp.getPostLogoutRedirectUris());
     }
 
+    @Test
+    public void testSecureRedirectUrisEnforcerExecutor_authorizationRequestWithClientProtocolConditionOidc() throws Exception {
+        // Create a client before enabling the policy.
+        // The redirect URI is registered, so the standard redirect_uri validation should pass.
+        List<String> registerResultList = testSecureRedirectUrisEnforcerExecutor_successRegisterByAdmin(
+                List.of("http://oauth.redirect/some"));
+        String alphaClientId = registerResultList.get(0);
+
+        // register profiles
+        String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
+                (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
+                        .addExecutor(SecureRedirectUrisEnforcerExecutorFactory.PROVIDER_ID,
+                                createSecureRedirectUrisEnforcerExecutorConfig(it -> {
+                                    it.setAllowHttpScheme(false);
+                                }))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                        .addCondition(ClientProtocolConditionFactory.PROVIDER_ID,
+                                createClientProtocolConditionConfig(OIDCLoginProtocol.LOGIN_PROTOCOL))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // authorization request - fail
+        // The redirect_uri matches the registered redirect URI, but HTTP scheme should be rejected
+        // by secure-redirect-uris-enforcer when AUTHORIZATION_REQUEST is enforced.
+        testSecureRedirectUrisEnforcerExecutor_failAuthorizationRequestWithRedirectUriToClient(alphaClientId, "http://oauth.redirect/some");
+    }
 
     private void testSecureRedirectUrisEnforcerExecutor_failRegisterByAdmin(List<String> redirectUrisList) {
         try {
@@ -637,7 +737,10 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
                 clientRep.setRedirectUris(redirectUrisList);
             });
             ClientRepresentation cRep = getClientByAdmin(alphaCid);
-            assertEquals(new HashSet<>(redirectUrisList), new HashSet<>(cRep.getRedirectUris()));
+            Set<String> expectedUris = redirectUrisList.stream()
+                    .filter(s -> s != null && !s.isBlank())
+                    .collect(Collectors.toSet());
+            assertEquals(expectedUris, new HashSet<>(cRep.getRedirectUris()));
         } catch (ClientPolicyException cpe) {
             fail();
         }
@@ -695,16 +798,27 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         oauth.client(clientId);
         oauth.redirectUri(redirectUri);
         oauth.openLoginForm();
-        assertTrue(errorPage.isCurrent());
+        errorPage.assertCurrent();
     }
 
     private void testSecureRedirectUrisEnforcerExecutor_successAuthorizationRequest(String clientId, String redirectUri) {
         oauth.client(clientId, "secret");
         oauth.redirectUri(redirectUri);
         AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
-        Assert.assertNotNull(response.getCode());
+        Assertions.assertNotNull(response.getCode());
         AccessTokenResponse res = oauth.doAccessTokenRequest(response.getCode());
         assertEquals(200, res.getStatusCode());
         oauth.doLogout(res.getRefreshToken());
+    }
+
+    private void testSecureRedirectUrisEnforcerExecutor_failAuthorizationRequestWithRedirectUriToClient(String clientId, String redirectUri) {
+        oauth.client(clientId);
+        oauth.redirectUri(redirectUri);
+        oauth.openLoginForm();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.RESPONSE_TYPE, "code")
+                .details(Details.REDIRECT_URI, redirectUri)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST);
     }
 }

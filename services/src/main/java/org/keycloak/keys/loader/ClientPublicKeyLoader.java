@@ -17,9 +17,14 @@
 
 package org.keycloak.keys.loader;
 
-import org.jboss.logging.Logger;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
+import java.util.Collections;
+
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.common.util.KeyUtils;
+import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.PublicKeysWrapper;
@@ -38,9 +43,7 @@ import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.util.JWKSUtils;
 import org.keycloak.util.JsonSerialization;
 
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
-import java.util.Collections;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -112,16 +115,22 @@ public class ClientPublicKeyLoader implements PublicKeyLoader {
             kid = certInfo.getKid() != null ? certInfo.getKid() : KeyUtils.createKeyId(clientCert.getPublicKey());
             keyWrapper.setKid(kid);
             keyWrapper.setPublicKey(clientCert.getPublicKey());
-            keyWrapper.setType(clientCert.getPublicKey().getAlgorithm());
+            keyWrapper.setType(JavaAlgorithm.getKeyType(clientCert.getPublicKey().getAlgorithm()));
             keyWrapper.setCertificate(clientCert);
             keyWrapper.setIsDefaultClientCertificate(true);
+            if (KeyType.OKP.equals(keyWrapper.getType())) {
+                keyWrapper.setCurve(clientCert.getPublicKey().getAlgorithm());
+            }
         } else {
             PublicKey publicKey = KeycloakModelUtils.getPublicKey(encodedPublicKey);
             // Check if we have kid in DB, generate otherwise
             kid = certInfo.getKid() != null ? certInfo.getKid() : KeyUtils.createKeyId(publicKey);
             keyWrapper.setKid(kid);
             keyWrapper.setPublicKey(publicKey);
-            keyWrapper.setType(publicKey.getAlgorithm());
+            keyWrapper.setType(JavaAlgorithm.getKeyType(publicKey.getAlgorithm()));
+            if (KeyType.OKP.equals(keyWrapper.getType())) {
+                keyWrapper.setCurve(publicKey.getAlgorithm());
+            }
         }
         return keyWrapper;
     }

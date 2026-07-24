@@ -16,10 +16,11 @@
  */
 package org.keycloak.social.github;
 
-import static org.junit.Assert.assertEquals;
+import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 
 import org.junit.Test;
-import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Unit test for {@link org.keycloak.social.github.GitHubIdentityProvider}.

@@ -30,7 +30,7 @@ export const ResetCredentialDialog = ({
   const form = useForm<CredentialResetForm>({
     defaultValues: {
       actions: [],
-      lifespan: realm?.actionTokenGeneratedByAdminLifespan,
+      lifespan: realm.actionTokenGeneratedByAdminLifespan,
     },
   });
   const { handleSubmit, control } = form;
@@ -72,8 +72,8 @@ export const ResetCredentialDialog = ({
       onCancel={onClose}
       toggleDialog={onClose}
       continueButtonLabel="credentialResetConfirm"
-      onConfirm={() => {
-        handleSubmit(sendCredentialsResetEmail)();
+      onConfirm={async () => {
+        await handleSubmit(sendCredentialsResetEmail)();
       }}
       confirmButtonDisabled={!resetIsNotDisabled}
     >

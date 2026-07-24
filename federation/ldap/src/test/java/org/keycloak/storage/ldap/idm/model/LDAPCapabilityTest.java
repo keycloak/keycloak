@@ -1,15 +1,17 @@
 package org.keycloak.storage.ldap.idm.model;
 
-import static junit.framework.TestCase.assertFalse;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import java.util.LinkedHashSet;
 import java.util.Set;
-import org.junit.Test;
+
 import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
 import org.keycloak.representations.idm.LDAPCapabilityRepresentation.CapabilityType;
 import org.keycloak.storage.ldap.idm.store.ldap.extended.PasswordModifyRequest;
+
+import org.junit.Test;
+
+import static junit.framework.TestCase.assertFalse;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class LDAPCapabilityTest {
 

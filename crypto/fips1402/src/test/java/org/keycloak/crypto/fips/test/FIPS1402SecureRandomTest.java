@@ -2,6 +2,10 @@ package org.keycloak.crypto.fips.test;
 
 import java.security.SecureRandom;
 
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.Environment;
+import org.keycloak.rule.CryptoInitRule;
+
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.fips.FipsStatus;
 import org.jboss.logging.Logger;
@@ -10,9 +14,6 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.Environment;
-import org.keycloak.rule.CryptoInitRule;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -38,16 +39,13 @@ public class FIPS1402SecureRandomTest {
 
         SecureRandom sc1 = new SecureRandom();
         logger.infof(dumpSecureRandom("new SecureRandom()", sc1));
+        Assert.assertEquals("DEFAULT", sc1.getAlgorithm());
+        Assert.assertEquals("BCFIPS", sc1.getProvider().getName());
 
         SecureRandom sc2 = SecureRandom.getInstance("DEFAULT", "BCFIPS");
         logger.infof(dumpSecureRandom("SecureRandom.getInstance(\"DEFAULT\", \"BCFIPS\")", sc2));
         Assert.assertEquals("DEFAULT", sc2.getAlgorithm());
         Assert.assertEquals("BCFIPS", sc2.getProvider().getName());
-
-        SecureRandom sc3 = SecureRandom.getInstance("SHA1PRNG");
-        logger.infof(dumpSecureRandom("SecureRandom.getInstance(\"SHA1PRNG\")", sc3));
-        Assert.assertEquals("SHA1PRNG", sc3.getAlgorithm());
-        Assert.assertEquals("BCFIPS", sc3.getProvider().getName());
     }
 
 
