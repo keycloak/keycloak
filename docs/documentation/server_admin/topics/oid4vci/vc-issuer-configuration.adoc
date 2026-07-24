@@ -624,4 +624,6 @@ https://github.com/adorsys/{project_name}-ssi-deployment/tree/main[{project_name
 
 include::requesting-credentials.adoc[]
 
+include::wallet-integration.adoc[]
+
 include::proofs.adoc[]
