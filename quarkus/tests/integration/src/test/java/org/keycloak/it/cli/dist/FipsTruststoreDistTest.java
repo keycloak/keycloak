@@ -17,6 +17,7 @@
 
 package org.keycloak.it.cli.dist;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -28,6 +29,9 @@ import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Reproduces <a href="https://github.com/keycloak/keycloak/issues/49139">#49139</a>:
@@ -93,6 +97,21 @@ public class FipsTruststoreDistTest {
         CLIResult cliResult = runner.run("--verbose", "start",
                 "--truststore-paths=" + truststorePath);
         cliResult.assertError("Unexpected error when configuring the crypto provider");
+    }
+
+    @Test
+    void testGeneratedTruststoreUsesBcfksInStrictMode(KeycloakRunner runner) {
+        RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
+        installBcFips(rawDist);
+
+        rawDist.copyOrReplaceFileFromClasspath("/self-signed.pem", Path.of("conf", "truststores", "self-signed.pem"));
+
+        CLIResult cliResult = runner.run("--verbose", "start", "--features=fips", "--fips-mode=strict");
+        cliResult.assertStarted();
+        cliResult.assertMessage("FIPS1402Provider created");
+
+        assertTrue(Files.exists(rawDist.getDistPath().resolve("data").resolve("keycloak-truststore.bcfks")));
+        assertFalse(Files.exists(rawDist.getDistPath().resolve("data").resolve("keycloak-truststore.p12")));
     }
 
     private void installBcFips(RawKeycloakDistribution rawDist) {

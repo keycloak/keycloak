@@ -40,6 +40,16 @@ public class FIPS1402KeystoreTypesTest {
                 KeystoreUtil.KeystoreFormat.BCFKS));
     }
 
+    @Test
+    public void testTruststoreFormatsInNonApprovedMode() {
+        Assume.assumeFalse(CryptoServicesRegistrar.isInApprovedOnlyMode());
+        Set<KeystoreUtil.TruststoreFormat> supportedTruststoreFormats = CryptoIntegration.getProvider().getSupportedTrustStoreTypes().collect(Collectors.toSet());
+        assertThat(supportedTruststoreFormats, Matchers.containsInAnyOrder(
+                KeystoreUtil.TruststoreFormat.PKCS12,
+                KeystoreUtil.TruststoreFormat.BCFKS));
+        assertThat(CryptoIntegration.getProvider().getPreferredGeneratedTrustStoreType(), Matchers.equalTo(KeystoreUtil.TruststoreFormat.PKCS12));
+    }
+
     // BCFIPS approved mode supports only BCFKS. No JKS nor PKCS12 support for keystores
     @Test
     public void testKeystoreFormatsInApprovedMode() {
@@ -47,5 +57,14 @@ public class FIPS1402KeystoreTypesTest {
         Set<KeystoreUtil.KeystoreFormat> supportedKeystoreFormats = CryptoIntegration.getProvider().getSupportedKeyStoreTypes().collect(Collectors.toSet());
         assertThat(supportedKeystoreFormats, Matchers.containsInAnyOrder(
                 KeystoreUtil.KeystoreFormat.BCFKS));
+    }
+
+    @Test
+    public void testTruststoreFormatsInApprovedMode() {
+        Assume.assumeTrue(CryptoServicesRegistrar.isInApprovedOnlyMode());
+        Set<KeystoreUtil.TruststoreFormat> supportedTruststoreFormats = CryptoIntegration.getProvider().getSupportedTrustStoreTypes().collect(Collectors.toSet());
+        assertThat(supportedTruststoreFormats, Matchers.containsInAnyOrder(
+                KeystoreUtil.TruststoreFormat.BCFKS));
+        assertThat(CryptoIntegration.getProvider().getPreferredGeneratedTrustStoreType(), Matchers.equalTo(KeystoreUtil.TruststoreFormat.BCFKS));
     }
 }

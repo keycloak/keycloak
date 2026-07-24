@@ -17,12 +17,17 @@
 
 package org.keycloak.tests.oid4vc.issuance.credentialbuilder;
 
+import java.security.KeyPairGenerator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import org.keycloak.OID4VCConstants;
+import org.keycloak.VCFormat;
 import org.keycloak.common.VerificationException;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBody;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.SdJwtCredentialBuilder;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
@@ -34,15 +39,21 @@ import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_CNF;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_ISSUER;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_JWK;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_VCT;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -93,12 +104,52 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
         );
     }
 
+    static Stream<Integer> decoyCountProvider() {
+        return Stream.of(0, 1, 5);
+    }
+
+    @ParameterizedTest
+    @MethodSource("decoyCountProvider")
+    public void shouldBindHolderKeyWithCnfClaim(int decoys) throws Exception {
+        CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig()
+                .setCredentialIssuer(TEST_ISSUER_DID)
+                .setCredentialType("https://credentials.example.com/test-credential")
+                .setTokenJwsType(VCFormat.SD_JWT_VC)
+                .setHashAlgorithm(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM)
+                .setNumberOfDecoys(decoys)
+                .setSdJwtVisibleClaims(List.of(CLAIM_NAME_CNF));
+
+        VerifiableCredential testCredential = getTestCredential(
+                Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()), "test", "value"));
+
+        SdJwtCredentialBody sdJwtCredentialBody = new SdJwtCredentialBuilder()
+                .buildCredentialBody(testCredential, credentialBuildConfig);
+
+        var holderKeyPair = KeyPairGenerator.getInstance("EC").generateKeyPair();
+        JWK holderJwk = JWKBuilder.create().kid("holder-key-1").ec(holderKeyPair.getPublic());
+        sdJwtCredentialBody.addKeyBinding(holderJwk);
+
+        String sdJwtString = sdJwtCredentialBody.sign(exampleSigner());
+        SdJwtVP sdJwt = SdJwtVP.of(sdJwtString);
+        IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
+
+        JsonNode cnfNode = jwt.getPayload().get(CLAIM_NAME_CNF);
+        assertNotNull(cnfNode, "The cnf claim must be present in the SD-JWT payload (decoys=" + decoys + ")");
+
+        JsonNode jwkNode = cnfNode.get(CLAIM_NAME_JWK);
+        assertNotNull(jwkNode, "The cnf claim must contain a jwk field");
+        assertEquals("holder-key-1", jwkNode.get("kid").asText(),
+                "The bound JWK must have the holder's key ID");
+        assertEquals("EC", jwkNode.get("kty").asText(),
+                "The bound JWK must have the correct key type");
+    }
+
     public void testSignSDJwtCredential(Map<String, Object> claims, int decoys, List<String> visibleClaims)
             throws VerificationException {
         CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig()
                 .setCredentialIssuer(TEST_ISSUER_DID)
                 .setCredentialType("https://credentials.example.com/test-credential")
-                .setTokenJwsType("example+sd-jwt")
+                .setTokenJwsType(VCFormat.SD_JWT_VC)
                 .setHashAlgorithm(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM)
                 .setNumberOfDecoys(decoys)
                 .setSdJwtVisibleClaims(visibleClaims);

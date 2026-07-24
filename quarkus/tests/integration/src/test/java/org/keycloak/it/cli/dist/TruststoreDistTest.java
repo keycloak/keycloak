@@ -17,6 +17,7 @@
 
 package org.keycloak.it.cli.dist;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -35,6 +36,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DistributionTest(stopServer = Mode.MANUAL)
 @RawDistOnly(reason = "Containers are immutable")
@@ -80,6 +83,9 @@ public class TruststoreDistTest {
 
         runner.run("--verbose", "start", "--db=dev-file", "--http-enabled=true", "--hostname=mykeycloak.org",
                 "--https-client-auth=required", "--https-key-store-file=" + keyStore);
+
+        assertTrue(Files.exists(rawDist.getDistPath().resolve("data").resolve("keycloak-truststore.p12")));
+        assertFalse(Files.exists(rawDist.getDistPath().resolve("data").resolve("keycloak-truststore.bcfks")));
 
         given().trustStore(TruststoreDistTest.class.getResource("/self-signed-truststore.p12").getPath(), TruststoreBuilder.DUMMY_PASSWORD)
                 .keyStore(TruststoreDistTest.class.getResource("/self-signed.p12").getPath(), "password")
