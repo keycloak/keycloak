@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientPoliciesPoliciesResource;
@@ -633,7 +632,7 @@ public abstract class OID4VCIssuerTestBase {
                     sdJwtTypeCredentialVct,
                     VCFormat.SD_JWT_VC,
                     null,
-                    List.of(OID4VCConstants.KeyAttestationResistanceLevels.HIGH, OID4VCConstants.KeyAttestationResistanceLevels.MODERATE)
+                    null
             );
             Map<String, String> sdJwtAttrs = Optional.ofNullable(sdJwtScope.getAttributes()).orElseGet(HashMap::new);
             sdJwtScope.setBindingRequired(true);
@@ -650,7 +649,7 @@ public abstract class OID4VCIssuerTestBase {
                     null,
                     VCFormat.JWT_VC,
                     TEST_CREDENTIAL_MAPPERS_FILE,
-                    Collections.emptyList()
+                    null
             );
             Map<String, String> jwtVcAttrs = Optional.ofNullable(jwtVcScope.getAttributes()).orElseGet(HashMap::new);
             jwtVcAttrs.put(VC_BINDING_REQUIRED, "true");

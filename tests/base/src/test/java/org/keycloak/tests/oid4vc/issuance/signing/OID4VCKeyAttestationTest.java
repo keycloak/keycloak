@@ -387,6 +387,15 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
     }
 
     @Test
+    public void testJwtProofWithoutKeyAttestationWhenRequiredIsRejected() {
+        String cNonce = getCNonce();
+        runOnServer.run(session -> {
+            setupSessionContext(session);
+            runJwtProofWithoutKeyAttestationWhenRequiredIsRejected(session, cNonce);
+        });
+    }
+
+    @Test
     public void testJwtProofMissingIssuerForClientBoundFlowAllowed() {
         String cNonce = getCNonce();
         runOnServer.run(session -> {
@@ -449,7 +458,6 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         });
     }
 
-
     private String getCNonce() {
         return oauth.oid4vc().nonceRequest().send().getNonce();
     }
@@ -480,6 +488,16 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
 
         context.setCredentialConfig(config)
                 .setCredentialRequest(new CredentialRequest());
+        return context;
+    }
+
+    private static VCIssuanceContext createVCIssuanceContextWithoutAttestation(KeycloakSession session) {
+        VCIssuanceContext context = createVCIssuanceContext(session);
+        context.getCredentialConfig()
+                .getProofTypesSupported()
+                .getSupportedProofTypes()
+                .get(JWT)
+                .setKeyAttestationsRequired(null);
         return context;
     }
 
@@ -590,6 +608,39 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
                     .sign(new ECDSASignatureSignerContext(proofKey));
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate JWT proof with both jwk and kid", e);
+        }
+    }
+
+    private static String generateJwtProofWithoutKeyAttestation(KeycloakSession session, KeyWrapper proofKey, String cNonce) {
+        try {
+            JWK proofJwk = JWKBuilder.create().ec(proofKey.getPublicKey());
+            proofJwk.setAlgorithm(proofKey.getAlgorithm());
+
+            AccessToken token = new AccessToken();
+            String credentialIssuer = OID4VCIssuerWellKnownProvider.getIssuer(session.getContext());
+            token.addAudience(credentialIssuer);
+            token.setNonce(cNonce);
+            token.issuedNow();
+
+            // Build header manually to avoid JWSBuilder automatically adding kid from the signer,
+            // which would trigger the kid/jwk/x5c mutual exclusivity check before the attestation check.
+            Map<String, Object> header = new HashMap<>();
+            header.put("alg", proofKey.getAlgorithm());
+            header.put("typ", JwtProofValidator.PROOF_JWT_TYP);
+            header.put("jwk", proofJwk);
+
+            return new JWSBuilder() {
+                @Override
+                protected String encodeHeader(String sigAlgName) {
+                    try {
+                        return Base64Url.encode(JsonSerialization.writeValueAsBytes(header));
+                    } catch (Exception e) {
+                        throw new RuntimeException("Failed to encode header", e);
+                    }
+                }
+            }.jsonContent(token).sign(new ECDSASignatureSignerContext(proofKey));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to generate JWT proof without key attestation", e);
         }
     }
 
@@ -854,7 +905,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
 
             String jwtProof = generateJwtProofWithX5c(session, proofKey, leafCert, cNonce);
 
-            VCIssuanceContext vcIssuanceContext = createVCIssuanceContext(session);
+            VCIssuanceContext vcIssuanceContext = createVCIssuanceContextWithoutAttestation(session);
             vcIssuanceContext.getCredentialRequest().setProofs(new Proofs().setJwt(List.of(jwtProof)));
 
             JwtProofValidator validator = new JwtProofValidator(session, new StaticAttestationKeyResolver(Map.of()));
@@ -872,7 +923,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         String jwtProof = OID4VCProofTestUtils.generateJwtProofWithClaims(List.of(credentialIssuer), cNonce, null,
                 null, null, null);
 
-        VCIssuanceContext context = createVCIssuanceContext(session);
+        VCIssuanceContext context = createVCIssuanceContextWithoutAttestation(session);
         context.setCredentialRequest(new CredentialRequest().setProofs(new Proofs().setJwt(List.of(jwtProof))));
         context.setAuthResult(new AuthenticationManager.AuthResult(null, null,
                 new AccessToken().issuedFor(OID4VCIssuerTestBase.OID4VCI_CLIENT_ID), null));
@@ -888,7 +939,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         String jwtProof = OID4VCProofTestUtils.generateJwtProofWithClaims(List.of(credentialIssuer), cNonce,
                 "wrong-client-id", null, null, null);
 
-        VCIssuanceContext context = createVCIssuanceContext(session);
+        VCIssuanceContext context = createVCIssuanceContextWithoutAttestation(session);
         context.setCredentialRequest(new CredentialRequest().setProofs(new Proofs().setJwt(List.of(jwtProof))));
         context.setAuthResult(new AuthenticationManager.AuthResult(null, null,
                 new AccessToken().issuedFor(OID4VCIssuerTestBase.OID4VCI_CLIENT_ID), null));
@@ -902,7 +953,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         String jwtProof = OID4VCProofTestUtils.generateJwtProofWithClaims(List.of(credentialIssuer), cNonce,
                 OID4VCIssuerTestBase.OID4VCI_CLIENT_ID, null, null, null);
 
-        VCIssuanceContext context = createVCIssuanceContext(session);
+        VCIssuanceContext context = createVCIssuanceContextWithoutAttestation(session);
         context.setCredentialRequest(new CredentialRequest().setProofs(new Proofs().setJwt(List.of(jwtProof))));
         context.setAuthResult(null);
 
@@ -916,7 +967,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
                 List.of(credentialIssuer, "https://unrelated.example"), cNonce, OID4VCIssuerTestBase.OID4VCI_CLIENT_ID,
                 null, null, null);
 
-        VCIssuanceContext context = createVCIssuanceContext(session);
+        VCIssuanceContext context = createVCIssuanceContextWithoutAttestation(session);
         context.setCredentialRequest(new CredentialRequest().setProofs(new Proofs().setJwt(List.of(jwtProof))));
         context.setAuthResult(new AuthenticationManager.AuthResult(null, null,
                 new AccessToken().issuedFor(OID4VCIssuerTestBase.OID4VCI_CLIENT_ID), null));
@@ -931,7 +982,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         String jwtProof = OID4VCProofTestUtils.generateJwtProofWithClaims(List.of(credentialIssuer), cNonce,
                 OID4VCIssuerTestBase.OID4VCI_CLIENT_ID, now + 120, null, null);
 
-        VCIssuanceContext context = createVCIssuanceContext(session);
+        VCIssuanceContext context = createVCIssuanceContextWithoutAttestation(session);
         context.setCredentialRequest(new CredentialRequest().setProofs(new Proofs().setJwt(List.of(jwtProof))));
         context.setAuthResult(new AuthenticationManager.AuthResult(null, null,
                 new AccessToken().issuedFor(OID4VCIssuerTestBase.OID4VCI_CLIENT_ID), null));
@@ -946,7 +997,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         String jwtProof = OID4VCProofTestUtils.generateJwtProofWithClaims(List.of(credentialIssuer), cNonce,
                 OID4VCIssuerTestBase.OID4VCI_CLIENT_ID, now, now - 1, null);
 
-        VCIssuanceContext context = createVCIssuanceContext(session);
+        VCIssuanceContext context = createVCIssuanceContextWithoutAttestation(session);
         context.setCredentialRequest(new CredentialRequest().setProofs(new Proofs().setJwt(List.of(jwtProof))));
         context.setAuthResult(new AuthenticationManager.AuthResult(null, null,
                 new AccessToken().issuedFor(OID4VCIssuerTestBase.OID4VCI_CLIENT_ID), null));
@@ -955,13 +1006,41 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         assertThrows(VCIssuerException.class, () -> validator.validateProof(context));
     }
 
+    private static void runJwtProofWithoutKeyAttestationWhenRequiredIsRejected(KeycloakSession session, String cNonce) {
+        try {
+            KeyWrapper proofKey = getECKey("proofKey");
+
+            // Create context and add attestation requirements to the JWT proof type
+            VCIssuanceContext vcIssuanceContext = createVCIssuanceContext(session);
+            KeyAttestationsRequired requirements = new KeyAttestationsRequired();
+            requirements.setKeyStorage(List.of(KeyAttestationResistanceLevels.HIGH));
+            vcIssuanceContext.getCredentialConfig()
+                    .getProofTypesSupported()
+                    .getSupportedProofTypes()
+                    .get(JWT)
+                    .setKeyAttestationsRequired(requirements);
+
+            // Generate a valid JWT proof WITHOUT key_attestation header
+            String jwtProof = generateJwtProofWithoutKeyAttestation(session, proofKey, cNonce);
+            vcIssuanceContext.getCredentialRequest().setProofs(new Proofs().setJwt(List.of(jwtProof)));
+
+            JwtProofValidator validator = new JwtProofValidator(session, new StaticAttestationKeyResolver(Map.of()));
+
+            VCIssuerException e = assertThrows(VCIssuerException.class, () -> validator.validateProof(vcIssuanceContext));
+            assertTrue(e.getMessage().contains("key_attestation"),
+                    "Expected error about missing key_attestation but got: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Test for missing key_attestation when required failed", e);
+        }
+    }
+
     private static void runJwtProofWithFutureNbfRejectedTest(KeycloakSession session, String cNonce) {
         String credentialIssuer = OID4VCIssuerWellKnownProvider.getIssuer(session.getContext());
         long now = System.currentTimeMillis() / 1000L;
         String jwtProof = OID4VCProofTestUtils.generateJwtProofWithClaims(List.of(credentialIssuer), cNonce,
                 OID4VCIssuerTestBase.OID4VCI_CLIENT_ID, now, null, now + 120);
 
-        VCIssuanceContext context = createVCIssuanceContext(session);
+        VCIssuanceContext context = createVCIssuanceContextWithoutAttestation(session);
         context.setCredentialRequest(new CredentialRequest().setProofs(new Proofs().setJwt(List.of(jwtProof))));
         context.setAuthResult(new AuthenticationManager.AuthResult(null, null,
                 new AccessToken().issuedFor(OID4VCIssuerTestBase.OID4VCI_CLIENT_ID), null));
