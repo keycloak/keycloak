@@ -21,6 +21,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -78,6 +79,7 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
@@ -1685,7 +1687,47 @@ public class AuthenticationManager {
                 accessToken.subject(userSession.getUser().getId());
                 accessToken.setRealmAccess(realmAccess);
                 accessToken.setResourceAccess(clientAccess);
+            } else if (accessToken.getSubject() != null) {
+                // Fallback for service accounts using client_credentials grant without a
+                // persistent user session. Only applies to the service account of the
+                // issuing client - other subjects (e.g. expired user sessions) must not
+                // regain roles through this path.
+                UserModel user = session.users().getUserById(realm, accessToken.getSubject());
+                if (user != null && user.getServiceAccountClientLink() != null
+                        && user.getServiceAccountClientLink().equals(client.getId())) {
+                    resolveServiceAccountRoles(session, accessToken, realm, client, user);
+                }
             }
+        }
+    }
+
+    private static void resolveServiceAccountRoles(KeycloakSession session, AccessToken accessToken,
+                                                    RealmModel realm, ClientModel client, UserModel user) {
+        // Resolve roles respecting client scope mappings (fullScopeAllowed and assigned scopes).
+        // Uses the same resolution logic as token creation (TokenManager.getAccess).
+        Stream<ClientScopeModel> clientScopes = Stream.concat(
+                client.getClientScopes(true).values().stream(),
+                Stream.of(client));
+        Set<RoleModel> allowedRoles = TokenManager.getAccess(user, client, clientScopes);
+
+        // Split into realm and client role buckets
+        AccessToken.Access realmAccess = new AccessToken.Access();
+        Map<String, AccessToken.Access> resourceAccess = new HashMap<>();
+
+        for (RoleModel role : allowedRoles) {
+            if (role.isClientRole()) {
+                String clientId = realm.getClientById(role.getContainerId()).getClientId();
+                resourceAccess.computeIfAbsent(clientId, k -> new AccessToken.Access()).addRole(role.getName());
+            } else {
+                realmAccess.addRole(role.getName());
+            }
+        }
+
+        if (realmAccess.getRoles() != null && !realmAccess.getRoles().isEmpty()) {
+            accessToken.setRealmAccess(realmAccess);
+        }
+        if (!resourceAccess.isEmpty()) {
+            accessToken.setResourceAccess(resourceAccess);
         }
     }
 
