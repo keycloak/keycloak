@@ -289,4 +289,39 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
             identityProviderResource.update(representation);
         }
     }
+
+    @Test
+    public void logoutSucceedsWhenIdpIsDisabled() {
+        logInAsUserInIDPForFirstTime();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+
+        // Disable the identity provider while the user session is still active
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+        IdentityProviderResource idpResource = consumerRealm.identityProviders().get(bc.getIDPAlias());
+        IdentityProviderRepresentation idpRep = idpResource.toRepresentation();
+        idpRep.setEnabled(false);
+        idpResource.update(idpRep);
+
+        try {
+            // Browser logout should complete gracefully even though the IdP is disabled
+            logoutFromRealm(
+                    getConsumerRoot(),
+                    bc.consumerRealmName(),
+                    null,
+                    null,
+                    null,
+                    null
+            );
+
+            // Verify user is actually logged out
+            oauth.client("broker-app");
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
+            waitForPage(driver, "sign in to", true);
+        } finally {
+            idpRep.setEnabled(true);
+            idpResource.update(idpRep);
+        }
+    }
+
 }
