@@ -289,4 +289,57 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
             identityProviderResource.update(representation);
         }
     }
+
+    @Test
+    public void logoutSucceedsWhenIdpIsDisabled() {
+        logInAsUserInIDPForFirstTime();
+        appPage.assertCurrent();
+
+        // Disable the identity provider while the user session is still active
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+        IdentityProviderResource idpResource = consumerRealm.identityProviders().get(bc.getIDPAlias());
+        IdentityProviderRepresentation idpRep = idpResource.toRepresentation();
+        idpRep.setEnabled(false);
+        idpResource.update(idpRep);
+
+        try {
+            // Logout should complete gracefully even though the IdP is disabled
+            AccountHelper.logout(consumerRealm, bc.getUserLogin());
+
+            // Verify user is actually logged out by checking they need to sign in again
+            oauth.client("broker-app");
+            loginPage.open(bc.consumerRealmName());
+            waitForPage(driver, "sign in to", true);
+        } finally {
+            // Re-enable the IdP to not break other tests
+            idpRep.setEnabled(true);
+            idpResource.update(idpRep);
+        }
+    }
+
+    @Test
+    public void logoutSucceedsWhenIdpIsRemoved() {
+        logInAsUserInIDPForFirstTime();
+        appPage.assertCurrent();
+
+        // Remove the identity provider entirely while the user session is still active
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+        IdentityProviderResource idpResource = consumerRealm.identityProviders().get(bc.getIDPAlias());
+        IdentityProviderRepresentation idpRep = idpResource.toRepresentation();
+        idpResource.remove();
+
+        try {
+            // Logout should complete gracefully even though the IdP no longer exists
+            AccountHelper.logout(consumerRealm, bc.getUserLogin());
+
+            // Verify user is actually logged out
+            oauth.client("broker-app");
+            loginPage.open(bc.consumerRealmName());
+            waitForPage(driver, "sign in to", true);
+        } finally {
+            // Recreate the IdP for other tests
+            consumerRealm.identityProviders().create(idpRep).close();
+        }
+    }
+
 }

@@ -733,10 +733,18 @@ public class AuthenticationManager {
         String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
         String initiatingIdp = logoutAuthSession.getAuthNote(AuthenticationManager.LOGOUT_INITIATING_IDP);
         if (brokerId != null && !brokerId.equals(initiatingIdp)) {
-            UserAuthenticationIdentityProvider<?> identityProvider = IdentityBrokerService.getIdentityProvider(session, brokerId);
-            Response response = identityProvider.keycloakInitiatedBrowserLogout(session, userSession, uriInfo, realm);
-            if (response != null) {
-                return response;
+            UserAuthenticationIdentityProvider<?> identityProvider = null;
+            try {
+                identityProvider = IdentityBrokerService.getIdentityProvider(session, brokerId);
+            } catch (IdentityBrokerException e) {
+                logger.warnf("Identity provider [%s] is no longer available, skipping identity provider initiated logout for user session [%s]", brokerId, userSession.getId());
+            }
+
+            if (identityProvider != null) {
+                Response response = identityProvider.keycloakInitiatedBrowserLogout(session, userSession, uriInfo, realm);
+                if (response != null) {
+                    return response;
+                }
             }
         }
 
