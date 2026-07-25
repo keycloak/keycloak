@@ -296,7 +296,7 @@ The Helm chart deploys the same Kubernetes resources as the kustomize install ab
 +
 [source,bash,subs="attributes+"]
 ----
-kubectl delete -k 'github.com/keycloak/keycloak-k8s-resources/cluster-wide?ref={version}'
+kubectl delete -k 'github.com/keycloak/keycloak-k8s-resources/kubernetes/cluster-wide?ref={version}'
 ----
 
 . Install via Helm with `crds.enabled=false` so Helm does not try to re-create the CRDs Helm did not originally install:
