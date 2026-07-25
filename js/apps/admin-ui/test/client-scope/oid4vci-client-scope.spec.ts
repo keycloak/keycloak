@@ -10,7 +10,7 @@ import {
   assertSaveButtonIsDisabled,
 } from "../utils/form.ts";
 import { clickTableRowItem, clickTableToolbarItem } from "../utils/table.ts";
-import { login } from "../utils/login.ts";
+import { login, navigateTo } from "../utils/login.ts";
 import {
   OID4VCI_PROTOCOL,
   skipIfOID4VCIFeatureDisabled,
@@ -67,10 +67,10 @@ async function navigateBackAndVerifyClientScope(
   testBed: Awaited<ReturnType<typeof createTestBed>>,
   clientScopeName: string,
 ) {
-  const currentUrl = page.url();
-  const baseUrl = currentUrl.split("#")[0];
-  await page.goto(
-    `${baseUrl}#${toClientScopes({ realm: testBed.realm }).pathname!}`,
+  await navigateTo(
+    page,
+    toClientScopes({ realm: testBed.realm }),
+    testBed.realm,
   );
   await expect(page.getByPlaceholder("Search for client scope")).toBeVisible();
 
