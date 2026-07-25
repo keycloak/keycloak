@@ -97,7 +97,7 @@ export async function createDefaultTrustProvider(
     (await page.getByTestId("currentRealm").textContent()) ?? "master";
 
   await page.goto(
-    `${SERVER_URL}/admin/master/console/#/${realm}/identity-providers/default-trust/add`,
+    `${SERVER_URL}/admin/master/console/${realm}/identity-providers/default-trust/add`,
   );
 
   await page.getByTestId("alias").fill(alias);

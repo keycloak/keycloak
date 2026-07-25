@@ -14,9 +14,11 @@ import {
 } from "react";
 import {
   Path,
+  To,
   generatePath,
   matchPath,
   useHref,
+  useLinkClickHandler,
   useLocation,
   useParams,
 } from "react-router-dom";
@@ -118,15 +120,22 @@ const DynamicTab = ({
   ...props
 }: PropsWithChildren<DynamicTabProps>) => {
   const href = useHref(props.eventKey);
+  const onClick = useLinkClickHandler(props.eventKey);
 
   return (
-    <Tab href={href} {...props}>
+    <Tab href={href} onClick={onClick} {...props}>
       {children}
     </Tab>
   );
 };
 
-export const useRoutableTab = (to: Partial<Path>) => ({
-  eventKey: to.pathname ?? "",
-  href: useHref(to),
-});
+export const useRoutableTab = (to: Partial<Path>) => {
+  const href = useHref(to);
+  const onClick = useLinkClickHandler(to as To);
+
+  return {
+    eventKey: to.pathname ?? "",
+    href,
+    onClick,
+  };
+};
