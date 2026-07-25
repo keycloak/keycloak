@@ -292,11 +292,13 @@ Run `helm show values oci://quay.io/keycloak/keycloak-operator-helm` for the ful
 
 The Helm chart deploys the same Kubernetes resources as the kustomize install above (same `ServiceAccount`, `ClusterRole`, `ClusterRoleBinding`, `Service`, `Deployment` names). Migration steps:
 
-. Delete the existing operator install, **keeping** the CRDs (do not delete the `keycloaks.k8s.keycloak.org` or `keycloakrealmimports.k8s.keycloak.org` CRDs — that would garbage-collect every `Keycloak` and `KeycloakRealmImport` resource in the cluster).
+. Delete only the existing operator workload and RBAC resources, **keeping** the CRDs. Do not run `kubectl delete -k` against the kustomization, because it also deletes the CRDs (`keycloaks.k8s.keycloak.org`, `keycloakrealmimports.k8s.keycloak.org`, and the client CRDs) — that would garbage-collect every `Keycloak`, `KeycloakRealmImport`, and client custom resource in the cluster. Delete the resources by name instead (replace `keycloak` with the namespace you installed the Operator into):
 +
 [source,bash,subs="attributes+"]
 ----
-kubectl delete -k 'github.com/keycloak/keycloak-k8s-resources/kubernetes/cluster-wide?ref={version}'
+kubectl delete deployment,service,serviceaccount keycloak-operator -n keycloak
+kubectl delete clusterrole keycloak-operator-clusterrole
+kubectl delete clusterrolebinding keycloak-operator-clusterrole-binding
 ----
 
 . Install via Helm with `crds.enabled=false` so Helm does not try to re-create the CRDs Helm did not originally install:
