@@ -9,12 +9,12 @@ import java.util.stream.Stream;
 import jakarta.annotation.Nonnull;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.mapper.ClientModelMappers;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
+import org.keycloak.scim.filter.ScimFilterException;
 import org.keycloak.scim.filter.ScimFilterParser.FilterContext;
 import org.keycloak.services.PatchType;
 import org.keycloak.services.ServiceException;
@@ -23,8 +23,6 @@ import org.keycloak.services.client.query.QueryFieldExtractor;
 import org.keycloak.services.client.query.QueryParseUtils;
 import org.keycloak.services.client.scim.ClientJpaQueryExecutor;
 import org.keycloak.services.client.scim.ClientJpaQuerySchema;
-import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.context.AdminClientViewContext;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.utils.StringUtil;
 
@@ -73,11 +71,11 @@ public class ScimBackedClientService implements ClientService {
 
             Stream<BaseClientRepresentation> stream = ClientJpaQueryExecutor.findClients(
                             session, realm, filterContext, sortAndSliceOptions.getSortOptions(), offset, limit)
-                    .map(this::mapClientWithPolicies)
+                    .map(client -> delegate.getMapper(client.getProtocol()).fromModel(client))
                     .filter(Objects::nonNull);
 
             return applyProjection(stream, projectionOptions);
-        } catch (ClientQueryException e) {
+        } catch (ClientQueryException | ScimFilterException e) {
             throw new ServiceException(e.getMessage(), jakarta.ws.rs.core.Response.Status.BAD_REQUEST);
         } catch (ModelException e) {
             throw new ServiceException(e.getMessage(), jakarta.ws.rs.core.Response.Status.BAD_REQUEST);
@@ -86,15 +84,6 @@ public class ScimBackedClientService implements ClientService {
 
     private boolean canViewAll(RealmModel realm) {
         return AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || permissions.clients().canView();
-    }
-
-    private BaseClientRepresentation mapClientWithPolicies(ClientModel client) {
-        try {
-            session.clientPolicy().triggerOnEvent(new AdminClientViewContext(client, permissions.adminAuth()));
-        } catch (ClientPolicyException e) {
-            throw new ServiceException(e.getErrorDetail(), jakarta.ws.rs.core.Response.Status.BAD_REQUEST);
-        }
-        return delegate.getMapper(client.getProtocol()).fromModel(client);
     }
 
     private boolean canUseJpaQuery(RealmModel realm, ClientSearchOptions searchOptions) {
