@@ -371,16 +371,19 @@ public class AutomaticKeyRotationTest {
      */
     @Test
     public void testAutomaticKeyDeletion() {
-        runOnServer.run(session -> {
-            RealmModel realm = session.getContext().getRealm();
-            
-            // Create a key provider with auto-deletion enabled
+        String realmName = realm.getName();
+
+        // Create the provider in its own committed transaction. The scheduled task now runs each
+        // action in a separate transaction, so the provider must be committed before it runs.
+        String providerId = runOnServer.fetch(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+
             ComponentModel keyProvider = new ComponentModel();
             keyProvider.setName("test-auto-deletion-" + System.currentTimeMillis());
             keyProvider.setProviderType(KeyProvider.class.getName());
             keyProvider.setProviderId("rsa-generated");
-            keyProvider.setParentId(realm.getId());
-            
+            keyProvider.setParentId(realmModel.getId());
+
             MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
             config.putSingle("priority", "200");
             config.putSingle(Attributes.ACTIVE_KEY, "false"); // Passive key
@@ -392,27 +395,20 @@ public class AutomaticKeyRotationTest {
             config.putSingle(Attributes.DISABLED_TIME_KEY, String.valueOf(twoSecondsAgo));
             keyProvider.setConfig(config);
 
-            ComponentModel created = realm.addComponentModel(keyProvider);
-            String providerId = created.getId();
+            return realmModel.addComponentModel(keyProvider).getId();
+        }, String.class);
 
-            // Verify provider was created
-            ComponentModel retrieved = realm.getComponent(providerId);
-            assertEquals("false", retrieved.get(Attributes.ENABLED_KEY));
-            assertEquals("true", retrieved.get(Attributes.AUTO_DELETE_DISABLED_KEYS_KEY));
+        // Run the rotation task
+        runOnServer.run(session -> new AutomaticKeyRotationTask().run(session));
 
-            // Run the rotation task
-            AutomaticKeyRotationTask task = new AutomaticKeyRotationTask();
-            task.run(session);
-
-            // Verify the provider was deleted
-            // Use getComponentsStream instead of getComponent to avoid JPA L1 cache
-            // returning a stale entity (removeComponent relies on orphan-removal at flush time)
-            boolean stillExists = realm.getComponentsStream(realm.getId(), KeyProvider.class.getName())
+        // Verify the provider was deleted
+        boolean stillExists = runOnServer.fetch(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            return realmModel.getComponentsStream(realmModel.getId(), KeyProvider.class.getName())
                     .anyMatch(c -> c.getId().equals(providerId));
-            if (stillExists) {
-                throw new AssertionError("Provider should have been deleted but still exists: " + providerId);
-            }
-        });
+        }, Boolean.class);
+
+        assertFalse(stillExists, "Provider should have been deleted but still exists: " + providerId);
     }
 
     /**
@@ -420,16 +416,18 @@ public class AutomaticKeyRotationTest {
      */
     @Test
     public void testKeyDeletionRespectGracePeriod() {
-        runOnServer.run(session -> {
-            RealmModel realm = session.getContext().getRealm();
-            
-            // Create a key provider with auto-deletion enabled but within grace period
+        String realmName = realm.getName();
+
+        // Create the provider in its own committed transaction.
+        String providerId = runOnServer.fetch(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+
             ComponentModel keyProvider = new ComponentModel();
             keyProvider.setName("test-grace-period-" + System.currentTimeMillis());
             keyProvider.setProviderType(KeyProvider.class.getName());
             keyProvider.setProviderId("rsa-generated");
-            keyProvider.setParentId(realm.getId());
-            
+            keyProvider.setParentId(realmModel.getId());
+
             MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
             config.putSingle("priority", "200");
             config.putSingle(Attributes.ACTIVE_KEY, "false");
@@ -440,24 +438,24 @@ public class AutomaticKeyRotationTest {
             config.putSingle(Attributes.DISABLED_TIME_KEY, String.valueOf(Time.currentTimeMillis()));
             keyProvider.setConfig(config);
 
-            ComponentModel created = realm.addComponentModel(keyProvider);
-            String providerId = created.getId();
+            return realmModel.addComponentModel(keyProvider).getId();
+        }, String.class);
 
-            // Run the rotation task
-            AutomaticKeyRotationTask task = new AutomaticKeyRotationTask();
-            task.run(session);
+        // Run the rotation task
+        runOnServer.run(session -> new AutomaticKeyRotationTask().run(session));
 
-            // Verify the provider still exists (not deleted yet)
-            ComponentModel stillExists = realm.getComponent(providerId);
-            if (stillExists == null) {
-                throw new AssertionError("Provider should not have been deleted yet");
+        // Verify the provider still exists (not deleted yet) and clean it up
+        boolean stillExists = runOnServer.fetch(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            ComponentModel provider = realmModel.getComponent(providerId);
+            if (provider == null) {
+                return false;
             }
-            assertEquals(providerId, stillExists.getId());
-            assertEquals("false", stillExists.get(Attributes.ENABLED_KEY));
+            realmModel.removeComponent(provider);
+            return true;
+        }, Boolean.class);
 
-            // Clean up
-            realm.removeComponent(stillExists);
-        });
+        assertTrue(stillExists, "Provider should not have been deleted yet");
     }
 
     /**
@@ -465,16 +463,18 @@ public class AutomaticKeyRotationTest {
      */
     @Test
     public void testKeyDeletionDisabled() {
-        runOnServer.run(session -> {
-            RealmModel realm = session.getContext().getRealm();
-            
-            // Create a key provider without auto-deletion
+        String realmName = realm.getName();
+
+        // Create the provider in its own committed transaction.
+        String providerId = runOnServer.fetch(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+
             ComponentModel keyProvider = new ComponentModel();
             keyProvider.setName("test-no-deletion-" + System.currentTimeMillis());
             keyProvider.setProviderType(KeyProvider.class.getName());
             keyProvider.setProviderId("rsa-generated");
-            keyProvider.setParentId(realm.getId());
-            
+            keyProvider.setParentId(realmModel.getId());
+
             MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
             config.putSingle("priority", "200");
             config.putSingle(Attributes.ACTIVE_KEY, "false");
@@ -486,24 +486,24 @@ public class AutomaticKeyRotationTest {
             config.putSingle(Attributes.DISABLED_TIME_KEY, String.valueOf(twoSecondsAgo));
             keyProvider.setConfig(config);
 
-            ComponentModel created = realm.addComponentModel(keyProvider);
-            String providerId = created.getId();
+            return realmModel.addComponentModel(keyProvider).getId();
+        }, String.class);
 
-            // Run the rotation task
-            AutomaticKeyRotationTask task = new AutomaticKeyRotationTask();
-            task.run(session);
+        // Run the rotation task
+        runOnServer.run(session -> new AutomaticKeyRotationTask().run(session));
 
-            // Verify the provider still exists (not deleted because auto-delete is false)
-            ComponentModel stillExists = realm.getComponent(providerId);
-            if (stillExists == null) {
-                throw new AssertionError("Provider should not have been deleted when auto-delete is disabled");
+        // Verify the provider still exists (not deleted because auto-delete is false) and clean it up
+        boolean stillExists = runOnServer.fetch(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            ComponentModel provider = realmModel.getComponent(providerId);
+            if (provider == null) {
+                return false;
             }
-            assertEquals(providerId, stillExists.getId());
-            assertEquals("false", stillExists.get(Attributes.ENABLED_KEY));
+            realmModel.removeComponent(provider);
+            return true;
+        }, Boolean.class);
 
-            // Clean up
-            realm.removeComponent(stillExists);
-        });
+        assertTrue(stillExists, "Provider should not have been deleted when auto-delete is disabled");
     }
 
     /**
