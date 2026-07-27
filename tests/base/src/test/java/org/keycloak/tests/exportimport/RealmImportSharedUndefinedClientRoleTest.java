@@ -14,28 +14,34 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.keycloak.testsuite.exportimport;
+package org.keycloak.tests.exportimport;
 
 import java.util.List;
 
-import org.junit.Test;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.AbstractKeycloakTest;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Reproduces the duplicate KEYCLOAK_ROLE primary key violation reported in issue #49731: when several users
- * reference the same client role that is not declared in {@code roles.client}, the role must be auto-created
- * only once during the batch-mode user import instead of being created for every user that references it.
+ * Reproduces the duplicate KEYCLOAK_ROLE primary key violation reported in
+ * issue #49731: when several users reference the same client role that is not
+ * declared in {@code roles.client}, the role must be auto-created only once
+ * during the batch-mode user import instead of being created for every user
+ * that references it.
  */
-public class RealmImportSharedUndefinedClientRoleTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest
+public class RealmImportSharedUndefinedClientRoleTest {
 
     private static final String REALM_NAME = "shared-undefined-client-role";
     private static final String CLIENT_ID = "shared-role-client";
@@ -43,10 +49,8 @@ public class RealmImportSharedUndefinedClientRoleTest extends AbstractKeycloakTe
     private static final String USER_1 = "user-one";
     private static final String USER_2 = "user-two";
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        // The realm under test is imported and removed within the test itself.
-    }
+    @InjectAdminClient
+    Keycloak adminClient;
 
     @Test
     public void importRealmWithSharedUndefinedClientRole() {
@@ -71,17 +75,17 @@ public class RealmImportSharedUndefinedClientRoleTest extends AbstractKeycloakTe
             long matching = realm.clients().get(clientUuid).roles().list().stream()
                     .filter(role -> ROLE_NAME.equals(role.getName()))
                     .count();
-            assertEquals("The shared client role must be created exactly once", 1, matching);
+            assertEquals(1L, matching, "The shared client role must be created exactly once");
 
             // (c) Both users end up with the shared client-role mapping.
             for (String username : List.of(USER_1, USER_2)) {
                 String userId = realm.users().search(username).get(0).getId();
                 List<RoleRepresentation> mappings = realm.users().get(userId).roles().clientLevel(clientUuid).listAll();
-                assertTrue("User " + username + " must have the shared client role mapped",
-                        mappings.stream().anyMatch(role -> ROLE_NAME.equals(role.getName())));
+                assertTrue(mappings.stream().anyMatch(role -> ROLE_NAME.equals(role.getName())),
+                        "User " + username + " must have the shared client role mapped");
             }
         } finally {
-            removeRealm(REALM_NAME);
+            adminClient.realm(REALM_NAME).remove();
         }
     }
 }
