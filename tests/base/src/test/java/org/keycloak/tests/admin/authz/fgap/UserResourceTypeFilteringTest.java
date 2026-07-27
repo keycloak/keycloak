@@ -565,6 +565,49 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
     }
 
     @Test
+    public void testRealmRoleMemberFilteringByViewPermission() {
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName("test_realm_role");
+        realm.admin().roles().create(role);
+        role = realm.admin().roles().get(role.getName()).toRepresentation();
+        realm.cleanup().add(r -> r.roles().deleteRole("test_realm_role"));
+
+        for (String username : List.of("user_x", "user_y", "user_z")) {
+            String userId = ApiUtil.getCreatedId(realm.admin().users().create(UserConfigBuilder.create()
+                    .username(username)
+                    .password("password")
+                    .firstName("user")
+                    .lastName(username)
+                    .email(username + "@test")
+                    .build()));
+            realm.admin().users().get(userId).roles().realmLevel().add(List.of(role));
+            realm.cleanup().add(r -> r.users().delete(userId).close());
+        }
+
+        UserPolicyRepresentation policy = createUserPolicy(realm, client, "Myadmin user policy",
+                realm.admin().users().search("myadmin").get(0).getId());
+        Set<String> allowedUsers = Set.of("user_x", "user_y");
+        createPermission(client, allowedUsers, AdminPermissionsSchema.USERS.getType(),
+                Set.of(AdminPermissionsSchema.VIEW), policy);
+
+        String realmMgmtClientId = realm.admin().clients()
+                .findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
+        RoleRepresentation viewRealmRole = realm.admin().clients().get(realmMgmtClientId)
+                .roles().get(AdminRoles.VIEW_REALM).toRepresentation();
+        String myadminId = realm.admin().users().search("myadmin").get(0).getId();
+        realm.admin().users().get(myadminId).roles().clientLevel(realmMgmtClientId).add(List.of(viewRealmRole));
+        realm.cleanup().add(r -> r.users().get(r.users().search("myadmin").get(0).getId())
+                .roles().clientLevel(realmMgmtClientId).remove(List.of(viewRealmRole)));
+
+        List<String> roleMembers = realmAdminClient.realm(realm.getName())
+                .roles().get(role.getName()).getUserMembers().stream()
+                .map(UserRepresentation::getUsername).toList();
+
+        assertThat(roleMembers, hasSize(allowedUsers.size()));
+        assertThat(roleMembers, hasItems(allowedUsers.toArray(new String[0])));
+    }
+
+    @Test
     public void testViewGroupMembersPolicyUsingAggregatedPolicy() {
         List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
         assertTrue(search.isEmpty());
