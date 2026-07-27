@@ -109,9 +109,11 @@ export const Header = () => {
   const isMasterRealm = realm === environment.masterRealm;
   const isManager = hasAccess("manage-realm");
 
-  const logo = environment.logo || "/logo.svg";
+  const logo = environment.logo || "/logo-light.png";
+  const logoDark = "/logo-dark.png";
   const url = useHref(toDashboard({ realm }));
   const logoUrl = environment.logoUrl ? environment.logoUrl : url;
+  const hasCustomLogo = Boolean(customLogo?.trim() || environment.logo);
 
   return (
     <KeycloakMasthead
@@ -123,6 +125,9 @@ export const Header = () => {
         src: customLogo?.trim()
           ? customLogo
           : joinPath(environment.resourceUrl, logo),
+        srcDark: hasCustomLogo
+          ? undefined
+          : joinPath(environment.resourceUrl, logoDark),
         alt: t("logo"),
         className: "keycloak__pageheader_brand",
       }}

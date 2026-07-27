@@ -53,7 +53,10 @@
       <div class="pf-v5-c-login__container">
         <header class="pf-v5-c-login__header">
           <div class="pf-v5-c-brand">
-            <img src="${resourcesPath}/logo.svg" alt="${productName} Logo" class="kc-brand">
+            <picture>
+              <source media="(prefers-color-scheme: dark)" srcset="${resourcesPath}/logo-dark.png">
+              <img src="${resourcesPath}/logo-light.png" alt="${productName} Logo" class="kc-brand">
+            </picture>
           </div>
         </header>
         <#if adminConsoleEnabled && (bootstrap || successMessage?has_content)>

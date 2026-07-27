@@ -38,7 +38,8 @@ export const Header = () => {
   const { environment, keycloak } = useEnvironment();
   const { t } = useTranslation();
 
-  const brandImage = environment.logo || "logo.svg";
+  const brandImage = environment.logo || "logo-light.png";
+  const brandImageDark = "logo-dark.png";
   const logoUrl = environment.logoUrl ? environment.logoUrl : "/";
   const internalLogoHref = useHref(logoUrl);
 
@@ -53,6 +54,9 @@ export const Header = () => {
       brand={{
         href: indexHref,
         src: joinPath(environment.resourceUrl, brandImage),
+        srcDark: environment.logo
+          ? undefined
+          : joinPath(environment.resourceUrl, brandImageDark),
         alt: t("logo"),
         className: style.brand,
       }}

@@ -10,8 +10,8 @@
     </#if>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light${darkMode?then(' dark', '')}">
-    <meta name="description" content="${properties.description!'The Keycloak Administration Console is a web-based interface for managing Keycloak.'}">
-    <title>${properties.title!'Keycloak Administration Console'}</title>
+    <meta name="description" content="${properties.description!'The Fidar Administration Console is a web-based interface for managing Fidar.'}">
+    <title>${properties.title!'Fidar Administration Console'}</title>
     <style>
       body {
         margin: 0;

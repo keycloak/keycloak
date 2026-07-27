@@ -1,7 +1,7 @@
 :root {
-    --keycloak-logo-url: url('../img/keycloak-logo-text.svg');
+    --keycloak-logo-url: url('../img/fidar-logo.png');
     --keycloak-bg-logo-url: url("../img/keycloak-bg-darken.svg");
-    --keycloak-logo-height: 63px;
+    --keycloak-logo-height: 90px;
     --keycloak-logo-width: 300px;
     --keycloak-card-top-color: var(--pf-v5-global--palette--blue-400);
 }

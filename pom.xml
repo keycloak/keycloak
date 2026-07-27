@@ -45,7 +45,7 @@
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
-        <project.build-name>Keycloak</project.build-name>
+        <project.build-name>Fidar</project.build-name>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 

@@ -40,7 +40,10 @@ function loggedInUserName(
   return givenName || familyName || preferredUsername || t("unknownUser");
 }
 
-type BrandLogo = MastheadBrandProps;
+type BrandLogo = MastheadBrandProps & {
+  /** Optional logo variant shown when the user's system is in dark mode. */
+  srcDark?: string;
+};
 
 type KeycloakMastheadProps = MastheadMainProps & {
   keycloak: Keycloak;
@@ -59,7 +62,7 @@ type KeycloakMastheadProps = MastheadMainProps & {
 
 const KeycloakMasthead = ({
   keycloak,
-  brand: { src, alt, className, ...brandProps },
+  brand: { src, srcDark, alt, className, ...brandProps },
   avatar,
   features: {
     hasLogout = true,
@@ -101,7 +104,14 @@ const KeycloakMasthead = ({
         </PageToggleButton>
       </MastheadToggle>
       <MastheadBrand {...brandProps}>
-        <img src={src} alt={alt} className={className} />
+        {srcDark ? (
+          <picture>
+            <source media="(prefers-color-scheme: dark)" srcSet={srcDark} />
+            <img src={src} alt={alt} className={className} />
+          </picture>
+        ) : (
+          <img src={src} alt={alt} className={className} />
+        )}
       </MastheadBrand>
       <MastheadContent>
         {toolbar}

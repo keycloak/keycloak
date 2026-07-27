@@ -473,6 +473,6 @@
   } ],
   "info" : {
     "title" : "Keycloak API",
-    "version" : "999.0.0-SNAPSHOT"
+    "version" : "26.7.0"
   }
 }
