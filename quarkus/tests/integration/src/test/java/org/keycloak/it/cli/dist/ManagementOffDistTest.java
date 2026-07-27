@@ -38,7 +38,7 @@ public class ManagementOffDistTest {
     @Launch({"start-dev"})
     public void notOccupied(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertNoMessage("Management interface listening on");
+        cliResult.assertNoStartupMessage("Management interface listening on");
 
         assertThrows(IOException.class, () -> when().get("/"), "Connection refused must be thrown");
         assertThrows(IOException.class, () -> when().get("/health"), "Connection refused must be thrown");

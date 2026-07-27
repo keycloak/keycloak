@@ -221,7 +221,9 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             exitCode = keycloak.exitValue();
         }
 
-        shutdownOutputExecutor();
+        if (!shutdownOutputExecutor()) {
+            throw new AssertionError("Did not get complete output");
+        }
     }
 
     private void destroyDescendantsOnWindows(Process parent, boolean force) {
@@ -306,17 +308,18 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         readOutput(keycloak, outputConsumer, outputExecutor);
     }
 
-    private void shutdownOutputExecutor() {
+    private boolean shutdownOutputExecutor() {
         if (outputExecutor != null) {
             outputExecutor.shutdown();
             try {
-                outputExecutor.awaitTermination(30, TimeUnit.SECONDS);
+                return outputExecutor.awaitTermination(30, TimeUnit.SECONDS);
             } catch (InterruptedException cause) {
                 throw new RuntimeException("Failed to terminate output executor", cause);
             } finally {
                 outputExecutor = null;
             }
         }
+        return true;
     }
 
     private void resetForNextRun() {
