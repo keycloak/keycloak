@@ -25,7 +25,9 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -120,7 +122,7 @@ public class ScimBackedClientQueryTest extends AbstractClientApiV2Test {
                 new ListOptions().query("protocol eq \"saml\""))) {
             List<BaseClientRepresentation> clients = stream.toList();
             assertThat(clients, not(empty()));
-            assertTrue(clients.stream().allMatch(c -> c instanceof SAMLClientRepresentation));
+            assertThat(clients, everyItem(instanceOf(SAMLClientRepresentation.class)));
         }
     }
 

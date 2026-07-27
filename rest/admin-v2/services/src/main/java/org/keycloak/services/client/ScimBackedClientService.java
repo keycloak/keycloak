@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import jakarta.annotation.Nonnull;
+import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.KeycloakSession;
@@ -76,9 +77,9 @@ public class ScimBackedClientService implements ClientService {
 
             return applyProjection(stream, projectionOptions);
         } catch (ClientQueryException | ScimFilterException e) {
-            throw new ServiceException(e.getMessage(), jakarta.ws.rs.core.Response.Status.BAD_REQUEST);
+            throw new ServiceException(e.getMessage(), Status.BAD_REQUEST);
         } catch (ModelException e) {
-            throw new ServiceException(e.getMessage(), jakarta.ws.rs.core.Response.Status.BAD_REQUEST);
+            throw new ServiceException(e.getMessage(), Status.BAD_REQUEST);
         }
     }
 
@@ -105,8 +106,7 @@ public class ScimBackedClientService implements ClientService {
     private void validateProjectionFields(ClientProjectionOptions projectionOptions) {
         projectionOptions.getFields().forEach(field -> {
             if (!MAPPERS.isKnownField(field)) {
-                throw new ServiceException("%s is an unknown field".formatted(field),
-                        jakarta.ws.rs.core.Response.Status.BAD_REQUEST);
+                throw new ServiceException("%s is an unknown field".formatted(field), Status.BAD_REQUEST);
             }
         });
     }
