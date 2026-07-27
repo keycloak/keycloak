@@ -201,7 +201,7 @@ Credentials are signed with a realm signing key. For SD-JWT VCs, the selected ke
 * The first certificate must be the leaf certificate for the credential signing key.
 * The leaf certificate must not be self-signed.
 * Any intermediate certificates must follow the leaf certificate in chain order.
-* The self-signed root certificate, or trust anchor, is not included in the `x5c` JOSE header. If the configured chain ends with a self-signed root certificate, {project_name} removes it when creating the SD-JWT VC.
+* The trust anchor must not be included in the `x5c` JOSE header. If the configured chain ends with a self-signed root certificate, {project_name} removes it when creating the SD-JWT VC. Any non-self-signed trust anchor must be omitted from the configured chain.
 
 [IMPORTANT]
 ====
@@ -211,7 +211,7 @@ Do not use a generated realm key to sign SD-JWT VCs. A generated key either has 
 Elliptic Curve cryptography with the P-256 curve and `ES256` algorithm is recommended for OpenID4VC. To configure a suitable signing key:
 
 . Obtain a P-256 private key and a corresponding leaf certificate issued by a certificate authority. Include intermediate certificates when applicable.
-. Store the private key and its certificate chain in a supported Java keystore. The private-key entry must contain the leaf certificate first, followed by any intermediate certificates and, optionally, the root certificate.
+. Store the private key and its certificate chain in a supported Java keystore. The private-key entry must contain the leaf certificate first, followed by any intermediate certificates. You may append a self-signed root certificate, but you must not append a non-self-signed certificate that is intended to be the trust anchor.
 . In the Admin Console, go to *Realm Settings* > *Keys* > *Providers*.
 . Add a *java-keystore* provider and configure the keystore path, type, passwords, and key alias.
 . Set *Algorithm* to `ES256` and *Key use* to `sig`.
@@ -219,7 +219,7 @@ Elliptic Curve cryptography with the P-256 curve and `ES256` algorithm is recomm
 
 [NOTE]
 ====
-The keystore may contain the self-signed root certificate so that {project_name} can load and validate the complete chain. The root certificate is not emitted in the SD-JWT VC `x5c` header.
+The keystore may contain a self-signed root certificate so that {project_name} can load and validate the complete chain. {project_name} removes a trailing self-signed root certificate from the SD-JWT VC `x5c` header. It does not remove a non-self-signed trust anchor, which must therefore be omitted from the configured chain.
 
 For details about the keystore location and provider fields, see <<realm_keys,Configuring realm keys>>.
 ====
