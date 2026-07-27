@@ -1,10 +1,13 @@
 package org.keycloak.tests.oid4vc.preauth;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.util.Time;
 import org.keycloak.protocol.oid4vc.model.CredentialDefinition;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
@@ -12,15 +15,25 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriResponse;
 import org.keycloak.util.JsonSerialization;
 
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -43,6 +56,167 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithPreAuthCodeEnabled.class)
 public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
+
+    @Test
+    public void testPreAuthOffer_RejectsExpirationBeyondConfiguredLifespan() {
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> wallet.createCredentialOfferUri(ctx, req -> {
+                    req.targetUser(ctx.getHolder());
+                    req.preAuthorized(true);
+                    req.expireAt(Time.currentTimeSeconds() + DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S + 60);
+                }));
+
+        CredentialOfferUriResponse response = ctx.getCredentialsOfferUriResponse();
+        assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusCode());
+        assertEquals("invalid_credential_offer_request", response.getError());
+        assertTrue(response.getErrorDescription()
+                .contains("Credential offer expiration must be after the current time and no later than"));
+        assertEquals(String.format("[%s] %s", response.getError(), response.getErrorDescription()), error.getMessage());
+    }
+
+    @Test
+    public void testPreAuthOffer_RejectsLongMaximumExpiration() {
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        assertThrows(IllegalStateException.class,
+                () -> wallet.createCredentialOfferUri(ctx, req -> {
+                    req.targetUser(ctx.getHolder());
+                    req.preAuthorized(true);
+                    req.expireAt(Long.MAX_VALUE);
+                }));
+
+        CredentialOfferUriResponse response = ctx.getCredentialsOfferUriResponse();
+        assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusCode());
+        assertEquals("invalid_credential_offer_request", response.getError());
+    }
+
+    @Test
+    public void testPreAuthOffer_RejectsExpirationInThePast() {
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        assertThrows(IllegalStateException.class,
+                () -> wallet.createCredentialOfferUri(ctx, req -> {
+                    req.targetUser(ctx.getHolder());
+                    req.preAuthorized(true);
+                    req.expireAt(Time.currentTimeSeconds() - 1L);
+                }));
+
+        CredentialOfferUriResponse response = ctx.getCredentialsOfferUriResponse();
+        assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusCode());
+        assertEquals("invalid_credential_offer_request", response.getError());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = { 0, -1 })
+    public void testPreAuthOffer_RejectsDefaultExpirationForNonPositiveConfiguredLifespan(int invalidLifespan) {
+        String originalLifespan = getRealmAttribute(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY);
+        try {
+            setRealmAttributes(Map.of(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY,
+                    Integer.toString(invalidLifespan)));
+            var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+            assertThrows(IllegalStateException.class,
+                    () -> wallet.createCredentialOfferUri(ctx, req -> {
+                        req.targetUser(ctx.getHolder());
+                        req.preAuthorized(true);
+                    }));
+
+            CredentialOfferUriResponse response = ctx.getCredentialsOfferUriResponse();
+            assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusCode());
+            assertEquals("invalid_credential_offer_request", response.getError());
+        } finally {
+            var realm = testRealm.admin().toRepresentation();
+            Map<String, String> attributes = new HashMap<>(realm.getAttributesOrEmpty());
+            if (originalLifespan == null) {
+                attributes.remove(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY);
+            } else {
+                attributes.put(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY, originalLifespan);
+            }
+            realm.setAttributes(attributes);
+            testRealm.admin().update(realm);
+        }
+    }
+
+    @Test
+    public void testPreAuthOffer_OriginatingSessionLogoutRevokesCode() {
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+            req.preAuthorized(true);
+        });
+        String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "preAuthCode");
+
+        wallet.logout(ctx.getIssuer());
+
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        assertFalse(tokenResponse.isSuccess(), "Token request should have failed");
+        assertEquals("invalid_grant", tokenResponse.getError());
+        assertEquals("Session that authorized the pre-authorized code is not active", tokenResponse.getErrorDescription());
+    }
+
+    @Test
+    public void testPreAuthOffer_OriginatingUserPasswordChangeRevokesCode() {
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+            req.preAuthorized(true);
+        });
+        String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "preAuthCode");
+
+        UserRepresentation issuer = testRealm.admin().users().search(ctx.getIssuer(), true).get(0);
+        UserResource issuerResource = testRealm.admin().users().get(issuer.getId());
+        try {
+            issuerResource.resetPassword(passwordCredential("updated-password"));
+
+            AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+            assertFalse(tokenResponse.isSuccess(), "Token request should have failed");
+            assertEquals("invalid_grant", tokenResponse.getError());
+            assertEquals("Credentials of the user that authorized the pre-authorized code have changed",
+                    tokenResponse.getErrorDescription());
+        } finally {
+            issuerResource.resetPassword(passwordCredential(TEST_PASSWORD));
+        }
+    }
+
+    @Test
+    public void testPreAuthOffer_ServiceAccountCanRedeemCode() {
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+        UserRepresentation serviceAccount = testRealm.admin().clients().get(client.getId()).getServiceAccountUser();
+        UserResource serviceAccountResource = testRealm.admin().users().get(serviceAccount.getId());
+        RoleRepresentation credentialOfferRole = testRealm.admin().roles()
+                .get(CREDENTIAL_OFFER_CREATE.getName()).toRepresentation();
+        serviceAccountResource.roles().realmLevel().add(List.of(credentialOfferRole));
+
+        try {
+            AccessTokenResponse clientCredentialsResponse = oauth
+                    .client(client.getClientId(), client.getSecret())
+                    .clientCredentialsGrantRequest()
+                    .send();
+            assertTrue(clientCredentialsResponse.isSuccess(), clientCredentialsResponse.getErrorDescription());
+
+            CredentialOfferURI offerUri = oauth.oid4vc()
+                    .credentialOfferUriRequest(ctx.getCredentialConfigurationId())
+                    .targetUser(ctx.getHolder())
+                    .preAuthorized(true)
+                    .bearerToken(clientCredentialsResponse.getAccessToken())
+                    .send()
+                    .getCredentialOfferURI();
+            CredentialsOffer credentialOffer = oauth.oid4vc().doCredentialOfferRequest(offerUri).getCredentialsOffer();
+
+            AccessTokenResponse tokenResponse = wallet
+                    .accessTokenRequestPreAuth(ctx, credentialOffer.getPreAuthorizedCode())
+                    .send();
+            assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
+        } finally {
+            serviceAccountResource.roles().realmLevel().remove(List.of(credentialOfferRole));
+        }
+    }
 
     @Test
     public void testPreAuthOffer_DisabledUser() {
@@ -188,6 +362,13 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
+
+    private CredentialRepresentation passwordCredential(String password) {
+        CredentialRepresentation credential = new CredentialRepresentation();
+        credential.setValue(password);
+        credential.setTemporary(false);
+        return credential;
+    }
 
     private void verifyCredentialResponse(OID4VCTestContext ctx, String expUser, CredentialResponse credResponse) throws Exception {
 
