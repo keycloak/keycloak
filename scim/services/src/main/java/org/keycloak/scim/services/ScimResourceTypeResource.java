@@ -3,6 +3,7 @@ package org.keycloak.scim.services;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
@@ -223,7 +224,8 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
             return resourceNotFound(id);
         }
 
-        if (!request.getSchemas().contains(Scim.PATCH_OP_CORE_SCHEMA)) {
+        Set<String> schemas = request.getSchemas();
+        if (schemas == null || !schemas.contains(Scim.PATCH_OP_CORE_SCHEMA)) {
             return invalidSyntax("No PATCH op schema provided in request");
         }
 
