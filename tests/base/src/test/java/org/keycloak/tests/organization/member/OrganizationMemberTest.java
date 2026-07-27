@@ -65,7 +65,6 @@ import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
@@ -105,7 +104,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     @InjectRealm(ref = "provider", config = AbstractOrganizationTest.ProviderRealmConf.class, lifecycle = LifeCycle.METHOD)
     ManagedRealm providerRealm;
 
-    @InjectUser(ref = "alice", realmRef = "provider", config = AliceUserConf.class)
+    @InjectUser(ref = "alice", realmRef = "provider", config = AbstractOrganizationTest.AliceUserConf.class)
     ManagedUser aliceFromProviderRealm;
 
     @InjectWebDriver
@@ -292,7 +291,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     @Test
     public void testGetAllDisabledOrganization() {
         OrganizationRepresentation orgRep = createOrganization(realm, organizationName,
-                createRealOrgBroker(organizationName + "-identity-provider"), organizationName + ".org");
+                createRealOrgBroker(organizationName + "-identity-provider", providerRealm), organizationName + ".org");
         OrganizationResource organization = realm.admin().organizations().get(orgRep.getId());
 
         // add some unmanaged members to the organization.
@@ -301,7 +300,8 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         }
 
         // onboard a test user by authenticating using the organization's provider.
-        loginViaBroker(aliceFromProviderRealm.getEmail(), aliceFromProviderRealm.getUsername(), aliceFromProviderRealm.getPassword());
+        loginViaBroker(aliceFromProviderRealm.getEmail(), aliceFromProviderRealm.getUsername(),
+                aliceFromProviderRealm.getPassword(), oauth, loginUsernamePage, loginPage, providerRealm);
 
         // disable the organization and check that fetching its representation has it disabled.
         orgRep.setEnabled(false);
@@ -352,7 +352,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     @Test
     public void testGetAllDisabledOrganizationProvider() throws IOException {
         OrganizationRepresentation orgRep = createOrganization(realm, organizationName,
-                createRealOrgBroker(organizationName + "-identity-provider"), organizationName + ".org");
+                createRealOrgBroker(organizationName + "-identity-provider", providerRealm), organizationName + ".org");
         OrganizationResource organization = realm.admin().organizations().get(orgRep.getId());
 
         // add some unmanaged members to the organization.
@@ -361,7 +361,8 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         }
 
         // onboard a test user by authenticating using the organization's provider.
-        loginViaBroker(aliceFromProviderRealm.getEmail(), aliceFromProviderRealm.getUsername(), aliceFromProviderRealm.getPassword());
+        loginViaBroker(aliceFromProviderRealm.getEmail(), aliceFromProviderRealm.getUsername(),
+                aliceFromProviderRealm.getPassword(), oauth, loginUsernamePage, loginPage, providerRealm);
 
         // now fetch all users from the realm
         List<UserRepresentation> members = realm.admin().users().search("*neworg*", null, null);
@@ -707,15 +708,16 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     @Test
     public void testManagedMemberOnlyRemovedFromHomeOrganization() {
         OrganizationResource orga = realm.admin().organizations().get(
-                createOrganization(realm, "org-a", createRealOrgBroker("org-a-identity-provider"), "org-a.org").getId());
+                createOrganization(realm, "org-a", createRealOrgBroker("org-a-identity-provider", providerRealm), "org-a.org").getId());
         loginViaBroker("alice@org-a.org", aliceFromProviderRealm.getUsername(),
-                aliceFromProviderRealm.getPassword(), "managed-org-a@org-a.org");
+                aliceFromProviderRealm.getPassword(), "managed-org-a@org-a.org",
+                oauth, loginUsernamePage, loginPage, loginUpdateProfilePage, providerRealm);
         UserRepresentation memberOrgA = orga.members().list(-1, -1).get(0);
         realm.admin().users().get(memberOrgA.getId()).logout();
         providerRealm.admin().logoutAll();
 
         OrganizationResource orgb = realm.admin().organizations().get(
-                createOrganization(realm, "org-b", createRealOrgBroker("org-b-identity-provider"), "org-b.org").getId());
+                createOrganization(realm, "org-b", createRealOrgBroker("org-b-identity-provider", providerRealm), "org-b.org").getId());
         UserRepresentation memberOrgB = UserBuilder.create()
                 .username("managed-org-b")
                 .password("password")
@@ -728,7 +730,8 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         providerRealm.cleanup().add(r -> r.users().get(memberOrgBProviderId).remove());
 
         loginViaBroker("managed-org-b@org-b.org", memberOrgB.getUsername(),
-                "password", "managed-org-b@org-b.org");
+                "password", "managed-org-b@org-b.org",
+                oauth, loginUsernamePage, loginPage, loginUpdateProfilePage, providerRealm);
         memberOrgB = orgb.members().list(-1, -1).get(0);
 
         orga.members().addMember(memberOrgB.getId()).close();
@@ -923,36 +926,6 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         assertTrue(singleMember.getAttributes().containsKey("testAttr"));
     }
 
-    private void loginViaBroker(String email, String username, String password) {
-        loginViaBroker(email, username, password, null);
-    }
-
-    private void loginViaBroker(String email, String username, String password, String updateEmail) {
-        oauth.openLoginForm();
-        loginUsernamePage.fillLoginWithUsernameOnly(email);
-        loginUsernamePage.submit();
-
-        assertTrue(driver.getCurrentUrl().contains("/realms/" + providerRealm.getName() + "/"),
-                "Should be on provider realm login page");
-
-        loginPage.fillLogin(username, password);
-        loginPage.submit();
-
-        if (updateEmail != null) {
-            loginUpdateProfilePage.update("Firstname", "Lastname", updateEmail);
-        }
-
-        List<UserRepresentation> users = realm.admin().users().search(username);
-        assertEquals(1, users.size(), "Federated user should be created in consumer realm");
-
-        String userId = users.get(0).getId();
-        realm.cleanup().add(r -> {
-            try {
-                r.users().get(userId).remove();
-            } catch (NotFoundException ignored) {}
-        });
-    }
-
     private void loginViaNonOrgIdP(String idpAlias) {
         oauth.openLoginForm();
 
@@ -966,37 +939,8 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         loginPage.submit();
     }
 
-    private IdentityProviderRepresentation createRealOrgBroker(String alias) {
-        IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
-        idp.setAlias(alias);
-        idp.setProviderId("keycloak-oidc");
-        idp.setEnabled(true);
-        idp.setTrustEmail(true);
-        String providerBaseUrl = providerRealm.getBaseUrl();
-        idp.setConfig(new HashMap<>(Map.of(
-                "clientId", CLIENT_ID,
-                "clientSecret", CLIENT_SECRET,
-                "authorizationUrl", providerBaseUrl + "/protocol/openid-connect/auth",
-                "tokenUrl", providerBaseUrl + "/protocol/openid-connect/token",
-                "userInfoUrl", providerBaseUrl + "/protocol/openid-connect/userinfo",
-                "defaultScope", "email profile",
-                "syncMode", "IMPORT"
-        )));
-        return idp;
-    }
-
     private UserRepresentation getUserRepFromMemberRep(MemberRepresentation member) {
         return new UserRepresentation(member);
     }
 
-    static class AliceUserConf implements UserConfig {
-        @Override
-        public UserBuilder configure(UserBuilder builder) {
-            return builder.username("alice")
-                    .password("password")
-                    .email("alice@neworg.org")
-                    .emailVerified(true)
-                    .name("Alice", "Org");
-        }
-    }
 }
