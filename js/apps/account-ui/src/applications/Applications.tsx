@@ -51,10 +51,19 @@ export const Applications = () => {
   const refresh = () => setKey(key + 1);
 
   usePromise(
-    (signal) => getApplications({ signal, context }),
-    (clients) => setApplications(clients.map((c) => ({ ...c, open: false }))),
-    [key],
-  );
+    (signal) => getApplications({ signal, context }),
+    (clients) =>
+      setApplications(
+        [...clients]
+          .sort((a, b) =>
+            (a.clientName || a.clientId).localeCompare(
+              b.clientName || b.clientId,
+            ),
+          )
+          .map((c) => ({ ...c, open: false })),
+      ),
+    [key],
+  );
 
   const toggleOpen = (clientId: string) => {
     setApplications([
