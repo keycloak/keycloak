@@ -190,7 +190,7 @@ public class OID4VCINaturalPersonTest extends OID4VCIssuerTestBase {
                         "firstName", "Alice",
                         "familyName", "Wonderland",
                         "email", "alice@email.cz",
-                        "sub", "did:key:5678"
+                        "sub", "alice"
                 ), claims);
             }
         }

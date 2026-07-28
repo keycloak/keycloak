@@ -461,6 +461,10 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
             userState.userRep.setLastName(null);
             userState.user.update(userState.userRep);
 
+            UserRepresentation userRep = testRealm.admin().users().search(TEST_USER).get(0);
+            var lastName = userRep.getLastName();
+            assertNull(lastName, "User last name should be null, not: " + lastName);
+
             Oid4vcCredentialResponse resp = oauth.oid4vc().credentialRequest()
                     .credentialIdentifier(credentialIdentifier)
                     .proofs(newJwtProofs())
@@ -1037,6 +1041,11 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         UserRepresentation userRep = testRealm.admin().users().search(TEST_USER).get(0);
         UserResource userResource = testRealm.admin().users().get(userRep.getId());
         userRep = userResource.toRepresentation();
+        // Ensure attributes is non-null so that subsequent updates (e.g. setLastName(null))
+        // skip the putIfAbsent merge in UserResource.updateUser and actually clear the field.
+        if (userRep.getAttributes() == null) {
+            userRep.setAttributes(Collections.emptyMap());
+        }
         return new UserState(userResource, userRep,
                 userRep.getFirstName(),
                 userRep.getLastName(),
