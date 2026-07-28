@@ -730,8 +730,8 @@ public abstract class OID4VCIssuerTestBase {
                     null
             ));
 
-            realm.users(createUser("John Doe", Map.of("did", "did:key:1234"), List.of(), Collections.emptyMap()));
-            realm.users(createUser("Alice Wonderland", Map.of("did", "did:key:5678"), List.of(), Map.of()));
+            realm.users(createUser("John Doe", Map.of(), List.of(), Collections.emptyMap()));
+            realm.users(createUser("Alice Wonderland", Map.of(), List.of(), Map.of()));
 
             // Add Client Policies
             //
@@ -1117,7 +1117,7 @@ public abstract class OID4VCIssuerTestBase {
 
         static List<ProtocolMapperRepresentation> getProtocolMappers(String scopeName) {
             return List.of(
-                    getSubjectIdMapper(CLAIM_NAME_SUBJECT_ID, UserModel.DID),
+                    getSubjectIdMapper(CLAIM_NAME_SUBJECT_ID, UserModel.USERNAME),
                     getUserAttributeMapper("email", "email"),
                     getUserAttributeMapper("firstName", "firstName"),
                     getUserAttributeMapper("lastName", "lastName"),
