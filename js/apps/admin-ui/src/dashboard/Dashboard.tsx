@@ -62,7 +62,7 @@ const EmptyDashboard = () => {
       <EmptyState variant="lg">
         <Brand
           src={environment.resourceUrl + brandImage}
-          alt="Keycloak icon"
+          alt="Fidar icon"
           className="keycloak__dashboard_icon"
         />
         <EmptyStateHeader titleText={<>{t("welcome")}</>} headingLevel="h2" />

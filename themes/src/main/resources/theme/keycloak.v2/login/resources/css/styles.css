@@ -1,9 +1,238 @@
+/* ==========================================================================
+   Fidar brand theme — PatternFly v5 design token overrides.
+
+   PatternFly declares its dark theme under `:where(.pf-v5-theme-dark)`, which
+   carries zero specificity, so the `:root` block below already outranks it.
+   Dark values therefore live under `:root.pf-v5-theme-dark` (0,2,0) so that
+   they in turn outrank the light defaults.
+
+   IMPORTANT: PatternFly's "--light-100" / "--dark-100" suffixed tokens are
+   NOT theme switches — they are literal ends of the colour ramp ("light" =
+   near-white, "dark" = near-black), kept around so a component can force
+   light-on-dark or dark-on-light text regardless of overall theme (e.g. the
+   masthead is always dark chrome, even on the light theme). Both the "100"
+   token AND its "--light-100"/"--dark-100" siblings must be overridden in
+   each scope, or a component reading the sibling directly falls back to the
+   other scope's value and produces invisible text.
+   ========================================================================== */
+
+:root {
+  /* Brand palette */
+  --fidar-lavender: #a8a7c8;
+  --fidar-sky: #ade5ff;
+  --fidar-pale: #d6e3f8;
+  --fidar-steel: #304d6d;
+  --fidar-indigo: #40476d;
+
+  /* Navy surface ramp derived from steel/indigo, used for dark chrome */
+  --fidar-navy-900: #0f1626;
+  --fidar-navy-800: #131b2b;
+  --fidar-navy-700: #1a2336;
+  --fidar-navy-600: #212c43;
+  --fidar-navy-500: #2b3750;
+  --fidar-navy-400: #3a4763;
+
+  /* Neutral ramp, cooled toward the brand blues */
+  --pf-v5-global--palette--black-100: #f9fbfe;
+  --pf-v5-global--palette--black-150: #f2f6fc;
+  --pf-v5-global--palette--black-200: #e9f0fa;
+  --pf-v5-global--palette--black-300: var(--fidar-pale);
+  --pf-v5-global--palette--black-400: #b9c6dd;
+  --pf-v5-global--palette--black-500: #8b96ae;
+  --pf-v5-global--palette--black-600: #5a6480;
+  --pf-v5-global--palette--black-700: #414b63;
+  --pf-v5-global--palette--black-800: var(--fidar-indigo);
+  --pf-v5-global--palette--black-900: #232a40;
+  --pf-v5-global--palette--black-1000: var(--fidar-navy-900);
+
+  /* Surfaces */
+  --pf-v5-global--BackgroundColor--100: #ffffff;
+  --pf-v5-global--BackgroundColor--150: #f7fafd;
+  --pf-v5-global--BackgroundColor--200: #f2f6fc;
+  --pf-v5-global--BackgroundColor--300: #e8eff9;
+  --pf-v5-global--BackgroundColor--400: #dae5f5;
+  --pf-v5-global--BackgroundColor--light-100: #ffffff;
+  --pf-v5-global--BackgroundColor--light-200: #f7fafd;
+  --pf-v5-global--BackgroundColor--light-300: #eef3fb;
+
+  /* Dark chrome (masthead, nav rail) — always dark, even on the light theme */
+  --pf-v5-global--BackgroundColor--dark-100: var(--fidar-indigo);
+  --pf-v5-global--BackgroundColor--dark-200: #2e3450;
+  --pf-v5-global--BackgroundColor--dark-300: var(--fidar-steel);
+  --pf-v5-global--BackgroundColor--dark-400: var(--fidar-navy-400);
+
+  /* Text */
+  --pf-v5-global--Color--100: #1b2233;
+  --pf-v5-global--Color--200: #5a6480;
+  --pf-v5-global--Color--dark-100: #1b2233;
+  --pf-v5-global--Color--dark-200: #5a6480;
+  --pf-v5-global--Color--light-100: #f5f8fd;
+  --pf-v5-global--Color--light-200: #c9d3e8;
+  --pf-v5-global--Color--light-300: var(--fidar-navy-500);
+
+  /* Borders */
+  --pf-v5-global--BorderColor--100: var(--fidar-pale);
+  --pf-v5-global--BorderColor--200: #c3d4ee;
+  --pf-v5-global--BorderColor--300: #b9c6dd;
+  --pf-v5-global--BorderColor--dark-100: rgba(255, 255, 255, 0.18);
+  --pf-v5-global--BorderColor--light-100: #c3d4ee;
+
+  /* Disabled state */
+  --pf-v5-global--disabled-color--100: #8b96ae;
+  --pf-v5-global--disabled-color--200: var(--fidar-pale);
+  --pf-v5-global--disabled-color--300: #eef3fb;
+
+  /* Icons */
+  --pf-v5-global--icon--Color--light: #5a6480;
+  --pf-v5-global--icon--Color--dark: #1b2233;
+  --pf-v5-global--icon--Color--light--light: #eef3fb;
+  --pf-v5-global--icon--Color--dark--light: #ffffff;
+  --pf-v5-global--icon--Color--light--dark: #5a6480;
+  --pf-v5-global--icon--Color--dark--dark: #1b2233;
+
+  /* Brand / interactive */
+  --pf-v5-global--primary-color--100: var(--fidar-indigo);
+  --pf-v5-global--primary-color--200: #2e3450;
+  --pf-v5-global--primary-color--300: var(--fidar-indigo);
+  --pf-v5-global--primary-color--400: #ffffff;
+  --pf-v5-global--primary-color--light-100: var(--fidar-sky);
+  --pf-v5-global--primary-color--dark-100: var(--fidar-indigo);
+  --pf-v5-global--active-color--100: var(--fidar-indigo);
+  --pf-v5-global--active-color--200: var(--fidar-steel);
+  --pf-v5-global--active-color--300: var(--fidar-lavender);
+  --pf-v5-global--active-color--400: var(--fidar-pale);
+  --pf-v5-global--palette--blue-400: var(--fidar-indigo);
+
+  --pf-v5-global--link--Color: var(--fidar-steel);
+  --pf-v5-global--link--Color--hover: #22384f;
+  --pf-v5-global--link--Color--dark: var(--fidar-steel);
+  --pf-v5-global--link--Color--dark--hover: #22384f;
+  --pf-v5-global--link--Color--light: var(--fidar-sky);
+  --pf-v5-global--link--Color--light--hover: var(--fidar-pale);
+  --pf-v5-global--link--Color--visited: var(--fidar-lavender);
+
+  /* Shape & depth */
+  --pf-v5-global--BorderRadius--sm: 6px;
+  --pf-v5-global--BoxShadow--sm: 0 1px 2px 0 rgba(27, 34, 51, 0.08), 0 0 2px 0 rgba(27, 34, 51, 0.06);
+  --pf-v5-global--BoxShadow--md: 0 4px 12px -2px rgba(27, 34, 51, 0.12), 0 0 4px 0 rgba(27, 34, 51, 0.06);
+  --pf-v5-global--BoxShadow--lg: 0 12px 28px -8px rgba(27, 34, 51, 0.18), 0 0 6px 0 rgba(27, 34, 51, 0.08);
+  --pf-v5-global--BoxShadow--xl: 0 24px 56px -20px rgba(27, 34, 51, 0.28), 0 0 8px 0 rgba(27, 34, 51, 0.1);
+}
+
+:root.pf-v5-theme-dark {
+  /* The neutral ramp inverts in dark mode: 100-400 stay light (text), 500+ are surfaces. */
+  --pf-v5-global--palette--black-50: #dfe6f5;
+  --pf-v5-global--palette--black-100: #d3d9e6;
+  --pf-v5-global--palette--black-200: #aeb7ca;
+  --pf-v5-global--palette--black-300: #8790a5;
+  --pf-v5-global--palette--black-400: #5d6780;
+  --pf-v5-global--palette--black-500: var(--fidar-navy-400);
+  --pf-v5-global--palette--black-600: var(--fidar-navy-500);
+  --pf-v5-global--palette--black-700: var(--fidar-navy-600);
+  --pf-v5-global--palette--black-800: var(--fidar-navy-700);
+  --pf-v5-global--palette--black-900: var(--fidar-navy-800);
+  --pf-v5-global--palette--black-1000: var(--fidar-navy-900);
+
+  --pf-v5-global--BackgroundColor--100: var(--fidar-navy-700);
+  --pf-v5-global--BackgroundColor--150: var(--fidar-navy-600);
+  --pf-v5-global--BackgroundColor--200: var(--fidar-navy-800);
+  --pf-v5-global--BackgroundColor--300: var(--fidar-navy-600);
+  --pf-v5-global--BackgroundColor--400: var(--fidar-navy-500);
+  --pf-v5-global--BackgroundColor--light-100: var(--fidar-navy-700);
+  --pf-v5-global--BackgroundColor--light-200: var(--fidar-navy-800);
+  --pf-v5-global--BackgroundColor--light-300: var(--fidar-navy-600);
+  --pf-v5-global--BackgroundColor--dark-100: var(--fidar-navy-900);
+  --pf-v5-global--BackgroundColor--dark-200: var(--fidar-navy-800);
+  --pf-v5-global--BackgroundColor--dark-300: var(--fidar-navy-700);
+  --pf-v5-global--BackgroundColor--dark-400: var(--fidar-navy-500);
+
+  --pf-v5-global--Color--100: #e6ecf8;
+  --pf-v5-global--Color--200: #a3aec7;
+  --pf-v5-global--Color--dark-100: #e6ecf8;
+  --pf-v5-global--Color--dark-200: #a3aec7;
+  --pf-v5-global--Color--light-100: #e6ecf8;
+  --pf-v5-global--Color--light-200: #a3aec7;
+  --pf-v5-global--Color--light-300: var(--fidar-navy-500);
+
+  --pf-v5-global--BorderColor--100: var(--fidar-navy-500);
+  --pf-v5-global--BorderColor--200: var(--fidar-navy-500);
+  --pf-v5-global--BorderColor--300: var(--fidar-navy-400);
+  --pf-v5-global--BorderColor--dark-100: var(--fidar-navy-500);
+  --pf-v5-global--BorderColor--light-100: var(--fidar-navy-500);
+
+  --pf-v5-global--disabled-color--100: #6b7691;
+  --pf-v5-global--disabled-color--200: var(--fidar-navy-600);
+  --pf-v5-global--disabled-color--300: #a3aec7;
+
+  --pf-v5-global--icon--Color--light: #a3aec7;
+  --pf-v5-global--icon--Color--dark: #e6ecf8;
+  --pf-v5-global--icon--Color--light--light: #a3aec7;
+  --pf-v5-global--icon--Color--dark--light: #e6ecf8;
+  --pf-v5-global--icon--Color--light--dark: #a3aec7;
+  --pf-v5-global--icon--Color--dark--dark: #e6ecf8;
+
+  /* On dark surfaces the accent inverts to sky with deep-navy text, mirroring
+     the light CTA treatment in the brand dashboard reference. */
+  --pf-v5-global--primary-color--100: var(--fidar-sky);
+  --pf-v5-global--primary-color--200: var(--fidar-pale);
+  --pf-v5-global--primary-color--300: var(--fidar-sky);
+  --pf-v5-global--primary-color--400: #10182a;
+  --pf-v5-global--primary-color--light-100: var(--fidar-sky);
+  --pf-v5-global--primary-color--dark-100: var(--fidar-sky);
+  --pf-v5-global--active-color--100: var(--fidar-sky);
+  --pf-v5-global--active-color--200: var(--fidar-lavender);
+
+  --pf-v5-global--link--Color: var(--fidar-sky);
+  --pf-v5-global--link--Color--hover: var(--fidar-pale);
+  --pf-v5-global--link--Color--dark: var(--fidar-sky);
+  --pf-v5-global--link--Color--dark--hover: var(--fidar-pale);
+  --pf-v5-global--link--Color--light: var(--fidar-sky);
+  --pf-v5-global--link--Color--light--hover: var(--fidar-pale);
+  --pf-v5-global--link--Color--visited: var(--fidar-lavender);
+
+  --pf-v5-global--BoxShadow--sm: 0 1px 2px 0 rgba(0, 0, 0, 0.45);
+  --pf-v5-global--BoxShadow--md: 0 4px 12px -2px rgba(0, 0, 0, 0.5);
+  --pf-v5-global--BoxShadow--lg: 0 12px 28px -8px rgba(0, 0, 0, 0.55);
+  --pf-v5-global--BoxShadow--xl: 0 24px 56px -20px rgba(0, 0, 0, 0.6);
+}
+
+/* Primary buttons are sky-on-navy in dark mode, so the hover/focus/active text
+   must stay dark — PatternFly otherwise flips it to white and it disappears. */
+:root.pf-v5-theme-dark .pf-v5-c-button {
+  --pf-v5-c-button--m-primary--hover--Color: #10182a;
+  --pf-v5-c-button--m-primary--focus--Color: #10182a;
+  --pf-v5-c-button--m-primary--active--Color: #10182a;
+}
+
+/* Softer, more deliberate surfaces */
+.pf-v5-c-card {
+  border-radius: 12px;
+}
+
+.pf-v5-c-masthead {
+  border-bottom: 1px solid rgba(168, 167, 200, 0.16);
+}
+
+/* --------------------------------------------------------------------------
+   Login screen
+   The Fidar wordmark in use here is the white variant, so this screen stays on
+   a dark canvas in both colour schemes; only the card follows the theme.
+   -------------------------------------------------------------------------- */
+
 :root {
     --keycloak-logo-url: url('../img/fidar-logo.png');
-    --keycloak-bg-logo-url: url("../img/keycloak-bg-darken.svg");
-    --keycloak-logo-height: 90px;
-    --keycloak-logo-width: 300px;
-    --keycloak-card-top-color: var(--pf-v5-global--palette--blue-400);
+    --keycloak-logo-height: 120px;
+    --keycloak-logo-width: 380px;
+}
+
+.login-pf body {
+    background:
+        radial-gradient(1100px 620px at 12% -5%, rgba(173, 229, 255, 0.14), transparent 62%),
+        radial-gradient(900px 700px at 88% 105%, rgba(168, 167, 200, 0.16), transparent 60%),
+        linear-gradient(157deg, #0f1626 0%, #16203a 46%, #1d2c48 100%);
+    background-attachment: fixed;
+    background-size: cover;
+    height: 100%;
 }
 
 .pf-v5-c-login__container {
@@ -12,24 +241,17 @@
                          "main"
 }
 
+.pf-v5-c-login__main {
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(168, 167, 200, 0.14);
+    box-shadow: 0 32px 72px -28px rgba(0, 0, 0, 0.65),
+                0 8px 24px -12px rgba(15, 22, 38, 0.55);
+}
+
 .pf-v5-c-login__main-header {
-    border-top: 4px solid var(--keycloak-card-top-color);
-}
-
-/* Info section - top margin + bottom padding */
-.pf-v5-c-login__main-footer-band:first-child {
-    margin-block-start: var(--pf-v5-global--spacer--lg);
-}
-
-.pf-v5-c-login__main-footer-band:last-child {
-    padding-bottom: 0;
-}
-/* Info section */
-
-.login-pf body {
-    background: var(--keycloak-bg-logo-url) no-repeat center center fixed;
-    background-size: cover;
-    height: 100%;
+    border-top: 3px solid var(--fidar-sky);
+    background: linear-gradient(135deg, rgba(173, 229, 255, 0.14), rgba(168, 167, 200, 0.06));
 }
 
 div.kc-logo-text {
@@ -54,14 +276,14 @@ div.kc-logo-text span {
 .kc-login-tooltip .kc-tooltip-text{
     top:-3px;
     left:160%;
-    background-color: black;
+    background-color: var(--fidar-navy-900);
     visibility: hidden;
     color: #fff;
 
     min-width:130px;
     text-align: center;
-    border-radius: 2px;
-    box-shadow:0 1px 8px rgba(0,0,0,0.6);
+    border-radius: 6px;
+    box-shadow:0 8px 24px -8px rgba(0,0,0,0.7);
     padding: 5px;
 
     position: absolute;
@@ -72,7 +294,7 @@ div.kc-logo-text span {
 /* Show tooltip */
 .kc-login-tooltip:hover .kc-tooltip-text {
     visibility: visible;
-    opacity:0.7;
+    opacity:0.9;
 }
 
 /* Arrow for tooltip */
@@ -84,7 +306,7 @@ div.kc-logo-text span {
     margin-top: -5px;
     border-width: 5px;
     border-style: solid;
-    border-color: transparent black transparent transparent;
+    border-color: transparent var(--fidar-navy-900) transparent transparent;
 }
 
 #kc-recovery-codes-list {
