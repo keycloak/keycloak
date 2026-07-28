@@ -470,12 +470,13 @@ public class OASModelFilter implements OASFilter {
         if (isBlank(description)) {
             return null;
         }
-        var split = description.split(ALLOWED_FIELDS_MARKER);
-        if (split.length > 1) {
-            return split[0].stripTrailing();
+
+        int markerIndex = description.indexOf(ALLOWED_FIELDS_MARKER);
+        if (markerIndex >= 0) {
+            return description.substring(0, markerIndex).stripTrailing();
         }
 
-        return description;
+        return description.stripTrailing();
     }
 
 }

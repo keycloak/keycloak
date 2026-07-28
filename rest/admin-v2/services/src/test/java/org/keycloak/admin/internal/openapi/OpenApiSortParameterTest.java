@@ -81,7 +81,27 @@ class OpenApiSortParameterTest {
         assertEquals(CLIENT_ALLOWED_FIELDS_MARKER + ".", description,
                 "blank sort descriptions should be treated as missing so only allowed-fields text is emitted");
         assertEquals(CLIENT_ALLOWED_FIELDS_MARKER + ".", description2,
-                "a second filter pass duplicates the \"Allowed fields:\" text");
+                "a second filter pass should keep the same allowed-fields text");
+    }
+
+    @Test
+    void nullSortParameterDescriptionIsReplacedWithoutLeadingWhitespace() throws Exception {
+        String description = enhanceSortParameterDescription(null);
+        String description2 = enhanceSortParameterDescription(description);
+
+        assertEquals(CLIENT_ALLOWED_FIELDS_MARKER + ".", description,
+                "null sort descriptions should be treated as missing so only allowed-fields text is emitted");
+        assertEquals(CLIENT_ALLOWED_FIELDS_MARKER + ".", description2,
+                "a second filter pass should keep the same allowed-fields text");
+    }
+
+    @Test
+    void nonEmptySortParameterDescriptionIsIdempotent() throws Exception {
+        String firstPass = enhanceSortParameterDescription(listOptionsSortDescription());
+        String secondPass = enhanceSortParameterDescription(firstPass);
+
+        assertEquals(firstPass, secondPass,
+                "a second filter pass on a non-empty description should not accumulate whitespace");
     }
 
     @Test
