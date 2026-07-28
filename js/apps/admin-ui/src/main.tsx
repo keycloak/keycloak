@@ -8,6 +8,7 @@ import { environment } from "./environment";
 import { i18n } from "./i18n/i18n";
 import { Root } from "./Root";
 import { routes } from "./routes";
+import { joinPath } from "./utils/joinPath";
 
 import "./index.css";
 
@@ -21,7 +22,7 @@ const basename =
 
 if (window.location.hash.startsWith("#/")) {
   const hashPath = decodeURIComponent(window.location.hash.substring(1));
-  window.history.replaceState(null, "", `${basename}${hashPath}`);
+  window.history.replaceState(null, "", joinPath(basename, hashPath));
 }
 
 const router = createBrowserRouter(
