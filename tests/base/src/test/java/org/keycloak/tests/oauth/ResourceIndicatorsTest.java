@@ -3,14 +3,17 @@ package org.keycloak.tests.oauth;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.testframework.annotations.InjectEvents;
@@ -42,6 +45,7 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.OAuthErrorException.INVALID_TARGET;
 import static org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants.ERROR_INVALID_RESOURCE;
 import static org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants.ERROR_NOT_MATCHING;
+import static org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants.ERROR_RESOURCE_INDICATORS_DISABLED;
 
 @KeycloakIntegrationTest(config = ResourceIndicatorsTest.ResourceIndicatorServerConfig.class)
 public class ResourceIndicatorsTest {
@@ -256,6 +260,72 @@ public class ResourceIndicatorsTest {
         MatcherAssert.assertThat(tokenMetadata.getAudience(), Matchers.hasItemInArray("https://custom-api"));
     }
 
+    @Test
+    public void testResourceIndicatorsDisabledByDefaultForClient() {
+        AccessTokenResponse tokenResponse = oauth.passwordGrantRequest("user", "pass")
+                .client("clientWithoutResourceIndicators", "clientWithoutResourceIndicators-secret")
+                .resource("urn:client:theservice").send();
+        assertErrorResponse(tokenResponse, INVALID_TARGET, ERROR_RESOURCE_INDICATORS_DISABLED);
+    }
+
+    @Test
+    public void testUnknownResourceWhenResourceIndicatorsDisabledForClient() {
+        // the client setting is checked before the resource is resolved against the audience of the token
+        AccessTokenResponse tokenResponse = oauth.passwordGrantRequest("user", "pass")
+                .client("clientWithoutResourceIndicators", "clientWithoutResourceIndicators-secret")
+                .resource("urn:client:somethingelse").send();
+        assertErrorResponse(tokenResponse, INVALID_TARGET, ERROR_RESOURCE_INDICATORS_DISABLED);
+    }
+
+    @Test
+    public void testNoResourceParamStillWorksWhenResourceIndicatorsDisabled() {
+        AccessTokenResponse tokenResponse = oauth.passwordGrantRequest("user", "pass")
+                .client("clientWithoutResourceIndicators", "clientWithoutResourceIndicators-secret")
+                .send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+    }
+
+    @Test
+    public void testAuthzResourceIndicatorsDisabledForClient() {
+        ClientResource clientResource = realm.admin().clients()
+                .get(realm.admin().clients().findByClientId("test-app").get(0).getId());
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        clientRep.getAttributes().put(OIDCConfigAttributes.RESOURCE_INDICATORS_ENABLED, "false");
+        clientResource.update(clientRep);
+
+        try {
+            AuthorizationEndpointResponse authorizationEndpointResponse = oauth.loginForm().resource("urn:client:theservice").doLoginWithCookie();
+            Assertions.assertTrue(authorizationEndpointResponse.isRedirected());
+            Assertions.assertEquals(INVALID_TARGET, authorizationEndpointResponse.getError());
+            Assertions.assertEquals(ERROR_RESOURCE_INDICATORS_DISABLED, authorizationEndpointResponse.getErrorDescription());
+        } finally {
+            clientRep.getAttributes().put(OIDCConfigAttributes.RESOURCE_INDICATORS_ENABLED, "true");
+            clientResource.update(clientRep);
+        }
+    }
+
+    @Test
+    public void testRefreshTokenWithResourceRejectedAfterResourceIndicatorsDisabledForClient() {
+        AccessTokenResponse tokenResponse = oauth.passwordGrantRequest("user", "pass").resource("urn:client:theservice").send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+
+        ClientResource clientResource = realm.admin().clients()
+                .get(realm.admin().clients().findByClientId("test-app").get(0).getId());
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        clientRep.getAttributes().put(OIDCConfigAttributes.RESOURCE_INDICATORS_ENABLED, "false");
+        clientResource.update(clientRep);
+
+        try {
+            // the refresh token is bound to a resource, so it is rejected also without the resource parameter
+            // instead of being exchanged for an access token with a wider audience.
+            AccessTokenResponse refreshResponse = oauth.refreshRequest(tokenResponse.getRefreshToken()).send();
+            assertErrorResponse(refreshResponse, INVALID_TARGET, ERROR_RESOURCE_INDICATORS_DISABLED);
+        } finally {
+            clientRep.getAttributes().put(OIDCConfigAttributes.RESOURCE_INDICATORS_ENABLED, "true");
+            clientResource.update(clientRep);
+        }
+    }
+
     private static final class ResourceIndicatorsRealm implements RealmConfig {
 
         @Override
@@ -270,6 +340,11 @@ public class ResourceIndicatorsTest {
             realm.clientRoles("serviceWithoutResource", "myrole");
 
             realm.clients(ClientBuilder.create("https://custom-api").secret("introspection-secret"));
+
+            realm.clients(ClientBuilder.create("clientWithoutResourceIndicators")
+                    .secret("clientWithoutResourceIndicators-secret")
+                    .directAccessGrantsEnabled(true)
+                    .fullScopeEnabled(true));
 
             realm.users(UserBuilder.create("user").firstName("user").lastName("user").password("pass").email("the@email.localhost")
                     .clientRoles("theservice", "myrole")
@@ -287,7 +362,8 @@ public class ResourceIndicatorsTest {
 
         @Override
         public ClientBuilder configure(ClientBuilder client) {
-            return client.clientId("no-audience").secret("password").directAccessGrantsEnabled();
+            return client.clientId("no-audience").secret("password").directAccessGrantsEnabled()
+                    .attribute(OIDCConfigAttributes.RESOURCE_INDICATORS_ENABLED, "true");
         }
     }
 
@@ -296,6 +372,7 @@ public class ResourceIndicatorsTest {
         @Override
         public ClientBuilder configure(ClientBuilder client) {
             return super.configure(client).fullScopeEnabled(true)
+                    .attribute(OIDCConfigAttributes.RESOURCE_INDICATORS_ENABLED, "true")
                     .protocolMappers(
                             createCustomAudienceMapper("custom-audience-mapper-1", "https://custom-api"),
                             createCustomAudienceMapper("custom-audience-mapper-2", "https://custom-api-2"),

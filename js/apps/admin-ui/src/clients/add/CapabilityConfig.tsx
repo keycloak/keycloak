@@ -414,6 +414,38 @@ export const CapabilityConfig = ({
                   )}
                 />
               </GridItem>
+              {isFeatureEnabled(Feature.ResourceIndicators) && (
+                <GridItem lg={8} sm={6}>
+                  <Controller
+                    name={convertAttributeNameToForm<
+                      Required<ClientRepresentation["attributes"]>
+                    >("attributes.resource.indicators.enabled")}
+                    // no default value: the attribute is only stored once it is changed here,
+                    // as a client without it can still get it enabled, for example by CIMD
+                    control={control}
+                    render={({ field }) => (
+                      <InputGroup>
+                        <InputGroupItem>
+                          <Checkbox
+                            data-testid="resource-indicators-enabled"
+                            label={t("resourceIndicatorsEnabled")}
+                            id="kc-resource-indicators-enabled"
+                            name="resource.indicators.enabled"
+                            isChecked={field.value?.toString() === "true"}
+                            onChange={field.onChange}
+                          />
+                        </InputGroupItem>
+                        <InputGroupItem>
+                          <HelpItem
+                            helpText={t("resourceIndicatorsEnabledHelp")}
+                            fieldLabelId="resourceIndicatorsEnabled"
+                          />
+                        </InputGroupItem>
+                      </InputGroup>
+                    )}
+                  />
+                </GridItem>
+              )}
             </Grid>
           </FormGroup>
           <FormGroup

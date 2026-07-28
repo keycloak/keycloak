@@ -31,6 +31,8 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oauth2.cimd.provider.ClientIdMetadataDocumentProvider;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
@@ -445,6 +447,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
 
     // Client ID Validation Errors
     public static final String ERR_NOTALLOWED_DOMAIN = "Invalid Client ID: domain not allowed.";
+    public static final String ERR_CLIENT_NOTFOUND = "Invalid Client ID: client not found.";
 
     // Client Metadata Verification Errors
     public static final String ERR_METADATA_NOCONTENT = "Invalid Client Metadata: no content.";
@@ -938,12 +941,16 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
      * resolves the {@code aud} claim by matching the requested resource directly against the token's audience, which
      * this mapper populates.
      *
+     * <p>Resource indicators are enabled for the client when an allow-listed resource is requested and the client
+     * does not have the setting yet. A setting that is already there, in particular an explicit {@code false}, is
+     * preserved: such a client gets no audience mapper, and the authorization endpoint rejects the request.
+     *
      * <p>This is a no-op (permissive mode) if the Resource Indicators feature is disabled or the authorization
      * request does not include the {@code resource} parameter.
      *
      * @param preAuthorizationRequestContext an authorization request
-     * @param clientModel the client looked up, created, or updated by CIMD for this authorization request, not {@code null}
-     * @throws ClientPolicyException when the {@code resource} parameter value is not allowed.
+     * @param clientModel the client looked up, created, or updated by CIMD for this authorization request
+     * @throws ClientPolicyException when the {@code resource} parameter value is not allowed, or the client does not exist any more.
      */
     protected void enforceResourceIndicator(PreAuthorizationRequestContext preAuthorizationRequestContext, ClientModel clientModel) throws ClientPolicyException {
         if (!Profile.isFeatureEnabled(Profile.Feature.RESOURCE_INDICATORS)) {
@@ -954,6 +961,12 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         if (resource == null) {
             // permissive mode: the executor does not require the resource parameter.
             return;
+        }
+
+        if (clientModel == null) {
+            // the client was removed after its fetch operation had been determined, for example by an administrator.
+            getLogger().warnv("client not found: clientId = {0}", preAuthorizationRequestContext.getClientId());
+            throw invalidClientIdMetadata(ERR_CLIENT_NOTFOUND);
         }
 
         List<String> allowList = convertContentFilledList(getConfiguration().getResourceIndicatorAllowList());
@@ -972,6 +985,16 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             });
             getLogger().warnv("resource parameter not allowed: resource = {0}", resource);
             throw invalidResourceIndicator();
+        }
+
+        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(clientModel);
+        if (clientModel.getAttribute(OIDCConfigAttributes.RESOURCE_INDICATORS_ENABLED) == null) {
+            // not configured yet: enable resource indicators for this client
+            clientConfig.setResourceIndicatorsEnabled(true);
+        } else if (!clientConfig.isResourceIndicatorsEnabled()) {
+            // explicitly disabled for this client: keep the setting and the client untouched,
+            // the authorization endpoint rejects the resource parameter afterwards.
+            return;
         }
 
         // allow-listed: attach an audience mapper for the resource so ResourceIndicatorsPostProcessor can resolve it.

@@ -5,6 +5,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.token.TokenInterceptorException;
 import org.keycloak.protocol.oidc.token.TokenPostProcessor;
 import org.keycloak.protocol.oidc.token.TokenPostProcessorContext;
@@ -38,6 +39,12 @@ public class ResourceIndicatorsPostProcessor implements TokenPostProcessor {
 
         if (originalResourceParam == null && requestedResource == null) {
             return;
+        }
+
+        // also applies when the resource comes only from the authorization code or the refresh token:
+        // a token bound to a resource must not be turned into a token with a wider audience.
+        if (!OIDCAdvancedConfigWrapper.fromClientModel(context.clientSessionCtx().getClientSession().getClient()).isResourceIndicatorsEnabled()) {
+            throw new TokenInterceptorException(OAuthErrorException.INVALID_TARGET, ResourceIndicatorConstants.ERROR_RESOURCE_INDICATORS_DISABLED);
         }
 
         if (originalResourceParamRequired) {
