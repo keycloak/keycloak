@@ -213,8 +213,13 @@
   border-bottom: 1px solid rgba(168, 167, 200, 0.16);
 }
 
+.pf-v5-c-masthead__brand {
+  align-items: center;
+}
+
 img.keycloak__pageheader_brand {
   height: 56px;
+  display: block;
 }
 
 .keycloak__form {

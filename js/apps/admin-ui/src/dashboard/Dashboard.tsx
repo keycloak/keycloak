@@ -44,7 +44,6 @@ import type { Environment } from "../environment-types";
 import helpUrls from "../help-urls";
 import { resolveDisplayName } from "../util";
 import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
-import { ProviderInfo } from "./ProviderInfo";
 import { DashboardTab, toDashboard } from "./routes/Dashboard";
 
 import "./dashboard.css";
@@ -136,7 +135,6 @@ const Dashboard = () => {
 
   const welcomeTab = useTab("welcome");
   const infoTab = useTab("info");
-  const providersTab = useTab("providers");
 
   if (Object.keys(serverInfo).length === 0) {
     return <KeycloakSpinner />;
@@ -191,6 +189,9 @@ const Dashboard = () => {
                     {t("viewDocumentation")}
                   </Button>
                 </div>
+                {/* Upstream also surfaced "Join community" and "Read blog"
+                    here; both are Keycloak-project destinations with no Fidar
+                    equivalent, so only the guides link remains. */}
                 <ActionList className="pf-v5-u-mt-sm">
                   <ActionListItem>
                     <Button
@@ -200,26 +201,6 @@ const Dashboard = () => {
                       variant="tertiary"
                     >
                       {t("viewGuides")}
-                    </Button>
-                  </ActionListItem>
-                  <ActionListItem>
-                    <Button
-                      component="a"
-                      href={helpUrls.community}
-                      target="_blank"
-                      variant="tertiary"
-                    >
-                      {t("joinCommunity")}
-                    </Button>
-                  </ActionListItem>
-                  <ActionListItem>
-                    <Button
-                      component="a"
-                      href={helpUrls.blog}
-                      target="_blank"
-                      variant="tertiary"
-                    >
-                      {t("readBlog")}
                     </Button>
                   </ActionListItem>
                 </ActionList>
@@ -339,14 +320,10 @@ const Dashboard = () => {
               </Grid>
             </PageSection>
           </Tab>
-          <Tab
-            id="providers"
-            data-testid="providersTab"
-            title={<TabTitleText>{t("providerInfo")}</TabTitleText>}
-            {...providersTab}
-          >
-            <ProviderInfo />
-          </Tab>
+          {/* The provider-info tab enumerates every SPI implementation by its
+              internal id (keycloak-oidc, keycloak-saml, …) and package name,
+              which is the last place the upstream project is plainly visible in
+              the console. It is a diagnostic view only, so it is not rendered. */}
         </RoutableTabs>
       </PageSection>
     </>

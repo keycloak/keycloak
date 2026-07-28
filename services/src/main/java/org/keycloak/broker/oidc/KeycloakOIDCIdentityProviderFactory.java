@@ -31,7 +31,7 @@ public class KeycloakOIDCIdentityProviderFactory extends AbstractIdentityProvide
 
     @Override
     public String getName() {
-        return "Keycloak OpenID Connect";
+        return "Fidar OpenID Connect";
     }
 
     @Override

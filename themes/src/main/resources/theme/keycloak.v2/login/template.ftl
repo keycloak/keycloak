@@ -99,6 +99,7 @@
         </#list>
     </#if>
     <script type="module" src="${url.resourcesPath}/js/passwordVisibility.js"></script>
+    <script type="module" src="${url.resourcesPath}/js/login-enhancements.js"></script>
     <script type="module">
         <#outputformat "JavaScript">
         import { startSessionPolling } from ${(url.resourcesPath + "/js/authChecker.js")?c};
@@ -148,12 +149,16 @@
     </script>
 </head>
 
-<body id="keycloak-bg" class="${properties.kcBodyClass!}" data-page-id="login-${pageId}">
+<body id="keycloak-bg" class="${properties.kcBodyClass!}" data-page-id="login-${pageId}" data-capslock-text="${msg('capsLockOn')}">
 <div class="${properties.kcLogin!}">
   <div class="${properties.kcLoginContainer!}">
     <header id="kc-header" class="pf-v5-c-login__header">
       <div id="kc-header-wrapper"
               class="pf-v5-c-brand">${kcSanitize(msg("loginTitleHtml",(realm.displayNameHtml!'')))?no_esc}</div>
+      <div class="kc-brand-copy">
+        <h2 class="kc-brand-headline">${msg("brandHeadline")}</h2>
+        <p class="kc-brand-tagline">${msg("brandTagline")}</p>
+      </div>
     </header>
     <main class="${properties.kcLoginMain!}">
       <div class="${properties.kcLoginMainHeader!}">

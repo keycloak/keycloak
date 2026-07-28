@@ -14,6 +14,17 @@ type ThemeSettingsTabProps = {
   save: (realm: RealmRepresentation) => void;
 };
 
+// Built-in theme directories are still named after the upstream project, and
+// that name is persisted in realm config — so only the visible label is mapped
+// here. `key` continues to carry the real theme id that gets saved.
+const THEME_LABELS: Record<string, string> = {
+  keycloak: "Fidar Classic",
+  "keycloak.v2": "Fidar",
+  "keycloak.v3": "Fidar",
+};
+
+const themeLabel = (name: string) => THEME_LABELS[name] ?? name;
+
 export const ThemeSettingsTab = ({ realm, save }: ThemeSettingsTabProps) => {
   const { t } = useTranslation();
 
@@ -56,7 +67,7 @@ export const ThemeSettingsTab = ({ realm, save }: ThemeSettingsTabProps) => {
             options={appendEmptyChoice(
               themeTypes.login.map((theme) => ({
                 key: theme.name,
-                value: theme.name,
+                value: themeLabel(theme.name),
                 description: theme.description,
               })),
             )}
@@ -71,7 +82,7 @@ export const ThemeSettingsTab = ({ realm, save }: ThemeSettingsTabProps) => {
             options={appendEmptyChoice(
               themeTypes.account.map((theme) => ({
                 key: theme.name,
-                value: theme.name,
+                value: themeLabel(theme.name),
                 description: theme.description,
               })),
             )}
@@ -86,7 +97,7 @@ export const ThemeSettingsTab = ({ realm, save }: ThemeSettingsTabProps) => {
             options={appendEmptyChoice(
               themeTypes.admin.map((theme) => ({
                 key: theme.name,
-                value: theme.name,
+                value: themeLabel(theme.name),
                 description: theme.description,
               })),
             )}
@@ -101,7 +112,7 @@ export const ThemeSettingsTab = ({ realm, save }: ThemeSettingsTabProps) => {
             options={appendEmptyChoice(
               themeTypes.email.map((theme) => ({
                 key: theme.name,
-                value: theme.name,
+                value: themeLabel(theme.name),
                 description: theme.description,
               })),
             )}
