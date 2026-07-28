@@ -18,46 +18,62 @@ function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+async function clickLinkWhenAvailable(link: Locator): Promise<boolean> {
+  if ((await link.count()) === 0 || !(await link.first().isVisible())) {
+    return false;
+  }
+
+  try {
+    await link.first().click({ timeout: 1_000 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function clickTableRowItem(page: Page, itemName: string) {
   const tableBody = page.locator("table tbody");
   await tableBody.waitFor();
 
   const exactNameRegex = new RegExp(`^${escapeRegex(itemName)}$`, "i");
-  const exactTableLink = tableBody
-    .getByRole("link", { name: itemName, exact: true })
-    .first();
 
-  if ((await exactTableLink.count()) > 0) {
-    await exactTableLink.click();
-    return;
-  }
+  for (let attempt = 0; attempt < 8; attempt++) {
+    if (
+      await clickLinkWhenAvailable(
+        tableBody.getByRole("link", { name: itemName, exact: true }),
+      )
+    ) {
+      return;
+    }
 
-  const normalizedExactTableLink = tableBody
-    .getByRole("link", { name: exactNameRegex })
-    .first();
-  if ((await normalizedExactTableLink.count()) > 0) {
-    await normalizedExactTableLink.click();
-    return;
-  }
+    if (
+      await clickLinkWhenAvailable(
+        tableBody.getByRole("link", { name: exactNameRegex }),
+      )
+    ) {
+      return;
+    }
 
-  const rowWithMatchingLink = tableBody
-    .locator("tr")
-    .filter({ has: page.getByRole("link", { name: exactNameRegex }) })
-    .first();
-  if ((await rowWithMatchingLink.count()) > 0) {
-    await rowWithMatchingLink
-      .getByRole("link", { name: exactNameRegex })
-      .first()
-      .click();
-    return;
-  }
+    if (
+      await clickLinkWhenAvailable(
+        tableBody
+          .locator("tr")
+          .filter({ has: page.getByRole("link", { name: exactNameRegex }) })
+          .getByRole("link", { name: exactNameRegex }),
+      )
+    ) {
+      return;
+    }
 
-  const looseTableLink = tableBody
-    .getByRole("link", { name: itemName })
-    .first();
-  if ((await looseTableLink.count()) > 0) {
-    await looseTableLink.click();
-    return;
+    if (
+      await clickLinkWhenAvailable(
+        tableBody.getByRole("link", { name: itemName }),
+      )
+    ) {
+      return;
+    }
+
+    await page.waitForTimeout(250);
   }
 
   throw new Error(`Table row item "${itemName}" not found`);
