@@ -67,11 +67,7 @@ async function navigateBackAndVerifyClientScope(
   testBed: Awaited<ReturnType<typeof createTestBed>>,
   clientScopeName: string,
 ) {
-  await navigateTo(
-    page,
-    toClientScopes({ realm: testBed.realm }),
-    testBed.realm,
-  );
+  await navigateTo(page, toClientScopes({ realm: testBed.realm }));
   await expect(page.getByPlaceholder("Search for client scope")).toBeVisible();
 
   await page.getByPlaceholder("Search for client scope").fill(clientScopeName);

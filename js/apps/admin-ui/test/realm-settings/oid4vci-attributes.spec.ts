@@ -118,11 +118,7 @@ test("should persist values after page refresh", async ({ page }) => {
   await page.reload();
 
   // Navigate back to realm settings via browser routing.
-  await navigateTo(
-    page,
-    toRealmSettings({ realm: testBed.realm }),
-    testBed.realm,
-  );
+  await navigateTo(page, toRealmSettings({ realm: testBed.realm }));
 
   // The TimeSelector component converts values based on units, so we need to check the actual saved values
   const realmData = await adminClient.getRealm(testBed.realm);
