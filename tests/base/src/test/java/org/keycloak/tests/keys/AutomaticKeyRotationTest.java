@@ -77,6 +77,8 @@ public class AutomaticKeyRotationTest {
                          c.getName().startsWith("test-neg-grace-") ||
                          c.getName().startsWith("test-zero-period-") ||
                          c.getName().startsWith("test-disabled-rotation-") ||
+                         c.getName().startsWith("test-gauge-") ||
+                         c.getName().startsWith("test-actiontoken-") ||
                          c.getName().matches("rsa-generated-\\d+") ||
                          c.getName().matches("hmac-generated-\\d+") ||
                          c.getName().matches("ecdsa-generated-\\d+")))
@@ -246,6 +248,14 @@ public class AutomaticKeyRotationTest {
         // Should still be just 1 provider (no rotation happened)
         assertEquals(1, afterProviders.size(), "Should not have created a new provider since rotation is not due");
         assertEquals(keyProviderId, afterProviders.get(0).getId(), "Provider ID should not have changed");
+
+        // Explicitly ensure no rotation replacement (named "rsa-generated-<timestamp>") was created;
+        // the name-prefixed filter above would otherwise miss such a provider.
+        boolean unexpectedReplacement = realm.admin().components()
+                .query(realm.getId(), KeyProvider.class.getName())
+                .stream()
+                .anyMatch(p -> p.getName() != null && p.getName().matches("rsa-generated-\\d+"));
+        assertFalse(unexpectedReplacement, "No rotation replacement should have been created when rotation is not due");
 
         // Cleanup
         realm.admin().components().component(keyProviderId).remove();
@@ -912,6 +922,133 @@ public class AutomaticKeyRotationTest {
                     .stream()
                     .filter(c -> c.getName() != null &&
                             (c.getName().startsWith("test-disabled-rotation-") || c.getName().matches("rsa-generated-\\d+")))
+                    .forEach(c -> realm.admin().components().component(c.getId()).remove());
+        }
+    }
+
+    /**
+     * The passive-key retention floor must also account for signed tokens not bounded by session
+     * timeouts (here, the user action-token lifespan). A key must not be expired while such a token
+     * could still need verification. Regression test for issue #5.
+     */
+    @Test
+    public void testPassiveRetentionIncludesActionTokenLifespan() {
+        String realmName = realm.getName();
+        String realmId = realm.getId();
+        String providerName = "test-actiontoken-" + System.currentTimeMillis();
+        int sixtyDays = 60 * 24 * 60 * 60;
+        long fortyDaysAgo = Time.currentTimeMillis() - (40L * 24 * 60 * 60 * 1000);
+
+        int originalActionTokenLifespan = runOnServer.fetch(session ->
+                session.realms().getRealmByName(realmName).getActionTokenGeneratedByUserLifespan(), Integer.class);
+
+        String providerId = runOnServer.fetch(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            realmModel.setActionTokenGeneratedByUserLifespan(sixtyDays);
+            ComponentModel keyProvider = new ComponentModel();
+            keyProvider.setName(providerName);
+            keyProvider.setProviderType(KeyProvider.class.getName());
+            keyProvider.setProviderId("rsa-generated");
+            keyProvider.setParentId(realmModel.getId());
+            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+            config.putSingle("priority", "200");
+            config.putSingle(Attributes.ACTIVE_KEY, "false"); // passive
+            config.putSingle(Attributes.ENABLED_KEY, "true");
+            config.putSingle(Attributes.PASSIVE_KEY_EXPIRATION_KEY, "1"); // tiny; the derived floor should dominate
+            return realmModel.addComponentModel(keyProvider).getId();
+        }, String.class);
+
+        // lastRotationTime 40 days ago: beyond the session-only floor (~33d) but within the
+        // action-token-derived floor (~66d).
+        runOnServer.run(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            ComponentModel provider = realmModel.getComponent(providerId);
+            MultivaluedHashMap<String, String> cfg = new MultivaluedHashMap<>(provider.getConfig());
+            cfg.putSingle(Attributes.LAST_ROTATION_TIME_KEY, String.valueOf(fortyDaysAgo));
+            provider.setConfig(cfg);
+            realmModel.updateComponent(provider);
+        });
+
+        try {
+            runOnServer.run(session -> new AutomaticKeyRotationTask().run(session));
+
+            boolean stillEnabled = runOnServer.fetch(session -> {
+                RealmModel realmModel = session.realms().getRealmByName(realmName);
+                ComponentModel provider = realmModel.getComponent(providerId);
+                String enabled = provider.get(Attributes.ENABLED_KEY);
+                return enabled == null || !"false".equalsIgnoreCase(enabled);
+            }, Boolean.class);
+
+            assertTrue(stillEnabled,
+                    "Passive key must not be expired while the action-token lifespan floor still covers it");
+        } finally {
+            runOnServer.run(session -> session.realms().getRealmByName(realmName)
+                    .setActionTokenGeneratedByUserLifespan(originalActionTokenLifespan));
+            realm.admin().components().query(realmId, KeyProvider.class.getName())
+                    .stream()
+                    .filter(c -> c.getName() != null && c.getName().equals(providerName))
+                    .forEach(c -> realm.admin().components().component(c.getId()).remove());
+        }
+    }
+
+    /**
+     * When an active auto-rotation provider is deleted administratively, its "last rotated" gauge
+     * and meter must be removed on the next scan instead of leaking forever. Regression test for
+     * issue #8.
+     */
+    @Test
+    public void testStaleGaugeRemovedWhenProviderDeleted() {
+        String realmName = realm.getName();
+        String realmId = realm.getId();
+        String providerName = "test-gauge-" + System.currentTimeMillis();
+        long nowMillis = Time.currentTimeMillis();
+
+        String providerId = runOnServer.fetch(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            ComponentModel keyProvider = new ComponentModel();
+            keyProvider.setName(providerName);
+            keyProvider.setProviderType(KeyProvider.class.getName());
+            keyProvider.setProviderId("rsa-generated");
+            keyProvider.setParentId(realmModel.getId());
+            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+            config.putSingle("priority", "200");
+            config.putSingle(Attributes.ACTIVE_KEY, "true");
+            config.putSingle(Attributes.ENABLED_KEY, "true");
+            config.putSingle(Attributes.AUTO_ROTATION_ENABLED_KEY, "true");
+            config.putSingle(Attributes.ROTATION_PERIOD_KEY, "7776000"); // 90 days
+            return realmModel.addComponentModel(keyProvider).getId();
+        }, String.class);
+
+        // Recent lastRotationTime so the provider stays active (a gauge is published, no rotation).
+        runOnServer.run(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            ComponentModel provider = realmModel.getComponent(providerId);
+            MultivaluedHashMap<String, String> cfg = new MultivaluedHashMap<>(provider.getConfig());
+            cfg.putSingle(Attributes.LAST_ROTATION_TIME_KEY, String.valueOf(nowMillis));
+            provider.setConfig(cfg);
+            realmModel.updateComponent(provider);
+        });
+
+        try {
+            // First run registers the gauge.
+            runOnServer.run(session -> new AutomaticKeyRotationTask().run(session));
+            boolean gaugePresent = runOnServer.fetch(session ->
+                    io.micrometer.core.instrument.Metrics.globalRegistry.find("keycloak.key.last_rotated_seconds")
+                            .tag("name", providerName).gauge() != null, Boolean.class);
+            assertTrue(gaugePresent, "Gauge should be registered for the active auto-rotation provider");
+
+            // Delete the provider administratively, then run again so reconciliation removes the gauge.
+            realm.admin().components().component(providerId).remove();
+            runOnServer.run(session -> new AutomaticKeyRotationTask().run(session));
+
+            boolean gaugeStillPresent = runOnServer.fetch(session ->
+                    io.micrometer.core.instrument.Metrics.globalRegistry.find("keycloak.key.last_rotated_seconds")
+                            .tag("name", providerName).gauge() != null, Boolean.class);
+            assertFalse(gaugeStillPresent, "Gauge/meter must be removed after the provider is deleted");
+        } finally {
+            realm.admin().components().query(realmId, KeyProvider.class.getName())
+                    .stream()
+                    .filter(c -> c.getName() != null && c.getName().equals(providerName))
                     .forEach(c -> realm.admin().components().component(c.getId()).remove());
         }
     }

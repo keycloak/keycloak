@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -35,6 +36,8 @@ import org.keycloak.Config;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
@@ -68,8 +71,11 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
 
     private static final String KEY_LAST_ROTATED_METER_NAME = "keycloak.key.last_rotated_seconds";
 
-    // Store gauge values for each provider so they can be tracked by Micrometer
-    private static final Map<String, AtomicLong> rotationGaugeValues = new ConcurrentHashMap<>();
+    // Store gauge handles (backing value + registered meter) per provider so stale meters can be removed
+    private static final Map<String, GaugeHandle> rotationGauges = new ConcurrentHashMap<>();
+
+    /** Registered "last rotated" gauge for a provider: the backing value and the meter to remove. */
+    private record GaugeHandle(AtomicLong value, Meter meter) {}
 
     // Attribute keys from org.keycloak.keys.Attributes (duplicated here to avoid module dependency)
     private static final String AUTO_ROTATION_ENABLED_KEY = "autoRotationEnabled";
@@ -116,6 +122,10 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
         for (RealmModel realm : realms) {
             processRealm(factory, realm, now, counters);
         }
+
+        // Remove gauges/meters for providers or realms that no longer exist, to avoid unbounded
+        // stale metric cardinality when keys are deleted administratively.
+        reconcileStaleGauges(session);
 
         long durationMillis = Time.currentTimeMillis() - startTimeMillis;
         long intervalSeconds = Config.scope("scheduled").getLong("interval", 900L);
@@ -208,14 +218,14 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
     private void publishLastRotationGauge(ProviderRotationState state) {
         try {
             if (!state.active() || state.lastRotationTimeMillis() == null) {
-                removeGauge(state);
+                removeGauge(gaugeKey(state));
                 return;
             }
 
             long lastRotationTimeSeconds = state.lastRotationTimeMillis() / 1000;
 
-            // Get or create the AtomicLong for this provider's gauge
-            AtomicLong gaugeValue = rotationGaugeValues.computeIfAbsent(gaugeKey(state), k -> {
+            // Get or create the gauge handle for this provider
+            GaugeHandle handle = rotationGauges.computeIfAbsent(gaugeKey(state), k -> {
                 AtomicLong value = new AtomicLong(lastRotationTimeSeconds);
 
                 // Register the gauge with Micrometer
@@ -224,16 +234,16 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
                 tags.add(Tag.of("provider", state.providerType()));
                 tags.add(Tag.of("name", state.providerName()));
 
-                Gauge.builder(KEY_LAST_ROTATED_METER_NAME, value, AtomicLong::get)
+                Gauge gauge = Gauge.builder(KEY_LAST_ROTATED_METER_NAME, value, AtomicLong::get)
                     .description("Unix timestamp (seconds) when key was last rotated")
                     .tags(tags)
                     .register(Metrics.globalRegistry);
 
-                return value;
+                return new GaugeHandle(value, gauge);
             });
 
             // Update the gauge value
-            gaugeValue.set(lastRotationTimeSeconds);
+            handle.value().set(lastRotationTimeSeconds);
 
         } catch (Exception e) {
             logger.infov(e, "Failed to update last rotation metric for provider '{0}'", state.providerName());
@@ -241,16 +251,35 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
     }
 
     /**
-     * Removes the "last rotated" gauge for a provider from both the local value map and the registry.
+     * Removes the "last rotated" gauge for a provider (by gauge key) from both the local map and
+     * the meter registry.
      */
-    private void removeGauge(ProviderRotationState state) {
-        AtomicLong removed = rotationGaugeValues.remove(gaugeKey(state));
+    private void removeGauge(String gaugeKey) {
+        GaugeHandle removed = rotationGauges.remove(gaugeKey);
         if (removed != null) {
-            Metrics.globalRegistry.remove(Metrics.globalRegistry.find(KEY_LAST_ROTATED_METER_NAME)
-                .tag("realm", state.realmName())
-                .tag("provider", state.providerType())
-                .tag("name", state.providerName())
-                .meter());
+            Metrics.globalRegistry.remove(removed.meter());
+        }
+    }
+
+    /**
+     * Removes gauges whose backing provider or realm no longer exists. Passive providers are
+     * already handled during the scan; this reconciliation catches providers or realms deleted
+     * administratively that would otherwise never appear in a future snapshot, leaving their meter
+     * registered forever.
+     */
+    private void reconcileStaleGauges(KeycloakSession session) {
+        for (String key : new ArrayList<>(rotationGauges.keySet())) {
+            int sep = key.indexOf(':');
+            if (sep < 0) {
+                removeGauge(key);
+                continue;
+            }
+            String realmId = key.substring(0, sep);
+            String componentId = key.substring(sep + 1);
+            RealmModel realm = session.realms().getRealm(realmId);
+            if (realm == null || realm.getComponent(componentId) == null) {
+                removeGauge(key);
+            }
         }
     }
 
@@ -547,6 +576,19 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
             maxLifespanSeconds = Math.max(maxLifespanSeconds, realm.getClientSessionMaxLifespan());
         }
 
+        // Signed tokens that are not bounded by session timeouts (access tokens, action tokens).
+        // A verifying key must outlive these too, otherwise a still-valid token could fail
+        // verification after its key is disabled.
+        maxLifespanSeconds = Math.max(maxLifespanSeconds, realm.getAccessTokenLifespan());
+        maxLifespanSeconds = Math.max(maxLifespanSeconds, realm.getAccessTokenLifespanForImplicitFlow());
+        maxLifespanSeconds = Math.max(maxLifespanSeconds, realm.getActionTokenGeneratedByAdminLifespan());
+        maxLifespanSeconds = Math.max(maxLifespanSeconds, realm.getActionTokenGeneratedByUserLifespan());
+        for (Integer actionTokenLifespan : realm.getUserActionTokenLifespans().values()) {
+            if (actionTokenLifespan != null) {
+                maxLifespanSeconds = Math.max(maxLifespanSeconds, actionTokenLifespan);
+            }
+        }
+
         // Safety margin: 10% of the max lifespan, at least 1 hour
         long safetyMarginSeconds = Math.max(3600L, maxLifespanSeconds / 10);
 
@@ -693,43 +735,66 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
     }
 
     /**
-     * Fires an admin event for key rotation operations.
+     * Fires an admin event for key rotation operations. The event is persisted to the configured
+     * event store (when admin events are enabled) and dispatched to the realm's configured and
+     * global {@link EventListenerProvider}s, so audit/SIEM listeners observe automatic rotation
+     * events. This mirrors the dispatch performed by the normal admin-event path and honors
+     * {@code isAdminEventsDetailsEnabled}.
      */
-    private void fireAdminEvent(KeycloakSession session, RealmModel realm, ComponentModel component, 
+    private void fireAdminEvent(KeycloakSession session, RealmModel realm, ComponentModel component,
                                 OperationType operationType, String message) {
         try {
-            EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-            if (eventStore != null && realm.isAdminEventsEnabled()) {
-                AdminEvent adminEvent = new AdminEvent();
-                adminEvent.setTime(Time.currentTimeMillis());
-                adminEvent.setRealmId(realm.getId());
-                adminEvent.setOperationType(operationType);
-                adminEvent.setResourceType(ResourceType.COMPONENT);
-                adminEvent.setResourcePath("components/" + component.getId());
-                
-                // No auth details available in scheduled task context - create empty AuthDetails for system-generated event
-                AuthDetails authDetails = new AuthDetails();
-                authDetails.setRealmId(realm.getId());
-                adminEvent.setAuthDetails(authDetails);
-                
-                // Add details about the key rotation
-                java.util.Map<String, String> details = new java.util.HashMap<>();
+            boolean includeRepresentation = realm.isAdminEventsDetailsEnabled();
+
+            AdminEvent adminEvent = new AdminEvent();
+            adminEvent.setId(java.util.UUID.randomUUID().toString());
+            adminEvent.setTime(Time.currentTimeMillis());
+            adminEvent.setRealmId(realm.getId());
+            adminEvent.setRealmName(realm.getName());
+            adminEvent.setOperationType(operationType);
+            adminEvent.setResourceType(ResourceType.COMPONENT);
+            adminEvent.setResourcePath("components/" + component.getId());
+
+            // No auth details available in scheduled task context - system-generated event.
+            AuthDetails authDetails = new AuthDetails();
+            authDetails.setRealmId(realm.getId());
+            adminEvent.setAuthDetails(authDetails);
+
+            if (includeRepresentation) {
+                Map<String, String> details = new java.util.HashMap<>();
                 details.put("providerId", component.getProviderId());
                 details.put("providerName", component.getName());
                 details.put("message", message);
                 details.put("rotationPeriod", component.get(ROTATION_PERIOD_KEY));
                 details.put("passiveExpiration", component.get(PASSIVE_KEY_EXPIRATION_KEY));
-                
-                // Serialize details as representation
                 try {
                     adminEvent.setRepresentation(org.keycloak.util.JsonSerialization.writeValueAsString(details));
                 } catch (Exception e) {
                     logger.infov(e, "Failed to serialize event details");
                 }
-                
-                // Always save with full details for system-generated security events
-                eventStore.onEvent(adminEvent, true);
             }
+
+            // Persist to the event store when admin events are enabled.
+            if (realm.isAdminEventsEnabled()) {
+                EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
+                if (eventStore != null) {
+                    eventStore.onEvent(adminEvent, includeRepresentation);
+                }
+            }
+
+            // Dispatch to the realm's configured and global event listeners.
+            Set<String> realmListeners = realm.getEventsListenersStream().collect(Collectors.toSet());
+            session.getKeycloakSessionFactory().getProviderFactoriesStream(EventListenerProvider.class)
+                    .filter(pf -> realmListeners.contains(pf.getId())
+                            || ((EventListenerProviderFactory) pf).isGlobal())
+                    .forEach(pf -> {
+                        try {
+                            EventListenerProvider listener = ((EventListenerProviderFactory) pf).create(session);
+                            listener.onEvent(adminEvent, includeRepresentation);
+                        } catch (Throwable t) {
+                            logger.warnv(t, "Failed to dispatch key rotation admin event to listener '{0}'", pf.getId());
+                        }
+                    });
         } catch (Exception e) {
             logger.warnv(e, "Failed to fire admin event for key rotation in realm '{0}'", realm.getName());
         }
