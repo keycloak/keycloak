@@ -69,7 +69,7 @@ public class CredentialClientPolicyExecutor implements ClientPolicyExecutorProvi
         // Get the list of requested credential scopes that are associated with this client
         //
         AuthorizationEndpointRequest request = context.getAuthorizationEndpointRequest();
-        List<CredentialScopeModel> credScopes = CredentialScopeUtils.getCredentialScopesForAuthorization(client, request);
+        List<CredentialScopeModel> credScopes = CredentialScopeUtils.getCredentialScopesForAuthorization(session, client, request);
 
         // Proceed when there are requested credential scopes
         //
