@@ -123,7 +123,7 @@ const DynamicTab = ({
   const onClick = useLinkClickHandler(props.eventKey);
 
   return (
-    <Tab href={href} onClick={onClick} {...props}>
+    <Tab {...props} href={href} onClick={onClick}>
       {children}
     </Tab>
   );
