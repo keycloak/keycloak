@@ -76,6 +76,7 @@ public class AutomaticKeyRotationTest {
                          c.getName().startsWith("test-ecdsa-rotation-") ||
                          c.getName().startsWith("test-neg-grace-") ||
                          c.getName().startsWith("test-zero-period-") ||
+                         c.getName().startsWith("test-disabled-rotation-") ||
                          c.getName().matches("rsa-generated-\\d+") ||
                          c.getName().matches("hmac-generated-\\d+") ||
                          c.getName().matches("ecdsa-generated-\\d+")))
@@ -854,6 +855,63 @@ public class AutomaticKeyRotationTest {
                     .stream()
                     .filter(c -> c.getName() != null &&
                             (c.getName().startsWith("test-zero-period-") || c.getName().matches("rsa-generated-\\d+")))
+                    .forEach(c -> realm.admin().components().component(c.getId()).remove());
+        }
+    }
+
+    /**
+     * A provider that is administratively disabled (enabled=false) must not be rotated, even if it
+     * is still marked active. Rotating it would create an enabled replacement and silently
+     * re-enable key material an administrator turned off. Regression test.
+     */
+    @Test
+    public void testDisabledProviderIsNotRotated() {
+        String realmName = realm.getName();
+        String realmId = realm.getId();
+        long ninetyOneDaysAgo = Time.currentTimeMillis() - (91L * 24 * 60 * 60 * 1000);
+
+        // Create server-side so internal attributes (e.g. lastRotationTime) are persisted.
+        String providerId = runOnServer.fetch(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            ComponentModel keyProvider = new ComponentModel();
+            keyProvider.setName("test-disabled-rotation-" + System.currentTimeMillis());
+            keyProvider.setProviderType(KeyProvider.class.getName());
+            keyProvider.setProviderId("rsa-generated");
+            keyProvider.setParentId(realmModel.getId());
+            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+            config.putSingle("priority", "200");
+            config.putSingle(Attributes.ACTIVE_KEY, "true");
+            config.putSingle(Attributes.ENABLED_KEY, "false"); // administratively disabled
+            config.putSingle(Attributes.AUTO_ROTATION_ENABLED_KEY, "true");
+            config.putSingle(Attributes.ROTATION_PERIOD_KEY, "7776000"); // 90 days
+            keyProvider.setConfig(config);
+            return realmModel.addComponentModel(keyProvider).getId();
+        }, String.class);
+
+        // Set lastRotationTime in a separate transaction so rotation would otherwise be due.
+        runOnServer.run(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            ComponentModel provider = realmModel.getComponent(providerId);
+            MultivaluedHashMap<String, String> cfg = new MultivaluedHashMap<>(provider.getConfig());
+            cfg.putSingle(Attributes.LAST_ROTATION_TIME_KEY, String.valueOf(ninetyOneDaysAgo));
+            provider.setConfig(cfg);
+            realmModel.updateComponent(provider);
+        });
+
+        try {
+            runOnServer.run(session -> new AutomaticKeyRotationTask().run(session));
+
+            boolean rotated = realm.admin().components()
+                    .query(realmId, KeyProvider.class.getName())
+                    .stream()
+                    .anyMatch(c -> c.getName() != null && c.getName().matches("rsa-generated-\\d+"));
+
+            assertFalse(rotated, "A disabled (enabled=false) provider must not be rotated");
+        } finally {
+            realm.admin().components().query(realmId, KeyProvider.class.getName())
+                    .stream()
+                    .filter(c -> c.getName() != null &&
+                            (c.getName().startsWith("test-disabled-rotation-") || c.getName().matches("rsa-generated-\\d+")))
                     .forEach(c -> realm.admin().components().component(c.getId()).remove());
         }
     }

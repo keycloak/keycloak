@@ -350,10 +350,12 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
     }
 
     /**
-     * Pure predicate: is an active, auto-rotation-enabled key past its rotation period?
+     * Pure predicate: is an active, enabled, auto-rotation-enabled key past its rotation period?
+     * A provider that an administrator has disabled (enabled=false) is never rotated, so rotation
+     * cannot silently re-enable disabled key material.
      */
     static boolean isDueForRotation(ProviderRotationState state, long now) {
-        if (!state.autoRotationEnabled() || !state.active()) {
+        if (!state.autoRotationEnabled() || !state.active() || !state.enabled()) {
             return false;
         }
         if (state.lastRotationTimeMillis() == null) {
