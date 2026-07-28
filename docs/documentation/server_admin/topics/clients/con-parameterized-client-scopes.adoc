@@ -51,6 +51,8 @@ When creating a parameterized scope, you must select a parameter type that deter
 
 | `username`
 | Validates that the parameter value is the username of an existing, enabled user in the realm. When the realm allows login with email, the parameter can also be an email address. Additionally, a user cannot target themselves with this scope type.
+
+When this type is selected, an additional *Allow access to user data* switch appears in the scope settings. It controls access checks in the <<_parameterized_scopes_mappers, Parameterized Scope User Property>> mapper.
 | Yes
 
 | `delegation`
@@ -113,6 +115,20 @@ Each parameter type defines a default for whether the scope is repeatable (see t
 . Click *Save*.
 
 When a client requests multiple parameter values for a non-repeatable scope, {project_name} rejects the request with an `invalid_scope` error.
+
+[[_parameterized_scopes_mappers]]
+=== Protocol mappers
+
+{project_name} provides two built-in protocol mappers for parameterized scopes. They appear in the mapper type dropdown when adding a protocol mapper to a parameterized client scope.
+
+Parameterized Scope Parameter:: Maps the raw parameter value directly to a token claim. For example, if a scope named `project` is requested as `project:backend-api`, this mapper can place `backend-api` into a claim such as `project`. Available for all parameterized scope types.
+
+Parameterized Scope User Property:: Resolves a user from the parameter value (username) and maps a user attribute or built-in property (such as `email`, `firstName`, or `id`) to a token claim. For example, a `share-with` scope requested as `share-with:alice` can map Alice's email to a `shared_user_email` claim.
++
+This mapper is applicable when the parameter type is `username` or `delegation`. Access control depends on the type:
++
+* `username` — the mapper checks whether the authenticated user has `view-users` permission or fine-grained admin permission for the target user. If the *Allow access to user data* switch is enabled on the scope, this check is skipped. Without permission, user property claims are silently omitted from the token.
+* `delegation` — the impersonation permission is already validated during scope resolution. Since this is a stronger check than `view-users`, no additional access control is applied and user property claims are always included.
 
 === Constraints
 
