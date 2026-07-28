@@ -80,10 +80,27 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
     private static final String KEY_USE = "keyUse";
     private static final String ALGORITHM_KEY = "algorithm";
     private static final String KEY_SIZE_KEY = "keySize";
+    private static final String SECRET_SIZE_KEY = "secretSize";
+    private static final String EC_GENERATE_CERTIFICATE_KEY = "ecGenerateCertificate";
+    private static final String ECDSA_ELLIPTIC_CURVE_KEY = "ecdsaEllipticCurveKey";
+    private static final String ECDH_ELLIPTIC_CURVE_KEY = "ecdhEllipticCurveKey";
+    private static final String EDDSA_ELLIPTIC_CURVE_KEY = "eddsaEllipticCurveKey";
     private static final String PASSIVE_KEY_EXPIRATION_KEY = "passiveKeyExpiration";
     private static final String AUTO_DELETE_DISABLED_KEYS_KEY = "autoDeleteDisabledKeys";
     private static final String DELETION_GRACE_PERIOD_KEY = "deletionGracePeriod";
     private static final String DISABLED_TIME_KEY = "disabledTime";
+
+    private static final long DEFAULT_ROTATION_PERIOD_SECONDS = 7776000L; // 90 days
+
+    /**
+     * Key-generation parameters copied onto the replacement provider so the new key is generated
+     * with the same characteristics as the rotated one (RSA key size, AES/HMAC secret size, EC
+     * curve, key use, algorithm, certificate generation). Generated key material (private keys,
+     * public keys, certificates, secrets, kid) is deliberately excluded so a fresh key is produced.
+     */
+    private static final List<String> GENERATION_PARAM_KEYS = List.of(
+            KEY_USE, ALGORITHM_KEY, KEY_SIZE_KEY, SECRET_SIZE_KEY, EC_GENERATE_CERTIFICATE_KEY,
+            ECDSA_ELLIPTIC_CURVE_KEY, ECDH_ELLIPTIC_CURVE_KEY, EDDSA_ELLIPTIC_CURVE_KEY);
 
     @Override
     public void run(KeycloakSession session) {
@@ -128,7 +145,14 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
             // Initialize missing rotation timestamps outside the hot loop, each in its own transaction.
             snapshots.stream()
                     .filter(state -> state.autoRotationEnabled() && state.lastRotationTimeMillis() == null)
-                    .forEach(state -> initializeMissingRotationTimestamps(factory, state));
+                    .forEach(state -> {
+                        try {
+                            initializeMissingRotationTimestamps(factory, state);
+                        } catch (Exception e) {
+                            logger.errorv(e, "Failed to initialize rotation timestamp for provider '{0}' in realm '{1}'",
+                                    state.providerName(), realm.getName());
+                        }
+                    });
 
             // Publish observability from the snapshot. Pure with respect to persistent state.
             snapshots.forEach(this::publishLastRotationGauge);
@@ -138,15 +162,22 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
                     .count();
 
             // Decide, then act. Each action re-reads and re-checks inside its own transaction.
+            // A failure on one provider is logged and isolated so it does not skip the remaining
+            // providers in the realm.
             for (ProviderRotationState state : snapshots) {
-                if (isDueForRotation(state, now) && rotateKeyTx(factory, state, now)) {
-                    counters.rotated++;
-                }
-                if (shouldExpirePassiveKey(state, now) && expirePassiveKeyTx(factory, state, now)) {
-                    counters.expired++;
-                }
-                if (shouldDeleteDisabledKey(state, now) && deleteDisabledKeyTx(factory, state, now)) {
-                    counters.deleted++;
+                try {
+                    if (isDueForRotation(state, now) && rotateKeyTx(factory, state, now)) {
+                        counters.rotated++;
+                    }
+                    if (shouldExpirePassiveKey(state, now) && expirePassiveKeyTx(factory, state, now)) {
+                        counters.expired++;
+                    }
+                    if (shouldDeleteDisabledKey(state, now) && deleteDisabledKeyTx(factory, state, now)) {
+                        counters.deleted++;
+                    }
+                } catch (Exception e) {
+                    logger.errorv(e, "Automatic key rotation failed for provider '{0}' in realm '{1}'",
+                            state.providerName(), realm.getName());
                 }
             }
         } catch (Exception e) {
@@ -268,7 +299,13 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
                 boolean enabled = enabledStr == null || !"false".equalsIgnoreCase(enabledStr);
 
                 Long lastRotationTimeMillis = parseLongOrNull(component.get(LAST_ROTATION_TIME_KEY));
-                long rotationPeriodSeconds = parseLongOrDefault(component.get(ROTATION_PERIOD_KEY), 7776000L); // 90 days
+                long rotationPeriodSeconds = parseLongOrDefault(component.get(ROTATION_PERIOD_KEY), DEFAULT_ROTATION_PERIOD_SECONDS);
+                if (rotationPeriodSeconds <= 0) {
+                    logger.warnf("Invalid rotationPeriod (%d s) for provider '%s' in realm '%s'; " +
+                            "falling back to the default of %d s to avoid rotating on every run.",
+                            rotationPeriodSeconds, component.getName(), realm.getName(), DEFAULT_ROTATION_PERIOD_SECONDS);
+                    rotationPeriodSeconds = DEFAULT_ROTATION_PERIOD_SECONDS;
+                }
                 long configuredPassiveExpirationSeconds = parseLongOrDefault(component.get(PASSIVE_KEY_EXPIRATION_KEY), 0L);
                 long minimumPassiveRetentionSeconds = computeMinimumPassiveKeyRetention(realm);
 
@@ -348,6 +385,10 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
             return false;
         }
         if (state.disabledTimeMillis() == null) {
+            return false;
+        }
+        if (state.deletionGracePeriodSeconds() < 0) {
+            // A negative grace period is invalid and must never trigger deletion of key material.
             return false;
         }
         long elapsedMillis = now - state.disabledTimeMillis();
@@ -540,26 +581,20 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
         newProvider.setProviderType(KeyProvider.class.getName());
 
         MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
-        
-        // Copy essential configuration
+
+        // Higher priority so the freshly generated key becomes the active one.
         long currentPriority = currentProvider.get("priority", 0L);
         config.putSingle("priority", String.valueOf(currentPriority + 1));
-        
-        // Copy key use if present
-        if (currentProvider.contains(KEY_USE)) {
-            config.putSingle(KEY_USE, currentProvider.get(KEY_USE));
+
+        // Copy every key-generation parameter (size, secret size, EC curve, key use, algorithm,
+        // certificate generation) so the replacement key is generated with the same characteristics.
+        // Generated key material is intentionally NOT copied so a fresh key is produced.
+        for (String paramKey : GENERATION_PARAM_KEYS) {
+            if (currentProvider.contains(paramKey)) {
+                config.putSingle(paramKey, currentProvider.get(paramKey));
+            }
         }
-        
-        // Copy algorithm if present
-        if (currentProvider.contains(ALGORITHM_KEY)) {
-            config.putSingle(ALGORITHM_KEY, currentProvider.get(ALGORITHM_KEY));
-        }
-        
-        // Copy key size if present
-        if (currentProvider.contains(KEY_SIZE_KEY)) {
-            config.putSingle(KEY_SIZE_KEY, currentProvider.get(KEY_SIZE_KEY));
-        }
-        
+
         newProvider.setConfig(config);
 
         // Add the component (this triggers validation and key generation)
@@ -694,7 +729,7 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
                 eventStore.onEvent(adminEvent, true);
             }
         } catch (Exception e) {
-            logger.warnv(e, "Failed to fire admin event for key rotation in realm '%s'", realm.getName());
+            logger.warnv(e, "Failed to fire admin event for key rotation in realm '{0}'", realm.getName());
         }
     }
 }
