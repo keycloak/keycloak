@@ -45,6 +45,11 @@ public class ParameterizedScopeBuilder {
         return this;
     }
 
+    public ParameterizedScopeBuilder allowUserDataAccess(boolean allow) {
+        builder.attribute(ClientScopeModel.ALLOW_USER_DATA_ACCESS, Boolean.toString(allow));
+        return this;
+    }
+
     public ParameterizedScopeBuilder regexp(String regexp) {
         builder.attribute(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, regexp);
         return this;

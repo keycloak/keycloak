@@ -9,6 +9,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -22,7 +23,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientPoliciesPoliciesResource;
@@ -273,6 +273,7 @@ public abstract class OID4VCIssuerTestBase {
 
         oauth.client(client.getClientId(), client.getSecret());
         enableVerifiableCredentialEvents();
+        ensureHaipCompliantSdJwtSigningConfiguration();
 
         wallet = new OID4VCBasicWallet(keycloak, oauth);
     }
@@ -478,7 +479,7 @@ public abstract class OID4VCIssuerTestBase {
     protected void setRealmAttributes(Map<String, String> extraAttributes) {
         RealmResource realmResource = testRealm.admin();
         RealmRepresentation realm = realmResource.toRepresentation();
-        Map<String, String> attributes = realm.getAttributesOrEmpty();
+        Map<String, String> attributes = new HashMap<>(realm.getAttributesOrEmpty());
         attributes.putAll(extraAttributes);
         realm.setAttributes(attributes);
         realmResource.update(realm);
@@ -523,6 +524,26 @@ public abstract class OID4VCIssuerTestBase {
         clientScopeResource.update(clientScope);
     }
 
+    /**
+     * Persistently add a dedicated realm signing key provider with a non-self-signed
+     * leaf certificate, so SD-JWT issuance can satisfy HAIP-6.1.1 across requests.
+     */
+    protected void ensureHaipCompliantSdJwtSigningConfiguration() {
+        final String providerName = "haip-sdjwt-signing-key-provider";
+        var components = testRealm.admin().components();
+        if (!components.query(testRealm.getId(), KeyProvider.class.getName(), providerName).isEmpty()) {
+            return;
+        }
+
+        KeyWrapper signingKey = getRsaKey(KeyUse.SIG, Algorithm.RS256, "haip-sdjwt-signing-key");
+        ComponentRepresentation provider = createRsaKeyProviderComponentWithNonSelfSignedLeaf(
+                signingKey,
+                providerName,
+                200
+        );
+        components.add(provider).close();
+    }
+
     protected ClientPolicyRepresentation getClientPolicy(String policyName) {
         ClientPoliciesPoliciesResource clientPoliciesResource = testRealm.admin().clientPoliciesPoliciesResource();
         ClientPoliciesRepresentation policies = clientPoliciesResource.getPolicies();
@@ -565,6 +586,45 @@ public abstract class OID4VCIssuerTestBase {
         )));
 
         return component;
+    }
+
+    private ComponentRepresentation createRsaKeyProviderComponentWithNonSelfSignedLeaf(KeyWrapper keyWrapper, String name, int priority) {
+        ComponentRepresentation component = new ComponentRepresentation();
+        component.setProviderType(KeyProvider.class.getName());
+        component.setName(name);
+        component.setId(UUID.randomUUID().toString());
+        component.setProviderId("rsa");
+
+        try {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+            kpg.initialize(2048);
+            KeyPair caKeyPair = kpg.generateKeyPair();
+            X509Certificate caCert = CertificateUtils.generateV1SelfSignedCertificate(caKeyPair, "Test CA");
+
+            KeyPair leafKeyPair = new KeyPair(
+                    (PublicKey) keyWrapper.getPublicKey(),
+                    (PrivateKey) keyWrapper.getPrivateKey()
+            );
+            X509Certificate leafCert = CertificateUtils.generateV3Certificate(
+                    leafKeyPair,
+                    caKeyPair.getPrivate(),
+                    caCert,
+                    "TestKey"
+            );
+
+            component.setConfig(new MultivaluedHashMap<>(Map.of(
+                    "privateKey", List.of(PemUtils.encodeKey(keyWrapper.getPrivateKey())),
+                    "certificate", List.of(PemUtils.encodeCertificate(leafCert)),
+                    "active", List.of("true"),
+                    "priority", List.of(String.valueOf(priority)),
+                    "enabled", List.of("true"),
+                    "algorithm", List.of(keyWrapper.getAlgorithm()),
+                    "keyUse", List.of(keyWrapper.getUse().name())
+            )));
+            return component;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create HAIP-compliant SD-JWT signing key provider", e);
+        }
     }
 
     private void enableVerifiableCredentialEvents() {
@@ -633,7 +693,7 @@ public abstract class OID4VCIssuerTestBase {
                     sdJwtTypeCredentialVct,
                     VCFormat.SD_JWT_VC,
                     null,
-                    List.of(OID4VCConstants.KeyAttestationResistanceLevels.HIGH, OID4VCConstants.KeyAttestationResistanceLevels.MODERATE)
+                    null
             );
             Map<String, String> sdJwtAttrs = Optional.ofNullable(sdJwtScope.getAttributes()).orElseGet(HashMap::new);
             sdJwtScope.setBindingRequired(true);
@@ -650,7 +710,7 @@ public abstract class OID4VCIssuerTestBase {
                     null,
                     VCFormat.JWT_VC,
                     TEST_CREDENTIAL_MAPPERS_FILE,
-                    Collections.emptyList()
+                    null
             );
             Map<String, String> jwtVcAttrs = Optional.ofNullable(jwtVcScope.getAttributes()).orElseGet(HashMap::new);
             jwtVcAttrs.put(VC_BINDING_REQUIRED, "true");
@@ -1132,14 +1192,14 @@ public abstract class OID4VCIssuerTestBase {
     }
 
     public static class StaticTimeProvider implements TimeProvider {
-        private final int currentTimeInS;
+        private final long currentTimeInS;
 
-        public StaticTimeProvider(int currentTimeInS) {
+        public StaticTimeProvider(long currentTimeInS) {
             this.currentTimeInS = currentTimeInS;
         }
 
         @Override
-        public int currentTimeSeconds() {
+        public long currentTimeSeconds() {
             return currentTimeInS;
         }
 
