@@ -2,6 +2,8 @@ package org.keycloak.common.util;
 
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -41,7 +43,7 @@ public class Base64UrlTest {
     @Test
     public void decode_normalInput() {
         byte[] result = Base64Url.decode("dGVzdA");
-        assertThat(new String(result), equalTo("test"));
+        assertThat(new String(result, StandardCharsets.UTF_8), equalTo("test"));
     }
 
     @Test
@@ -49,6 +51,6 @@ public class Base64UrlTest {
         // decode() routes through encodeBase64ToBase64Url, so padded Base64
         // input must still work.
         byte[] result = Base64Url.decode("dGVzdA==");
-        assertThat(new String(result), equalTo("test"));
+        assertThat(new String(result, StandardCharsets.UTF_8), equalTo("test"));
     }
 }
