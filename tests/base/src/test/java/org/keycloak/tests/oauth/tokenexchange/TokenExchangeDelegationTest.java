@@ -30,6 +30,7 @@ import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelRespo
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.ClientNotificationEndpointRequest;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
+import org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.ClaimType;
 import org.keycloak.protocol.oidc.mappers.ParameterizedScopeUserPropertyMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -76,6 +77,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ACCESS_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ID_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.INTROSPECTION;
 import static org.keycloak.representations.IDToken.ACT;
 import static org.keycloak.representations.IDToken.MAY_ACT;
 import static org.keycloak.representations.IDToken.PREFERRED_USERNAME;
@@ -189,10 +193,9 @@ public class TokenExchangeDelegationTest {
 
         realm.cleanup().add(r -> r.users().get(administrator.getId()).roles().clientLevel(clientUUID).remove(List.of(impersonation)));
         String delegationScopeId = findDelegationScopeId();
-        ProtocolMapperModel preferredUsernameMapper = ParameterizedScopeUserPropertyMapper.create(
-                "may_act preferred_username", "username",
-                MAY_ACT + "." + PREFERRED_USERNAME, "String",
-                true, true, true);
+        ProtocolMapperModel preferredUsernameMapper = ParameterizedScopeUserPropertyMapper.builder("may_act preferred_username")
+                .userAttribute("username").claimName(MAY_ACT + "." + PREFERRED_USERNAME)
+                .type(ClaimType.STRING).includeIn(ACCESS_TOKEN, ID_TOKEN, INTROSPECTION).build();
 
         try (var response = realm.admin().clientScopes().get(delegationScopeId).getProtocolMappers()
                 .createMapper(ModelToRepresentation.toRepresentation(preferredUsernameMapper))) {

@@ -51,6 +51,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
+import org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.ClaimType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -93,6 +94,9 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ACCESS_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ID_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.INTROSPECTION;
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
@@ -1128,7 +1132,7 @@ public abstract class StandardTokenExchangeV2Test extends AbstractClientPolicies
     public void testJWTClaimClientPolicies(String claimName, String claimValue, String executorRegex, boolean success, String errorMessage) throws Exception {
         ClientAttributeUpdater.forClient(adminClient, TEST, "subject-client")
                 .protocolMappers()
-                .add(ModelToRepresentation.toRepresentation(HardcodedClaim.create(claimName, claimName, claimValue, "String", true, true, true)))
+                .add(ModelToRepresentation.toRepresentation(HardcodedClaim.builder(claimName, claimName, claimValue).type(ClaimType.STRING).includeIn(ACCESS_TOKEN, ID_TOKEN, INTROSPECTION).build()))
                 .update();
 
         JWTClaimEnforcerExecutor.Configuration claimsConfig = new JWTClaimEnforcerExecutor.Configuration();
@@ -1252,7 +1256,7 @@ public abstract class StandardTokenExchangeV2Test extends AbstractClientPolicies
         try (
                 ProtocolMappersUpdater clientUpdater1 = ClientAttributeUpdater.forClient(adminClient, TEST, "requester-client")
                         .protocolMappers()
-                        .add(ModelToRepresentation.toRepresentation(AudienceProtocolMapper.createClaimMapper("requester-client-2", "requester-client-2", null, true, false, true)))
+                        .add(ModelToRepresentation.toRepresentation(AudienceProtocolMapper.builder("requester-client-2").clientAudience("requester-client-2").includeIn(ACCESS_TOKEN, INTROSPECTION).build()))
                         .update();
 
                 ClientAttributeUpdater clientUpdater2 = ClientAttributeUpdater.forClient(adminClient, TEST, "requester-client-2")
@@ -1455,7 +1459,7 @@ public abstract class StandardTokenExchangeV2Test extends AbstractClientPolicies
     public void testSenderConstrainedTokenRejection() throws Exception {
         ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm(TEST), "subject-client");
         // Create a protocol mapper that adds the cnf claim
-        ProtocolMapperModel mapper = HardcodedClaim.create("test-cnf-mapper", "cnf", "{\"jkt\":\"test-thumbprint-12345\"}", "JSON", true,  false, false);
+        ProtocolMapperModel mapper = HardcodedClaim.builder("test-cnf-mapper", "cnf", "{\"jkt\":\"test-thumbprint-12345\"}").type(ClaimType.JSON).includeIn(ACCESS_TOKEN).build();
 
         Response mapperResponse = client.getProtocolMappers().createMapper(ModelToRepresentation.toRepresentation(mapper));
         String mapperId = ApiUtil.getCreatedId(mapperResponse);

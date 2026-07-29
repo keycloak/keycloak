@@ -12,6 +12,7 @@ import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
+import org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.ClaimType;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -21,6 +22,10 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ACCESS_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ID_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.INTROSPECTION;
 
 /**
  * Final class as it's not intended to be overriden. Feel free to remove "final" if you really know what you are doing.
@@ -47,15 +52,30 @@ public final class OAuth2BrokerTest extends AbstractAdvancedBrokerTest {
                 List<ClientRepresentation> clients = super.createProviderClients();
                 ClientRepresentation client = clients.get(0);
                 List<ProtocolMapperRepresentation> protocolMappers = new ArrayList<>(client.getProtocolMappers());
-                ProtocolMapperModel userNameClaim = HardcodedClaim.create("username-claim", "username-claim", "username-claim", "String", true, true, true);
+                ProtocolMapperModel userNameClaim = HardcodedClaim.builder("username-claim", "username-claim", "username-claim")
+                        .type(ClaimType.STRING)
+                        .includeIn(ACCESS_TOKEN, ID_TOKEN, INTROSPECTION)
+                        .build();
                 protocolMappers.add(ModelToRepresentation.toRepresentation(userNameClaim));
-                ProtocolMapperModel firstNameClaim = HardcodedClaim.create("first-name-claim", "first-name-claim", "first-name-claim", "String", true, true, true);
+                ProtocolMapperModel firstNameClaim = HardcodedClaim.builder("first-name-claim", "first-name-claim", "first-name-claim")
+                        .type(ClaimType.STRING)
+                        .includeIn(ACCESS_TOKEN, ID_TOKEN, INTROSPECTION)
+                        .build();
                 protocolMappers.add(ModelToRepresentation.toRepresentation(firstNameClaim));
-                ProtocolMapperModel lastNameClaim = HardcodedClaim.create("last-name-claim", "last-name-claim", "last-name-claim", "String", true, true, true);
+                ProtocolMapperModel lastNameClaim = HardcodedClaim.builder("last-name-claim", "last-name-claim", "last-name-claim")
+                        .type(ClaimType.STRING)
+                        .includeIn(ACCESS_TOKEN, ID_TOKEN, INTROSPECTION)
+                        .build();
                 protocolMappers.add(ModelToRepresentation.toRepresentation(lastNameClaim));
-                ProtocolMapperModel nameClaim = HardcodedClaim.create("name-claim", "name-claim", "my user", "String", true, true, true);
+                ProtocolMapperModel nameClaim = HardcodedClaim.builder("name-claim", "name-claim", "my user")
+                        .type(ClaimType.STRING)
+                        .includeIn(ACCESS_TOKEN, ID_TOKEN, INTROSPECTION)
+                        .build();
                 protocolMappers.add(ModelToRepresentation.toRepresentation(nameClaim));
-                ProtocolMapperModel emailClaim = HardcodedClaim.create("email-claim", "email-claim", "email-claim@keycloak.org", "String", true, true, true);
+                ProtocolMapperModel emailClaim = HardcodedClaim.builder("email-claim", "email-claim", "email-claim@keycloak.org")
+                        .type(ClaimType.STRING)
+                        .includeIn(ACCESS_TOKEN, ID_TOKEN, INTROSPECTION)
+                        .build();
                 protocolMappers.add(ModelToRepresentation.toRepresentation(emailClaim));
                 client.setProtocolMappers(protocolMappers);
                 return clients;

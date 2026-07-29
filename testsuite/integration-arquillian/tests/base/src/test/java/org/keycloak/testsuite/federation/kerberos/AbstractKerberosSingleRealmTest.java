@@ -30,6 +30,7 @@ import org.keycloak.events.Details;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.ClaimType;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.UserInfo;
@@ -47,6 +48,9 @@ import org.junit.Assume;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ACCESS_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.INTROSPECTION;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.USERINFO;
 import static org.keycloak.testsuite.admin.AdminApiUtil.findClientByClientId;
 
 /**
@@ -177,10 +181,11 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
     public void credentialDelegationTest() throws Exception {
         Assume.assumeTrue("Ignoring test as the embedded server is not started", getKerberosRule().isStartEmbeddedLdapServer());
         // Add kerberos delegation credential mapper
-        ProtocolMapperModel protocolMapper = UserSessionNoteMapper.createClaimMapper(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME,
-                KerberosConstants.GSS_DELEGATION_CREDENTIAL,
-                KerberosConstants.GSS_DELEGATION_CREDENTIAL, "String",
-                true, false, true, true);
+        ProtocolMapperModel protocolMapper = UserSessionNoteMapper.builder(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME, KerberosConstants.GSS_DELEGATION_CREDENTIAL)
+                .claimName(KerberosConstants.GSS_DELEGATION_CREDENTIAL)
+                .type(ClaimType.STRING)
+                .includeIn(ACCESS_TOKEN, USERINFO, INTROSPECTION)
+                .build();
         ProtocolMapperRepresentation protocolMapperRep = ModelToRepresentation.toRepresentation(protocolMapper);
         ClientResource clientResource = findClientByClientId(testRealmResource(), "kerberos-app");
         Response response = clientResource.getProtocolMappers().createMapper(protocolMapperRep);

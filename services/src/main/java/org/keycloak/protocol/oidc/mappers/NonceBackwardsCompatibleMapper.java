@@ -17,9 +17,7 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.keycloak.Config;
 import org.keycloak.models.ClientSessionContext;
@@ -28,6 +26,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.ProtocolMapperBuilder;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -100,13 +99,15 @@ public class NonceBackwardsCompatibleMapper implements OIDCAccessTokenMapper, Pr
         return token;
     }
 
-    public static ProtocolMapperModel create(String name) {
-        ProtocolMapperModel mapper = new ProtocolMapperModel();
-        mapper.setName(name);
-        mapper.setProtocolMapper(PROVIDER_ID);
-        mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Map<String, String> config = new HashMap<>();
-        mapper.setConfig(config);
-        return mapper;
+    public static class Builder extends ProtocolMapperBuilder<Builder> {
+        private Builder(String name) {
+            super(name);
+            protocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            protocolMapper(PROVIDER_ID);
+        }
+    }
+
+    public static Builder builder(String name) {
+        return new Builder(name);
     }
 }

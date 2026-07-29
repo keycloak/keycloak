@@ -196,17 +196,17 @@ public class ScriptBasedOIDCProtocolMapper extends AbstractOIDCProtocolMapper im
     return mapperModel.getConfig().get(SCRIPT);
   }
 
-  public static ProtocolMapperModel create(String name,
-                                           String userAttribute,
-                                           String tokenClaimName, String claimType,
-                                           boolean accessToken, boolean idToken, boolean introspectionEndpoint, String script, boolean multiValued) {
-    ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
-      tokenClaimName, claimType,
-      accessToken, idToken,  introspectionEndpoint,
-      script);
+  public static class Builder extends OIDCProtocolMapperBuilder<Builder> {
+    private Builder(String name) {
+      super(name, PROVIDER_ID);
+    }
 
-    mapper.getConfig().put(ProtocolMapperUtils.MULTIVALUED, String.valueOf(multiValued));
+    public Builder script(String script) {
+      return config(SCRIPT, script);
+    }
+  }
 
-    return mapper; 
+  public static Builder builder(String name) {
+    return new Builder(name);
   }
 }

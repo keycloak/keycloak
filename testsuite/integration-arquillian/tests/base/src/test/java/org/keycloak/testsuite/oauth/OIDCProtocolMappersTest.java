@@ -47,6 +47,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
+import org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.ClaimType;
 import org.keycloak.protocol.oidc.mappers.UserPropertyMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AddressClaimSet;
@@ -84,6 +85,10 @@ import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.OAuth2Constants.SCOPE_PROFILE;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ACCESS_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ID_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.INTROSPECTION;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.USERINFO;
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.AdminApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.admin.AdminApiUtil.findClientResourceByClientId;
@@ -634,15 +639,12 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         String mapperId = null;
 
-        try (Response response = client.getProtocolMappers().createMapper(ModelToRepresentation.toRepresentation(UserPropertyMapper.createClaimMapper(
-                "test-property-mapper",
-                "email",
-                "claim-name",
-                String.class.getSimpleName(),
-                true,
-                true,
-                true
-        )))) {
+        try (Response response = client.getProtocolMappers().createMapper(ModelToRepresentation.toRepresentation(UserPropertyMapper.builder("test-property-mapper")
+                .userAttribute("email")
+                .claimName("claim-name")
+                .type(ClaimType.STRING)
+                .includeIn(ACCESS_TOKEN, ID_TOKEN, USERINFO, INTROSPECTION)
+                .build()))) {
             mapperId = getCreatedId(response);
             List<ClientScopeRepresentation> defaultClientScopes = client.getDefaultClientScopes();
 
@@ -684,15 +686,12 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         String mapperId = null;
 
-        try (Response response = client.getProtocolMappers().createMapper(ModelToRepresentation.toRepresentation(UserPropertyMapper.createClaimMapper(
-                "test-property-mapper",
-                "email",
-                "claim-name",
-                String.class.getSimpleName(),
-                true,
-                true,
-                true
-        )))) {
+        try (Response response = client.getProtocolMappers().createMapper(ModelToRepresentation.toRepresentation(UserPropertyMapper.builder("test-property-mapper")
+                .userAttribute("email")
+                .claimName("claim-name")
+                .type(ClaimType.STRING)
+                .includeIn(ACCESS_TOKEN, ID_TOKEN, USERINFO, INTROSPECTION)
+                .build()))) {
             mapperId = getCreatedId(response);
             List<ClientScopeRepresentation> defaultClientScopes = client.getDefaultClientScopes();
 

@@ -32,6 +32,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.ClaimType;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
@@ -43,6 +44,9 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ACCESS_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ID_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.INTROSPECTION;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -90,12 +94,16 @@ public class TokenExchangeTestUtils {
             clientExchanger.addScopeMapping(impersonateRole);
         }
 
-        clientExchanger.addProtocolMapper(UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_ID));
-        clientExchanger.addProtocolMapper(UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_USERNAME));
-        clientExchanger.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("different-scope-client-audience", differentScopeClient.getClientId(), null, true, false, true));
-        clientExchanger.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("allowed-exchanger1", null, "legal", true, false, true));
-        clientExchanger.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("allowed-exchanger2", null, "no-refresh-token", true, false, true));
-        clientExchanger.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("audience-to-itself", "client-exchanger", null, true, false, true));
+        clientExchanger.addProtocolMapper(UserSessionNoteMapper.builder(IMPERSONATOR_ID.getDisplayName(), IMPERSONATOR_ID.toString())
+                .claimName(IMPERSONATOR_ID.getTokenClaim()).type(ClaimType.STRING)
+                .includeIn(ACCESS_TOKEN, ID_TOKEN, INTROSPECTION).build());
+        clientExchanger.addProtocolMapper(UserSessionNoteMapper.builder(IMPERSONATOR_USERNAME.getDisplayName(), IMPERSONATOR_USERNAME.toString())
+                .claimName(IMPERSONATOR_USERNAME.getTokenClaim()).type(ClaimType.STRING)
+                .includeIn(ACCESS_TOKEN, ID_TOKEN, INTROSPECTION).build());
+        clientExchanger.addProtocolMapper(AudienceProtocolMapper.builder("different-scope-client-audience").clientAudience(differentScopeClient.getClientId()).includeIn(ACCESS_TOKEN, INTROSPECTION).build());
+        clientExchanger.addProtocolMapper(AudienceProtocolMapper.builder("allowed-exchanger1").customAudience("legal").includeIn(ACCESS_TOKEN, INTROSPECTION).build());
+        clientExchanger.addProtocolMapper(AudienceProtocolMapper.builder("allowed-exchanger2").customAudience("no-refresh-token").includeIn(ACCESS_TOKEN, INTROSPECTION).build());
+        clientExchanger.addProtocolMapper(AudienceProtocolMapper.builder("audience-to-itself").clientAudience("client-exchanger").includeIn(ACCESS_TOKEN, INTROSPECTION).build());
        //adding the exception, as te v1 will be removed
         clientExchanger.setAttribute(OIDCConfigAttributes.ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK, "true");
 
@@ -135,7 +143,7 @@ public class TokenExchangeTestUtils {
         directPublic.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         directPublic.setFullScopeAllowed(false);
         directPublic.addRedirectUri("*");
-        directPublic.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("client-exchanger-audience", clientExchanger.getClientId(), null, true, false, true));
+        directPublic.addProtocolMapper(AudienceProtocolMapper.builder("client-exchanger-audience").clientAudience(clientExchanger.getClientId()).includeIn(ACCESS_TOKEN, INTROSPECTION).build());
 
         ClientModel directUntrustedPublic = realm.addClient("direct-public-untrusted");
         directUntrustedPublic.setClientId("direct-public-untrusted");
@@ -146,7 +154,7 @@ public class TokenExchangeTestUtils {
         directUntrustedPublic.setFullScopeAllowed(false);
         directUntrustedPublic.addRedirectUri("*");
         directUntrustedPublic.setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+");
-        directUntrustedPublic.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("client-exchanger-audience", clientExchanger.getClientId(), null, true, false, true));
+        directUntrustedPublic.addProtocolMapper(AudienceProtocolMapper.builder("client-exchanger-audience").clientAudience(clientExchanger.getClientId()).includeIn(ACCESS_TOKEN, INTROSPECTION).build());
 
         ClientModel directNoSecret = realm.addClient("direct-no-secret");
         directNoSecret.setClientId("direct-no-secret");

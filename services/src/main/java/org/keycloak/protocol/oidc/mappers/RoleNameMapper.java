@@ -18,15 +18,14 @@
 package org.keycloak.protocol.oidc.mappers;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.ProtocolMapperBuilder;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -152,20 +151,24 @@ public class RoleNameMapper extends AbstractOIDCProtocolMapper implements OIDCAc
         access.addRole(newRoleName);
     }
 
-    public static ProtocolMapperModel create(String name,
-                                             String role,
-                                             String newName) {
-        String mapperId = PROVIDER_ID;
-        ProtocolMapperModel mapper = new ProtocolMapperModel();
-        mapper.setName(name);
-        mapper.setProtocolMapper(mapperId);
-        mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Map<String, String> config = new HashMap<>();
-        config.put(ROLE_CONFIG, role);
-        config.put(NEW_ROLE_NAME, newName);
-        mapper.setConfig(config);
-        return mapper;
+    public static class Builder extends ProtocolMapperBuilder<Builder> {
+        private Builder(String name) {
+            super(name);
+            protocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            protocolMapper(PROVIDER_ID);
+        }
 
+        public Builder role(String role) {
+            return config(ROLE_CONFIG, role);
+        }
+
+        public Builder newRoleName(String newRoleName) {
+            return config(NEW_ROLE_NAME, newRoleName);
+        }
+    }
+
+    public static Builder builder(String name) {
+        return new Builder(name);
     }
 
 }

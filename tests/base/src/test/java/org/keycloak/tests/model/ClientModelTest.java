@@ -40,6 +40,11 @@ import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.remote.annotations.TestOnServer;
 
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ACCESS_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ID_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.INTROSPECTION;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.USERINFO;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -86,7 +91,9 @@ public class ClientModelTest {
         client.addWebOrigin("origin-2");
         client.registerNode("node1", 10);
         client.registerNode("10.20.30.40", 50);
-        client.addProtocolMapper(AddressMapper.createAddressMapper());
+        client.addProtocolMapper(AddressMapper.builder("address")
+                .includeIn(ACCESS_TOKEN, ID_TOKEN, USERINFO, INTROSPECTION)
+                .build());
         client.updateClient();
         return client;
     }

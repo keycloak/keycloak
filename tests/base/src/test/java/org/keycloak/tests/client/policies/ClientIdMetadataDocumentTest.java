@@ -70,6 +70,8 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ACCESS_TOKEN;
+
 /**
  *
  * @author rmartinc
@@ -254,14 +256,10 @@ public class ClientIdMetadataDocumentTest {
         // Add audience mapper to allow test-app to introspect tokens
         ClientRepresentation client = findByClientIdByAdmin();
         ProtocolMapperRepresentation audienceMapper = ModelToRepresentation.toRepresentation(
-            AudienceProtocolMapper.createClaimMapper(
-                "test-app-audience",
-                "test-app",
-                null,
-                true,
-                false,
-                false
-            )
+            AudienceProtocolMapper.builder("test-app-audience")
+                .clientAudience("test-app")
+                .includeIn(ACCESS_TOKEN)
+                .build()
         );
         realm.admin().clients().get(client.getId()).getProtocolMappers().createMapper(audienceMapper);
 

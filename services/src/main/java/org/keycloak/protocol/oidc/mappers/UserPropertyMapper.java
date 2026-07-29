@@ -86,13 +86,8 @@ public class UserPropertyMapper extends AbstractOIDCProtocolMapper implements OI
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, propertyValue);
     }
 
-    public static ProtocolMapperModel createClaimMapper(String name,
-                                                        String userAttribute,
-                                                        String tokenClaimName, String claimType,
-                                                        boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
-        return OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
-                tokenClaimName, claimType,
-                accessToken, idToken, introspectionEndpoint,
-                PROVIDER_ID);
+    public static OIDCProtocolMapperBuilder<?> builder(String name) {
+        return OIDCProtocolMapperBuilder.builder(name, PROVIDER_ID);
     }
+
 }

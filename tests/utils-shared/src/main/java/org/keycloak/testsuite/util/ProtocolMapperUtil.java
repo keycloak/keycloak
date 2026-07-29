@@ -1,11 +1,16 @@
 package org.keycloak.testsuite.util;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.HardcodedRole;
+import org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.ClaimType;
+import org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn;
 import org.keycloak.protocol.oidc.mappers.RoleNameMapper;
 import org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper;
 import org.keycloak.protocol.oidc.mappers.ScriptBasedOIDCProtocolMapper;
@@ -14,6 +19,11 @@ import org.keycloak.protocol.oidc.mappers.UserClientRoleMappingMapper;
 import org.keycloak.protocol.oidc.mappers.UserRealmRoleMappingMapper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ACCESS_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ID_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.INTROSPECTION;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.USERINFO;
 
 /**
  * @author <a href="mailto:bruno@abstractj.org">Bruno Oliveira</a>.
@@ -31,13 +41,12 @@ public class ProtocolMapperUtil {
     public static ProtocolMapperRepresentation createRoleNameMapper(String name,
                                                                     String role,
                                                                     String newName) {
-        return ModelToRepresentation.toRepresentation(RoleNameMapper.create(name, role, newName));
-
+        return ModelToRepresentation.toRepresentation(RoleNameMapper.builder(name).role(role).newRoleName(newName).build());
     }
 
     public static ProtocolMapperRepresentation createHardcodedRole(String name,
                                                                    String role) {
-        return ModelToRepresentation.toRepresentation(HardcodedRole.create(name, role));
+        return ModelToRepresentation.toRepresentation(HardcodedRole.builder(name).role(role).build());
     }
 
     /**
@@ -48,7 +57,9 @@ public class ProtocolMapperUtil {
      * @return
      */
     public static ProtocolMapperRepresentation createAddressMapper(boolean idToken, boolean accessToken, boolean userInfo, boolean introspectionEndpoint) {
-        return ModelToRepresentation.toRepresentation(AddressMapper.createAddressMapper(idToken, accessToken, userInfo, introspectionEndpoint));
+        return ModelToRepresentation.toRepresentation(AddressMapper.builder("address")
+                .includeIn(collectTargets(accessToken, idToken, userInfo, introspectionEndpoint))
+                .build());
     }
 
     /**
@@ -66,8 +77,10 @@ public class ProtocolMapperUtil {
                                                                     String hardcodedName,
                                                                     String hardcodedValue, String claimType,
                                                                     boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
-        return ModelToRepresentation.toRepresentation(HardcodedClaim.create(name, hardcodedName, hardcodedValue,
-                claimType, accessToken, idToken, introspectionEndpoint));
+        return ModelToRepresentation.toRepresentation(HardcodedClaim.builder(name, hardcodedName, hardcodedValue)
+                .type(claimType)
+                .includeIn(collectTargets(accessToken, idToken, introspectionEndpoint))
+                .build());
     }
 
     /**
@@ -86,9 +99,7 @@ public class ProtocolMapperUtil {
                                                                  String userAttribute,
                                                                  String tokenClaimName, String claimType,
                                                                  boolean accessToken, boolean idToken, boolean introspectionEndpoint, boolean multivalued) {
-        return ModelToRepresentation.toRepresentation(UserAttributeMapper.createClaimMapper(name, userAttribute, tokenClaimName,
-                claimType, accessToken, idToken, introspectionEndpoint, multivalued, false));
-
+        return createClaimMapper(name, userAttribute, tokenClaimName, claimType, accessToken, idToken, introspectionEndpoint, multivalued, false);
     }
 
     public static ProtocolMapperRepresentation createClaimMapper(String name,
@@ -96,28 +107,33 @@ public class ProtocolMapperUtil {
                                                                  String tokenClaimName, String claimType,
                                                                  boolean accessToken, boolean idToken, boolean introspectionEndpoint,
                                                                  boolean multivalued, boolean aggregateAttrs) {
-        return ModelToRepresentation.toRepresentation(UserAttributeMapper.createClaimMapper(name, userAttribute, tokenClaimName,
-                claimType, accessToken, idToken, introspectionEndpoint, multivalued, aggregateAttrs));
-
+        var targets = collectTargets(accessToken, idToken, introspectionEndpoint);
+        targets.add(USERINFO);
+        return ModelToRepresentation.toRepresentation(UserAttributeMapper.builder(name)
+                .userAttribute(userAttribute)
+                .claimName(tokenClaimName)
+                .type(claimType)
+                .includeIn(targets)
+                .multivalued(multivalued)
+                .aggregateAttributes(aggregateAttrs)
+                .build());
     }
 
     public static ProtocolMapperRepresentation createClaimMapper(String name,
                                                                  String userSessionNote,
                                                                  String tokenClaimName, String jsonType,
                                                                  boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
-
-        return ModelToRepresentation.toRepresentation(UserSessionNoteMapper.createClaimMapper(name,
-                userSessionNote,
-                tokenClaimName, jsonType,
-                accessToken, idToken, introspectionEndpoint));
+        return ModelToRepresentation.toRepresentation(UserSessionNoteMapper.builder(name, userSessionNote)
+                .claimName(tokenClaimName)
+                .type(jsonType)
+                .includeIn(collectTargets(accessToken, idToken, introspectionEndpoint))
+                .build());
     }
-
 
     public static ProtocolMapperRepresentation createUserRealmRoleMappingMapper(String realmRolePrefix,
                                                                                 String name,
                                                                                 String tokenClaimName,
                                                                                 boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
-
         return createUserRealmRoleMappingMapper(realmRolePrefix, name, tokenClaimName, accessToken, idToken, introspectionEndpoint, true);
     }
 
@@ -125,15 +141,19 @@ public class ProtocolMapperUtil {
                                                                                 String name,
                                                                                 String tokenClaimName,
                                                                                 boolean accessToken, boolean idToken, boolean introspectionEndpoint, boolean multiValued) {
-
-        return ModelToRepresentation.toRepresentation(UserRealmRoleMappingMapper.create(realmRolePrefix, name, tokenClaimName, accessToken, idToken, introspectionEndpoint, multiValued));
+        return ModelToRepresentation.toRepresentation(UserRealmRoleMappingMapper.builder(name)
+                .claimName(tokenClaimName)
+                .type(ClaimType.STRING)
+                .multivalued(multiValued)
+                .realmRolePrefix(realmRolePrefix)
+                .includeIn(collectTargets(accessToken, idToken, introspectionEndpoint))
+                .build());
     }
 
     public static ProtocolMapperRepresentation createUserClientRoleMappingMapper(String clientId, String clientRolePrefix,
                                                                                 String name,
                                                                                 String tokenClaimName,
                                                                                 boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
-
         return createUserClientRoleMappingMapper(clientId, clientRolePrefix, name, tokenClaimName, accessToken, idToken, introspectionEndpoint, true);
     }
 
@@ -141,8 +161,14 @@ public class ProtocolMapperUtil {
                                                                                  String name,
                                                                                  String tokenClaimName,
                                                                                  boolean accessToken, boolean idToken, boolean introspectionEndpoint, boolean multiValued) {
-
-        return ModelToRepresentation.toRepresentation(UserClientRoleMappingMapper.create(clientId, clientRolePrefix, name, tokenClaimName, accessToken, idToken, introspectionEndpoint, multiValued));
+        return ModelToRepresentation.toRepresentation(UserClientRoleMappingMapper.builder(name)
+                .claimName(tokenClaimName)
+                .type(ClaimType.STRING)
+                .multivalued(multiValued)
+                .clientId(clientId)
+                .clientRolePrefix(clientRolePrefix)
+                .includeIn(collectTargets(accessToken, idToken, introspectionEndpoint))
+                .build());
     }
 
     public static ProtocolMapperRepresentation getMapperByNameAndProtocol(ProtocolMappersResource protocolMappers, String protocol, String name) {
@@ -163,10 +189,14 @@ public class ProtocolMapperUtil {
                                                                   boolean introspectionEndpoint,
                                                                   String script,
                                                                   boolean multiValued) {
-
-        return ModelToRepresentation.toRepresentation(
-          ScriptBasedOIDCProtocolMapper.create(name, userAttribute, tokenClaimName, claimType, accessToken, idToken, introspectionEndpoint, script, multiValued)
-        );
+        return ModelToRepresentation.toRepresentation(ScriptBasedOIDCProtocolMapper.builder(name)
+                .userAttribute(userAttribute)
+                .claimName(tokenClaimName)
+                .type(claimType)
+                .multivalued(multiValued)
+                .script(script)
+                .includeIn(collectTargets(accessToken, idToken, introspectionEndpoint))
+                .build());
     }
 
     public static ProtocolMapperRepresentation createPairwiseMapper(String sectorIdentifierUri, String salt) {
@@ -177,9 +207,24 @@ public class ProtocolMapperUtil {
                                                                     String includedClientAudience,
                                                                     String includedCustomAudience,
                                                                     boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
+        var builder = AudienceProtocolMapper.builder(name);
+        if (includedClientAudience != null) builder.clientAudience(includedClientAudience);
+        if (includedCustomAudience != null) builder.customAudience(includedCustomAudience);
+        return ModelToRepresentation.toRepresentation(builder
+                .includeIn(collectTargets(accessToken, idToken, introspectionEndpoint))
+                .build());
+    }
 
-        return ModelToRepresentation.toRepresentation(
-                AudienceProtocolMapper.createClaimMapper(name, includedClientAudience, includedCustomAudience, accessToken, idToken, introspectionEndpoint)
-        );
+    private static Set<IncludeIn> collectTargets(boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
+        return collectTargets(accessToken, idToken, false, introspectionEndpoint);
+    }
+
+    private static Set<IncludeIn> collectTargets(boolean accessToken, boolean idToken, boolean userInfo, boolean introspectionEndpoint) {
+        Set<IncludeIn> targets = EnumSet.noneOf(IncludeIn.class);
+        if (accessToken) targets.add(ACCESS_TOKEN);
+        if (idToken) targets.add(ID_TOKEN);
+        if (userInfo) targets.add(USERINFO);
+        if (introspectionEndpoint) targets.add(INTROSPECTION);
+        return targets;
     }
 }

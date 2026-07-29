@@ -18,17 +18,13 @@
 package org.keycloak.protocol.oidc.mappers;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UserSessionNoteDescriptor;
 import org.keycloak.protocol.ProtocolMapperUtils;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
@@ -99,46 +95,15 @@ public class UserSessionNoteMapper extends AbstractOIDCProtocolMapper implements
         OIDCAttributeMapperHelper.mapClaim(accessTokenResponse, mappingModel, noteValue);
     }
 
-    public static ProtocolMapperModel createClaimMapper(String name,
-                                                        String userSessionNote,
-                                                        String tokenClaimName, String jsonType,
-                                                        boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
-        return createClaimMapper(name, userSessionNote, tokenClaimName, jsonType, accessToken, idToken, false, introspectionEndpoint);
+    public static class Builder extends OIDCProtocolMapperBuilder<Builder> {
+        private Builder(String name, String userSessionNote) {
+            super(name, PROVIDER_ID);
+            config(ProtocolMapperUtils.USER_SESSION_NOTE, userSessionNote);
+        }
     }
 
-    public static ProtocolMapperModel createClaimMapper(String name,
-                                                        String userSessionNote,
-                                                        String tokenClaimName, String jsonType,
-                                                        boolean accessToken, boolean idToken, boolean userInfo, boolean introspectionEndpoint) {
-        ProtocolMapperModel mapper = new ProtocolMapperModel();
-        mapper.setName(name);
-        mapper.setProtocolMapper(PROVIDER_ID);
-        mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Map<String, String> config = new HashMap<>();
-        config.put(ProtocolMapperUtils.USER_SESSION_NOTE, userSessionNote);
-        config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, tokenClaimName);
-        config.put(OIDCAttributeMapperHelper.JSON_TYPE, jsonType);
-        if (accessToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
-        if (idToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
-        if (userInfo) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
-        if (introspectionEndpoint) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION, "true");
-        mapper.setConfig(config);
-        return mapper;
-    }
-
-    /**
-     * For session notes defined using a {@link UserSessionNoteDescriptor} enum
-     *
-     * @param userSessionNoteDescriptor User session note descriptor for which to create a protocol mapper model.
-     */
-    public static ProtocolMapperModel createUserSessionNoteMapper(UserSessionNoteDescriptor userSessionNoteDescriptor) {
-        return UserSessionNoteMapper.createClaimMapper(
-                userSessionNoteDescriptor.getDisplayName(),
-                userSessionNoteDescriptor.toString(),
-                userSessionNoteDescriptor.getTokenClaim(),
-                "String",
-                true, true, true
-        );
+    public static Builder builder(String name, String userSessionNote) {
+        return new Builder(name, userSessionNote);
     }
 
 }

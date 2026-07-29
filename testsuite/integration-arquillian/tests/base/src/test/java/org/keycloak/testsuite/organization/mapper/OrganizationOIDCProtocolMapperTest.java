@@ -75,6 +75,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ACCESS_TOKEN;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -1868,14 +1869,10 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         createMapperAndAddCleanup(clientResource, createHardcodedClaim(
                 "custom-org-mapper", OAuth2Constants.ORGANIZATION, "my-company", "String", true, true, true));
         createMapperAndAddCleanup(clientResource, ModelToRepresentation.toRepresentation(
-                AudienceProtocolMapper.createClaimMapper(
-                        "audience-mapper-test",
-                        "direct-grant",
-                        null,
-                        true,
-                        false,
-                        false
-                )
+                AudienceProtocolMapper.builder("audience-mapper-test")
+                        .clientAudience("direct-grant")
+                        .includeIn(ACCESS_TOKEN)
+                        .build()
         ));
 
         oauth.client("direct-grant", "password");

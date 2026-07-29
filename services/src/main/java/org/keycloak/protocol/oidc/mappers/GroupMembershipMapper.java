@@ -18,9 +18,7 @@
 package org.keycloak.protocol.oidc.mappers;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -29,7 +27,6 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.ProtocolMapperUtils;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
 
@@ -104,23 +101,18 @@ public class GroupMembershipMapper extends AbstractOIDCProtocolMapper implements
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, membership);
     }
 
-    public static ProtocolMapperModel create(String name,
-                                             String tokenClaimName,
-                                             boolean consentRequired, String consentText,
-                                             boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
-        ProtocolMapperModel mapper = new ProtocolMapperModel();
-        mapper.setName(name);
-        mapper.setProtocolMapper(PROVIDER_ID);
-        mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Map<String, String> config = new HashMap<String, String>();
-        config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, tokenClaimName);
-        if (accessToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
-        if (idToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
-        if (introspectionEndpoint) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION, "true");
-        mapper.setConfig(config);
+    public static class Builder extends OIDCProtocolMapperBuilder<Builder> {
+        private Builder(String name) {
+            super(name, PROVIDER_ID);
+        }
 
-        return mapper;
+        public Builder fullPath(boolean fullPath) {
+            return config("full.path", Boolean.toString(fullPath));
+        }
     }
 
+    public static Builder builder(String name) {
+        return new Builder(name);
+    }
 
 }

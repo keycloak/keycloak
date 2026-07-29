@@ -19,7 +19,6 @@
 package org.keycloak.protocol.oidc.mappers;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -89,17 +88,8 @@ public class AcrProtocolMapper extends AbstractOIDCProtocolMapper implements OID
         token.setAcr(acr);
     }
 
-    public static ProtocolMapperModel create(String name, boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
-        ProtocolMapperModel mapper = new ProtocolMapperModel();
-        mapper.setName(name);
-        mapper.setProtocolMapper(PROVIDER_ID);
-        mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Map<String, String> config = new HashMap<>();
-        if (accessToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
-        if (idToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
-        if (introspectionEndpoint) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION, "true");
-        mapper.setConfig(config);
-        return mapper;
+    public static OIDCProtocolMapperBuilder<?> builder(String name) {
+        return OIDCProtocolMapperBuilder.builder(name, PROVIDER_ID);
     }
 
     protected String getAcr(AuthenticatedClientSessionModel clientSession) {

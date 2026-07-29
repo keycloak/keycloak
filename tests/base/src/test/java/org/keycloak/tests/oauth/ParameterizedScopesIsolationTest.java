@@ -9,6 +9,7 @@ import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
+import org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.ClaimType;
 import org.keycloak.protocol.oidc.mappers.ParameterizedScopeMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
@@ -40,6 +41,9 @@ import org.keycloak.testsuite.util.oauth.ciba.AuthenticationRequestAcknowledgeme
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.ACCESS_TOKEN;
+import static org.keycloak.protocol.oidc.mappers.OIDCProtocolMapperBuilder.IncludeIn.INTROSPECTION;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -287,8 +291,8 @@ public class ParameterizedScopesIsolationTest {
             scopeId = ApiUtil.getCreatedId(response);
         }
 
-        ProtocolMapperModel mapper = ParameterizedScopeMapper.create(
-                name + "-param-mapper", claimName, "String", true, false, true);
+        ProtocolMapperModel mapper = ParameterizedScopeMapper.builder(name + "-param-mapper")
+                .claimName(claimName).type(ClaimType.STRING).includeIn(ACCESS_TOKEN, INTROSPECTION).build();
         try (Response response = realm.admin().clientScopes().get(scopeId).getProtocolMappers()
                 .createMapper(ModelToRepresentation.toRepresentation(mapper))) {
             assertEquals(201, response.getStatus(), "Mapper creation should succeed");
