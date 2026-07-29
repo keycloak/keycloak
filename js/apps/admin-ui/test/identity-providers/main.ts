@@ -93,12 +93,7 @@ export async function createDefaultTrustProvider(
   alias: string,
   jwksUrl: string,
 ) {
-  const realm =
-    (await page.getByTestId("currentRealm").textContent()) ?? "master";
-
-  await page.goto(
-    `${SERVER_URL}/admin/master/console/${realm}/identity-providers/default-trust/add`,
-  );
+  await clickProviderCard(page, "default-trust");
 
   await page.getByTestId("alias").fill(alias);
   await expect(page.getByTestId("config.useJwksUrl")).toBeChecked();
