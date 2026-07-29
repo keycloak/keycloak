@@ -26,12 +26,16 @@ import java.util.Map;
 import java.util.Set;
 
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -78,6 +82,7 @@ import static org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory.NATURAL_PE
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -95,7 +100,9 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
         clientScope.setName("test-client-scope");
         clientScope.setDescription("test-client-scope-description");
         clientScope.setProtocol(OID4VC_PROTOCOL);
-        clientScope.setAttributes(Map.of("test-attribute", "test-value"));
+        clientScope.setAttributes(Map.of(
+                "test-attribute", "test-value",
+                VC_CONFIGURATION_ID, "   "));
 
         String clientScopeId = null;
         ClientScopesResource clientScopes = testRealm.admin().clientScopes();
@@ -131,6 +138,74 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
         } finally {
             assertNotNull(clientScopeId);
             clientScopes.get(clientScopeId).remove();
+        }
+    }
+
+    @Test
+    public void testCredentialConfigurationIdDoesNotFallbackToScopeName() {
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealmByName(VCTestRealmConfig.TEST_REALM_NAME);
+            ClientScopeModel clientScope = realm.addClientScope("issue-51185-no-fallback");
+            clientScope.setProtocol(OID4VC_PROTOCOL);
+            try {
+                assertNull(new CredentialScopeModel(clientScope).getCredentialConfigurationId());
+            } finally {
+                realm.removeClientScope(clientScope.getId());
+            }
+        });
+    }
+
+    @Test
+    public void testCredentialConfigurationIdMustBeUnique() {
+        ClientScopesResource clientScopes = testRealm.admin().clientScopes();
+        String firstScopeId = createCredentialScope(clientScopes, "issue-51185-first", "issue-51185-shared-id");
+        String secondScopeId = null;
+
+        try {
+            CredentialScopeRepresentation explicitDuplicate = new CredentialScopeRepresentation("issue-51185-explicit-duplicate");
+            explicitDuplicate.setCredentialConfigurationId("issue-51185-shared-id");
+            try (Response response = clientScopes.create(explicitDuplicate)) {
+                assertEquals(Response.Status.CONFLICT.getStatusCode(), response.getStatus());
+                assertTrue(response.readEntity(String.class).contains("issue-51185-shared-id"));
+            }
+
+            CredentialScopeRepresentation implicitDuplicate = new CredentialScopeRepresentation("issue-51185-shared-id");
+            implicitDuplicate.setCredentialConfigurationId(null);
+            try (Response response = clientScopes.create(implicitDuplicate)) {
+                assertEquals(Response.Status.CONFLICT.getStatusCode(), response.getStatus());
+            }
+
+            secondScopeId = createCredentialScope(clientScopes, "issue-51185-second", "issue-51185-second-id");
+            ClientScopeResource secondScope = clientScopes.get(secondScopeId);
+            CredentialScopeRepresentation duplicateUpdate = new CredentialScopeRepresentation(secondScope.toRepresentation());
+            duplicateUpdate.setCredentialConfigurationId("issue-51185-shared-id");
+            duplicateUpdate.setProtocol(null);
+
+            WebApplicationException exception = assertThrows(WebApplicationException.class,
+                    () -> secondScope.update(duplicateUpdate));
+            assertEquals(Response.Status.CONFLICT.getStatusCode(), exception.getResponse().getStatus());
+
+            CredentialScopeRepresentation update = new CredentialScopeRepresentation(secondScope.toRepresentation());
+            update.setId(null);
+            update.setDescription("self update without representation ID");
+            secondScope.update(update);
+            assertEquals("issue-51185-second-id",
+                    secondScope.toRepresentation().getAttributes().get(VC_CONFIGURATION_ID));
+        } finally {
+            if (secondScopeId != null) {
+                clientScopes.get(secondScopeId).remove();
+            }
+            clientScopes.get(firstScopeId).remove();
+        }
+    }
+
+    private String createCredentialScope(ClientScopesResource clientScopes, String name,
+                                         String credentialConfigurationId) {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation(name);
+        scope.setCredentialConfigurationId(credentialConfigurationId);
+        try (Response response = clientScopes.create(scope)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            return ApiUtil.getCreatedId(response);
         }
     }
 

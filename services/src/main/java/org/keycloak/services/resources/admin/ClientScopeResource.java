@@ -126,6 +126,10 @@ public class ClientScopeResource {
     })
     public Response update(final ClientScopeRepresentation rep) {
         auth.clients().requireManageClientScopes();
+        rep.setId(clientScope.getId());
+        if (rep.getProtocol() == null) {
+            rep.setProtocol(clientScope.getProtocol());
+        }
         ClientScopeResource.validateClientScope(session, rep);
         validateParameterizedScopeUpdate(rep);
         try {
