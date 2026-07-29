@@ -42,15 +42,18 @@ type Application = ClientRepresentation & {
 };
 
 export const Applications = () => {
-  const { t } = useTranslation();
-  const context = useEnvironment<AccountEnvironment>();
-  const { addAlert, addError } = useAccountAlerts();
+  const { t } = useTranslation();
+  const context = useEnvironment<AccountEnvironment>();
+  const {
+    environment: { locale },
+  } = context;
+  const { addAlert, addError } = useAccountAlerts();
 
-  const [applications, setApplications] = useState<Application[]>();
-  const [key, setKey] = useState(1);
-  const refresh = () => setKey(key + 1);
+  const [applications, setApplications] = useState<Application[]>();
+  const [key, setKey] = useState(1);
+  const refresh = () => setKey(key + 1);
 
-  usePromise(
+  usePromise(
     (signal) => getApplications({ signal, context }),
     (clients) =>
       setApplications(
@@ -58,6 +61,7 @@ export const Applications = () => {
           .sort((a, b) =>
             (a.clientName || a.clientId).localeCompare(
               b.clientName || b.clientId,
+              locale,
             ),
           )
           .map((c) => ({ ...c, open: false })),
