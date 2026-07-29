@@ -1306,8 +1306,8 @@ html[dir="rtl"] #password-new {
 
     div.kc-logo-text {
         background-position: center;
-        inline-size: min(220px, 65%);
-        block-size: 52px;
+        inline-size: min(300px, 80%);
+        block-size: 72px;
         margin-inline: auto;
     }
 
@@ -1685,7 +1685,7 @@ html.login-pf,
     }
 
     div.kc-logo-text {
-        block-size: 48px;
+        block-size: 56px;
     }
 
     .pf-v5-c-login__main {
@@ -1698,5 +1698,48 @@ html.login-pf,
     .pf-v5-c-login::before,
     .pf-v5-c-login::after {
         display: none;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Tenant logo inside the sign-in card
+   Hidden until the image loads (see login-enhancements.js), so realms without
+   branding show no reserved gap.
+   -------------------------------------------------------------------------- */
+
+.kc-realm-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-block: 1.75rem 0.25rem;
+    padding-inline: 2rem;
+}
+
+.kc-realm-logo[hidden] {
+    display: none;
+}
+
+.kc-realm-logo img {
+    max-inline-size: min(200px, 70%);
+    max-block-size: 56px;
+    inline-size: auto;
+    block-size: auto;
+    object-fit: contain;
+}
+
+/* The card header supplies its own top padding; drop it when the logo has
+   already opened the space above the title. */
+.kc-realm-logo:not([hidden]) + .pf-v5-c-login__main-header {
+    --pf-v5-c-login__main-header--PaddingTop: 0.75rem;
+}
+
+@media (max-width: 640px) {
+    .kc-realm-logo {
+        padding-block: 1.25rem 0.25rem;
+        padding-inline: 1.35rem;
+    }
+
+    .kc-realm-logo img {
+        max-block-size: 44px;
     }
 }

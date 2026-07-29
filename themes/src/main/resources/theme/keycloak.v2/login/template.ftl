@@ -168,7 +168,7 @@
     </script>
 </head>
 
-<body id="keycloak-bg" class="${properties.kcBodyClass!}" data-page-id="login-${pageId}" data-capslock-text="${msg('capsLockOn')}" data-dark-class="${properties.kcDarkModeClass!}">
+<body id="keycloak-bg" class="${properties.kcBodyClass!}" data-page-id="login-${pageId}" data-capslock-text="${msg('capsLockOn')}" data-dark-class="${properties.kcDarkModeClass!}" data-realm="${realm.name!}">
 <#if darkMode>
   <button type="button" id="kc-theme-toggle" class="kc-theme-toggle"
           aria-label="${msg('toggleColorScheme')}" title="${msg('toggleColorScheme')}">
@@ -181,12 +181,21 @@
     <header id="kc-header" class="pf-v5-c-login__header">
       <div id="kc-header-wrapper"
               class="pf-v5-c-brand">${kcSanitize(msg("loginTitleHtml",(realm.displayNameHtml!'')))?no_esc}</div>
+      <#-- dir="auto" so each string takes direction from its own content: these
+           fall back to English on locales without a translation, and Latin text
+           inside an RTL page otherwise has its trailing punctuation relocated. -->
       <div class="kc-brand-copy">
-        <h2 class="kc-brand-headline">${msg("brandHeadline")}</h2>
-        <p class="kc-brand-tagline">${msg("brandTagline")}</p>
+        <h2 class="kc-brand-headline" dir="auto">${msg("brandHeadline")}</h2>
+        <p class="kc-brand-tagline" dir="auto">${msg("brandTagline")}</p>
       </div>
     </header>
     <main class="${properties.kcLoginMain!}">
+      <#-- Tenant logo, resolved at runtime from the branding API. Starts hidden
+           and is only revealed once an image actually loads, so realms without
+           one show no gap and a failed request degrades to the Fidar mark. -->
+      <div id="kc-realm-logo" class="kc-realm-logo" hidden>
+        <img id="kc-realm-logo-img" src="" alt="" />
+      </div>
       <div class="${properties.kcLoginMainHeader!}">
         <h1 class="${properties.kcLoginMainTitle!}" id="kc-page-title"><#nested "header"></h1>
         <#if realm.internationalizationEnabled  && locale.supported?size gt 1>

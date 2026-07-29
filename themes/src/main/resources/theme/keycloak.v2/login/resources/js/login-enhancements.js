@@ -144,7 +144,125 @@ function setupThemeToggle() {
   });
 }
 
+/**
+ * Tenant logo shown inside the sign-in card, above the page title.
+ *
+ * Mirrors the behaviour of the Keycloakify build's useRealmBranding hook:
+ * resolve `{logoLightUrl, logoDarkUrl}` for the realm from the branding API,
+ * cache per realm in sessionStorage so subsequent pages in the same flow
+ * (password, OTP, reset) don't refetch, and fall back silently to no logo.
+ *
+ * The Fidar wordmark on the brand panel is unaffected — this is additive.
+ */
+const BRANDING_API = "https://sdk.fidar.io/fidar/sdk/api";
+const BRANDING_CACHE_PREFIX = "fidar_branding_";
+
+function readBrandingCache(realm) {
+  try {
+    const raw = sessionStorage.getItem(BRANDING_CACHE_PREFIX + realm);
+    return raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function writeBrandingCache(realm, branding) {
+  try {
+    sessionStorage.setItem(
+      BRANDING_CACHE_PREFIX + realm,
+      JSON.stringify(branding),
+    );
+  } catch (error) {
+    // sessionStorage unavailable — the logo still renders, just refetches.
+  }
+}
+
+function setupRealmLogo() {
+  const container = document.getElementById("kc-realm-logo");
+  const image = document.getElementById("kc-realm-logo-img");
+  const realm = document.body.dataset.realm;
+  const darkClass = document.body.dataset.darkClass;
+
+  // `master` is the admin realm and has no tenant branding of its own.
+  if (!container || !image || !realm || realm === "master") {
+    return;
+  }
+
+  const apply = (branding) => {
+    if (!branding) {
+      return;
+    }
+
+    const pick = () => {
+      const isDark =
+        !!darkClass && document.documentElement.classList.contains(darkClass);
+      // Either variant stands in for a missing counterpart.
+      return isDark
+        ? branding.logoDarkUrl || branding.logoLightUrl
+        : branding.logoLightUrl || branding.logoDarkUrl;
+    };
+
+    const url = pick();
+
+    if (!url) {
+      return;
+    }
+
+    // Only reveal once the image has actually decoded, so a broken or slow
+    // URL never leaves an empty box above the title.
+    image.addEventListener("load", () => container.removeAttribute("hidden"), {
+      once: true,
+    });
+    image.addEventListener("error", () => container.setAttribute("hidden", ""), {
+      once: true,
+    });
+    image.src = url;
+
+    // Keep the variant in step with the theme toggle.
+    const toggle = document.getElementById("kc-theme-toggle");
+
+    if (toggle) {
+      toggle.addEventListener("click", () => {
+        const next = pick();
+
+        if (next) {
+          image.src = next;
+        }
+      });
+    }
+  };
+
+  const cached = readBrandingCache(realm);
+
+  if (cached) {
+    apply(cached);
+    return;
+  }
+
+  fetch(`${BRANDING_API}/public/tenant-branding/${encodeURIComponent(realm)}`)
+    .then((response) => (response.ok ? response.json() : null))
+    .then((json) => {
+      if (!json) {
+        return;
+      }
+
+      const branding = {
+        logoLightUrl: json.logoLightUrl ?? null,
+        logoDarkUrl: json.logoDarkUrl ?? null,
+      };
+
+      if (branding.logoLightUrl || branding.logoDarkUrl) {
+        writeBrandingCache(realm, branding);
+        apply(branding);
+      }
+    })
+    .catch(() => {
+      // Branding is decorative; a failed lookup must never block sign-in.
+    });
+}
+
 setupCapsLockWarning();
 setupRipple();
 setupSubmitState();
 setupThemeToggle();
+setupRealmLogo();
