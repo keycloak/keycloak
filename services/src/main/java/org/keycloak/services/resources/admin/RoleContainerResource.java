@@ -376,6 +376,7 @@ public class RoleContainerResource extends RoleResource {
         if (role == null) {
             throw new NotFoundException("Could not find role");
         }
+        auth.roles().requireManage(role);
         addComposites(auth, adminEvent, uriInfo, roles, role);
     }
 
@@ -490,6 +491,7 @@ public class RoleContainerResource extends RoleResource {
         if (role == null) {
             throw new NotFoundException("Could not find role");
         }
+        auth.roles().requireManage(role);
         deleteComposites(auth, adminEvent, uriInfo, roles, role);
     }
 

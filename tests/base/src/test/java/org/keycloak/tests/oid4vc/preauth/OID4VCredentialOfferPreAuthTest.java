@@ -19,6 +19,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.oid4vc.CredentialOfferStateUtils.CredentialOfferStateRecord;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -34,6 +35,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
+
+import static org.keycloak.tests.oid4vc.CredentialOfferStateUtils.getCredentialOfferStateRecord;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -291,6 +294,15 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
 
         String preAuthCode = credOffer.getPreAuthorizedCode();
 
+        CredentialOfferURI offerURI = ctx.getCredentialsOfferUri();
+        assertNotNull(offerURI, "No CredentialOfferURI");
+
+        // Verify internal offer state target user and client
+        //
+        CredentialOfferStateRecord runtimeOfferState = getCredentialOfferStateRecord(runOnServer, offerURI.getNonce());
+        assertEquals("john", runtimeOfferState.targetUsername());
+        assertEquals(client.getClientId(), runtimeOfferState.targetClientId());
+
         // Redeem Pre-Authorized Code for AccessToken
         //
         AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
@@ -323,11 +335,17 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
             req.preAuthorized(true);
         });
 
-        String preAuthCode = credOffer.getPreAuthorizedCode();
-        assertNotNull(preAuthCode, "preAuthCode");
-
         CredentialOfferURI offerURI = ctx.getCredentialsOfferUri();
         assertNotNull(offerURI, "No CredentialOfferURI");
+
+        // Verify internal offer state target user and client
+        //
+        CredentialOfferStateRecord runtimeOfferState = getCredentialOfferStateRecord(runOnServer, offerURI.getNonce());
+        assertEquals("alice", runtimeOfferState.targetUsername());
+        assertEquals(client.getClientId(), runtimeOfferState.targetClientId());
+
+        String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "preAuthCode");
 
         // Fetch credential offer again
         // https://github.com/keycloak/keycloak/issues/48014

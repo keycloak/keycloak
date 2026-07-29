@@ -314,7 +314,7 @@ public class JwtProofValidator extends AbstractProofValidator {
     private KeyAttestationInfo resolveHeaderAttestation(VCIssuanceContext vcIssuanceContext, Map<String, Object> headerClaims)
             throws JWSInputException, VerificationException {
         if (!headerClaims.containsKey(KEY_ATTESTATION_CLAIM)) {
-            KeyAttestationsRequired attestationRequirements = AttestationValidatorUtil.getAttestationRequirements(vcIssuanceContext);
+            KeyAttestationsRequired attestationRequirements = AttestationValidatorUtil.getAttestationRequirements(vcIssuanceContext, ProofType.JWT);
             if (attestationRequirements != null) {
                 throw new VCIssuerException(ErrorType.INVALID_PROOF,
                         "key_attestation JWT header claim is required by the credential configuration but was not provided");
