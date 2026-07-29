@@ -26,9 +26,11 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.util.ApiUtil;
@@ -603,6 +605,66 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         } catch (jakarta.ws.rs.NotFoundException e) {
             // Expected
         }
+    }
+
+    @Test
+    public void testFindGroupByPathWithBriefRepresentation() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
+
+        // Create a realm role and a client role to be mapped to the group
+        RoleRepresentation realmRole = new RoleRepresentation("brief-rep-realm-role", "Test realm role", false);
+        realm.admin().roles().create(realmRole);
+        realm.cleanup().add(r -> r.roles().deleteRole("brief-rep-realm-role"));
+        RoleRepresentation createdRealmRole = realm.admin().roles().get("brief-rep-realm-role").toRepresentation();
+
+        ClientRepresentation clientRep = new ClientRepresentation();
+        clientRep.setClientId("brief-rep-client");
+        clientRep.setEnabled(true);
+        String clientUuid;
+        try (Response response = realm.admin().clients().create(clientRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            clientUuid = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.clients().get(clientUuid).remove());
+        realm.admin().clients().get(clientUuid).roles().create(new RoleRepresentation("brief-rep-client-role", "Test client role", false));
+        RoleRepresentation createdClientRole = realm.admin().clients().get(clientUuid).roles().get("brief-rep-client-role").toRepresentation();
+
+        GroupRepresentation parentRep = new GroupRepresentation();
+        parentRep.setName("parent");
+        parentRep.singleAttribute("department", "Engineering");
+        String parentId;
+        try (Response response = orgResource.groups().addTopLevelGroup(parentRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            parentId = ApiUtil.getCreatedId(response);
+        }
+
+        orgResource.groups().group(parentId).roles().realmLevel().add(List.of(createdRealmRole));
+        orgResource.groups().group(parentId).roles().clientLevel(clientUuid).add(List.of(createdClientRole));
+
+        // briefRepresentation = false returns the full representation
+        GroupRepresentation full = orgResource.groups().getGroupByPath("/parent", false, false);
+        assertThat(full.getName(), is("parent"));
+        assertThat(full.getPath(), is("/parent"));
+        assertThat(full.getAttributes().get("department").get(0), is("Engineering"));
+        assertThat(full.getRealmRoles(), containsInAnyOrder("brief-rep-realm-role"));
+        assertThat(full.getClientRoles().get("brief-rep-client"), containsInAnyOrder("brief-rep-client-role"));
+
+        // briefRepresentation = true omits attributes and role mappings
+        GroupRepresentation brief = orgResource.groups().getGroupByPath("/parent", true, false);
+        assertThat(brief.getName(), is("parent"));
+        assertThat(brief.getPath(), is("/parent"));
+        assertThat(brief.getAttributes(), nullValue());
+        assertThat(brief.getRealmRoles(), nullValue());
+        assertThat(brief.getClientRoles(), nullValue());
+
+        // briefRepresentation defaults to true when the parameter is not sent
+        GroupRepresentation defaultRep = orgResource.groups().getGroupByPath("/parent", false);
+        assertThat(defaultRep.getName(), is("parent"));
+        assertThat(defaultRep.getPath(), is("/parent"));
+        assertThat(defaultRep.getAttributes(), nullValue());
+        assertThat(defaultRep.getRealmRoles(), nullValue());
+        assertThat(defaultRep.getClientRoles(), nullValue());
     }
 
     @Test
