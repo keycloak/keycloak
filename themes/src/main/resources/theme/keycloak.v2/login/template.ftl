@@ -69,10 +69,29 @@
       <script type="module" async blocking="render">
           <#outputformat "JavaScript">
           const DARK_MODE_CLASS = ${properties.kcDarkModeClass?c};
+          const STORAGE_KEY = "fidar-color-scheme";
           const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
-          updateDarkMode(mediaQuery.matches);
-          mediaQuery.addEventListener("change", (event) => updateDarkMode(event.matches));
+          // An explicit choice from the toggle outranks the system setting.
+          // Storage can throw when cookies are blocked, so it is never trusted
+          // to be available.
+          function storedScheme() {
+            try {
+              return localStorage.getItem(STORAGE_KEY);
+            } catch (error) {
+              return null;
+            }
+          }
+
+          const stored = storedScheme();
+          updateDarkMode(stored ? stored === "dark" : mediaQuery.matches);
+
+          mediaQuery.addEventListener("change", (event) => {
+            // Only follow the system once the user has not picked a side.
+            if (!storedScheme()) {
+              updateDarkMode(event.matches);
+            }
+          });
 
           function updateDarkMode(isEnabled) {
             const { classList } = document.documentElement;
@@ -149,7 +168,14 @@
     </script>
 </head>
 
-<body id="keycloak-bg" class="${properties.kcBodyClass!}" data-page-id="login-${pageId}" data-capslock-text="${msg('capsLockOn')}">
+<body id="keycloak-bg" class="${properties.kcBodyClass!}" data-page-id="login-${pageId}" data-capslock-text="${msg('capsLockOn')}" data-dark-class="${properties.kcDarkModeClass!}">
+<#if darkMode>
+  <button type="button" id="kc-theme-toggle" class="kc-theme-toggle"
+          aria-label="${msg('toggleColorScheme')}" title="${msg('toggleColorScheme')}">
+    <span class="kc-theme-toggle__sun" aria-hidden="true"></span>
+    <span class="kc-theme-toggle__moon" aria-hidden="true"></span>
+  </button>
+</#if>
 <div class="${properties.kcLogin!}">
   <div class="${properties.kcLoginContainer!}">
     <header id="kc-header" class="pf-v5-c-login__header">

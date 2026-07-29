@@ -3,10 +3,7 @@ import FeatureRepresentation, {
 } from "@keycloak/keycloak-admin-client/lib/defs/featureRepresentation";
 import { HelpItem, useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
-  ActionList,
-  ActionListItem,
   Brand,
-  Button,
   Card,
   CardBody,
   CardTitle,
@@ -41,7 +38,6 @@ import {
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import type { Environment } from "../environment-types";
-import helpUrls from "../help-urls";
 import { resolveDisplayName } from "../util";
 import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
 import { DashboardTab, toDashboard } from "./routes/Dashboard";
@@ -178,32 +174,9 @@ const Dashboard = () => {
                 <div className="pf-v5-l-grid__item keycloak__dashboard_welcome_tab">
                   <Text component={TextVariants.h3}>{t("welcomeText")}</Text>
                 </div>
-                <div className="pf-v5-l-grid__item pf-m-10-col pf-v5-u-mt-md">
-                  <Button
-                    className="pf-v5-u-px-lg pf-v5-u-py-sm"
-                    component="a"
-                    href={helpUrls.documentation}
-                    target="_blank"
-                    variant="primary"
-                  >
-                    {t("viewDocumentation")}
-                  </Button>
-                </div>
-                {/* Upstream also surfaced "Join community" and "Read blog"
-                    here; both are Keycloak-project destinations with no Fidar
-                    equivalent, so only the guides link remains. */}
-                <ActionList className="pf-v5-u-mt-sm">
-                  <ActionListItem>
-                    <Button
-                      component="a"
-                      href={helpUrls.guides}
-                      target="_blank"
-                      variant="tertiary"
-                    >
-                      {t("viewGuides")}
-                    </Button>
-                  </ActionListItem>
-                </ActionList>
+                {/* Upstream surfaced documentation, guides, community and blog
+                    links here; all pointed at Keycloak-project destinations
+                    with no Fidar equivalent. */}
               </div>
             </PageSection>
           </Tab>

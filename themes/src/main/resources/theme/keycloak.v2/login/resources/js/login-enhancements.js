@@ -111,6 +111,40 @@ function setupSubmitState() {
   }
 }
 
+/**
+ * Light/dark toggle. The initial scheme is resolved by an inline script in the
+ * document head so there is no flash of the wrong theme; this only handles the
+ * click and records the choice.
+ */
+function setupThemeToggle() {
+  const button = document.getElementById("kc-theme-toggle");
+  const darkClass = document.body.dataset.darkClass;
+
+  if (!button || !darkClass) {
+    return;
+  }
+
+  const sync = (isDark) => {
+    button.setAttribute("aria-pressed", String(isDark));
+  };
+
+  sync(document.documentElement.classList.contains(darkClass));
+
+  button.addEventListener("click", () => {
+    const isDark = document.documentElement.classList.toggle(darkClass);
+
+    try {
+      localStorage.setItem("fidar-color-scheme", isDark ? "dark" : "light");
+    } catch (error) {
+      // Storage unavailable (blocked cookies); the toggle still applies for
+      // this page view, it just will not be remembered.
+    }
+
+    sync(isDark);
+  });
+}
+
 setupCapsLockWarning();
 setupRipple();
 setupSubmitState();
+setupThemeToggle();

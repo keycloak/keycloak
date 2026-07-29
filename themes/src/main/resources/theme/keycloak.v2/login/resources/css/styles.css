@@ -216,13 +216,119 @@
 /* ==========================================================================
    Login screen — premium split-screen
 
-   The auth screens always render dark: the Fidar wordmark used here is the
-   white variant, and the glass treatment is designed against the aurora
-   canvas. `:root.login-pf` matches the dark-theme block's specificity (0,2,0)
-   and is declared after it, so these values win in BOTH colour schemes.
+   Both colour schemes are supported. The template already toggles
+   `pf-v5-theme-dark` on <html> from prefers-color-scheme, so light lives on
+   `:root.login-pf` and dark on `:root.login-pf.pf-v5-theme-dark`, which is
+   one class more specific and therefore wins when present.
+
+   Every surface colour below is a token so the two schemes differ only in
+   this block — including the wordmark, which has to swap between the white
+   and dark-ink variants or it disappears against one of the two canvases.
    ========================================================================== */
 
 :root.login-pf {
+    /* ---- Light scheme ---- */
+    --fidar-ink-900: #f4f7fb;
+    --fidar-ink-800: #ffffff;
+    --fidar-accent: #40476d;
+    --fidar-accent-deep: #2e3450;
+
+    --kc-glass-bg: rgba(255, 255, 255, 0.76);
+    --kc-glass-border: rgba(23, 31, 46, 0.09);
+    --kc-glass-highlight: rgba(255, 255, 255, 0.9);
+    --kc-field-bg: rgba(255, 255, 255, 0.85);
+    --kc-field-bg-hover: #ffffff;
+    --kc-field-border: rgba(23, 31, 46, 0.14);
+
+    --kc-canvas-gradient: linear-gradient(160deg, #eef3fb 0%, #e4ecf8 48%, #dde7f6 100%);
+    --kc-canvas-glow-1: rgba(173, 229, 255, 0.55);
+    --kc-canvas-glow-2: rgba(168, 167, 200, 0.38);
+    --kc-canvas-glow-3: rgba(124, 201, 245, 0.32);
+    --kc-noise-opacity: 0.16;
+    --kc-blob-1: rgba(173, 229, 255, 0.5);
+    --kc-blob-2: rgba(168, 167, 200, 0.42);
+
+    --kc-brand-divider: rgba(23, 31, 46, 0.12);
+    --kc-heading: #141b2b;
+    --kc-heading-gradient: linear-gradient(120deg, #141b2b 0%, #304d6d 45%, #40476d 100%);
+    --kc-tagline: rgba(20, 27, 43, 0.68);
+
+    --kc-cta-bg: linear-gradient(135deg, #40476d 0%, #364266 48%, #304d6d 100%);
+    --kc-cta-fg: #ffffff;
+    --kc-cta-shadow: rgba(48, 77, 109, 0.32);
+    --kc-cta-ring: rgba(64, 71, 109, 0.16);
+
+    --kc-card-shadow-1: rgba(23, 31, 46, 0.14);
+    --kc-card-shadow-2: rgba(23, 31, 46, 0.08);
+
+    --kc-title: #141b2b;
+    --kc-label: #3d4759;
+    --kc-input-text: #141b2b;
+    --kc-placeholder: #8f9bb3;
+    --kc-autofill-bg: #ffffff;
+    --kc-icon-muted: #5f6b83;
+    --kc-muted: #5f6b83;
+    --kc-field-border-hover: rgba(23, 31, 46, 0.24);
+    --kc-focus-border: #40476d;
+    --kc-inset-highlight: rgba(255, 255, 255, 0.85);
+    --kc-sheen: rgba(255, 255, 255, 0.5);
+    --kc-btn2-bg: rgba(23, 31, 46, 0.04);
+    --kc-btn2-bg-hover: rgba(23, 31, 46, 0.08);
+    --kc-btn2-fg: #2a3346;
+    --kc-btn2-fg-hover: #141b2b;
+    --kc-btn2-border-hover: rgba(64, 71, 109, 0.45);
+    --kc-divider: rgba(23, 31, 46, 0.14);
+    --kc-selection-bg: rgba(64, 71, 109, 0.18);
+    --kc-selection-fg: #141b2b;
+    --kc-error-fg: #b3352a;
+    --kc-error-border: rgba(212, 72, 59, 0.55);
+    --kc-error-bg: rgba(212, 72, 59, 0.07);
+    --kc-error-ring: rgba(212, 72, 59, 0.14);
+    --kc-warn-fg: #8a5a0f;
+    --kc-warn-bg: rgba(201, 130, 26, 0.1);
+    --kc-warn-border: rgba(201, 130, 26, 0.3);
+    --kc-alert-bg: rgba(23, 31, 46, 0.03);
+    --kc-alert-title: #141b2b;
+    --kc-ripple: rgba(255, 255, 255, 0.3);
+    --kc-spinner-track: rgba(255, 255, 255, 0.35);
+
+    --keycloak-logo-url: url('../img/fidar-logo-light.png');
+
+    /* Text ramp */
+    --pf-v5-global--Color--100: #141b2b;
+    --pf-v5-global--Color--200: #5f6b83;
+    --pf-v5-global--Color--light-100: #141b2b;
+    --pf-v5-global--Color--light-200: #5f6b83;
+    --pf-v5-global--Color--dark-100: #141b2b;
+    --pf-v5-global--Color--dark-200: #5f6b83;
+
+    --pf-v5-global--BorderColor--100: var(--kc-field-border);
+    --pf-v5-global--BorderColor--200: var(--kc-field-border);
+    --pf-v5-global--BorderColor--300: var(--kc-field-border);
+    --pf-v5-global--BorderColor--light-100: var(--kc-field-border);
+    --pf-v5-global--BorderColor--dark-100: var(--kc-field-border);
+
+    --pf-v5-global--link--Color: #304d6d;
+    --pf-v5-global--link--Color--hover: #22384f;
+    --pf-v5-global--link--Color--light: #304d6d;
+    --pf-v5-global--link--Color--dark: #304d6d;
+    --pf-v5-global--primary-color--100: var(--fidar-accent);
+    --pf-v5-global--active-color--100: var(--fidar-accent);
+
+    /* Motion + shape, shared by both schemes */
+    --kc-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --kc-dur: 250ms;
+    --kc-dur-slow: 600ms;
+    --kc-radius-card: 24px;
+    --kc-radius-field: 14px;
+
+    /* Inter and SF Pro are used only when already installed locally; an auth
+       screen should never depend on a third-party font request. */
+    --kc-font: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont,
+        "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+:root.login-pf.pf-v5-theme-dark {
     /* Canvas */
     --fidar-ink-900: #0b0f19;
     --fidar-ink-800: #111827;
@@ -237,17 +343,59 @@
     --kc-field-bg-hover: rgba(255, 255, 255, 0.075);
     --kc-field-border: rgba(255, 255, 255, 0.11);
 
-    /* Motion + shape */
-    --kc-ease: cubic-bezier(0.16, 1, 0.3, 1);
-    --kc-dur: 250ms;
-    --kc-dur-slow: 600ms;
-    --kc-radius-card: 24px;
-    --kc-radius-field: 14px;
+    --kc-canvas-gradient: linear-gradient(160deg, #0b0f19 0%, #101827 48%, #131d31 100%);
+    --kc-canvas-glow-1: rgba(173, 229, 255, 0.16);
+    --kc-canvas-glow-2: rgba(168, 167, 200, 0.14);
+    --kc-canvas-glow-3: rgba(124, 201, 245, 0.12);
+    --kc-noise-opacity: 0.45;
+    --kc-blob-1: rgba(173, 229, 255, 0.3);
+    --kc-blob-2: rgba(168, 167, 200, 0.28);
 
-    /* Inter and SF Pro are used only when already installed locally; an auth
-       screen should never depend on a third-party font request. */
-    --kc-font: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont,
-        "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --kc-brand-divider: rgba(255, 255, 255, 0.14);
+    --kc-heading: #ffffff;
+    --kc-heading-gradient: linear-gradient(120deg, #ffffff 0%, #d7f2ff 45%, #b9b8d8 100%);
+    --kc-tagline: rgba(248, 250, 252, 0.86);
+
+    --kc-cta-bg: linear-gradient(135deg, #ade5ff 0%, #7cc9f5 48%, #b9b8d8 100%);
+    --kc-cta-fg: #0b0f19;
+    --kc-cta-shadow: rgba(173, 229, 255, 0.42);
+    --kc-cta-ring: rgba(173, 229, 255, 0.14);
+
+    --kc-card-shadow-1: rgba(0, 0, 0, 0.75);
+    --kc-card-shadow-2: rgba(0, 0, 0, 0.5);
+
+    --kc-title: #ffffff;
+    --kc-label: #cbd5e1;
+    --kc-input-text: #f8fafc;
+    --kc-placeholder: #64748b;
+    --kc-autofill-bg: #18202f;
+    --kc-icon-muted: #94a3b8;
+    --kc-muted: #94a3b8;
+    --kc-field-border-hover: rgba(255, 255, 255, 0.18);
+    --kc-focus-border: rgba(173, 229, 255, 0.65);
+    --kc-inset-highlight: rgba(255, 255, 255, 0.16);
+    --kc-sheen: rgba(255, 255, 255, 0.055);
+    --kc-btn2-bg: rgba(255, 255, 255, 0.05);
+    --kc-btn2-bg-hover: rgba(255, 255, 255, 0.1);
+    --kc-btn2-fg: #e8edf7;
+    --kc-btn2-fg-hover: #ffffff;
+    --kc-btn2-border-hover: rgba(173, 229, 255, 0.4);
+    --kc-divider: rgba(255, 255, 255, 0.16);
+    --kc-selection-bg: rgba(173, 229, 255, 0.28);
+    --kc-selection-fg: #ffffff;
+    --kc-error-fg: #fca5a5;
+    --kc-error-border: rgba(248, 113, 113, 0.65);
+    --kc-error-bg: rgba(248, 113, 113, 0.07);
+    --kc-error-ring: rgba(248, 113, 113, 0.14);
+    --kc-warn-fg: #fcd34d;
+    --kc-warn-bg: rgba(252, 211, 77, 0.09);
+    --kc-warn-border: rgba(252, 211, 77, 0.24);
+    --kc-alert-bg: rgba(255, 255, 255, 0.05);
+    --kc-alert-title: #f1f5f9;
+    --kc-ripple: rgba(11, 15, 25, 0.28);
+    --kc-spinner-track: rgba(11, 15, 25, 0.3);
+
+    --keycloak-logo-url: url('../img/fidar-logo.png');
 
     /* Text ramp */
     --pf-v5-global--Color--100: #f8fafc;
@@ -269,8 +417,6 @@
     --pf-v5-global--link--Color--dark: var(--fidar-accent);
     --pf-v5-global--primary-color--100: var(--fidar-accent);
     --pf-v5-global--active-color--100: var(--fidar-accent);
-
-    --keycloak-logo-url: url('../img/fidar-logo.png');
 }
 
 html.login-pf,
@@ -328,14 +474,20 @@ html.login-pf,
     padding: 0;
     background-color: var(--fidar-ink-900);
     background-image:
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E"),
-        radial-gradient(1200px 820px at 6% -12%, rgba(173, 229, 255, 0.16), transparent 60%),
-        radial-gradient(900px 720px at 96% 6%, rgba(168, 167, 200, 0.14), transparent 58%),
-        radial-gradient(1000px 900px at 48% 116%, rgba(124, 201, 245, 0.12), transparent 60%),
-        linear-gradient(160deg, #0b0f19 0%, #101827 48%, #131d31 100%);
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E"),
+        radial-gradient(1200px 820px at 6% -12%, var(--kc-canvas-glow-1), transparent 60%),
+        radial-gradient(900px 720px at 96% 6%, var(--kc-canvas-glow-2), transparent 58%),
+        radial-gradient(1000px 900px at 48% 116%, var(--kc-canvas-glow-3), transparent 60%),
+        var(--kc-canvas-gradient);
     background-size: 180px 180px, auto, auto, auto, auto;
     background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat;
     background-attachment: fixed;
+    /* The baked-in noise reads far heavier on a light canvas than a dark one. */
+    background-blend-mode: soft-light, normal, normal, normal, normal;
+}
+
+:root.login-pf.pf-v5-theme-dark .pf-v5-c-login {
+    background-blend-mode: normal, normal, normal, normal, normal;
 }
 
 /* Slow-drifting blobs sitting between the canvas and the content. */
@@ -356,7 +508,7 @@ html.login-pf,
     max-block-size: 720px;
     inset-block-start: -14vw;
     inset-inline-start: -10vw;
-    background: radial-gradient(circle, rgba(173, 229, 255, 0.30), transparent 70%);
+    background: radial-gradient(circle, var(--kc-blob-1), transparent 70%);
     animation: kc-drift-a 24s var(--kc-ease) infinite alternate;
 }
 
@@ -367,7 +519,7 @@ html.login-pf,
     max-block-size: 640px;
     inset-block-end: -16vw;
     inset-inline-end: -8vw;
-    background: radial-gradient(circle, rgba(168, 167, 200, 0.28), transparent 70%);
+    background: radial-gradient(circle, var(--kc-blob-2), transparent 70%);
     animation: kc-drift-b 30s var(--kc-ease) infinite alternate;
 }
 
@@ -402,7 +554,7 @@ html.login-pf,
     gap: 1.5rem;
     margin: 0;
     padding: clamp(2rem, 6vw, 5.5rem);
-    color: #fff;
+    color: var(--kc-heading);
     animation: kc-fade-up var(--kc-dur-slow) var(--kc-ease) both;
 }
 
@@ -412,7 +564,7 @@ html.login-pf,
     inset-block: 12%;
     inset-inline-end: 0;
     inline-size: 1px;
-    background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.14), transparent);
+    background: linear-gradient(180deg, transparent, var(--kc-brand-divider), transparent);
 }
 
 #kc-header-wrapper {
@@ -423,7 +575,7 @@ html.login-pf,
     line-height: 1.15;
     text-transform: none;
     text-align: start;
-    color: #fff;
+    color: var(--kc-heading);
 }
 
 div.kc-logo-text {
@@ -455,8 +607,8 @@ div.kc-logo-text span {
     font-weight: 600;
     letter-spacing: -0.025em;
     line-height: 1.1;
-    color: #fff;
-    background: linear-gradient(120deg, #ffffff 0%, #d7f2ff 45%, #b9b8d8 100%);
+    color: var(--kc-heading);
+    background: var(--kc-heading-gradient);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -468,7 +620,7 @@ div.kc-logo-text span {
     font-size: clamp(1.25rem, 1.7vw, 1.5rem);
     font-weight: 500;
     line-height: 1.5;
-    color: rgba(248, 250, 252, 0.86);
+    color: var(--kc-tagline);
 }
 
 .kc-brand-copy .kc-brand-tagline {
@@ -488,15 +640,15 @@ div.kc-logo-text span {
     margin: clamp(2rem, 5vw, 4rem) clamp(1.25rem, 4vw, 3.5rem);
     overflow: hidden;
     background:
-        linear-gradient(170deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0) 42%),
+        linear-gradient(170deg, var(--kc-sheen), rgba(255, 255, 255, 0) 42%),
         var(--kc-glass-bg);
     -webkit-backdrop-filter: blur(28px) saturate(150%);
     backdrop-filter: blur(28px) saturate(150%);
     border: 1px solid var(--kc-glass-border);
     border-radius: var(--kc-radius-card);
     box-shadow:
-        0 32px 80px -28px rgba(0, 0, 0, 0.75),
-        0 8px 28px -12px rgba(0, 0, 0, 0.5),
+        0 32px 80px -28px var(--kc-card-shadow-1),
+        0 8px 28px -12px var(--kc-card-shadow-2),
         inset 0 1px 0 0 var(--kc-glass-highlight);
     animation: kc-rise var(--kc-dur-slow) 60ms var(--kc-ease) both;
     transition: box-shadow var(--kc-dur-slow) var(--kc-ease);
@@ -504,9 +656,9 @@ div.kc-logo-text span {
 
 .pf-v5-c-login__main:hover {
     box-shadow:
-        0 36px 88px -28px rgba(0, 0, 0, 0.8),
-        0 8px 28px -12px rgba(0, 0, 0, 0.5),
-        0 0 40px -18px rgba(173, 229, 255, 0.28),
+        0 36px 88px -28px var(--kc-card-shadow-1),
+        0 8px 28px -12px var(--kc-card-shadow-2),
+        0 0 40px -18px var(--kc-cta-shadow),
         inset 0 1px 0 0 var(--kc-glass-highlight);
 }
 
@@ -517,7 +669,7 @@ div.kc-logo-text span {
     inset-block-start: 0;
     inset-inline: 0;
     block-size: 1px;
-    background: linear-gradient(90deg, transparent, rgba(173, 229, 255, 0.75), transparent);
+    background: linear-gradient(90deg, transparent, var(--fidar-accent), transparent);
     background-size: 200% 100%;
     animation: kc-shimmer 7s linear infinite;
 }
@@ -533,7 +685,7 @@ div.kc-logo-text span {
     font-weight: 650;
     letter-spacing: -0.02em;
     line-height: 1.25;
-    color: #fff;
+    color: var(--kc-title);
 }
 
 /* --------------------------------------------------------------------------
@@ -562,7 +714,7 @@ div.kc-logo-text span {
     font-size: 0.875rem;
     font-weight: 500;
     letter-spacing: -0.005em;
-    color: #cbd5e1;
+    color: var(--kc-label);
 }
 
 /* PatternFly draws the field as a bottom rule via ::after; zero it out and
@@ -589,28 +741,28 @@ div.kc-logo-text span {
 .pf-v5-c-form-control:hover,
 .pf-v5-c-input-group:hover {
     background: var(--kc-field-bg-hover);
-    border-color: rgba(255, 255, 255, 0.18);
+    border-color: var(--kc-field-border-hover);
 }
 
 .pf-v5-c-form-control:focus-within,
 .pf-v5-c-input-group:focus-within {
     background: var(--kc-field-bg-hover);
-    border-color: rgba(173, 229, 255, 0.65);
+    border-color: var(--kc-focus-border);
     box-shadow:
-        0 0 0 4px rgba(173, 229, 255, 0.14),
-        0 0 24px -6px rgba(173, 229, 255, 0.35);
+        0 0 0 4px var(--kc-cta-ring),
+        0 0 24px -6px var(--kc-cta-shadow);
 }
 
 .pf-v5-c-form-control > input {
     padding-block: 0.85rem;
     padding-inline: 1rem;
     font-size: 0.95rem;
-    color: #f8fafc;
+    color: var(--kc-input-text);
     background: transparent;
 }
 
 .pf-v5-c-form-control > input::placeholder {
-    color: #64748b;
+    color: var(--kc-placeholder);
 }
 
 /* Field icons. Painted as the input's own background rather than a pseudo
@@ -656,9 +808,9 @@ html[dir="rtl"] #password-new {
 .pf-v5-c-form-control > input:-webkit-autofill,
 .pf-v5-c-form-control > input:-webkit-autofill:hover,
 .pf-v5-c-form-control > input:-webkit-autofill:focus {
-    -webkit-text-fill-color: #f8fafc;
-    -webkit-box-shadow: 0 0 0 1000px #18202f inset;
-    caret-color: #f8fafc;
+    -webkit-text-fill-color: var(--kc-input-text);
+    -webkit-box-shadow: 0 0 0 1000px var(--kc-autofill-bg) inset;
+    caret-color: var(--kc-input-text);
     transition: background-color 9999s ease-out 0s;
 }
 
@@ -690,7 +842,7 @@ html[dir="rtl"] #password-new {
 .pf-v5-c-input-group .pf-v5-c-button.pf-m-control {
     background: transparent;
     border: none;
-    color: #94a3b8;
+    color: var(--kc-icon-muted);
     padding-inline: 0.9rem;
     transition: color var(--kc-dur) var(--kc-ease);
 }
@@ -709,19 +861,19 @@ html[dir="rtl"] #password-new {
 
 .pf-v5-c-form-control.pf-m-error,
 .pf-v5-c-input-group:has(.pf-m-error) {
-    border-color: rgba(248, 113, 113, 0.65);
-    background: rgba(248, 113, 113, 0.07);
+    border-color: var(--kc-error-border);
+    background: var(--kc-error-bg);
     animation: kc-shake 420ms var(--kc-ease) both;
 }
 
 .pf-v5-c-form-control.pf-m-error:focus-within,
 .pf-v5-c-input-group:has(.pf-m-error):focus-within {
-    box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.14);
+    box-shadow: 0 0 0 4px var(--kc-error-ring);
 }
 
 .pf-v5-c-helper-text__item-text.pf-m-error,
 .pf-m-error .pf-v5-c-helper-text__item-text {
-    color: #fca5a5;
+    color: var(--kc-error-fg);
 }
 
 .pf-v5-c-form__helper-text {
@@ -742,9 +894,9 @@ html[dir="rtl"] #password-new {
     margin-block-start: 0.6rem;
     padding: 0.55rem 0.75rem;
     font-size: 0.8125rem;
-    color: #fcd34d;
-    background: rgba(252, 211, 77, 0.09);
-    border: 1px solid rgba(252, 211, 77, 0.24);
+    color: var(--kc-warn-fg);
+    background: var(--kc-warn-bg);
+    border: 1px solid var(--kc-warn-border);
     border-radius: 10px;
     animation: kc-fade-up 200ms var(--kc-ease) both;
 }
@@ -774,7 +926,7 @@ html[dir="rtl"] #password-new {
 
 .pf-v5-c-check__label {
     font-size: 0.8125rem;
-    color: #cbd5e1;
+    color: var(--kc-label);
     cursor: pointer;
 }
 
@@ -788,7 +940,7 @@ html[dir="rtl"] #password-new {
 }
 
 .pf-v5-c-login__main a:hover {
-    color: #d7f2ff;
+    color: var(--pf-v5-global--link--Color--hover);
     text-decoration: underline;
     text-underline-offset: 3px;
 }
@@ -806,12 +958,12 @@ html[dir="rtl"] #password-new {
     font-size: 0.95rem;
     font-weight: 600;
     letter-spacing: 0.01em;
-    color: #0b0f19;
-    background: linear-gradient(135deg, #ade5ff 0%, #7cc9f5 48%, #b9b8d8 100%);
+    color: var(--kc-cta-fg);
+    background: var(--kc-cta-bg);
     background-size: 150% 150%;
     box-shadow:
-        0 8px 20px -12px rgba(173, 229, 255, 0.42),
-        inset 0 1px 0 0 rgba(255, 255, 255, 0.35);
+        0 8px 20px -12px var(--kc-cta-shadow),
+        inset 0 1px 0 0 var(--kc-inset-highlight);
     transition:
         transform var(--kc-dur) var(--kc-ease),
         box-shadow var(--kc-dur) var(--kc-ease),
@@ -822,8 +974,8 @@ html[dir="rtl"] #password-new {
     transform: translateY(-2px);
     background-position: 100% 50%;
     box-shadow:
-        0 14px 30px -12px rgba(173, 229, 255, 0.52),
-        inset 0 1px 0 0 rgba(255, 255, 255, 0.45);
+        0 14px 30px -12px var(--kc-cta-shadow),
+        inset 0 1px 0 0 var(--kc-inset-highlight);
 }
 
 .pf-v5-c-login__main .pf-v5-c-button.pf-m-primary:active {
@@ -850,7 +1002,7 @@ html[dir="rtl"] #password-new {
     position: absolute;
     border-radius: 50%;
     transform: scale(0);
-    background: rgba(11, 15, 25, 0.28);
+    background: var(--kc-ripple);
     pointer-events: none;
     animation: kc-ripple 620ms var(--kc-ease);
 }
@@ -871,8 +1023,8 @@ html[dir="rtl"] #password-new {
     block-size: 1.15rem;
     margin-block-start: -0.575rem;
     margin-inline-start: -0.575rem;
-    border: 2px solid rgba(11, 15, 25, 0.3);
-    border-block-start-color: #0b0f19;
+    border: 2px solid var(--kc-spinner-track);
+    border-block-start-color: var(--kc-cta-fg);
     border-radius: 50%;
     animation: kc-spin 620ms linear infinite;
 }
@@ -887,8 +1039,8 @@ html[dir="rtl"] #password-new {
 .pf-v5-c-login__main .pf-v5-c-button.pf-m-secondary {
     border-radius: var(--kc-radius-field);
     border: 1px solid var(--kc-field-border);
-    background: rgba(255, 255, 255, 0.05);
-    color: #e8edf7;
+    background: var(--kc-btn2-bg);
+    color: var(--kc-btn2-fg);
     font-weight: 500;
     transition:
         transform var(--kc-dur) var(--kc-ease),
@@ -898,9 +1050,9 @@ html[dir="rtl"] #password-new {
 
 .pf-v5-c-login__main .pf-v5-c-button.pf-m-secondary:hover {
     transform: translateY(-1px);
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(173, 229, 255, 0.4);
-    color: #fff;
+    background: var(--kc-btn2-bg-hover);
+    border-color: var(--kc-btn2-border-hover);
+    color: var(--kc-btn2-fg-hover);
 }
 
 /* --------------------------------------------------------------------------
@@ -921,12 +1073,12 @@ html[dir="rtl"] #password-new {
     content: "";
     flex: 1 1 auto;
     block-size: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent);
+    background: linear-gradient(90deg, transparent, var(--kc-divider), transparent);
 }
 
 .pf-v5-c-login__main-footer-band-item {
     font-size: 0.8125rem;
-    color: #94a3b8;
+    color: var(--kc-muted);
     white-space: nowrap;
 }
 
@@ -942,8 +1094,8 @@ html[dir="rtl"] #password-new {
     padding-inline: 1rem;
     border-radius: var(--kc-radius-field);
     border: 1px solid var(--kc-field-border);
-    background: rgba(255, 255, 255, 0.05);
-    color: #e8edf7;
+    background: var(--kc-btn2-bg);
+    color: var(--kc-btn2-fg);
     font-size: 0.9rem;
     font-weight: 500;
     transition:
@@ -954,9 +1106,9 @@ html[dir="rtl"] #password-new {
 
 #kc-social-providers .pf-v5-c-button:hover {
     transform: translateY(-1px);
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(173, 229, 255, 0.4);
-    color: #fff;
+    background: var(--kc-btn2-bg-hover);
+    border-color: var(--kc-btn2-border-hover);
+    color: var(--kc-btn2-fg-hover);
 }
 
 #kc-social-providers svg {
@@ -989,7 +1141,7 @@ html[dir="rtl"] #password-new {
 #kc-registration,
 #kc-info-wrapper {
     font-size: 0.875rem;
-    color: #94a3b8;
+    color: var(--kc-muted);
 }
 
 #kc-registration a {
@@ -1003,15 +1155,15 @@ html[dir="rtl"] #password-new {
 .pf-v5-c-alert {
     border-radius: 12px;
     border: 1px solid var(--kc-field-border);
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--kc-alert-bg);
     -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
     animation: kc-fade-up 320ms var(--kc-ease) both;
 }
 
 .pf-v5-c-alert.pf-m-danger {
-    border-color: rgba(248, 113, 113, 0.32);
-    background: rgba(248, 113, 113, 0.1);
+    border-color: var(--kc-error-border);
+    background: var(--kc-error-bg);
 }
 
 .pf-v5-c-alert.pf-m-success {
@@ -1020,12 +1172,12 @@ html[dir="rtl"] #password-new {
 }
 
 .pf-v5-c-alert.pf-m-warning {
-    border-color: rgba(252, 211, 77, 0.32);
-    background: rgba(252, 211, 77, 0.1);
+    border-color: var(--kc-warn-border);
+    background: var(--kc-warn-bg);
 }
 
 .pf-v5-c-alert__title {
-    color: #f1f5f9;
+    color: var(--kc-alert-title);
     font-size: 0.875rem;
 }
 
@@ -1040,8 +1192,8 @@ html[dir="rtl"] #password-new {
 }
 
 .login-pf ::selection {
-    background: rgba(173, 229, 255, 0.28);
-    color: #fff;
+    background: var(--kc-selection-bg);
+    color: var(--kc-selection-fg);
 }
 
 /* --------------------------------------------------------------------------
@@ -1134,11 +1286,14 @@ html[dir="rtl"] #password-new {
         min-height: auto;
     }
 
+    /* Stacked, the brand block sits above the form on every phone regardless
+       of height, so it has to earn its space rather than use the desktop
+       split-screen sizing (that sizing assumed a full column to itself). */
     .pf-v5-c-login__header {
         align-items: center;
         text-align: center;
-        gap: 1rem;
-        padding: clamp(2.5rem, 7vw, 3.5rem) 1.5rem 0.5rem;
+        gap: 0.5rem;
+        padding: clamp(1.25rem, 5vw, 2rem) 1.5rem 0.375rem;
     }
 
     .pf-v5-c-login__header::after {
@@ -1151,44 +1306,68 @@ html[dir="rtl"] #password-new {
 
     div.kc-logo-text {
         background-position: center;
-        inline-size: min(420px, 85%);
-        block-size: 96px;
+        inline-size: min(220px, 65%);
+        block-size: 52px;
         margin-inline: auto;
     }
 
     .kc-brand-copy {
         align-items: center;
-        gap: 0.75rem;
+        gap: 0.3rem;
     }
 
-    .kc-brand-headline,
-    .kc-brand-tagline {
+    .kc-brand-headline {
         max-width: 46ch;
         text-align: center;
+        /* The desktop clamp bottoms out at 2.25rem — still large once the
+           column is this narrow. Fixed size, not a clamp: nothing on a
+           stacked phone layout benefits from scaling further with width. */
+        font-size: 1.375rem;
+    }
+
+    .kc-brand-tagline {
+        max-width: 38ch;
+        text-align: center;
+        font-size: 0.875rem;
     }
 
     .pf-v5-c-login__main {
-        margin-block: 1.5rem 3rem;
+        margin-block: 0.75rem 1.25rem;
         margin-inline: auto;
     }
 }
 
 @media (max-width: 640px) {
     .pf-v5-c-login {
+        --pf-v5-c-login__main-header--PaddingTop: 1.5rem;
         --pf-v5-c-login__main-header--PaddingRight: 1.35rem;
         --pf-v5-c-login__main-header--PaddingLeft: 1.35rem;
         --pf-v5-c-login__main-header--md--PaddingRight: 1.35rem;
         --pf-v5-c-login__main-header--md--PaddingLeft: 1.35rem;
+        --pf-v5-c-login__main-body--PaddingBottom: 1rem;
         --pf-v5-c-login__main-body--PaddingRight: 1.35rem;
         --pf-v5-c-login__main-body--PaddingLeft: 1.35rem;
         --pf-v5-c-login__main-body--md--PaddingRight: 1.35rem;
         --pf-v5-c-login__main-body--md--PaddingLeft: 1.35rem;
+        /* Base value is tuned for the desktop card; the fields themselves
+           already meet the 48px touch target below, so the row spacing can
+           come in without anything feeling cramped. */
+        --pf-v5-c-form--GridGap: 0.9rem;
     }
 
     .pf-v5-c-login__main {
         inline-size: 100%;
         margin-inline: 0.85rem;
         border-radius: 20px;
+    }
+
+    #kc-page-title,
+    .pf-v5-c-login__main-header .pf-v5-c-title {
+        font-size: 1.3rem;
+    }
+
+    .pf-v5-c-form__actions {
+        margin-block-start: 0.35rem;
     }
 
     /* Touch targets stay comfortable on small screens. */
@@ -1271,5 +1450,253 @@ hr {
 @media (min-width: 768px) {
     div.pf-v5-c-login__main-header:has(.pf-v5-c-login__main-header-utilities) {
         grid-template-columns: 70% 30%;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Colour scheme toggle
+   Pinned to the viewport so it is reachable from every login-flow page, since
+   they all share this template.
+   -------------------------------------------------------------------------- */
+
+.kc-theme-toggle {
+    position: fixed;
+    inset-block-start: 1.25rem;
+    inset-inline-end: 1.25rem;
+    z-index: 10;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
+    padding: 0;
+    cursor: pointer;
+    color: var(--kc-icon-muted);
+    background: var(--kc-glass-bg);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    backdrop-filter: blur(14px) saturate(140%);
+    border: 1px solid var(--kc-glass-border);
+    border-radius: 50%;
+    box-shadow: 0 6px 18px -10px var(--kc-card-shadow-1);
+    transition:
+        color var(--kc-dur) var(--kc-ease),
+        border-color var(--kc-dur) var(--kc-ease),
+        transform var(--kc-dur) var(--kc-ease);
+}
+
+.kc-theme-toggle:hover {
+    color: var(--kc-title);
+    border-color: var(--kc-field-border-hover);
+    transform: translateY(-1px);
+}
+
+.kc-theme-toggle:active {
+    transform: translateY(0);
+}
+
+.kc-theme-toggle__sun,
+.kc-theme-toggle__moon {
+    position: absolute;
+    inline-size: 1.1rem;
+    block-size: 1.1rem;
+    background-color: currentColor;
+    transition: opacity var(--kc-dur) var(--kc-ease),
+        transform var(--kc-dur) var(--kc-ease);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+}
+
+/* Masks rather than fills, so the icons inherit `currentColor` on hover. */
+.kc-theme-toggle__sun {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4'/%3E%3C/svg%3E");
+}
+
+.kc-theme-toggle__moon {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z'/%3E%3C/svg%3E");
+}
+
+/* Show the scheme you would switch *to*, which is the opposite of the current one. */
+.kc-theme-toggle__sun {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.6);
+}
+
+.kc-theme-toggle__moon {
+    opacity: 1;
+    transform: none;
+}
+
+:root.pf-v5-theme-dark .kc-theme-toggle__sun {
+    opacity: 1;
+    transform: none;
+}
+
+:root.pf-v5-theme-dark .kc-theme-toggle__moon {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.6);
+}
+
+@media (max-width: 640px) {
+    .kc-theme-toggle {
+        inset-block-start: 0.75rem;
+        inset-inline-end: 0.75rem;
+        inline-size: 2.25rem;
+        block-size: 2.25rem;
+    }
+}
+
+/* ==========================================================================
+   Responsive hardening
+   The split-screen already collapses at 1024px, but several login-flow pages
+   carry content that overflows narrow viewports on its own: QR codes rendered
+   at their natural size, a client-supplied logo of unknown dimensions, a
+   two-column recovery-code list, and long unbroken tokens.
+   ========================================================================== */
+
+/* Nothing in the auth flow should ever produce a horizontal scrollbar. */
+html.login-pf,
+.login-pf body {
+    max-inline-size: 100%;
+    overflow-x: hidden;
+}
+
+/* Long unbroken strings — client ids, redirect URIs, emails, tokens — would
+   otherwise force the card wider than the viewport. */
+.pf-v5-c-login__main,
+.pf-v5-c-login__main-body,
+#kc-page-title,
+#kc-header-wrapper,
+.pf-v5-c-alert__title,
+.pf-v5-c-helper-text__item-text,
+#kc-info-wrapper {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* QR codes (TOTP enrolment, OID4VC credential offer) render at their natural
+   pixel size; cap them to the card. */
+#kc-totp-secret-qr-code,
+#kc-credential-offer-qr-code {
+    display: block;
+    max-inline-size: min(100%, 240px);
+    block-size: auto;
+    margin-inline: auto;
+    border-radius: var(--kc-radius-field);
+    background: #ffffff;
+    padding: 0.5rem;
+}
+
+/* The OAuth grant screen renders a logo supplied by the client, so its
+   dimensions are entirely outside our control. */
+#kc-oauth img,
+.pf-v5-c-login__main img:not([id*="qr-code"]):not(.kc-social-provider-logo) {
+    max-inline-size: 100%;
+    block-size: auto;
+}
+
+/* The TOTP manual-entry secret is a long unbroken string. */
+#kc-totp-secret-key,
+.pf-v5-c-login__main pre,
+.pf-v5-c-login__main code {
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+/* Authenticator picker rows: keep icon, label and chevron on one line without
+   squeezing the text out. */
+.select-auth-box-parent {
+    flex-wrap: nowrap;
+}
+
+.select-auth-box-desc,
+.select-auth-box-headline {
+    overflow-wrap: anywhere;
+}
+
+/* Tablet — the panels have stacked by now, so let the card breathe wider. */
+@media (max-width: 1024px) {
+    .pf-v5-c-login__main {
+        inline-size: min(100%, 32rem);
+    }
+}
+
+@media (max-width: 640px) {
+    /* Two columns of recovery codes are unreadable on a phone. */
+    #kc-recovery-codes-list {
+        columns: 1;
+    }
+
+    /* Social provider buttons go full width rather than a cramped grid. */
+    #kc-social-providers .pf-v5-l-grid__item {
+        grid-column: 1 / -1;
+    }
+
+    .pf-v5-c-login__main-header,
+    .pf-v5-c-login__main-body,
+    .pf-v5-c-login__main-footer {
+        max-inline-size: 100%;
+    }
+
+    /* Language selector sits above the title instead of beside it. */
+    div.pf-v5-c-login__main-header:has(.pf-v5-c-login__main-header-utilities) {
+        grid-template-columns: 1fr;
+        row-gap: 0.75rem;
+    }
+}
+
+/* Very narrow (small phones, split-screen multitasking). */
+@media (max-width: 380px) {
+    .pf-v5-c-login {
+        --pf-v5-c-login__main-header--PaddingRight: 1rem;
+        --pf-v5-c-login__main-header--PaddingLeft: 1rem;
+        --pf-v5-c-login__main-header--md--PaddingRight: 1rem;
+        --pf-v5-c-login__main-header--md--PaddingLeft: 1rem;
+        --pf-v5-c-login__main-body--PaddingRight: 1rem;
+        --pf-v5-c-login__main-body--PaddingLeft: 1rem;
+        --pf-v5-c-login__main-body--md--PaddingRight: 1rem;
+        --pf-v5-c-login__main-body--md--PaddingLeft: 1rem;
+    }
+
+    .pf-v5-c-login__main {
+        margin-inline: 0.5rem;
+    }
+
+    #kc-recovery-codes-list li {
+        font-size: 0.8125rem;
+    }
+}
+
+/* Short viewports — phone landscape, or a tall on-screen keyboard. The brand
+   panel is decorative, so it yields before the form does. */
+@media (max-height: 560px) and (max-width: 1024px) {
+    .pf-v5-c-login__header {
+        padding-block: 1.25rem 0.5rem;
+    }
+
+    .kc-brand-headline,
+    .kc-brand-tagline {
+        display: none;
+    }
+
+    div.kc-logo-text {
+        block-size: 48px;
+    }
+
+    .pf-v5-c-login__main {
+        margin-block: 0.75rem 1.5rem;
+    }
+}
+
+/* The drift blobs are pure decoration and cost real paint time on mobile. */
+@media (max-width: 640px) {
+    .pf-v5-c-login::before,
+    .pf-v5-c-login::after {
+        display: none;
     }
 }

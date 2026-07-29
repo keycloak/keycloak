@@ -1,107 +1,202 @@
 /* ==========================================================================
-   Fidar brand theme — PatternFly v5 design token overrides.
+   FIDAR DESIGN SYSTEM
+   --------------------------------------------------------------------------
+   A transformation layer over PatternFly v5. The consoles are ~85k lines of
+   TSX built on PatternFly components; rather than rewrite those (which would
+   end the ability to rebase onto upstream releases), this restyles the
+   component library beneath them — shape, type, colour, density, elevation.
 
-   PatternFly declares its dark theme under `:where(.pf-v5-theme-dark)`, which
-   carries zero specificity, so the `:root` block below already outranks it.
-   Dark values therefore live under `:root.pf-v5-theme-dark` (0,2,0) so that
-   they in turn outrank the light defaults.
+   Two PatternFly behaviours drive the structure here:
 
-   IMPORTANT: PatternFly's "--light-100" / "--dark-100" suffixed tokens are
-   NOT theme switches — they are literal ends of the colour ramp ("light" =
-   near-white, "dark" = near-black), kept around so a component can force
-   light-on-dark or dark-on-light text regardless of overall theme (e.g. the
-   masthead is always dark chrome, even on the light theme). Both the "100"
-   token AND its "--light-100"/"--dark-100" siblings must be overridden in
-   each scope, or a component reading the sibling directly falls back to the
-   other scope's value and produces invisible text.
+   1. The dark theme is declared under `:where(.pf-v5-theme-dark)`, which has
+      zero specificity. `:root` already outranks it, so dark values must live
+      under `:root.pf-v5-theme-dark` (0,2,0) to win.
+
+   2. The `--light-100` / `--dark-100` suffixed tokens are NOT theme switches.
+      They are literal ends of the ramp ("light" = near-white, "dark" =
+      near-black), used where a component must force light-on-dark regardless
+      of theme. Each scope must set both the plain token and its siblings, or
+      a component reading a sibling falls through to the other scope's value
+      and renders invisible text.
    ========================================================================== */
 
+/* --------------------------------------------------------------------------
+   1. Foundation — typography
+   PatternFly ships Red Hat's brand faces, which is the single strongest
+   visual tell. Swapped for a system stack: no external request (important
+   for air-gapped IAM deployments) while still resolving to Inter or SF Pro
+   where they exist locally.
+   -------------------------------------------------------------------------- */
+
 :root {
-  /* Brand palette */
+  --fidar-font-sans: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --fidar-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono",
+    Menlo, Consolas, "Liberation Mono", monospace;
+
+  --pf-v5-global--FontFamily--text: var(--fidar-font-sans);
+  --pf-v5-global--FontFamily--heading: var(--fidar-font-sans);
+  --pf-v5-global--FontFamily--monospace: var(--fidar-font-mono);
+  --pf-v5-global--FontFamily--text--vf: var(--fidar-font-sans);
+  --pf-v5-global--FontFamily--heading--vf: var(--fidar-font-sans);
+  --pf-v5-global--FontFamily--monospace--vf: var(--fidar-font-mono);
+  --pf-v5-global--FontFamily--redhatVF: var(--fidar-font-sans);
+
+  /* Type scale — tightened tracking on display sizes, roomier line height on body */
+  --pf-v5-global--FontSize--4xl: 2.25rem;
+  --pf-v5-global--FontSize--3xl: 1.75rem;
+  --pf-v5-global--FontSize--2xl: 1.375rem;
+  --pf-v5-global--FontSize--xl: 1.125rem;
+  --pf-v5-global--FontSize--lg: 1rem;
+  --pf-v5-global--FontSize--md: 0.9375rem;
+  --pf-v5-global--FontSize--sm: 0.8125rem;
+  --pf-v5-global--FontSize--xs: 0.75rem;
+
+  --pf-v5-global--LineHeight--sm: 1.4;
+  --pf-v5-global--LineHeight--md: 1.6;
+
+  --pf-v5-global--FontWeight--normal: 400;
+  --pf-v5-global--FontWeight--semi-bold: 550;
+  --pf-v5-global--FontWeight--bold: 650;
+
+  /* Motion */
+  --fidar-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --fidar-dur: 180ms;
+  --pf-v5-global--Transition: all var(--fidar-dur) var(--fidar-ease);
+}
+
+body,
+.pf-v5-c-page {
+  font-family: var(--fidar-font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+.pf-v5-c-title,
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--fidar-font-sans);
+  letter-spacing: -0.018em;
+}
+
+.pf-v5-c-title.pf-m-4xl,
+.pf-v5-c-title.pf-m-3xl,
+.pf-v5-c-title.pf-m-2xl {
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+
+code, pre, kbd, samp,
+.pf-v5-c-code-block, .pf-v5-c-code-editor {
+  font-family: var(--fidar-font-mono);
+  font-size: 0.8125rem;
+}
+
+/* --------------------------------------------------------------------------
+   2. Foundation — shape & elevation
+   PatternFly's 3px radius and hard shadows read as utilitarian. Fidar uses a
+   deliberate radius ladder and soft, layered elevation.
+   -------------------------------------------------------------------------- */
+
+:root {
+  --fidar-radius-xs: 6px;
+  --fidar-radius-sm: 8px;
+  --fidar-radius-md: 10px;
+  --fidar-radius-lg: 14px;
+  --fidar-radius-xl: 18px;
+
+  --pf-v5-global--BorderRadius--sm: var(--fidar-radius-md);
+  --pf-v5-global--BorderRadius--lg: 30em;
+
+  --pf-v5-global--BorderWidth--sm: 1px;
+  --pf-v5-global--spacer--form-element: 0.5rem;
+}
+
+/* --------------------------------------------------------------------------
+   3. Foundation — colour, light
+   -------------------------------------------------------------------------- */
+
+:root {
+  /* Brand */
   --fidar-lavender: #a8a7c8;
   --fidar-sky: #ade5ff;
   --fidar-pale: #d6e3f8;
   --fidar-steel: #304d6d;
   --fidar-indigo: #40476d;
 
-  /* Navy surface ramp derived from steel/indigo, used for dark chrome */
+  /* Navy ramp for dark chrome */
   --fidar-navy-900: #0f1626;
-  --fidar-navy-800: #131b2b;
-  --fidar-navy-700: #1a2336;
-  --fidar-navy-600: #212c43;
-  --fidar-navy-500: #2b3750;
-  --fidar-navy-400: #3a4763;
+  --fidar-navy-800: #141d30;
+  --fidar-navy-700: #1b2439;
+  --fidar-navy-600: #222d45;
+  --fidar-navy-500: #2c3752;
+  --fidar-navy-400: #3b4767;
+
+  /* Accent used for focus, links, selection */
+  --fidar-accent: var(--fidar-indigo);
+  --fidar-accent-hover: #2e3450;
 
   /* Neutral ramp, cooled toward the brand blues */
-  --pf-v5-global--palette--black-100: #f9fbfe;
-  --pf-v5-global--palette--black-150: #f2f6fc;
-  --pf-v5-global--palette--black-200: #e9f0fa;
-  --pf-v5-global--palette--black-300: var(--fidar-pale);
-  --pf-v5-global--palette--black-400: #b9c6dd;
-  --pf-v5-global--palette--black-500: #8b96ae;
-  --pf-v5-global--palette--black-600: #5a6480;
-  --pf-v5-global--palette--black-700: #414b63;
+  --pf-v5-global--palette--black-100: #fafbfd;
+  --pf-v5-global--palette--black-150: #f4f7fb;
+  --pf-v5-global--palette--black-200: #eaeff7;
+  --pf-v5-global--palette--black-300: #dbe4f1;
+  --pf-v5-global--palette--black-400: #bcc7db;
+  --pf-v5-global--palette--black-500: #8f9bb3;
+  --pf-v5-global--palette--black-600: #5f6b83;
+  --pf-v5-global--palette--black-700: #434d63;
   --pf-v5-global--palette--black-800: var(--fidar-indigo);
   --pf-v5-global--palette--black-900: #232a40;
   --pf-v5-global--palette--black-1000: var(--fidar-navy-900);
 
   /* Surfaces */
   --pf-v5-global--BackgroundColor--100: #ffffff;
-  --pf-v5-global--BackgroundColor--150: #f7fafd;
-  --pf-v5-global--BackgroundColor--200: #f2f6fc;
-  --pf-v5-global--BackgroundColor--300: #e8eff9;
-  --pf-v5-global--BackgroundColor--400: #dae5f5;
+  --pf-v5-global--BackgroundColor--150: #fafbfd;
+  --pf-v5-global--BackgroundColor--200: #f5f7fb;
+  --pf-v5-global--BackgroundColor--300: #eef2f8;
+  --pf-v5-global--BackgroundColor--400: #e4eaf4;
   --pf-v5-global--BackgroundColor--light-100: #ffffff;
-  --pf-v5-global--BackgroundColor--light-200: #f7fafd;
-  --pf-v5-global--BackgroundColor--light-300: #eef3fb;
-
-  /* Dark chrome (masthead, nav rail) — always dark, even on the light theme */
-  --pf-v5-global--BackgroundColor--dark-100: var(--fidar-indigo);
-  --pf-v5-global--BackgroundColor--dark-200: #2e3450;
-  --pf-v5-global--BackgroundColor--dark-300: var(--fidar-steel);
-  --pf-v5-global--BackgroundColor--dark-400: var(--fidar-navy-400);
+  --pf-v5-global--BackgroundColor--light-200: #fafbfd;
+  --pf-v5-global--BackgroundColor--light-300: #f2f5fa;
+  --pf-v5-global--BackgroundColor--dark-100: var(--fidar-navy-900);
+  --pf-v5-global--BackgroundColor--dark-200: var(--fidar-navy-800);
+  --pf-v5-global--BackgroundColor--dark-300: var(--fidar-navy-700);
+  --pf-v5-global--BackgroundColor--dark-400: var(--fidar-navy-600);
 
   /* Text */
-  --pf-v5-global--Color--100: #1b2233;
-  --pf-v5-global--Color--200: #5a6480;
-  --pf-v5-global--Color--dark-100: #1b2233;
-  --pf-v5-global--Color--dark-200: #5a6480;
-  --pf-v5-global--Color--light-100: #f5f8fd;
-  --pf-v5-global--Color--light-200: #c9d3e8;
-  --pf-v5-global--Color--light-300: var(--fidar-navy-500);
+  --pf-v5-global--Color--100: #171f2e;
+  --pf-v5-global--Color--200: #5f6b83;
+  --pf-v5-global--Color--300: #8f9bb3;
+  --pf-v5-global--Color--dark-100: #171f2e;
+  --pf-v5-global--Color--dark-200: #5f6b83;
+  --pf-v5-global--Color--light-100: #f7f9fc;
+  --pf-v5-global--Color--light-200: #c2ccdf;
+  --pf-v5-global--Color--light-300: #8f9bb3;
 
   /* Borders */
-  --pf-v5-global--BorderColor--100: var(--fidar-pale);
-  --pf-v5-global--BorderColor--200: #c3d4ee;
-  --pf-v5-global--BorderColor--300: #b9c6dd;
-  --pf-v5-global--BorderColor--dark-100: rgba(255, 255, 255, 0.18);
-  --pf-v5-global--BorderColor--light-100: #c3d4ee;
+  --pf-v5-global--BorderColor--100: #e3e9f2;
+  --pf-v5-global--BorderColor--200: #d5deec;
+  --pf-v5-global--BorderColor--300: #c3cfe3;
+  --pf-v5-global--BorderColor--light-100: #e3e9f2;
+  --pf-v5-global--BorderColor--dark-100: rgba(255, 255, 255, 0.14);
 
-  /* Disabled state */
-  --pf-v5-global--disabled-color--100: #8b96ae;
-  --pf-v5-global--disabled-color--200: var(--fidar-pale);
-  --pf-v5-global--disabled-color--300: #eef3fb;
-
-  /* Icons */
-  --pf-v5-global--icon--Color--light: #5a6480;
-  --pf-v5-global--icon--Color--dark: #1b2233;
-  --pf-v5-global--icon--Color--light--light: #eef3fb;
-  --pf-v5-global--icon--Color--dark--light: #ffffff;
-  --pf-v5-global--icon--Color--light--dark: #5a6480;
-  --pf-v5-global--icon--Color--dark--dark: #1b2233;
-
-  /* Brand / interactive */
-  --pf-v5-global--primary-color--100: var(--fidar-indigo);
-  --pf-v5-global--primary-color--200: #2e3450;
-  --pf-v5-global--primary-color--300: var(--fidar-indigo);
+  /* Interactive */
+  --pf-v5-global--primary-color--100: var(--fidar-accent);
+  --pf-v5-global--primary-color--200: var(--fidar-accent-hover);
+  --pf-v5-global--primary-color--300: var(--fidar-accent);
   --pf-v5-global--primary-color--400: #ffffff;
   --pf-v5-global--primary-color--light-100: var(--fidar-sky);
-  --pf-v5-global--primary-color--dark-100: var(--fidar-indigo);
-  --pf-v5-global--active-color--100: var(--fidar-indigo);
+  --pf-v5-global--primary-color--dark-100: var(--fidar-accent);
+  --pf-v5-global--active-color--100: var(--fidar-accent);
   --pf-v5-global--active-color--200: var(--fidar-steel);
   --pf-v5-global--active-color--300: var(--fidar-lavender);
   --pf-v5-global--active-color--400: var(--fidar-pale);
-  --pf-v5-global--palette--blue-400: var(--fidar-indigo);
+  --pf-v5-global--palette--blue-50: #f1f6fd;
+  --pf-v5-global--palette--blue-100: #e2ecfb;
+  --pf-v5-global--palette--blue-200: #c5d9f5;
+  --pf-v5-global--palette--blue-300: #7f93c4;
+  --pf-v5-global--palette--blue-400: var(--fidar-accent);
+  --pf-v5-global--palette--blue-500: #2e3450;
 
   --pf-v5-global--link--Color: var(--fidar-steel);
   --pf-v5-global--link--Color--hover: #22384f;
@@ -109,23 +204,67 @@
   --pf-v5-global--link--Color--dark--hover: #22384f;
   --pf-v5-global--link--Color--light: var(--fidar-sky);
   --pf-v5-global--link--Color--light--hover: var(--fidar-pale);
-  --pf-v5-global--link--Color--visited: var(--fidar-lavender);
+  --pf-v5-global--link--Color--visited: #5b4b8a;
 
-  /* Shape & depth */
-  --pf-v5-global--BorderRadius--sm: 6px;
-  --pf-v5-global--BoxShadow--sm: 0 1px 2px 0 rgba(27, 34, 51, 0.08), 0 0 2px 0 rgba(27, 34, 51, 0.06);
-  --pf-v5-global--BoxShadow--md: 0 4px 12px -2px rgba(27, 34, 51, 0.12), 0 0 4px 0 rgba(27, 34, 51, 0.06);
-  --pf-v5-global--BoxShadow--lg: 0 12px 28px -8px rgba(27, 34, 51, 0.18), 0 0 6px 0 rgba(27, 34, 51, 0.08);
-  --pf-v5-global--BoxShadow--xl: 0 24px 56px -20px rgba(27, 34, 51, 0.28), 0 0 8px 0 rgba(27, 34, 51, 0.1);
+  /* Status — desaturated to sit calmly against the brand neutrals */
+  --pf-v5-global--success-color--100: #1f9d6b;
+  --pf-v5-global--success-color--200: #167a52;
+  --pf-v5-global--warning-color--100: #c9821a;
+  --pf-v5-global--warning-color--200: #a06713;
+  --pf-v5-global--danger-color--100: #d4483b;
+  --pf-v5-global--danger-color--200: #ad392e;
+  --pf-v5-global--info-color--100: var(--fidar-steel);
+  --pf-v5-global--info-color--200: #22384f;
+  --pf-v5-global--palette--green-50: #eefaf4;
+  --pf-v5-global--palette--red-50: #fdf2f1;
+  --pf-v5-global--palette--gold-50: #fdf7ec;
+
+  /* Disabled */
+  --pf-v5-global--disabled-color--100: #8f9bb3;
+  --pf-v5-global--disabled-color--200: #eef2f8;
+  --pf-v5-global--disabled-color--300: #f5f7fb;
+
+  /* Icons */
+  --pf-v5-global--icon--Color--light: #5f6b83;
+  --pf-v5-global--icon--Color--dark: #171f2e;
+  --pf-v5-global--icon--Color--light--light: #eef2f8;
+  --pf-v5-global--icon--Color--dark--light: #ffffff;
+  --pf-v5-global--icon--Color--light--dark: #5f6b83;
+  --pf-v5-global--icon--Color--dark--dark: #171f2e;
+
+  /* Elevation — soft and layered rather than PatternFly's hard drop */
+  --pf-v5-global--BoxShadow--sm: 0 1px 2px 0 rgba(23, 31, 46, 0.06),
+    0 1px 3px 0 rgba(23, 31, 46, 0.05);
+  --pf-v5-global--BoxShadow--md: 0 4px 12px -2px rgba(23, 31, 46, 0.08),
+    0 2px 6px -2px rgba(23, 31, 46, 0.05);
+  --pf-v5-global--BoxShadow--lg: 0 12px 28px -8px rgba(23, 31, 46, 0.14),
+    0 4px 10px -4px rgba(23, 31, 46, 0.07);
+  --pf-v5-global--BoxShadow--xl: 0 24px 56px -16px rgba(23, 31, 46, 0.2),
+    0 8px 20px -8px rgba(23, 31, 46, 0.1);
+  --pf-v5-global--BoxShadow--sm-top: 0 -1px 3px 0 rgba(23, 31, 46, 0.06);
+  --pf-v5-global--BoxShadow--sm-bottom: 0 1px 3px 0 rgba(23, 31, 46, 0.06);
+  --pf-v5-global--BoxShadow--sm-left: -1px 0 3px 0 rgba(23, 31, 46, 0.06);
+  --pf-v5-global--BoxShadow--sm-right: 1px 0 3px 0 rgba(23, 31, 46, 0.06);
+  --pf-v5-global--BoxShadow--md-top: 0 -4px 12px -2px rgba(23, 31, 46, 0.08);
+  --pf-v5-global--BoxShadow--md-bottom: 0 4px 12px -2px rgba(23, 31, 46, 0.08);
+  --pf-v5-global--BoxShadow--md-left: -4px 0 12px -2px rgba(23, 31, 46, 0.08);
+  --pf-v5-global--BoxShadow--md-right: 4px 0 12px -2px rgba(23, 31, 46, 0.08);
 }
 
+/* --------------------------------------------------------------------------
+   4. Foundation — colour, dark
+   -------------------------------------------------------------------------- */
+
 :root.pf-v5-theme-dark {
-  /* The neutral ramp inverts in dark mode: 100-400 stay light (text), 500+ are surfaces. */
-  --pf-v5-global--palette--black-50: #dfe6f5;
-  --pf-v5-global--palette--black-100: #d3d9e6;
-  --pf-v5-global--palette--black-200: #aeb7ca;
-  --pf-v5-global--palette--black-300: #8790a5;
-  --pf-v5-global--palette--black-400: #5d6780;
+  --fidar-accent: var(--fidar-sky);
+  --fidar-accent-hover: var(--fidar-pale);
+
+  /* The ramp inverts: 100-400 stay light (text), 500+ become surfaces. */
+  --pf-v5-global--palette--black-50: #e6ecf8;
+  --pf-v5-global--palette--black-100: #d6deeb;
+  --pf-v5-global--palette--black-200: #b2bccf;
+  --pf-v5-global--palette--black-300: #8a95ac;
+  --pf-v5-global--palette--black-400: #616c86;
   --pf-v5-global--palette--black-500: var(--fidar-navy-400);
   --pf-v5-global--palette--black-600: var(--fidar-navy-500);
   --pf-v5-global--palette--black-700: var(--fidar-navy-600);
@@ -146,41 +285,33 @@
   --pf-v5-global--BackgroundColor--dark-300: var(--fidar-navy-700);
   --pf-v5-global--BackgroundColor--dark-400: var(--fidar-navy-500);
 
-  --pf-v5-global--Color--100: #e6ecf8;
-  --pf-v5-global--Color--200: #a3aec7;
-  --pf-v5-global--Color--dark-100: #e6ecf8;
-  --pf-v5-global--Color--dark-200: #a3aec7;
-  --pf-v5-global--Color--light-100: #e6ecf8;
-  --pf-v5-global--Color--light-200: #a3aec7;
+  --pf-v5-global--Color--100: #e8eefb;
+  --pf-v5-global--Color--200: #9fabc4;
+  --pf-v5-global--Color--300: #7a86a0;
+  --pf-v5-global--Color--dark-100: #e8eefb;
+  --pf-v5-global--Color--dark-200: #9fabc4;
+  --pf-v5-global--Color--light-100: #e8eefb;
+  --pf-v5-global--Color--light-200: #9fabc4;
   --pf-v5-global--Color--light-300: var(--fidar-navy-500);
 
-  --pf-v5-global--BorderColor--100: var(--fidar-navy-500);
-  --pf-v5-global--BorderColor--200: var(--fidar-navy-500);
-  --pf-v5-global--BorderColor--300: var(--fidar-navy-400);
-  --pf-v5-global--BorderColor--dark-100: var(--fidar-navy-500);
-  --pf-v5-global--BorderColor--light-100: var(--fidar-navy-500);
+  --pf-v5-global--BorderColor--100: #2b3650;
+  --pf-v5-global--BorderColor--200: #2b3650;
+  --pf-v5-global--BorderColor--300: #3b4767;
+  --pf-v5-global--BorderColor--light-100: #2b3650;
+  --pf-v5-global--BorderColor--dark-100: #2b3650;
 
-  --pf-v5-global--disabled-color--100: #6b7691;
-  --pf-v5-global--disabled-color--200: var(--fidar-navy-600);
-  --pf-v5-global--disabled-color--300: #a3aec7;
-
-  --pf-v5-global--icon--Color--light: #a3aec7;
-  --pf-v5-global--icon--Color--dark: #e6ecf8;
-  --pf-v5-global--icon--Color--light--light: #a3aec7;
-  --pf-v5-global--icon--Color--dark--light: #e6ecf8;
-  --pf-v5-global--icon--Color--light--dark: #a3aec7;
-  --pf-v5-global--icon--Color--dark--dark: #e6ecf8;
-
-  /* On dark surfaces the accent inverts to sky with deep-navy text, mirroring
-     the light CTA treatment in the brand dashboard reference. */
   --pf-v5-global--primary-color--100: var(--fidar-sky);
   --pf-v5-global--primary-color--200: var(--fidar-pale);
   --pf-v5-global--primary-color--300: var(--fidar-sky);
-  --pf-v5-global--primary-color--400: #10182a;
+  --pf-v5-global--primary-color--400: #0f1626;
   --pf-v5-global--primary-color--light-100: var(--fidar-sky);
   --pf-v5-global--primary-color--dark-100: var(--fidar-sky);
   --pf-v5-global--active-color--100: var(--fidar-sky);
   --pf-v5-global--active-color--200: var(--fidar-lavender);
+  --pf-v5-global--palette--blue-50: rgba(173, 229, 255, 0.08);
+  --pf-v5-global--palette--blue-100: rgba(173, 229, 255, 0.14);
+  --pf-v5-global--palette--blue-200: rgba(173, 229, 255, 0.22);
+  --pf-v5-global--palette--blue-400: var(--fidar-sky);
 
   --pf-v5-global--link--Color: var(--fidar-sky);
   --pf-v5-global--link--Color--hover: var(--fidar-pale);
@@ -190,32 +321,1214 @@
   --pf-v5-global--link--Color--light--hover: var(--fidar-pale);
   --pf-v5-global--link--Color--visited: var(--fidar-lavender);
 
-  --pf-v5-global--BoxShadow--sm: 0 1px 2px 0 rgba(0, 0, 0, 0.45);
-  --pf-v5-global--BoxShadow--md: 0 4px 12px -2px rgba(0, 0, 0, 0.5);
+  --pf-v5-global--success-color--100: #45c793;
+  --pf-v5-global--success-color--200: #6fdcae;
+  --pf-v5-global--warning-color--100: #e2a83c;
+  --pf-v5-global--warning-color--200: #f0c06a;
+  --pf-v5-global--danger-color--100: #f87d71;
+  --pf-v5-global--danger-color--200: #ffa79e;
+  --pf-v5-global--info-color--100: var(--fidar-sky);
+  --pf-v5-global--info-color--200: var(--fidar-pale);
+  --pf-v5-global--palette--green-50: rgba(69, 199, 147, 0.1);
+  --pf-v5-global--palette--red-50: rgba(248, 125, 113, 0.1);
+  --pf-v5-global--palette--gold-50: rgba(226, 168, 60, 0.1);
+
+  --pf-v5-global--disabled-color--100: #6b7691;
+  --pf-v5-global--disabled-color--200: var(--fidar-navy-600);
+  --pf-v5-global--disabled-color--300: #9fabc4;
+
+  --pf-v5-global--icon--Color--light: #9fabc4;
+  --pf-v5-global--icon--Color--dark: #e8eefb;
+  --pf-v5-global--icon--Color--light--light: #9fabc4;
+  --pf-v5-global--icon--Color--dark--light: #e8eefb;
+  --pf-v5-global--icon--Color--light--dark: #9fabc4;
+  --pf-v5-global--icon--Color--dark--dark: #e8eefb;
+
+  --pf-v5-global--BoxShadow--sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --pf-v5-global--BoxShadow--md: 0 4px 12px -2px rgba(0, 0, 0, 0.45);
   --pf-v5-global--BoxShadow--lg: 0 12px 28px -8px rgba(0, 0, 0, 0.55);
-  --pf-v5-global--BoxShadow--xl: 0 24px 56px -20px rgba(0, 0, 0, 0.6);
+  --pf-v5-global--BoxShadow--xl: 0 24px 56px -16px rgba(0, 0, 0, 0.6);
 }
 
-/* Primary buttons are sky-on-navy in dark mode, so the hover/focus/active text
-   must stay dark — PatternFly otherwise flips it to white and it disappears. */
-:root.pf-v5-theme-dark .pf-v5-c-button {
-  --pf-v5-c-button--m-primary--hover--Color: #10182a;
-  --pf-v5-c-button--m-primary--focus--Color: #10182a;
-  --pf-v5-c-button--m-primary--active--Color: #10182a;
+/* --------------------------------------------------------------------------
+   5. Layout — page shell, masthead, sidebar, breadcrumb
+   -------------------------------------------------------------------------- */
+
+.pf-v5-c-page {
+  --pf-v5-c-page__header--MinHeight: 60px;
+  background-color: var(--pf-v5-global--BackgroundColor--200);
 }
 
-/* Softer, more deliberate surfaces */
-.pf-v5-c-card {
-  border-radius: 12px;
-}
-
+/* Masthead — a quiet surface rail rather than a heavy dark bar */
 .pf-v5-c-masthead {
-  border-bottom: 1px solid rgba(168, 167, 200, 0.16);
+  --pf-v5-c-masthead--BackgroundColor: var(--pf-v5-global--BackgroundColor--100);
+  --pf-v5-c-masthead--c-toolbar--BackgroundColor: var(--pf-v5-global--BackgroundColor--100);
+  --pf-v5-c-masthead--PaddingLeft: 1.25rem;
+  --pf-v5-c-masthead--PaddingRight: 1.25rem;
+  --pf-v5-c-masthead--inset: 1.25rem;
+  color: var(--pf-v5-global--Color--100);
+  border-bottom: 1px solid var(--pf-v5-global--BorderColor--100);
+  box-shadow: none;
+}
+
+:root.pf-v5-theme-dark .pf-v5-c-masthead {
+  --pf-v5-c-masthead--BackgroundColor: var(--fidar-navy-900);
+  --pf-v5-c-masthead--c-toolbar--BackgroundColor: var(--fidar-navy-900);
+  border-bottom-color: #2b3650;
+}
+
+/* PatternFly declares the masthead surface and the toolbar sitting inside it
+   as two separate dark-theme rules, both landing on its own near-black. Set
+   only one and the bar renders in two tones, so pin the toolbar to the same
+   surface here. */
+:root.pf-v5-theme-dark .pf-v5-c-masthead .pf-v5-c-toolbar,
+:root.pf-v5-theme-dark .pf-v5-c-masthead .pf-v5-c-toolbar__content,
+:root.pf-v5-theme-dark .pf-v5-c-masthead .pf-v5-c-toolbar__item {
+  --pf-v5-c-toolbar--BackgroundColor: var(--fidar-navy-900);
+  background-color: var(--fidar-navy-900);
 }
 
 .pf-v5-c-masthead__brand {
   align-items: center;
 }
+
+.pf-v5-c-masthead .pf-v5-c-button.pf-m-plain,
+.pf-v5-c-masthead__toggle .pf-v5-c-button {
+  color: var(--pf-v5-global--Color--200);
+  border-radius: var(--fidar-radius-sm);
+}
+
+.pf-v5-c-masthead .pf-v5-c-button.pf-m-plain:hover,
+.pf-v5-c-masthead__toggle .pf-v5-c-button:hover {
+  color: var(--pf-v5-global--Color--100);
+  background-color: var(--pf-v5-global--BackgroundColor--300);
+}
+
+/* Sidebar */
+.pf-v5-c-page__sidebar {
+  --pf-v5-c-page__sidebar--BackgroundColor: var(--pf-v5-global--BackgroundColor--100);
+  --pf-v5-c-page__sidebar--Width: 260px;
+  --pf-v5-c-page__sidebar--BoxShadow: none;
+  border-right: 1px solid var(--pf-v5-global--BorderColor--100);
+}
+
+:root.pf-v5-theme-dark .pf-v5-c-page__sidebar {
+  --pf-v5-c-page__sidebar--BackgroundColor: var(--fidar-navy-800);
+  border-right-color: #2b3650;
+}
+
+.pf-v5-c-page__sidebar-body {
+  padding-block: 0.75rem;
+  padding-inline: 0.75rem;
+}
+
+/* Nav — pill-shaped items with a soft active fill instead of a hard left bar */
+.pf-v5-c-nav {
+  --pf-v5-c-nav__link--PaddingTop: 0.5rem;
+  --pf-v5-c-nav__link--PaddingBottom: 0.5rem;
+  --pf-v5-c-nav__link--PaddingLeft: 0.75rem;
+  --pf-v5-c-nav__link--PaddingRight: 0.75rem;
+  --pf-v5-c-nav__link--FontSize: 0.875rem;
+  --pf-v5-c-nav__link--BackgroundColor: transparent;
+  --pf-v5-c-nav__link--hover--BackgroundColor: var(--pf-v5-global--BackgroundColor--300);
+  --pf-v5-c-nav__link--focus--BackgroundColor: var(--pf-v5-global--BackgroundColor--300);
+  --pf-v5-c-nav__link--active--BackgroundColor: var(--pf-v5-global--BackgroundColor--300);
+  --pf-v5-c-nav__link--m-current--BackgroundColor: var(--pf-v5-global--palette--blue-100);
+  --pf-v5-c-nav__link--m-current--Color: var(--fidar-accent);
+  --pf-v5-c-nav__link--Color: var(--pf-v5-global--Color--200);
+  --pf-v5-c-nav__link--before--BorderColor: transparent;
+  --pf-v5-c-nav__link--after--BorderColor: transparent;
+  --pf-v5-c-nav__link--m-current--after--BorderColor: transparent;
+  --pf-v5-c-nav__link--hover--after--BorderColor: transparent;
+}
+
+/* Spacing between nav groups; a real selector, not a token. */
+.pf-v5-c-nav__section + .pf-v5-c-nav__section {
+  margin-block-start: 1.25rem;
+}
+
+.pf-v5-c-nav__link {
+  border-radius: var(--fidar-radius-sm);
+  margin-block-end: 2px;
+  font-weight: 450;
+  transition: background-color var(--fidar-dur) var(--fidar-ease),
+    color var(--fidar-dur) var(--fidar-ease);
+}
+
+.pf-v5-c-nav__link.pf-m-current,
+.pf-v5-c-nav__link:where([aria-current="page"]) {
+  font-weight: 550;
+}
+
+/* PatternFly marks the active item with a pseudo-element rule; the fill above
+   replaces it, so neutralise the bar rather than leave both. */
+.pf-v5-c-nav__link::before,
+.pf-v5-c-nav__link::after,
+.pf-v5-c-nav__item::before {
+  border: 0 !important;
+}
+
+.pf-v5-c-nav__section-title {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pf-v5-global--Color--300);
+  padding-inline: 0.75rem;
+  margin-block-end: 0.375rem;
+}
+
+/* Breadcrumb */
+.pf-v5-c-breadcrumb {
+  --pf-v5-c-breadcrumb__item--FontSize: 0.8125rem;
+}
+
+.pf-v5-c-breadcrumb__item-divider {
+  color: var(--pf-v5-global--Color--300);
+}
+
+.pf-v5-c-breadcrumb__link {
+  color: var(--pf-v5-global--Color--200);
+  text-decoration: none;
+}
+
+.pf-v5-c-breadcrumb__link:hover {
+  color: var(--fidar-accent);
+  text-decoration: none;
+}
+
+/* Page sections — more generous gutters */
+.pf-v5-c-page__main-section {
+  --pf-v5-c-page__main-section--PaddingTop: 1.5rem;
+  --pf-v5-c-page__main-section--PaddingBottom: 1.5rem;
+  --pf-v5-c-page__main-section--PaddingLeft: 1.75rem;
+  --pf-v5-c-page__main-section--PaddingRight: 1.75rem;
+}
+
+.pf-v5-c-page__main-breadcrumb {
+  --pf-v5-c-page__main-breadcrumb--PaddingTop: 1.25rem;
+  --pf-v5-c-page__main-breadcrumb--PaddingRight: 1.75rem;
+  --pf-v5-c-page__main-breadcrumb--PaddingLeft: 1.75rem;
+}
+
+/* --------------------------------------------------------------------------
+   6. Surfaces — cards, panels
+   -------------------------------------------------------------------------- */
+
+.pf-v5-c-card {
+  --pf-v5-c-card--BackgroundColor: var(--pf-v5-global--BackgroundColor--100);
+  --pf-v5-c-card--BoxShadow: none;
+  --pf-v5-c-card--child--PaddingTop: 1.25rem;
+  --pf-v5-c-card--child--PaddingRight: 1.25rem;
+  --pf-v5-c-card--child--PaddingBottom: 1.25rem;
+  --pf-v5-c-card--child--PaddingLeft: 1.25rem;
+  border: 1px solid var(--pf-v5-global--BorderColor--100);
+  border-radius: var(--fidar-radius-lg);
+  transition: box-shadow var(--fidar-dur) var(--fidar-ease),
+    border-color var(--fidar-dur) var(--fidar-ease);
+}
+
+.pf-v5-c-card.pf-m-selectable:hover,
+.pf-v5-c-card.pf-m-clickable:hover {
+  border-color: var(--pf-v5-global--BorderColor--300);
+  box-shadow: var(--pf-v5-global--BoxShadow--md);
+}
+
+.pf-v5-c-card.pf-m-selected {
+  border-color: var(--fidar-accent);
+  box-shadow: 0 0 0 3px var(--pf-v5-global--palette--blue-100);
+}
+
+.pf-v5-c-card__title {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+}
+
+.pf-v5-c-panel {
+  --pf-v5-c-panel--BackgroundColor: var(--pf-v5-global--BackgroundColor--100);
+  --pf-v5-c-panel--BorderRadius: var(--fidar-radius-lg);
+  border: 1px solid var(--pf-v5-global--BorderColor--100);
+}
+
+.pf-v5-c-panel.pf-m-raised {
+  box-shadow: var(--pf-v5-global--BoxShadow--md);
+}
+
+/* Divider */
+.pf-v5-c-divider {
+  --pf-v5-c-divider--BackgroundColor: var(--pf-v5-global--BorderColor--100);
+}
+
+/* --------------------------------------------------------------------------
+   7. Data — tables, toolbar, pagination
+   -------------------------------------------------------------------------- */
+
+.pf-v5-c-table {
+  --pf-v5-c-table--BackgroundColor: transparent;
+  --pf-v5-c-table--BorderColor: var(--pf-v5-global--BorderColor--100);
+  --pf-v5-c-table--cell--PaddingTop: 0.85rem;
+  --pf-v5-c-table--cell--PaddingBottom: 0.85rem;
+  --pf-v5-c-table--cell--PaddingLeft: 1rem;
+  --pf-v5-c-table--cell--PaddingRight: 1rem;
+  --pf-v5-c-table--cell--FontSize: 0.875rem;
+  --pf-v5-c-table--m-compact--cell--PaddingTop: 0.6rem;
+  --pf-v5-c-table--m-compact--cell--PaddingBottom: 0.6rem;
+  --pf-v5-c-table--tbody--BorderColor: var(--pf-v5-global--BorderColor--100);
+  --pf-v5-c-table--tr--BorderWidth: 1px;
+}
+
+.pf-v5-c-table thead th,
+.pf-v5-c-table .pf-v5-c-table__th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pf-v5-global--Color--200);
+  background-color: var(--pf-v5-global--BackgroundColor--150);
+  border-block-end: 1px solid var(--pf-v5-global--BorderColor--200);
+}
+
+:root.pf-v5-theme-dark .pf-v5-c-table thead th,
+:root.pf-v5-theme-dark .pf-v5-c-table .pf-v5-c-table__th {
+  background-color: var(--fidar-navy-600);
+}
+
+/* Round the outer corners of the header row so tables read as one surface */
+.pf-v5-c-table thead tr > *:first-child {
+  border-start-start-radius: var(--fidar-radius-lg);
+}
+
+.pf-v5-c-table thead tr > *:last-child {
+  border-start-end-radius: var(--fidar-radius-lg);
+}
+
+.pf-v5-c-table tbody tr {
+  transition: background-color var(--fidar-dur) var(--fidar-ease);
+}
+
+.pf-v5-c-table tbody tr:hover {
+  background-color: var(--pf-v5-global--BackgroundColor--150);
+}
+
+:root.pf-v5-theme-dark .pf-v5-c-table tbody tr:hover {
+  background-color: var(--fidar-navy-600);
+}
+
+.pf-v5-c-table tbody tr:last-child > * {
+  border-block-end: 0;
+}
+
+/* Wrap tables sitting directly in a page section so they get the card treatment */
+.pf-v5-c-page__main-section > .pf-v5-c-table,
+.pf-v5-c-card > .pf-v5-c-table {
+  border: 1px solid var(--pf-v5-global--BorderColor--100);
+  border-radius: var(--fidar-radius-lg);
+  overflow: hidden;
+  background-color: var(--pf-v5-global--BackgroundColor--100);
+}
+
+/* Toolbar — the search / filter / action strip above tables */
+.pf-v5-c-toolbar {
+  --pf-v5-c-toolbar--BackgroundColor: transparent;
+  --pf-v5-c-toolbar--PaddingTop: 0;
+  --pf-v5-c-toolbar--PaddingBottom: 0.875rem;
+  --pf-v5-c-toolbar__content--PaddingLeft: 0;
+  --pf-v5-c-toolbar__content--PaddingRight: 0;
+}
+
+.pf-v5-c-toolbar__item .pf-v5-c-text-input-group,
+.pf-v5-c-toolbar__item .pf-v5-c-search-input {
+  min-inline-size: 260px;
+}
+
+/* Pagination */
+.pf-v5-c-pagination {
+  --pf-v5-c-pagination--FontSize: 0.8125rem;
+}
+
+.pf-v5-c-pagination__nav .pf-v5-c-button {
+  border-radius: var(--fidar-radius-sm);
+}
+
+/* Description list — used heavily on detail pages */
+.pf-v5-c-description-list {
+  --pf-v5-c-description-list--RowGap: 1.25rem;
+  --pf-v5-c-description-list__term--FontWeight: 550;
+  --pf-v5-c-description-list__term--FontSize: 0.8125rem;
+}
+
+.pf-v5-c-description-list__term {
+  color: var(--pf-v5-global--Color--200);
+}
+
+/* Data list */
+.pf-v5-c-data-list {
+  --pf-v5-c-data-list--BorderColor: var(--pf-v5-global--BorderColor--100);
+  --pf-v5-c-data-list--BackgroundColor: var(--pf-v5-global--BackgroundColor--100);
+  border: 1px solid var(--pf-v5-global--BorderColor--100);
+  border-radius: var(--fidar-radius-lg);
+  overflow: hidden;
+}
+
+.pf-v5-c-data-list__item.pf-m-clickable:hover {
+  background-color: var(--pf-v5-global--BackgroundColor--150);
+}
+
+/* --------------------------------------------------------------------------
+   8. Forms
+   PatternFly v5 renders inputs as a wrapping <span> with a ::after underline.
+   Zeroing that rule and promoting the wrapper to a bordered surface is what
+   turns them from underlined fields into modern boxed controls.
+   -------------------------------------------------------------------------- */
+
+.pf-v5-c-form {
+  --pf-v5-c-form--GridGap: 1.25rem;
+  --pf-v5-c-form__group-label--PaddingBottom: 0.4rem;
+  --pf-v5-c-form__label--FontSize: 0.8125rem;
+  --pf-v5-c-form__label-text--FontWeight: 550;
+  --pf-v5-c-form__helper-text--FontSize: 0.75rem;
+}
+
+.pf-v5-c-form__label-text {
+  color: var(--pf-v5-global--Color--100);
+}
+
+.pf-v5-c-form-control {
+  --pf-v5-c-form-control--after--BorderBottomWidth: 0;
+  --pf-v5-c-form-control--focus--after--BorderBottomWidth: 0;
+  --pf-v5-c-form-control--hover--after--BorderBottomWidth: 0;
+  --pf-v5-c-form-control--BackgroundColor: var(--pf-v5-global--BackgroundColor--100);
+  --pf-v5-c-form-control--FontSize: 0.875rem;
+  --pf-v5-c-form-control--PaddingTop: 0.5rem;
+  --pf-v5-c-form-control--PaddingBottom: 0.5rem;
+  --pf-v5-c-form-control--PaddingLeft: 0.75rem;
+  --pf-v5-c-form-control--PaddingRight: 0.75rem;
+  background-color: var(--pf-v5-global--BackgroundColor--100);
+  border: 1px solid var(--pf-v5-global--BorderColor--200);
+  border-radius: var(--fidar-radius-md);
+  transition: border-color var(--fidar-dur) var(--fidar-ease),
+    box-shadow var(--fidar-dur) var(--fidar-ease);
+}
+
+.pf-v5-c-form-control::after {
+  display: none;
+}
+
+.pf-v5-c-form-control:hover {
+  border-color: var(--pf-v5-global--BorderColor--300);
+}
+
+.pf-v5-c-form-control:focus-within {
+  border-color: var(--fidar-accent);
+  box-shadow: 0 0 0 3px var(--pf-v5-global--palette--blue-100);
+}
+
+.pf-v5-c-form-control.pf-m-error {
+  border-color: var(--pf-v5-global--danger-color--100);
+}
+
+.pf-v5-c-form-control.pf-m-error:focus-within {
+  box-shadow: 0 0 0 3px var(--pf-v5-global--palette--red-50);
+}
+
+.pf-v5-c-form-control.pf-m-disabled,
+.pf-v5-c-form-control[disabled] {
+  background-color: var(--pf-v5-global--BackgroundColor--200);
+  border-color: var(--pf-v5-global--BorderColor--100);
+}
+
+.pf-v5-c-form-control > input::placeholder,
+.pf-v5-c-form-control > textarea::placeholder {
+  color: var(--pf-v5-global--Color--300);
+}
+
+/* Input group — make the field and its adjacent control read as one unit */
+.pf-v5-c-input-group {
+  --pf-v5-c-input-group--BackgroundColor: transparent;
+  border-radius: var(--fidar-radius-md);
+}
+
+.pf-v5-c-input-group__item {
+  background: transparent;
+  border: none;
+}
+
+/* Select / menu toggle */
+.pf-v5-c-menu-toggle {
+  --pf-v5-c-menu-toggle--BackgroundColor: var(--pf-v5-global--BackgroundColor--100);
+  --pf-v5-c-menu-toggle--PaddingTop: 0.5rem;
+  --pf-v5-c-menu-toggle--PaddingBottom: 0.5rem;
+  --pf-v5-c-menu-toggle--PaddingLeft: 0.75rem;
+  --pf-v5-c-menu-toggle--PaddingRight: 0.75rem;
+  --pf-v5-c-menu-toggle--FontSize: 0.875rem;
+  --pf-v5-c-menu-toggle--before--BorderColor: var(--pf-v5-global--BorderColor--200);
+  --pf-v5-c-menu-toggle--before--BorderWidth: 1px;
+  --pf-v5-c-menu-toggle--BorderRadius: var(--fidar-radius-md);
+  border-radius: var(--fidar-radius-md);
+  transition: border-color var(--fidar-dur) var(--fidar-ease),
+    box-shadow var(--fidar-dur) var(--fidar-ease);
+}
+
+.pf-v5-c-menu-toggle::before {
+  border-radius: var(--fidar-radius-md);
+}
+
+.pf-v5-c-menu-toggle:hover::before {
+  border-color: var(--pf-v5-global--BorderColor--300);
+}
+
+.pf-v5-c-menu-toggle.pf-m-expanded::before,
+.pf-v5-c-menu-toggle:focus-within::before {
+  border-color: var(--fidar-accent);
+  border-width: 1px;
+}
+
+.pf-v5-c-menu-toggle.pf-m-expanded,
+.pf-v5-c-menu-toggle:focus-within {
+  box-shadow: 0 0 0 3px var(--pf-v5-global--palette--blue-100);
+}
+
+/* Checkbox / radio */
+.pf-v5-c-check__input,
+.pf-v5-c-radio__input {
+  accent-color: var(--fidar-accent);
+  inline-size: 0.95rem;
+  block-size: 0.95rem;
+  cursor: pointer;
+}
+
+.pf-v5-c-check__label,
+.pf-v5-c-radio__label {
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+/* Switch */
+.pf-v5-c-switch {
+  --pf-v5-c-switch--Height: 1.375rem;
+  --pf-v5-c-switch__toggle--BackgroundColor: var(--pf-v5-global--palette--black-400);
+  --pf-v5-c-switch__input--checked__toggle--BackgroundColor: var(--fidar-accent);
+  --pf-v5-c-switch__label--FontSize: 0.875rem;
+}
+
+.pf-v5-c-switch__toggle {
+  transition: background-color var(--fidar-dur) var(--fidar-ease);
+}
+
+/* Helper text */
+.pf-v5-c-helper-text__item-text {
+  font-size: 0.75rem;
+}
+
+/* --------------------------------------------------------------------------
+   9. Actions — buttons
+   -------------------------------------------------------------------------- */
+
+.pf-v5-c-button {
+  --pf-v5-c-button--PaddingTop: 0.5rem;
+  --pf-v5-c-button--PaddingBottom: 0.5rem;
+  --pf-v5-c-button--PaddingLeft: 0.95rem;
+  --pf-v5-c-button--PaddingRight: 0.95rem;
+  --pf-v5-c-button--FontSize: 0.875rem;
+  --pf-v5-c-button--FontWeight: 550;
+  --pf-v5-c-button--BorderRadius: var(--fidar-radius-md);
+  border-radius: var(--fidar-radius-md);
+  letter-spacing: -0.005em;
+  transition: background-color var(--fidar-dur) var(--fidar-ease),
+    color var(--fidar-dur) var(--fidar-ease),
+    box-shadow var(--fidar-dur) var(--fidar-ease),
+    transform var(--fidar-dur) var(--fidar-ease);
+}
+
+.pf-v5-c-button::after {
+  border-radius: var(--fidar-radius-md);
+}
+
+.pf-v5-c-button.pf-m-primary {
+  box-shadow: var(--pf-v5-global--BoxShadow--sm);
+}
+
+.pf-v5-c-button.pf-m-primary:hover {
+  box-shadow: var(--pf-v5-global--BoxShadow--md);
+}
+
+.pf-v5-c-button.pf-m-primary:active {
+  transform: translateY(0.5px);
+}
+
+.pf-v5-c-button.pf-m-secondary {
+  --pf-v5-c-button--m-secondary--BackgroundColor: var(--pf-v5-global--BackgroundColor--100);
+  --pf-v5-c-button--m-secondary--hover--BackgroundColor: var(--pf-v5-global--BackgroundColor--200);
+}
+
+.pf-v5-c-button.pf-m-plain {
+  border-radius: var(--fidar-radius-sm);
+}
+
+.pf-v5-c-button.pf-m-plain:hover {
+  background-color: var(--pf-v5-global--BackgroundColor--300);
+}
+
+.pf-v5-c-button.pf-m-link {
+  --pf-v5-c-button--PaddingLeft: 0.4rem;
+  --pf-v5-c-button--PaddingRight: 0.4rem;
+}
+
+.pf-v5-c-button.pf-m-small {
+  --pf-v5-c-button--PaddingTop: 0.3rem;
+  --pf-v5-c-button--PaddingBottom: 0.3rem;
+  --pf-v5-c-button--FontSize: 0.8125rem;
+  border-radius: var(--fidar-radius-sm);
+}
+
+/* --------------------------------------------------------------------------
+   10. Status — labels, badges, chips, alerts
+   -------------------------------------------------------------------------- */
+
+.pf-v5-c-label {
+  --pf-v5-c-label--BorderRadius: var(--fidar-radius-xs);
+  --pf-v5-c-label--FontSize: 0.75rem;
+  --pf-v5-c-label--PaddingLeft: 0.5rem;
+  --pf-v5-c-label--PaddingRight: 0.5rem;
+  font-weight: 550;
+  border-radius: var(--fidar-radius-xs);
+}
+
+.pf-v5-c-badge {
+  --pf-v5-c-badge--FontSize: 0.75rem;
+  --pf-v5-c-badge--BorderRadius: var(--fidar-radius-lg);
+  font-weight: 600;
+}
+
+.pf-v5-c-chip {
+  --pf-v5-c-chip--BorderRadius: var(--fidar-radius-xs);
+  --pf-v5-c-chip--BackgroundColor: var(--pf-v5-global--BackgroundColor--300);
+  --pf-v5-c-chip--FontSize: 0.75rem;
+  border: none;
+}
+
+.pf-v5-c-alert {
+  --pf-v5-c-alert--BorderRadius: var(--fidar-radius-md);
+  --pf-v5-c-alert--BorderTopWidth: 0;
+  --pf-v5-c-alert--BoxShadow: var(--pf-v5-global--BoxShadow--md);
+  border-radius: var(--fidar-radius-md);
+  border: 1px solid var(--pf-v5-global--BorderColor--100);
+}
+
+.pf-v5-c-alert.pf-m-success {
+  border-color: color-mix(in srgb, var(--pf-v5-global--success-color--100) 32%, transparent);
+  background-color: var(--pf-v5-global--palette--green-50);
+}
+
+.pf-v5-c-alert.pf-m-danger {
+  border-color: color-mix(in srgb, var(--pf-v5-global--danger-color--100) 32%, transparent);
+  background-color: var(--pf-v5-global--palette--red-50);
+}
+
+.pf-v5-c-alert.pf-m-warning {
+  border-color: color-mix(in srgb, var(--pf-v5-global--warning-color--100) 32%, transparent);
+  background-color: var(--pf-v5-global--palette--gold-50);
+}
+
+.pf-v5-c-alert.pf-m-info {
+  border-color: color-mix(in srgb, var(--pf-v5-global--info-color--100) 32%, transparent);
+  background-color: var(--pf-v5-global--palette--blue-50);
+}
+
+.pf-v5-c-alert__title {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   11. Overlays — modal, dropdown, popover, tooltip, drawer
+   -------------------------------------------------------------------------- */
+
+.pf-v5-c-modal-box {
+  --pf-v5-c-modal-box--BorderRadius: var(--fidar-radius-xl);
+  --pf-v5-c-modal-box--BoxShadow: var(--pf-v5-global--BoxShadow--xl);
+  --pf-v5-c-modal-box--PaddingTop: 1.5rem;
+  border-radius: var(--fidar-radius-xl);
+  border: 1px solid var(--pf-v5-global--BorderColor--100);
+}
+
+.pf-v5-c-modal-box__title {
+  font-size: 1.125rem;
+  font-weight: 650;
+  letter-spacing: -0.018em;
+}
+
+.pf-v5-c-modal-box__footer {
+  gap: 0.5rem;
+  padding-block-start: 1.25rem;
+}
+
+.pf-v5-c-backdrop {
+  --pf-v5-c-backdrop--BackgroundColor: rgba(15, 22, 38, 0.45);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+.pf-v5-c-menu {
+  --pf-v5-c-menu--BorderRadius: var(--fidar-radius-lg);
+  --pf-v5-c-menu--BoxShadow: var(--pf-v5-global--BoxShadow--lg);
+  --pf-v5-c-menu__list-item--FontSize: 0.875rem;
+  --pf-v5-c-menu__item--PaddingTop: 0.45rem;
+  --pf-v5-c-menu__item--PaddingBottom: 0.45rem;
+  border-radius: var(--fidar-radius-lg);
+  border: 1px solid var(--pf-v5-global--BorderColor--100);
+  overflow: hidden;
+  padding-block: 0.3rem;
+}
+
+.pf-v5-c-menu__list-item {
+  border-radius: var(--fidar-radius-xs);
+  margin-inline: 0.3rem;
+}
+
+.pf-v5-c-menu__item:hover {
+  border-radius: var(--fidar-radius-xs);
+}
+
+.pf-v5-c-dropdown__menu {
+  border-radius: var(--fidar-radius-lg);
+  box-shadow: var(--pf-v5-global--BoxShadow--lg);
+  border: 1px solid var(--pf-v5-global--BorderColor--100);
+  overflow: hidden;
+  padding-block: 0.3rem;
+}
+
+.pf-v5-c-popover {
+  --pf-v5-c-popover--BorderRadius: var(--fidar-radius-lg);
+  --pf-v5-c-popover--BoxShadow: var(--pf-v5-global--BoxShadow--lg);
+  --pf-v5-c-popover--FontSize: 0.875rem;
+}
+
+.pf-v5-c-popover__content {
+  border-radius: var(--fidar-radius-lg);
+  border: 1px solid var(--pf-v5-global--BorderColor--100);
+}
+
+.pf-v5-c-tooltip {
+  --pf-v5-c-tooltip--BorderRadius: var(--fidar-radius-sm);
+  --pf-v5-c-tooltip--FontSize: 0.75rem;
+  --pf-v5-c-tooltip__content--BackgroundColor: var(--fidar-navy-900);
+  --pf-v5-c-tooltip__content--PaddingTop: 0.4rem;
+  --pf-v5-c-tooltip__content--PaddingBottom: 0.4rem;
+}
+
+.pf-v5-c-tooltip__content {
+  border-radius: var(--fidar-radius-sm);
+  box-shadow: var(--pf-v5-global--BoxShadow--md);
+}
+
+.pf-v5-c-drawer__panel {
+  border-inline-start: 1px solid var(--pf-v5-global--BorderColor--100);
+  box-shadow: var(--pf-v5-global--BoxShadow--lg);
+}
+
+/* --------------------------------------------------------------------------
+   12. Navigation — tabs, accordion, expandable
+   -------------------------------------------------------------------------- */
+
+.pf-v5-c-tabs {
+  --pf-v5-c-tabs__link--FontSize: 0.875rem;
+  --pf-v5-c-tabs__item--m-current__link--Color: var(--fidar-accent);
+  --pf-v5-c-tabs__link--PaddingTop: 0.75rem;
+  --pf-v5-c-tabs__link--PaddingBottom: 0.75rem;
+  --pf-v5-c-tabs__link--PaddingLeft: 0.95rem;
+  --pf-v5-c-tabs__link--PaddingRight: 0.95rem;
+  border-block-end: 1px solid var(--pf-v5-global--BorderColor--100);
+}
+
+.pf-v5-c-tabs__link {
+  font-weight: 500;
+  transition: color var(--fidar-dur) var(--fidar-ease);
+}
+
+.pf-v5-c-tabs__item.pf-m-current .pf-v5-c-tabs__link {
+  font-weight: 600;
+}
+
+/* PatternFly draws the underline via ::after on the link */
+.pf-v5-c-tabs__item.pf-m-current .pf-v5-c-tabs__link::after {
+  border-color: var(--fidar-accent);
+  border-block-end-width: 2px;
+}
+
+.pf-v5-c-accordion {
+  --pf-v5-c-accordion--BackgroundColor: transparent;
+  --pf-v5-c-accordion__toggle--FontSize: 0.9375rem;
+}
+
+.pf-v5-c-accordion__toggle {
+  border-radius: var(--fidar-radius-sm);
+}
+
+.pf-v5-c-expandable-section__toggle {
+  border-radius: var(--fidar-radius-sm);
+  font-size: 0.875rem;
+}
+
+/* --------------------------------------------------------------------------
+   13. Feedback — empty, loading, skeleton, progress
+   -------------------------------------------------------------------------- */
+
+.pf-v5-c-empty-state {
+  --pf-v5-c-empty-state--PaddingTop: 3.5rem;
+  --pf-v5-c-empty-state--PaddingBottom: 3.5rem;
+}
+
+.pf-v5-c-empty-state__icon {
+  color: var(--pf-v5-global--Color--300);
+  font-size: 2.5rem;
+  margin-block-end: 0.5rem;
+}
+
+.pf-v5-c-empty-state__title-text {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.pf-v5-c-empty-state__body {
+  font-size: 0.875rem;
+  color: var(--pf-v5-global--Color--200);
+  max-inline-size: 46ch;
+  margin-inline: auto;
+}
+
+.pf-v5-c-spinner {
+  --pf-v5-c-spinner--Color: var(--fidar-accent);
+}
+
+.pf-v5-c-skeleton {
+  --pf-v5-c-skeleton--BorderRadius: var(--fidar-radius-sm);
+  --pf-v5-c-skeleton--BackgroundColor: var(--pf-v5-global--BackgroundColor--300);
+}
+
+.pf-v5-c-progress {
+  --pf-v5-c-progress__bar--BackgroundColor: var(--pf-v5-global--BackgroundColor--300);
+  --pf-v5-c-progress__indicator--BackgroundColor: var(--fidar-accent);
+  --pf-v5-c-progress__bar--Height: 0.5rem;
+}
+
+.pf-v5-c-progress__bar,
+.pf-v5-c-progress__indicator {
+  border-radius: 30em;
+}
+
+/* --------------------------------------------------------------------------
+   14. Accessibility & motion
+   -------------------------------------------------------------------------- */
+
+:focus-visible {
+  outline: 2px solid var(--fidar-accent);
+  outline-offset: 2px;
+  border-radius: var(--fidar-radius-xs);
+}
+
+::selection {
+  background-color: var(--pf-v5-global--palette--blue-200);
+  color: var(--pf-v5-global--Color--100);
+}
+
+/* Scrollbars, so the chrome matches the surfaces it sits on */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--pf-v5-global--palette--black-400) transparent;
+}
+
+*::-webkit-scrollbar {
+  inline-size: 10px;
+  block-size: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--pf-v5-global--palette--black-400);
+  border-radius: 30em;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--pf-v5-global--palette--black-500);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+
+/* ==========================================================================
+   15. Structural layer
+   Colour and type alone still leave PatternFly's silhouette intact. These
+   rules change the shapes people actually navigate by — the tab strip, the
+   form axis, the page header — which is what makes the product stop reading
+   as a themed PatternFly app.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   15.1 Tabs → pill row
+   PatternFly's underlined strip is one of its most identifiable elements, and
+   it is drawn through a stack of pseudo-elements: a baseline on the container
+   and on the list, a frame on every link, plus the current-item underline. A
+   late grouped rule then re-asserts `content: ""` across all of them, so they
+   have to be cleared as a set rather than one at a time.
+
+   The pills sit directly on the page instead of inside a track: the scroll
+   buttons are siblings of the list, so a track drawn on the list leaves them
+   stranded outside its border.
+   -------------------------------------------------------------------------- */
+
+.pf-v5-c-tabs,
+.pf-v5-c-tabs.pf-m-box {
+  background-color: transparent;
+  border: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.pf-v5-c-tabs__list {
+  gap: 0.25rem;
+  padding: 0;
+  background-color: transparent;
+  border: 0;
+}
+
+.pf-v5-c-tabs::before,
+.pf-v5-c-tabs::after,
+.pf-v5-c-tabs__list::before,
+.pf-v5-c-tabs__list::after,
+.pf-v5-c-tabs__item::before,
+.pf-v5-c-tabs__item::after,
+.pf-v5-c-tabs__link::before,
+.pf-v5-c-tabs__link::after,
+.pf-v5-c-tabs__scroll-button::before,
+.pf-v5-c-tabs__scroll-button::after,
+.pf-v5-c-tabs.pf-m-box .pf-v5-c-tabs__link::before,
+.pf-v5-c-tabs.pf-m-box .pf-v5-c-tabs__link::after,
+.pf-v5-c-tabs.pf-m-box .pf-v5-c-tabs__item.pf-m-current .pf-v5-c-tabs__link::before,
+.pf-v5-c-tabs.pf-m-box .pf-v5-c-tabs__item.pf-m-current .pf-v5-c-tabs__link::after {
+  content: none !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.pf-v5-c-tabs__item,
+.pf-v5-c-tabs.pf-m-box .pf-v5-c-tabs__item,
+.pf-v5-c-tabs.pf-m-box .pf-v5-c-tabs__item.pf-m-current {
+  background-color: transparent;
+  border: 0;
+}
+
+.pf-v5-c-tabs__link,
+.pf-v5-c-tabs.pf-m-box .pf-v5-c-tabs__link {
+  --pf-v5-c-tabs__link--PaddingTop: 0.45rem;
+  --pf-v5-c-tabs__link--PaddingBottom: 0.45rem;
+  --pf-v5-c-tabs__link--PaddingLeft: 0.85rem;
+  --pf-v5-c-tabs__link--PaddingRight: 0.85rem;
+  background-color: transparent;
+  border: 0;
+  border-radius: var(--fidar-radius-sm);
+  color: var(--pf-v5-global--Color--200);
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color var(--fidar-dur) var(--fidar-ease),
+    color var(--fidar-dur) var(--fidar-ease);
+}
+
+.pf-v5-c-tabs__link:hover {
+  color: var(--pf-v5-global--Color--100);
+  background-color: var(--pf-v5-global--BackgroundColor--300);
+}
+
+.pf-v5-c-tabs__item.pf-m-current .pf-v5-c-tabs__link,
+.pf-v5-c-tabs.pf-m-box .pf-v5-c-tabs__item.pf-m-current .pf-v5-c-tabs__link {
+  background-color: var(--pf-v5-global--palette--blue-100);
+  color: var(--fidar-accent);
+  font-weight: 600;
+}
+
+:root.pf-v5-theme-dark .pf-v5-c-tabs__item.pf-m-current .pf-v5-c-tabs__link,
+:root.pf-v5-theme-dark .pf-v5-c-tabs.pf-m-box .pf-v5-c-tabs__item.pf-m-current .pf-v5-c-tabs__link {
+  background-color: rgba(173, 229, 255, 0.14);
+  color: var(--fidar-sky);
+}
+
+.pf-v5-c-tabs__scroll-button {
+  border: 0;
+  background-color: transparent;
+  color: var(--pf-v5-global--Color--200);
+  border-radius: var(--fidar-radius-sm);
+}
+
+.pf-v5-c-tabs__scroll-button:hover {
+  background-color: var(--pf-v5-global--BackgroundColor--300);
+  color: var(--pf-v5-global--Color--100);
+}
+
+/* Vertical tabs keep a simple stacked rail */
+.pf-v5-c-tabs.pf-m-vertical .pf-v5-c-tabs__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Search field and its submit button read as one control; PatternFly leaves
+   the field's underline visible under the adjacent button. */
+.pf-v5-c-input-group .pf-v5-c-button::before,
+.pf-v5-c-input-group .pf-v5-c-button::after,
+.pf-v5-c-search-input .pf-v5-c-button::before,
+.pf-v5-c-search-input .pf-v5-c-button::after {
+  border: 0;
+}
+
+.pf-v5-c-toolbar__item + .pf-v5-c-toolbar__item {
+  margin-inline-start: 0.4rem;
+}
+
+/* --------------------------------------------------------------------------
+   15.2 Forms → stacked axis
+   PatternFly's horizontal form puts a fixed label column beside every field,
+   which is the layout signature of enterprise Java admin tools. Stacking the
+   label above the control is the single biggest structural shift available
+   without touching TSX.
+   -------------------------------------------------------------------------- */
+
+@media (min-width: 768px) {
+  .pf-v5-c-form.pf-m-horizontal .pf-v5-c-form__group {
+    grid-template-columns: 1fr;
+    grid-row-gap: 0.4rem;
+  }
+
+  .pf-v5-c-form.pf-m-horizontal .pf-v5-c-form__group-label {
+    padding-block-start: 0;
+    max-inline-size: none;
+  }
+
+  .pf-v5-c-form.pf-m-horizontal .pf-v5-c-form__group-control {
+    grid-column: 1;
+  }
+}
+
+/* Keep forms to a comfortable measure instead of stretching edge to edge */
+.pf-v5-c-form:not(.pf-m-limit-width) {
+  max-inline-size: 46rem;
+}
+
+.pf-v5-c-form__group-label {
+  margin-block-end: 0;
+}
+
+.pf-v5-c-form__actions {
+  gap: 0.5rem;
+  padding-block-start: 0.75rem;
+}
+
+/* --------------------------------------------------------------------------
+   15.3 Page header
+   Give the title block real presence and let it sit on the page surface
+   rather than a full-bleed white slab.
+   -------------------------------------------------------------------------- */
+
+.pf-v5-c-page__main-section.pf-m-light,
+.pf-v5-c-page__main-section {
+  background-color: transparent;
+}
+
+/* The first light section on a page is the title block */
+.pf-v5-c-page__main > .pf-v5-c-page__main-section.pf-m-light:first-of-type {
+  padding-block-end: 0.75rem;
+}
+
+.pf-v5-c-page__main-section h1,
+.pf-v5-c-page__main-section .pf-v5-c-title.pf-m-2xl,
+.pf-v5-c-page__main-section .pf-v5-c-title.pf-m-3xl {
+  font-size: 1.5rem;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+
+/* Cards and tables provide their own surface, so the page keeps its tint */
+.pf-v5-c-page__main-body,
+.pf-v5-c-page__main-tabs {
+  background-color: transparent;
+}
+
+/* --------------------------------------------------------------------------
+   15.4 Content surfaces
+   With page sections transparent, anything that was relying on that white
+   slab needs its own surface back.
+   -------------------------------------------------------------------------- */
+
+.pf-v5-c-page__main-section > .pf-v5-c-form,
+.pf-v5-c-page__main-section > .pf-v5-c-description-list,
+.pf-v5-c-tab-content > .pf-v5-c-page__main-section > .pf-v5-c-form {
+  background-color: var(--pf-v5-global--BackgroundColor--100);
+  border: 1px solid var(--pf-v5-global--BorderColor--100);
+  border-radius: var(--fidar-radius-lg);
+  padding: 1.5rem;
+}
+
+/* Toolbar sits above its table as one composed block */
+.pf-v5-c-toolbar {
+  border-radius: var(--fidar-radius-lg) var(--fidar-radius-lg) 0 0;
+}
+
+/* --------------------------------------------------------------------------
+   15.5 Search & filters
+   -------------------------------------------------------------------------- */
+
+.pf-v5-c-text-input-group {
+  --pf-v5-c-text-input-group--BackgroundColor: var(--pf-v5-global--BackgroundColor--100);
+  border: 1px solid var(--pf-v5-global--BorderColor--200);
+  border-radius: var(--fidar-radius-md);
+  overflow: hidden;
+  transition: border-color var(--fidar-dur) var(--fidar-ease),
+    box-shadow var(--fidar-dur) var(--fidar-ease);
+}
+
+.pf-v5-c-text-input-group:focus-within {
+  border-color: var(--fidar-accent);
+  box-shadow: 0 0 0 3px var(--pf-v5-global--palette--blue-100);
+}
+
+.pf-v5-c-text-input-group__text::after,
+.pf-v5-c-text-input-group__text::before {
+  border: 0;
+}
+
+.pf-v5-c-text-input-group__text-input {
+  font-size: 0.875rem;
+  padding-block: 0.45rem;
+}
+
+/* --------------------------------------------------------------------------
+   15.6 Login-adjacent surfaces inside the consoles
+   (select menus rendered into the page body, jump links, tiles)
+   -------------------------------------------------------------------------- */
+
+.pf-v5-c-jump-links__link {
+  border-radius: var(--fidar-radius-sm);
+  font-size: 0.8125rem;
+}
+
+.pf-v5-c-tile {
+  border-radius: var(--fidar-radius-lg);
+  border: 1px solid var(--pf-v5-global--BorderColor--100);
+  transition: border-color var(--fidar-dur) var(--fidar-ease),
+    box-shadow var(--fidar-dur) var(--fidar-ease);
+}
+
+.pf-v5-c-tile:hover {
+  border-color: var(--pf-v5-global--BorderColor--300);
+  box-shadow: var(--pf-v5-global--BoxShadow--md);
+}
+
+.pf-v5-c-tile.pf-m-selected {
+  border-color: var(--fidar-accent);
+  box-shadow: 0 0 0 3px var(--pf-v5-global--palette--blue-100);
+}
+
+/* --------------------------------------------------------------------------
+   15.7 Wizards
+   -------------------------------------------------------------------------- */
+
+.pf-v5-c-wizard__nav {
+  background-color: var(--pf-v5-global--BackgroundColor--150);
+  border-inline-end: 1px solid var(--pf-v5-global--BorderColor--100);
+}
+
+.pf-v5-c-wizard__nav-link {
+  border-radius: var(--fidar-radius-sm);
+  font-size: 0.875rem;
+}
+
+.pf-v5-c-wizard__nav-link.pf-m-current {
+  background-color: var(--pf-v5-global--palette--blue-100);
+  color: var(--fidar-accent);
+  font-weight: 600;
+}
+
+.pf-v5-c-wizard__nav-link::before {
+  content: none;
+}
+
+
+/* --------------------------------------------------------------------------
+   15.8 Form panel insets
+   FormPanel renders a PatternFly Card, but Keycloak ships per-screen rules
+   (realm-settings-section.css, user-section.css and friends) that zero the
+   horizontal padding on its header and body. Those were written for the old
+   full-bleed layout, where the page section supplied the inset — against a
+   card surface they leave headings and fields flush to the edge. The app
+   selectors are more specific than the component ones, so restoring the inset
+   needs !important rather than a tidier override.
+   -------------------------------------------------------------------------- */
+
+.pf-v5-c-card > .pf-v5-c-card__header.kc-form-panel__header,
+.pf-v5-c-card > .pf-v5-c-card__body.kc-form-panel__body {
+  padding-inline: 1.5rem !important;
+}
+
+.pf-v5-c-card > .pf-v5-c-card__header.kc-form-panel__header {
+  padding-block-start: 1.35rem !important;
+  padding-block-end: 0.35rem !important;
+}
+
+.pf-v5-c-card > .pf-v5-c-card__body.kc-form-panel__body {
+  padding-block-end: 1.5rem !important;
+}
+
+.kc-form-panel__header .pf-v5-c-card__title,
+.kc-form-panel__header .pf-v5-c-title {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+}
+
+/* Panels stacked in one section need separation now that each has a surface */
+.pf-v5-c-card.pf-m-flat + .pf-v5-c-card.pf-m-flat {
+  margin-block-start: 1rem;
+}
+
+/* --------------------------------------------------------------------------
+   15.9 Density
+   -------------------------------------------------------------------------- */
+
+.pf-v5-c-card {
+  --pf-v5-c-card--child--PaddingTop: 1.5rem;
+  --pf-v5-c-card--child--PaddingRight: 1.5rem;
+  --pf-v5-c-card--child--PaddingBottom: 1.5rem;
+  --pf-v5-c-card--child--PaddingLeft: 1.5rem;
+}
+
+.pf-v5-c-form {
+  --pf-v5-c-form--GridGap: 1.4rem;
+}
+
+/* Switch rows read as one unit rather than a floating label above a control */
+.pf-v5-c-form__group-label + .pf-v5-c-form__group-control .pf-v5-c-switch {
+  margin-block-start: 0.15rem;
+}
+
+/* --------------------------------------------------------------------------
+   Admin console — app-specific rules
+   -------------------------------------------------------------------------- */
 
 img.keycloak__pageheader_brand {
   height: 56px;
