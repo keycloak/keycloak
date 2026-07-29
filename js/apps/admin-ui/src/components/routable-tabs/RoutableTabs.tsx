@@ -14,12 +14,11 @@ import {
 } from "react";
 import {
   Path,
-  To,
   generatePath,
   matchPath,
   useHref,
-  useLinkClickHandler,
   useLocation,
+  useNavigate,
   useParams,
 } from "react-router-dom";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
@@ -48,6 +47,7 @@ export const RoutableTabs = ({
   ...otherProps
 }: RoutableTabsProps) => {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const params = useParams();
   const { componentTypes } = useServerInfo();
   const tabs = componentTypes?.[TAB_PROVIDER] || [];
@@ -89,6 +89,16 @@ export const RoutableTabs = ({
       activeKey={
         exactMatch ?? nearestMatch ?? defaultLocation?.pathname ?? pathname
       }
+      onSelect={(event, eventKey) => {
+        otherProps.onSelect?.(event, eventKey);
+
+        if (typeof eventKey !== "string" || eventKey === decodeURI(pathname)) {
+          return;
+        }
+
+        event.preventDefault();
+        navigate(eventKey);
+      }}
       component={TabsComponent.nav}
       inset={{
         default: "insetNone",
@@ -120,10 +130,9 @@ const DynamicTab = ({
   ...props
 }: PropsWithChildren<DynamicTabProps>) => {
   const href = useHref(props.eventKey);
-  const onClick = useLinkClickHandler(props.eventKey);
 
   return (
-    <Tab {...props} href={href} onClick={onClick}>
+    <Tab {...props} href={href}>
       {children}
     </Tab>
   );
@@ -131,11 +140,9 @@ const DynamicTab = ({
 
 export const useRoutableTab = (to: Partial<Path>) => {
   const href = useHref(to);
-  const onClick = useLinkClickHandler(to as To);
 
   return {
     eventKey: to.pathname ?? "",
     href,
-    onClick,
   };
 };
