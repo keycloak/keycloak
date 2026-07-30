@@ -88,6 +88,8 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.partialimport.PartialImportResults;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
@@ -375,9 +377,13 @@ public class DefaultExportImportManager implements ExportImportManager {
         importIdentityProviders(rep, newRealm, session);
         importIdentityProviderMappers(rep, session);
 
+        if (rep.isVerifiableCredentialsEnabled() != null) {
+            newRealm.setVerifiableCredentialsEnabled(rep.isVerifiableCredentialsEnabled());
+        }
+
         Map<String, ClientScopeModel> clientScopes = new HashMap<>();
         if (rep.getClientScopes() != null) {
-            clientScopes = createClientScopes(rep.getClientScopes(), newRealm);
+            clientScopes = createClientScopes(session, rep.getClientScopes(), newRealm);
         }
         if (rep.getDefaultDefaultClientScopes() != null) {
             for (String clientScopeName : rep.getDefaultDefaultClientScopes()) {
@@ -505,9 +511,6 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.isInternationalizationEnabled() != null) {
             newRealm.setInternationalizationEnabled(rep.isInternationalizationEnabled());
         }
-        if (rep.isVerifiableCredentialsEnabled() != null) {
-            newRealm.setVerifiableCredentialsEnabled(rep.isVerifiableCredentialsEnabled());
-        }
         if (rep.getSupportedLocales() != null) {
             newRealm.setSupportedLocales(new HashSet<String>(rep.getSupportedLocales()));
         }
@@ -612,9 +615,17 @@ public class DefaultExportImportManager implements ExportImportManager {
         return appMap;
     }
 
-    private static Map<String, ClientScopeModel> createClientScopes(List<ClientScopeRepresentation> clientScopes, RealmModel realm) {
+    private static Map<String, ClientScopeModel> createClientScopes(KeycloakSession session,
+                                                                    List<ClientScopeRepresentation> clientScopes,
+                                                                    RealmModel realm) {
         Map<String, ClientScopeModel> appMap = new HashMap<>();
         for (ClientScopeRepresentation resourceRep : clientScopes) {
+            LoginProtocolFactory loginProtocolFactory = (LoginProtocolFactory) session.getKeycloakSessionFactory()
+                    .getProviderFactory(LoginProtocol.class, resourceRep.getProtocol());
+            if (loginProtocolFactory != null) {
+                loginProtocolFactory.validateClientScope(session, resourceRep);
+                loginProtocolFactory.addClientScopeDefaults(resourceRep);
+            }
             ClientScopeModel app = RepresentationToModel.createClientScope(realm, resourceRep);
             appMap.put(app.getName(), app);
         }

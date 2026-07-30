@@ -350,6 +350,62 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
         }
     }
 
+    @Test
+    public void testRealmImportAppliesCredentialScopeDefaults() {
+        RealmsResource realms = keycloak.realms();
+        String realmName = "issue-51185-import-defaults";
+        String scopeName = "issue-51185-imported-scope";
+
+        RealmRepresentation realmRep = new RealmRepresentation();
+        realmRep.setRealm(realmName);
+        realmRep.setEnabled(true);
+        realmRep.setVerifiableCredentialsEnabled(true);
+
+        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
+        clientScope.setName(scopeName);
+        clientScope.setProtocol(OID4VC_PROTOCOL);
+        realmRep.setClientScopes(List.of(clientScope));
+
+        try {
+            realms.create(realmRep);
+
+            ClientScopeRepresentation importedScope = realms.realm(realmName).clientScopes().findAll().stream()
+                    .filter(scope -> scopeName.equals(scope.getName()))
+                    .findFirst()
+                    .orElseThrow();
+            assertEquals(scopeName, importedScope.getAttributes().get(VC_CONFIGURATION_ID));
+        } finally {
+            realms.realm(realmName).remove();
+        }
+    }
+
+    @Test
+    public void testRealmImportRejectsDuplicateCredentialConfigurationIds() {
+        RealmsResource realms = keycloak.realms();
+        String realmName = "issue-51185-import-duplicate";
+        String credentialConfigurationId = "issue-51185-imported-shared-id";
+
+        RealmRepresentation realmRep = new RealmRepresentation();
+        realmRep.setRealm(realmName);
+        realmRep.setEnabled(true);
+        realmRep.setVerifiableCredentialsEnabled(true);
+
+        CredentialScopeRepresentation firstScope = new CredentialScopeRepresentation("issue-51185-imported-first");
+        firstScope.setCredentialConfigurationId(credentialConfigurationId);
+        CredentialScopeRepresentation secondScope = new CredentialScopeRepresentation("issue-51185-imported-second");
+        secondScope.setCredentialConfigurationId(credentialConfigurationId);
+        realmRep.setClientScopes(List.of(firstScope, secondScope));
+
+        try {
+            WebApplicationException exception = assertThrows(WebApplicationException.class, () -> realms.create(realmRep));
+            assertEquals(Response.Status.CONFLICT.getStatusCode(), exception.getResponse().getStatus());
+        } finally {
+            if (realms.findAll().stream().anyMatch(realm -> realmName.equals(realm.getRealm()))) {
+                realms.realm(realmName).remove();
+            }
+        }
+    }
+
     /**
      * Test that creating a client scope with invalid refresh interval is rejected
      */
