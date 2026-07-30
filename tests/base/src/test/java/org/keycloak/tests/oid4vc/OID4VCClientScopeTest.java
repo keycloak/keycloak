@@ -38,6 +38,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -196,6 +197,33 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
                 clientScopes.get(secondScopeId).remove();
             }
             clientScopes.get(firstScopeId).remove();
+        }
+    }
+
+    @Test
+    public void testUpdatingProtocolToOID4VCAppliesOID4VCDefaults() {
+        ClientScopesResource clientScopes = testRealm.admin().clientScopes();
+        ClientScopeRepresentation scope = new ClientScopeRepresentation();
+        scope.setName("issue-51185-protocol-update");
+        scope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+
+        String scopeId = null;
+        try (Response response = clientScopes.create(scope)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            scopeId = ApiUtil.getCreatedId(response);
+        }
+
+        try {
+            ClientScopeResource scopeResource = clientScopes.get(scopeId);
+            ClientScopeRepresentation update = scopeResource.toRepresentation();
+            update.setProtocol(OID4VC_PROTOCOL);
+            scopeResource.update(update);
+
+            ClientScopeRepresentation updatedScope = scopeResource.toRepresentation();
+            assertEquals(OID4VC_PROTOCOL, updatedScope.getProtocol());
+            assertEquals(updatedScope.getName(), updatedScope.getAttributes().get(VC_CONFIGURATION_ID));
+        } finally {
+            clientScopes.get(scopeId).remove();
         }
     }
 

@@ -1446,6 +1446,11 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
+    public Stream<ClientScopeModel> getClientScopesByProtocolForUpdate(RealmModel realm, String protocol) {
+        return getClientScopeDelegate().getClientScopesByProtocolForUpdate(realm, protocol);
+    }
+
+    @Override
     public Stream<ClientScopeModel> getClientScopesByAttributes(RealmModel realm, Map<String, String> searchMap,
                                                                 boolean useOr) {
         return getClientScopeDelegate().getClientScopesByAttributes(realm, searchMap, useOr);

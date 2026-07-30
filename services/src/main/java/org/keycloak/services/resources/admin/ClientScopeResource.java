@@ -135,7 +135,7 @@ public class ClientScopeResource {
         try {
             LoginProtocolFactory loginProtocolFactory = //
                     (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class,
-                                                                                                  clientScope.getProtocol());
+                                                                                                  rep.getProtocol());
             Optional.ofNullable(loginProtocolFactory).ifPresent(lp -> lp.addClientScopeDefaults(rep));
             RepresentationToModel.updateClientScope(rep, clientScope);
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();

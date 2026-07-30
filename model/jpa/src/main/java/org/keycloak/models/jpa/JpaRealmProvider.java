@@ -1289,6 +1289,21 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
                     .map(entity -> new ClientScopeAdapter(realm, em, session, entity));
     }
 
+    @Override
+    public Stream<ClientScopeModel> getClientScopesByProtocolForUpdate(RealmModel realm, String protocol) {
+        RealmEntity realmEntity = em.find(RealmEntity.class, realm.getId(), LockModeType.PESSIMISTIC_WRITE);
+        if (realmEntity == null) {
+            return Stream.empty();
+        }
+
+        TypedQuery<ClientScopeEntity> query = em.createNamedQuery("getClientScopesByProtocol", ClientScopeEntity.class)
+                .setParameter("realm", realm.getId())
+                .setParameter("protocol", protocol)
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE);
+        return query.getResultStream()
+                .map(entity -> new ClientScopeAdapter(realm, em, session, entity));
+    }
+
     /**
      * This method filters clientScopes by specific attributes. To do this, it will generate the sql-statement
      * dynamically based on the given search-parameters.<br />

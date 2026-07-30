@@ -303,8 +303,8 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
             throw ErrorResponse.error("Credential configuration ID must not be blank", Response.Status.BAD_REQUEST);
         }
 
-        session.getContext().getRealm().getClientScopesStream()
-                .filter(existingScope -> OID4VC_PROTOCOL.equals(existingScope.getProtocol()))
+        RealmModel realm = session.getContext().getRealm();
+        session.clientScopes().getClientScopesByProtocolForUpdate(realm, OID4VC_PROTOCOL)
                 .filter(existingScope -> !Objects.equals(existingScope.getId(), clientScope.getId()))
                 .filter(existingScope -> credentialConfigurationId.equals(getEffectiveCredentialConfigurationId(existingScope)))
                 .findAny()
