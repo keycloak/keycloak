@@ -287,6 +287,9 @@
     --kc-warn-fg: #8a5a0f;
     --kc-warn-bg: rgba(201, 130, 26, 0.1);
     --kc-warn-border: rgba(201, 130, 26, 0.3);
+    --kc-success-fg: #15803d;
+    --kc-success-bg: rgba(21, 128, 61, 0.08);
+    --kc-success-border: rgba(21, 128, 61, 0.28);
     --kc-alert-bg: rgba(23, 31, 46, 0.03);
     --kc-alert-title: #141b2b;
     --kc-ripple: rgba(255, 255, 255, 0.3);
@@ -390,6 +393,9 @@
     --kc-warn-fg: #fcd34d;
     --kc-warn-bg: rgba(252, 211, 77, 0.09);
     --kc-warn-border: rgba(252, 211, 77, 0.24);
+    --kc-success-fg: #4ade80;
+    --kc-success-bg: rgba(74, 222, 128, 0.1);
+    --kc-success-border: rgba(74, 222, 128, 0.32);
     --kc-alert-bg: rgba(255, 255, 255, 0.05);
     --kc-alert-title: #f1f5f9;
     --kc-ripple: rgba(11, 15, 25, 0.28);
@@ -724,7 +730,14 @@ div.kc-logo-text span {
     --pf-v5-c-form-control--after--BorderBottomWidth: 0;
     --pf-v5-c-form-control--focus--after--BorderBottomWidth: 0;
     --pf-v5-c-form-control--BackgroundColor: transparent;
-    --pf-v5-c-form-control--Color: #f8fafc;
+    /* This PatternFly custom property is what the <select> locale switcher
+       actually reads its text colour from — the sibling rule below only
+       covers <input>. Hardcoded near-white here was correct back when the
+       login page was dark-only; it survived the later light/dark pass
+       because it's a custom property, not a class selector, and the
+       substitution script only matched selectors. Left as literal white it
+       made the language dropdown nearly invisible in light mode. */
+    --pf-v5-c-form-control--Color: var(--kc-input-text);
     background: var(--kc-field-bg);
     border: 1px solid var(--kc-field-border);
     border-radius: var(--kc-radius-field);
@@ -1167,8 +1180,8 @@ html[dir="rtl"] #password-new {
 }
 
 .pf-v5-c-alert.pf-m-success {
-    border-color: rgba(74, 222, 128, 0.32);
-    background: rgba(74, 222, 128, 0.1);
+    border-color: var(--kc-success-border);
+    background: var(--kc-success-bg);
 }
 
 .pf-v5-c-alert.pf-m-warning {
@@ -1390,7 +1403,12 @@ html[dir="rtl"] #password-new {
 .kc-login-tooltip .kc-tooltip-text {
     top: -3px;
     left: 160%;
-    background-color: var(--fidar-ink-900);
+    /* Deliberately not a scheme token: this is a small dark bubble with white
+       text in both colour schemes, the same convention most sites use for
+       tooltips regardless of page theme. --fidar-ink-900 would be wrong here
+       — it now means "the page canvas colour", which is near-white in light
+       mode, making this white-on-near-white. */
+    background-color: #141b2b;
     visibility: hidden;
     color: #fff;
     min-width: 130px;
@@ -1416,7 +1434,8 @@ html[dir="rtl"] #password-new {
     margin-top: -5px;
     border-width: 5px;
     border-style: solid;
-    border-color: transparent var(--fidar-ink-900) transparent transparent;
+    /* Matches the bubble's own hardcoded colour above, not the scheme token. */
+    border-color: transparent #141b2b transparent transparent;
 }
 
 #kc-recovery-codes-list {
