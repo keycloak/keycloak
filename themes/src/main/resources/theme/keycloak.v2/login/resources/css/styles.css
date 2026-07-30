@@ -227,6 +227,20 @@
    ========================================================================== */
 
 :root.login-pf {
+    /* Tells the browser this page is *currently* light, so it paints native
+       widgets — the locale <select> and its dropdown, scrollbars, the caret — to
+       match.
+
+       Without it the only signal is <meta name="color-scheme" content="light
+       dark"> in the template, which says "either is fine" and leaves the UA
+       following the OS. PatternFly declares `color-scheme: dark` for its dark
+       theme but ships no light counterpart, so a device set to dark system-wide
+       kept rendering native controls dark over this light card: on Android the
+       locale select's text came out near-white on a white field and the current
+       language was unreadable. Desktop Chrome happened to paint that text from
+       the CSS `color` instead, which is why it only showed on the phone. */
+    color-scheme: light;
+
     /* ---- Light scheme ---- */
     --fidar-ink-900: #f4f7fb;
     --fidar-ink-800: #ffffff;
@@ -266,6 +280,9 @@
     --kc-input-text: #141b2b;
     --kc-placeholder: #8f9bb3;
     --kc-autofill-bg: #ffffff;
+    /* Opaque: the native <select> popup composites against the OS surface, not
+       the translucent card, so a token with alpha would wash out. */
+    --kc-option-bg: #ffffff;
     --kc-icon-muted: #5f6b83;
     --kc-muted: #5f6b83;
     --kc-field-border-hover: rgba(23, 31, 46, 0.24);
@@ -332,6 +349,13 @@
 }
 
 :root.login-pf.pf-v5-theme-dark {
+    /* The mirror of the light block's declaration. PatternFly already sets this
+       on its dark theme class, but stating it here keeps the pair together and
+       removes any dependence on stylesheet order — and it is what makes the
+       toggle correct rather than the OS: a device set to light that toggles this
+       page to dark needs native widgets to follow the page, not the system. */
+    color-scheme: dark;
+
     /* Canvas */
     --fidar-ink-900: #0b0f19;
     --fidar-ink-800: #111827;
@@ -372,6 +396,7 @@
     --kc-input-text: #f8fafc;
     --kc-placeholder: #64748b;
     --kc-autofill-bg: #18202f;
+    --kc-option-bg: #18202f;
     --kc-icon-muted: #94a3b8;
     --kc-muted: #94a3b8;
     --kc-field-border-hover: rgba(255, 255, 255, 0.18);
@@ -589,8 +614,23 @@ div.kc-logo-text {
     background-repeat: no-repeat;
     background-size: contain;
     background-position: left center;
-    block-size: clamp(112px, 11vw, 168px);
-    inline-size: min(560px, 100%);
+    /* Box matches the wordmark's own proportions, so block-size is literally the
+       rendered height of the mark and background-size: contain fills the box
+       exactly rather than letterboxing.
+
+       The source PNGs used to be 4000x4000 with the wordmark occupying only 18%
+       of the height, which made `contain` scale to the square and left the mark
+       at a fraction of the box — 168px of box for a 30px mark, and barely 13px
+       once the box shrank on a phone. They are now cropped to the artwork, so
+       the geometry here means what it says.
+
+       max-inline-size is the guard for narrow viewports: the box then goes
+       narrower than the ratio and contain letterboxes, shrinking the mark
+       instead of overflowing. */
+    aspect-ratio: 3820 / 715;
+    block-size: clamp(30px, 2.4vw, 40px);
+    inline-size: auto;
+    max-inline-size: min(560px, 100%);
     margin: 0;
 }
 
@@ -760,6 +800,22 @@ div.kc-logo-text span {
 
 .pf-v5-c-form-control::after {
     display: none;
+}
+
+/* The locale switcher's dropdown list is drawn by the platform, not by this
+   stylesheet, and PatternFly styles the <select> without ever touching its
+   <option>s. That left the open list on whatever the OS chose for its
+   background while the options inherited our text colour — light-on-light, or
+   dark-on-dark, depending on the mismatch. Opaque values on both properties,
+   since a translucent field colour would composite against the native popup
+   rather than the card. */
+#login-select-toggle {
+    color: var(--kc-input-text);
+}
+
+#login-select-toggle option {
+    color: var(--kc-input-text);
+    background-color: var(--kc-option-bg);
 }
 
 .pf-v5-c-form-control:hover,
@@ -1330,8 +1386,11 @@ html[dir="rtl"] #password-new {
 
     div.kc-logo-text {
         background-position: center;
-        inline-size: min(300px, 80%);
-        block-size: 72px;
+        /* Deliberately taller than the desktop clamp resolves to. Stacked, this
+           is the only brand cue above the card and it sits beside a 1.375rem
+           headline, so it can afford the presence. */
+        block-size: 44px;
+        max-inline-size: 88%;
         margin-inline: auto;
     }
 
@@ -1720,7 +1779,7 @@ html.login-pf,
     }
 
     div.kc-logo-text {
-        block-size: 56px;
+        block-size: 30px;
     }
 
     .pf-v5-c-login__main {
@@ -1767,9 +1826,9 @@ html.login-pf,
        Width follows the intrinsic ratio. object-fit matters once max-inline-size
        clamps an unusually wide logo: the box then no longer matches the image's
        ratio, and contain letterboxes it instead of stretching it. */
-    block-size: clamp(72px, 8vw, 96px);
+    block-size: clamp(88px, 9vw, 112px);
     inline-size: auto;
-    max-inline-size: min(280px, 78%);
+    max-inline-size: min(300px, 82%);
     object-fit: contain;
 }
 
@@ -1786,12 +1845,11 @@ html.login-pf,
     }
 
     .kc-realm-logo img {
-        /* Same height the Fidar mark takes in the stacked layout, so the tenant
-           logo reads with comparable weight on a phone rather than shrinking to
-           a badge. The clamp above already resolves to its 72px floor at these
-           widths; this only relaxes the width cap for the narrower card. */
-        block-size: 72px;
-        max-inline-size: 82%;
+        /* Larger than the clamp's 88px floor, not smaller: on a phone this is the
+           only tenant cue on screen, and many uploads are square logos with
+           their own internal padding, which costs apparent size. */
+        block-size: 96px;
+        max-inline-size: 86%;
     }
 }
 
@@ -1806,6 +1864,6 @@ html.login-pf,
     }
 
     .kc-realm-logo img {
-        block-size: 52px;
+        block-size: 60px;
     }
 }
