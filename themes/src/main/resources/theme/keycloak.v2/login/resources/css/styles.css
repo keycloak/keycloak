@@ -1623,9 +1623,14 @@ html.login-pf,
 }
 
 /* The OAuth grant screen renders a logo supplied by the client, so its
-   dimensions are entirely outside our control. */
+   dimensions are entirely outside our control.
+
+   The tenant logo is excluded: it lives in this container too, but it is sized
+   deliberately further down. This rule is more specific than that one (0,3,1
+   against 0,1,1), so without the exclusion its `block-size: auto` silently won
+   and left the logo at whatever the container allowed. */
 #kc-oauth img,
-.pf-v5-c-login__main img:not([id*="qr-code"]):not(.kc-social-provider-logo) {
+.pf-v5-c-login__main img:not([id*="qr-code"]):not(.kc-social-provider-logo):not(#kc-realm-logo-img) {
     max-inline-size: 100%;
     block-size: auto;
 }
@@ -1750,10 +1755,21 @@ html.login-pf,
 }
 
 .kc-realm-logo img {
-    max-inline-size: min(200px, 70%);
-    max-block-size: 56px;
+    /* Height-driven rather than capped with max-block-size.
+
+       Two reasons. A cap only ever shrinks, so a tenant who uploads a small
+       source file renders at its natural size while another at 1080px renders at
+       the cap — the same slot, wildly different optical weight. And a cap treats
+       every aspect ratio alike: at a 56px ceiling a square logo got 56x56 while
+       a 2:1 wordmark got 119x56, so square marks looked roughly half the size of
+       their wide counterparts for no reason the tenant could control.
+
+       Width follows the intrinsic ratio. object-fit matters once max-inline-size
+       clamps an unusually wide logo: the box then no longer matches the image's
+       ratio, and contain letterboxes it instead of stretching it. */
+    block-size: clamp(72px, 8vw, 96px);
     inline-size: auto;
-    block-size: auto;
+    max-inline-size: min(280px, 78%);
     object-fit: contain;
 }
 
@@ -1770,6 +1786,26 @@ html.login-pf,
     }
 
     .kc-realm-logo img {
-        max-block-size: 44px;
+        /* Same height the Fidar mark takes in the stacked layout, so the tenant
+           logo reads with comparable weight on a phone rather than shrinking to
+           a badge. The clamp above already resolves to its 72px floor at these
+           widths; this only relaxes the width cap for the narrower card. */
+        block-size: 72px;
+        max-inline-size: 82%;
+    }
+}
+
+/* Short viewports again — phone landscape, or a keyboard covering half the
+   screen. The block above deliberately keeps this logo large, which is wrong
+   when vertical space is what's scarce, so it yields here like the brand panel
+   does. Has to live after the base rule rather than in the earlier
+   max-height query: same specificity, so source order decides. */
+@media (max-height: 560px) and (max-width: 1024px) {
+    .kc-realm-logo {
+        padding-block: 1rem 0.125rem;
+    }
+
+    .kc-realm-logo img {
+        block-size: 52px;
     }
 }
