@@ -251,10 +251,12 @@ function setupRealmLogo() {
         logoDarkUrl: json.logoDarkUrl ?? null,
       };
 
-      if (branding.logoLightUrl || branding.logoDarkUrl) {
-        writeBrandingCache(realm, branding);
-        apply(branding);
-      }
+      // Cached even when both URLs are null. Realms with no logo of their own
+      // are the common case, and skipping the write meant every screen in the
+      // flow — passkey, password, OTP, reset — refetched the same empty answer.
+      // apply() and pick() both no-op on a logo-less realm.
+      writeBrandingCache(realm, branding);
+      apply(branding);
     })
     .catch(() => {
       // Branding is decorative; a failed lookup must never block sign-in.

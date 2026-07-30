@@ -1,6 +1,9 @@
 <#import "template.ftl" as layout>
 <#import "buttons.ftl" as buttons>
-<@layout.registrationLayout displayInfo=(realm.registrationAllowed && !registrationDisabled??); section>
+<#-- displayInfo=false: the "info" section that held the registration link is
+     commented out at the foot of this file, and leaving displayInfo on would
+     still emit its empty wrapper div and the gap it occupies. -->
+<@layout.registrationLayout displayInfo=false; section>
 <!-- template: webauthn-authenticate.ftl -->
 
     <#if section = "title">
@@ -138,11 +141,17 @@
         </#outputformat>
     </script>
 
+    <#-- "New user? Register" is disabled on this screen. Commented rather than
+         deleted so it can be restored as-is; to bring it back, also restore the
+         displayInfo expression on the registrationLayout call above, or the
+         layout renders an empty #kc-info wrapper and its spacing instead.
+
     <#elseif section = "info">
         <#if realm.registrationAllowed && !registrationDisabled??>
             <div id="kc-registration">
                 <span>${msg("noAccount")} <a href="${url.registrationUrl}">${msg("doRegister")}</a></span>
             </div>
         </#if>
+    -->
     </#if>
 </@layout.registrationLayout>

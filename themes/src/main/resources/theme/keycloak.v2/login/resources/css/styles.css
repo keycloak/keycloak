@@ -594,8 +594,19 @@ div.kc-logo-text {
     margin: 0;
 }
 
+/* The mark is a background image on the parent, so this text is the only
+   accessible name the logo has. Clipped rather than `display: none`, which
+   would drop it out of the accessibility tree along with the layout. */
 div.kc-logo-text span {
-    display: none;
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
 }
 
 /* Brand copy ------------------------------------------------------------- */

@@ -179,8 +179,26 @@
 <div class="${properties.kcLogin!}">
   <div class="${properties.kcLoginContainer!}">
     <header id="kc-header" class="pf-v5-c-login__header">
-      <div id="kc-header-wrapper"
-              class="pf-v5-c-brand">${kcSanitize(msg("loginTitleHtml",(realm.displayNameHtml!'')))?no_esc}</div>
+      <#-- Always the Fidar mark, never the realm's name.
+
+           Upstream renders msg("loginTitleHtml", realm.displayNameHtml) here,
+           and RealmBean falls back displayNameHtml -> displayName -> the realm's
+           internal *name*. None of our realms set a display name, so this
+           rendered raw identifiers such as "FIDAR_WEBAUTH_V2" as the masthead of
+           the sign-in page.
+
+           Per-tenant identity is not this element's job — that is the logo below
+           inside the card, resolved per realm from the branding API. This slot is
+           the product's own mark and is the same on every realm.
+
+           The mark is drawn as a background image on .kc-logo-text (see
+           --keycloak-logo-url) rather than an <img>, so it follows the light/dark
+           toggle, which flips a class and would not trigger a <picture> element's
+           prefers-color-scheme sources. The span is the logo's accessible name
+           and is clipped, not hidden, by the stylesheet. -->
+      <div id="kc-header-wrapper" class="pf-v5-c-brand">
+        <div class="kc-logo-text"><span>Fidar</span></div>
+      </div>
       <#-- dir="auto" so each string takes direction from its own content: these
            fall back to English on locales without a translation, and Latin text
            inside an RTL page otherwise has its trailing punctuation relocated. -->
