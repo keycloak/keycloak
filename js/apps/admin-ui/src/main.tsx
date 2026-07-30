@@ -16,9 +16,10 @@ import "./index.css";
 await i18n.init();
 
 const basename =
-  decodeURIComponent(
-    new URL(environment.consoleBaseUrl, window.location.origin).pathname,
-  ).replace(/\/+$/, "") || "/";
+  new URL(environment.consoleBaseUrl, window.location.origin).pathname.replace(
+    /\/+$/,
+    "",
+  ) || "/";
 
 if (window.location.hash.startsWith("#/")) {
   const hashPath = decodeURIComponent(window.location.hash.substring(1));
