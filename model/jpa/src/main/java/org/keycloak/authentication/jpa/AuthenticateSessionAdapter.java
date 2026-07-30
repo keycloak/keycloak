@@ -60,11 +60,23 @@ class AuthenticateSessionAdapter implements AuthenticationSessionModel {
         this.session = Objects.requireNonNull(session);
     }
 
-    public static AuthenticateSessionAdapter create(RootAuthenticationSessionAdapter parentSession, KeycloakSession session, String tabId, String clientUUID, int timestamp) {
+    /**
+     * Creates a new {@link AuthenticateSessionAdapter} backed by a fresh {@link AuthenticationSessionEntity}.
+     *
+     * @param parentSession the parent root authentication session adapter.
+     * @param session       the current Keycloak session.
+     * @param tabId         the tab identifier for this authentication session.
+     * @param clientUUID    the UUID of the client initiating the authentication.
+     * @param timestamp     the creation timestamp.
+     * @return a new adapter instance. The underlying entity is not persisted; the caller must persist it.
+     * @throws NullPointerException if {@code parentSession}, {@code session}, {@code tabId}, or {@code clientUUID} is
+     *                              {@code null}.
+     */
+    public static AuthenticateSessionAdapter create(RootAuthenticationSessionAdapter parentSession, KeycloakSession session, String tabId, String clientUUID, long timestamp) {
         var authEntity = new AuthenticationSessionEntity();
-        authEntity.setTabId(tabId);
+        authEntity.setTabId(Objects.requireNonNull(tabId));
         authEntity.setRootAuthenticationSession(parentSession.getEntity());
-        authEntity.setClientUUID(clientUUID);
+        authEntity.setClientUUID(Objects.requireNonNull(clientUUID));
         authEntity.setTimestamp(timestamp);
         AuthenticationSessionSerialization.setClientScopes(authEntity, Set.of());
         AuthenticationSessionSerialization.setExecutionStatus(authEntity, Map.of());

@@ -25,8 +25,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
@@ -51,9 +49,6 @@ public class RequiredActionMultipleActionsTest extends AbstractTestRealmKeycloak
     public AssertEvents events = new AssertEvents(this);
 
     @Page
-    protected AppPage appPage;
-
-    @Page
     protected LoginPage loginPage;
 
     @Page
@@ -68,21 +63,13 @@ public class RequiredActionMultipleActionsTest extends AbstractTestRealmKeycloak
         loginPage.login("test-user@localhost", "password");
 
         String codeId = null;
-        if (changePasswordPage.isCurrent()) {
-            codeId = updatePassword(codeId);
+        updateProfilePage.assertCurrent();
+        codeId = updateProfile(codeId);
 
-            updateProfilePage.assertCurrent();
-            updateProfile(codeId);
-        } else if (updateProfilePage.isCurrent()) {
-            codeId = updateProfile(codeId);
+        changePasswordPage.assertCurrent();
+        updatePassword(codeId);
 
-            changePasswordPage.assertCurrent();
-            updatePassword(codeId);
-        } else {
-            Assertions.fail("Expected to update password and profile before login");
-        }
-
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectLoginSuccess(events.poll()).sessionId(codeId);
     }

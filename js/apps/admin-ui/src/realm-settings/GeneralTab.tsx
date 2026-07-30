@@ -214,7 +214,7 @@ function RealmSettingsGeneralTabForm({
         // a toast but doesn't block the disable — outbox-pending-max-age
         // backstops any leftover PENDING rows.
         try {
-          await deleteRealmSsfQueuedEvents(adminClient, realmName);
+          await deleteRealmSsfQueuedEvents(adminClient);
           addAlert(t("ssfTransmitterDisableEventsCleared"));
         } catch (error) {
           addError("ssfTransmitterDisableEventsClearFailed", error);

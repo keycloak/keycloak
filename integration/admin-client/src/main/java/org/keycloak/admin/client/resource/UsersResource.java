@@ -291,6 +291,7 @@ public interface UsersResource {
      * @param createdAfter only return users created after (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds
      * @param createdBefore only return users created before (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds
      * @return a list of {@link UserRepresentation}
+     * @since Keycloak server 26.7.0
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)

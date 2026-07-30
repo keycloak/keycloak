@@ -140,7 +140,7 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
     @Override
     public boolean isSupported(Config.Scope config) {
         return InfinispanUtils.isEmbeddedInfinispan() &&
-                Profile.isFeatureEnabled(Profile.Feature.CACHELESS);
+                Profile.isFeatureEnabled(Profile.Feature.STATELESS);
     }
 
 }

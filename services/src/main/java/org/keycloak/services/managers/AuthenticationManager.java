@@ -107,6 +107,7 @@ import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.services.ErrorPage;
+import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
@@ -688,7 +689,7 @@ public class AuthenticationManager {
                     uriInfo,
                     headers);
             clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
-            TokenManager.dettachClientSession(clientSession);
+            TokenManager.detachClientSession(clientSession);
         }
     }
 
@@ -1070,9 +1071,9 @@ public class AuthenticationManager {
 
     }
 
-    private static Response handleActionTokenVerificationException(KeycloakSession session, EventBuilder event, String eventError, String errorMessage) {
+    private static void handleActionTokenVerificationException(KeycloakSession session, EventBuilder event, String eventError, String errorMessage) {
         event.error(eventError);
-        return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, errorMessage == null ? Messages.INVALID_CODE : errorMessage);
+        throw new ErrorPageException(session, null, Response.Status.BAD_REQUEST, errorMessage == null ? Messages.INVALID_CODE : errorMessage);
     }
 
 
@@ -1084,12 +1085,12 @@ public class AuthenticationManager {
             if (actionTokenKey != null) {
                 // Token has expired. We must not accept it, as it will have been removed from the single use provider already
                 if (Time.currentTime() > actionTokenKey.getExp()) {
-                    return handleActionTokenVerificationException(session, event, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
+                    handleActionTokenVerificationException(session, event, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
                 }
 
                 var revokedTokens = session.revokedTokens();
                 if (!revokedTokens.put(actionTokenKeyToInvalidate, actionTokenKey.getExp() - Time.currentTime() + CLOCK_SKEW_SECONDS)) {
-                    return handleActionTokenVerificationException(session, event, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
+                    handleActionTokenVerificationException(session, event, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
                 }
             }
         }
@@ -1287,7 +1288,7 @@ public class AuthenticationManager {
         //if Parameterized Scopes are enabled, get the scopes from the AuthorizationRequestContext, passing the session and scopes as parameters
         // then concat a Stream with the ClientModel, as it's discarded in the getAuthorizationRequestContext method
         if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
-            return AuthorizationContextUtil.getAuthorizationRequestsStreamFromScopesWithClient(session, client, authSession.getClientNote(OAuth2Constants.SCOPE));
+            return AuthorizationContextUtil.getAuthorizationRequestsStreamFromScopesWithClient(session, client, authSession.getAuthenticatedUser(), authSession.getClientNote(OAuth2Constants.SCOPE));
         }
         // if parameterized scopes are not enabled, we retain the old behaviour, but the ClientScopes will be wrapped in
         // AuthorizationRequest objects to standardize the code handling these.

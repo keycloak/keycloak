@@ -14,6 +14,7 @@ import org.keycloak.config.HttpOptions;
 import org.keycloak.config.ManagementOptions;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionsUtil;
+import org.keycloak.config.ProxyOptions;
 import org.keycloak.config.SecurityOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
@@ -21,6 +22,7 @@ import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.DurationConverter;
@@ -42,6 +44,7 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
     private static final String QUARKUS_HTTPS_TRUST_STORE_FILE = "quarkus.http.ssl.certificate.trust-store-file";
     public static final String QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE = "quarkus.http.ssl.certificate.trust-store-file-type";
     private static final String QUARKUS_HTTPS_KEY_STORE_FILE_TYPE = "quarkus.http.ssl.certificate.key-store-file-type";
+    public static final String QUARKUS_HTTPS_SNI = "quarkus.http.ssl.sni";
 
     // Transform runtime exceptions obtained from Quarkus to ours with a relevant message
     private static void setCustomExceptionTransformer() {
@@ -264,6 +267,15 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
                         .to("kc.spi-connections-infinispan--default--shutdown-timeout")
                         .paramLabel("timeout")
                         .validator(HttpPropertyMappers::validateShutdownDuration)
+                        .build(),
+                fromOption(HttpOptions.HTTPS_SNI_ENABLED)
+                        .to(QUARKUS_HTTPS_SNI)
+                        .transformer((value, context) -> {
+                            if (value == null && isHttpsEnabled() && Configuration.getConfigValue(ProxyOptions.PROXY_HEADERS).getValue() == null) {
+                                return "true";
+                            }
+                            return value;
+                        })
                         .build()
         );
 

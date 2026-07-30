@@ -30,7 +30,6 @@ import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
@@ -138,7 +137,7 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
         registerPage.assertCurrent();
 
         registerPage.register("Johny", "Anthony", "johnyanth@check.cz", "johnkeycloak", "Password1", "Password1");
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
@@ -208,7 +207,7 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
         registerPage.assertCurrent();
 
         registerPage.register("Jož,o", "Baříč", "johnyanth@check.cz", "johnkeycloak", "Password1", "Password1");
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
@@ -250,7 +249,7 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
 
         String code = oauth.parseLoginResponse().getCode();
         String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
-        appPage.logout(idTokenHint);
+        oauth.doLogout(idTokenHint);
 
         oauth.openLoginForm();
         loginPage.clickRegister();

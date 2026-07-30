@@ -22,7 +22,8 @@ public class KcOidcBrokerAcrParameterTest extends AbstractBrokerTest {
     @Override
     protected void loginUser() {
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         driver.navigate().to(driver.getCurrentUrl() + "&" + ACR_VALUES + "=" + ACR_3);
 
@@ -43,9 +44,8 @@ public class KcOidcBrokerAcrParameterTest extends AbstractBrokerTest {
         waitForPage(driver, "update account information", false);
 
         updateAccountInformationPage.assertCurrent();
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+        Assertions.assertTrue(driver.getCurrentUrl().contains(bc.consumerRealmName()),
                 "We must be on correct realm right now");
-
 
         log.debug("Updating info on updateAccount page");
         updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");

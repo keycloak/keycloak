@@ -257,6 +257,35 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         assertSuccessfulCredentialResponse(credResponse);
     }
 
+    /**
+     * Replaying the same proof JWT in a second credential request must fail because the
+     * proof c_nonce is consumed after the first successful request.
+     */
+    @Test
+    public void testCredentialRequestRejectsReplayedProofCNonce() throws Exception {
+
+        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
+        AccessTokenResponse tokenResponse = authzCodeFlow(issuer);
+        String credentialIdentifier = assertTokenResponse(tokenResponse);
+        Proofs proofs = newJwtProofs();
+
+        Oid4vcCredentialResponse firstResponse = oauth.oid4vc().credentialRequest()
+                .credentialIdentifier(credentialIdentifier)
+                .proofs(proofs)
+                .bearerToken(tokenResponse.getAccessToken())
+                .send();
+        assertSuccessfulCredentialResponse(firstResponse);
+
+        Oid4vcCredentialResponse replayResponse = oauth.oid4vc().credentialRequest()
+                .credentialIdentifier(credentialIdentifier)
+                .proofs(proofs)
+                .bearerToken(tokenResponse.getAccessToken())
+                .send();
+
+        assertEquals(400, replayResponse.getStatusCode());
+        assertEquals(ErrorType.INVALID_NONCE.getValue(), replayResponse.getError());
+    }
+
     /** After refreshing the token the new access-token must still be usable for a credential request. */
     @Test
     public void testCompleteFlowWithClaimsValidationAuthorizationCode_refreshToken() throws Exception {

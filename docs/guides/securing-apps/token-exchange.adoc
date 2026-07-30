@@ -291,8 +291,8 @@ for the requester client (if the client session was not yet created).
 
 * {project_name} Token exchange does not yet have support for the `resource` parameter.
 
-* The token exchange specification mentions the concepts of https://datatracker.ietf.org/doc/html/rfc8693#name-delegation-vs-impersonation[impersonation and delegation]. {project_name} has support for the
-impersonation use case, but not yet for the delegation use case.
+* The token exchange specification mentions the concepts of https://datatracker.ietf.org/doc/html/rfc8693#name-delegation-vs-impersonation[impersonation and delegation]. {project_name} has support for
+impersonation and experimental support for delegation through the <<_token-exchange-delegation,Token Exchange Delegation>> feature.
 
 ==== Revocation
 
@@ -328,12 +328,81 @@ s|Public clients  | Not available. Downscoping implemented by V1 can be replaced
 s|Consents        | Allowed for clients with `Consent required` as long as the user is already granted consent | Not allowed for clients with *Consent required*
 s|Authorization  | Verification that the requester client must be in the audience of the `subject_token`. Integration with client policies. No Fine-grained admin permissions | Based on fine-grained admin permissions version 1
 s|Revocation chain | Not available for access tokens. Available for refresh tokens   | Not available for access nor refresh tokens
-s|Delegation per RFC 8693|Not supported yet|Not supported
+s|Sender-constrained tokens (DPoP, mTLS) | Supported. See <@links.securingapps id="dpop" />. | Not supported. The exchanged token is issued without any binding.
+s|Delegation per RFC 8693|Experimental support via <<_token-exchange-delegation,Token Exchange Delegation>>|Not supported
 s|Resource parameter per RFC 8693|Not supported yet|Not supported
 s|Internal to external Token Exchange | Identity brokering APIs can be used instead. See link:{developerguide_link}#_identity-brokering-apis[Identity Brokering APIs] for more information. | Implemented as a preview
 s|External to internal Token Exchange | Use-case implemented by Standard Token Exchange V2 and JWT Authorization Grant. See <@links.securingapps id="oauth-identity-authorization-chaining-across-domains" /> for more information. | Implemented as a preview
 s|Subject impersonation (including direct naked impersonation)   | Not implemented yet | Implemented as a preview
 |===
+
+[[_token-exchange-delegation]]
+== Token exchange delegation
+
+<#include "/templates/experimental-feature.adoc">
+
+Token exchange delegation allows a subject to pre-authorize an actor to act on their behalf, as described in the https://datatracker.ietf.org/doc/html/rfc8693#name-delegation-vs-impersonation[delegation semantics of the token exchange specification].
+
+This feature requires the `parameterized-scopes` feature to be enabled. To enable both features, start {project_name} with:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --features=token-exchange-delegation,parameterized-scopes
+----
+
+=== Admin delegation
+
+Admin delegation allows a user (subject) to delegate their token to an administrator. The client requests the `delegation` scope with the administrator's identifier as a parameter using the https://datatracker.ietf.org/doc/html/rfc9396[parameterized scopes] syntax.
+
+When the feature is enabled, a `delegation` client scope is automatically created in new realms. Clients that want to use delegation must add the `delegation` scope to their optional client scopes in the Admin Console.
+
+==== How it works
+
+. The client requests the `delegation` scope with the administrator's (actor) identifier as a parameter, for example `scope=openid delegation:admin`.
+. {project_name} validates that the specified administrator (actor) exists and has the `impersonation` role from the `realm-management` client.
+. The user (subject) is presented with a consent screen to approve the delegation.
+. If the user consents and validation passes, the issued token includes the `may_act` claim with the actor's user ID as the `sub`:
++
+[source,json]
+----
+{
+  "sub": "subject@example.com",
+  "may_act": {
+    "sub": "f1234567-89ab-cdef-0123-456789abcdef"
+  },
+  "scope": "openid delegation:admin",
+  ...
+}
+----
+
+The `may_act` claim declares that the specified administrator (actor) is authorized to act on behalf of the user (subject). The `sub` inside `may_act` contains the actor's user ID, consistent with {project_name}'s standard `sub` claim semantics. An external Security Token Service (STS) receiving this token can verify the delegation authorization directly from the claim without querying back to {project_name}.
+
+If the administrator (actor) does not have impersonation permission, the delegation scope is silently dropped and the `may_act` claim is not included in the token. The consent for delegation is always required and is not stored permanently - the user must approve delegation each login session.
+
+==== Adding additional claims to `may_act`
+
+By default, only the actor's `sub` (user ID) is included in the `may_act` claim. Additional claims can be added by configuring extra "Parameterized Scope User Property" mappers on the `delegation` client scope in the Admin Console.
+
+For example, to include the actor's username:
+
+. Navigate to *Client scopes* -> *delegation* -> *Mappers* -> *Add mapper* -> *By type* -> *Parameterized Scope User Property*.
+. Set *User Property* to `username`.
+. Set *Token Claim Name* to `may_act.preferred_username`.
+. Enable the token types where the claim should be included (e.g. access token, ID token).
+
+The resulting token will then include:
+
+[source,json]
+----
+{
+  "may_act": {
+    "sub": "f1234567-89ab-cdef-0123-456789abcdef",
+    "preferred_username": "admin"
+  }
+}
+----
+
+Other useful claims to add include `may_act.email` (user property `email`) or `may_act.iss` (for cross-realm delegation scenarios).
 
 [[_legacy-token-exchange]]
 == Legacy token exchange
@@ -706,6 +775,8 @@ the `iss` (issuer) claim within the JWT which must be the alias of the provider,
 For validation, if the token is an access token, the provider's user info service will be invoked to validate the token.  A successful call
 will mean that the access token is valid.  If the subject token is a JWT and if the provider has signature validation enabled, that will be attempted,
 otherwise, it will default to also invoking on the user info service to validate the token.
+
+WARNING: The legacy external-to-internal token exchange does *not* validate the `aud` (audience) claim of the `subject_token`, so an ID token issued by the external identity provider to a different client will be accepted as long as signature and expiry checks pass; restrict `token-exchange` permissions to only the clients that genuinely require them.
 
 By default, the internal token minted will use the calling client to determine what's in the token using the protocol
 mappers defined for the calling client.  Alternatively, you can specify a different target client using the `audience`

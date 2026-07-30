@@ -32,7 +32,6 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
@@ -55,9 +54,6 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
-
-    @Page
-    protected AppPage appPage;
 
     @Page
     protected LoginPage loginPage;
@@ -91,7 +87,7 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
         // Open login form and login successfully. Assert session_state is present
         AuthorizationEndpointResponse authzResponse = oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         Assertions.assertNotNull(authzResponse.getSessionState());
 
         // Switch "exclude session_state" to on
@@ -103,7 +99,7 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
 
         // Open login again and assert session_state not present
         oauth.openLoginForm();
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.expectLoginSuccess(events.poll()).details(Details.USERNAME, "test-user@localhost");
 
         authzResponse = oauth.parseLoginResponse();
@@ -119,7 +115,7 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
         // Open login form and login successfully. Assert iss parameter is present
         AuthorizationEndpointResponse authzResponse = oauth.doLogin("test-user@localhost", "password");
         EventAssertion.expectLoginSuccess(events.poll());
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         Assertions.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", authzResponse.getIssuer());
 
         // Switch "exclude iss" to on
@@ -131,7 +127,7 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
 
         // Open login again and assert iss parameter is not present
         oauth.openLoginForm();
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.expectLoginSuccess(events.poll()).details(Details.USERNAME, "test-user@localhost");
 
         authzResponse = oauth.parseLoginResponse();

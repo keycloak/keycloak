@@ -17,11 +17,16 @@
 
 package org.keycloak.testframework.server;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 
+import org.keycloak.common.Profile;
 import org.keycloak.it.utils.DockerKeycloakDistribution;
 import org.keycloak.testframework.clustering.LoadBalancer;
 import org.keycloak.testframework.infinispan.CacheType;
@@ -42,44 +47,71 @@ public class ClusteredKeycloakServer implements KeycloakServer {
     private final DockerKeycloakDistribution[] containers;
     private final String images;
     private final long startTimeout;
+    private final boolean stateless;
+    private LoadBalancer loadBalancer;
 
     private static LazyFuture<String> defaultImage() {
         return DockerKeycloakDistribution.createImage(true);
     }
 
-    public ClusteredKeycloakServer(int mumServers, String images, long startTimeout) {
-        containers = new DockerKeycloakDistribution[mumServers];
+    public ClusteredKeycloakServer(int numServers, String images, long startTimeout, boolean stateless) {
+        containers = new DockerKeycloakDistribution[numServers];
         this.images = images;
         this.startTimeout = startTimeout;
+        this.stateless = stateless;
     }
 
     @Override
     public void start(KeycloakServerConfigBuilder configBuilder, boolean tlsEnabled) {
         int numServers = containers.length;
-        CountdownLatchLoggingConsumer clusterLatch = new CountdownLatchLoggingConsumer(numServers, String.format(CLUSTER_VIEW_REGEX, numServers));
+
         String[] imagePeServer = null;
+        Supplier<CountdownLatchLoggingConsumer> latchSupplier;
+        List<CountdownLatchLoggingConsumer> consumers = new ArrayList<>(numServers);
 
         // Infinispan clustered cache
         configBuilder.cache(CacheType.ISPN);
+        if (stateless) {
+            configBuilder.features(Profile.Feature.STATELESS);
+            latchSupplier = () -> {
+                var clusterLatch = new CountdownLatchLoggingConsumer(1, String.format(CLUSTER_VIEW_REGEX, 1));
+                consumers.add(clusterLatch);
+                return clusterLatch;
+            };
+        } else {
+            var clusterLatch = new CountdownLatchLoggingConsumer(numServers, String.format(CLUSTER_VIEW_REGEX, numServers));
+            latchSupplier = () -> clusterLatch;
+            consumers.add(clusterLatch);
+        }
 
         if (images == null || images.isEmpty() || (imagePeServer = images.split(",")).length == 1) {
-            startContainersWithSameImage(configBuilder, imagePeServer == null ? SNAPSHOT_IMAGE : imagePeServer[0], clusterLatch);
+            startContainersWithSameImage(configBuilder, imagePeServer == null ? SNAPSHOT_IMAGE : imagePeServer[0], latchSupplier);
         } else {
-            startContainersWithMixedImage(configBuilder, imagePeServer, clusterLatch);
+            startContainersWithMixedImage(configBuilder, imagePeServer, latchSupplier);
         }
 
         try {
-            clusterLatch.await((long) numServers * DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            long perLatchTimeout = stateless ? DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS : (long) numServers * DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS;
+            for (var clusterLatch : consumers) {
+                clusterLatch.await(perLatchTimeout, TimeUnit.SECONDS);
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         } catch (TimeoutException e) {
-            throw new RuntimeException("Expected %d cluster members".formatted(numServers), e);
+            if (stateless) {
+                throw new RuntimeException("One or more nodes failed to start with 'stateless' feature.", e);
+            } else {
+                throw new RuntimeException("Expected %d cluster members".formatted(numServers), e);
+            }
         }
         ReadinessProbe.waitUntilReady(this::getBaseUrl, numServers, startTimeout);
+        // none of the Inject* annotations can make the LoadBalancer as a dependency, to ensure it is started before any http request is performed.
+        // it is better to start/manage it here.
+        loadBalancer = new LoadBalancer(this);
     }
 
-    private void startContainersWithMixedImage(KeycloakServerConfigBuilder configBuilder, String[] imagePeServer, CountdownLatchLoggingConsumer clusterLatch) {
+    private void startContainersWithMixedImage(KeycloakServerConfigBuilder configBuilder, String[] imagePeServer, Supplier<CountdownLatchLoggingConsumer> clusterLatch) {
         assert imagePeServer != null;
         if (containers.length != imagePeServer.length) {
             throw new IllegalArgumentException("The number of containers and the number of images must match");
@@ -104,12 +136,13 @@ public class ClusteredKeycloakServer implements KeycloakServer {
 
             copyProvidersAndConfigs(container, configBuilder);
 
-            configureLogConsumers(container, i, clusterLatch);
+            configureLogConsumers(container, i, clusterLatch.get());
+            configureClusterNameIfStatelessEnabled(configBuilder, i);
             container.runKc(configBuilder.toArgs());
         }
     }
 
-    private void startContainersWithSameImage(KeycloakServerConfigBuilder configBuilder, String image, CountdownLatchLoggingConsumer clusterLatch) {
+    private void startContainersWithSameImage(KeycloakServerConfigBuilder configBuilder, String image, Supplier<CountdownLatchLoggingConsumer> clusterLatch) {
         int[] exposedPorts = new int[]{REQUEST_PORT, MANAGEMENT_PORT};
         LazyFuture<String> imageFuture = image == null || SNAPSHOT_IMAGE.equals(image) ?
                 defaultImage() :
@@ -119,7 +152,8 @@ public class ClusteredKeycloakServer implements KeycloakServer {
             containers[i] = container;
 
             copyProvidersAndConfigs(container, configBuilder);
-            configureLogConsumers(container, i, clusterLatch);
+            configureLogConsumers(container, i, clusterLatch.get());
+            configureClusterNameIfStatelessEnabled(configBuilder, i);
             container.runKc(configBuilder.toArgs());
         }
     }
@@ -137,6 +171,8 @@ public class ClusteredKeycloakServer implements KeycloakServer {
 
     @Override
     public void stop() {
+        Optional.ofNullable(loadBalancer).ifPresent(LoadBalancer::close);
+        loadBalancer = null;
         Arrays.stream(containers)
                 .filter(Objects::nonNull)
                 .forEach(DockerKeycloakDistribution::stop);
@@ -166,5 +202,16 @@ public class ClusteredKeycloakServer implements KeycloakServer {
 
     public int clusterSize() {
         return containers.length;
+    }
+
+    public LoadBalancer getLoadBalancer() {
+        return loadBalancer;
+    }
+
+    private void configureClusterNameIfStatelessEnabled(KeycloakServerConfigBuilder configBuilder, int id) {
+        if (!stateless) {
+            return;
+        }
+        configBuilder.spiOption("cache-embedded", "default", "cluster-name", "cluster-" + id);
     }
 }

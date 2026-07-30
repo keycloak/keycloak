@@ -418,9 +418,7 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
     }
 
     private static String getAdminUrl(Keycloak keycloak, KubernetesClient client, String addressOverride) {
-        boolean httpEnabled = KeycloakServiceDependentResource.isHttpEnabled(keycloak);
-        // for now preferring to use http if available
-        boolean https = isTlsConfigured(keycloak) && !httpEnabled;
+        boolean https = isTlsConfigured(keycloak);
         String protocol = https?HTTPS:"http";
         String address = addressOverride;
 

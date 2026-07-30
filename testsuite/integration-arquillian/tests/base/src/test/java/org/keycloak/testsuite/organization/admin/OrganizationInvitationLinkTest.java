@@ -320,7 +320,8 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         realm.setRegistrationAllowed(true);
         managedRealm.admin().update(realm);
         oauth.client("broker-app");
-        loginPage.open(realm.getRealm());
+        oauth.realm(realm.getRealm());
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
         String registerUrl = UriBuilder.fromUri(driver.getCurrentUrl())
@@ -447,7 +448,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
             String link = getInvitationLinkFromEmail();
             driver.navigate().to(link);
             Assertions.assertFalse(organization.members().list(-1, -1).stream().anyMatch(actual -> email.equals(actual.getEmail())));
-            registerPage.assertCurrent(organizationName);
+            registerPage.assertCurrent();
             registerPage.openLanguage("Portuguese");
             Assertions.assertTrue(driver.getPageSource().contains("Campos obrigatórios"));
             registerPage.register("firstName", "lastName", email,
@@ -547,7 +548,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         String link = getInvitationLinkFromEmail();
         driver.navigate().to(link);
         Assertions.assertFalse(organization.members().list(-1, -1).stream().anyMatch(actual -> email.equals(actual.getEmail())));
-        registerPage.assertCurrent(organizationName);
+        registerPage.assertCurrent();
         assertThat(registerPage.getEmail(), equalTo(expectedEmail));
         registerPage.register("firstName", "lastName", email,
                 "invitedUser", "password", "password", null, false, null);
@@ -585,7 +586,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         // Disable the organization after the invitation was sent
         try (OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setEnabled(false).update()) {
             driver.navigate().to(link);
-            assertThat(infoPage.isCurrent(), is(true));
+            infoPage.assertCurrent();
             assertThat(infoPage.getInfo(), containsString("The organization is not available at this time and cannot accept new members."));
 
             // User should not be added to organization
@@ -645,7 +646,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
             // Now try to use the invitation link (should fail)
             driver.navigate().to(invitationLink);
-            assertThat(infoPage.isCurrent(), is(true));
+            infoPage.assertCurrent();
             assertThat(infoPage.getInfo(), containsString("The link you clicked is no longer valid. It may have expired or already been used."));
             
             // User should not be created or added to organization
@@ -680,7 +681,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
             driver.navigate().to(invitationLink);
             
             // Should show an error page saying invitation is no longer valid
-            assertThat(infoPage.isCurrent(), is(true));
+            infoPage.assertCurrent();
             assertThat(infoPage.getInfo(), containsString("The link you clicked is no longer valid. It may have expired or already been used."));
             
             // User should not be added to organization
@@ -716,7 +717,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
             // Now try to re-use the first invitation link (should fail)
             driver.navigate().to(firstInvitationLink);
-            assertThat(infoPage.isCurrent(), is(true));
+            infoPage.assertCurrent();
             assertThat(infoPage.getInfo(), containsString("The link you clicked is no longer valid. It may have expired or already been used."));
 
             // User should not be added to organization

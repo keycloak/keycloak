@@ -57,6 +57,7 @@ import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
@@ -101,6 +102,7 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
     }
 
     @Test
+    @DatabaseTest
     public void testViewAllUsersUsingUserPolicy() {
         UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
         createAllPermission(adminPermissionsClient, usersType, policy, Set.of(VIEW));
@@ -111,6 +113,7 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
     }
 
     @Test
+    @DatabaseTest
     public void testDeniedResourcesPrecedenceOverGrantedResources() {
         UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
         createAllPermission(adminPermissionsClient, usersType, policy, Set.of(VIEW));
@@ -128,6 +131,7 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
     }
 
     @Test
+    @DatabaseTest
     public void testCountWithFilters() {
         assertThat(realmAdminClient.realm(realm.getName()).users().count("user-"), is(0));
         assertThat(realmAdminClient.realm(realm.getName()).users().count(null, null, null, "user-15"), is(0));
@@ -370,6 +374,38 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
     }
 
     @Test
+    public void testBruteForceUserEndpointSearchByIdFilteredByViewPermission() {
+        UserRepresentation allowed = realm.admin().users().search("user-0").get(0);
+        UserRepresentation denied = realm.admin().users().search("user-1").get(0);
+
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        createPermission(adminPermissionsClient, allowed.getId(), USERS_RESOURCE_TYPE, Set.of(VIEW), policy);
+
+        try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+            WebTarget target = httpClient.target(keycloakUrls.getBaseUrl().toString())
+                    .path("admin")
+                    .path("realms")
+                    .path(realm.getName())
+                    .path("ui-ext")
+                    .path("brute-force-user")
+                    .register(new BearerAuthFilter(realmAdminClient.tokenManager()));
+
+            Response allowedResponse = target.queryParam("search", "id:" + allowed.getId())
+                    .request(MediaType.APPLICATION_JSON).get();
+            assertThat(allowedResponse.getStatus(), is(Response.Status.OK.getStatusCode()));
+            List<UserRepresentation> allowedResult = allowedResponse.readEntity(new GenericType<>() {});
+            assertThat(allowedResult, hasSize(1));
+            assertThat(allowedResult.get(0).getUsername(), is("user-0"));
+
+            Response deniedResponse = target.queryParam("search", "id:" + denied.getId())
+                    .request(MediaType.APPLICATION_JSON).get();
+            assertThat(deniedResponse.getStatus(), is(Response.Status.OK.getStatusCode()));
+            List<UserRepresentation> deniedResult = deniedResponse.readEntity(new GenericType<>() {});
+            assertThat(deniedResult, is(empty()));
+        }
+    }
+
+    @Test
     public void testViewUserUsingRoleInheritedFromGroup() {
         List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
         assertTrue(search.isEmpty());
@@ -528,6 +564,49 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         List<String> roleMembers = realmAdminClient.realm(realm.getName()).clients().get(testClient.getId()).roles().get(role.getName()).getUserMembers().stream().map(UserRepresentation::getUsername).toList();
 
         // Assert only permitted users are returned as role members
+        assertThat(roleMembers, hasSize(allowedUsers.size()));
+        assertThat(roleMembers, hasItems(allowedUsers.toArray(new String[0])));
+    }
+
+    @Test
+    public void testRealmRoleMemberFilteringByViewPermission() {
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName("test_realm_role");
+        realm.admin().roles().create(role);
+        role = realm.admin().roles().get(role.getName()).toRepresentation();
+        realm.cleanup().add(r -> r.roles().deleteRole("test_realm_role"));
+
+        for (String username : List.of("user_x", "user_y", "user_z")) {
+            String userId = ApiUtil.getCreatedId(realm.admin().users().create(UserBuilder.create()
+                    .username(username)
+                    .password("password")
+                    .firstName("user")
+                    .lastName(username)
+                    .email(username + "@test")
+                    .build()));
+            realm.admin().users().get(userId).roles().realmLevel().add(List.of(role));
+            realm.cleanup().add(r -> r.users().delete(userId).close());
+        }
+
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Myadmin user policy",
+                realm.admin().users().search("myadmin").get(0).getId());
+        Set<String> allowedUsers = Set.of("user_x", "user_y");
+        createPermission(adminPermissionsClient, allowedUsers, AdminPermissionsSchema.USERS.getType(),
+                Set.of(AdminPermissionsSchema.VIEW), policy);
+
+        String realmMgmtClientId = realm.admin().clients()
+                .findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
+        RoleRepresentation viewRealmRole = realm.admin().clients().get(realmMgmtClientId)
+                .roles().get(AdminRoles.VIEW_REALM).toRepresentation();
+        String myadminId = realm.admin().users().search("myadmin").get(0).getId();
+        realm.admin().users().get(myadminId).roles().clientLevel(realmMgmtClientId).add(List.of(viewRealmRole));
+        realm.cleanup().add(r -> r.users().get(r.users().search("myadmin").get(0).getId())
+                .roles().clientLevel(realmMgmtClientId).remove(List.of(viewRealmRole)));
+
+        List<String> roleMembers = realmAdminClient.realm(realm.getName())
+                .roles().get(role.getName()).getUserMembers().stream()
+                .map(UserRepresentation::getUsername).toList();
+
         assertThat(roleMembers, hasSize(allowedUsers.size()));
         assertThat(roleMembers, hasItems(allowedUsers.toArray(new String[0])));
     }

@@ -22,7 +22,9 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse.Credential;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.Proofs;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.RefreshToken;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -44,11 +46,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_VCT;
+import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ABCA_JKT_TYPE;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_HEADER;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_POP_HEADER;
 import static org.keycloak.constants.OID4VCIConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE;
 import static org.keycloak.constants.OID4VCIConstants.TIME_CLAIMS_STRATEGY;
 import static org.keycloak.constants.OID4VCIConstants.TIME_RANDOMIZE_WINDOW_SECONDS;
+import static org.keycloak.services.util.DPoPUtil.DPOP_JKT_TYPE;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.createRsaKeyPair;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CLIENT_ATTESTER_ATTACHMENT_KEY;
 
@@ -471,6 +475,153 @@ public class HAIPIssuerConformanceTest extends OID4VCIssuerTestBase {
         } finally {
             oauth.config().client(clientId);
         }
+    }
+
+    /**
+     * fapi2-security-profile-final-refresh-token
+     *
+     * This test obtains refresh tokens and checks that the refresh token is correctly bound to the client.
+     */
+    @Test
+    public void testRefreshTokenHappyFlow() throws Exception {
+
+        var ctx = new OID4VCTestContext(abcaClient, sdJwtTypeCredentialScope);
+        ctx.putAttachment(CLIENT_ATTESTER_ATTACHMENT_KEY, attester);
+
+        var pkce = PkceGenerator.s256();
+
+        // Generate ABCA Headers
+        //
+        KeyWrapper abcaKey = wallet.getRSAKeyPair(ctx, "rsaABCA#1");
+        String attestationJwt = wallet.buildClientAttestationJWT(ctx, abcaKey);
+        String attestationPoPJwt = wallet.buildClientAttestationPoPJWT(ctx, abcaKey);
+
+        // Send PAR Request
+        //
+        String requestUri = oauth.pushedAuthorizationRequest()
+                .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
+                .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
+                .scopeParam(ctx.getScope())
+                .codeChallenge(pkce)
+                .send().getRequestUri();
+        assertNotNull(requestUri, "No requestUri");
+
+        // Send Authorization Request
+        //
+        String authCode = wallet.authorizationRequest()
+                .requestUri(requestUri)
+                .codeChallenge(pkce)
+                .send(ctx.getHolder(), TEST_PASSWORD)
+                .getCode();
+        assertNotNull(authCode, "No auth code");
+
+        // Send AccessToken Request
+        //
+        KeyWrapper ecKey = wallet.getECKeyPair(ctx);
+        String tokenEndpoint = oauth.getEndpoints().getToken();
+        String dpopProof = wallet.generateSignedDPoPProof(tokenEndpoint, ecKey, null);
+
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode)
+                .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
+                .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
+                .codeVerifier(pkce)
+                .dpopProof(dpopProof)
+                .send();
+
+        // Inspect AccessToken
+        //
+        assertTrue(tokenResponse.isSuccess());
+        String encodedAccessToken = tokenResponse.getAccessToken();
+        assertNotNull(encodedAccessToken, "No access token");
+        String tokenType = tokenResponse.getTokenType();
+        assertEquals(TokenUtil.TOKEN_TYPE_DPOP, tokenType);
+
+        AccessToken accessToken = new JWSInput(encodedAccessToken).readJsonContent(AccessToken.class);
+        AccessToken.Confirmation accessCnf = accessToken.getConfirmation();
+        assertNotNull(accessCnf, "No access confirmation");
+        assertEquals(DPOP_JKT_TYPE, accessCnf.getJktType());
+
+        // Inspect RefreshToken
+        //
+        String encodedRefreshToken = tokenResponse.getRefreshToken();
+        assertNotNull(encodedRefreshToken, "No refresh token");
+
+        RefreshToken refreshToken = new JWSInput(encodedRefreshToken).readJsonContent(RefreshToken.class);
+        AccessToken.Confirmation refreshCnf = refreshToken.getConfirmation();
+        assertNotNull(refreshCnf, "No refresh confirmation");
+        assertEquals(ABCA_JKT_TYPE, refreshCnf.getJktType());
+
+        JWK abcaJwk = JWKBuilder.create()
+                .kid(abcaKey.getKid())
+                .algorithm(abcaKey.getAlgorithm())
+                .rsa(abcaKey.getPublicKey(), abcaKey.getUse());
+        String abcaThumbprint = JWKSUtils.computeThumbprint(abcaJwk);
+        String cnfThumbprint = refreshCnf.getKeyThumbprint();
+        assertEquals(abcaThumbprint, cnfThumbprint, "Expected ABCA thumbprint in confirmation");
+
+        // Generate other ABCA Key/Headers (i.e. transferred refresh token)
+        //
+        KeyWrapper abcaKey2 = wallet.getRSAKeyPair(ctx, "rsaABCA#2");
+        String attestationJwt2 = wallet.buildClientAttestationJWT(ctx, abcaKey2);
+        String attestationPoPJwt2 = wallet.buildClientAttestationPoPJWT(ctx, abcaKey2);
+
+        // Exchange RefreshToken for new AccessToken (fails)
+        //
+        dpopProof = wallet.generateSignedDPoPProof(tokenEndpoint, ecKey, encodedRefreshToken);
+        tokenResponse = oauth.refreshRequest(encodedRefreshToken)
+                .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt2)
+                .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt2)
+                .dpopProof(dpopProof)
+                .send();
+        assertFalse(tokenResponse.isSuccess());
+        assertEquals("invalid_grant", tokenResponse.getError());
+        assertEquals("Attestation-Based Key mismatch", tokenResponse.getErrorDescription());
+
+        // Exchange RefreshToken for new AccessToken (success)
+        //
+        dpopProof = wallet.generateSignedDPoPProof(tokenEndpoint, ecKey, encodedRefreshToken);
+        tokenResponse = oauth.refreshRequest(encodedRefreshToken)
+                .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
+                .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
+                .dpopProof(dpopProof)
+                .send();
+
+        // Inspect AccessToken
+        //
+        assertTrue(tokenResponse.isSuccess());
+        encodedAccessToken = tokenResponse.getAccessToken();
+        assertNotNull(encodedAccessToken, "No access token");
+        tokenType = tokenResponse.getTokenType();
+        assertEquals(TokenUtil.TOKEN_TYPE_DPOP, tokenType);
+
+        accessToken = new JWSInput(encodedAccessToken).readJsonContent(AccessToken.class);
+        accessCnf = accessToken.getConfirmation();
+        assertNotNull(accessCnf, "No access confirmation");
+        assertEquals(DPOP_JKT_TYPE, accessCnf.getJktType());
+
+        // Send Nonce Request
+        //
+        String nonce = wallet.nonceRequest().send().getNonce();
+        Proofs jwtProofs = wallet.generateJwtProofs(ctx, nonce, ecKey);
+
+        // Send Credential Request
+        // Note, we use the same EC key for DPoP and Holder identity
+        //
+        String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
+        assertNotNull(credentialIdentifier, "No authorized credential identifier");
+
+        String credentialEndpoint = oauth.getEndpoints().getOid4vcCredential();
+        dpopProof = wallet.generateSignedDPoPProof(credentialEndpoint, ecKey, encodedAccessToken);
+
+        CredentialResponse credResponse = wallet.credentialRequest(ctx, tokenType, encodedAccessToken)
+                .credentialIdentifier(credentialIdentifier)
+                .dpopProof(dpopProof)
+                .proofs(jwtProofs)
+                .send().getCredentialResponse();
+
+        // Verify Credential Response
+        //
+        verifyCredentialResponse(ctx, jwtProofs, credResponse);
     }
 
     /**

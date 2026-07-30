@@ -28,28 +28,40 @@ To create a parameterized client scope, follow these steps:
 .Creating a parameterized client scope
 image:images/client-scopes-parameterized-create.png[width=600]
 
+[[_parameterized_scopes_parameter_types]]
 === Parameter types
 
 When creating a parameterized scope, you must select a parameter type that determines how the parameter value is validated at request time. The following built-in types are available:
 
-[cols="1,3",options="header"]
+[cols="1,3,1",options="header"]
 |===
-| Type | Description
+| Type | Description | Repeatable by default
 
 | `string`
 | Accepts any string value. No validation is performed on the parameter.
+| Yes
 
 | `integer`
 | Accepts integer numbers only. The parameter value must be parsable as an integer number.
+| Yes
 
 | `boolean`
 | Accepts only `true` or `false` (case-insensitive).
+| No
 
 | `username`
-| Validates that the parameter value is the username of an existing, enabled user in the realm. Additionally, a user cannot target themselves with this scope type.
+| Validates that the parameter value is the username of an existing, enabled user in the realm. When the realm allows login with email, the parameter can also be an email address. Additionally, a user cannot target themselves with this scope type.
+
+When this type is selected, an additional *Allow access to user data* switch appears in the scope settings. It controls access checks in the <<_parameterized_scopes_mappers, Parameterized Scope User Property>> mapper.
+| Yes
+
+| `delegation`
+| Extends the `username` type with an additional impersonation check. The parameter must be the username (or email address when the realm allows login with email) of an existing, enabled user. The user cannot target themselves, and the current user must have impersonation permissions for the target user.
+| No
 
 | `custom`
 | Validates the parameter value against a regular expression pattern defined by the administrator. When selecting this type, you must provide a valid regex pattern.
+| Yes
 |===
 
 [[_parameterized_scopes_use_case]]
@@ -64,7 +76,7 @@ With parameterized scopes, you define a single `project` scope with the `string`
 scope=openid project:backend-api
 ----
 
-{project_name} validates the parameter value against the configured parameter type. If the validation fails, the scope value is silently excluded from the request. A client can also request multiple values for the same parameterized scope in a single request:
+{project_name} validates the parameter value against the configured parameter type. If the validation fails, the scope value is silently excluded from the request. When a scope is <<_parameterized_scopes_repeatable, repeatable>>, a client can request multiple values for the same parameterized scope in a single request:
 
 [source,bash,subs=+attributes]
 ----
@@ -89,9 +101,39 @@ For example, using the <<_parameterized_scopes_use_case, resource-specific acces
 .Consent screen with parameterized scopes
 image:images/client-scopes-parameterized-consent.png[width=450]
 
+[[_parameterized_scopes_repeatable]]
+=== Repeatable scopes
+
+By default, a client can request the same parameterized scope with multiple different parameter values in a single authorization request. For example, `scope=openid project:backend-api project:mobile-app` includes two values for the `project` scope.
+
+However, some scope types do not allow this. For example, a `boolean` scope with both `scope:true` and `scope:false` in the same request is contradictory. Similarly, a `delegation` scope that identifies a single target user should not appear with multiple values.
+
+Each parameter type defines a default for whether the scope is repeatable (see the <<_parameterized_scopes_parameter_types, Parameter types>> table). You can override this default for individual scopes:
+
+. Open the parameterized client scope in the Admin Console.
+. Toggle the *Repeatable* switch to enable or disable multiple parameter values.
+. Click *Save*.
+
+When a client requests multiple parameter values for a non-repeatable scope, {project_name} rejects the request with an `invalid_scope` error.
+
+[[_parameterized_scopes_mappers]]
+=== Protocol mappers
+
+{project_name} provides two built-in protocol mappers for parameterized scopes. They appear in the mapper type dropdown when adding a protocol mapper to a parameterized client scope.
+
+Parameterized Scope Parameter:: Maps the raw parameter value directly to a token claim. For example, if a scope named `project` is requested as `project:backend-api`, this mapper can place `backend-api` into a claim such as `project`. Available for all parameterized scope types.
+
+Parameterized Scope User Property:: Resolves a user from the parameter value (username) and maps a user attribute or built-in property (such as `email`, `firstName`, or `id`) to a token claim. For example, a `share-with` scope requested as `share-with:alice` can map Alice's email to a `shared_user_email` claim.
++
+This mapper is applicable when the parameter type is `username` or `delegation`. Access control depends on the type:
++
+* `username` — the mapper checks whether the authenticated user has `view-users` permission or fine-grained admin permission for the target user. If the *Allow access to user data* switch is enabled on the scope, this check is skipped. Without permission, user property claims are silently omitted from the token.
+* `delegation` — the impersonation permission is already validated during scope resolution. Since this is a stronger check than `view-users`, no additional access control is applied and user property claims are always included.
+
 === Constraints
 
 Parameterized client scopes have the following constraints:
 
 * A parameterized scope can only be an *optional* client scope. It cannot be assigned as a default client scope for a client.
 * A parameterized scope cannot be assigned as a realm default scope. It can be assigned as a realm optional scope.
+* When multiple parameterized scopes with overlapping name prefixes are assigned to the same client, the most specific (longest prefix) scope is matched. For example, if a client has both `read` and `read:account` as parameterized scopes, a request for `read:account:victim` binds to `read:account` with parameter `victim`, not to `read` with parameter `account:victim`.

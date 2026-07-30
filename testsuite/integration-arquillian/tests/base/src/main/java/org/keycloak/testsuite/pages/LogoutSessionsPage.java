@@ -26,17 +26,14 @@ import org.openqa.selenium.support.FindBy;
  * <p>A page that contains the logout other sessions checkbox.</p>
  *
  * @author rmartinc
+ *
+ * THIS ABSTRACT PAGE WON'T BE MIGRATED TO THE NEW TEST FRAMEWORK!
  */
+@Deprecated(forRemoval = true)
 public abstract class LogoutSessionsPage extends LanguageComboboxAwarePage {
 
     @FindBy(id = "logout-sessions")
     private WebElement logoutSessionsCheckbox;
-
-    @Override
-    public void assertCurrent() {
-        super.assertCurrent();
-        Assertions.assertTrue(this.isLogoutSessionDisplayed(), "The page doesn't display the logout other sessions checkbox");
-    }
 
     public boolean isLogoutSessionDisplayed() {
         return UIUtils.isElementVisible(logoutSessionsCheckbox);

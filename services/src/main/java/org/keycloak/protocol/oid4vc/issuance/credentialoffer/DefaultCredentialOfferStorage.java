@@ -56,7 +56,7 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
      * @return Lifespan in seconds, or 0 if the entry is already expired
      */
     private long calculateLifespanSeconds(long expiresAt) {
-        long currentTime = Time.currentTime();
+        long currentTime = Time.currentTimeSeconds();
         long lifespan = expiresAt - currentTime;
         
         // If already expired or about to expire immediately, skip storage

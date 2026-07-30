@@ -2,6 +2,7 @@
 <#import "/templates/kc.adoc" as kc>
 <#import "/templates/options.adoc" as opts>
 <#import "/templates/links.adoc" as links>
+<#import "/templates/features.adoc" as features>
 
 <@tmpl.guide
 title="Configuring distributed caches"
@@ -153,6 +154,16 @@ bin/kc.sh start --features-disabled=persistent-user-sessions ...
 Disabling `persistent-user-sessions` is not possible when `multi-site` feature is enabled.
 ====
 
+=== Stateless instances
+
+<@features.techpreview feature="stateless"/>
+
+When the feature `stateless` is enabled, {project_name} does not cache user entity data, and login failures, authentication sessions, and action tokens are persisted to the database. While realm and authorization data are still cached, session-related state is persisted and the database becomes the source of truth. The `work` cache is still used to invalidate realm and authorization data within the cluster.
+
+If you are running multiple independent {project_name} clusters against the same database, cache invalidation between clusters is performed via a database table (outbox). For that, each cluster needs to have a unique name specified via `+--spi-cache-embedded--default--cluster-name+`.
+
+This is the foundation for the multi-cluster (v2) setup that is covered in more detail in the high-availability guide at <@links.ha id="multi-cluster-v2-introduction" />.
+
 === Configuring cache maximum size
 
 In order to reduce memory usage, it's possible to place an upper bound on the number of entries which are stored in a given
@@ -219,7 +230,7 @@ Use the SPI option `+spi-cache-embedded--default--cluster-name+` (or environment
 +
 For example: `+--spi-cache-embedded--default--cluster-name=my-cluster+`
 +
-WARNING: As invalidation of caches between clusters with distinct names will not work, this will lead to stale caches and incorrect behavior. Do not use in production environments. Use only together with the experimental `cacheless` feature.
+WARNING: As invalidation of caches between clusters with distinct names will not work, this will lead to stale caches and incorrect behavior. Do not use in production environments. Use only together with the `stateless` feature.
 
 Node name::
 Sets a human-readable name for the current node, used in log messages and management tools.

@@ -22,10 +22,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,11 +40,11 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -156,9 +156,19 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         Process proc = builder.start();
 
         DefaultOutputConsumer outputConsumer = new DefaultOutputConsumer();
-        readOutput(proc, outputConsumer);
-
-        int exitValue = proc.exitValue();
+        var executor = Executors.newCachedThreadPool();
+        int exitValue = -1;
+        try {
+            readOutput(proc, outputConsumer, executor).get();
+            exitValue = proc.waitFor();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        } finally {
+            executor.shutdownNow();
+        }
 
         return CLIResult.create(outputConsumer.getStdOut(), outputConsumer.getErrOut(), exitValue);
     }
@@ -292,8 +302,8 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
     private void asyncReadOutput() {
         shutdownOutputExecutor();
-        outputExecutor = Executors.newSingleThreadExecutor();
-        outputExecutor.execute(this::readOutput);
+        outputExecutor = Executors.newCachedThreadPool();
+        readOutput(keycloak, outputConsumer, outputExecutor);
     }
 
     private void shutdownOutputExecutor() {
@@ -414,36 +424,21 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
     }
 
-    private void readOutput() {
-        readOutput(keycloak, outputConsumer);
+    private CompletableFuture<Void> readOutput(Process process, OutputConsumer outputConsumer, Executor ex) {
+        var inputFuture = CompletableFuture.runAsync(() -> readOutput(process, process.inputReader(StandardCharsets.UTF_8), outputConsumer::onStdOut), ex);
+        var errorFuture = CompletableFuture.runAsync(() -> readOutput(process, process.errorReader(StandardCharsets.UTF_8), outputConsumer::onErrOut), ex);
+        return CompletableFuture.allOf(inputFuture, errorFuture);
     }
 
-    private void readOutput(Process process, OutputConsumer outputConsumer) {
-        try (
-                BufferedReader outStream = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                BufferedReader errStream = new BufferedReader(new InputStreamReader(process.getErrorStream()))
-        ) {
-            while (process.isAlive()) {
-                readStream(outStream, outputConsumer, false);
-                readStream(errStream, outputConsumer, true);
-                // a hint to temporarily disable the current thread in favor of the process where the distribution is running
-                // after some tests it shows effective to help starting the server faster
-                LockSupport.parkNanos(1L);
-            }
-        } catch (Throwable cause) {
-            throw new RuntimeException("Failed to read server output", cause);
-        }
-    }
+    private void readOutput(Process process, BufferedReader reader, Consumer<String> outputConsumer) {
+        try (reader) {
+            String line;
 
-    private void readStream(BufferedReader reader, OutputConsumer outputConsumer, boolean error) throws IOException {
-        String line;
-
-        while (reader.ready() && (line = reader.readLine()) != null) {
-            if (error) {
-                outputConsumer.onErrOut(line);
-            } else {
-                outputConsumer.onStdOut(line);
+            while ((line = reader.readLine()) != null) {
+                outputConsumer.accept(line);
             }
+        } catch (IOException cause) {
+            throw new UncheckedIOException(cause);
         }
     }
 

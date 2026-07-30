@@ -29,57 +29,71 @@ import org.keycloak.provider.Provider;
 public interface SingleUseObjectProvider extends Provider {
 
     /**
-     * Suffix to a key to indicate that token is considered revoked.
-     * For revoked tokens, only the methods {@link #put} and {@link #contains} must be used.
+     * Suffix appended to a key to indicate that a token is considered revoked. For revoked tokens, only the methods
+     * {@link #put} and {@link #contains} must be used.
      */
     String REVOKED_KEY = ".revoked";
 
     /**
-     * Stores the given data and guarantees that data should be available in the store for at least the time specified by {@param lifespanSeconds} parameter
-     * @param key String
-     * @param lifespanSeconds Minimum lifespan for which successfully added key will be kept in the cache.
-     * @param notes For revoked tokens, this must be an empty Map.
+     * Stores the given data and guarantees that data should be available in the store for at least the time specified
+     * by {@code lifespanSeconds} parameter.
+     *
+     * @param key             identifier for the single-use object. Must not be {@code null}.
+     * @param lifespanSeconds minimum lifespan for which the key will be kept in the store. Must be positive.
+     * @param notes           data to associate with the key. For revoked tokens, this must be an empty Map.
+     * @throws NullPointerException     if {@code key} is {@code null}.
+     * @throws IllegalArgumentException if {@code lifespanSeconds} is not positive.
      */
     void put(String key, long lifespanSeconds, Map<String, String> notes);
 
     /**
      * Gets data associated with the given key.
-     * @param key String
-     * @return Map<String, String> Data associated with the given key or {@code null} if there is no associated data.
+     *
+     * @param key identifier for the single-use object. Must not be {@code null}.
+     * @return data associated with the given key, or {@code null} if there is no associated data.
+     * @throws NullPointerException if {@code key} is {@code null}.
      */
     Map<String, String> get(String key);
 
     /**
-     * This method returns data just if removal was successful. Implementation should guarantee that "remove" is single-use. So if
-     * 2 threads (even on different cluster nodes or on different multi-site nodes) calls "remove(123)" concurrently, then just one of them
-     * is allowed to succeed and return data back. It can't happen that both will succeed.
+     * Returns data only if the removal was successful. Implementations must guarantee that removal is single-use: if
+     * two threads (even on different cluster nodes or different multi-site nodes) call {@code remove(key)}
+     * concurrently, only one of them is allowed to succeed and return data. It must not happen that both succeed.
      *
-     * @param key String
-     * @return context data associated to the key. It returns {@code null} if there are no context data available.
+     * @param key identifier for the single-use object. Must not be {@code null}.
+     * @return context data associated with the key, or {@code null} if there is no context data available.
+     * @throws NullPointerException if {@code key} is {@code null}.
      */
     Map<String, String> remove(String key);
 
     /**
      * Replaces data associated with the given key in the store if the store contains the key.
-     * @param key String
-     * @param notes Map<String, String> New data to be stored
+     *
+     * @param key   identifier for the single-use object. Must not be {@code null}.
+     * @param notes new data to be stored.
      * @return {@code true} if the store contains the key and data was replaced, otherwise {@code false}.
+     * @throws NullPointerException if {@code key} is {@code null}.
      */
     boolean replace(String key, Map<String, String> notes);
 
     /**
-     * Will try to put the key into the cache. It will succeed just if key is not already there.
+     * Tries to put the key into the store. It will succeed only if the key is not already present.
      *
-     * @param key
-     * @param lifespanInSeconds Minimum lifespan for which successfully added key will be kept in the cache.
-     * @return true if the key was successfully put into the cache. This means that same key wasn't in the cache before
+     * @param key               identifier for the single-use object. Must not be {@code null}.
+     * @param lifespanInSeconds minimum lifespan for which the key will be kept in the store. Must be positive.
+     * @return {@code true} if the key was successfully put into the store, meaning the same key wasn't in the store
+     * before.
+     * @throws NullPointerException     if {@code key} is {@code null}.
+     * @throws IllegalArgumentException if {@code lifespanInSeconds} is not positive.
      */
     boolean putIfAbsent(String key, long lifespanInSeconds);
 
     /**
      * Checks if there is a record in the store for the given key.
-     * @param key String
+     *
+     * @param key identifier for the single-use object. Must not be {@code null}.
      * @return {@code true} if the record is present in the store, {@code false} otherwise.
+     * @throws NullPointerException if {@code key} is {@code null}.
      */
     boolean contains(String key);
 }

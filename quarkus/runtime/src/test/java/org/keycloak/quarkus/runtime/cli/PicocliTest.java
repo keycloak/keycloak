@@ -310,6 +310,27 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void failOptimizedBeforeCommand() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("--optimized", "export", "--dir=data");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: '--optimized'"));
+    }
+
+    @Test
+    public void failPropertyMapperBeforeCommand() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("--dir=data", "export");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: '--dir'"));
+    }
+
+    @Test
+    public void failUnknownOptionBeforeCommand() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("--foobar", "export", "--dir=data");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: '--foobar'"));
+    }
+
+    @Test
     public void failIfOptimizedUsedForFirstStartupExport() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--optimized", "--dir=data");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);

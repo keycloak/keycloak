@@ -33,6 +33,7 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_ISSUER_DID;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED_KEY_STORAGE;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED_USER_AUTH;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_REFRESH_INTERVAL_IN_SECONDS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SD_JWT_NUMBER_OF_DECOYS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SD_JWT_NUMBER_OF_DECOYS_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SIGNING_ALG;
@@ -121,6 +122,18 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
         return setAttribute(VC_EXPIRY_IN_SECONDS, Optional.ofNullable(expiryInSeconds)
                         .map(String::valueOf)
                         .orElse(null));
+    }
+
+    public Integer getRefreshIntervalInSeconds() {
+        return Optional.ofNullable(getAttribute(VC_REFRESH_INTERVAL_IN_SECONDS))
+                .map(Integer::parseInt)
+                .orElse(null);
+    }
+
+    public CredentialScopeRepresentation setRefreshIntervalInSeconds(Integer refreshIntervalInSeconds) {
+        return setAttribute(VC_REFRESH_INTERVAL_IN_SECONDS, Optional.ofNullable(refreshIntervalInSeconds)
+                .map(String::valueOf)
+                .orElse(null));
     }
 
     public Integer getSdJwtNumberOfDecoys() {

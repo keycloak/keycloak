@@ -75,6 +75,10 @@ public class AdminRoles {
     }
 
     public static boolean isAdminRole(RoleModel role) {
+        if (role == null) {
+            return false;
+        }
+
         if (!ALL_ROLES.contains(role.getName())) {
             return false;
         }
@@ -122,5 +126,19 @@ public class AdminRoles {
             return false;
         }
         return role.getCompositesStream().anyMatch(child -> isAdminRole(child, visited));
+    }
+
+    public static boolean containsAdminRole(RoleModel role) {
+        return containsAdminRole(role, new HashSet<>());
+    }
+
+    private static boolean containsAdminRole(RoleModel role, Set<String> visited) {
+        if (isAdminRole(role)) {
+            return true;
+        }
+        if (role == null || !role.isComposite() || !visited.add(role.getId())) {
+            return false;
+        }
+        return role.getCompositesStream().anyMatch(r -> containsAdminRole(r, visited));
     }
 }

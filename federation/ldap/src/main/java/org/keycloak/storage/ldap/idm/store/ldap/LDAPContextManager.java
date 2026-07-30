@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import javax.naming.AuthenticationException;
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -20,6 +21,8 @@ import org.keycloak.tracing.TracingProvider;
 import org.keycloak.truststore.TruststoreProvider;
 import org.keycloak.vault.VaultStringSecret;
 
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Timer;
 import org.jboss.logging.Logger;
 
 import static javax.naming.Context.SECURITY_CREDENTIALS;
@@ -33,22 +36,52 @@ public final class LDAPContextManager implements AutoCloseable {
 
     private final KeycloakSession session;
     private final LDAPConfig ldapConfig;
+    private final Meter.MeterProvider<Timer> requestTimer;
     private StartTlsResponse tlsResponse;
     private LdapContext ldapContext;
 
+    @Deprecated(forRemoval = true, since = "26.8")
     public LDAPContextManager(KeycloakSession session, LDAPConfig connectionProperties) {
-        this.session = session;
-        this.ldapConfig = connectionProperties;
+        this(session, connectionProperties, null);
     }
 
+    public LDAPContextManager(KeycloakSession session, LDAPConfig connectionProperties, Meter.MeterProvider<Timer> requestTimer) {
+        this.session = session;
+        this.ldapConfig = connectionProperties;
+        this.requestTimer = requestTimer;
+    }
+
+    /**
+     * Use this method only when the operation should not be tracked by metrics, for example when testing a connection.
+     */
     public static LDAPContextManager create(KeycloakSession session, LDAPConfig connectionProperties) {
-        return new LDAPContextManager(session, connectionProperties);
+        return new LDAPContextManager(session, connectionProperties, null);
+    }
+
+    /**
+     * This is the default method to create the context manager. It will track metrics for LDAP requests.
+     */
+    public static LDAPContextManager create(KeycloakSession session, LDAPConfig connectionProperties, Meter.MeterProvider<Timer> requestTimer) {
+        return new LDAPContextManager(session, connectionProperties, requestTimer);
+    }
+
+    private void recordLdapRequest(boolean success, long startTimeNanos) {
+        if (requestTimer == null) {
+            return;
+        }
+        long durationNanos = System.nanoTime() - startTimeNanos;
+        requestTimer.withTags("operation", "connect", "outcome", success ? "success" : "error")
+                .record(durationNanos, TimeUnit.NANOSECONDS);
     }
 
     // Create connection that is authenticated as admin user.
     private void createLdapContext() throws NamingException {
         var tracing = session.getProvider(TracingProvider.class);
         tracing.startSpan(LDAPContextManager.class, "createLdapContext");
+
+        long startTimeNanos = System.nanoTime();
+        boolean success = false;
+
         try {
             Hashtable<Object, Object> connProp = getNonAuthConnectionProperties(ldapConfig);
 
@@ -82,10 +115,12 @@ public final class LDAPContextManager implements AutoCloseable {
                 // StartTLS must complete before authenticating, so bind only now.
                 setAdminConnectionAuthProperties(ldapContext);
             }
+            success = true;
         } catch (NamingException e) {
             tracing.error(e);
             throw e;
         } finally {
+            recordLdapRequest(success, startTimeNanos);
             tracing.endSpan();
         }
 

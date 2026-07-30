@@ -49,7 +49,9 @@ import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.keys.PublicKeyStorageUtils;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
@@ -410,7 +412,12 @@ public class SamlProtocolUtils {
         };
     }
 
-    public static String getSelectedLoA(RequestedAuthnContextType requestedAuthnContext, Map<String, Integer> acrLoaMap, String minLoa) {
+    public static String getSelectedLoA(ClientModel client, RequestedAuthnContextType requestedAuthnContext, Map<String, Integer> acrLoaMap) {
+        String minLoa = AcrUtils.getMinimumAcrValue(client);
+        if (minLoa != null && acrLoaMap.get(minLoa) == null) {
+            logger.warnf("Invalid value '%s' for option '%s' in client '%s' in realm '%s', no minimum value used",
+                        minLoa, Constants.MINIMUM_ACR_VALUE, client.getClientId(), client.getRealm().getName());
+        }
         Integer minLevel = minLoa != null ? acrLoaMap.get(minLoa) : null;
         return requestedAuthnContext.getAuthnContextClassRef().stream()
                 .map(current -> checkLoa(requestedAuthnContext.getComparison(), current, acrLoaMap,

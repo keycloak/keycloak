@@ -37,6 +37,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -226,6 +227,8 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
                     "OID4VC protocol cannot be used when Verifiable Credentials is disabled for the realm",
                     Response.Status.BAD_REQUEST);
         }
+
+        validateOID4VCIRefreshInterval(clientScope);
     }
 
     @Override
@@ -290,4 +293,45 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
+    /**
+     * Validates that the refresh interval does not exceed the credential lifetime.
+     *
+     * @param clientScope the client scope representation to validate
+     * @throws ErrorResponseException if refresh interval > credential lifetime
+     */
+    private void validateOID4VCIRefreshInterval(ClientScopeRepresentation clientScope) throws ErrorResponseException {
+        if (clientScope.getAttributes() == null) {
+            return;
+        }
+
+        String expiryStr = clientScope.getAttributes().get(CredentialScopeModel.VC_EXPIRY_IN_SECONDS);
+        String refreshIntervalStr = clientScope.getAttributes().get(CredentialScopeModel.VC_REFRESH_INTERVAL_IN_SECONDS);
+
+        // If either is not set, use defaults
+        final int expiry;
+        final int refreshInterval;
+        try {
+            expiry = expiryStr != null ? Integer.parseInt(expiryStr) : CredentialScopeModel.VC_EXPIRY_IN_SECONDS_DEFAULT;
+            // Smart default: if refresh interval is not set, use the smaller of 7 days or the credential lifetime
+            // This ensures backward compatibility with existing tests that set short lifetimes
+            if (refreshIntervalStr != null) {
+                refreshInterval = Integer.parseInt(refreshIntervalStr);
+            } else {
+                refreshInterval = Math.min(CredentialScopeModel.VC_REFRESH_INTERVAL_IN_SECONDS_DEFAULT, expiry);
+            }
+        } catch (NumberFormatException ex) {
+            throw ErrorResponse.error("Credential lifetime and refresh interval must be valid integer values in seconds.", Response.Status.BAD_REQUEST);
+        }
+        if (expiry <= 0 || refreshInterval <= 0) {
+            throw ErrorResponse.error("Credential lifetime and refresh interval must be greater than 0 seconds.", Response.Status.BAD_REQUEST);
+        }
+
+        if (refreshInterval > expiry) {
+            throw ErrorResponse.error(
+                    String.format("Credential refresh interval (%d seconds) cannot exceed credential lifetime (%d seconds). " +
+                                    "The refresh token expires with the credential lifetime, so a longer refresh interval would be unusable.",
+                            refreshInterval, expiry),
+                    Response.Status.BAD_REQUEST);
+        }
+    }
 }

@@ -46,6 +46,17 @@ public class DelegationScopeType extends UsernameScopeType {
     }
 
     @Override
+    public boolean isRepeatable() {
+        return false;
+    }
+
+    @Override
+    public boolean canAccessTargetUser(ClientScopeModel scope, UserModel currentUser, UserModel targetUser) {
+        // Impersonation relationship is already validated in validateParameterWithUser during scope resolution
+        return true;
+    }
+
+    @Override
     public ParameterizedScopeTypeProvider create(KeycloakSession session) {
         return new DelegationScopeType(session);
     }
@@ -58,7 +69,7 @@ public class DelegationScopeType extends UsernameScopeType {
         }
         RealmModel realm = scope.getRealm();
         AdminPermissionEvaluator evaluator = AdminPermissions.evaluator(session, realm, realm, targetUser);
-        if (!evaluator.users().canImpersonate(currentUser, session.getContext().getClient())) {
+        if (!evaluator.users().canImpersonate(currentUser, null)) {
             throw new InvalidScopeParameterException(String.format("User '%s' cannot be impersonated by the administrator '%s' in realm '%s'",
                     currentUser.getUsername(), targetUser.getUsername(), realm.getName()));
         }

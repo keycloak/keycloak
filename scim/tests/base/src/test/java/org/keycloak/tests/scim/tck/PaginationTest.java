@@ -240,6 +240,28 @@ public class PaginationTest extends AbstractScimTest {
         assertThat(response.getStartIndex(), is(1));
     }
 
+    @Test
+    public void testUserSearchWithNegativeCount() {
+        createUser("user-0", "User 0", "Test", "user0@keycloak.org", true);
+
+        ListResponse<User> response = client.users().search(null, 1, -5);
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getTotalResults(), is(1));
+        assertThat(response.getItemsPerPage(), is(0));
+        assertThat(response.getResources().size(), is(0));
+    }
+
+    @Test
+    public void testGroupSearchWithNegativeCount() {
+        createGroup("group-0");
+
+        ListResponse<Group> response = client.groups().search(null, 1, -5);
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getTotalResults(), is(1));
+        assertThat(response.getItemsPerPage(), is(0));
+        assertThat(response.getResources().size(), is(0));
+    }
+
     private User createUser(String username, String givenName, String familyName, String email, boolean active) {
         User user = new User();
         user.setUserName(username);

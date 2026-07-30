@@ -29,12 +29,14 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -60,7 +62,9 @@ import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.deployment.DeployedConfigurationsManager;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.AccountRoles;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -86,6 +90,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.AccessToken.Access;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -341,6 +346,57 @@ public final class KeycloakModelUtils {
         }
 
         return session.users().getUserByUsername(realm, username);
+    }
+
+    /**
+     * Enlists a task that will run in a new, independent transaction when the current
+     * transaction rolls back. The task is a no-op if the current transaction commits normally.
+     *
+     * <p>Use this for cleanup operations that must persist even when an error response
+     * causes the main transaction to roll back (e.g., session invalidation on token reuse).
+     * The task receives a {@link SessionLookup} backed by a fresh session
+     * with realm/client context cloned from the current one.</p>
+     *
+     * @see #enlistAfterCompletion(KeycloakSession, Consumer)
+     */
+    public static void enlistAfterRollback(KeycloakSession currentSession, Consumer<SessionLookup> task) {
+        enlistAfterCompletion(currentSession, task, false);
+    }
+
+    /**
+     * Enlists a task that will run in a new, independent transaction after the current
+     * transaction completes, regardless of whether it commits or rolls back.
+     *
+     * <p>Use this for operations that must persist in both success and error paths
+     * (e.g., creating UMA permission tickets).</p>
+     *
+     * @see #enlistAfterRollback(KeycloakSession, Consumer)
+     */
+    public static void enlistAfterCompletion(KeycloakSession currentSession, Consumer<SessionLookup> task) {
+        enlistAfterCompletion(currentSession, task, true);
+    }
+
+    private static void enlistAfterCompletion(KeycloakSession currentSession, Consumer<SessionLookup> task, boolean runOnCommit) {
+        KeycloakSessionFactory factory = currentSession.getKeycloakSessionFactory();
+        KeycloakContext context = currentSession.getContext();
+
+        currentSession.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+            @Override
+            protected void commitImpl() {
+                if (runOnCommit) {
+                    execute();
+                }
+            }
+
+            @Override
+            protected void rollbackImpl() {
+                execute();
+            }
+
+            private void execute() {
+                runJobInTransaction(factory, context, sub -> task.accept(new SessionLookup(sub)));
+            }
+        });
     }
 
     /**
@@ -1124,6 +1180,38 @@ public final class KeycloakModelUtils {
         return clientId + CLIENT_ROLE_SEPARATOR + roleName;
     }
 
+    public static RoleModel getRoleByName(RealmModel realm, String clientId, String name) {
+        if (clientId == null) {
+            return realm.getRole(name);
+        } else {
+            ClientModel client = realm.getClientByClientId(clientId);
+
+            if (client == null) {
+                return null;
+            }
+
+            return client.getRole(name);
+        }
+    }
+
+    public static void removeTransientAdminRoles(RealmModel realm, String clientId, UserModel user, Access access) {
+        if (access == null || access.getRoles() == null) {
+            return;
+        }
+
+        Set<String> roles = access.getRoles();
+        Iterator<String> roleIterator = roles.iterator();
+
+        while (roleIterator.hasNext()) {
+            String role = roleIterator.next();
+            RoleModel adminRole = getRoleByName(realm, clientId, role);
+
+            if (AdminRoles.containsAdminRole(adminRole) && !user.hasRole(adminRole)) {
+                roleIterator.remove();
+            }
+        }
+    }
+
     /**
      * Check to see if a flow is currently in use
      *
@@ -1237,7 +1325,7 @@ public final class KeycloakModelUtils {
 
         if (clientScope == null) {
             // as fallback we try to resolve parameterized scopes
-            clientScope = client.getDynamicClientScope(clientScopeId);
+            clientScope = client.getParameterizedClientScope(clientScopeId);
         }
 
         if (clientScope != null) {

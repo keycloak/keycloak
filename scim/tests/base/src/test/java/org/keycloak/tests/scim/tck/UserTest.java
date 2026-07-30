@@ -57,6 +57,7 @@ import static org.keycloak.scim.model.user.UserExtensionModelSchema.KEYCLOAK_USE
 import static org.keycloak.scim.resource.Scim.ENTERPRISE_USER_SCHEMA;
 import static org.keycloak.scim.resource.Scim.USER_RESOURCE_TYPE;
 import static org.keycloak.scim.resource.Scim.getCoreSchema;
+import static org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider.MAX_PATCH_OPERATIONS;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -65,6 +66,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -167,6 +169,23 @@ public class UserTest extends AbstractScimTest {
         assertEquals(name.getHonorificPrefix(), actualName.getHonorificPrefix());
         assertEquals(name.getHonorificSuffix(), actualName.getHonorificSuffix());
         assertEquals("Mr. John M Doe Jr.", actualName.getFormatted());
+    }
+
+    @Test
+    public void testCreateWithRegularNameFormatted() {
+        User expected = new User();
+        expected.setUserName(KeycloakModelUtils.generateId());
+        Name name = new Name();
+        name.setGivenName("John");
+        name.setFamilyName("Doe");
+        expected.setName(name);
+
+        User actual = client.users().create(expected);
+        actual = client.users().get(actual.getId());
+
+        assertRootAttributes(actual, expected);
+        assertNotNull(actual.getName());
+        assertEquals("John Doe", actual.getName().getFormatted());
     }
 
     @Test
@@ -754,6 +773,21 @@ public class UserTest extends AbstractScimTest {
         assertNotNull(actual.getEnterpriseUser());
         assertNull(actual.getEnterpriseUser().getEmployeeNumber());
         assertEquals("5678", actual.getEnterpriseUser().getCostCenter());
+    }
+
+    @Test
+    public void testPatchExceedingMaxOperations() {
+        User expected = client.users().create(createUser());
+        PatchRequest.Builder builder = PatchRequest.create();
+        for (int i = 0; i <= MAX_PATCH_OPERATIONS; i++) {
+            builder.add("displayName", "name-" + i);
+        }
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), builder.build()));
+        assertNotNull(ce.getError());
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), ce.getError().getStatusInt());
+        assertEquals("tooMany", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains("maximum allowed number"));
     }
 
     @Test

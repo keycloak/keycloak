@@ -595,9 +595,10 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             event.success();
             return cors.add(Response.fromResponse(response));
         } catch (Exception e) {
+            logger.errorf(e, "Failed to retrieve token from identity provider");
             event.detail(Details.REASON, e.getMessage());
             event.error(Errors.INVALID_REQUEST);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, e.getMessage(), Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Failed to retrieve token from identity provider", Response.Status.BAD_REQUEST);
         }
     }
 

@@ -242,21 +242,6 @@ public class LoginEventsTest {
         Assertions.assertEquals(0, events().size());
     }
 
-
-    /*
-    Removed this test because it takes too long.  The default interval for
-    event cleanup is 15 minutes (900 seconds).  I don't have time to figure out
-    a way to set the cleanup thread to a lower interval for testing.
-    @Test
-    public void eventExpirationTest() {
-        configRep.setEventsExpiration(1L); //  second
-        saveConfig();
-        badLogin();
-        assertEquals(1, events().size());
-        pause(900); // pause 900 seconds
-        assertEquals(0, events().size());
-    }**/
-
     private static class LoginEventsRealmConfig implements RealmConfig {
 
         @Override

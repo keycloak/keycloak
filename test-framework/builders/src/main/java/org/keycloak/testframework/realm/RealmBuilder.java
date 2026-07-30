@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
@@ -158,6 +159,11 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder loginWithEmailAllowed(boolean loginWithEmailAllowed) {
+        rep.setLoginWithEmailAllowed(loginWithEmailAllowed);
+        return this;
+    }
+
     public RealmBuilder registrationEmailAsUsername(boolean registrationEmailAsUsername) {
         rep.setRegistrationEmailAsUsername(registrationEmailAsUsername);
         return this;
@@ -223,6 +229,12 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder browserSecurityHeader(String name, String value) {
+        rep.setBrowserSecurityHeaders(createIfNull(rep.getBrowserSecurityHeaders(), HashMap::new));
+        rep.getBrowserSecurityHeaders().put(name, value);
+        return this;
+    }
+
     public RealmBuilder setEventsListeners(List<String> eventListeners) {
         rep.setEventsListeners(eventListeners);
         return this;
@@ -231,6 +243,10 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
     public RealmBuilder eventsExpiration(long eventsExpiration) {
         rep.setEventsExpiration(eventsExpiration);
         return this;
+    }
+
+    public RealmBuilder adminEventsExpiration(long adminEventsExpiration) {
+        return attribute(RealmAttributes.ADMIN_EVENTS_EXPIRATION, String.valueOf(adminEventsExpiration));
     }
 
     public RealmBuilder internationalizationEnabled(boolean enabled) {
@@ -633,6 +649,21 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
 
     public RealmBuilder accountTheme(String accountTheme) {
         rep.setAccountTheme(accountTheme);
+        return this;
+    }
+
+    public RealmBuilder permanentLockout(boolean permanentLockout) {
+        rep.setPermanentLockout(permanentLockout);
+        return this;
+    }
+
+    public RealmBuilder maxTemporaryLockouts(int maxTemporaryLockouts) {
+        rep.setMaxTemporaryLockouts(maxTemporaryLockouts);
+        return this;
+    }
+
+    public RealmBuilder maxDeltaTimeSeconds(int maxDeltaTimeSeconds) {
+        rep.setMaxDeltaTimeSeconds(maxDeltaTimeSeconds);
         return this;
     }
 

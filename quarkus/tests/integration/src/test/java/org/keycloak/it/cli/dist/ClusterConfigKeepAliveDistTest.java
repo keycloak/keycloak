@@ -115,10 +115,10 @@ public class ClusterConfigKeepAliveDistTest {
 
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
-    void testDefaultLifespanWithCachelessFeature(KeycloakRunner runner) {
+    void testDefaultLifespanWithStatelessFeature(KeycloakRunner runner) {
         String[] caches = {AUTHORIZATION_CACHE_NAME, REALM_CACHE_NAME, USER_CACHE_NAME};
 
-        runner.run("start-dev", "--features=cacheless");
+        runner.run("start-dev", "--features=stateless");
 
         for (String cache : caches) {
             Configuration config = getCacheConfiguration(cache);
@@ -148,12 +148,12 @@ public class ClusterConfigKeepAliveDistTest {
 
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
-    void testZeroOrNegativeLifespanOverridesCachelessDefault(KeycloakRunner runner) {
+    void testZeroOrNegativeLifespanOverridesStatelessDefault(KeycloakRunner runner) {
         String[] caches = {AUTHORIZATION_CACHE_NAME, REALM_CACHE_NAME, USER_CACHE_NAME};
 
         List<String> args = new ArrayList<>();
         args.add("start-dev");
-        args.add("--features=cacheless");
+        args.add("--features=stateless");
         args.add("--spi-cache-embedded--default--%s-lifespan=0s".formatted(AUTHORIZATION_CACHE_NAME));
         args.add("--spi-cache-embedded--default--%s-lifespan=-1s".formatted(REALM_CACHE_NAME));
         args.add("--spi-cache-embedded--default--%s-lifespan=0".formatted(USER_CACHE_NAME));
@@ -162,7 +162,7 @@ public class ClusterConfigKeepAliveDistTest {
         for (String cache : caches) {
             Configuration config = getCacheConfiguration(cache);
             assertEquals(-1, config.expiration().lifespan(),
-                    "Expected immortal entries (lifespan=-1) for cache " + cache + " even with cacheless feature enabled");
+                    "Expected immortal entries (lifespan=-1) for cache " + cache + " even with stateless feature enabled");
         }
     }
 

@@ -159,6 +159,15 @@ public class CredentialScopeModel implements ClientScopeModel {
     public static final String VC_BINDING_REQUIRED_PROOF_TYPES = "vc.binding_required_proof_types";
 
     /**
+     * The interval in seconds at which the wallet should refresh the credential.
+     * This determines the expiration date (`exp` claim) in the actual VC returned to the wallet.
+     * If not set, defaults to the smaller of VC_REFRESH_INTERVAL_IN_SECONDS_DEFAULT (7 days) or the credential lifetime.
+     */
+    public static final String VC_REFRESH_INTERVAL_IN_SECONDS = "vc.refresh_interval_in_seconds";
+
+    public static final Integer VC_REFRESH_INTERVAL_IN_SECONDS_DEFAULT = 604800; // 7 days in seconds
+
+    /**
      * the actual object that is represented by this scope
      */
     private final ClientScopeModel clientScope;
@@ -212,6 +221,16 @@ public class CredentialScopeModel implements ClientScopeModel {
 
     public void setExpiryInSeconds(Integer expiryInSeconds) {
         clientScope.setAttribute(VC_EXPIRY_IN_SECONDS, String.valueOf(expiryInSeconds));
+    }
+
+    public Integer getRefreshIntervalInSeconds() {
+        return Optional.ofNullable(clientScope.getAttribute(VC_REFRESH_INTERVAL_IN_SECONDS))
+                .map(Integer::parseInt)
+                .orElseGet(() -> Math.min(VC_REFRESH_INTERVAL_IN_SECONDS_DEFAULT, getExpiryInSeconds()));
+    }
+
+    public void setRefreshIntervalInSeconds(Integer refreshIntervalInSeconds) {
+        clientScope.setAttribute(VC_REFRESH_INTERVAL_IN_SECONDS, String.valueOf(refreshIntervalInSeconds));
     }
 
     public Integer getSdJwtNumberOfDecoys() {

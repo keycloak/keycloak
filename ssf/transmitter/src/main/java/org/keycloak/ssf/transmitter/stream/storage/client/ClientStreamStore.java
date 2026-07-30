@@ -27,6 +27,7 @@ import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationConfig;
 import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
+import org.keycloak.ssf.transmitter.support.SsfUtil;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.vault.VaultStringSecret;
 
@@ -37,7 +38,7 @@ public class ClientStreamStore implements SsfStreamStore {
     protected static final Logger log = Logger.getLogger(ClientStreamStore.class);
 
     // ----- Receiver-level configuration (survives stream delete) -------------
-    public static final String SSF_ENABLED_KEY = "ssf.enabled";
+    public static final String SSF_ENABLED_KEY = SsfUtil.SSF_ENABLED_KEY;
     public static final String SSF_PROFILE_KEY = "ssf.profile";
     public static final String SSF_AUTO_VERIFY_STREAM_KEY = "ssf.autoVerifyStream";
     public static final String SSF_VERIFICATION_DELAY_MILLIS_KEY = "ssf.verificationDelayMillis";
@@ -311,7 +312,10 @@ public class ClientStreamStore implements SsfStreamStore {
         if (streamConfig == null || !streamId.equals(streamConfig.getStreamId())) {
             return null;
         }
-        if (!Boolean.parseBoolean(client.getAttribute(SSF_ENABLED_KEY))) {
+        // Config-only gate: admin flows (read, delete + outbox cascade) must
+        // still resolve a disabled client's stream — the delivery gate lives
+        // on findStreamsForSsfReceiverClients, not this shared lookup.
+        if (!SsfUtil.isReceiverClient(client)) {
             return null;
         }
         return streamConfig;
@@ -330,7 +334,9 @@ public class ClientStreamStore implements SsfStreamStore {
             return List.of();
         }
 
-        if (!Boolean.parseBoolean(receiverClient.getAttribute("ssf.enabled"))) {
+        // Config-only gate — see getStream; this lookup also backs management
+        // flows (e.g. the one-stream-per-receiver check at create time).
+        if (!SsfUtil.isReceiverClient(receiverClient)) {
             return List.of();
         }
 
@@ -343,6 +349,11 @@ public class ClientStreamStore implements SsfStreamStore {
         Map<String, String> attributes = Map.of(SSF_ENABLED_KEY, "true");
         return session.clients()
                 .searchClientsByAttributes(realm, attributes, null, null)
+                // The attribute search already matches ssf.enabled=true, but it
+                // cannot express the client on/off state — filter disabled
+                // receivers out here so the dispatcher and event listener never
+                // see their streams.
+                .filter(SsfUtil::isReceiverEnabled)
                 .map(this::extractStreamConfig)
                 .filter(Objects::nonNull)
                 .toList();

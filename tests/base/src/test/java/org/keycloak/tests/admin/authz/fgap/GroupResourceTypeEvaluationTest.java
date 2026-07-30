@@ -18,6 +18,7 @@
 package org.keycloak.tests.admin.authz.fgap;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import jakarta.ws.rs.ForbiddenException;
@@ -27,6 +28,8 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -86,6 +89,44 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
             realm.cleanup().add(r -> r.groups().group(topGroup.getId()).remove());
         }
         realm.admin().users().get(userAlice.getId()).joinGroup(topGroup.getId());
+    }
+
+    @Test
+    public void testMoveGroupRequiresManagePermissionOnChild() {
+        // create two groups: parentGroup and childGroup
+        GroupRepresentation parentGroup = new GroupRepresentation();
+        parentGroup.setName("parent_group");
+        try (Response response = realm.admin().groups().add(parentGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+            parentGroup.setId(ApiUtil.getCreatedId(response));
+            realm.cleanup().add(r -> r.groups().group(parentGroup.getId()).remove());
+        }
+
+        GroupRepresentation childGroup = new GroupRepresentation();
+        childGroup.setName("child_group");
+        try (Response response = realm.admin().groups().add(childGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+            childGroup.setId(ApiUtil.getCreatedId(response));
+            realm.cleanup().add(r -> r.groups().group(childGroup.getId()).remove());
+        }
+
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+
+        // grant manage on parentGroup only
+        createGroupPermission(parentGroup, Set.of(VIEW, MANAGE), policy);
+
+        // moving childGroup into parentGroup should be forbidden — myadmin has no manage permission on childGroup
+        try (Response response = realmAdminClient.realm(realm.getName()).groups().group(parentGroup.getId()).subGroup(childGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.FORBIDDEN.getStatusCode()));
+        }
+
+        // now grant manage on childGroup as well
+        createGroupPermission(childGroup, Set.of(VIEW, MANAGE), policy);
+
+        // moving childGroup into parentGroup should succeed
+        try (Response response = realmAdminClient.realm(realm.getName()).groups().group(parentGroup.getId()).subGroup(childGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+        }
     }
 
     @Test
@@ -437,6 +478,94 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
 
         realmAdminClient.realm(realm.getName()).users().get(userJdoe.getId()).impersonate();
         realmAdminClient.tokenManager().logout();
+    }
+
+    @Test
+    public void testChildrenEndpointRequiresQueryRole() {
+        GroupRepresentation parentGroup = createGroup("parent-group");
+
+        GroupRepresentation hiddenChildGroup = new GroupRepresentation();
+        hiddenChildGroup.setName("hidden-child-group");
+        try (Response response = realm.admin().groups().group(parentGroup.getId()).subGroup(hiddenChildGroup)) {
+            hiddenChildGroup.setId(ApiUtil.getCreatedId(response));
+        }
+        hiddenChildGroup.setAttributes(Map.of("hidden", List.of("child-secret-attr")));
+        realm.admin().groups().group(hiddenChildGroup.getId()).update(hiddenChildGroup);
+
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+
+        // remove all query roles from myadmin
+        String realmMgmtId = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
+        List<RoleRepresentation> queryRoles = List.of(AdminRoles.QUERY_USERS, AdminRoles.QUERY_GROUPS, AdminRoles.QUERY_CLIENTS).stream()
+                .map(roleName -> realm.admin().clients().get(realmMgmtId).roles().get(roleName).toRepresentation())
+                .toList();
+        realm.admin().users().get(myadmin.getId()).roles().clientLevel(realmMgmtId).remove(queryRoles);
+
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createGroupPermission(parentGroup, Set.of(VIEW), policy);
+
+        // limited admin can still view parent group directly (requireView passes via FGAP)
+        realmAdminClient.realm(realm.getName()).groups().group(parentGroup.getId()).toRepresentation();
+
+        // children endpoint requires query role — should be forbidden without it
+        try {
+            realmAdminClient.realm(realm.getName()).groups().group(parentGroup.getId()).getSubGroups(-1, -1, false);
+            fail("Should not be able to list children without query role");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+
+        try {
+            realmAdminClient.realm(realm.getName()).groups().group(parentGroup.getId()).getSubGroups("hidden-child-group", true, -1, -1, false);
+            fail("Should not be able to search children without query role");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+    }
+
+    @Test
+    public void testChildrenEndpointFilteredByGroupPermissions() {
+        GroupRepresentation parentGroup = createGroup("parent-group");
+
+        GroupRepresentation hiddenChildGroup = new GroupRepresentation();
+        hiddenChildGroup.setName("hidden-child-group");
+        try (Response response = realm.admin().groups().group(parentGroup.getId()).subGroup(hiddenChildGroup)) {
+            hiddenChildGroup.setId(ApiUtil.getCreatedId(response));
+        }
+        hiddenChildGroup.setAttributes(Map.of("hidden", List.of("child-secret-attr")));
+        realm.admin().groups().group(hiddenChildGroup.getId()).update(hiddenChildGroup);
+
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createGroupPermission(parentGroup, Set.of(VIEW), policy);
+
+        // limited admin can view parent group
+        realmAdminClient.realm(realm.getName()).groups().group(parentGroup.getId()).toRepresentation();
+
+        // limited admin cannot view hidden child group directly
+        try {
+            realmAdminClient.realm(realm.getName()).groups().group(hiddenChildGroup.getId()).toRepresentation();
+            fail("Should not be able to access hidden child group directly");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+
+        // searching for hidden child group by name returns empty
+        List<GroupRepresentation> search = realmAdminClient.realm(realm.getName()).groups().groups("hidden-child-group", -1, -1, false);
+        assertTrue(search.isEmpty());
+
+        // children endpoint must not return hidden child group (partial evaluator filters it)
+        List<GroupRepresentation> children = realmAdminClient.realm(realm.getName()).groups().group(parentGroup.getId()).getSubGroups(-1, -1, false);
+        assertTrue(children.isEmpty());
+
+        // exact name search via children endpoint must not return hidden child group
+        children = realmAdminClient.realm(realm.getName()).groups().group(parentGroup.getId()).getSubGroups("hidden-child-group", true, -1, -1, false);
+        assertTrue(children.isEmpty());
+
+        // full admin still sees the child
+        List<GroupRepresentation> adminChildren = realm.admin().groups().group(parentGroup.getId()).getSubGroups(-1, -1, false);
+        assertThat(adminChildren, hasSize(1));
+        assertEquals("hidden-child-group", adminChildren.get(0).getName());
     }
 
     private ScopePermissionRepresentation createAllGroupsPermission(UserPolicyRepresentation policy, Set<String> scopes) {
