@@ -152,12 +152,13 @@ public abstract class RoleResource {
                 .map(ModelToRepresentation::toBriefRepresentation);
     }
 
-    protected void deleteComposites(AdminEventBuilder adminEvent, UriInfo uriInfo, List<RoleRepresentation> roles, RoleModel role) {
+    protected void deleteComposites(AdminPermissionEvaluator auth, AdminEventBuilder adminEvent, UriInfo uriInfo, List<RoleRepresentation> roles, RoleModel role) {
         for (RoleRepresentation rep : roles) {
             RoleModel composite = realm.getRoleById(rep.getId());
             if (composite == null) {
                 throw new NotFoundException("Could not find composite role");
             }
+            auth.roles().requireMapComposite(composite);
             role.removeCompositeRole(composite);
         }
 

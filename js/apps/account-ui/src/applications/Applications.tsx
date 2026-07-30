@@ -52,7 +52,17 @@ export const Applications = () => {
 
   usePromise(
     (signal) => getApplications({ signal, context }),
-    (clients) => setApplications(clients.map((c) => ({ ...c, open: false }))),
+    (clients) =>
+      setApplications(
+        [...clients]
+          .sort((a, b) =>
+            (a.clientName || a.clientId).localeCompare(
+              b.clientName || b.clientId,
+              context.environment.locale,
+            ),
+          )
+          .map((c) => ({ ...c, open: false })),
+      ),
     [key],
   );
 

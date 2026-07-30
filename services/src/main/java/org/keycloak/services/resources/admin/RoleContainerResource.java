@@ -41,6 +41,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Encode;
 import org.keycloak.events.admin.OperationType;
@@ -52,6 +53,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
@@ -62,6 +64,7 @@ import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.services.resources.admin.fgap.UserPermissionEvaluator;
 import org.keycloak.utils.ProfileHelper;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -373,6 +376,7 @@ public class RoleContainerResource extends RoleResource {
         if (role == null) {
             throw new NotFoundException("Could not find role");
         }
+        auth.roles().requireManage(role);
         addComposites(auth, adminEvent, uriInfo, roles, role);
     }
 
@@ -481,13 +485,14 @@ public class RoleContainerResource extends RoleResource {
     public void deleteComposites(
                                    final @Parameter(description = "role's name (not id!)") @PathParam("role-name") String roleName,
                                    @Parameter(description = "roles to remove") List<RoleRepresentation> roles) {
-
+        // realm/client roles by name
         auth.roles().requireManage(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
             throw new NotFoundException("Could not find role");
         }
-        deleteComposites(adminEvent, uriInfo, roles, role);
+        auth.roles().requireManage(role);
+        deleteComposites(auth, adminEvent, uriInfo, roles, role);
     }
 
     /**
@@ -597,9 +602,19 @@ public class RoleContainerResource extends RoleResource {
         }
 
         boolean briefRep = Boolean.TRUE.equals(briefRepresentation);
+        UserPermissionEvaluator usersEvaluator = auth.users();
 
-        return session.users().getRoleMembersStream(realm, role, firstResult, maxResults)
-                .map((u) -> ModelToRepresentation.toRepresentation(session, u, briefRep));
+        Stream<UserModel> members = session.users().getRoleMembersStream(realm, role, firstResult, maxResults);
+
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+            members = members.filter(usersEvaluator::canView);
+        }
+
+        return members.map(user -> {
+            UserRepresentation userRep = ModelToRepresentation.toRepresentation(session, user, briefRep);
+            userRep.setAccess(usersEvaluator.getAccessForListing(user));
+            return userRep;
+        });
     }
 
     /**

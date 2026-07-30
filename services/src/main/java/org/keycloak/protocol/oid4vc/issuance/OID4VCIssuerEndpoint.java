@@ -112,6 +112,8 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
 import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
 import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
+import org.keycloak.protocol.oidc.encode.AccessTokenContext;
+import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.representations.AccessToken;
@@ -233,10 +235,24 @@ public class OID4VCIssuerEndpoint {
 
         this.credentialBuilders = loadCredentialBuilders(session);
 
-        RealmModel realm = keycloakSession.getContext().getRealm();
-        this.credentialOfferLifespan = Optional.ofNullable(realm.getAttribute(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY))
-                .map(Integer::valueOf)
-                .orElse(DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S);
+        this.credentialOfferLifespan = getCredentialOfferLifespan(keycloakSession.getContext().getRealm());
+    }
+
+    /**
+     * Returns the configured credential-offer lifespan, falling back to the default for missing or malformed values.
+     */
+    public static int getCredentialOfferLifespan(RealmModel realm) {
+        String configuredLifespan = realm.getAttribute(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY);
+        if (configuredLifespan == null) {
+            return DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
+        }
+        try {
+            return Integer.parseInt(configuredLifespan);
+        } catch (NumberFormatException e) {
+            LOGGER.warnf("Invalid credential offer lifespan '%s' configured for realm '%s'; using default of %d seconds",
+                    configuredLifespan, realm.getName(), DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S);
+            return DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
+        }
     }
 
     /**
@@ -430,7 +446,7 @@ public class OID4VCIssuerEndpoint {
      * | yes      | yes      | yes     | Offer restricted to a specific user.       |
      * +----------+----------+---------+--------------------------------------------+
      * </p>
-     * <b>Pre-Authorized Offer</b>
+     * <b>Pre-Authorized Code Grant Offer</b>
      * <ul>
      *   <li>A pre-authorized offer is authorized for the clientId from the current login session</li>
      *   <li>If targetUser is null or empty, it defaults to the user from the current login session</li>
@@ -440,7 +456,7 @@ public class OID4VCIssuerEndpoint {
      *   <li>An offer can optionally have a predefined expiry date</li>
      * </ul>
      *
-     * <b>Non Pre-Authorized Offer</b>
+     * <b>Authorization Code Grant Offer</b>
      * <ul>
      *   <li>If targetUser is null or empty, the generated offer is "anonymous"</li>
      *   <li>If targetUser is equal to the current login, the offer is "self issued"</li>
@@ -481,7 +497,7 @@ public class OID4VCIssuerEndpoint {
             @QueryParam("credential_configuration_id") String credentialConfigurationId,
             @QueryParam("pre_authorized") @DefaultValue("false") Boolean preAuthorized,
             @QueryParam("target_user") String targetUser,
-            @QueryParam("expire") Integer expiresAt,
+            @QueryParam("expire") Long expiresAt,
             @QueryParam("type") @DefaultValue("uri") OfferResponseType responseType,
             @QueryParam("width") @DefaultValue("200") int width,
             @QueryParam("height") @DefaultValue("200") int height
@@ -535,15 +551,28 @@ public class OID4VCIssuerEndpoint {
             targetUser = loginUserModel.getUsername();
         }
 
+        long currentTime = timeProvider.currentTimeSeconds();
+        long maximumExpiresAt = currentTime + credentialOfferLifespan;
         if (expiresAt == null) {
-            expiresAt = timeProvider.currentTimeSeconds() + credentialOfferLifespan;
+            expiresAt = maximumExpiresAt;
+        }
+        if (expiresAt <= currentTime || expiresAt > maximumExpiresAt) {
+            var errorMessage = String.format(
+                    "Credential offer expiration must be after the current time and no later than %d", maximumExpiresAt);
+            eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_REQUEST.getValue());
+            throw new CorsErrorResponseException(cors,
+                    ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue(), errorMessage, Response.Status.BAD_REQUEST);
         }
 
         // Create the CredentialsOffer
         //
-        String targetClientId = clientModel.getClientId();
         String grantType = preAuthorized ? PRE_AUTH_GRANT_TYPE : AUTH_CODE_GRANT_TYPE;
         List<String> credentialConfigurationIds = List.of(credentialConfigurationId);
+
+        // Bind pre-authorized code offers to the authenticated client to prevent redemption from a different client_id.
+        // Authorization Code Grant offers are intentionally not bound to a client_id.
+        // https://github.com/keycloak/keycloak/issues/48188
+        String targetClientId = preAuthorized ? clientModel.getClientId() : null;
 
         CredentialOfferState offerState;
         try {
@@ -551,6 +580,30 @@ public class OID4VCIssuerEndpoint {
             CredentialOfferProvider offerProvider = session.getProvider(CredentialOfferProvider.class);
             offerState = offerProvider.createCredentialOffer(loginUserModel, grantType,
                     credentialConfigurationIds, targetClientId, targetUser, expiresAt);
+            if (preAuthorized) {
+                offerState.setOriginatingUserId(loginUserModel.getId());
+                // Bearer authentication reconstructs request-scoped sessions for stateless tokens. Bind the offer to
+                // a session only when the access token identifies a persistent online or offline origin.
+                AccessTokenContext.SessionType originatingSessionType = session
+                        .getProvider(TokenContextEncoderProvider.class)
+                        .getTokenContextFromTokenId(getAuthResult().token().getId())
+                        .getSessionType();
+                boolean transientUserSession = originatingSessionType == AccessTokenContext.SessionType.TRANSIENT;
+                boolean originatingSessionOffline = switch (originatingSessionType) {
+                    case OFFLINE, OFFLINE_TRANSIENT_CLIENT -> true;
+                    case UNKNOWN -> userSession.isOffline();
+                    default -> false;
+                };
+                boolean bindOriginatingSession = !transientUserSession
+                        && (originatingSessionType != AccessTokenContext.SessionType.UNKNOWN
+                        || loginUserModel.getServiceAccountClientLink() == null);
+                if (bindOriginatingSession) {
+                    offerState.setOriginatingUserSessionId(userSession.getId());
+                    offerState.setOriginatingUserSessionOffline(originatingSessionOffline);
+                }
+                offerState.setOriginatingUserPasswordCredentialCreatedDate(
+                        OID4VCUtil.getPasswordCredentialTimestamp(loginUserModel));
+            }
 
         } catch (CredentialOfferException ex) {
             eventBuilder.detail(Details.REASON, ex.getMessage()).error(ex.getErrorType());
@@ -1238,6 +1291,18 @@ public class OID4VCIssuerEndpoint {
             throw new JWEException("Multiple encryption keys found for kid: " + kid);
         }
         KeyWrapper keyWrapper = matchingKeys.get(0);
+
+        String alg = header.getAlgorithm();
+        if (alg == null) {
+            throw new JWEException("Missing alg in JWE header");
+        }
+        if (!alg.equals(keyWrapper.getAlgorithm())) {
+            String errorMessage = String.format(
+                    "Key management algorithm mismatch: header alg=%s does not match key algorithm=%s for kid=%s",
+                    alg, keyWrapper.getAlgorithm(), kid);
+            LOGGER.debug(errorMessage);
+            throw new JWEException(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
+        }
 
         // Set the decryption key
         jwe.getKeyStorage().setDecryptionKey(keyWrapper.getPrivateKey());

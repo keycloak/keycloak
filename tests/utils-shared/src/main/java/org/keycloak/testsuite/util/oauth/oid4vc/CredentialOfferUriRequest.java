@@ -16,7 +16,7 @@ public class CredentialOfferUriRequest extends AbstractHttpGetRequest<Credential
     private String credConfigId;
     private Boolean preAuthorized;
     private String targetUser;
-    private Integer expireAt;
+    private Long expireAt;
     private OfferResponseType responseType;
     private Integer width, height;
 
@@ -35,12 +35,21 @@ public class CredentialOfferUriRequest extends AbstractHttpGetRequest<Credential
         return this;
     }
 
+    public boolean isPreAuthorized() {
+        return Boolean.TRUE.equals(preAuthorized);
+    }
+
     public CredentialOfferUriRequest targetUser(String targetUser) {
         this.targetUser = targetUser;
         return this;
     }
 
     public CredentialOfferUriRequest expireAt(Integer expireAt) {
+        this.expireAt = expireAt == null ? null : expireAt.longValue();
+        return this;
+    }
+
+    public CredentialOfferUriRequest expireAt(long expireAt) {
         this.expireAt = expireAt;
         return this;
     }

@@ -20,7 +20,11 @@ package org.keycloak.tests.oid4vc.presentation;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.cert.X509Certificate;
+import java.security.spec.ECGenParameterSpec;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -30,7 +34,10 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.broker.oid4vp.OID4VPIdentityProviderConfig;
 import org.keycloak.broker.oid4vp.OID4VPIdentityProviderFactory;
+import org.keycloak.common.crypto.CryptoConstants;
+import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
@@ -86,17 +93,44 @@ public abstract class OID4VPVerifierTestBase extends OID4VCIssuerTestBase {
         keyProvider.setParentId(testRealm.getId());
         keyProvider.setProviderId(GeneratedEcdsaKeyProviderFactory.ID);
         keyProvider.setProviderType(KeyProvider.class.getName());
-        keyProvider.setConfig(new MultivaluedHashMap<>(Map.of(
+
+        try {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance(KeyType.EC);
+            ECGenParameterSpec ecSpec = new ECGenParameterSpec(CryptoConstants.EC_KEY_SECP256R1);
+            kpg.initialize(ecSpec);
+            KeyPair caKeyPair = kpg.generateKeyPair();
+            X509Certificate caCert = CertificateUtils.generateV1SelfSignedCertificate(caKeyPair, "Test CA");
+
+            KeyPair leafKeyPair = kpg.generateKeyPair();
+
+            X509Certificate leafCert = CertificateUtils.generateV3Certificate(
+                    leafKeyPair,
+                    caKeyPair.getPrivate(),
+                    caCert,
+                    "TestKey"
+            );
+
+            keyProvider.setConfig(new MultivaluedHashMap<>(Map.of(
                 Attributes.PRIORITY_KEY, List.of("100"),
                 Attributes.ENABLED_KEY, List.of("true"),
                 Attributes.ACTIVE_KEY, List.of("true"),
+                GeneratedEcdsaKeyProviderFactory.ECDSA_PRIVATE_KEY_KEY, List.of(
+                        Base64.getEncoder().encodeToString(leafKeyPair.getPrivate().getEncoded())),
+                GeneratedEcdsaKeyProviderFactory.ECDSA_PUBLIC_KEY_KEY, List.of(
+                        Base64.getEncoder().encodeToString(leafKeyPair.getPublic().getEncoded())),
                 GeneratedEcdsaKeyProviderFactory.ECDSA_ELLIPTIC_CURVE_KEY, List.of("P-256"),
-                Attributes.EC_GENERATE_CERTIFICATE_KEY, List.of("true"))));
+                Attributes.CERTIFICATE_KEY, List.of(PemUtils.encodeCertificate(leafCert)),
+                Attributes.ALGORITHM_KEY, List.of(Algorithm.ES256),
+                Attributes.KEY_USE, List.of(KeyUse.SIG.name()))
+            ));
 
-        try (Response response = testRealm.admin().components().add(keyProvider)) {
-            Assertions.assertEquals(201, response.getStatus(), "Failed to add the verifier signing key");
-            String location = response.getHeaderString("Location");
-            ecKeyComponentId = location.substring(location.lastIndexOf('/') + 1);
+            try (Response response = testRealm.admin().components().add(keyProvider)) {
+                Assertions.assertEquals(201, response.getStatus(), "Failed to add the verifier signing key");
+                String location = response.getHeaderString("Location");
+                ecKeyComponentId = location.substring(location.lastIndexOf('/') + 1);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create HAIP-compliant SD-JWT signing key provider", e);
         }
     }
 

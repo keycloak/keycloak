@@ -317,6 +317,11 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       "attributes.parameterized.scope.repeatable",
     );
 
+  const allowUserDataAccessFieldName =
+    convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.parameterized.scope.allow.user.data",
+    );
+
   useEffect(() => {
     if (parameterizedScope === "true" && isCustomType) {
       const current = (form.getValues(regexpFieldName) as string) || "";
@@ -422,6 +427,15 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                   labelIcon={t("repeatableScopeHelp")}
                   stringify
                 />
+                {parameterType === "username" && (
+                  <DefaultSwitchControl
+                    name={allowUserDataAccessFieldName}
+                    defaultValue="false"
+                    label={t("allowUserDataAccess")}
+                    labelIcon={t("allowUserDataAccessHelp")}
+                    stringify
+                  />
+                )}
                 <Divider className="pf-v5-u-mb-sm" />
               </>
             )}

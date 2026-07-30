@@ -14,6 +14,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
@@ -29,8 +30,11 @@ import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientScopeBuilder;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.page.OID4VCCredentialOfferPage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -56,8 +60,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @see <a href="https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-14.5">OID4VCI specification section about credential refresh</a>
  */
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithRestCredentialOfferEnabled.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
 public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
+
+    @InjectPage
+    OID4VCCredentialOfferPage credentialOfferPage;
 
     @InjectUser(config = OID4VCActionTest.OID4VCTestUserConfig.class)
     ManagedUser user;
@@ -370,14 +377,24 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
      */
     @Test
     public void testRefreshSucceedsAfterCredentialOfferRemoved() {
-        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
-            req.targetUser(user.getUsername());
-            req.preAuthorized(false);
-        });
+        // Create credential offer via AIA
+        oauth.loginForm()
+                .kcAction(OID4VCActionTest.getKcActionParameter(client.getClientId(), minimalJwtTypeCredentialConfigurationIdName, false))
+                .open();
+        oauth.fillLoginForm(user.getUsername(), TEST_PASSWORD);
 
+        credentialOfferPage.assertCurrent();
+        String credentialOfferUri = credentialOfferPage.getCredentialOfferUri();
+        String credentialOfferNonce = OID4VCActionTest.getNonceFromCredentialOfferUri(credentialOfferUri);
+
+        CredentialOfferResponse credentialOfferResponse = oauth.oid4vc().credentialOfferRequest(credentialOfferNonce).send();
+        CredentialsOffer credOffer = credentialOfferResponse.getCredentialsOffer();
         assertNotNull(credOffer, "Credential offer should be created");
 
-        AccessTokenResponse tokenResponse = authzCodeFlow(credOffer.getAuthorizationCodeGrant().getIssuerState());
+        String issuerState = credOffer.getIssuerState();
+        assertNotNull(issuerState);
+
+        AccessTokenResponse tokenResponse = authzCodeFlow(issuerState);
         assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
 
         String accessToken1 = wallet.validateHolderAccessToken(ctx, tokenResponse);
@@ -437,38 +454,57 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
      */
     @Test
     public void testThrowsExceptionWhenCredentialOfferExpiredBeforeIssuance() {
+        // Configure a short credential offer lifespan (3 seconds)
+        RealmRepresentation realmRep = testRealm.admin().toRepresentation();
+        realmRep.getAttributes().put(OID4VCIssuerEndpoint.CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY, "3");
+        testRealm.admin().update(realmRep);
 
-        long offerExpiryTime = Time.currentTimeSeconds() + 3;
-        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
-            req.targetUser(user.getUsername());
-            req.expireAt((int) offerExpiryTime);
-            req.preAuthorized(false);
-        });
+        try {
+            // Create credential offer via AIA
+            oauth.loginForm()
+                    .kcAction(OID4VCActionTest.getKcActionParameter(client.getClientId(), minimalJwtTypeCredentialConfigurationIdName, false))
+                    .open();
+            oauth.fillLoginForm(user.getUsername(), TEST_PASSWORD);
 
-        assertNotNull(credOffer, "Credential offer should be created");
+            credentialOfferPage.assertCurrent();
+            String credentialOfferUri = credentialOfferPage.getCredentialOfferUri();
+            String credentialOfferNonce = OID4VCActionTest.getNonceFromCredentialOfferUri(credentialOfferUri);
 
-        AccessTokenResponse tokenResponse = authzCodeFlow(credOffer.getAuthorizationCodeGrant().getIssuerState());
-        assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
+            CredentialOfferResponse credentialOfferResponse = oauth.oid4vc().credentialOfferRequest(credentialOfferNonce).send();
+            CredentialsOffer credOffer = credentialOfferResponse.getCredentialsOffer();
+            assertNotNull(credOffer, "Credential offer should be created");
 
-        String accessToken1 = wallet.validateHolderAccessToken(ctx, tokenResponse);
-        assertNotNull(accessToken1, "access token must be present");
+            String issuerState = credOffer.getIssuerState();
+            assertNotNull(issuerState);
 
-        OID4VCAuthorizationDetail authzDetail1 = ctx.getAuthorizationDetailFromAccessToken();
-        assertNotNull(authzDetail1, "Authorization detail should be present in the first access token");
+            AccessTokenResponse tokenResponse = authzCodeFlow(issuerState);
+            assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
 
-        // Verify credentialsOfferId is present in first authorization detail/access token
-        assertNotNull(authzDetail1.getCredentialsOfferId(), "credentials_offer_id must be present in the first access token");
+            String accessToken1 = wallet.validateHolderAccessToken(ctx, tokenResponse);
+            assertNotNull(accessToken1, "access token must be present");
 
-        String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
+            OID4VCAuthorizationDetail authzDetail1 = ctx.getAuthorizationDetailFromAccessToken();
+            assertNotNull(authzDetail1, "Authorization detail should be present in the first access token");
 
-        timeOffSet.set(8);
+            // Verify credentialsOfferId is present in first authorization detail/access token
+            assertNotNull(authzDetail1.getCredentialsOfferId(), "credentials_offer_id must be present in the first access token");
 
-        Exception exception = assertThrows(IllegalStateException.class, () -> wallet.credentialRequest(ctx, accessToken1)
-                .credentialIdentifier(credentialIdentifier)
-                .send().getCredentialResponse());
+            String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
 
-        String expectedExceptionMessage = "Credential offer has already expired";
-        assertTrue(exception.getMessage().contains(expectedExceptionMessage), "Expected exception message for expired credential offer");
+            timeOffSet.set(8);
+
+            Exception exception = assertThrows(IllegalStateException.class, () -> wallet.credentialRequest(ctx, accessToken1)
+                    .credentialIdentifier(credentialIdentifier)
+                    .send().getCredentialResponse());
+
+            String expectedExceptionMessage = "Credential offer has already expired";
+            assertTrue(exception.getMessage().contains(expectedExceptionMessage), "Expected exception message for expired credential offer");
+        } finally {
+            // Restore default credential offer lifespan
+            realmRep = testRealm.admin().toRepresentation();
+            realmRep.getAttributes().remove(OID4VCIssuerEndpoint.CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY);
+            testRealm.admin().update(realmRep);
+        }
     }
 
     /**
