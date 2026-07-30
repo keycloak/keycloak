@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import jakarta.ws.rs.core.Response;
 
@@ -55,6 +56,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
 
@@ -202,7 +204,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
         clientScope.getAttributes().putIfAbsent(INCLUDE_IN_TOKEN_SCOPE, "true");
         clientScope.getAttributes().putIfAbsent(VC_INCLUDE_IN_METADATA, "true");
-        clientScope.getAttributes().putIfAbsent(VC_CONFIGURATION_ID, scopeName);
+        clientScope.getAttributes().put(VC_CONFIGURATION_ID, getEffectiveCredentialConfigurationId(clientScope));
         clientScope.getAttributes().putIfAbsent(VC_SUPPORTED_TYPES, credentialType);
         clientScope.getAttributes().putIfAbsent(VC_CONTEXTS, credentialType);
         clientScope.getAttributes().putIfAbsent(VCT, credentialType);
@@ -229,6 +231,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         }
 
         validateOID4VCIRefreshInterval(clientScope);
+        validateCredentialConfigurationId(session, clientScope);
     }
 
     @Override
@@ -293,6 +296,40 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
+
+    private void validateCredentialConfigurationId(KeycloakSession session, ClientScopeRepresentation clientScope) {
+        String credentialConfigurationId = getEffectiveCredentialConfigurationId(clientScope);
+        if (StringUtil.isBlank(credentialConfigurationId)) {
+            throw ErrorResponse.error("Credential configuration ID must not be blank", Response.Status.BAD_REQUEST);
+        }
+
+        RealmModel realm = session.getContext().getRealm();
+        session.clientScopes().getClientScopesByProtocolForUpdate(realm, OID4VC_PROTOCOL)
+                .filter(existingScope -> !Objects.equals(existingScope.getId(), clientScope.getId()))
+                .filter(existingScope -> credentialConfigurationId.equals(getEffectiveCredentialConfigurationId(existingScope)))
+                .findAny()
+                .ifPresent(existingScope -> {
+                    throw ErrorResponse.exists(String.format(
+                            "Credential configuration ID '%s' is already used by client scope '%s'",
+                            credentialConfigurationId, existingScope.getName()));
+                });
+    }
+
+    private static String getEffectiveCredentialConfigurationId(ClientScopeRepresentation clientScope) {
+        String configuredId = clientScope.getAttributes() == null
+                ? null
+                : clientScope.getAttributes().get(VC_CONFIGURATION_ID);
+        return getEffectiveCredentialConfigurationId(configuredId, clientScope.getName());
+    }
+
+    private static String getEffectiveCredentialConfigurationId(ClientScopeModel clientScope) {
+        return getEffectiveCredentialConfigurationId(clientScope.getAttribute(VC_CONFIGURATION_ID), clientScope.getName());
+    }
+
+    private static String getEffectiveCredentialConfigurationId(String configuredId, String scopeName) {
+        return StringUtil.isBlank(configuredId) ? scopeName : configuredId;
+    }
+
     /**
      * Validates that the refresh interval does not exceed the credential lifetime.
      *
