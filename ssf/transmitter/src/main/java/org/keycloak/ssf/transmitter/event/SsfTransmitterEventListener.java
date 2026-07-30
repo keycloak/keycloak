@@ -375,6 +375,12 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
                 log.debugf("Could not generate SSF Security Event Token for Admin Event. id=%s", adminEvent.getId());
                 continue;
             }
+            if (isAnyEventEmitOnlyForReceiver(securityEventToken, stream)) {
+                log.debugf("Skipping native auto-emit — event type is in receiver's emitOnlyEvents set. "
+                                + "streamId=%s clientId=%s jti=%s",
+                        stream.getStreamId(), stream.getClientClientId(), securityEventToken.getJti());
+                continue;
+            }
             log.debugf("Generated SSF Security Event Token for Admin Event. "
                             + "realm=%s clientId=%s streamId=%s operationType=%s resourceType=%s resourcePath=%s jti=%s",
                     session.getContext().getRealm().getName(),
