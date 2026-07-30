@@ -156,7 +156,7 @@ public class JWSBuilder {
     }
 
     protected void encode(Algorithm alg, byte[] data, StringBuilder encoding) {
-        encode(alg.name(), data, encoding);
+        encode(alg.getName(), data, encoding);
     }
 
     protected void encode(String sigAlgName, byte[] data, StringBuilder encoding) {

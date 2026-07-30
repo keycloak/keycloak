@@ -236,7 +236,7 @@ public class AccessTokenIntrospectionProvider<T extends AccessToken> implements 
             TokenVerifier<T> verifier = TokenVerifier.create(tokenStr, getTokenClass())
                     .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
 
-            SignatureVerifierContext verifierContext = CryptoUtils.getSignatureProvider(session, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
+            SignatureVerifierContext verifierContext = CryptoUtils.getSignatureProvider(session, verifier.getHeader().getRawAlgorithm()).verifier(verifier.getHeader().getKeyId());
             verifier.verifierContext(verifierContext);
 
             this.token = verifier.verify().getToken();
