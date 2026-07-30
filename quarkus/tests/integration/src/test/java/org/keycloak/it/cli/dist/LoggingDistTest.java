@@ -335,7 +335,7 @@ public class LoggingDistTest {
 
         when().get("http://127.0.0.1:8080/realms/master/clients/account/redirect").then()
                 .statusCode(200);
-        cliResult.assertNoMessageGiven("Request GET /realms/master/clients/account/redirect has context request", "127.0.0.1 GET /realms/master/clients/account/redirect");
+        cliResult.assertNoMessageGiven("TestFilter Request GET /realms/master/clients/account/redirect is done", "127.0.0.1 GET /realms/master/clients/account/redirect");
 
         // file
         CLIResult fileCliResult = runner.run("start-dev", "--http-access-log-enabled=true", "--http-access-log-file-enabled=true", "--http-access-log-pattern='%A %{METHOD} %{REQUEST_URL} %{i,User-Agent}'", "--http-access-log-exclude=/realms/master/clients/.*");
@@ -345,9 +345,9 @@ public class LoggingDistTest {
 
         when().get("http://127.0.0.1:8080/realms/master/clients/account/redirect").then()
                 .statusCode(200);
-        fileCliResult.assertNoMessageGiven("TestFilter GET Request /realms/master/clients/account/redirect is done", "[org.keycloak.http.access-log]");
-        fileCliResult.assertNoMessageGiven("TestFilter GET Request /realms/master/clients/account/redirect is done", "127.0.0.1 GET /realms/master/.well-known/openid-configuration");
-        fileCliResult.assertNoMessageGiven("TestFilter GET Request /realms/master/clients/account/redirect is done", "127.0.0.1 GET /realms/master/clients/account/redirect");
+        fileCliResult.assertNoMessageGiven("TestFilter Request GET /realms/master/clients/account/redirect is done", "[org.keycloak.http.access-log]");
+        fileCliResult.assertNoMessageGiven("TestFilter Request GET /realms/master/clients/account/redirect is done", "127.0.0.1 GET /realms/master/.well-known/openid-configuration");
+        fileCliResult.assertNoMessageGiven("TestFilter Request GET /realms/master/clients/account/redirect is done", "127.0.0.1 GET /realms/master/clients/account/redirect");
 
         Awaitility.await().atMost(10, TimeUnit.SECONDS).ignoreExceptions().untilAsserted(() -> {
             String data = readHttpAccessLogFile(path, "keycloak-http-access.log");

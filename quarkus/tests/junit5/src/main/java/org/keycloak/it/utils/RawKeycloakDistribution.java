@@ -428,12 +428,12 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     private CompletableFuture<Void> readOutput(Process process, OutputConsumer outputConsumer, Executor ex) {
-        var inputFuture = CompletableFuture.runAsync(() -> readOutput(process, process.inputReader(StandardCharsets.UTF_8), outputConsumer::onStdOut), ex);
-        var errorFuture = CompletableFuture.runAsync(() -> readOutput(process, process.errorReader(StandardCharsets.UTF_8), outputConsumer::onErrOut), ex);
+        var inputFuture = CompletableFuture.runAsync(() -> readOutput(process.inputReader(StandardCharsets.UTF_8), outputConsumer::onStdOut), ex);
+        var errorFuture = CompletableFuture.runAsync(() -> readOutput(process.errorReader(StandardCharsets.UTF_8), outputConsumer::onErrOut), ex);
         return CompletableFuture.allOf(inputFuture, errorFuture);
     }
 
-    private void readOutput(Process process, BufferedReader reader, Consumer<String> outputConsumer) {
+    private void readOutput(BufferedReader reader, Consumer<String> outputConsumer) {
         try (reader) {
             String line;
 
