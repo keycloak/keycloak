@@ -93,9 +93,8 @@ Additional performance tuning and security hardening are still recommended when 
 
 == Example blueprint
 
-While this blueprint uses {kubernetes}, the concepts are not limited to {kubernetes}.
-
 * <@links.ha id="multi-cluster-v2-deploy-keycloak-kubernetes" />
+* <@links.ha id="multi-cluster-v2-deploy-keycloak-bare-metal" />
 
 == Operational procedures
 

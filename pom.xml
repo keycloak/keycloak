@@ -345,12 +345,6 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <!-- Remove the override in https://github.com/keycloak/keycloak/issues/48990 -->
-            <dependency>
-                <groupId>org.postgresql</groupId>
-                <artifactId>postgresql</artifactId>
-                <version>${postgresql-jdbc.version}</version>
-            </dependency>
             <dependency>
                 <groupId>io.sundr</groupId>
                 <artifactId>builder-annotations</artifactId>

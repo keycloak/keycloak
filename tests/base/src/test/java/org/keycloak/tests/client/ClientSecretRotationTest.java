@@ -1,94 +1,79 @@
-package org.keycloak.testsuite.client;
+package org.keycloak.tests.client;
 
-import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.resource.ClientPoliciesPoliciesResource;
+import org.keycloak.admin.client.resource.ClientPoliciesProfilesResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.profile.CommaSeparatedListProfileConfigResolver;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
-import org.keycloak.models.AdminRoles;
-import org.keycloak.models.ClientSecretConstants;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
-import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.condition.ClientAccessTypeCondition.Configuration;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
 import org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutor;
 import org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutorFactory;
+import org.keycloak.testframework.annotations.InjectEvents;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.events.Events;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ClientConfig;
+import org.keycloak.testframework.realm.ClientPolicyBuilder;
+import org.keycloak.testframework.realm.ClientProfileBuilder;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.account.AbstractRestServiceTest;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
-import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
-import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
-import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
-import org.keycloak.testsuite.util.ServerURLs;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
-import org.jetbrains.annotations.NotNull;
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-
-import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
+ *
  * @author <a href="mailto:masales@redhat.com">Marcelo Sales</a>
  */
-@EnableFeature(value = Feature.CLIENT_SECRET_ROTATION)
-public class ClientSecretRotationTest extends AbstractRestServiceTest {
+@KeycloakIntegrationTest(config = ClientSecretRotationTest.ClientSecretRotationServerConfig.class)
+public class ClientSecretRotationTest {
 
-    private static final String OIDC = "openid-connect";
-    private static final String DEFAULT_CLIENT_ID = KeycloakModelUtils.generateId();
-    private static final String REALM_NAME = "test";
     private static final String CLIENT_NAME = "confidential-client";
     private static final String DEFAULT_SECRET = "GFyDEriVTA9nAu92DenBknb5bjR5jdUM";
     private static final String PROFILE_NAME = "ClientSecretRotationProfile";
@@ -97,75 +82,35 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
     private static final String TEST_USER_NAME = "test-user@localhost";
     private static final String TEST_USER_PASSWORD = "password";
 
-    private static final String ADMIN_USER_NAME = "admin-user";
-    private static final String COMMON_USER_NAME = "common-user";
-    private static final String COMMON_USER_ID = KeycloakModelUtils.generateId();
-    private static final String USER_PASSWORD = "password";
-
     private static final Logger logger = Logger.getLogger(ClientSecretRotationTest.class);
-    private static final ObjectMapper objectMapper = new ObjectMapper();
-    private static final int DEFAULT_EXPIRATION_PERIOD = Long.valueOf(TimeUnit.HOURS.toSeconds(1))
-            .intValue();
-    private static final int DEFAULT_ROTATED_EXPIRATION_PERIOD = Long.valueOf(
-            TimeUnit.MINUTES.toSeconds(10)).intValue();
-    private static final int DEFAULT_REMAIN_EXPIRATION_PERIOD = Long.valueOf(
-            TimeUnit.MINUTES.toSeconds(30)).intValue();
 
-    @BeforeClass
+    private static final int DEFAULT_EXPIRATION_PERIOD = Long.valueOf(TimeUnit.HOURS.toSeconds(1)).intValue();
+    private static final int DEFAULT_ROTATED_EXPIRATION_PERIOD = Long.valueOf(TimeUnit.MINUTES.toSeconds(10)).intValue();
+    private static final int DEFAULT_REMAIN_EXPIRATION_PERIOD = Long.valueOf(TimeUnit.MINUTES.toSeconds(30)).intValue();
+    @InjectRealm(config = ClientSecretRotationRealmConfig.class)
+    protected ManagedRealm realm;
+
+    @InjectOAuthClient(config = OAuthClientConfig.class, lifecycle = LifeCycle.METHOD)
+    OAuthClient oauth;
+
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
+
+    @InjectEvents
+    Events events;
+
+    @BeforeAll
     public static void beforeAll() {
-        Profile.configure(new CommaSeparatedListProfileConfigResolver(Feature.CLIENT_SECRET_ROTATION.getVersionedKey(), ""));
-    }
-
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
-
-    @After
-    public void after() {
-        try {
-            revertToBuiltinProfiles();
-            revertToBuiltinPolicies();
-        } catch (ClientPolicyException e) {
-            throw new RuntimeException(e);
-        }
-        timeOffSet.set(0);
-    }
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"),
-                RealmRepresentation.class);
-
-        List<UserRepresentation> users = realm.getUsers();
-
-        UserRepresentation user = UserBuilder.create().enabled(Boolean.TRUE)
-                .username(ADMIN_USER_NAME)
-                .password(USER_PASSWORD).realmRoles(new String[]{AdminRoles.MANAGE_CLIENTS}).build();
-        users.add(user);
-
-        UserRepresentation commonUser = UserBuilder.create().id(COMMON_USER_ID)
-                .enabled(Boolean.TRUE)
-                .username(COMMON_USER_NAME).email(COMMON_USER_NAME + "@localhost")
-                .password(USER_PASSWORD)
-                .build();
-        users.add(commonUser);
-
-        realm.setUsers(users);
-        testRealms.add(realm);
+        Profile.configure(new CommaSeparatedListProfileConfigResolver(Profile.Feature.CLIENT_SECRET_ROTATION.getVersionedKey(), ""));
     }
 
     /**
      * When create a client even without policy secret rotation enabled the client must have a
      * secret creation time
-     *
-     * @throws Exception
      */
     @Test
-    public void whenCreateClientSecretCreationTimeMustExist() throws Exception {
-
-        String cidConfidential = createClientByAdmin(DEFAULT_CLIENT_ID);
-        ClientResource clientResource = adminClient.realm(REALM_NAME).clients()
-                .get(cidConfidential);
-
+    public void whenCreateClientSecretCreationTimeMustExist() {
+        ClientResource clientResource = oauth.clientResource();
         OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(
                 clientResource.toRepresentation());
         assertThat(wrapper.getClientSecretCreationTime(), is(notNullValue()));
@@ -177,14 +122,10 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
     /**
      * When regenerate a client secret the creation time attribute must be updated, when the
      * rotation secret policy is not enable
-     *
-     * @throws Exception
      */
     @Test
-    public void regenerateSecret() throws Exception {
-        String cidConfidential = createClientByAdmin(DEFAULT_CLIENT_ID);
-        ClientResource clientResource = adminClient.realm(REALM_NAME).clients()
-                .get(cidConfidential);
+    public void regenerateSecret() {
+        ClientResource clientResource = oauth.clientResource();
         String secret = clientResource.getSecret().getValue();
         long secretCreationTime = OIDCClientSecretConfigWrapper.fromClientRepresentation(
                 clientResource.toRepresentation()).getClientSecretCreationTime();
@@ -199,17 +140,13 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
     /**
      * When update a client with policy enabled and secret expiration is still valid the rotation
      * must not be performed
-     *
-     * @throws Exception
      */
     @Test
-    public void updateClientWithPolicyAndSecretNotExpired() throws Exception {
+    public void updateClientWithPolicyAndSecretNotExpired() {
 
         configureDefaultProfileAndPolicy();
 
-        String cidConfidential = createClientByAdmin(DEFAULT_CLIENT_ID);
-        ClientResource clientResource = adminClient.realm(REALM_NAME).clients()
-                .get(cidConfidential);
+        ClientResource clientResource = oauth.clientResource();
         String secret = clientResource.getSecret().getValue();
         ClientRepresentation clientRepresentation = clientResource.toRepresentation();
         long secretCreationTime = OIDCClientSecretConfigWrapper.fromClientRepresentation(
@@ -226,17 +163,13 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
     /**
      * When regenerate the secret for a client with policy enabled and the secret is not yet
      * expired, the secret must be rotated
-     *
-     * @throws Exception
      */
     @Test
-    public void regenerateSecretOnCurrentSecretNotExpired() throws Exception {
+    public void regenerateSecretOnCurrentSecretNotExpired() {
         //apply policy
         configureDefaultProfileAndPolicy();
 
-        String cidConfidential = createClientByAdmin(DEFAULT_CLIENT_ID);
-        ClientResource clientResource = adminClient.realm(REALM_NAME).clients()
-                .get(cidConfidential);
+        ClientResource clientResource = oauth.clientResource();
         String firstSecret = clientResource.getSecret().getValue();
         String secondSecret = clientResource.generateNewSecret().getValue();
         OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(
@@ -250,15 +183,11 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
     /**
      * When regenerate secret for a client and the expiration date is reached the policy must force
      * a secret rotation
-     *
-     * @throws Exception
      */
     @Test
-    public void regenerateSecretAfterCurrentSecretExpires() throws Exception {
+    public void regenerateSecretAfterCurrentSecretExpires() {
 
-        String cidConfidential = createClientByAdmin(DEFAULT_CLIENT_ID);
-        ClientResource clientResource = adminClient.realm(REALM_NAME).clients()
-                .get(cidConfidential);
+        ClientResource clientResource = oauth.clientResource();
         String firstSecret = clientResource.getSecret().getValue();
         String secondSecret = clientResource.generateNewSecret().getValue();
         assertThat(secondSecret, not(equalTo(firstSecret)));
@@ -281,23 +210,18 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         long rotatedCreationTime = wrapper.getClientSecretCreationTime();
         assertThat(rotatedCreationTime, is(notNullValue()));
         assertThat(rotatedCreationTime, greaterThan(0L));
-
     }
 
     /**
      * When update a client with policy enabled and secret expired the secret rotation must be
      * performed
-     *
-     * @throws Exception
      */
     @Test
-    public void updateClientPolicyEnabledSecretExpired() throws Exception {
+    public void updateClientPolicyEnabledSecretExpired() {
 
         configureDefaultProfileAndPolicy();
 
-        String cidConfidential = createClientByAdmin(DEFAULT_CLIENT_ID);
-        ClientResource clientResource = adminClient.realm(REALM_NAME).clients()
-                .get(cidConfidential);
+        ClientResource clientResource = oauth.clientResource();
         String firstSecret = clientResource.getSecret().getValue();
         ClientRepresentation clientRepresentation = clientResource.toRepresentation();
         clientRepresentation.setDescription("New Description Updated");
@@ -331,44 +255,31 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
     /**
      * When authenticate with client-id and secret and the policy is not enable the login must be
      * successfully (Keeps flow compatibility without secret rotation)
-     *
-     * @throws ClientPolicyException
      */
     @Test
-    public void authenticateWithValidClientNoPolicy() throws ClientPolicyException {
-        String clientId = generateSuffixedName(CLIENT_NAME);
-        String cId = createClientByAdmin(clientId);
-        successfulLoginAndLogout(clientId, DEFAULT_SECRET);
+    public void authenticateWithValidClientNoPolicy() {
+        successfulLoginAndLogout(CLIENT_NAME, DEFAULT_SECRET);
     }
 
     /**
      * When the secret rotation policy is active and the client's main secret has not yet expired,
      * the login should be successful.
-     *
-     * @throws Exception
      */
     @Test
-    public void authenticateWithValidClientPolicyEnable() throws Exception {
+    public void authenticateWithValidClientPolicyEnable() {
         configureDefaultProfileAndPolicy();
-        String clientId = generateSuffixedName(CLIENT_NAME);
-        String cId = createClientByAdmin(clientId);
-        successfulLoginAndLogout(clientId, DEFAULT_SECRET);
+        successfulLoginAndLogout(CLIENT_NAME, DEFAULT_SECRET);
     }
 
     /**
      * When the secret rotation policy is active and the client's main secret has expired, the login
      * should not be successful.
-     *
-     * @throws Exception
      */
     @Test
-    public void authenticateWithInvalidClientPolicyEnable() throws Exception {
+    public void authenticateWithInvalidClientPolicyEnable() {
         configureDefaultProfileAndPolicy();
-        String clientId = generateSuffixedName(CLIENT_NAME);
-        String cId = createClientByAdmin(clientId);
 
         //The first login will be successful
-        oauth.client(clientId, DEFAULT_SECRET);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
@@ -378,31 +289,25 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         //advance 1 hour
         timeOffSet.set(3601);
 
-        oauth.client(clientId, DEFAULT_SECRET);
-
         // the second login must fail
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         code = oauth.parseLoginResponse().getCode();
         res = oauth.doAccessTokenRequest(code);
         assertThat(res.getStatusCode(), equalTo(Status.UNAUTHORIZED.getStatusCode()));
+        AdminApiUtil.findUserByUsernameId(realm.admin(), TEST_USER_NAME).logout();
     }
 
     /**
      * When a client goes through a secret rotation, the current secret becomes a rotated secret. A
      * login attempt with the new secret and the rotated secret should be successful as long as none
      * of the client's secrets are expired.
-     *
-     * @throws Exception
      */
     @Test
-    public void authenticateWithValidActualAndRotatedSecret() throws Exception {
+    public void authenticateWithValidActualAndRotatedSecret() {
         configureDefaultProfileAndPolicy();
-        String clientId = generateSuffixedName(CLIENT_NAME);
-        String cidConfidential = createClientByAdmin(clientId);
 
         // force client update. First update will not rotate the secret
-        ClientResource clientResource = adminClient.realm(REALM_NAME).clients()
-                .get(cidConfidential);
+        ClientResource clientResource = oauth.clientResource();
         String firstSecret = clientResource.getSecret().getValue();
         ClientRepresentation clientRepresentation = clientResource.toRepresentation();
         clientRepresentation.setDescription("New Description Updated");
@@ -421,7 +326,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(
                 clientResource.toRepresentation());
 
-        oauth.client(clientId, updatedSecret);
+        oauth.client(CLIENT_NAME, updatedSecret);
 
         //login with new secret
         AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME,
@@ -432,30 +337,24 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         oauth.doLogout(res.getRefreshToken());
 
         //login with rotated secret
-        oauth.client(clientId, firstSecret);
+        oauth.client(CLIENT_NAME, firstSecret);
         loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         code = oauth.parseLoginResponse().getCode();
         res = oauth.doAccessTokenRequest(code);
         assertThat(res.getStatusCode(), equalTo(Status.OK.getStatusCode()));
         oauth.doLogout(res.getRefreshToken());
-
     }
 
     /**
      * When a client goes through a secret rotation, the current secret becomes a rotated secret. A
      * login attempt with the rotated secret should not be successful if secret is expired.
-     *
-     * @throws Exception
      */
     @Test
-    public void authenticateWithInValidRotatedSecret() throws Exception {
+    public void authenticateWithInValidRotatedSecret() {
         configureDefaultProfileAndPolicy();
-        String clientId = generateSuffixedName(CLIENT_NAME);
-        String cidConfidential = createClientByAdmin(clientId);
 
         // force client update (rotate the secret according to the policy)
-        ClientResource clientResource = adminClient.realm(REALM_NAME).clients()
-                .get(cidConfidential);
+        ClientResource clientResource = oauth.clientResource();
         String firstSecret = clientResource.getSecret().getValue();
         ClientRepresentation clientRepresentation = clientResource.toRepresentation();
         clientRepresentation.setDescription("New Description Updated");
@@ -483,8 +382,6 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
                         wrapper.getClientSecretExpirationTime()))
                         + " | Time: " + Time.toDate(Time.currentTime()));
 
-        oauth.client(clientId);
-
         timeOffSet.set(7201);
 
         logger.debug("client secret:" + updatedSecret + "\nsecret expiration: " + new Date(TimeUnit.SECONDS.toMillis(
@@ -494,7 +391,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
                 Time.currentTime()));
         logger.debug(">>> trying login at time " + Time.toDate(Time.currentTime()));
 
-        oauth.client(clientId, firstSecret);
+        oauth.client(CLIENT_NAME, firstSecret);
 
         // try to login with rotated secret (must fail)
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
@@ -502,23 +399,18 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertThat(res.getStatusCode(), equalTo(Status.UNAUTHORIZED.getStatusCode()));
         oauth.doLogout(res.getRefreshToken());
-
     }
 
     /**
      * When a client goes through a secret rotation and the configuration for rotated secret is zero
      * then the rotated secret is automatically invalidated, therefore the rotated secret is not
      * valid for a successful login
-     *
-     * @throws Exception
      */
     @Test
-    public void authenticateWithRotatedSecretWithZeroExpirationTime() throws Exception {
+    public void authenticateWithRotatedSecretWithZeroExpirationTime() {
         configureCustomProfileAndPolicy(DEFAULT_EXPIRATION_PERIOD, 0, 0);
-        String clientId = generateSuffixedName(CLIENT_NAME);
-        String cidConfidential = createClientByAdmin(clientId);
-        ClientResource clientResource = adminClient.realm(REALM_NAME).clients()
-                .get(cidConfidential);
+
+        ClientResource clientResource = oauth.clientResource();
         clientResource.update(clientResource.toRepresentation());
 
         //advance 1 hour
@@ -538,7 +430,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
                 clientResource.toRepresentation());
         assertThat(wrapper.hasRotatedSecret(), is(Boolean.FALSE));
 
-        oauth.client(clientId, firstSecret);
+        oauth.client(CLIENT_NAME, firstSecret);
 
         // try to login with rotated secret (must fail)
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
@@ -546,40 +438,35 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertThat(res.getStatusCode(), equalTo(Status.UNAUTHORIZED.getStatusCode()));
         oauth.doLogout(res.getRefreshToken());
-
     }
 
     /**
      * When create a confidential client with policy enabled the client must have secret expiration
      * time configured
-     *
-     * @throws Exception
      */
     @Test
-    public void createClientWithPolicyEnableSecretExpiredTime() throws Exception {
+    public void createClientWithPolicyEnableSecretExpiredTime() {
 
         configureDefaultProfileAndPolicy();
 
-        String cidConfidential = createClientByAdmin(DEFAULT_CLIENT_ID);
-        ClientResource clientResource = adminClient.realm(REALM_NAME).clients()
-                .get(cidConfidential);
+        ClientResource clientResource = oauth.clientResource();
         ClientRepresentation clientRepresentation = clientResource.toRepresentation();
+        clientResource.remove();
+        realm.admin().clients().create(clientRepresentation);
 
         OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(
                 clientResource.toRepresentation());
         long clientSecretExpirationTime = wrapper.getClientSecretExpirationTime();
         assertThat(clientSecretExpirationTime, is(not(0L)));
-
     }
 
     @Test
-    public void secretExpirationWithLargeOffsetDoesNotOverflow() throws Exception {
+    public void secretExpirationWithLargeOffsetDoesNotOverflow() {
         long fiftyYearsInSeconds = TimeUnit.DAYS.toSeconds(365 * 50);
-        doConfigProfileAndPolicy(new ClientProfileBuilder(),
-                getClientProfileConfiguration(fiftyYearsInSeconds, TimeUnit.DAYS.toSeconds(2), TimeUnit.DAYS.toSeconds(10)));
+        configureCustomProfileAndPolicy(fiftyYearsInSeconds, TimeUnit.DAYS.toSeconds(2), TimeUnit.DAYS.toSeconds(2));
 
-        String cidConfidential = createClientByAdmin(DEFAULT_CLIENT_ID);
-        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cidConfidential);
+        ClientResource clientResource = oauth.clientResource();
+        clientResource.generateNewSecret();
 
         OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(
                 clientResource.toRepresentation());
@@ -590,22 +477,14 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
     /**
      * After rotate the secret the endpoint must return the rotated secret
-     *
-     * @throws Exception
      */
     @Test
-    public void getClientRotatedSecret() throws Exception {
+    public void getClientRotatedSecret() {
         configureDefaultProfileAndPolicy();
 
-        String cidConfidential = createClientByAdmin(DEFAULT_CLIENT_ID);
-        ClientResource clientResource = adminClient.realm(REALM_NAME).clients()
-                .get(cidConfidential);
+        ClientResource clientResource = oauth.clientResource();
         String firstSecret = clientResource.getSecret().getValue();
-        try {
-            clientResource.getClientRotatedSecret();
-        } catch (Exception e) {
-            assertThat(e, is(instanceOf(NotFoundException.class)));
-        }
+        assertThrows(NotFoundException.class, () -> clientResource.getClientRotatedSecret());
 
         String newSecret = clientResource.generateNewSecret().getValue();
         String rotatedSecret = clientResource.getClientRotatedSecret().getValue();
@@ -615,50 +494,39 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
     /**
      * After rotate the secret it must be possible to invalidate the rotated secret
-     *
-     * @throws Exception
      */
     @Test
-    public void invalidateClientRotatedSecret() throws Exception {
+    public void invalidateClientRotatedSecret() {
         configureDefaultProfileAndPolicy();
 
-        String cidConfidential = createClientByAdmin(DEFAULT_CLIENT_ID);
-        ClientResource clientResource = adminClient.realm(REALM_NAME).clients()
-                .get(cidConfidential);
+        ClientResource clientResource = oauth.clientResource();
         String firstSecret = clientResource.getSecret().getValue();
         String newSecret = clientResource.generateNewSecret().getValue();
         String rotatedSecret = clientResource.getClientRotatedSecret().getValue();
         assertThat(firstSecret, not(equalTo(newSecret)));
         assertThat(firstSecret, equalTo(rotatedSecret));
         clientResource.invalidateRotatedSecret();
-        try {
-            clientResource.getClientRotatedSecret();
-        } catch (Exception e) {
-            assertThat(e, is(instanceOf(NotFoundException.class)));
-        }
+        assertThrows(NotFoundException.class, () -> clientResource.getClientRotatedSecret());
     }
 
     /**
      * When try to create an executor for client secret rotation the configuration must be valid.
      * If the rules expressed in services/src/main/java/org/keycloak/services/clientpolicy/executor/ClientSecretRotationExecutor.Configuration is invalid, then the resource must not be created
-     *
-     * @throws Exception
      */
     @Test
-    public void createExecutorConfigurationWithInvalidValues() throws Exception {
-        try {
-            configureCustomProfileAndPolicy(60, 61, 30);
-        } catch (Exception e) {
-            assertThat(e, instanceOf(ClientPolicyException.class));
-        }
-        // no police must have been created due to the above error
-        ClientPoliciesPoliciesResource policiesResource = adminClient.realm(REALM_NAME).clientPoliciesPoliciesResource();
-        ClientPoliciesRepresentation policies = policiesResource.getPolicies();
-        assertThat(policies.getPolicies(), is(empty()));
+    public void createExecutorConfigurationWithInvalidValues() {
+        BadRequestException bre = assertThrows(BadRequestException.class, () -> doConfigProfile(getClientProfileConfiguration(60, 61, 30)));
+        ErrorRepresentation error = bre.getResponse().readEntity(ErrorRepresentation.class);
+        assertThat(error.getErrorMessage(), is("proposed client profile contains the executor, which does not have valid provider, or has invalid configuration."));
+
+        // no profile must have been created due to the above error
+        ClientPoliciesProfilesResource profileResource = realm.admin().clientPoliciesProfilesResource();
+        ClientProfilesRepresentation profiles = profileResource.getProfiles(false);
+        assertThat(profiles.getProfiles(), is(empty()));
     }
 
     @Test
-    public void createExecutorConfigurationWithMissingConfigDoesNotCauseNPE() throws Exception {
+    public void createExecutorConfigurationWithMissingConfigDoesNotCauseNPE() {
         ClientSecretRotationExecutor.Configuration missingExpirationPeriod = getClientProfileConfiguration(60, 30, 20);
         missingExpirationPeriod.setExpirationPeriod(null);
         ClientSecretRotationExecutor.Configuration missingRotatedExpirationPeriod = getClientProfileConfiguration(60, 30, 20);
@@ -668,31 +536,25 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
         for (ClientSecretRotationExecutor.Configuration config : Arrays.asList(
                 missingExpirationPeriod, missingRotatedExpirationPeriod, missingRemainExpirationPeriod)) {
-            try {
-                doConfigProfileAndPolicy(new ClientProfileBuilder(), config);
-                fail("Should have rejected configuration with a missing period");
-            } catch (ClientPolicyException e) {
-                assertThat(e.getErrorDetail(), is(Status.BAD_REQUEST.getReasonPhrase()));
-            }
+            BadRequestException bre = assertThrows(BadRequestException.class, () -> doConfigProfile(config));
+            ErrorRepresentation error = bre.getResponse().readEntity(ErrorRepresentation.class);
+            assertThat(error.getErrorMessage(), is("proposed client profile contains the executor, which does not have valid provider, or has invalid configuration."));
         }
 
-        ClientPoliciesPoliciesResource policiesResource = adminClient.realm(REALM_NAME).clientPoliciesPoliciesResource();
-        ClientPoliciesRepresentation policies = policiesResource.getPolicies();
-        assertThat(policies.getPolicies(), is(empty()));
+        ClientPoliciesProfilesResource profileResource = realm.admin().clientPoliciesProfilesResource();
+        ClientProfilesRepresentation profiles = profileResource.getProfiles(false);
+        assertThat(profiles.getProfiles(), is(empty()));
     }
 
     /**
      * When there is a client that has a secret rotated and the policy is disabled, Rotation information must be removed after updating a client
-     *
-     * @throws Exception
      */
     @Test
-    public void removingPolicyMustClearRotationInformationFromClientOnUpdate() throws Exception {
+    public void removingPolicyMustClearRotationInformationFromClientOnUpdate() {
         //create and enable the profile
         configureDefaultProfileAndPolicy();
         //create client
-        String cidConfidential = createClientByAdmin(DEFAULT_CLIENT_ID);
-        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cidConfidential);
+        ClientResource clientResource = oauth.clientResource();
         String firstSecret = clientResource.getSecret().getValue();
         String newSecret = clientResource.generateNewSecret().getValue();
         String rotatedSecret = clientResource.getClientRotatedSecret().getValue();
@@ -717,16 +579,13 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
     /**
      * When there is a client that has a secret rotated and the policy is disabled, Rotation information must be removed after request a new secret
-     *
-     * @throws Exception
      */
     @Test
-    public void removingPolicyMustClearRotationInformationFromClientOnRequestNewSecret() throws Exception {
+    public void removingPolicyMustClearRotationInformationFromClientOnRequestNewSecret() {
         //create and enable the profile
         configureDefaultProfileAndPolicy();
         //create client
-        String cidConfidential = createClientByAdmin(DEFAULT_CLIENT_ID);
-        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cidConfidential);
+        ClientResource clientResource = oauth.clientResource();
         String firstSecret = clientResource.getSecret().getValue();
         String newSecret = clientResource.generateNewSecret().getValue();
         String rotatedSecret = clientResource.getClientRotatedSecret().getValue();
@@ -751,56 +610,6 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
      * -------------------- support methods --------------------
      **/
 
-    private void configureCustomProfileAndPolicy(int secretExpiration, int rotatedExpiration,
-                                                 int remainingExpiration) throws Exception {
-        ClientProfileBuilder profileBuilder = new ClientProfileBuilder();
-        ClientSecretRotationExecutor.Configuration profileConfig = getClientProfileConfiguration(
-                secretExpiration, rotatedExpiration, remainingExpiration);
-
-        doConfigProfileAndPolicy(profileBuilder, profileConfig);
-    }
-
-    private void configureDefaultProfileAndPolicy() throws Exception {
-        // register profiles
-        ClientProfileBuilder profileBuilder = new ClientProfileBuilder();
-        ClientSecretRotationExecutor.Configuration profileConfig = getClientProfileConfiguration(
-                DEFAULT_EXPIRATION_PERIOD, DEFAULT_ROTATED_EXPIRATION_PERIOD,
-                DEFAULT_REMAIN_EXPIRATION_PERIOD);
-
-        doConfigProfileAndPolicy(profileBuilder, profileConfig);
-    }
-
-    private void disableProfile() throws Exception {
-        Configuration config = new Configuration();
-        config.setType(Arrays.asList(ClientAccessTypeConditionFactory.TYPE_CONFIDENTIAL));
-        String json = (new ClientPoliciesBuilder()).addPolicy(
-                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME,
-                                "Policy for Client Secret Rotation",
-                                Boolean.FALSE).addCondition(ClientAccessTypeConditionFactory.PROVIDER_ID, config)
-                        .addProfile(PROFILE_NAME).toRepresentation()).toString();
-        updatePolicies(json);
-    }
-
-    private void doConfigProfileAndPolicy(ClientProfileBuilder profileBuilder,
-                                          ClientSecretRotationExecutor.Configuration profileConfig) throws Exception {
-        String json = (new ClientProfilesBuilder()).addProfile(
-                profileBuilder.createProfile(PROFILE_NAME, "Enable Client Secret Rotation")
-                        .addExecutor(ClientSecretRotationExecutorFactory.PROVIDER_ID, profileConfig)
-                        .toRepresentation()).toString();
-        updateProfiles(json);
-
-        // register policies
-        Configuration config = new Configuration();
-        config.setType(Arrays.asList(ClientAccessTypeConditionFactory.TYPE_CONFIDENTIAL));
-        json = (new ClientPoliciesBuilder()).addPolicy(
-                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME,
-                                "Policy for Client Secret Rotation",
-                                Boolean.TRUE).addCondition(ClientAccessTypeConditionFactory.PROVIDER_ID, config)
-                        .addProfile(PROFILE_NAME).toRepresentation()).toString();
-        updatePolicies(json);
-    }
-
-    @NotNull
     private ClientSecretRotationExecutor.Configuration getClientProfileConfiguration(
             long expirationPeriod, long rotatedExpirationPeriod, long remainExpirationPeriod) {
         ClientSecretRotationExecutor.Configuration profileConfig = new ClientSecretRotationExecutor.Configuration();
@@ -810,124 +619,56 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         return profileConfig;
     }
 
-    protected String createClientByAdmin(String clientId) throws ClientPolicyException {
-        ClientRepresentation clientRep = getClientRepresentation(clientId);
-
-        Response resp = adminClient.realm(REALM_NAME).clients().create(clientRep);
-        if (resp.getStatus() == Response.Status.BAD_REQUEST.getStatusCode()) {
-            String respBody = resp.readEntity(String.class);
-            Map<String, String> responseJson = null;
-            try {
-                responseJson = JsonSerialization.readValue(respBody, Map.class);
-            } catch (IOException e) {
-                fail();
-            }
-            throw new ClientPolicyException(responseJson.get(OAuth2Constants.ERROR),
-                    responseJson.get(OAuth2Constants.ERROR_DESCRIPTION));
-        }
-        resp.close();
-        assertEquals(Response.Status.CREATED.getStatusCode(), resp.getStatus());
-        // registered components will be removed automatically when a test method finishes regardless of its success or failure.
-        String cId = ApiUtil.getCreatedId(resp);
-        testContext.getOrCreateCleanup(REALM_NAME).addClientUuid(cId);
-        return cId;
+    private void doConfigProfile(ClientSecretRotationExecutor.Configuration profileConfig) {
+        ClientProfileRepresentation clientProfile = ClientProfileBuilder.create()
+                .name(PROFILE_NAME)
+                .description("Enable Client Secret Rotation")
+                .executor(ClientSecretRotationExecutorFactory.PROVIDER_ID, profileConfig)
+                .build();
+        ClientProfilesRepresentation clientProfiles = new ClientProfilesRepresentation();
+        clientProfiles.setProfiles(List.of(clientProfile));
+        realm.admin().clientPoliciesProfilesResource().updateProfiles(clientProfiles);
     }
 
-    @NotNull
-    private ClientRepresentation getClientRepresentation(String clientId) {
-        ClientRepresentation clientRep = new ClientRepresentation();
-        clientRep.setClientId(clientId);
-        clientRep.setName(CLIENT_NAME);
-        clientRep.setSecret(DEFAULT_SECRET);
-        clientRep.setAttributes(new HashMap<>());
-        clientRep.getAttributes()
-                .put(ClientSecretConstants.CLIENT_SECRET_CREATION_TIME,
-                        String.valueOf(Time.currentTime()));
-        clientRep.setProtocol(OIDC);
-        clientRep.setBearerOnly(Boolean.FALSE);
-        clientRep.setPublicClient(Boolean.FALSE);
-        clientRep.setServiceAccountsEnabled(Boolean.TRUE);
-        clientRep.setStandardFlowEnabled(Boolean.TRUE);
-        clientRep.setImplicitFlowEnabled(Boolean.TRUE);
-        clientRep.setClientAuthenticatorType(ClientIdAndSecretAuthenticator.PROVIDER_ID);
-
-        clientRep.setRedirectUris(Collections.singletonList(
-                ServerURLs.getAuthServerContextRoot() + "/auth/realms/master/app/auth"));
-        return clientRep;
+    private void configureDefaultProfileAndPolicy() {
+        configureCustomProfileAndPolicy(DEFAULT_EXPIRATION_PERIOD, DEFAULT_ROTATED_EXPIRATION_PERIOD, DEFAULT_REMAIN_EXPIRATION_PERIOD);
     }
 
-    protected String generateSuffixedName(String name) {
-        return name + "-" + UUID.randomUUID().toString().subSequence(0, 7);
+    private void configureCustomProfileAndPolicy(long secretExpiration, long rotatedExpiration, long remainingExpiration) {
+        realm.updateWithCleanup(r -> {
+            r.clientProfile(ClientProfileBuilder.create()
+                    .name(PROFILE_NAME)
+                    .description("Enable Client Secret Rotation")
+                    .executor(ClientSecretRotationExecutorFactory.PROVIDER_ID, getClientProfileConfiguration(
+                            secretExpiration, rotatedExpiration, remainingExpiration))
+                    .build());
+
+            r.clientPolicy(ClientPolicyBuilder.create()
+                    .name(POLICY_NAME)
+                    .description("Policy for Client Secret Rotation")
+                    .condition(ClientAccessTypeConditionFactory.PROVIDER_ID, ClientPolicyBuilder.clientAccessTypeCondition(
+                            false, ClientAccessTypeConditionFactory.TYPE_CONFIDENTIAL))
+                    .profile(PROFILE_NAME)
+                    .build());
+
+            return r;
+        });
     }
 
-    protected void updateProfiles(String json) throws ClientPolicyException {
-        try {
-            ClientProfilesRepresentation clientProfiles = JsonSerialization.readValue(json,
-                    ClientProfilesRepresentation.class);
-            adminClient.realm(REALM_NAME).clientPoliciesProfilesResource()
-                    .updateProfiles(clientProfiles);
-        } catch (BadRequestException e) {
-            throw new ClientPolicyException("update profiles failed",
-                    e.getResponse().getStatusInfo().toString());
-        } catch (Exception e) {
-            throw new ClientPolicyException("update profiles failed", e.getMessage());
-        }
-    }
+    private void disableProfile() {
+        realm.updateWithCleanup(r -> {
+            r.resetClientPolicies()
+                    .clientPolicy(ClientPolicyBuilder.create()
+                            .name(POLICY_NAME)
+                            .description("Policy for Client Secret Rotation")
+                            .condition(ClientAccessTypeConditionFactory.PROVIDER_ID, ClientPolicyBuilder.clientAccessTypeCondition(
+                                    false, ClientAccessTypeConditionFactory.TYPE_CONFIDENTIAL))
+                            .profile(PROFILE_NAME)
+                            .enabled(false)
+                            .build());
 
-    protected void updateProfiles(ClientProfilesRepresentation reps) throws ClientPolicyException {
-        updateProfiles(convertToProfilesJson(reps));
-    }
-
-    protected void revertToBuiltinProfiles() throws ClientPolicyException {
-        updateProfiles("{}");
-    }
-
-    protected String convertToProfilesJson(ClientProfilesRepresentation reps) {
-        String json = null;
-        try {
-            json = objectMapper.writeValueAsString(reps);
-        } catch (JsonProcessingException e) {
-            fail();
-        }
-        return json;
-    }
-
-    protected String convertToProfileJson(ClientProfileRepresentation rep) {
-        String json = null;
-        try {
-            json = objectMapper.writeValueAsString(rep);
-        } catch (JsonProcessingException e) {
-            fail();
-        }
-        return json;
-    }
-
-    protected ClientProfileRepresentation convertToProfile(String json) {
-        ClientProfileRepresentation rep = null;
-        try {
-            rep = JsonSerialization.readValue(json, ClientProfileRepresentation.class);
-        } catch (IOException e) {
-            fail();
-        }
-        return rep;
-    }
-
-    protected void revertToBuiltinPolicies() throws ClientPolicyException {
-        updatePolicies("{}");
-    }
-
-    protected void updatePolicies(String json) throws ClientPolicyException {
-        try {
-            ClientPoliciesRepresentation clientPolicies = json == null ? null
-                    : JsonSerialization.readValue(json, ClientPoliciesRepresentation.class);
-            adminClient.realm(REALM_NAME).clientPoliciesPoliciesResource()
-                    .updatePolicies(clientPolicies);
-        } catch (BadRequestException e) {
-            throw new ClientPolicyException("update policies failed",
-                    e.getResponse().getStatusInfo().toString());
-        } catch (IOException e) {
-            throw new ClientPolicyException("update policies failed", e.getMessage());
-        }
+            return r;
+        });
     }
 
     private void successfulLoginAndLogout(String clientId, String clientSecret) {
@@ -956,5 +697,35 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
                 .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
         return res;
+    }
+
+    static class ClientSecretRotationServerConfig implements KeycloakServerConfig {
+
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.features(Profile.Feature.CLIENT_SECRET_ROTATION);
+        }
+    }
+
+    static class ClientSecretRotationRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return realm.users(UserBuilder.create(TEST_USER_NAME).password(TEST_USER_PASSWORD)
+                    .name("Test", "User").email(TEST_USER_NAME).emailVerified(true));
+        }
+    }
+
+    static class OAuthClientConfig implements ClientConfig {
+
+        @Override
+        public ClientBuilder configure(ClientBuilder client) {
+            return client.clientId(CLIENT_NAME)
+                    .secret(DEFAULT_SECRET)
+                    .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                    .publicClient(false)
+                    .serviceAccountsEnabled()
+                    .redirectUris("*");
+        }
     }
 }
