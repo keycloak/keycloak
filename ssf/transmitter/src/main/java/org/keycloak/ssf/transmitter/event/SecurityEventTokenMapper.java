@@ -30,7 +30,6 @@ import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.event.InitiatingEntity;
 import org.keycloak.ssf.event.SsfEvent;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
-import org.keycloak.ssf.event.caep.CaepEvent;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.ssf.event.risc.RiscAccountDisabled;
 import org.keycloak.ssf.event.risc.RiscAccountEnabled;
