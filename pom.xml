@@ -40,8 +40,8 @@
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
-        <quarkus.version>3.37.4</quarkus.version>
-        <quarkus.build.version>3.37.4</quarkus.build.version>
+        <quarkus.version>3.38.0</quarkus.version>
+        <quarkus.build.version>3.38.0</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
@@ -111,7 +111,7 @@
         <sun.activation.version>1.2.2</sun.activation.version>
         <org.glassfish.jaxb.xsom.version>2.3.3-b02</org.glassfish.jaxb.xsom.version>
         <undertow.version>2.3.24.Final</undertow.version>
-        <wildfly-elytron.version>2.9.1.Final</wildfly-elytron.version>
+        <wildfly-elytron.version>2.9.2.Final</wildfly-elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <woodstox.version>6.0.3</woodstox.version>
         <wildfly.common.quarkus.aligned.version>1.5.4.Final-format-001</wildfly.common.quarkus.aligned.version>
