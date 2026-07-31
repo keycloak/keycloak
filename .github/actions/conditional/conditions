@@ -32,6 +32,7 @@ quarkus/                                    ci-quarkus guides
 
 model/                                      ci-store
 testsuite/model/                            ci-store
+tests/base/src/test/java/org/keycloak/tests/suites/StatelessTestSuite.java ci-store
 operator/                                   operator
 
 testsuite/integration-arquillian/tests/other/sssd/   ci-sssd
