@@ -18,7 +18,6 @@
 package org.keycloak.admin.internal.openapi;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -145,10 +144,8 @@ class OpenApiSortParameterTest {
         };
     }
 
-    private static String enhanceSortParameterDescription(String description) throws Exception {
-        Method method = OASModelFilter.class.getDeclaredMethod("enhanceSortParameterDescription", String.class, String.class);
-        method.setAccessible(true);
-        return (String) method.invoke(null, description, ClientField.allowedApiNames());
+    private static String enhanceSortParameterDescription(String description) {
+        return OASModelFilter.enhanceSortParameterDescription(description, ClientField.allowedApiNames());
     }
 
     private static String listOptionsSortDescription() throws Exception {

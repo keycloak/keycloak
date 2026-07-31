@@ -458,7 +458,7 @@ public class OASModelFilter implements OASFilter {
         }
     }
 
-    private static String enhanceSortParameterDescription(String description, String allowedApiNames) {
+    static String enhanceSortParameterDescription(String description, String allowedApiNames) {
         String base = stripAllowedFieldsSuffix(description);
         if (isNullOrEmpty(base)) {
             return ALLOWED_FIELDS_MARKER + allowedApiNames + ".";
