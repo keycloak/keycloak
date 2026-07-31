@@ -40,6 +40,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
@@ -107,10 +108,15 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
                     authSession.getClient().getClientId(), authSession.getTabId(), AuthenticationProcessor.getClientData(session, authSession));
             String confirmUri = builder.build(realm.getName()).toString();
 
+            IdentityProviderModel identityProvider = session.identityProviders().getByAlias(token.getIdentityProviderAlias());
+            String idpDisplayName = identityProvider == null
+                    ? token.getIdentityProviderAlias()
+                    : KeycloakModelUtils.getIdentityProviderDisplayName(session, identityProvider);
+
             LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
             return forms.setAuthenticationSession(authSession)
-                    .setAttribute("messageHeader", forms.getMessage(Messages.CONFIRM_ACCOUNT_LINKING, token.getIdentityProviderUsername(), token.getIdentityProviderAlias()))
-                    .setSuccess(Messages.CONFIRM_ACCOUNT_LINKING_BODY, token.getIdentityProviderUsername(), token.getIdentityProviderAlias())
+                    .setAttribute("messageHeader", forms.getMessage(Messages.CONFIRM_ACCOUNT_LINKING, token.getIdentityProviderUsername(), idpDisplayName))
+                    .setSuccess(Messages.CONFIRM_ACCOUNT_LINKING_BODY, token.getIdentityProviderUsername(), idpDisplayName)
                     .setAttribute(Constants.TEMPLATE_ATTR_ACTION_URI, confirmUri)
                     .createInfoPage();
         }
@@ -132,9 +138,14 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
             setUserVerifiedSingleObject(token, realm, session, user);
 
+            IdentityProviderModel identityProvider = session.identityProviders().getByAlias(token.getIdentityProviderAlias());
+            String idpDisplayName = identityProvider == null
+                    ? token.getIdentityProviderAlias()
+                    : KeycloakModelUtils.getIdentityProviderDisplayName(session, identityProvider);
+
             return session.getProvider(LoginFormsProvider.class)
                     .setAuthenticationSession(authSession)
-                    .setSuccess(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, token.getIdentityProviderAlias(), token.getIdentityProviderUsername())
+                    .setSuccess(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, idpDisplayName, token.getIdentityProviderUsername())
                     .setAttribute(Constants.SKIP_LINK, true)
                     .createInfoPage();
         }
