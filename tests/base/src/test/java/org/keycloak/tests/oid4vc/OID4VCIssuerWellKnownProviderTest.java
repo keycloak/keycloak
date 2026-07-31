@@ -385,7 +385,8 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
 
     /**
      * This test uses the configured scopes {@link #jwtTypeCredentialScope} and
-     * {@link #sdJwtTypeCredentialScope} to verify that the metadata endpoint is presenting the expected data
+     * {@link #sdJwtTypeCredentialScope}, including {@link #keyAttestationCredentialScope}, to verify that the metadata
+     * endpoint is presenting the expected data.
      */
     @Test
     public void testMetaDataEndpointIsCorrectlySetup() throws Exception {
@@ -424,7 +425,8 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
         assertNotNull(batch, "batch_credential_issuance should be present");
         assertEquals(Integer.valueOf(10), batch.getBatchSize());
 
-        for (CredentialScopeRepresentation credScope : List.of(jwtTypeCredentialScope, sdJwtTypeCredentialScope, minimalJwtTypeCredentialScope)) {
+        for (CredentialScopeRepresentation credScope : List.of(jwtTypeCredentialScope, sdJwtTypeCredentialScope,
+                keyAttestationCredentialScope, minimalJwtTypeCredentialScope)) {
             compareMetadataToClientScope(credentialIssuer, credScope);
         }
     }
