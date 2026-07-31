@@ -24,7 +24,7 @@ This section documents the proof types supported by OpenID for Verifiable Creden
 
 When a credential requires cryptographic holder binding, the client must provide a proof of an appropriate type. The issuer validates the proof and extracts the binding key, which is then included in the issued credential.
 
-==== Configuring Trusted Attester Keys
+==== Configuring Trusted Attesters
 
 {project_name} supports JWT proofs that can optionally include key attestations, and the `attestation` proof type. To validate these attestations, configure the trusted attester keys through trust-material identity providers and link those identity providers to the OID4VCI client.
 
@@ -32,12 +32,20 @@ Trusted attester keys are configured per client because different wallets can re
 
 ===== Admin Console
 
-. Create or configure a trust-material identity provider, such as **Default Trust**, that exposes the trusted attester public keys. The identity provider must be configured with either a JWKS URL or a validating public key.
+. Create or configure a trust-material identity provider, such as **Default Trust**, that exposes the trusted attester public keys or X.509 trust anchors.
+** For `kid`-based attestations, configure a JWKS URL or validating public key.
+** For `x5c`-based attestations, enable **Use X.509 attestation trust**, provide a PEM bundle containing only self-signed device-vendor attestation CA roots, and configure **Allowed attestation extended key usages** with at least one Extended Key Usage (EKU) OID. This setting is required. The attestation end-entity certificate must contain an EKU extension with at least one OID that exactly matches a configured value; otherwise, validation fails.
 . Go to *Clients* and select the wallet client that requests credentials.
 . Open the *Advanced* tab.
 . In the *OpenID Verifiable Credentials* section, enable **Enable OID4VCI**.
 . In **OID4VCI Attester Trust Identity Providers**, select the trust-material identity providers that contain the trusted attester public keys.
 . Save the client.
+
+OID4VCI does not define a universal EKU OID for key attestation. Use the OID specified by the device vendor or the applicable attestation trust framework. For example, a private test PKI could place `1.3.6.1.4.1.32473.1.1` in both the certificate and the configuration to demonstrate exact matching. The `32473` private enterprise number is reserved for documentation and must not be used in production.
+
+WARNING: The built-in OIDC identity provider exposes only JWK trust material and cannot provide X.509 trust anchors for `x5c`-based attestations. Use **Default Trust**, or a custom trust-material identity provider that implements X.509 trust resolution, for `x5c`-based attestations.
+
+WARNING: Certificate revocation checking is not currently supported for `x5c` key-attestation certificate chains. Before trusting an attestation CA, ensure that revoked attestation certificates are rejected by a mandatory revocation mechanism outside {project_name}.
 
 The **OID4VCI Attester Trust Identity Providers** option is only shown when **Enable OID4VCI** is enabled for the client. It accepts only trust-material identity providers from the current realm. If no trust-material identity provider is configured, the dropdown has no values to select.
 
@@ -51,7 +59,7 @@ The **OID4VCI Attester Trust Identity Providers** option is only shown when **En
 
 | `oid4vci.attester_trust_idps`
 | none
-| Comma-separated aliases of trust-material identity providers containing trusted attester public keys for OID4VCI key attestation validation.
+| Comma-separated aliases of trust-material identity providers containing trusted attester public keys or X.509 attestation roots for OID4VCI key attestation validation.
 
 |===
 
@@ -72,7 +80,41 @@ curl -X PUT "https://localhost:8443/admin/realms/{realm}/clients/{client-uuid}" 
       }'
 ----
 
-For a JWT proof with a `key_attestation` JOSE header, or for an `attestation` proof, {project_name} resolves the attester signing key from the configured identity providers. Key resolution can use the attestation JWT header and payload, including the `kid`, `alg`, and `iss` values. If no configured identity provider exposes a matching trusted key, proof validation fails.
+For a JWT proof with a `key_attestation` JOSE header, or for an `attestation` proof, {project_name} resolves the attester signing key from the configured identity providers. Key resolution can use the attestation JWT header and payload, including the `kid`, `alg`, and `iss` values. If no configured identity provider trusts the key or certificate chain, proof validation fails.
+
+===== X.509 Certificate-Chain Validation
+
+For an `x5c`-based key attestation, the certificates presented in the attestation JWT and the trust material configured in the identity provider have different roles:
+
+[source,text]
+----
+Attestation JWT JOSE header                   Default Trust identity provider
+---------------------------                   -------------------------------
+x5c[0]: attestation leaf certificate          Trusted certificates:
+         - signs the attestation JWT            device-vendor root CA
+         - must be an end-entity certificate    (self-signed trust anchor)
+         - contains an allowed EKU
+
+x5c[1..n]: intermediate CA certificates       Allowed attestation extended
+           needed to build the path            key usages:
+           (if any)                             device-vendor attestation EKU
+
+x5c[last]: device-vendor root CA              The same root is configured
+           (optional)                          as the trust anchor
+
+                    Certificate path built by Keycloak
+       attestation leaf -> intermediate CA(s) -> configured root CA
+----
+
+The first `x5c` entry must be the certificate containing the public key that signed the attestation JWT. Each following entry must be an issuer of the previous certificate. The entries are base64-encoded DER certificates, not PEM values or base64url-encoded values.
+
+Include any intermediate CA certificates required to connect the leaf to the configured root. The root certificate can be the final `x5c` entry, but it is not required because the same root is already configured as a trust anchor. For example, if the configured root directly issued the leaf, `x5c` can contain only the leaf certificate.
+
+For each selected X.509-capable trust-material identity provider, {project_name} independently builds a certificate path from the leaf to a root configured in that provider. The leaf must be an end-entity certificate, and its Extended Key Usage (EKU) extension must contain at least one OID allowed by the same provider. Trust roots and EKU policies from different providers are never combined.
+
+A root included in `x5c` does not become trusted merely by being present. It must match a root configured in the identity provider. The JVM system truststore is never used as attestation trust.
+
+Do not place public Web PKI roots or the general {project_name} TLS truststore in an attestation trust provider. Each provider should represent one device-vendor trust domain so its roots and certificate policy cannot be combined with another provider accidentally.
 
 ==== Creating and Sending JWT Proofs
 
