@@ -347,8 +347,20 @@ public class ClientStreamStore implements SsfStreamStore {
     public List<StreamConfig> findStreamsForSsfReceiverClients() {
         RealmModel realm = session.getContext().getRealm();
         Map<String, String> attributes = Map.of(SSF_ENABLED_KEY, "true");
-        return session.clients()
+        // TEMPORARY DIAGNOSTIC — investigating an intermittent CI failure where
+        // this returns empty for a client whose stream was just created
+        // (keycloak/keycloak#51318). Remove once root-caused.
+        List<ClientModel> rawCandidates = session.clients()
                 .searchClientsByAttributes(realm, attributes, null, null)
+                .toList();
+        log.warnf("SSF-DIAG findStreamsForSsfReceiverClients: realm=%s(%s) rawCandidates=%s",
+                realm.getName(), realm.getId(),
+                rawCandidates.stream()
+                        .map(c -> c.getClientId() + "[enabled=" + c.isEnabled()
+                                + ",ssf.enabled=" + c.getAttribute(SSF_ENABLED_KEY)
+                                + ",streamId=" + c.getAttribute(SSF_STREAM_ID_KEY) + "]")
+                        .toList());
+        return rawCandidates.stream()
                 // The attribute search already matches ssf.enabled=true, but it
                 // cannot express the client on/off state — filter disabled
                 // receivers out here so the dispatcher and event listener never
