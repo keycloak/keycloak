@@ -129,6 +129,18 @@ public class SsfTransmitterAccountStateEventTests {
         setEmitOnlyEvents();
 
         createPushStream(Set.of(RiscAccountDisabled.TYPE, RiscAccountEnabled.TYPE));
+
+        // Observed in CI: the very first admin-event-triggered SSF lookup
+        // (StreamService.findStreamsForSsfReceiverClients, via the admin-event
+        // path) against a freshly started per-class test server can transiently
+        // see no streams — likely a client-attribute-search cache/index warm-up
+        // race, since every subsequent call in the same server instance (i.e.
+        // every other test in this class) succeeds reliably. Prime that path
+        // once here with a throwaway disable/re-enable cycle so the real
+        // per-test assertions below are never the first caller.
+        setUserEnabled(false);
+        setUserEnabled(true);
+        pushes.clear();
     }
 
     @AfterEach
