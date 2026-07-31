@@ -6,9 +6,10 @@ title="Integrating with Model Context Protocol (MCP)"
 priority=115
 summary="Using {project_name} as an authorization server for Model Context Protocol (MCP) servers.">
 
-There are currently four versions of the Model Context Protocol (MCP) specification:
+There are currently five versions of the Model Context Protocol (MCP) specification:
 
-* 2025-11-25 (latest version)
+* 2026-07-28 (latest version)
+* 2025-11-25
 * 2025-06-18
 * 2025-03-26
 * 2024-11-05 (initial version)
@@ -31,15 +32,17 @@ According to the https://modelcontextprotocol.io/specification/draft/basic/autho
 
 [%autowidth]
 |======
-|Standard |2025-11-25 |2025-06-18 |2025-03-26 |{project_name}
+|Standard |2026-07-28 |2025-11-25 |2025-06-18 |2025-03-26 |{project_name}
 
 | https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-14[The OAuth 2.1 Authorization Framework (Internet Draft)]
+| MUST
 | MUST
 | MUST
 | MUST
 | Supported
 
 | https://datatracker.ietf.org/doc/html/rfc8414[OAuth 2.0 Authorization Server Metadata (RFC 8414)]
+| MUST (or OpenID Connect Discovery 1.0)
 | MUST
 | MUST
 | MUST
@@ -48,16 +51,26 @@ According to the https://modelcontextprotocol.io/specification/draft/basic/autho
 | https://datatracker.ietf.org/doc/html/rfc8707[Resource Indicators for OAuth 2.0 (RFC 8707)]
 | MUST
 | MUST
+| MUST
 | -
 | Not supported
 
+| https://datatracker.ietf.org/doc/html/rfc9207[OAuth 2.0 Authorization Server Issuer Identification (RFC 9207)]
+| SHOULD
+| -
+| -
+| -
+| Supported
+
 | https://datatracker.ietf.org/doc/html/rfc7591[OAuth 2.0 Dynamic Client Registration Protocol (RFC 7591)]
+| MAY
 | MAY
 | SHOULD
 | SHOULD
 | Supported
 
 | https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-00[OAuth Client ID Metadata Document (Internet Draft)]
+| SHOULD
 | SHOULD
 | -
 | -
@@ -88,6 +101,9 @@ According to these criteria, the following table shows which MCP version {projec
 | https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization[2025-11-25]
 | Partially Supported without Resource Indicators for OAuth 2.0
 
+| https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization[2026-07-28]
+| Partially Supported without Resource Indicators for OAuth 2.0
+
 |===
 
 == Setup
@@ -96,7 +112,7 @@ According to these criteria, the following table shows which MCP version {projec
 
 No special setup is required.
 
-=== For MCP 2025-06-18 and 2025-11-25
+=== For MCP 2025-06-18, 2025-11-25 and 2026-07-28
 
 ==== Token Audience Binding and Validation
 
@@ -147,7 +163,7 @@ You need to do an appropriate setup for Client Registration's anonymous access p
 * Allowed Registration Web Origins: Needs to include web origin of MCP inspector's backend server.
 * Trusted Hosts: Needs to include hostname or IP address of the machine that sends a dynamic client registration request to {project_name}, namely the machine your browser runs on.
 
-=== For MCP 2025-11-25
+=== For MCP 2025-11-25 and 2026-07-28
 
 ==== Client Registration
 
