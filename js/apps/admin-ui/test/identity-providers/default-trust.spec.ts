@@ -60,9 +60,6 @@ test.describe.serial("Default Trust identity provider test", () => {
     await expect(
       page.getByTestId("config.attestationExtendedKeyUsages"),
     ).toBeVisible();
-    await expect(
-      page.getByTestId("config.certificateRevocationEnabled"),
-    ).toBeChecked();
   });
 
   test("should create and edit a Default Trust provider", async ({ page }) => {
@@ -85,9 +82,6 @@ test.describe.serial("Default Trust identity provider test", () => {
     await page
       .getByTestId("config.attestationExtendedKeyUsages")
       .fill("1.2.3.4");
-    await page
-      .getByTestId("config.certificateRevocationEnabled")
-      .click({ force: true });
     await page.getByTestId("config.useX509").click({ force: true });
     await clickSaveButton(page);
 

@@ -39,7 +39,5 @@ public interface AttestationKeyResolver {
      * Resolves and validates an attestation certificate chain. Returning {@code null} means that none of the
      * configured trust sources trusts the chain.
      */
-    default JWK resolveX5c(List<String> x5c, Map<String, Object> header, Map<String, Object> payload) {
-        return null;
-    }
+    JWK resolveX5c(List<String> x5c, Map<String, Object> header, Map<String, Object> payload);
 }

@@ -18,17 +18,11 @@ export default function DefaultTrustSettings() {
     defaultValue: "false",
   });
 
-  const setUseX509 = (checked: boolean) => {
+  const clearX509Settings = () => {
     const options = { shouldDirty: true };
-
-    if (checked) {
-      setValue("config.certificateRevocationEnabled", "true", options);
-      return;
-    }
 
     setValue("config.trustedCertificates", "", options);
     setValue("config.attestationExtendedKeyUsages", "", options);
-    setValue("config.certificateRevocationEnabled", "", options);
   };
 
   return (
@@ -48,7 +42,11 @@ export default function DefaultTrustSettings() {
         labelIcon={t("useX509AttestationTrustHelp")}
         defaultValue="false"
         stringify
-        onChange={(_, checked) => setUseX509(checked)}
+        onChange={(_, checked) => {
+          if (!checked) {
+            clearX509Settings();
+          }
+        }}
       />
       {useX509 === "true" ? (
         <>
@@ -63,13 +61,6 @@ export default function DefaultTrustSettings() {
             label={t("attestationExtendedKeyUsages")}
             labelIcon={t("attestationExtendedKeyUsagesHelp")}
             rules={{ required: t("required") }}
-          />
-          <DefaultSwitchControl
-            name="config.certificateRevocationEnabled"
-            label={t("certificateRevocation")}
-            labelIcon={t("certificateRevocationHelp")}
-            defaultValue="true"
-            stringify
           />
         </>
       ) : (

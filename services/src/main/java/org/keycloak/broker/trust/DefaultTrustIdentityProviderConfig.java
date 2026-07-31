@@ -42,7 +42,6 @@ public class DefaultTrustIdentityProviderConfig extends IdentityProviderModel {
     public static final String USE_X509 = "useX509";
     public static final String TRUSTED_CERTIFICATES = "trustedCertificates";
     public static final String ATTESTATION_EXTENDED_KEY_USAGES = "attestationExtendedKeyUsages";
-    public static final String CERTIFICATE_REVOCATION_ENABLED = "certificateRevocationEnabled";
 
     public DefaultTrustIdentityProviderConfig() {
     }
@@ -62,20 +61,6 @@ public class DefaultTrustIdentityProviderConfig extends IdentityProviderModel {
         boolean hasTrustedJwksUrl = !Strings.isEmpty(getTrustedJwksUrl());
         boolean hasTrustedJwks = !Strings.isEmpty(getTrustedJwks());
         boolean hasTrustedCertificates = !Strings.isEmpty(getTrustedCertificates());
-        if (!isUseX509() && hasTrustedCertificates) {
-            throw new IllegalArgumentException(
-                    "'Use X.509 attestation trust' must be enabled when trusted X.509 certificates are configured");
-        }
-        if (!isUseX509() && isUseJwksUrl()) {
-            if (!hasTrustedJwksUrl) {
-                throw new IllegalArgumentException("JWKS URL is required when 'Use JWKS URL' is enabled");
-            }
-        } else if (!isUseX509() && !hasTrustedJwks) {
-            throw new IllegalArgumentException("Validating public key is required when 'Use JWKS URL' is disabled");
-        }
-        if (!isUseX509() && hasTrustedJwksUrl && isUseJwksUrl()) {
-            checkUrl(realm.getSslRequired(), getTrustedJwksUrl(), TRUSTED_JWKS_URL);
-        }
         if (isUseX509()) {
             if (!hasTrustedCertificates) {
                 throw new IllegalArgumentException("Trusted X.509 certificates are required when X.509 trust is enabled");
@@ -89,10 +74,25 @@ public class DefaultTrustIdentityProviderConfig extends IdentityProviderModel {
                     throw new IllegalArgumentException("At least one trusted X.509 certificate is required");
                 }
                 new X509TrustMaterial(new LinkedHashSet<>(Arrays.asList(certificates)),
-                        getAttestationExtendedKeyUsages(), isCertificateRevocationEnabled());
+                        getAttestationExtendedKeyUsages());
             } catch (RuntimeException e) {
                 throw new IllegalArgumentException(
                         "Trusted X.509 certificates must be a valid PEM bundle of self-signed CA roots", e);
+            }
+        } else {
+            if (hasTrustedCertificates) {
+                throw new IllegalArgumentException(
+                        "'Use X.509 attestation trust' must be enabled when trusted X.509 certificates are configured");
+            }
+            if (isUseJwksUrl()) {
+                if (!hasTrustedJwksUrl) {
+                    throw new IllegalArgumentException("JWKS URL is required when 'Use JWKS URL' is enabled");
+                }
+            } else if (!hasTrustedJwks) {
+                throw new IllegalArgumentException("Validating public key is required when 'Use JWKS URL' is disabled");
+            }
+            if (hasTrustedJwksUrl && isUseJwksUrl()) {
+                checkUrl(realm.getSslRequired(), getTrustedJwksUrl(), TRUSTED_JWKS_URL);
             }
         }
     }
@@ -157,10 +157,5 @@ public class DefaultTrustIdentityProviderConfig extends IdentityProviderModel {
                 .filter(value -> !value.isEmpty())
                 .distinct()
                 .toList();
-    }
-
-    public boolean isCertificateRevocationEnabled() {
-        String configured = getConfig().get(CERTIFICATE_REVOCATION_ENABLED);
-        return configured == null || !Boolean.FALSE.toString().equalsIgnoreCase(configured.trim());
     }
 }

@@ -68,7 +68,9 @@ final class AttestationX509CertificateValidator {
             PKIXBuilderParameters parameters = new PKIXBuilderParameters(trustAnchors, selector);
             parameters.addCertStore(CryptoIntegration.getProvider().getCertStore(
                     new CollectionCertStoreParameters(certificateChain)));
-            parameters.setRevocationEnabled(trustMaterial.revocationEnabled());
+            // PKIX enables its provider-specific revocation mechanism by default. Attestation certificate
+            // revocation is not supported yet, so disable it explicitly until a configurable mechanism is available.
+            parameters.setRevocationEnabled(false);
 
             CryptoIntegration.getProvider().getCertPathBuilder().build(parameters);
             return X5cKeyUtils.toJwk(leaf, algorithm, certificateChain);

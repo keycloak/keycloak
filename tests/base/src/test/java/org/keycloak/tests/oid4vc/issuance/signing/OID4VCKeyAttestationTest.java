@@ -28,6 +28,7 @@ import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.common.util.Time;
 import org.keycloak.config.TruststoreOptions;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyType;
@@ -367,8 +368,9 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         });
     }
 
-    @Test
-    public void testAttestationWithX5cCertificateChain() {
+    @ParameterizedTest(name = "{0} proof")
+    @ValueSource(strings = { ATTESTATION, JWT })
+    public void testX5cKeyAttestationWithCertificateChain(String proofType) {
         String cNonce = getCNonce();
         String caCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.caCertificatePem();
         String leafCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.leafCertificatePem();
@@ -376,12 +378,13 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         runOnServer.run(session -> {
             setupSessionContext(session);
             runAttestationWithX5cCertificateChain(session, cNonce, caCertificatePem, leafCertificatePem,
-                    leafPrivateKeyPem, false, TEST_ATTESTATION_EKU, true);
+                    leafPrivateKeyPem, proofType, true, TEST_ATTESTATION_EKU, true);
         });
     }
 
-    @Test
-    public void testAttestationWithX5cCertificateChainInSystemTruststoreIsRejected() {
+    @ParameterizedTest(name = "{0} proof")
+    @ValueSource(strings = { ATTESTATION, JWT })
+    public void testX5cKeyAttestationWithCertificateChainInSystemTruststoreIsRejected(String proofType) {
         String cNonce = getCNonce();
         String caCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.caCertificatePem();
         String leafCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.leafCertificatePem();
@@ -389,12 +392,13 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         runOnServer.run(session -> {
             setupSessionContext(session);
             runAttestationWithX5cCertificateChain(session, cNonce, caCertificatePem, leafCertificatePem,
-                    leafPrivateKeyPem, null, TEST_ATTESTATION_EKU, false);
+                    leafPrivateKeyPem, proofType, false, TEST_ATTESTATION_EKU, false);
         });
     }
 
-    @Test
-    public void testAttestationWithUnavailableRevocationInformationIsRejected() {
+    @ParameterizedTest(name = "{0} proof")
+    @ValueSource(strings = { ATTESTATION, JWT })
+    public void testX5cKeyAttestationWithDisallowedExtendedKeyUsageIsRejected(String proofType) {
         String cNonce = getCNonce();
         String caCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.caCertificatePem();
         String leafCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.leafCertificatePem();
@@ -402,20 +406,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         runOnServer.run(session -> {
             setupSessionContext(session);
             runAttestationWithX5cCertificateChain(session, cNonce, caCertificatePem, leafCertificatePem,
-                    leafPrivateKeyPem, true, TEST_ATTESTATION_EKU, false);
-        });
-    }
-
-    @Test
-    public void testAttestationWithDisallowedExtendedKeyUsageIsRejected() {
-        String cNonce = getCNonce();
-        String caCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.caCertificatePem();
-        String leafCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.leafCertificatePem();
-        String leafPrivateKeyPem = X5C_TEST_CERTIFICATE_CHAIN.leafPrivateKeyPem();
-        runOnServer.run(session -> {
-            setupSessionContext(session);
-            runAttestationWithX5cCertificateChain(session, cNonce, caCertificatePem, leafCertificatePem,
-                    leafPrivateKeyPem, false, DISALLOWED_ATTESTATION_EKU, false);
+                    leafPrivateKeyPem, proofType, true, DISALLOWED_ATTESTATION_EKU, false);
         });
     }
 
@@ -428,7 +419,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         runOnServer.run(session -> {
             setupSessionContext(session);
             runAttestationWithX5cCertificateChain(session, cNonce, caCertificatePem, leafCertificatePem,
-                    leafPrivateKeyPem, false, TEST_ATTESTATION_EKU, false);
+                    leafPrivateKeyPem, ATTESTATION, true, TEST_ATTESTATION_EKU, false);
         });
     }
 
@@ -441,7 +432,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         runOnServer.run(session -> {
             setupSessionContext(session);
             runAttestationWithX5cCertificateChain(session, cNonce, caCertificatePem, leafCertificatePem,
-                    leafPrivateKeyPem, false, TEST_ATTESTATION_EKU, false);
+                    leafPrivateKeyPem, ATTESTATION, true, TEST_ATTESTATION_EKU, false);
         });
     }
 
@@ -452,9 +443,9 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
                 X5C_TEST_CERTIFICATE_CHAIN.caSignerCertificatePem());
 
         assertThrows(IllegalArgumentException.class,
-                () -> new X509TrustMaterial(Set.of(leafCertificate), List.of(TEST_ATTESTATION_EKU), false));
+                () -> new X509TrustMaterial(Set.of(leafCertificate), List.of(TEST_ATTESTATION_EKU)));
         assertThrows(IllegalArgumentException.class,
-                () -> new X509TrustMaterial(Set.of(intermediateCertificate), List.of(TEST_ATTESTATION_EKU), false));
+                () -> new X509TrustMaterial(Set.of(intermediateCertificate), List.of(TEST_ATTESTATION_EKU)));
     }
 
     @Test
@@ -466,8 +457,8 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
                 X5C_TEST_CERTIFICATE_CHAIN.unrelatedCaCertificatePem());
 
         AttestationKeyResolver keyResolver = new StaticAttestationKeyResolver(Map.of(), List.of(
-                new X509TrustMaterial(Set.of(matchingTrustAnchor), List.of(DISALLOWED_ATTESTATION_EKU), false),
-                new X509TrustMaterial(Set.of(unrelatedTrustAnchor), List.of(TEST_ATTESTATION_EKU), false)));
+                new X509TrustMaterial(Set.of(matchingTrustAnchor), List.of(DISALLOWED_ATTESTATION_EKU)),
+                new X509TrustMaterial(Set.of(unrelatedTrustAnchor), List.of(TEST_ATTESTATION_EKU))));
         List<String> x5c = List.of(java.util.Base64.getEncoder().encodeToString(leafCertificate.getEncoded()));
 
         assertThrows(VCIssuerException.class,
@@ -490,23 +481,6 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
                     () -> config.validate(session.getContext().getRealm()));
             assertTrue(error.getMessage().contains("must be enabled"));
         });
-    }
-
-    @Test
-    public void testCertificateRevocationCanOnlyBeExplicitlyDisabled() {
-        DefaultTrustIdentityProviderConfig config = new DefaultTrustIdentityProviderConfig();
-        config.setConfig(new HashMap<>());
-
-        assertTrue(config.isCertificateRevocationEnabled());
-
-        config.getConfig().put(DefaultTrustIdentityProviderConfig.CERTIFICATE_REVOCATION_ENABLED, "false");
-        assertFalse(config.isCertificateRevocationEnabled());
-
-        config.getConfig().put(DefaultTrustIdentityProviderConfig.CERTIFICATE_REVOCATION_ENABLED, " FALSE ");
-        assertFalse(config.isCertificateRevocationEnabled());
-
-        config.getConfig().put(DefaultTrustIdentityProviderConfig.CERTIFICATE_REVOCATION_ENABLED, "invalid");
-        assertTrue(config.isCertificateRevocationEnabled());
     }
 
     @Test
@@ -1316,7 +1290,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
             VCIssuanceContext vcIssuanceContext = createVCIssuanceContext(session);
             X509Certificate trustAnchor = PemUtils.decodeCertificate(caCertificatePem);
             AttestationKeyResolver keyResolver = new StaticAttestationKeyResolver(Map.of(),
-                    List.of(new X509TrustMaterial(Set.of(trustAnchor), List.of(TEST_ATTESTATION_EKU), false)));
+                    List.of(new X509TrustMaterial(Set.of(trustAnchor), List.of(TEST_ATTESTATION_EKU))));
             AttestationProofValidator validator = new AttestationProofValidator(session, keyResolver);
             vcIssuanceContext.getCredentialRequest().setProofs(new Proofs().setAttestation(List.of(attestationJwt)));
             assertThrows(VCIssuerException.class, () -> validator.validateProof(vcIssuanceContext),
@@ -1328,21 +1302,20 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
 
     private static void runAttestationWithX5cCertificateChain(KeycloakSession session, String cNonce,
                                                               String caCertificatePem, String leafCertificatePem, String leafPrivateKeyPem,
-                                                              Boolean revocationEnabled, String allowedExtendedKeyUsage, boolean expectSuccess) {
+                                                              String proofType, boolean configureTrustProvider,
+                                                              String allowedExtendedKeyUsage, boolean expectSuccess) {
         try {
             X509Certificate caCert = PemUtils.decodeCertificate(caCertificatePem);
             X509Certificate leafCert = PemUtils.decodeCertificate(leafCertificatePem);
 
-            if (revocationEnabled != null) {
+            if (configureTrustProvider) {
                 configureTrustIdentityProvider(session.getContext().getRealm(), OID4VCI_ATTESTER_DEFAULT_TRUST_IDP_ALIAS,
                         DefaultTrustIdentityProviderFactory.PROVIDER_ID,
                         Map.of(
                                 DefaultTrustIdentityProviderConfig.USE_X509, "true",
                                 DefaultTrustIdentityProviderConfig.TRUSTED_CERTIFICATES, caCertificatePem,
                                 DefaultTrustIdentityProviderConfig.ATTESTATION_EXTENDED_KEY_USAGES,
-                                allowedExtendedKeyUsage,
-                                DefaultTrustIdentityProviderConfig.CERTIFICATE_REVOCATION_ENABLED,
-                                revocationEnabled.toString()));
+                                allowedExtendedKeyUsage));
             }
 
             KeyWrapper signerKey = new KeyWrapper();
@@ -1359,7 +1332,9 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
 
             KeyAttestationJwtBody payload = new KeyAttestationJwtBody();
             payload.setNonce(cNonce);
-            payload.setIat((long) TIME_PROVIDER.currentTimeSeconds());
+            long iat = Time.currentTime();
+            payload.setIat(iat);
+            payload.setExp(iat + 3600);
             payload.setAttestedKeys(List.of(proofJwk));
             payload.setKeyStorage(List.of(KeyAttestationResistanceLevels.HIGH));
             payload.setUserAuthentication(List.of(KeyAttestationResistanceLevels.HIGH));
@@ -1371,17 +1346,16 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
                     .sign(new ECDSASignatureSignerContext(signerKey));
 
             VCIssuanceContext vcIssuanceContext = createVCIssuanceContext(session);
-            vcIssuanceContext.getCredentialRequest().setProofs(new Proofs().setAttestation(List.of(attestationJwt)));
-
-            AttestationProofValidator validator = new AttestationProofValidator(session,
-                    new TrustedAttestationKeyResolver(session));
             if (!expectSuccess) {
-                assertThrows(VCIssuerException.class, () -> validator.validateProof(vcIssuanceContext),
+                assertThrows(VCIssuerException.class,
+                        () -> validateX5cKeyAttestation(session, vcIssuanceContext, proofKey, attestationJwt,
+                                cNonce, proofType),
                         "Attestation certificate policy must fail closed");
                 return;
             }
 
-            List<JWK> attestedKeys = validator.validateProof(vcIssuanceContext);
+            List<JWK> attestedKeys = validateX5cKeyAttestation(session, vcIssuanceContext, proofKey,
+                    attestationJwt, cNonce, proofType);
             assertNotNull(attestedKeys, "Attested keys should not be null");
             assertEquals(1, attestedKeys.size(), "Should contain exactly one attested key");
             assertEquals(proofKey.getKid(), attestedKeys.get(0).getKeyId(),
@@ -1389,6 +1363,23 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         } catch (Exception e) {
             throw new RuntimeException("x5c key attestation trusted chain test failed", e);
         }
+    }
+
+    private static List<JWK> validateX5cKeyAttestation(KeycloakSession session,
+                                                       VCIssuanceContext vcIssuanceContext,
+                                                       KeyWrapper proofKey, String attestationJwt,
+                                                       String cNonce, String proofType) {
+        AttestationKeyResolver keyResolver = new TrustedAttestationKeyResolver(session);
+        if (JWT.equals(proofType)) {
+            String jwtProof = generateJwtProofWithKeyAttestation(session, proofKey, attestationJwt, cNonce);
+            vcIssuanceContext.getCredentialRequest().setProofs(new Proofs().setJwt(List.of(jwtProof)));
+            return new JwtProofValidator(session, keyResolver).validateProof(vcIssuanceContext);
+        }
+        if (ATTESTATION.equals(proofType)) {
+            vcIssuanceContext.getCredentialRequest().setProofs(new Proofs().setAttestation(List.of(attestationJwt)));
+            return new AttestationProofValidator(session, keyResolver).validateProof(vcIssuanceContext);
+        }
+        throw new IllegalArgumentException("Unsupported proof type: " + proofType);
     }
 
     private static void runAttestationWithInvalidResistanceLevels(KeycloakSession session, String cNonce) throws VCIssuerException {

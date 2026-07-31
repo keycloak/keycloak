@@ -26,11 +26,9 @@ import java.util.Set;
  *
  * @param trustAnchors             self-signed CA roots for one trust domain
  * @param allowedExtendedKeyUsages extended-key-usage OIDs accepted for end-entity certificates
- * @param revocationEnabled        whether PKIX revocation checking is required
  */
 public record X509TrustMaterial(Set<X509Certificate> trustAnchors,
-                                List<String> allowedExtendedKeyUsages,
-                                boolean revocationEnabled) {
+                                List<String> allowedExtendedKeyUsages) {
 
     public X509TrustMaterial {
         trustAnchors = Set.copyOf(trustAnchors);

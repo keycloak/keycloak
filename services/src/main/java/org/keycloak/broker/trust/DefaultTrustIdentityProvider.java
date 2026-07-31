@@ -79,8 +79,7 @@ public class DefaultTrustIdentityProvider implements TrustMaterialIdentityProvid
         X509Certificate[] certificates = PemUtils.decodeCertificates(config.getTrustedCertificates());
         return Stream.of(new X509TrustMaterial(
                 new LinkedHashSet<>(Arrays.asList(certificates)),
-                config.getAttestationExtendedKeyUsages(),
-                config.isCertificateRevocationEnabled()));
+                config.getAttestationExtendedKeyUsages()));
     }
 
     @Override
