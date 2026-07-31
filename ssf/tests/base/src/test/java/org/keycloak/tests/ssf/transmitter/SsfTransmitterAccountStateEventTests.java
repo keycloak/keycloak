@@ -106,7 +106,7 @@ public class SsfTransmitterAccountStateEventTests {
     private String testUserId;
 
     @BeforeEach
-    public void setup() throws IOException, InterruptedException {
+    public void setup() throws IOException {
         pushes.clear();
 
         mockReceiverServer.createContext(PUSH_CONTEXT_PATH, new HttpHandler() {
@@ -129,26 +129,6 @@ public class SsfTransmitterAccountStateEventTests {
         setEmitOnlyEvents();
 
         createPushStream(Set.of(RiscAccountDisabled.TYPE, RiscAccountEnabled.TYPE));
-
-        // Observed in CI: the very first admin-event-triggered SSF lookup
-        // (StreamService.findStreamsForSsfReceiverClients, via the admin-event
-        // path) against a freshly started per-class test server can transiently
-        // see no streams — likely a client-attribute-search cache/index warm-up
-        // race, since every subsequent call in the same server instance (i.e.
-        // every other test in this class) succeeds reliably. Prime that path
-        // once here with a throwaway disable/re-enable cycle so the real
-        // per-test assertions below are never the first caller.
-        //
-        // Delivery is asynchronous (outbox drainer), so the warm-up's own
-        // pushes don't land immediately — actually wait for each one (or
-        // its absence) instead of clearing the queue right away, otherwise
-        // they arrive late and get consumed by the next real assertion
-        // instead of pushes.clear() below.
-        setUserEnabled(false);
-        pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS);
-        setUserEnabled(true);
-        pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS);
-        pushes.clear();
     }
 
     @AfterEach
@@ -232,11 +212,21 @@ public class SsfTransmitterAccountStateEventTests {
         userResource.update(rep);
     }
 
+    /**
+     * Sets (or, with no arguments, clears) the receiver's
+     * {@code ssf.emitOnlyEvents} attribute.
+     *
+     * <p>Clearing writes an empty string rather than {@code null}: a
+     * null-valued attribute in the update representation is skipped rather
+     * than removed, so the previous value would survive and keep suppressing
+     * auto-emit in every subsequent test. {@code ClientStreamStore} treats
+     * blank the same as absent, so an empty string reliably means "no
+     * emit-only events".
+     */
     protected void setEmitOnlyEvents(String... eventTypes) {
         ClientResource clientResource = realm.admin().clients().get(findClientByClientId(RECEIVER).getId());
         ClientRepresentation rep = clientResource.toRepresentation();
-        rep.getAttributes().put(ClientStreamStore.SSF_EMIT_ONLY_EVENTS_KEY,
-                eventTypes.length == 0 ? null : String.join(",", eventTypes));
+        rep.getAttributes().put(ClientStreamStore.SSF_EMIT_ONLY_EVENTS_KEY, String.join(",", eventTypes));
         clientResource.update(rep);
     }
 
