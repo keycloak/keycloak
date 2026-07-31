@@ -106,7 +106,7 @@ public class SsfTransmitterAccountStateEventTests {
     private String testUserId;
 
     @BeforeEach
-    public void setup() throws IOException {
+    public void setup() throws IOException, InterruptedException {
         pushes.clear();
 
         mockReceiverServer.createContext(PUSH_CONTEXT_PATH, new HttpHandler() {
@@ -138,8 +138,16 @@ public class SsfTransmitterAccountStateEventTests {
         // every other test in this class) succeeds reliably. Prime that path
         // once here with a throwaway disable/re-enable cycle so the real
         // per-test assertions below are never the first caller.
+        //
+        // Delivery is asynchronous (outbox drainer), so the warm-up's own
+        // pushes don't land immediately — actually wait for each one (or
+        // its absence) instead of clearing the queue right away, otherwise
+        // they arrive late and get consumed by the next real assertion
+        // instead of pushes.clear() below.
         setUserEnabled(false);
+        pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS);
         setUserEnabled(true);
+        pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS);
         pushes.clear();
     }
 
