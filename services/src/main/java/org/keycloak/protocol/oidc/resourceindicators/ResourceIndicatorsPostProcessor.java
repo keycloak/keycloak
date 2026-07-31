@@ -63,7 +63,9 @@ public class ResourceIndicatorsPostProcessor implements TokenPostProcessor {
             throw new TokenInterceptorException(OAuthErrorException.INVALID_TARGET, ResourceIndicatorConstants.ERROR_INVALID_RESOURCE);
         }
 
-        context.refreshToken().getOtherClaims().put(OAuth2Constants.RESOURCE, requestedResource);
+        if (context.refreshToken() != null) {
+            context.refreshToken().getOtherClaims().put(OAuth2Constants.RESOURCE, requestedResource);
+        }
         context.accessToken().audience(audienceToSet);
     }
 
