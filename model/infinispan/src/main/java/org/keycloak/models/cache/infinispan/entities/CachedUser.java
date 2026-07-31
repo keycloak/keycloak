@@ -34,6 +34,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
 import org.keycloak.models.cache.infinispan.LazyLoader;
+import org.keycloak.models.utils.StorageUnavailableUserModelDelegate;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -71,11 +72,15 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
         this.eagerLoadedAttributes.putSingle(UserModel.FIRST_NAME,user.getFirstName());
         this.eagerLoadedAttributes.putSingle(UserModel.LAST_NAME,user.getLastName());
         this.eagerLoadedAttributes.putSingle(UserModel.EMAIL,user.getEmail());
-        this.lazyLoadedAttributes = new DefaultLazyLoader<>(userModel -> new MultivaluedHashMap<>(userModel.getAttributes()), MultivaluedHashMap::new);
-        this.requiredActions = new DefaultLazyLoader<>(userModel -> userModel.getRequiredActionsStream().collect(Collectors.toSet()), Collections::emptySet);
-        this.roleMappings = new DefaultLazyLoader<>(userModel -> userModel.getRoleMappingsStream().map(RoleModel::getId).collect(Collectors.toSet()), Collections::emptySet);
-        this.groups = new DefaultLazyLoader<>(userModel -> userModel.getGroupsStream().map(GroupModel::getId).collect(Collectors.toCollection(LinkedHashSet::new)), LinkedHashSet::new);
-        this.storedCredentials = new DefaultLazyLoader<>(userModel -> userModel.credentialManager().getStoredCredentialsStream().collect(Collectors.toCollection(LinkedList::new)), LinkedList::new);
+        this.lazyLoadedAttributes = new DefaultLazyLoader<>(userModel -> new MultivaluedHashMap<>(userModel.getAttributes()), MultivaluedHashMap::new, CachedUser::isStorageAvailable);
+        this.requiredActions = new DefaultLazyLoader<>(userModel -> userModel.getRequiredActionsStream().collect(Collectors.toSet()), Collections::emptySet, CachedUser::isStorageAvailable);
+        this.roleMappings = new DefaultLazyLoader<>(userModel -> userModel.getRoleMappingsStream().map(RoleModel::getId).collect(Collectors.toSet()), Collections::emptySet, CachedUser::isStorageAvailable);
+        this.groups = new DefaultLazyLoader<>(userModel -> userModel.getGroupsStream().map(GroupModel::getId).collect(Collectors.toCollection(LinkedHashSet::new)), LinkedHashSet::new, CachedUser::isStorageAvailable);
+        this.storedCredentials = new DefaultLazyLoader<>(userModel -> userModel.credentialManager().getStoredCredentialsStream().collect(Collectors.toCollection(LinkedList::new)), LinkedList::new, CachedUser::isStorageAvailable);
+    }
+
+    private static boolean isStorageAvailable(UserModel userModel) {
+        return !(userModel instanceof StorageUnavailableUserModelDelegate);
     }
 
     public String getRealm() {

@@ -17,6 +17,7 @@
 package org.keycloak.models.cache.infinispan;
 
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import org.keycloak.models.KeycloakSession;
@@ -34,11 +35,17 @@ public class DefaultLazyLoader<S, D> implements LazyLoader<S, D> {
 
     private final Function<S, D> loader;
     private final Supplier<D> fallback;
+    private final Predicate<S> cacheable;
     private volatile D data;
 
     public DefaultLazyLoader(Function<S, D> loader, Supplier<D> fallback) {
+        this(loader, fallback, source -> true);
+    }
+
+    public DefaultLazyLoader(Function<S, D> loader, Supplier<D> fallback, Predicate<S> cacheable) {
         this.loader = loader;
         this.fallback = fallback;
+        this.cacheable = cacheable;
     }
 
     @Override
@@ -46,10 +53,14 @@ public class DefaultLazyLoader<S, D> implements LazyLoader<S, D> {
         if (data == null) {
             synchronized (this) {
                 if (data == null) {
-                    runWithoutAuthorization(session, () -> {
+                    return runWithoutAuthorization(session, () -> {
                         // make sure caching does not include partial results when FGAP is enabled
                         S source = sourceSupplier.get();
-                        data = source == null ? fallback.get() : loader.apply(source);
+                        D loaded = source == null ? fallback.get() : loader.apply(source);
+                        if (source == null || cacheable.test(source)) {
+                            data = loaded;
+                        }
+                        return loaded;
                     });
                 }
             }
