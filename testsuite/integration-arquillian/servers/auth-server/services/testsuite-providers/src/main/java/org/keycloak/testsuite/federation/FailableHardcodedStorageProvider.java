@@ -50,6 +50,7 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     public static String email = "billb@nowhere.com";
     public static String first = "Bill";
     public static String last = "Burke";
+    public static String groupName;
     public static MultivaluedHashMap<String, String> attributes = new MultivaluedHashMap<>();
 
     public static boolean fail;
@@ -121,8 +122,13 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     }
 
     private static class Delegate extends UserModelDelegate {
-        public Delegate(UserModel delegate) {
+        private final KeycloakSession session;
+        private final RealmModel realm;
+
+        public Delegate(UserModel delegate, KeycloakSession session, RealmModel realm) {
             super(delegate);
+            this.session = session;
+            this.realm = realm;
         }
 
         @Override
@@ -166,6 +172,16 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
             super.setEmail(em);
             email = em;
         }
+
+        @Override
+        public Stream<GroupModel> getGroupsStream() {
+            if (groupName == null) {
+                return super.getGroupsStream();
+            }
+
+            GroupModel group = session.groups().getGroupByName(realm, null, groupName);
+            return group == null ? Stream.empty() : Stream.of(group);
+        }
     }
 
     @Override
@@ -174,7 +190,7 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
         if (failOnValidation) {
             throw new RuntimeException("Forcing validation failure");
         }
-        return new Delegate(user);
+        return new Delegate(user, session, realm);
     }
 
     @Override
@@ -191,7 +207,7 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
         if (local != null && !model.getId().equals(local.getFederationLink())) {
             throw new RuntimeException("local storage has wrong federation link");
         }
-        if (local != null) return new Delegate(local);
+        if (local != null) return new Delegate(local, session, realm);
         local = UserStoragePrivateUtil.userLocalStorage(session).addUser(realm, uname);
         local.setEnabled(true);
         local.setFirstName(first);
@@ -203,7 +219,7 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
             if (values == null) continue;
             local.setAttribute(entry.getKey(), values);
         }
-        return new Delegate(local);
+        return new Delegate(local, session, realm);
     }
 
     @Override
