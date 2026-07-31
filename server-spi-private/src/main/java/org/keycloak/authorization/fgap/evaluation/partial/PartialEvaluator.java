@@ -137,7 +137,7 @@ public final class PartialEvaluator {
         return cache.get(adminUser.getId()).get(resourceType.getType());
     }
 
-    private List<Predicate> buildPredicates(PartialEvaluationContext context) {
+    List<Predicate> buildPredicates(PartialEvaluationContext context) {
         List<Predicate> storageFilters = getStorageFilters(context);
         CriteriaBuilder builder = context.getCriteriaBuilder();
         Path<?> path = context.getPath();
@@ -159,7 +159,9 @@ public final class PartialEvaluator {
 
         if (!deniedIds.isEmpty()) {
             // add filters to remove denied resources from the result set
-            predicates.add(builder.not(path.get(ID_FIELD).in(deniedIds)));
+            CriteriaBuilder.In<String> deniedResources = builder.in(path.get(ID_FIELD));
+            deniedIds.forEach(id -> deniedResources.value(builder.literal(id)));
+            predicates.add(builder.not(deniedResources));
         }
 
         List<Predicate> storageNegateFilters = getStorageNegateFilters(context);
