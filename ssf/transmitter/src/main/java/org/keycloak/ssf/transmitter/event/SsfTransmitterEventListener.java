@@ -298,11 +298,14 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
     public void onEvent(AdminEvent adminEvent, boolean includeRepresentation) {
 
         if (shouldIgnoreEvent(adminEvent)) {
+            log.warnf("SSF-DIAG onEvent: shouldIgnoreEvent=true, dropping admin event id=%s realmId=%s resourcePath=%s",
+                    adminEvent.getId(), adminEvent.getRealmId(), adminEvent.getResourcePath());
             return;
         }
 
         SsfTransmitterProvider transmitter = session.getProvider(SsfTransmitterProvider.class);
         if (transmitter == null) {
+            log.warnf("SSF-DIAG onEvent: transmitter provider is null, dropping admin event id=%s", adminEvent.getId());
             return;
         }
 
@@ -314,12 +317,17 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
         // triggered a stream lookup that the mapper would then ignore.
         // The canConvert predicate also handles the ResourceType=USER guard
         // the old code had inline.
-        if (!transmitter.securityEventTokenMapper().canConvert(adminEvent)) {
+        boolean canConvert = transmitter.securityEventTokenMapper().canConvert(adminEvent);
+        log.warnf("SSF-DIAG onEvent: canConvert=%s id=%s operationType=%s resourceType=%s resourcePath=%s details=%s",
+                canConvert, adminEvent.getId(), adminEvent.getOperationType(), adminEvent.getResourceType(),
+                adminEvent.getResourcePath(), adminEvent.getDetails());
+        if (!canConvert) {
             return;
         }
 
         var streamTokens = generateSecurityEventTokensForAdminEvent(adminEvent, transmitter);
         if (streamTokens == null || streamTokens.isEmpty()) {
+            log.warnf("SSF-DIAG onEvent: no streamTokens produced for admin event id=%s", adminEvent.getId());
             return;
         }
         dispatchSecurityEventTokens(streamTokens, transmitter);
@@ -343,6 +351,8 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
     protected List<Map.Entry<SsfSecurityEventToken, StreamConfig>> generateSecurityEventTokensForAdminEvent(AdminEvent adminEvent, SsfTransmitterProvider transmitter) {
 
         if (adminEvent.getResourceType() != ResourceType.USER) {
+            log.warnf("SSF-DIAG generateSecurityEventTokensForAdminEvent: resourceType=%s != USER, dropping id=%s",
+                    adminEvent.getResourceType(), adminEvent.getId());
             return List.of();
         }
 
@@ -354,8 +364,13 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
         }
 
         RealmModel realm = session.realms().getRealm(adminEvent.getRealmId());
-        UserModel eventUser = session.users().getUserById(realm, SsfUtil.userIdFromAdminEventPath(adminEvent));
+        String eventUserId = SsfUtil.userIdFromAdminEventPath(adminEvent);
+        UserModel eventUser = session.users().getUserById(realm, eventUserId);
         if (eventUser == null) {
+            log.warnf("SSF-DIAG generateSecurityEventTokensForAdminEvent: eventUser not found. id=%s realm=%s(%s) "
+                            + "parsedUserId=%s resourcePath=%s",
+                    adminEvent.getId(), realm != null ? realm.getName() : null, adminEvent.getRealmId(),
+                    eventUserId, adminEvent.getResourcePath());
             return List.of();
         }
 
@@ -367,6 +382,9 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
                 // Avoids building a token for a stream the dispatcher
                 // would just filter out, and keeps logs honest for the
                 // multi-receiver case where only some streams deliver.
+                log.warnf("SSF-DIAG generateSecurityEventTokensForAdminEvent: shouldDispatchForUser=false. id=%s "
+                                + "userId=%s streamId=%s clientId=%s",
+                        adminEvent.getId(), eventUserId, stream.getStreamId(), stream.getClientClientId());
                 continue;
             }
 
