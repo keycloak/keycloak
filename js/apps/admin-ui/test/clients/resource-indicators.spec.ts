@@ -7,7 +7,8 @@ import { assertNotificationMessage } from "../utils/masthead.ts";
 import { save } from "./utils.ts";
 
 // The integration server is always started with the `resource-indicators`
-// feature (see js/apps/keycloak-server/scripts/start-server.js, #47121), so
+// feature (locally via js/apps/keycloak-server/scripts/start-server.js and in
+// CI via the `--features` list in .github/workflows/js-ci.yml, #47121), so
 // these tests assert the switch renders and fail loudly if it is absent,
 // rather than skipping.
 test.describe.serial("Client resource indicators", () => {
