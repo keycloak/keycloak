@@ -1,4 +1,5 @@
 import type { Page } from "@playwright/test";
+import { expect } from "@playwright/test";
 import {
   selectItem,
   assertSelectValue,
@@ -40,4 +41,12 @@ export async function getJwtAuthorizationGrantIdpOptions(
   const options = page.getByRole("option");
   await options.first().waitFor({ state: "visible" });
   return await options.allTextContents();
+}
+
+export async function setResourceUrl(page: Page, value: string) {
+  await page.getByTestId("attributes.resource_url").fill(value);
+}
+
+export async function assertResourceUrl(page: Page, value: string) {
+  await expect(page.getByTestId("attributes.resource_url")).toHaveValue(value);
 }
