@@ -14,6 +14,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.api.ListOptions;
+import org.keycloak.admin.api.TypedResponse;
 import org.keycloak.common.constants.KeycloakOpenAPI;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 
@@ -53,6 +54,10 @@ public interface ClientsApi {
             @APIResponse(responseCode = "201", description = "Created", content = @Content(schema = @Schema(implementation = BaseClientRepresentation.class)))
     })
     Response createClient(@Valid BaseClientRepresentation client);
+
+    default TypedResponse<BaseClientRepresentation> create(BaseClientRepresentation client) {
+        return new TypedResponse<>(createClient(client), BaseClientRepresentation.class);
+    }
 
     @Path("{id}")
     ClientApi client(@PathParam("id") String id);

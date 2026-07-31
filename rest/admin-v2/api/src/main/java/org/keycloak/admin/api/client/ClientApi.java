@@ -12,6 +12,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.api.PatchTypeNames;
+import org.keycloak.admin.api.TypedResponse;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -42,6 +43,10 @@ public interface ClientApi {
         @APIResponse(responseCode = "201", description = "Created", content = @Content(schema = @Schema(implementation = BaseClientRepresentation.class)))
     })
     Response createOrUpdateClient(BaseClientRepresentation client);
+
+    default TypedResponse<BaseClientRepresentation> createOrUpdate(BaseClientRepresentation client) {
+        return new TypedResponse<>(createOrUpdateClient(client), BaseClientRepresentation.class);
+    }
 
     @PATCH
     @Consumes(PatchTypeNames.JSON_MERGE)
