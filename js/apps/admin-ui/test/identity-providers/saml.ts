@@ -11,15 +11,18 @@ import {
 } from "./main.ts";
 
 export async function editSAMLSettings(page: Page, samlProviderName: string) {
+  const providerSwitch = page.getByTestId(`${samlProviderName}-switch`);
+
   // Toggle provider state
-  await switchOff(page, "#-switch");
+  await switchOff(page, providerSwitch);
   await confirmModal(page);
   await assertNotificationMessage(page, "Provider successfully updated");
   await goToIdentityProviders(page);
   await expect(page.getByText("Disabled")).toBeVisible();
 
   await clickTableRowItem(page, samlProviderName);
-  await switchOn(page, "#-switch");
+  await switchOn(page, providerSwitch);
+  await assertNotificationMessage(page, "Provider successfully updated");
 
   // Verify and configure settings
   await setUrl(page, "singleSignOnService", "invalid");
