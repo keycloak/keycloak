@@ -785,6 +785,10 @@ public class UserSessionLimitsTest {
         RealmRepresentation realmClient = managedRealm.admin().toRepresentation();
         boolean originalBruteForceEnabled = Boolean.TRUE.equals(realmClient.isBruteForceProtected());
         Integer orginalFailureFactor = realmClient.getFailureFactor();
+        Integer originalMaxDeltaTimeSeconds = realmClient.getMaxDeltaTimeSeconds();
+        Integer originalMaxFailureWaitSeconds = realmClient.getMaxFailureWaitSeconds();
+        Integer originalWaitIncrementSeconds = realmClient.getWaitIncrementSeconds();
+        Long originalQuickLoginCheckMilliSeconds = realmClient.getQuickLoginCheckMilliSeconds();
 
         realmClient.setBruteForceProtected(true);
         realmClient.setFailureFactor(BRUTE_FORCE_FAILURE_FACTOR);
@@ -875,6 +879,10 @@ public class UserSessionLimitsTest {
             managedRealm.admin().attackDetection().clearAllBruteForce();
             realmClient.setBruteForceProtected(originalBruteForceEnabled);
             realmClient.setFailureFactor(orginalFailureFactor);
+            realmClient.setMaxDeltaTimeSeconds(originalMaxDeltaTimeSeconds);
+            realmClient.setMaxFailureWaitSeconds(originalMaxFailureWaitSeconds);
+            realmClient.setWaitIncrementSeconds(originalWaitIncrementSeconds);
+            realmClient.setQuickLoginCheckMilliSeconds(originalQuickLoginCheckMilliSeconds);
             managedRealm.admin().update(realmClient);
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW,
                     UserSessionLimitsAuthenticatorFactory.BEHAVIOR,
