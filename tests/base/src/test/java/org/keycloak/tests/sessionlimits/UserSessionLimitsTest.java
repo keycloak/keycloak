@@ -17,6 +17,7 @@
 package org.keycloak.tests.sessionlimits;
 
 import java.util.List;
+import java.util.Map;
 
 import jakarta.mail.internet.MimeMessage;
 
@@ -36,6 +37,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -64,6 +66,7 @@ import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.tests.utils.MailUtils;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.admin.client.resource.AttackDetectionResource;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
@@ -115,6 +118,7 @@ public class UserSessionLimitsTest {
     private static final String password = "password";
     private static final String directGrant1 = "direct-grant-1";
     private static final String directGrant2 = "direct-grant-2";
+    private static final int BRUTE_FORCE_FAILURE_FACTOR = 3;
 
     @BeforeEach
     public void setup() {
@@ -773,6 +777,101 @@ public class UserSessionLimitsTest {
     }
 
 
+    @Test
+    public void testSessionLimitDenialDoesNotTriggerBruteForceLockout() throws Exception {
+        RealmRepresentation realmClient = managedRealm.admin().toRepresentation();
+        boolean originalBruteForceEnabled = Boolean.TRUE.equals(realmClient.isBruteForceProtected());
+        Integer orginalFailureFactor = realmClient.getFailureFactor();
+
+        realmClient.setBruteForceProtected(true);
+        realmClient.setFailureFactor(BRUTE_FORCE_FAILURE_FACTOR);
+        realmClient.setMaxDeltaTimeSeconds(3600);
+        realmClient.setMaxFailureWaitSeconds(900);
+        realmClient.setWaitIncrementSeconds(60);
+        realmClient.setQuickLoginCheckMilliSeconds(1000L);
+
+        managedRealm.admin().update(realmClient);
+        managedRealm.admin().attackDetection().clearAllBruteForce();
+
+        String userId = managedRealm.admin().users().search(username).get(0).getId();
+
+        try{
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW,
+                    UserSessionLimitsAuthenticatorFactory.BEHAVIOR,
+                    UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW,
+                    UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT,
+                    "2");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW,
+                    UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT,
+                    "0");
+
+            managedRealm.admin().users().get(userId).logout();
+            runOnServer.run(assertSessionCount(realmName, username, 0));
+            events.clear();
+
+            oauth.openLoginForm();
+            loginPage.fillLogin(username, password);
+            loginPage.submit();
+            EventRepresentation loginEvent = events.poll();
+            EventAssertion.assertSuccess(loginEvent).type(EventType.LOGIN);
+
+            deleteAllCookiesForRealm(driver);
+
+            oauth.openLoginForm();
+            loginPage.fillLogin(username, password);
+            loginPage.submit();
+            loginEvent = events.poll();
+            EventAssertion.assertSuccess(loginEvent).type(EventType.LOGIN);
+
+            // verifying session count is 2
+            runOnServer.run(assertSessionCount(realmName, username, 2));
+
+            for(int i=0; i <= BRUTE_FORCE_FAILURE_FACTOR+3; i++){
+                deleteAllCookiesForRealm(driver);
+                oauth.openLoginForm();
+                loginPage.fillLogin(username, password);
+                loginPage.submit();
+                EventRepresentation errorEvent = events.poll();
+                EventAssertion.assertError(errorEvent)
+                        .type(EventType.LOGIN_ERROR)
+                        .userId(null)
+                        .error(Errors.GENERIC_AUTHENTICATION_ERROR);
+                errorPage.assertCurrent();
+                assertEquals(ERROR_TO_DISPLAY, errorPage.getError());
+            }
+
+            // Check If the user got locked out or not.
+            assertUserNotBruteForceLocked(userId);
+
+            // logout all session of test user
+            managedRealm.admin().users().get(userId).logout();
+            // Test login of the same user again
+            deleteAllCookiesForRealm(driver);
+            events.clear();
+
+            oauth.openLoginForm();
+            loginPage.fillLogin(username, password);
+            loginPage.submit();
+            loginEvent = events.poll();
+            EventAssertion.assertSuccess(loginEvent).type(EventType.LOGIN);
+        } finally {
+            managedRealm.admin().attackDetection().clearAllBruteForce();
+            realmClient.setBruteForceProtected(originalBruteForceEnabled);
+            realmClient.setFailureFactor(orginalFailureFactor);
+            managedRealm.admin().update(realmClient);
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW,
+                    UserSessionLimitsAuthenticatorFactory.BEHAVIOR,
+                    UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW,
+                    UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT,
+                    "0");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW,
+                    UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT,
+                    "1");
+        }
+    }
+
     private void restoreAndRemoveFlow(String realmName) {
         // Cleanup: restore original browser flow and remove custom flow
         String currentRealm = this.realmName;
@@ -803,6 +902,13 @@ public class UserSessionLimitsTest {
                 }
             }
         });
+    }
+
+    private void assertUserNotBruteForceLocked(String userId){
+        AttackDetectionResource detection = managedRealm.admin().attackDetection();
+        Map<String, Object> status = detection.bruteForceUserStatus(userId);
+        assertEquals(Boolean.FALSE, status.get("disabled"), "User should not be brute force locked out");
+        assertEquals(0, status.get("numFailures"), "No Failures should be recorded");
     }
 
     private void deleteAllCookiesForRealm(ManagedWebDriver driver) {
