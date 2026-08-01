@@ -51,6 +51,8 @@ public final class PartialEvaluator {
     private static final String NO_ID = "none";
     private static final String ID_FIELD = "id";
     private static final String PARTIAL_EVALUATION_CONTEXT_CACHE = "kc.authz.fgap.partial.evaluation.cache";
+    // Leave room for parameters added by the surrounding query before PostgreSQL's 65,535 parameter limit.
+    private static final int DENIED_RESOURCES_LITERAL_THRESHOLD = 32_000;
 
     public List<Predicate> getPredicates(KeycloakSession session, ResourceType resourceType, PartialEvaluationStorageProvider storage, RealmModel realm, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
         if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
@@ -159,8 +161,15 @@ public final class PartialEvaluator {
 
         if (!deniedIds.isEmpty()) {
             // add filters to remove denied resources from the result set
-            CriteriaBuilder.In<String> deniedResources = builder.in(path.get(ID_FIELD));
-            deniedIds.forEach(id -> deniedResources.value(builder.literal(id)));
+            Predicate deniedResources;
+            if (deniedIds.size() >= DENIED_RESOURCES_LITERAL_THRESHOLD) {
+                CriteriaBuilder.In<String> deniedResourceLiterals = builder.in(path.get(ID_FIELD));
+                deniedIds.forEach(id -> deniedResourceLiterals.value(builder.literal(id)));
+                deniedResources = deniedResourceLiterals;
+            } else {
+                deniedResources = path.get(ID_FIELD).in(deniedIds);
+            }
+
             predicates.add(builder.not(deniedResources));
         }
 
