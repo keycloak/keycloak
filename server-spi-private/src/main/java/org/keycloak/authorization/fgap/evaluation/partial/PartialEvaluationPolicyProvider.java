@@ -33,6 +33,24 @@ import org.keycloak.representations.idm.authorization.ResourceType;
  */
 public interface PartialEvaluationPolicyProvider {
 
+    enum Outcome {
+
+        /**
+         * The evaluation resulted in a GRANT
+         */
+        GRANT,
+
+        /**
+         * The evaluation resulted in a DENY
+         */
+        DENY,
+
+        /**
+         * The evaluation should be skipped and the next policy should be evaluated.
+         */
+        SKIP
+    }
+
     /**
      * Returns a list of {@link Policy} instances representing the permissions that apply to a given {@code subject} when
      * partially evaluating the realm resources that can be accessed.
@@ -62,4 +80,8 @@ public interface PartialEvaluationPolicyProvider {
      * @return {@code true} if access is granted. Otherwise, returns {@code false}
      */
     boolean evaluate(KeycloakSession session, Policy policy, UserModel subject);
+
+    default Outcome evaluateOutcome(KeycloakSession session, Policy policy, UserModel subject) {
+        return evaluate(session, policy, subject) ? Outcome.GRANT : Outcome.DENY;
+    }
 }
