@@ -77,8 +77,17 @@ public class PartialEvaluatorTest {
     }
 
     @Test
-    public void deniedResourcesDoNotUseBindParameters() {
-        Set<String> deniedIds = createIds(POSTGRESQL_PARAMETER_LIMIT + 1);
+    public void deniedResourcesUseBindParametersForOrdinaryCollections() {
+        assertEquals(2, countParameters(executeQuery(Set.of("denied"))));
+    }
+
+    @Test
+    public void deniedResourcesDoNotUseBindParametersForOversizedCollections() {
+        assertEquals(1, countParameters(executeQuery(createIds(POSTGRESQL_PARAMETER_LIMIT + 1))));
+    }
+
+    private static String executeQuery(Set<String> deniedIds) {
+        sqlRecorder.clear();
 
         try (Session session = sessionFactory.openSession()) {
             CriteriaBuilder builder = session.getCriteriaBuilder();
@@ -95,10 +104,9 @@ public class PartialEvaluatorTest {
             List<Predicate> predicates = new PartialEvaluator().buildPredicates(context);
             query.select(root).where(predicates.toArray(Predicate[]::new));
 
-            sqlRecorder.clear();
             session.createQuery(query).getResultList();
 
-            assertEquals(1, countParameters(sqlRecorder.lastSelect()));
+            return sqlRecorder.lastSelect();
         }
     }
 
