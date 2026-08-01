@@ -547,6 +547,70 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
     }
 
     @Test
+    public void testExactGroupPolicyOnParentDoesNotDenyChildMember() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+
+        GroupRepresentation parentGroup = createGroup("fgap-exact-parent-" + KeycloakModelUtils.generateId());
+        GroupRepresentation childGroup = new GroupRepresentation();
+        childGroup.setName("fgap-exact-child-" + KeycloakModelUtils.generateId());
+        try (Response response = realm.admin().groups().group(parentGroup.getId()).subGroup(childGroup)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+            childGroup.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.admin().users().get(myadmin.getId()).joinGroup(childGroup.getId());
+
+        GroupPolicyRepresentation exactParentPolicy = new GroupPolicyRepresentation();
+        exactParentPolicy.setName("Exact Parent Group Policy");
+        exactParentPolicy.setLogic(Logic.POSITIVE);
+        exactParentPolicy.addGroup(parentGroup.getId(), false);
+        try (Response response = adminPermissionsClient.authorization().policies().group()
+                .create(exactParentPolicy)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
+
+        UserPolicyRepresentation allowMyAdmin = createUserPolicy(
+                realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createAllPermission(adminPermissionsClient, usersType, allowMyAdmin, Set.of(VIEW));
+
+        UserRepresentation targetUser = realm.admin().users().search("user-15").get(0);
+        createPermission(adminPermissionsClient, targetUser.getId(), USERS_RESOURCE_TYPE, Set.of(VIEW), exactParentPolicy);
+
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName())
+                .users().search(targetUser.getUsername(), 0, 10);
+        assertThat(search.stream().map(UserRepresentation::getId).toList(),
+                hasItems(targetUser.getId()));
+        assertThat(realmAdminClient.realm(realm.getName()).users()
+                .count(null, null, null, targetUser.getUsername()), is(1));
+    }
+
+    @Test
+    public void testMultiDefinitionGroupPolicyGrantsWhenOneDefinitionMatches() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+
+        GroupRepresentation unrelatedGroup = createGroup("fgap-unrelated-" + KeycloakModelUtils.generateId());
+        GroupRepresentation adminGroup = createGroup("fgap-admin-direct-" + KeycloakModelUtils.generateId());
+        realm.admin().users().get(myadmin.getId()).joinGroup(adminGroup.getId());
+
+        GroupPolicyRepresentation multiGroupPolicy = new GroupPolicyRepresentation();
+        multiGroupPolicy.setName("Multi Group Policy");
+        multiGroupPolicy.setLogic(Logic.POSITIVE);
+        multiGroupPolicy.addGroup(unrelatedGroup.getId(), false);
+        multiGroupPolicy.addGroup(adminGroup.getId(), false);
+        try (Response response = adminPermissionsClient.authorization().policies().group()
+                .create(multiGroupPolicy)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
+
+        UserRepresentation targetUser = realm.admin().users().search("user-15").get(0);
+        createPermission(adminPermissionsClient, targetUser.getId(), USERS_RESOURCE_TYPE, Set.of(VIEW), multiGroupPolicy);
+
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName())
+                .users().search(targetUser.getUsername(), 0, 10);
+        assertThat(search.stream().map(UserRepresentation::getId).toList(),
+                hasItems(targetUser.getId()));
+    }
+
+    @Test
     public void testSessionEndpointRespectsUserViewPermission() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
         String clientUuid = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
