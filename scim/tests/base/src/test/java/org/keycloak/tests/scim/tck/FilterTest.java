@@ -582,6 +582,27 @@ public class FilterTest extends AbstractScimTest {
     }
 
     @Test
+    public void testNestedValuePathDoesNotDropOuterAttributePath() {
+        createUser("bob", "Robert", "Anderson", "bob@keycloak.org", true);
+
+        // emails.name.familyName is not a valid attribute path, so the filter must not match anything;
+        // it must not be evaluated as if it were name[familyName eq "Anderson"]
+        String filter = "emails[name[familyName eq \"Anderson\"]]";
+        ListResponse<User> response = client.users().getAll(filter);
+        assertNoResults(response);
+    }
+
+    @Test
+    public void testNestedValuePathRestoresOuterAttributePath() {
+        User bob = createUser("bob", "Robert", "Anderson", "bob@keycloak.org", true);
+
+        // after the inner value path completes, familyName must still resolve to name.familyName
+        String filter = "name[bogus[value eq \"x\"] or familyName eq \"Anderson\"]";
+        ListResponse<User> response = client.users().getAll(filter);
+        assertSingleResult(response, bob.getUserName());
+    }
+
+    @Test
     public void testComplexAttributeCombinedWithRegularFilter() {
         User bob = createUser("bob", "Robert", "Anderson", "bob@keycloak.org", true);
         createUser("alice", "Alice", "Anderson", "alice@keycloak.org", false);
