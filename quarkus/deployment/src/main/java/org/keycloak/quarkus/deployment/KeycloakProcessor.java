@@ -23,7 +23,6 @@ import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -1039,9 +1038,8 @@ class KeycloakProcessor {
             configureScriptDescriptor(descriptor, fileName -> {
                 // descriptor is at META-INF/
                 try {
-                    Path basePath = Path.of(url.toURI()).getParent().getParent();
-                    return basePath.resolve(fileName).toUri().toURL().openStream();
-                } catch (IOException | URISyntaxException e) {
+                    return new URL(url, "../" + fileName).openStream();
+                } catch (IOException e) {
                     throw new RuntimeException("Failed to read script file from: " + fileName);
                 }
             });
