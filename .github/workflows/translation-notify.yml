@@ -25,6 +25,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # This only runs after a pull request has been merged to the current branch, so this is safe
+          allow-unsafe-pr-checkout: true
 
       - name: Install Yq
         run: sudo snap install yq
