@@ -26,13 +26,18 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.keys.Attributes;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.scheduled.AutomaticKeyRotationTask;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
@@ -62,6 +67,9 @@ public class AutomaticKeyRotationTest {
     @InjectRunOnServer
     RunOnServerClient runOnServer;
 
+    @InjectAdminEvents
+    AdminEvents adminEvents;
+
     @BeforeEach
     public void cleanupOldTestProviders() {
         // Remove any leftover test providers from previous test runs
@@ -79,6 +87,7 @@ public class AutomaticKeyRotationTest {
                          c.getName().startsWith("test-disabled-rotation-") ||
                          c.getName().startsWith("test-gauge-") ||
                          c.getName().startsWith("test-actiontoken-") ||
+                         c.getName().startsWith("test-adminevent-") ||
                          c.getName().matches("rsa-generated-\\d+") ||
                          c.getName().matches("hmac-generated-\\d+") ||
                          c.getName().matches("ecdsa-generated-\\d+")))
@@ -952,18 +961,19 @@ public class AutomaticKeyRotationTest {
             keyProvider.setParentId(realmModel.getId());
             MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
             config.putSingle("priority", "200");
-            config.putSingle(Attributes.ACTIVE_KEY, "false"); // passive
-            config.putSingle(Attributes.ENABLED_KEY, "true");
-            config.putSingle(Attributes.PASSIVE_KEY_EXPIRATION_KEY, "1"); // tiny; the derived floor should dominate
             return realmModel.addComponentModel(keyProvider).getId();
         }, String.class);
 
-        // lastRotationTime 40 days ago: beyond the session-only floor (~33d) but within the
-        // action-token-derived floor (~66d).
+        // Make the key passive with a tiny configured expiration and a lastRotationTime 40 days ago,
+        // all via updateComponent so the internal attributes persist (they are dropped on create).
+        // 40 days is beyond the session-only floor (~33d) but within the action-token floor (~66d).
         runOnServer.run(session -> {
             RealmModel realmModel = session.realms().getRealmByName(realmName);
             ComponentModel provider = realmModel.getComponent(providerId);
             MultivaluedHashMap<String, String> cfg = new MultivaluedHashMap<>(provider.getConfig());
+            cfg.putSingle(Attributes.ACTIVE_KEY, "false");
+            cfg.putSingle(Attributes.ENABLED_KEY, "true");
+            cfg.putSingle(Attributes.PASSIVE_KEY_EXPIRATION_KEY, "1"); // tiny; the derived floor should dominate
             cfg.putSingle(Attributes.LAST_ROTATION_TIME_KEY, String.valueOf(fortyDaysAgo));
             provider.setConfig(cfg);
             realmModel.updateComponent(provider);
@@ -1049,6 +1059,61 @@ public class AutomaticKeyRotationTest {
             realm.admin().components().query(realmId, KeyProvider.class.getName())
                     .stream()
                     .filter(c -> c.getName() != null && c.getName().equals(providerName))
+                    .forEach(c -> realm.admin().components().component(c.getId()).remove());
+        }
+    }
+
+    /**
+     * A rotation must fire an admin event through the normal dispatch path (persisted to the event
+     * store and dispatched to the realm's configured/global event listeners by the same code).
+     * Verifies fireAdminEvent end-to-end after the dispatch rewrite (issue #6).
+     */
+    @Test
+    public void testRotationFiresAdminEvent() {
+        String realmName = realm.getName();
+        String realmId = realm.getId();
+        String providerName = "test-adminevent-" + System.currentTimeMillis();
+        long ninetyOneDaysAgo = Time.currentTimeMillis() - (91L * 24 * 60 * 60 * 1000);
+
+        String providerId = runOnServer.fetch(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            ComponentModel keyProvider = new ComponentModel();
+            keyProvider.setName(providerName);
+            keyProvider.setProviderType(KeyProvider.class.getName());
+            keyProvider.setProviderId("rsa-generated");
+            keyProvider.setParentId(realmModel.getId());
+            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+            config.putSingle("priority", "200");
+            return realmModel.addComponentModel(keyProvider).getId();
+        }, String.class);
+
+        // Configure rotation via updateComponent so the attributes persist (create-time config is
+        // dropped for generated providers), with lastRotationTime 91 days ago so rotation is due.
+        runOnServer.run(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            ComponentModel provider = realmModel.getComponent(providerId);
+            MultivaluedHashMap<String, String> cfg = new MultivaluedHashMap<>(provider.getConfig());
+            cfg.putSingle(Attributes.ACTIVE_KEY, "true");
+            cfg.putSingle(Attributes.ENABLED_KEY, "true");
+            cfg.putSingle(Attributes.AUTO_ROTATION_ENABLED_KEY, "true");
+            cfg.putSingle(Attributes.ROTATION_PERIOD_KEY, "7776000"); // 90 days
+            cfg.putSingle(Attributes.LAST_ROTATION_TIME_KEY, String.valueOf(ninetyOneDaysAgo));
+            provider.setConfig(cfg);
+            realmModel.updateComponent(provider);
+        });
+
+        try {
+            runOnServer.run(session -> new AutomaticKeyRotationTask().run(session));
+
+            // The rotation creates a new key provider and fires a COMPONENT CREATE admin event.
+            AdminEventAssertion.assertSuccess(adminEvents.poll())
+                    .operationType(OperationType.CREATE)
+                    .resourceType(ResourceType.COMPONENT);
+        } finally {
+            realm.admin().components().query(realmId, KeyProvider.class.getName())
+                    .stream()
+                    .filter(c -> c.getName() != null &&
+                            (c.getName().equals(providerName) || c.getName().matches("rsa-generated-\\d+")))
                     .forEach(c -> realm.admin().components().component(c.getId()).remove());
         }
     }
