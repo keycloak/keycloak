@@ -16,7 +16,7 @@ See <@links.ha id="multi-cluster-v2-introduction" /> for the introduction.
 
 Use this setup to provide {project_name} deployments that are able to tolerate cluster failures, reducing the likelihood of downtime.
 
-Multiple {project_name} clusters share a synchronously replicate database.
+Multiple {project_name} clusters share a synchronously replicated database.
 
 Unlike the standard <@links.ha id="multi-cluster-concepts" />, this setup does not require an external {jdgserver_name} cluster.
 This simplifies the deployment architecture and removes the need for an external monitoring solution that reconfigures the external {jdgserver_name} on failover. It also eliminates operational procedures on failback.
