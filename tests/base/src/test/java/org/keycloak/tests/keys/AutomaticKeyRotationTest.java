@@ -30,6 +30,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.keys.Attributes;
 import org.keycloak.keys.KeyProvider;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.scheduled.AutomaticKeyRotationTask;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -41,6 +42,8 @@ import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.common.BasicRealmWithUserConfig;
 
@@ -58,7 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 
  * @author <a href="mailto:volck@redhat.com">Volck</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = AutomaticKeyRotationTest.ServerConfigWithMetrics.class)
 public class AutomaticKeyRotationTest {
 
     @InjectRealm(config = BasicRealmWithUserConfig.class)
@@ -82,15 +85,19 @@ public class AutomaticKeyRotationTest {
                          c.getName().startsWith("test-no-rotation-") ||
                          c.getName().startsWith("test-hmac-rotation-") ||
                          c.getName().startsWith("test-ecdsa-rotation-") ||
+                         c.getName().startsWith("test-ecdh-rotation-") ||
                          c.getName().startsWith("test-neg-grace-") ||
                          c.getName().startsWith("test-zero-period-") ||
                          c.getName().startsWith("test-disabled-rotation-") ||
+                         c.getName().startsWith("test-nodistime-") ||
                          c.getName().startsWith("test-gauge-") ||
                          c.getName().startsWith("test-actiontoken-") ||
+                         c.getName().startsWith("test-clienttoken-") ||
                          c.getName().startsWith("test-adminevent-") ||
                          c.getName().matches("rsa-generated-\\d+") ||
                          c.getName().matches("hmac-generated-\\d+") ||
-                         c.getName().matches("ecdsa-generated-\\d+")))
+                         c.getName().matches("ecdsa-generated-\\d+") ||
+                         c.getName().matches("ecdh-generated-\\d+")))
                 .forEach(c -> {
                     try {
                         realm.admin().components().component(c.getId()).remove();
@@ -1118,6 +1125,206 @@ public class AutomaticKeyRotationTest {
         }
     }
 
+    /**
+     * Rotation must preserve the ECDH key-agreement algorithm. If {@code ecdhAlgorithm} is dropped
+     * from the copied generation parameters, an ECDH provider configured for a non-default
+     * algorithm silently reverts to the factory default (ECDH-ES) on its first rotation, changing
+     * the content-encryption behavior. Regression test for review item C.
+     */
+    @Test
+    public void testRotationPreservesEcdhAlgorithm() {
+        String realmName = realm.getName();
+        String realmId = realm.getId();
+        String ecdhAlgorithmKey = "ecdhAlgorithm";
+        String nonDefaultAlgorithm = "ECDH-ES+A256KW"; // factory default is ECDH-ES
+        long ninetyOneDaysAgo = Time.currentTimeMillis() - (91L * 24 * 60 * 60 * 1000);
+
+        String providerId = runOnServer.fetch(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            ComponentModel keyProvider = new ComponentModel();
+            keyProvider.setName("test-ecdh-rotation-" + System.currentTimeMillis());
+            keyProvider.setProviderType(KeyProvider.class.getName());
+            keyProvider.setProviderId("ecdh-generated");
+            keyProvider.setParentId(realmModel.getId());
+            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+            config.putSingle("priority", "200");
+            config.putSingle(Attributes.ACTIVE_KEY, "true");
+            config.putSingle(Attributes.ENABLED_KEY, "true");
+            config.putSingle(ecdhAlgorithmKey, nonDefaultAlgorithm);
+            config.putSingle(Attributes.AUTO_ROTATION_ENABLED_KEY, "true");
+            config.putSingle(Attributes.ROTATION_PERIOD_KEY, "7776000"); // 90 days
+            keyProvider.setConfig(config);
+            return realmModel.addComponentModel(keyProvider).getId();
+        }, String.class);
+
+        // Set lastRotationTime in a separate transaction so rotation is due (internal attribute).
+        runOnServer.run(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            ComponentModel provider = realmModel.getComponent(providerId);
+            MultivaluedHashMap<String, String> cfg = new MultivaluedHashMap<>(provider.getConfig());
+            cfg.putSingle(Attributes.LAST_ROTATION_TIME_KEY, String.valueOf(ninetyOneDaysAgo));
+            provider.setConfig(cfg);
+            realmModel.updateComponent(provider);
+        });
+
+        try {
+            runOnServer.run(session -> new AutomaticKeyRotationTask().run(session));
+
+            ComponentRepresentation rotated = realm.admin().components()
+                    .query(realmId, KeyProvider.class.getName())
+                    .stream()
+                    .filter(c -> c.getName() != null && c.getName().matches("ecdh-generated-\\d+"))
+                    .findFirst()
+                    .orElse(null);
+
+            assertNotNull(rotated, "Rotation should have created a replacement ecdh provider");
+            assertEquals(nonDefaultAlgorithm, rotated.getConfig().getFirst(ecdhAlgorithmKey),
+                    "Rotation must preserve the configured ECDH algorithm");
+        } finally {
+            realm.admin().components().query(realmId, KeyProvider.class.getName())
+                    .stream()
+                    .filter(c -> c.getName() != null &&
+                            (c.getName().startsWith("test-ecdh-rotation-") || c.getName().matches("ecdh-generated-\\d+")))
+                    .forEach(c -> realm.admin().components().component(c.getId()).remove());
+        }
+    }
+
+    /**
+     * A provider that is disabled with auto-delete enabled but has no {@code disabledTime} (the
+     * normal state after an administrator disables it manually, or enables auto-delete on an
+     * already-disabled provider) must have its disable timestamp initialized so the deletion grace
+     * period can start. Without this the provider is retained forever. Regression test for review
+     * item B.
+     */
+    @Test
+    public void testDisabledProviderWithoutDisabledTimeGetsTimestampInitialized() {
+        String realmName = realm.getName();
+        String realmId = realm.getId();
+        String providerName = "test-nodistime-" + System.currentTimeMillis();
+
+        String providerId = runOnServer.fetch(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            ComponentModel keyProvider = new ComponentModel();
+            keyProvider.setName(providerName);
+            keyProvider.setProviderType(KeyProvider.class.getName());
+            keyProvider.setProviderId("rsa-generated");
+            keyProvider.setParentId(realmModel.getId());
+            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+            config.putSingle("priority", "200");
+            return realmModel.addComponentModel(keyProvider).getId();
+        }, String.class);
+
+        // Disable it with auto-delete enabled and a long grace period, but no disabledTime, via
+        // updateComponent so the internal attributes persist (create-time config is dropped).
+        runOnServer.run(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            ComponentModel provider = realmModel.getComponent(providerId);
+            MultivaluedHashMap<String, String> cfg = new MultivaluedHashMap<>(provider.getConfig());
+            cfg.putSingle(Attributes.ACTIVE_KEY, "false");
+            cfg.putSingle(Attributes.ENABLED_KEY, "false");
+            cfg.putSingle(Attributes.AUTO_DELETE_DISABLED_KEYS_KEY, "true");
+            cfg.putSingle(Attributes.DELETION_GRACE_PERIOD_KEY, "86400"); // 1 day: must NOT delete yet
+            cfg.remove(Attributes.DISABLED_TIME_KEY); // ensure unset
+            provider.setConfig(cfg);
+            realmModel.updateComponent(provider);
+        });
+
+        try {
+            runOnServer.run(session -> new AutomaticKeyRotationTask().run(session));
+
+            String disabledTime = runOnServer.fetch(session -> {
+                RealmModel realmModel = session.realms().getRealmByName(realmName);
+                ComponentModel provider = realmModel.getComponent(providerId);
+                return provider == null ? null : provider.get(Attributes.DISABLED_TIME_KEY);
+            }, String.class);
+
+            assertNotNull(disabledTime,
+                    "A disabled auto-delete provider without disabledTime must have one initialized");
+            assertFalse(disabledTime.trim().isEmpty(),
+                    "The initialized disabledTime must be a non-empty timestamp");
+        } finally {
+            realm.admin().components().query(realmId, KeyProvider.class.getName())
+                    .stream()
+                    .filter(c -> c.getName() != null && c.getName().equals(providerName))
+                    .forEach(c -> realm.admin().components().component(c.getId()).remove());
+        }
+    }
+
+    /**
+     * The passive-key retention floor must also account for per-client token/session lifespan
+     * overrides that exceed the realm-level defaults. A client configuring a long
+     * {@code access.token.lifespan} could otherwise have its still-valid tokens rejected after the
+     * signing key is expired. Regression test for review item A.
+     */
+    @Test
+    public void testPassiveRetentionIncludesClientAccessTokenLifespan() {
+        String realmName = realm.getName();
+        String realmId = realm.getId();
+        String providerName = "test-clienttoken-" + System.currentTimeMillis();
+        String clientId = "test-clienttoken-client-" + System.currentTimeMillis();
+        int sixtyDays = 60 * 24 * 60 * 60;
+        long fortyDaysAgo = Time.currentTimeMillis() - (40L * 24 * 60 * 60 * 1000);
+
+        // A client whose access-token lifespan (60d) exceeds the realm session floor (~33d).
+        runOnServer.run(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            ClientModel client = realmModel.addClient(clientId);
+            client.setAttribute("access.token.lifespan", String.valueOf(sixtyDays));
+        });
+
+        String providerId = runOnServer.fetch(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            ComponentModel keyProvider = new ComponentModel();
+            keyProvider.setName(providerName);
+            keyProvider.setProviderType(KeyProvider.class.getName());
+            keyProvider.setProviderId("rsa-generated");
+            keyProvider.setParentId(realmModel.getId());
+            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+            config.putSingle("priority", "200");
+            return realmModel.addComponentModel(keyProvider).getId();
+        }, String.class);
+
+        // Make the key passive with a tiny configured expiration and lastRotationTime 40 days ago.
+        // 40d is beyond the session-only floor (~33d) but within the client access-token floor (~66d).
+        runOnServer.run(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            ComponentModel provider = realmModel.getComponent(providerId);
+            MultivaluedHashMap<String, String> cfg = new MultivaluedHashMap<>(provider.getConfig());
+            cfg.putSingle(Attributes.ACTIVE_KEY, "false");
+            cfg.putSingle(Attributes.ENABLED_KEY, "true");
+            cfg.putSingle(Attributes.PASSIVE_KEY_EXPIRATION_KEY, "1"); // tiny; the derived floor should dominate
+            cfg.putSingle(Attributes.LAST_ROTATION_TIME_KEY, String.valueOf(fortyDaysAgo));
+            provider.setConfig(cfg);
+            realmModel.updateComponent(provider);
+        });
+
+        try {
+            runOnServer.run(session -> new AutomaticKeyRotationTask().run(session));
+
+            boolean stillEnabled = runOnServer.fetch(session -> {
+                RealmModel realmModel = session.realms().getRealmByName(realmName);
+                ComponentModel provider = realmModel.getComponent(providerId);
+                String enabled = provider.get(Attributes.ENABLED_KEY);
+                return enabled == null || !"false".equalsIgnoreCase(enabled);
+            }, Boolean.class);
+
+            assertTrue(stillEnabled,
+                    "Passive key must not be expired while a per-client access-token lifespan still covers it");
+        } finally {
+            runOnServer.run(session -> {
+                RealmModel realmModel = session.realms().getRealmByName(realmName);
+                ClientModel client = realmModel.getClientByClientId(clientId);
+                if (client != null) {
+                    realmModel.removeClient(client.getId());
+                }
+            });
+            realm.admin().components().query(realmId, KeyProvider.class.getName())
+                    .stream()
+                    .filter(c -> c.getName() != null && c.getName().equals(providerName))
+                    .forEach(c -> realm.admin().components().component(c.getId()).remove());
+        }
+    }
+
     private ComponentRepresentation createKeyProviderWithAutoRotation() {
         String realmId = realm.getId();
         ComponentRepresentation keyProvider = new ComponentRepresentation();
@@ -1166,5 +1373,13 @@ public class AutomaticKeyRotationTest {
 
         keyProvider.setId(id);
         return keyProvider;
+    }
+
+    public static class ServerConfigWithMetrics implements KeycloakServerConfig {
+
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.option("metrics-enabled", "true");
+        }
     }
 }

@@ -44,10 +44,12 @@ import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.keys.KeyProvider;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.timer.ScheduledTask;
 
 import org.jboss.logging.Logger;
@@ -71,6 +73,9 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
 
     private static final String KEY_LAST_ROTATED_METER_NAME = "keycloak.key.last_rotated_seconds";
 
+    // Root config key for --metrics-enabled (duplicated here to avoid a config-api module dependency).
+    private static final String METRICS_ENABLED_CONFIG_KEY = "metrics-enabled";
+
     // Store gauge handles (backing value + registered meter) per provider so stale meters can be removed
     private static final Map<String, GaugeHandle> rotationGauges = new ConcurrentHashMap<>();
 
@@ -90,6 +95,7 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
     private static final String EC_GENERATE_CERTIFICATE_KEY = "ecGenerateCertificate";
     private static final String ECDSA_ELLIPTIC_CURVE_KEY = "ecdsaEllipticCurveKey";
     private static final String ECDH_ELLIPTIC_CURVE_KEY = "ecdhEllipticCurveKey";
+    private static final String ECDH_ALGORITHM_KEY = "ecdhAlgorithm";
     private static final String EDDSA_ELLIPTIC_CURVE_KEY = "eddsaEllipticCurveKey";
     private static final String PASSIVE_KEY_EXPIRATION_KEY = "passiveKeyExpiration";
     private static final String AUTO_DELETE_DISABLED_KEYS_KEY = "autoDeleteDisabledKeys";
@@ -106,7 +112,7 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
      */
     private static final List<String> GENERATION_PARAM_KEYS = List.of(
             KEY_USE, ALGORITHM_KEY, KEY_SIZE_KEY, SECRET_SIZE_KEY, EC_GENERATE_CERTIFICATE_KEY,
-            ECDSA_ELLIPTIC_CURVE_KEY, ECDH_ELLIPTIC_CURVE_KEY, EDDSA_ELLIPTIC_CURVE_KEY);
+            ECDSA_ELLIPTIC_CURVE_KEY, ECDH_ELLIPTIC_CURVE_KEY, ECDH_ALGORITHM_KEY, EDDSA_ELLIPTIC_CURVE_KEY);
 
     @Override
     public void run(KeycloakSession session) {
@@ -124,8 +130,11 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
         }
 
         // Remove gauges/meters for providers or realms that no longer exist, to avoid unbounded
-        // stale metric cardinality when keys are deleted administratively.
-        reconcileStaleGauges(session);
+        // stale metric cardinality when keys are deleted administratively. Skipped when metrics are
+        // disabled, since no gauges were ever registered.
+        if (isMetricsEnabled()) {
+            reconcileStaleGauges(session);
+        }
 
         long durationMillis = Time.currentTimeMillis() - startTimeMillis;
         long intervalSeconds = Config.scope("scheduled").getLong("interval", 900L);
@@ -145,10 +154,14 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
      */
     private void processRealm(KeycloakSessionFactory factory, RealmModel realm, long now, RotationCounters counters) {
         try {
+            // Compute the session/token-derived retention floor once per realm (it iterates the
+            // realm's clients) rather than once per provider, then reuse it for every snapshot.
+            long minimumPassiveRetentionSeconds = computeMinimumPassiveKeyRetention(realm);
+
             // Snapshot: parse each provider's configuration exactly once into an immutable state object.
             List<ProviderRotationState> snapshots = realm
                     .getComponentsStream(realm.getId(), KeyProvider.class.getName())
-                    .map(component -> ProviderRotationState.from(component, realm))
+                    .map(component -> ProviderRotationState.from(component, realm, minimumPassiveRetentionSeconds))
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
 
@@ -160,6 +173,22 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
                             initializeMissingRotationTimestamps(factory, state);
                         } catch (Exception e) {
                             logger.errorv(e, "Failed to initialize rotation timestamp for provider '{0}' in realm '{1}'",
+                                    state.providerName(), realm.getName());
+                        }
+                    });
+
+            // Initialize a missing disable timestamp for disabled providers with auto-delete enabled,
+            // so the deletion grace period can actually start counting. Without this, a provider that
+            // was disabled administratively (which never writes disabledTime) — or one that had
+            // auto-delete enabled while already disabled — would be retained forever.
+            snapshots.stream()
+                    .filter(state -> state.autoDeleteDisabledKeys() && !state.enabled()
+                            && state.disabledTimeMillis() == null)
+                    .forEach(state -> {
+                        try {
+                            initializeMissingDisabledTimestamp(factory, state);
+                        } catch (Exception e) {
+                            logger.errorv(e, "Failed to initialize disabled timestamp for provider '{0}' in realm '{1}'",
                                     state.providerName(), realm.getName());
                         }
                     });
@@ -216,6 +245,10 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
      * to persistent state — it only touches the in-memory metric registry.
      */
     private void publishLastRotationGauge(ProviderRotationState state) {
+        // Honor --metrics-enabled=false: do not register meters when metrics are disabled.
+        if (!isMetricsEnabled()) {
+            return;
+        }
         try {
             if (!state.active() || state.lastRotationTimeMillis() == null) {
                 removeGauge(gaugeKey(state));
@@ -287,6 +320,15 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
         return state.realmId() + ":" + state.componentId();
     }
 
+    /**
+     * Whether Keycloak metrics are enabled ({@code --metrics-enabled=true}). When disabled, this
+     * task must not create counters or gauges, matching the behavior of other metric producers such
+     * as {@code ExpirationTaskFactory} and {@code PasswordCredentialProviderFactory}.
+     */
+    private static boolean isMetricsEnabled() {
+        return Config.scope().root().getBoolean(METRICS_ENABLED_CONFIG_KEY, Boolean.FALSE);
+    }
+
     // -------------------------------------------------------------------------
     // Immutable snapshot + pure decision helpers
     // -------------------------------------------------------------------------
@@ -317,7 +359,7 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
          * configuration cannot be parsed is logged and skipped (returns {@code null}) so a single
          * malformed provider does not poison the whole realm scan.
          */
-        static ProviderRotationState from(ComponentModel component, RealmModel realm) {
+        static ProviderRotationState from(ComponentModel component, RealmModel realm, long minimumPassiveRetentionSeconds) {
             try {
                 boolean autoRotationEnabled = "true".equalsIgnoreCase(component.get(AUTO_ROTATION_ENABLED_KEY));
 
@@ -336,7 +378,6 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
                     rotationPeriodSeconds = DEFAULT_ROTATION_PERIOD_SECONDS;
                 }
                 long configuredPassiveExpirationSeconds = parseLongOrDefault(component.get(PASSIVE_KEY_EXPIRATION_KEY), 0L);
-                long minimumPassiveRetentionSeconds = computeMinimumPassiveKeyRetention(realm);
 
                 boolean autoDeleteDisabledKeys = "true".equalsIgnoreCase(component.get(AUTO_DELETE_DISABLED_KEYS_KEY));
                 Long disabledTimeMillis = parseLongOrNull(component.get(DISABLED_TIME_KEY));
@@ -457,6 +498,38 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
     }
 
     /**
+     * Initializes a missing {@code disabledTime} for a disabled provider that has auto-delete
+     * enabled, in its own transaction. Only {@code expirePassiveKey} writes this timestamp during
+     * automatic expiration; a provider disabled by an administrator (or one that had auto-delete
+     * turned on while already disabled) has no timestamp and would otherwise never start its
+     * deletion grace period. The value is written only after re-reading the component inside the
+     * transaction and confirming it is still disabled, still auto-delete, and still unset, which
+     * provides a compare-and-set guarantee against concurrent writers.
+     */
+    private void initializeMissingDisabledTimestamp(KeycloakSessionFactory factory, ProviderRotationState state) {
+        KeycloakModelUtils.runJobInTransaction(factory, txSession -> {
+            RealmModel realm = txSession.realms().getRealm(state.realmId());
+            if (realm == null) {
+                return;
+            }
+            ComponentModel component = realm.getComponent(state.componentId());
+            if (component == null) {
+                return;
+            }
+            boolean stillEnabled = !"false".equalsIgnoreCase(component.get(ENABLED_KEY));
+            boolean autoDelete = "true".equalsIgnoreCase(component.get(AUTO_DELETE_DISABLED_KEYS_KEY));
+            String existing = component.get(DISABLED_TIME_KEY);
+            if (stillEnabled || !autoDelete || (existing != null && !existing.trim().isEmpty())) {
+                return; // Re-check inside the transaction: state changed or another writer set it.
+            }
+            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>(component.getConfig());
+            config.putSingle(DISABLED_TIME_KEY, String.valueOf(Time.currentTimeMillis()));
+            component.setConfig(config);
+            realm.updateComponent(component);
+        });
+    }
+
+    /**
      * Rotates a key in its own transaction, re-checking the predicate against a freshly re-read
      * snapshot so a concurrent rotation on another node is not duplicated.
      *
@@ -472,7 +545,7 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
             if (component == null) {
                 return false;
             }
-            ProviderRotationState fresh = ProviderRotationState.from(component, realm);
+            ProviderRotationState fresh = ProviderRotationState.from(component, realm, computeMinimumPassiveKeyRetention(realm));
             if (fresh == null || !isDueForRotation(fresh, now)) {
                 return false; // Re-check inside the transaction.
             }
@@ -497,7 +570,7 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
             if (component == null) {
                 return false;
             }
-            ProviderRotationState fresh = ProviderRotationState.from(component, realm);
+            ProviderRotationState fresh = ProviderRotationState.from(component, realm, computeMinimumPassiveKeyRetention(realm));
             if (fresh == null || !shouldExpirePassiveKey(fresh, now)) {
                 return false; // Re-check inside the transaction.
             }
@@ -522,7 +595,7 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
             if (component == null) {
                 return false;
             }
-            ProviderRotationState fresh = ProviderRotationState.from(component, realm);
+            ProviderRotationState fresh = ProviderRotationState.from(component, realm, computeMinimumPassiveKeyRetention(realm));
             if (fresh == null || !shouldDeleteDisabledKey(fresh, now)) {
                 return false; // Re-check inside the transaction.
             }
@@ -589,10 +662,52 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
             }
         }
 
+        // Per-client overrides: an individual client may configure a token/session lifespan that
+        // exceeds every realm-level default above (e.g. a longer access.token.lifespan or
+        // client.offline.session.max.lifespan). A verifying key must outlive the longest such value
+        // so a token or session issued by any client can still be validated after the key goes
+        // passive. Computed once per realm (see processRealm) so this scan is not repeated per key.
+        long maxClientLifespanSeconds = realm.getClientsStream()
+                .mapToLong(AutomaticKeyRotationTask::maxClientLifespanSeconds)
+                .max()
+                .orElse(0L);
+        maxLifespanSeconds = Math.max(maxLifespanSeconds, maxClientLifespanSeconds);
+
         // Safety margin: 10% of the max lifespan, at least 1 hour
         long safetyMarginSeconds = Math.max(3600L, maxLifespanSeconds / 10);
 
         return maxLifespanSeconds + safetyMarginSeconds;
+    }
+
+    /**
+     * Largest per-client token/session lifespan override configured on a single client, in seconds,
+     * or 0 if the client inherits all realm-level values. These attributes, when set, take
+     * precedence over the realm defaults (see {@code SessionExpirationUtils}).
+     */
+    private static long maxClientLifespanSeconds(ClientModel client) {
+        long max = 0L;
+        max = Math.max(max, clientAttributeSeconds(client, OIDCConfigAttributes.ACCESS_TOKEN_LIFESPAN));
+        max = Math.max(max, clientAttributeSeconds(client, OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT));
+        max = Math.max(max, clientAttributeSeconds(client, OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN));
+        max = Math.max(max, clientAttributeSeconds(client, OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_IDLE_TIMEOUT));
+        max = Math.max(max, clientAttributeSeconds(client, OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_MAX_LIFESPAN));
+        return max;
+    }
+
+    /**
+     * Reads a client attribute as a non-negative number of seconds, returning 0 when the attribute
+     * is unset, blank, or not a valid number (in which case the realm default applies).
+     */
+    private static long clientAttributeSeconds(ClientModel client, String attr) {
+        String value = client.getAttribute(attr);
+        if (value == null || value.trim().isEmpty()) {
+            return 0L;
+        }
+        try {
+            return Math.max(0L, Long.parseLong(value.trim()));
+        } catch (NumberFormatException e) {
+            return 0L;
+        }
     }
 
     /**
@@ -662,13 +777,16 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
         added.setConfig(rotationConfig);
         realm.updateComponent(added);
 
-        rotationMeterProvider.withTags(tags).increment();
+        if (isMetricsEnabled()) {
+            rotationMeterProvider.withTags(tags).increment();
+        }
         
         logger.infof("Automatic key rotation activated: Created and configured new key provider '%s' (id=%s) for realm '%s'", 
                 added.getName(), added.getId(), realm.getName());
         
-        // Update metric for the new key immediately after rotation
-        publishLastRotationGauge(ProviderRotationState.from(added, realm));
+        // Update metric for the new key immediately after rotation. The retention floor is
+        // irrelevant to the gauge (it only reads active state and lastRotationTime), so pass 0.
+        publishLastRotationGauge(ProviderRotationState.from(added, realm, 0L));
         
         // Fire admin event
         fireAdminEvent(session, realm, added, OperationType.CREATE, "Automatic key rotation activated");
@@ -702,7 +820,9 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
         tags.add(Tag.of("realm", realm.getName()));
         tags.add(Tag.of("provider", provider.getProviderId()));
         tags.add(Tag.of("operation", "expire"));
-        rotationMeterProvider.withTags(tags).increment();
+        if (isMetricsEnabled()) {
+            rotationMeterProvider.withTags(tags).increment();
+        }
 
         logger.infof("Disabled expired passive key provider '%s' in realm '%s' at %d",
                 provider.getName(), realm.getName(), currentTime);
@@ -731,7 +851,9 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
         tags.add(Tag.of("realm", realm.getName()));
         tags.add(Tag.of("provider", provider.getProviderId()));
         tags.add(Tag.of("operation", "delete"));
-        rotationMeterProvider.withTags(tags).increment();
+        if (isMetricsEnabled()) {
+            rotationMeterProvider.withTags(tags).increment();
+        }
     }
 
     /**
