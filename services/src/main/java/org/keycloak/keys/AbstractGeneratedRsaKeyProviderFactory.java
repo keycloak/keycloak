@@ -59,6 +59,8 @@ public abstract class AbstractGeneratedRsaKeyProviderFactory extends AbstractRsa
                 .property(Attributes.AUTO_ROTATION_ENABLED_PROPERTY)
                 .property(Attributes.ROTATION_PERIOD_PROPERTY)
                 .property(Attributes.PASSIVE_KEY_EXPIRATION_PROPERTY)
+                .property(Attributes.PRE_ACTIVATION_PERIOD_PROPERTY)
+                .property(Attributes.ACTIVATION_TIME_PROPERTY)
                 .property(Attributes.LAST_ROTATION_TIME_PROPERTY)
                 .property(Attributes.AUTO_DELETE_DISABLED_KEYS_PROPERTY)
                 .property(Attributes.DELETION_GRACE_PERIOD_PROPERTY)

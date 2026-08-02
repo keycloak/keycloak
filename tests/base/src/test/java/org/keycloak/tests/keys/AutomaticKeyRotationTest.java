@@ -94,6 +94,7 @@ public class AutomaticKeyRotationTest {
                          c.getName().startsWith("test-actiontoken-") ||
                          c.getName().startsWith("test-clienttoken-") ||
                          c.getName().startsWith("test-adminevent-") ||
+                         c.getName().startsWith("test-preact-") ||
                          c.getName().matches("rsa-generated-\\d+") ||
                          c.getName().matches("hmac-generated-\\d+") ||
                          c.getName().matches("ecdsa-generated-\\d+") ||
@@ -1321,6 +1322,237 @@ public class AutomaticKeyRotationTest {
             realm.admin().components().query(realmId, KeyProvider.class.getName())
                     .stream()
                     .filter(c -> c.getName() != null && c.getName().equals(providerName))
+                    .forEach(c -> realm.admin().components().component(c.getId()).remove());
+        }
+    }
+
+    /**
+     * When a pre-activation period is configured, rotation must publish the replacement key as a
+     * passive (but enabled) key without demoting the currently active key, so clients that cache
+     * the JWKS can pick up the new public key before it is used for signing. The current key must
+     * stay active and be marked as having a pending pre-activation so it is not rotated again.
+     */
+    @Test
+    public void testPreActivationPublishesPassiveKeyWithoutDemotingCurrent() {
+        String realmName = realm.getName();
+        String realmId = realm.getId();
+        String providerName = "test-preact-" + System.currentTimeMillis();
+        long ninetyOneDaysAgo = Time.currentTimeMillis() - (91L * 24 * 60 * 60 * 1000);
+
+        String oldId = runOnServer.fetch(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            ComponentModel keyProvider = new ComponentModel();
+            keyProvider.setName(providerName);
+            keyProvider.setProviderType(KeyProvider.class.getName());
+            keyProvider.setProviderId("rsa-generated");
+            keyProvider.setParentId(realmModel.getId());
+            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+            config.putSingle("priority", "200");
+            config.putSingle(Attributes.ACTIVE_KEY, "true");
+            config.putSingle(Attributes.ENABLED_KEY, "true");
+            config.putSingle(Attributes.AUTO_ROTATION_ENABLED_KEY, "true");
+            config.putSingle(Attributes.ROTATION_PERIOD_KEY, "7776000"); // 90 days
+            config.putSingle(Attributes.PRE_ACTIVATION_PERIOD_KEY, "7776000"); // 90 days: stays pending
+            keyProvider.setConfig(config);
+            return realmModel.addComponentModel(keyProvider).getId();
+        }, String.class);
+
+        // Rotation due: set lastRotationTime in a separate transaction (internal attribute).
+        runOnServer.run(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            ComponentModel provider = realmModel.getComponent(oldId);
+            MultivaluedHashMap<String, String> cfg = new MultivaluedHashMap<>(provider.getConfig());
+            cfg.putSingle(Attributes.LAST_ROTATION_TIME_KEY, String.valueOf(ninetyOneDaysAgo));
+            provider.setConfig(cfg);
+            realmModel.updateComponent(provider);
+        });
+
+        try {
+            runOnServer.run(session -> new AutomaticKeyRotationTask().run(session));
+
+            ComponentRepresentation pending = realm.admin().components()
+                    .query(realmId, KeyProvider.class.getName())
+                    .stream()
+                    .filter(c -> c.getName() != null && c.getName().matches("rsa-generated-\\d+"))
+                    .findFirst()
+                    .orElse(null);
+
+            assertNotNull(pending, "Pre-activation should have created a replacement provider");
+            String pendingId = pending.getId();
+
+            // The replacement key is passive (not signing) but enabled (published in the JWKS).
+            String pendingActive = runOnServer.fetch(session -> session.realms().getRealmByName(realmName)
+                    .getComponent(pendingId).get(Attributes.ACTIVE_KEY), String.class);
+            String pendingEnabled = runOnServer.fetch(session -> session.realms().getRealmByName(realmName)
+                    .getComponent(pendingId).get(Attributes.ENABLED_KEY), String.class);
+            String activationTime = runOnServer.fetch(session -> session.realms().getRealmByName(realmName)
+                    .getComponent(pendingId).get(Attributes.ACTIVATION_TIME_KEY), String.class);
+            String predecessor = runOnServer.fetch(session -> session.realms().getRealmByName(realmName)
+                    .getComponent(pendingId).get(Attributes.PRE_ACTIVATION_PREDECESSOR_KEY), String.class);
+
+            assertEquals("false", pendingActive, "Pre-activation key must be passive (not signing) during the window");
+            assertNotEquals("false", pendingEnabled, "Pre-activation key must be enabled/published in the JWKS");
+            assertNotNull(activationTime, "Pre-activation key must carry a future activation time");
+            assertEquals(oldId, predecessor, "Pre-activation key must reference its predecessor");
+
+            // The current key keeps signing and is flagged so it is not rotated again while pending.
+            String oldActive = runOnServer.fetch(session -> session.realms().getRealmByName(realmName)
+                    .getComponent(oldId).get(Attributes.ACTIVE_KEY), String.class);
+            String oldPending = runOnServer.fetch(session -> session.realms().getRealmByName(realmName)
+                    .getComponent(oldId).get(Attributes.PRE_ACTIVATION_PENDING_KEY), String.class);
+
+            assertNotEquals("false", oldActive, "The current key must stay active during the pre-activation window");
+            assertEquals("true", oldPending, "The current key must be marked as having a pending pre-activation");
+        } finally {
+            realm.admin().components().query(realmId, KeyProvider.class.getName())
+                    .stream()
+                    .filter(c -> c.getName() != null &&
+                            (c.getName().equals(providerName) || c.getName().matches("rsa-generated-\\d+")))
+                    .forEach(c -> realm.admin().components().component(c.getId()).remove());
+        }
+    }
+
+    /**
+     * Once the activation time of a pre-activation key has passed, a subsequent run must promote it
+     * to the active signing key and demote its predecessor to passive.
+     */
+    @Test
+    public void testPreActivationKeyPromotedAfterActivationTime() {
+        String realmName = realm.getName();
+        String realmId = realm.getId();
+        String providerName = "test-preact-" + System.currentTimeMillis();
+        long ninetyOneDaysAgo = Time.currentTimeMillis() - (91L * 24 * 60 * 60 * 1000);
+
+        String oldId = runOnServer.fetch(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            ComponentModel keyProvider = new ComponentModel();
+            keyProvider.setName(providerName);
+            keyProvider.setProviderType(KeyProvider.class.getName());
+            keyProvider.setProviderId("rsa-generated");
+            keyProvider.setParentId(realmModel.getId());
+            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+            config.putSingle("priority", "200");
+            config.putSingle(Attributes.ACTIVE_KEY, "true");
+            config.putSingle(Attributes.ENABLED_KEY, "true");
+            config.putSingle(Attributes.AUTO_ROTATION_ENABLED_KEY, "true");
+            config.putSingle(Attributes.ROTATION_PERIOD_KEY, "7776000");
+            config.putSingle(Attributes.PRE_ACTIVATION_PERIOD_KEY, "7776000");
+            keyProvider.setConfig(config);
+            return realmModel.addComponentModel(keyProvider).getId();
+        }, String.class);
+
+        runOnServer.run(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            ComponentModel provider = realmModel.getComponent(oldId);
+            MultivaluedHashMap<String, String> cfg = new MultivaluedHashMap<>(provider.getConfig());
+            cfg.putSingle(Attributes.LAST_ROTATION_TIME_KEY, String.valueOf(ninetyOneDaysAgo));
+            provider.setConfig(cfg);
+            realmModel.updateComponent(provider);
+        });
+
+        try {
+            // First run: publish the passive pre-activation key.
+            runOnServer.run(session -> new AutomaticKeyRotationTask().run(session));
+
+            String pendingId = realm.admin().components()
+                    .query(realmId, KeyProvider.class.getName())
+                    .stream()
+                    .filter(c -> c.getName() != null && c.getName().matches("rsa-generated-\\d+"))
+                    .map(ComponentRepresentation::getId)
+                    .findFirst()
+                    .orElse(null);
+            assertNotNull(pendingId, "Pre-activation should have created a replacement provider");
+
+            // Force the activation time into the past so promotion is due on the next run.
+            runOnServer.run(session -> {
+                RealmModel realmModel = session.realms().getRealmByName(realmName);
+                ComponentModel provider = realmModel.getComponent(pendingId);
+                MultivaluedHashMap<String, String> cfg = new MultivaluedHashMap<>(provider.getConfig());
+                cfg.putSingle(Attributes.ACTIVATION_TIME_KEY, String.valueOf(Time.currentTimeMillis() - 1000));
+                provider.setConfig(cfg);
+                realmModel.updateComponent(provider);
+            });
+
+            // Second run: promote the pending key and demote the predecessor.
+            runOnServer.run(session -> new AutomaticKeyRotationTask().run(session));
+
+            String promotedActive = runOnServer.fetch(session -> session.realms().getRealmByName(realmName)
+                    .getComponent(pendingId).get(Attributes.ACTIVE_KEY), String.class);
+            String promotedActivationTime = runOnServer.fetch(session -> session.realms().getRealmByName(realmName)
+                    .getComponent(pendingId).get(Attributes.ACTIVATION_TIME_KEY), String.class);
+            String oldActiveAfter = runOnServer.fetch(session -> session.realms().getRealmByName(realmName)
+                    .getComponent(oldId).get(Attributes.ACTIVE_KEY), String.class);
+
+            assertNotEquals("false", promotedActive, "The promoted pre-activation key must be active for signing");
+            assertTrue(promotedActivationTime == null || promotedActivationTime.trim().isEmpty(),
+                    "The activation marker must be cleared once the key is promoted");
+            assertEquals("false", oldActiveAfter, "The predecessor key must be demoted to passive after promotion");
+        } finally {
+            realm.admin().components().query(realmId, KeyProvider.class.getName())
+                    .stream()
+                    .filter(c -> c.getName() != null &&
+                            (c.getName().equals(providerName) || c.getName().matches("rsa-generated-\\d+")))
+                    .forEach(c -> realm.admin().components().component(c.getId()).remove());
+        }
+    }
+
+    /**
+     * While a pre-activation is pending, a further run must not rotate the still-active predecessor
+     * again — otherwise every run would spawn another passive key. Exactly one replacement key must
+     * exist during the pre-activation window.
+     */
+    @Test
+    public void testPreActivationDoesNotCreateSecondKeyWhilePending() {
+        String realmName = realm.getName();
+        String realmId = realm.getId();
+        String providerName = "test-preact-" + System.currentTimeMillis();
+        long ninetyOneDaysAgo = Time.currentTimeMillis() - (91L * 24 * 60 * 60 * 1000);
+
+        String oldId = runOnServer.fetch(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            ComponentModel keyProvider = new ComponentModel();
+            keyProvider.setName(providerName);
+            keyProvider.setProviderType(KeyProvider.class.getName());
+            keyProvider.setProviderId("rsa-generated");
+            keyProvider.setParentId(realmModel.getId());
+            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+            config.putSingle("priority", "200");
+            config.putSingle(Attributes.ACTIVE_KEY, "true");
+            config.putSingle(Attributes.ENABLED_KEY, "true");
+            config.putSingle(Attributes.AUTO_ROTATION_ENABLED_KEY, "true");
+            config.putSingle(Attributes.ROTATION_PERIOD_KEY, "7776000");
+            config.putSingle(Attributes.PRE_ACTIVATION_PERIOD_KEY, "7776000");
+            keyProvider.setConfig(config);
+            return realmModel.addComponentModel(keyProvider).getId();
+        }, String.class);
+
+        runOnServer.run(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            ComponentModel provider = realmModel.getComponent(oldId);
+            MultivaluedHashMap<String, String> cfg = new MultivaluedHashMap<>(provider.getConfig());
+            cfg.putSingle(Attributes.LAST_ROTATION_TIME_KEY, String.valueOf(ninetyOneDaysAgo));
+            provider.setConfig(cfg);
+            realmModel.updateComponent(provider);
+        });
+
+        try {
+            // Run the task twice within the pre-activation window.
+            runOnServer.run(session -> new AutomaticKeyRotationTask().run(session));
+            runOnServer.run(session -> new AutomaticKeyRotationTask().run(session));
+
+            long replacementCount = realm.admin().components()
+                    .query(realmId, KeyProvider.class.getName())
+                    .stream()
+                    .filter(c -> c.getName() != null && c.getName().matches("rsa-generated-\\d+"))
+                    .count();
+
+            assertEquals(1L, replacementCount,
+                    "Only one pre-activation replacement key must exist while a promotion is pending");
+        } finally {
+            realm.admin().components().query(realmId, KeyProvider.class.getName())
+                    .stream()
+                    .filter(c -> c.getName() != null &&
+                            (c.getName().equals(providerName) || c.getName().matches("rsa-generated-\\d+")))
                     .forEach(c -> realm.admin().components().component(c.getId()).remove());
         }
     }

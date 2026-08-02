@@ -101,6 +101,19 @@ public interface Attributes {
     String PASSIVE_KEY_EXPIRATION_KEY = "passiveKeyExpiration";
     ProviderConfigProperty PASSIVE_KEY_EXPIRATION_PROPERTY = new ProviderConfigProperty(PASSIVE_KEY_EXPIRATION_KEY, "Passive Key Expiration (seconds)", "Number of seconds to keep passive keys before they are disabled", STRING_TYPE, "2592000");
 
+    String PRE_ACTIVATION_PERIOD_KEY = "preActivationPeriod";
+    ProviderConfigProperty PRE_ACTIVATION_PERIOD_PROPERTY = new ProviderConfigProperty(PRE_ACTIVATION_PERIOD_KEY, "Pre-Activation Period (seconds)", "Number of seconds a rotated key is published in the JWKS as a passive key before it becomes active for signing, giving clients that cache the JWKS time to pick it up. 0 activates the new key immediately (default).", STRING_TYPE, "0");
+
+    String ACTIVATION_TIME_KEY = "activationTime";
+    // Note: This is set automatically during a pre-activation rotation, not manually configured
+    ProviderConfigProperty ACTIVATION_TIME_PROPERTY = new ProviderConfigProperty(ACTIVATION_TIME_KEY, "Activation Time", "Timestamp (milliseconds) when this pre-activation key becomes active for signing - set automatically", STRING_TYPE, null);
+
+    // Internal plumbing for the pre-activation phase (set automatically, not shown as configurable):
+    // the component id of the still-active predecessor key to demote when this key is promoted, and
+    // a marker on that predecessor so it is not rotated again while a promotion is pending.
+    String PRE_ACTIVATION_PREDECESSOR_KEY = "preActivationPredecessorId";
+    String PRE_ACTIVATION_PENDING_KEY = "preActivationPending";
+
     String LAST_ROTATION_TIME_KEY = "lastRotationTime";
     // Note: This is typically set automatically by the rotation task, not manually configured
     ProviderConfigProperty LAST_ROTATION_TIME_PROPERTY = new ProviderConfigProperty(LAST_ROTATION_TIME_KEY, "Last Rotation Time", "Timestamp (milliseconds) of the last automatic key rotation - set automatically", STRING_TYPE, null);

@@ -101,6 +101,10 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
     private static final String AUTO_DELETE_DISABLED_KEYS_KEY = "autoDeleteDisabledKeys";
     private static final String DELETION_GRACE_PERIOD_KEY = "deletionGracePeriod";
     private static final String DISABLED_TIME_KEY = "disabledTime";
+    private static final String PRE_ACTIVATION_PERIOD_KEY = "preActivationPeriod";
+    private static final String ACTIVATION_TIME_KEY = "activationTime";
+    private static final String PRE_ACTIVATION_PREDECESSOR_KEY = "preActivationPredecessorId";
+    private static final String PRE_ACTIVATION_PENDING_KEY = "preActivationPending";
 
     private static final long DEFAULT_ROTATION_PERIOD_SECONDS = 7776000L; // 90 days
 
@@ -140,9 +144,10 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
         long intervalSeconds = Config.scope("scheduled").getLong("interval", 900L);
 
         // Only log if there are providers with auto-rotation enabled or if any actions were taken
-        if (counters.autoRotationEnabled > 0 || counters.rotated > 0 || counters.expired > 0 || counters.deleted > 0) {
-            logger.infof("Automatic key rotation task: %d providers with auto-rotation enabled, rotated=%d, expired=%d, deleted=%d keys in %d ms, next run in %d seconds",
-                    counters.autoRotationEnabled, counters.rotated, counters.expired, counters.deleted, durationMillis, intervalSeconds);
+        if (counters.autoRotationEnabled > 0 || counters.rotated > 0 || counters.promoted > 0
+                || counters.expired > 0 || counters.deleted > 0) {
+            logger.infof("Automatic key rotation task: %d providers with auto-rotation enabled, rotated=%d, promoted=%d, expired=%d, deleted=%d keys in %d ms, next run in %d seconds",
+                    counters.autoRotationEnabled, counters.rotated, counters.promoted, counters.expired, counters.deleted, durationMillis, intervalSeconds);
         }
     }
 
@@ -208,6 +213,9 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
                     if (isDueForRotation(state, now) && rotateKeyTx(factory, state, now)) {
                         counters.rotated++;
                     }
+                    if (shouldPromotePreActivationKey(state, now) && promotePreActivationKeyTx(factory, state, now)) {
+                        counters.promoted++;
+                    }
                     if (shouldExpirePassiveKey(state, now) && expirePassiveKeyTx(factory, state, now)) {
                         counters.expired++;
                     }
@@ -230,6 +238,7 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
     private static final class RotationCounters {
         private int autoRotationEnabled;
         private int rotated;
+        private int promoted;
         private int expired;
         private int deleted;
     }
@@ -352,7 +361,11 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
             long minimumPassiveRetentionSeconds,
             boolean autoDeleteDisabledKeys,
             Long disabledTimeMillis,
-            long deletionGracePeriodSeconds) {
+            long deletionGracePeriodSeconds,
+            long preActivationPeriodSeconds,
+            Long activationTimeMillis,
+            String preActivationPredecessorId,
+            boolean preActivationPending) {
 
         /**
          * Parses a provider's configuration into an immutable snapshot. A provider whose
@@ -383,11 +396,20 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
                 Long disabledTimeMillis = parseLongOrNull(component.get(DISABLED_TIME_KEY));
                 long deletionGracePeriodSeconds = parseLongOrDefault(component.get(DELETION_GRACE_PERIOD_KEY), 3600L); // 1 hour
 
+                long preActivationPeriodSeconds = parseLongOrDefault(component.get(PRE_ACTIVATION_PERIOD_KEY), 0L);
+                if (preActivationPeriodSeconds < 0) {
+                    preActivationPeriodSeconds = 0L; // A negative window is meaningless; treat as immediate activation.
+                }
+                Long activationTimeMillis = parseLongOrNull(component.get(ACTIVATION_TIME_KEY));
+                String preActivationPredecessorId = component.get(PRE_ACTIVATION_PREDECESSOR_KEY);
+                boolean preActivationPending = "true".equalsIgnoreCase(component.get(PRE_ACTIVATION_PENDING_KEY));
+
                 return new ProviderRotationState(
                         realm.getId(), realm.getName(), component.getId(), component.getProviderId(), component.getName(),
                         autoRotationEnabled, active, enabled, lastRotationTimeMillis, rotationPeriodSeconds,
                         configuredPassiveExpirationSeconds, minimumPassiveRetentionSeconds, autoDeleteDisabledKeys,
-                        disabledTimeMillis, deletionGracePeriodSeconds);
+                        disabledTimeMillis, deletionGracePeriodSeconds, preActivationPeriodSeconds, activationTimeMillis,
+                        preActivationPredecessorId, preActivationPending);
             } catch (Exception e) {
                 logger.warnv(e, "Skipping key provider '{0}' in realm '{1}' due to malformed rotation configuration",
                         component.getName(), realm.getName());
@@ -422,10 +444,15 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
     /**
      * Pure predicate: is an active, enabled, auto-rotation-enabled key past its rotation period?
      * A provider that an administrator has disabled (enabled=false) is never rotated, so rotation
-     * cannot silently re-enable disabled key material.
+     * cannot silently re-enable disabled key material. A key that is itself a not-yet-promoted
+     * pre-activation key, or one that already has a pre-activation successor pending promotion, is
+     * also skipped so a single rotation does not spawn multiple replacements.
      */
     static boolean isDueForRotation(ProviderRotationState state, long now) {
         if (!state.autoRotationEnabled() || !state.active() || !state.enabled()) {
+            return false;
+        }
+        if (state.activationTimeMillis() != null || state.preActivationPending()) {
             return false;
         }
         if (state.lastRotationTimeMillis() == null) {
@@ -436,10 +463,30 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
     }
 
     /**
+     * Pure predicate: is a passive pre-activation key past its activation time and ready to become
+     * the active signing key? During the pre-activation window the new key is published in the JWKS
+     * ({@code enabled=true}) but not yet active, giving clients that cache the JWKS time to pick it
+     * up before it signs tokens.
+     */
+    static boolean shouldPromotePreActivationKey(ProviderRotationState state, long now) {
+        if (state.activationTimeMillis() == null) {
+            return false;
+        }
+        if (state.active() || !state.enabled()) {
+            return false;
+        }
+        return now >= state.activationTimeMillis();
+    }
+
+    /**
      * Pure predicate: has a passive, still-enabled key exceeded its effective expiration period?
+     * A pre-activation key waiting to be promoted (activationTime set) is never expired here.
      */
     static boolean shouldExpirePassiveKey(ProviderRotationState state, long now) {
         if (state.active() || !state.enabled()) {
+            return false;
+        }
+        if (state.activationTimeMillis() != null) {
             return false;
         }
         if (state.lastRotationTimeMillis() == null) {
@@ -550,6 +597,31 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
                 return false; // Re-check inside the transaction.
             }
             rotateKey(txSession, realm, component);
+            return true;
+        });
+    }
+
+    /**
+     * Promotes a pre-activation key in its own transaction, re-checking the predicate against a
+     * freshly re-read snapshot so a concurrent promotion on another node is not duplicated.
+     *
+     * @return {@code true} if the key was promoted, {@code false} if it was skipped on re-check.
+     */
+    private boolean promotePreActivationKeyTx(KeycloakSessionFactory factory, ProviderRotationState state, long now) {
+        return KeycloakModelUtils.runJobInTransactionWithResult(factory, txSession -> {
+            RealmModel realm = txSession.realms().getRealm(state.realmId());
+            if (realm == null) {
+                return false;
+            }
+            ComponentModel component = realm.getComponent(state.componentId());
+            if (component == null) {
+                return false;
+            }
+            ProviderRotationState fresh = ProviderRotationState.from(component, realm, computeMinimumPassiveKeyRetention(realm));
+            if (fresh == null || !shouldPromotePreActivationKey(fresh, now)) {
+                return false; // Re-check inside the transaction.
+            }
+            promotePreActivationKey(txSession, realm, component, fresh);
             return true;
         });
     }
@@ -711,17 +783,27 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
     }
 
     /**
-     * Rotates the key by creating a new key provider with higher priority and 
-     * setting the current active key to passive.
+     * Rotates the key. When a pre-activation period is configured the replacement key is first
+     * published passively (visible in the JWKS but not yet used for signing) so clients that cache
+     * the JWKS have time to pick it up; a later run promotes it to active. Otherwise the replacement
+     * becomes active immediately (the default behavior).
      */
     private void rotateKey(KeycloakSession session, RealmModel realm, ComponentModel currentProvider) {
-        logger.infof("ROTATING KEY for provider '%s' (id=%s) in realm '%s'", 
+        long preActivationPeriodSeconds = currentProvider.get(PRE_ACTIVATION_PERIOD_KEY, 0L);
+        if (preActivationPeriodSeconds > 0) {
+            startPreActivation(session, realm, currentProvider, preActivationPeriodSeconds);
+        } else {
+            rotateImmediately(session, realm, currentProvider);
+        }
+    }
+
+    /**
+     * Immediate rotation: demote the current key to passive and create a new, higher-priority
+     * active key in the same step, so the new key starts signing right away.
+     */
+    private void rotateImmediately(KeycloakSession session, RealmModel realm, ComponentModel currentProvider) {
+        logger.infof("ROTATING KEY for provider '%s' (id=%s) in realm '%s'",
                 currentProvider.getName(), currentProvider.getId(), realm.getName());
-        
-        List<Tag> tags = new ArrayList<>();
-        tags.add(Tag.of("realm", realm.getName()));
-        tags.add(Tag.of("provider", currentProvider.getProviderId()));
-        tags.add(Tag.of("operation", "rotate"));
 
         // Set the current provider's key to passive
         MultivaluedHashMap<String, String> currentConfig = new MultivaluedHashMap<>(currentProvider.getConfig());
@@ -730,7 +812,121 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
         currentProvider.setConfig(currentConfig);
         realm.updateComponent(currentProvider);
 
-        // Create a new key provider with higher priority
+        ComponentModel added = createReplacementProvider(realm, currentProvider);
+
+        MultivaluedHashMap<String, String> rotationConfig = baseRotationConfig(added, currentProvider);
+        rotationConfig.putSingle(LAST_ROTATION_TIME_KEY, String.valueOf(Time.currentTimeMillis()));
+        rotationConfig.putSingle(ACTIVE_KEY, "true");
+        added.setConfig(rotationConfig);
+        realm.updateComponent(added);
+
+        incrementRotationMeter(realm, currentProvider.getProviderId(), "rotate");
+
+        logger.infof("Automatic key rotation activated: Created and configured new key provider '%s' (id=%s) for realm '%s'",
+                added.getName(), added.getId(), realm.getName());
+
+        // Update metric for the new key immediately after rotation. The retention floor is
+        // irrelevant to the gauge (it only reads active state and lastRotationTime), so pass 0.
+        publishLastRotationGauge(ProviderRotationState.from(added, realm, 0L));
+
+        // Fire admin event
+        fireAdminEvent(session, realm, added, OperationType.CREATE, "Automatic key rotation activated");
+    }
+
+    /**
+     * Pre-activation rotation: create the replacement key as passive-but-published
+     * ({@code active=false, enabled=true}) with an {@code activationTime} in the future, while the
+     * current key keeps signing. The current key is marked {@code preActivationPending} so it is not
+     * rotated again before the pending key is promoted. A later run promotes the new key (see
+     * {@link #promotePreActivationKey}).
+     */
+    private void startPreActivation(KeycloakSession session, RealmModel realm, ComponentModel currentProvider,
+                                    long preActivationPeriodSeconds) {
+        long now = Time.currentTimeMillis();
+        long activationTime = now + TimeUnit.SECONDS.toMillis(preActivationPeriodSeconds);
+
+        logger.infof("PRE-ACTIVATION rotation for provider '%s' (id=%s) in realm '%s': replacement key will be " +
+                "published passively for %d s and activated at %d",
+                currentProvider.getName(), currentProvider.getId(), realm.getName(), preActivationPeriodSeconds, activationTime);
+
+        ComponentModel added = createReplacementProvider(realm, currentProvider);
+
+        MultivaluedHashMap<String, String> cfg = baseRotationConfig(added, currentProvider);
+        cfg.putSingle(LAST_ROTATION_TIME_KEY, String.valueOf(now));
+        cfg.putSingle(ACTIVE_KEY, "false"); // passive but published in the JWKS
+        cfg.putSingle(ACTIVATION_TIME_KEY, String.valueOf(activationTime));
+        cfg.putSingle(PRE_ACTIVATION_PREDECESSOR_KEY, currentProvider.getId());
+        added.setConfig(cfg);
+        realm.updateComponent(added);
+
+        // Mark the still-active predecessor so it is not rotated again while promotion is pending.
+        MultivaluedHashMap<String, String> currentConfig = new MultivaluedHashMap<>(currentProvider.getConfig());
+        currentConfig.putSingle(PRE_ACTIVATION_PENDING_KEY, "true");
+        currentProvider.setConfig(currentConfig);
+        realm.updateComponent(currentProvider);
+
+        incrementRotationMeter(realm, currentProvider.getProviderId(), "pre-activate");
+
+        logger.infof("Automatic key rotation pre-activation: published passive key provider '%s' (id=%s) for realm '%s'",
+                added.getName(), added.getId(), realm.getName());
+
+        // The new key is passive, so no "last rotated" gauge is published until it is promoted.
+        fireAdminEvent(session, realm, added, OperationType.CREATE, "Automatic key rotation: pre-activation key published");
+    }
+
+    /**
+     * Promotes a pre-activation key to the active signing key once its activation time has passed:
+     * the new key becomes active and its pre-activation markers are cleared, and its predecessor
+     * (the previously active key) is demoted to passive so its expiration clock starts.
+     */
+    private void promotePreActivationKey(KeycloakSession session, RealmModel realm, ComponentModel newProvider,
+                                         ProviderRotationState state) {
+        long now = Time.currentTimeMillis();
+
+        logger.infof("PROMOTING pre-activation key '%s' (id=%s) to active in realm '%s'",
+                newProvider.getName(), newProvider.getId(), realm.getName());
+
+        // Demote the predecessor (previously active) key to passive, if it still exists.
+        String predecessorId = state.preActivationPredecessorId();
+        if (predecessorId != null && !predecessorId.trim().isEmpty()) {
+            ComponentModel predecessor = realm.getComponent(predecessorId);
+            if (predecessor != null) {
+                MultivaluedHashMap<String, String> pc = new MultivaluedHashMap<>(predecessor.getConfig());
+                pc.putSingle(ACTIVE_KEY, "false");
+                pc.putSingle(LAST_ROTATION_TIME_KEY, String.valueOf(now)); // start its passive-expiration clock now
+                pc.remove(PRE_ACTIVATION_PENDING_KEY);
+                predecessor.setConfig(pc);
+                realm.updateComponent(predecessor);
+                // The predecessor is now passive: drop its "last rotated" gauge.
+                publishLastRotationGauge(ProviderRotationState.from(predecessor, realm, 0L));
+            }
+        }
+
+        // Promote the new key to active and clear the pre-activation markers.
+        MultivaluedHashMap<String, String> cfg = new MultivaluedHashMap<>(newProvider.getConfig());
+        cfg.putSingle(ACTIVE_KEY, "true");
+        cfg.putSingle(LAST_ROTATION_TIME_KEY, String.valueOf(now)); // its rotation clock starts at activation
+        cfg.remove(ACTIVATION_TIME_KEY);
+        cfg.remove(PRE_ACTIVATION_PREDECESSOR_KEY);
+        newProvider.setConfig(cfg);
+        realm.updateComponent(newProvider);
+
+        incrementRotationMeter(realm, newProvider.getProviderId(), "promote");
+
+        // The new key is now active: publish its "last rotated" gauge.
+        publishLastRotationGauge(ProviderRotationState.from(newProvider, realm, 0L));
+
+        fireAdminEvent(session, realm, newProvider, OperationType.UPDATE,
+                "Automatic key rotation: pre-activation key promoted to active");
+    }
+
+    /**
+     * Creates the replacement key provider (higher priority, same key-generation parameters as the
+     * rotated one) and returns the persisted component. Generated key material is intentionally not
+     * copied so a fresh key is produced. Rotation-specific and activation state is applied by the
+     * caller.
+     */
+    private ComponentModel createReplacementProvider(RealmModel realm, ComponentModel currentProvider) {
         ComponentModel newProvider = new ComponentModel();
         // Use providerId as base name to avoid accumulating timestamps that exceed DB column length
         String baseName = currentProvider.getProviderId();
@@ -741,7 +937,7 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
 
         MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
 
-        // Higher priority so the freshly generated key becomes the active one.
+        // Higher priority so the freshly generated key can become the active one.
         long currentPriority = currentProvider.get("priority", 0L);
         config.putSingle("priority", String.valueOf(currentPriority + 1));
 
@@ -757,39 +953,48 @@ public class AutomaticKeyRotationTask implements ScheduledTask {
         newProvider.setConfig(config);
 
         // Add the component (this triggers validation and key generation)
-        ComponentModel added = realm.addComponentModel(newProvider);
-        
-        // Now update it with rotation-specific config after it's been created and validated
-        MultivaluedHashMap<String, String> rotationConfig = new MultivaluedHashMap<>(added.getConfig());
-        rotationConfig.putSingle(AUTO_ROTATION_ENABLED_KEY, "true");
-        rotationConfig.putSingle(ROTATION_PERIOD_KEY, currentProvider.get(ROTATION_PERIOD_KEY));
-        rotationConfig.putSingle(PASSIVE_KEY_EXPIRATION_KEY, currentProvider.get(PASSIVE_KEY_EXPIRATION_KEY));
-        rotationConfig.putSingle(LAST_ROTATION_TIME_KEY, String.valueOf(Time.currentTimeMillis()));
-        rotationConfig.putSingle(ACTIVE_KEY, "true");
-        rotationConfig.putSingle(ENABLED_KEY, "true");
+        return realm.addComponentModel(newProvider);
+    }
+
+    /**
+     * Builds the rotation-specific configuration shared by both the immediate and pre-activation
+     * paths (auto-rotation, rotation period, passive expiration, deletion settings and the
+     * pre-activation period), starting from the added component's generated config. The caller adds
+     * the active/activation state.
+     */
+    private MultivaluedHashMap<String, String> baseRotationConfig(ComponentModel added, ComponentModel currentProvider) {
+        MultivaluedHashMap<String, String> cfg = new MultivaluedHashMap<>(added.getConfig());
+        cfg.putSingle(AUTO_ROTATION_ENABLED_KEY, "true");
+        cfg.putSingle(ROTATION_PERIOD_KEY, currentProvider.get(ROTATION_PERIOD_KEY));
+        cfg.putSingle(PASSIVE_KEY_EXPIRATION_KEY, currentProvider.get(PASSIVE_KEY_EXPIRATION_KEY));
+        cfg.putSingle(ENABLED_KEY, "true");
         // Propagate deletion settings to the new provider
         if (currentProvider.get(AUTO_DELETE_DISABLED_KEYS_KEY) != null) {
-            rotationConfig.putSingle(AUTO_DELETE_DISABLED_KEYS_KEY, currentProvider.get(AUTO_DELETE_DISABLED_KEYS_KEY));
+            cfg.putSingle(AUTO_DELETE_DISABLED_KEYS_KEY, currentProvider.get(AUTO_DELETE_DISABLED_KEYS_KEY));
         }
         if (currentProvider.get(DELETION_GRACE_PERIOD_KEY) != null) {
-            rotationConfig.putSingle(DELETION_GRACE_PERIOD_KEY, currentProvider.get(DELETION_GRACE_PERIOD_KEY));
+            cfg.putSingle(DELETION_GRACE_PERIOD_KEY, currentProvider.get(DELETION_GRACE_PERIOD_KEY));
         }
-        added.setConfig(rotationConfig);
-        realm.updateComponent(added);
+        // Propagate the pre-activation period so the replacement key rotates the same way next time.
+        if (currentProvider.get(PRE_ACTIVATION_PERIOD_KEY) != null) {
+            cfg.putSingle(PRE_ACTIVATION_PERIOD_KEY, currentProvider.get(PRE_ACTIVATION_PERIOD_KEY));
+        }
+        return cfg;
+    }
 
-        if (isMetricsEnabled()) {
-            rotationMeterProvider.withTags(tags).increment();
+    /**
+     * Increments the key-rotation operations counter for the given operation, honoring
+     * {@code --metrics-enabled}.
+     */
+    private void incrementRotationMeter(RealmModel realm, String providerId, String operation) {
+        if (!isMetricsEnabled()) {
+            return;
         }
-        
-        logger.infof("Automatic key rotation activated: Created and configured new key provider '%s' (id=%s) for realm '%s'", 
-                added.getName(), added.getId(), realm.getName());
-        
-        // Update metric for the new key immediately after rotation. The retention floor is
-        // irrelevant to the gauge (it only reads active state and lastRotationTime), so pass 0.
-        publishLastRotationGauge(ProviderRotationState.from(added, realm, 0L));
-        
-        // Fire admin event
-        fireAdminEvent(session, realm, added, OperationType.CREATE, "Automatic key rotation activated");
+        List<Tag> tags = new ArrayList<>();
+        tags.add(Tag.of("realm", realm.getName()));
+        tags.add(Tag.of("provider", providerId));
+        tags.add(Tag.of("operation", operation));
+        rotationMeterProvider.withTags(tags).increment();
     }
 
     /**
