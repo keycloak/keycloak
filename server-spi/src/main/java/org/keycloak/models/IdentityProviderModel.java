@@ -272,6 +272,20 @@ public class IdentityProviderModel implements Serializable {
     public void validate(RealmModel realm) {
     }
 
+    /**
+     * <p>Validates this configuration with access to the current session.
+     *
+     * <p>Sub-classes can override this method when validation needs to resolve server-side state
+     * (e.g. realm keys) that is only reachable through the {@link KeycloakSession}. The default
+     * implementation delegates to {@link #validate(RealmModel)} so existing validations keep working.
+     *
+     * @param session the current session
+     * @param realm the realm
+     */
+    public void validate(KeycloakSession session, RealmModel realm) {
+        validate(realm);
+    }
+
     public IdentityProviderSyncMode getSyncMode() {
         String syncMode = getConfig().get(SYNC_MODE);
         return syncMode != null ? IdentityProviderSyncMode.valueOf(syncMode) : null;

@@ -20,6 +20,8 @@ package org.keycloak.connections.httpclient;
 import java.io.IOException;
 import java.io.InputStream;
 
+import javax.net.ssl.SSLContext;
+
 import org.keycloak.provider.Provider;
 
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -36,9 +38,27 @@ public interface HttpClientProvider extends Provider {
      * Closing the {@code HttpClient} instance is responsibility of this provider. However,
      * the objects created via the returned {@code HttpClient} need to be closed properly
      * by the code that instantiated them.
-     * @return 
+     * @return
      */
     CloseableHttpClient getHttpClient();
+
+    /**
+     * Builds a dedicated {@code CloseableHttpClient} that inherits the server-wide outbound HTTP
+     * configuration (proxy, timeouts, connection pool, cookie/redirect/retry policy, hostname
+     * verification and tracing) but uses the supplied {@link SSLContext} in place of the server-wide
+     * TLS material. This is intended for callers that need per-request client TLS key material, such as
+     * an OIDC identity provider configured with {@code tls_client_auth} (RFC 8705 mTLS).
+     * <p>
+     * <b>Unlike {@link #getHttpClient()}, the returned client is owned by the caller and MUST be
+     * {@code close()}d once the request has completed.</b>
+     *
+     * @param sslContext the SSL context providing the client key material (and trust material) to use
+     * @return a dedicated, caller-owned client
+     */
+    default CloseableHttpClient createHttpClient(SSLContext sslContext) {
+        throw new UnsupportedOperationException(
+                "This HttpClientProvider does not support building a dedicated client with a custom SSLContext");
+    }
 
     /**
      * Helper method

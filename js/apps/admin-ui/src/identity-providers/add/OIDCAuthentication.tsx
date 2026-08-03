@@ -1,6 +1,10 @@
-import { SelectControl } from "@keycloak/keycloak-ui-shared";
+import type { KeyMetadataRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/keyMetadataRepresentation";
+import { SelectControl, useFetch } from "@keycloak/keycloak-ui-shared";
+import { useMemo, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { useAdminClient } from "../../admin-client";
+import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { sortProviders } from "../../util";
 import { ClientIdSecret } from "../component/ClientIdSecret";
@@ -13,11 +17,14 @@ const clientAuthentications = [
   "client_secret_basic_unencoded",
   "client_secret_jwt",
   "private_key_jwt",
+  "tls_client_auth",
 ];
 
 export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
   const providers = useServerInfo().providers!.clientSignature.providers;
   const { t } = useTranslation();
+  const { adminClient } = useAdminClient();
+  const { realm } = useRealm();
 
   const { control } = useFormContext();
 
@@ -25,6 +32,47 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
     control: control,
     name: "config.clientAuthMethod",
   });
+
+  const [realmKeys, setRealmKeys] = useState<KeyMetadataRepresentation[]>([]);
+
+  // The realm keys are only needed to populate the certificate selector for tls_client_auth.
+  // Only fetch them when that method is selected: the /keys endpoint requires view-realm, while
+  // managing identity providers only requires manage-identity-providers. Fetching unconditionally
+  // would make every OIDC IdP form fail for least-privileged IdP administrators. Any error (e.g. a
+  // 403 for admins without view-realm) is swallowed to an empty list so the form still renders
+  // instead of being sent to the error boundary.
+  useFetch(
+    async () => {
+      if (clientAuthMethod !== "tls_client_auth") {
+        return [];
+      }
+      try {
+        const keysMetadata = await adminClient.realms.getKeys({ realm });
+        return keysMetadata.keys ?? [];
+      } catch (error) {
+        console.warn(
+          "Could not load realm keys for tls_client_auth certificate selection.",
+          error,
+        );
+        return [];
+      }
+    },
+    setRealmKeys,
+    [clientAuthMethod],
+  );
+
+  const certKeyProviderOptions = useMemo(() => {
+    const seen = new Set<string>();
+    const options: { key: string; value: string }[] = [];
+    for (const k of realmKeys) {
+      if (k.certificate && k.providerId && !seen.has(k.providerId)) {
+        seen.add(k.providerId);
+        const label = `${k.providerId} (${k.type ?? k.algorithm ?? ""}${k.kid ? ", " + k.kid : ""})`;
+        options.push({ key: k.providerId, value: label });
+      }
+    }
+    return options;
+  }, [realmKeys]);
 
   return (
     <>
@@ -41,7 +89,10 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
         }}
       />
       <ClientIdSecret
-        secretRequired={clientAuthMethod !== "private_key_jwt"}
+        secretRequired={
+          clientAuthMethod !== "private_key_jwt" &&
+          clientAuthMethod !== "tls_client_auth"
+        }
         create={create}
       />
       <SelectControl
@@ -67,6 +118,15 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
         <SwitchField
           field="config.jwtX509HeadersEnabled"
           label="jwtX509HeadersEnabled"
+        />
+      )}
+      {clientAuthMethod === "tls_client_auth" && (
+        <SelectControl
+          name="config.clientCertKeyProviderId"
+          label={t("clientCertKeyProviderId")}
+          labelIcon={t("clientCertKeyProviderIdHelp")}
+          options={certKeyProviderOptions}
+          controller={{ defaultValue: "" }}
         />
       )}
     </>

@@ -22,6 +22,7 @@ import java.util.Map;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.representations.MTLSEndpointAliases;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -80,6 +81,21 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
         // Hence some servers may not add it to their well-known responses
         if (rep.getIntrospectionEndpoint() != null) {
             config.setTokenIntrospectionUrl(rep.getIntrospectionEndpoint());
+        }
+
+        // RFC 8705: preserve the mtls_endpoint_aliases so that tls_client_auth backchannel requests are
+        // sent to the certificate-authenticated endpoints rather than the regular ones.
+        MTLSEndpointAliases mtlsAliases = rep.getMtlsEndpointAliases();
+        if (mtlsAliases != null) {
+            if (mtlsAliases.getTokenEndpoint() != null) {
+                config.setMtlsTokenUrl(mtlsAliases.getTokenEndpoint());
+            }
+            if (mtlsAliases.getUserInfoEndpoint() != null) {
+                config.setMtlsUserInfoUrl(mtlsAliases.getUserInfoEndpoint());
+            }
+            if (mtlsAliases.getIntrospectionEndpoint() != null) {
+                config.setMtlsTokenIntrospectionUrl(mtlsAliases.getIntrospectionEndpoint());
+            }
         }
         return config.getConfig();
     }

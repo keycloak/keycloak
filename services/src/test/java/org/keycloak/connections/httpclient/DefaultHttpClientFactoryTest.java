@@ -205,6 +205,22 @@ public class DefaultHttpClientFactoryTest {
             }
         }
 
+        @Test
+        public void createHttpClientWithCustomSslContextInheritsServerSettings() throws Exception {
+            // The per-IdP mTLS path (tls_client_auth) builds a dedicated client via createHttpClient(sslContext).
+            // It must inherit the server-wide settings: here we verify the disabled-by-default redirect handling
+            // is still applied (i.e. the builder configuration ran) and the client is usable.
+            HttpClientProvider provider = createDefaultProvider();
+            javax.net.ssl.SSLContext sslContext = javax.net.ssl.SSLContext.getInstance("TLS");
+            sslContext.init(null, null, null);
+
+            try (CloseableHttpClient httpClient = provider.createHttpClient(sslContext);
+                    CloseableHttpResponse res = httpClient.execute(new HttpGet("http://localhost:8280/redirect"))) {
+                // redirects disabled by default -> the 302 is returned as-is instead of being followed
+                Assert.assertEquals(302, res.getStatusLine().getStatusCode());
+            }
+        }
+
 	private Optional<String> getTestURL() {
 		try {
 			// Convert domain name to ip to make request by ip

@@ -23,6 +23,8 @@ import java.security.KeyStore;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import javax.net.ssl.SSLContext;
+
 import org.keycloak.Config;
 import org.keycloak.common.util.EnvUtil;
 import org.keycloak.common.util.KeystoreUtil;
@@ -100,6 +102,11 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
             }
 
             @Override
+            public CloseableHttpClient createHttpClient(SSLContext sslContext) {
+                return buildHttpClient(session, sslContext);
+            }
+
+            @Override
             public void close() {
 
             }
@@ -174,92 +181,113 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
         if (httpClient == null) {
             synchronized(this) {
                 if (httpClient == null) {
-                    long socketTimeout = config.getLong("socket-timeout-millis", 5000L);
-                    long establishConnectionTimeout = config.getLong("establish-connection-timeout-millis", -1L);
-                    long connectionRequestTimeout = config.getLong("connection-request-timeout-millis", HttpClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS);
-                    int maxPooledPerRoute = config.getInt("max-pooled-per-route", 64);
-                    int connectionPoolSize = config.getInt("connection-pool-size", 128);
-                    long connectionTTL = config.getLong("connection-ttl-millis", -1L);
-                    long maxConnectionIdleTime = config.getLong("max-connection-idle-time-millis", 900000L);
-                    boolean disableCookies = config.getBoolean("disable-cookies", true);
-                    String clientKeystore = config.get("client-keystore");
-                    String clientKeystorePassword = config.get("client-keystore-password");
-                    String clientPrivateKeyPassword = config.get("client-key-password");
-                    boolean disableTrustManager = config.getBoolean("disable-trust-manager", false);
-
-                    boolean expectContinueEnabled = getBooleanConfigWithSysPropFallback("expect-continue-enabled", false);
-                    boolean reuseConnections = getBooleanConfigWithSysPropFallback("reuse-connections", true);
-
-                    // optionally configure proxy mappings
-                    // direct SPI config (e.g. via standalone.xml) takes precedence over env vars
-                    // lower case env vars take precedence over upper case env vars
-                    ProxyMappings proxyMappings = ProxyMappings.valueOf(config.getArray("proxy-mappings"));
-                    if (proxyMappings == null || proxyMappings.isEmpty()) {
-                        logger.debug("Trying to use proxy mapping from env vars");
-                        String httpProxy = getEnvVarValue(HTTPS_PROXY);
-                        if (isBlank(httpProxy)) {
-                            httpProxy = getEnvVarValue(HTTP_PROXY);
-                        }
-                        String noProxy = getEnvVarValue(NO_PROXY);
-
-                        logger.debugf("httpProxy: %s, noProxy: %s", httpProxy, noProxy);
-                        proxyMappings = ProxyMappings.withFixedProxyMapping(httpProxy, noProxy);
-                    }
-
-                    HttpClientBuilder builder = newHttpClientBuilder(session);
-
-                    builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
-                            .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
-                            .connectionRequestTimeout(connectionRequestTimeout, TimeUnit.MILLISECONDS)
-                            .maxPooledPerRoute(maxPooledPerRoute)
-                            .connectionPoolSize(connectionPoolSize)
-                            .connectionTTL(connectionTTL, TimeUnit.MILLISECONDS)
-                            .maxConnectionIdleTime(maxConnectionIdleTime, TimeUnit.MILLISECONDS)
-                            .disableCookies(disableCookies)
-                            .proxyMappings(proxyMappings)
-                            .expectContinueEnabled(expectContinueEnabled)
-                            .reuseConnections(reuseConnections);
-
-                    TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
-                    boolean disableTruststoreProvider = truststoreProvider == null || truststoreProvider.getTruststore() == null;
-
-                    if (disableTruststoreProvider) {
-                    	logger.warn("TruststoreProvider is disabled");
-                    } else {
-                        builder.hostnameVerification(truststoreProvider.getPolicy());
-                        try {
-                            builder.trustStore(truststoreProvider.getTruststore());
-                        } catch (Exception e) {
-                            throw new RuntimeException("Failed to load truststore", e);
-                        }
-                    }
-
-                    if (disableTrustManager) {
-                    	logger.warn("TrustManager is disabled");
-                    	builder.disableTrustManager();
-                    }
-
-                    if (!config.getBoolean(ALLOW_REDIRECTS, false)) {
-                        builder.disableRedirectHandling();
-                    }
-
-                    if (clientKeystore != null) {
-                        clientKeystore = EnvUtil.replace(clientKeystore);
-                        try {
-                            KeyStore clientCertKeystore = KeystoreUtil.loadKeyStore(clientKeystore, clientKeystorePassword);
-                            builder.keyStore(clientCertKeystore, clientPrivateKeyPassword);
-                        } catch (Exception e) {
-                            throw new RuntimeException("Failed to load keystore", e);
-                        }
-                    }
-
-                    // Configure retry behavior
-                    configureRetries(builder);
-
-                    httpClient = builder.build();
+                    httpClient = buildHttpClient(session, null);
                 }
             }
         }
+    }
+
+    /**
+     * Builds a {@link CloseableHttpClient} using the server-wide connection settings (timeouts, connection
+     * pool, proxy, cookie/redirect/retry policy, truststore and hostname verification, and — via the
+     * factory's {@link #newHttpClientBuilder(KeycloakSession)} — tracing).
+     *
+     * @param session the current session
+     * @param sslContext when non-null, this SSL context is used verbatim (taking precedence over the
+     *                   server-wide client keystore/truststore SSL material) so that only the TLS key
+     *                   material is swapped while every other setting is preserved. Used for per-IdP
+     *                   {@code tls_client_auth} (mTLS) clients.
+     * @return a configured client; the caller owns and must close clients built with a custom sslContext
+     */
+    CloseableHttpClient buildHttpClient(KeycloakSession session, SSLContext sslContext) {
+        HttpClientBuilder builder = newHttpClientBuilder(session);
+        configureBuilder(builder, session);
+        if (sslContext != null) {
+            builder.sslContext(sslContext);
+        }
+        return builder.build();
+    }
+
+    private void configureBuilder(HttpClientBuilder builder, KeycloakSession session) {
+        long socketTimeout = config.getLong("socket-timeout-millis", 5000L);
+        long establishConnectionTimeout = config.getLong("establish-connection-timeout-millis", -1L);
+        long connectionRequestTimeout = config.getLong("connection-request-timeout-millis", HttpClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS);
+        int maxPooledPerRoute = config.getInt("max-pooled-per-route", 64);
+        int connectionPoolSize = config.getInt("connection-pool-size", 128);
+        long connectionTTL = config.getLong("connection-ttl-millis", -1L);
+        long maxConnectionIdleTime = config.getLong("max-connection-idle-time-millis", 900000L);
+        boolean disableCookies = config.getBoolean("disable-cookies", true);
+        String clientKeystore = config.get("client-keystore");
+        String clientKeystorePassword = config.get("client-keystore-password");
+        String clientPrivateKeyPassword = config.get("client-key-password");
+        boolean disableTrustManager = config.getBoolean("disable-trust-manager", false);
+
+        boolean expectContinueEnabled = getBooleanConfigWithSysPropFallback("expect-continue-enabled", false);
+        boolean reuseConnections = getBooleanConfigWithSysPropFallback("reuse-connections", true);
+
+        // optionally configure proxy mappings
+        // direct SPI config (e.g. via standalone.xml) takes precedence over env vars
+        // lower case env vars take precedence over upper case env vars
+        ProxyMappings proxyMappings = ProxyMappings.valueOf(config.getArray("proxy-mappings"));
+        if (proxyMappings == null || proxyMappings.isEmpty()) {
+            logger.debug("Trying to use proxy mapping from env vars");
+            String httpProxy = getEnvVarValue(HTTPS_PROXY);
+            if (isBlank(httpProxy)) {
+                httpProxy = getEnvVarValue(HTTP_PROXY);
+            }
+            String noProxy = getEnvVarValue(NO_PROXY);
+
+            logger.debugf("httpProxy: %s, noProxy: %s", httpProxy, noProxy);
+            proxyMappings = ProxyMappings.withFixedProxyMapping(httpProxy, noProxy);
+        }
+
+        builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
+                .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
+                .connectionRequestTimeout(connectionRequestTimeout, TimeUnit.MILLISECONDS)
+                .maxPooledPerRoute(maxPooledPerRoute)
+                .connectionPoolSize(connectionPoolSize)
+                .connectionTTL(connectionTTL, TimeUnit.MILLISECONDS)
+                .maxConnectionIdleTime(maxConnectionIdleTime, TimeUnit.MILLISECONDS)
+                .disableCookies(disableCookies)
+                .proxyMappings(proxyMappings)
+                .expectContinueEnabled(expectContinueEnabled)
+                .reuseConnections(reuseConnections);
+
+        TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
+        boolean disableTruststoreProvider = truststoreProvider == null || truststoreProvider.getTruststore() == null;
+
+        if (disableTruststoreProvider) {
+            logger.warn("TruststoreProvider is disabled");
+        } else {
+            builder.hostnameVerification(truststoreProvider.getPolicy());
+            try {
+                builder.trustStore(truststoreProvider.getTruststore());
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load truststore", e);
+            }
+        }
+
+        if (disableTrustManager) {
+            logger.warn("TrustManager is disabled");
+            builder.disableTrustManager();
+        }
+
+        if (!config.getBoolean(ALLOW_REDIRECTS, false)) {
+            builder.disableRedirectHandling();
+        }
+
+        if (clientKeystore != null) {
+            clientKeystore = EnvUtil.replace(clientKeystore);
+            try {
+                KeyStore clientCertKeystore = KeystoreUtil.loadKeyStore(clientKeystore, clientKeystorePassword);
+                builder.keyStore(clientCertKeystore, clientPrivateKeyPassword);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load keystore", e);
+            }
+        }
+
+        // Configure retry behavior
+        configureRetries(builder);
     }
 
     /**
