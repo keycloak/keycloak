@@ -194,7 +194,10 @@ export async function addMapper(
 }
 
 export async function clickSaveMapper(page: Page) {
-  await page.getByTestId("new-mapper-save-button").click();
+  const saveMapperButton = page.getByTestId("new-mapper-save-button");
+  await expect(saveMapperButton).toBeEnabled();
+  await saveMapperButton.click();
+  await expect(page).toHaveURL(/.*mappers$/);
 }
 
 export async function clickCancelMapper(page: Page) {
