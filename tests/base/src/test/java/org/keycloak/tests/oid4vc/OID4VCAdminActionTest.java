@@ -145,6 +145,28 @@ public class OID4VCAdminActionTest extends OID4VCIssuerTestBase {
     }
 
     @Test
+    public void testAdminCredentialOfferDoesNotSetEmailVerified() throws Exception {
+        user.updateWithCleanup(u -> u.emailVerified(false));
+        adminEvents.clear();
+
+        String link = sendEmailAndGetLink(null, null, null, "This link will expire within 12 hours");
+
+        driver.open(link);
+
+        proceedPage.assertCurrent();
+        proceedPage.clickProceedLink();
+
+        credentialOfferPage.assertCurrent();
+        credentialOfferPage.clickContinueButton();
+
+        infoPage.assertCurrent();
+        assertEquals("Your account has been updated.", infoPage.getInfo());
+
+        assertFalse(user.admin().toRepresentation().isEmailVerified(),
+                "Opening the credential offer link must not mark the user's email as verified");
+    }
+
+    @Test
     public void testAdminCredentialOfferClientId() throws Exception {
         String link = sendEmailAndGetLink("oidc-client", null, 7200, "This link will expire within 2 hours");
 
