@@ -176,7 +176,7 @@ public class JwtProofValidator extends AbstractProofValidator {
                 }
             }
         } else if (jwsHeader.getX5c() != null && !jwsHeader.getX5c().isEmpty()) {
-            jwk = AttestationValidatorUtil.resolveJwkFromValidatedX5c(jwsHeader.getX5c(), jwsHeader.getAlgorithm().name());
+            jwk = AttestationValidatorUtil.resolveJwkFromProofX5c(jwsHeader.getX5c(), jwsHeader.getAlgorithm().name());
         } else {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Missing binding key. JWT must contain either jwk, kid, or x5c in header.");
         }
@@ -337,7 +337,6 @@ public class JwtProofValidator extends AbstractProofValidator {
         if (attestedKeys == null || attestedKeys.isEmpty()) {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "key_attestation does not contain attested keys");
         }
-
         return new KeyAttestationInfo(attestedKeys);
     }
 

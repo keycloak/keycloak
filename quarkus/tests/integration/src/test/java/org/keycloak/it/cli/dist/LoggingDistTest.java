@@ -30,12 +30,14 @@ import org.keycloak.config.HttpAccessLogOptions;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.connections.httpclient.HttpClientBuilder;
 import org.keycloak.cookie.CookieType;
+import org.keycloak.it.jaxrs.filter.TestFilterTestProvider;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.StopServer;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
+import org.keycloak.it.junit5.extension.TestProvider;
 import org.keycloak.it.utils.RawDistRootPath;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
@@ -65,6 +67,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DistributionTest(stopServer = Mode.MANUAL)
 @RawDistOnly(reason = "Too verbose for docker and enough to check raw dist")
 @Tag(DistributionTest.SLOW)
+@TestProvider(TestFilterTestProvider.class)
 public class LoggingDistTest {
 
     @Test
@@ -176,8 +179,8 @@ public class LoggingDistTest {
     @Test
     @Launch({"start-dev", "--log=syslog"})
     void syslogHandler(CLIResult cliResult) {
-        cliResult.assertNoMessage("org.keycloak");
-        cliResult.assertNoMessage("Listening on:");
+        cliResult.assertNoStartupMessage("org.keycloak");
+        cliResult.assertNoStartupMessage("Listening on:");
         cliResult.assertError("Error writing to TCP stream");
     }
 
@@ -332,19 +335,19 @@ public class LoggingDistTest {
 
         when().get("http://127.0.0.1:8080/realms/master/clients/account/redirect").then()
                 .statusCode(200);
-        cliResult.assertNoMessage("127.0.0.1 GET /realms/master/clients/account/redirect");
+        cliResult.assertNoMessageGiven("TestFilter Request GET /realms/master/clients/account/redirect is done", "127.0.0.1 GET /realms/master/clients/account/redirect");
 
         // file
         CLIResult fileCliResult = runner.run("start-dev", "--http-access-log-enabled=true", "--http-access-log-file-enabled=true", "--http-access-log-pattern='%A %{METHOD} %{REQUEST_URL} %{i,User-Agent}'", "--http-access-log-exclude=/realms/master/clients/.*");
         fileCliResult.assertStartedDevMode();
         when().get("http://127.0.0.1:8080/realms/master/.well-known/openid-configuration").then()
                 .statusCode(200);
-        fileCliResult.assertNoMessage("[org.keycloak.http.access-log]");
-        fileCliResult.assertNoMessage("127.0.0.1 GET /realms/master/.well-known/openid-configuration");
 
         when().get("http://127.0.0.1:8080/realms/master/clients/account/redirect").then()
                 .statusCode(200);
-        fileCliResult.assertNoMessage("127.0.0.1 GET /realms/master/clients/account/redirect");
+        fileCliResult.assertNoMessageGiven("TestFilter Request GET /realms/master/clients/account/redirect is done", "[org.keycloak.http.access-log]");
+        fileCliResult.assertNoMessageGiven("TestFilter Request GET /realms/master/clients/account/redirect is done", "127.0.0.1 GET /realms/master/.well-known/openid-configuration");
+        fileCliResult.assertNoMessageGiven("TestFilter Request GET /realms/master/clients/account/redirect is done", "127.0.0.1 GET /realms/master/clients/account/redirect");
 
         Awaitility.await().atMost(10, TimeUnit.SECONDS).ignoreExceptions().untilAsserted(() -> {
             String data = readHttpAccessLogFile(path, "keycloak-http-access.log");
@@ -359,12 +362,12 @@ public class LoggingDistTest {
     void httpAccessLogFile(CLIResult cliResult, RawDistRootPath path) {
         when().get("http://127.0.0.1:8080/realms/master/.well-known/openid-configuration").then()
                 .statusCode(200);
-        cliResult.assertNoMessage("[org.keycloak.http.access-log]");
-        cliResult.assertNoMessage("127.0.0.1 GET /realms/master/.well-known/openid-configuration");
-
         when().get("http://127.0.0.1:8080/realms/master/clients/account/redirect").then()
                 .statusCode(200);
-        cliResult.assertNoMessage("http://127.0.0.1:8080/realms/master/clients/account/redirect");
+        
+        cliResult.assertNoMessageGiven("TestFilter Request GET /realms/master/clients/account/redirect is done", "[org.keycloak.http.access-log]");
+        cliResult.assertNoMessageGiven("TestFilter Request GET /realms/master/clients/account/redirect is done", "127.0.0.1 GET /realms/master/.well-known/openid-configuration");
+        cliResult.assertNoMessageGiven("TestFilter Request GET /realms/master/clients/account/redirect is done", "http://127.0.0.1:8080/realms/master/clients/account/redirect");
 
         Awaitility.await().atMost(10, TimeUnit.SECONDS).ignoreExceptions().untilAsserted(() -> {
             String data = readHttpAccessLogFile(path, "my-custom-http-access.txt");
@@ -381,7 +384,8 @@ public class LoggingDistTest {
         cliResult.assertStartedDevMode();
         cliResult.assertMessage("opentelemetry");
         cliResult.assertMessage("service.name=\"keycloak\"");
-        cliResult.assertMessage("Failed to export LogsRequestMarshaler.");
+        cliResult.assertMessage("Failed to export");
+        cliResult.assertMessage("error message: Connection refused");
     }
 
     @Test
@@ -438,10 +442,10 @@ public class LoggingDistTest {
 
         // Verify that sensitive cookie values are masked in the access log
         cliResult.assertMessage("[org.keycloak.http.access-log]");
-        cliResult.assertMessage("Authorization: Bearer ...");
-        cliResult.assertMessage("Authorization: DPoP ...");
+        cliResult.assertMessage("Authorization: Bearer <hidden>");
+        cliResult.assertMessage("Authorization: DPoP <hidden>");
         cliResult.assertMessage("Cookie: SOMETHING=something-not-sensitive");
         cliResult.assertMessage("Content-Language: cs");
-        HttpAccessLogOptions.DEFAULT_HIDDEN_COOKIES.forEach(cookie -> cliResult.assertMessage("Cookie: %s=...".formatted(cookie)));
+        HttpAccessLogOptions.DEFAULT_HIDDEN_COOKIES.forEach(cookie -> cliResult.assertMessage("Cookie: %s=<hidden>".formatted(cookie)));
     }
 }

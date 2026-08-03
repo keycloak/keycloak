@@ -1,12 +1,29 @@
 import { useTranslation } from "react-i18next";
-import { TextControl } from "@keycloak/keycloak-ui-shared";
+import { TextAreaControl, TextControl } from "@keycloak/keycloak-ui-shared";
 import { JwksSettings } from "./JwksSettings";
 import { useParams } from "react-router-dom";
 import type { IdentityProviderParams } from "../routes/IdentityProvider";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
+import { useFormContext, useWatch } from "react-hook-form";
+import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 
 export default function DefaultTrustSettings() {
   const { t } = useTranslation();
   const { tab } = useParams<IdentityProviderParams>();
+  const { control, setValue } =
+    useFormContext<IdentityProviderRepresentation>();
+  const useX509 = useWatch({
+    control,
+    name: "config.useX509",
+    defaultValue: "false",
+  });
+
+  const clearX509Settings = () => {
+    const options = { shouldDirty: true };
+
+    setValue("config.trustedCertificates", "", options);
+    setValue("config.attestationExtendedKeyUsages", "", options);
+  };
 
   return (
     <>
@@ -19,7 +36,36 @@ export default function DefaultTrustSettings() {
           required: t("required"),
         }}
       />
-      <JwksSettings />
+      <DefaultSwitchControl
+        name="config.useX509"
+        label={t("useX509AttestationTrust")}
+        labelIcon={t("useX509AttestationTrustHelp")}
+        defaultValue="false"
+        stringify
+        onChange={(_, checked) => {
+          if (!checked) {
+            clearX509Settings();
+          }
+        }}
+      />
+      {useX509 === "true" ? (
+        <>
+          <TextAreaControl
+            name="config.trustedCertificates"
+            label={t("trustedAttestationCertificates")}
+            labelIcon={t("trustedAttestationCertificatesHelp")}
+            rules={{ required: t("required") }}
+          />
+          <TextControl
+            name="config.attestationExtendedKeyUsages"
+            label={t("attestationExtendedKeyUsages")}
+            labelIcon={t("attestationExtendedKeyUsagesHelp")}
+            rules={{ required: t("required") }}
+          />
+        </>
+      ) : (
+        <JwksSettings />
+      )}
     </>
   );
 }

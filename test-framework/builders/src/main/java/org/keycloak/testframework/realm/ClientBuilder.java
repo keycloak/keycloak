@@ -179,6 +179,11 @@ public class ClientBuilder extends Builder<ClientRepresentation> {
         return this;
     }
 
+    public ClientBuilder implicitFlowEnabled(Boolean enabled) {
+        rep.setImplicitFlowEnabled(enabled);
+        return this;
+    }
+
     public ClientBuilder webOrigins(String... webOrigins) {
         rep.setWebOrigins(combine(rep.getWebOrigins(), webOrigins));
         return this;

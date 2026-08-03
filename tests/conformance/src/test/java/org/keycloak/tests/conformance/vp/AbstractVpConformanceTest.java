@@ -53,9 +53,22 @@ abstract class AbstractVpConformanceTest extends AbstractConformanceTest {
 
     @Override
     protected Consumer<ModuleRun> interaction(ConformanceModuleVariant moduleVariant) {
-        return moduleRun -> new KeycloakVerifierBrowser(suite, keycloakUrls.getBase(), browserSslContext())
-                .login(VpConformanceRealmConfig.REALM, VpConformanceRealmConfig.CLIENT_ID,
+        return moduleRun -> {
+            KeycloakVerifierBrowser browser =
+                    new KeycloakVerifierBrowser(suite, keycloakUrls.getBase(), browserSslContext());
+            if (crossDevice()) {
+                browser.loginCrossDevice(VpConformanceRealmConfig.REALM, VpConformanceRealmConfig.CLIENT_ID,
                         VpConformanceRealmConfig.IDP_ALIAS, moduleRun);
+            } else {
+                browser.login(VpConformanceRealmConfig.REALM, VpConformanceRealmConfig.CLIENT_ID,
+                        VpConformanceRealmConfig.IDP_ALIAS, moduleRun);
+            }
+        };
+    }
+
+    // Whether the browser plays the cross device flow (QR code link and status poll).
+    protected boolean crossDevice() {
+        return false;
     }
 
     // The browser visits both Keycloak and the suite over TLS, so it trusts the Keycloak server

@@ -28,4 +28,13 @@ public class Oid4vpDirectPostResponse extends AbstractHttpResponse {
                 .map(node -> node.path(OAuth2Constants.REDIRECT_URI).textValue())
                 .orElseThrow(() -> new IllegalStateException(String.format("[%s] %s", getError(), getErrorDescription())));
     }
+
+    // A cross device presentation is answered with an empty JSON object instead of a redirect
+    public boolean hasRedirectUri() {
+        return body != null && body.hasNonNull(OAuth2Constants.REDIRECT_URI);
+    }
+
+    public ObjectNode getBody() {
+        return body;
+    }
 }

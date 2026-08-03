@@ -778,6 +778,59 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     }
 
     @Test
+    public void testCredentialScopeKeyAttestationRequirementRejectsMissingAttestation() {
+        String scopeName = keyAttestationCredentialScope.getName();
+        String credConfigId = keyAttestationCredentialScope.getAttributes()
+                .get(CredentialScopeModel.VC_CONFIGURATION_ID);
+
+        ClientResource clientResource = testRealm.admin().clients().get(client.getId());
+        String userId = testRealm.admin().users().search(TEST_USER).get(0).getId();
+        var credentialsResource = testRealm.admin().users().get(userId).verifiableCredentials();
+
+        clientResource.addOptionalClientScope(keyAttestationCredentialScope.getId());
+        boolean credentialCreated = false;
+        try {
+            UserVerifiableCredentialRepresentation credRep = new UserVerifiableCredentialRepresentation();
+            credRep.setCredentialScopeName(scopeName);
+            credentialsResource.createCredential(credRep);
+            credentialCreated = true;
+
+            CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+            OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+            authDetail.setType(OPENID_CREDENTIAL);
+            authDetail.setCredentialConfigurationId(credConfigId);
+            authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+
+            String authCode = getAuthorizationCode(oauth, client, TEST_USER, scopeName);
+            AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
+            String token = tokenResponse.getAccessToken();
+            String credentialIdentifier = tokenResponse.getOID4VCAuthorizationDetails().get(0)
+                    .getCredentialIdentifiers().get(0);
+
+            String cNonce = getCNonce();
+            String jwtProof = generateJwtProof(credentialIssuer.getCredentialIssuer(), cNonce);
+            CredentialRequest request = new CredentialRequest()
+                    .setCredentialIdentifier(credentialIdentifier)
+                    .setProofs(new Proofs().setJwt(List.of(jwtProof)));
+
+            Oid4vcCredentialResponse response = oauth.oid4vc()
+                    .credentialRequest(request)
+                    .bearerToken(token)
+                    .send();
+
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+            assertEquals(ErrorType.INVALID_PROOF.getValue(), response.getError());
+            assertEquals("key_attestation JWT header claim is required by the credential configuration but was not provided",
+                    response.getErrorDescription());
+        } finally {
+            if (credentialCreated) {
+                credentialsResource.revokeCredential(scopeName);
+            }
+            clientResource.removeOptionalClientScope(keyAttestationCredentialScope.getId());
+        }
+    }
+
+    @Test
     public void testRequestCredentialWithHs256JwtProofRejected() {
         final String scopeName = jwtTypeCredentialScope.getName();
         String credConfigId = jwtTypeCredentialScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);

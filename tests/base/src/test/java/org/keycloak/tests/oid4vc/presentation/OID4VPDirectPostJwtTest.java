@@ -39,8 +39,12 @@ import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vpDirectPostResponse;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Drives the OID4VP wallet login for the encrypted {@code direct_post.jwt} response mode, where the
@@ -65,18 +69,18 @@ public class OID4VPDirectPostJwtTest extends OID4VPVerifierTestBase {
     public void requestObjectAdvertisesEncryptedResponseMode() throws Exception {
         JsonNode request = requestObject();
 
-        Assertions.assertEquals("direct_post.jwt", request.path("response_mode").asText());
+        assertEquals("direct_post.jwt", request.path("response_mode").asText());
         JsonNode metadata = request.path("client_metadata");
         // HAIP requires advertising both A128GCM and A256GCM.
-        Assertions.assertEquals(List.of("A128GCM", "A256GCM"), JsonSerialization.mapper.convertValue(
+        assertEquals(List.of("A128GCM", "A256GCM"), JsonSerialization.mapper.convertValue(
                 metadata.path("encrypted_response_enc_values_supported"), List.class));
 
         JsonNode jwk = OID4VCBasicWallet.encryptionJwk(request);
-        Assertions.assertEquals("EC", jwk.path("kty").asText());
-        Assertions.assertEquals("P-256", jwk.path("crv").asText());
-        Assertions.assertEquals("enc", jwk.path("use").asText());
-        Assertions.assertTrue(jwk.hasNonNull("kid"), "Ephemeral encryption key must carry a kid");
-        Assertions.assertTrue(jwk.hasNonNull("x") && jwk.hasNonNull("y"), "EC public key must expose x and y");
+        assertEquals("EC", jwk.path("kty").asText());
+        assertEquals("P-256", jwk.path("crv").asText());
+        assertEquals("enc", jwk.path("use").asText());
+        assertTrue(jwk.hasNonNull("kid"), "Ephemeral encryption key must carry a kid");
+        assertTrue(jwk.hasNonNull("x") && jwk.hasNonNull("y"), "EC public key must expose x and y");
     }
 
     @Test
@@ -92,14 +96,74 @@ public class OID4VPDirectPostJwtTest extends OID4VPVerifierTestBase {
     }
 
     @Test
+    public void crossDeviceHappyFlowCompletesViaStatusPolling() throws Exception {
+        OID4VCTestContext credential = issueCredential();
+        JsonNode request = crossDeviceRequestObject();
+        String state = request.path("state").asText();
+
+        Oid4vpDirectPostResponse response =
+                wallet.directPostJwt(request, wallet.encryptedResponse(request, wallet.present(credential, request)));
+        assertEquals(200, response.getStatusCode());
+        assertFalse(response.hasRedirectUri(),
+                "A cross device direct_post must not hand the redirect to the remote wallet");
+
+        JsonNode status = pollStatus(state);
+        assertEquals("complete", status.path("status").asText());
+        driver.open(status.path("redirectUri").asText());
+        assertLoginContinued();
+    }
+
+    @Test
+    public void crossDeviceCompletesAfterAbandonedSameDeviceAttempt() throws Exception {
+        OID4VCTestContext credential = issueCredential();
+        String sameDeviceUrl = openWalletPage();
+        String crossDeviceUrl = currentCrossDeviceWalletUrl();
+
+        // The same device attempt fetched the request object but the wallet never answered.
+        JsonNode sameDeviceRequest = wallet.fetchRequestObject(wallet.requestUri(sameDeviceUrl)).getClaims();
+        JsonNode crossDeviceRequest = wallet.fetchRequestObject(wallet.requestUri(crossDeviceUrl)).getClaims();
+
+        assertEquals(sameDeviceRequest.path("state").asText(), crossDeviceRequest.path("state").asText());
+        assertEquals(OID4VCBasicWallet.encryptionJwk(sameDeviceRequest),
+                OID4VCBasicWallet.encryptionJwk(crossDeviceRequest),
+                "Both flows must advertise the same ephemeral encryption key");
+
+        Oid4vpDirectPostResponse response = wallet.directPostJwt(crossDeviceRequest,
+                wallet.encryptedResponse(crossDeviceRequest, wallet.present(credential, crossDeviceRequest)));
+        assertEquals(200, response.getStatusCode());
+        assertFalse(response.hasRedirectUri());
+
+        JsonNode status = pollStatus(crossDeviceRequest.path("state").asText());
+        assertEquals("complete", status.path("status").asText());
+        driver.open(status.path("redirectUri").asText());
+        assertLoginContinued();
+    }
+
+    @Test
+    public void latePresentationAfterCompletionReadsAsExpiredState() throws Exception {
+        OID4VCTestContext credential = issueCredential();
+        JsonNode request = crossDeviceRequestObject();
+        String encrypted = wallet.encryptedResponse(request, wallet.present(credential, request));
+        assertEquals(200, wallet.directPostJwt(request, encrypted).getStatusCode());
+
+        // An abandoned wallet session firing after the completion consumed the state must read like
+        // the plain mode duplicate, not like an encryption key problem.
+        Oid4vpDirectPostResponse replay = wallet.directPostJwt(request, encrypted);
+        assertEquals(400, replay.getStatusCode());
+        assertEquals("invalid_request", replay.getError());
+        assertTrue(replay.getErrorDescription().contains("Unknown or expired state"),
+                "Expected the expired state error, was: " + replay.getErrorDescription());
+    }
+
+    @Test
     public void directPostRejectsUnencryptedPresentation() throws Exception {
         OID4VCTestContext credential = issueCredential();
         JsonNode request = requestObject();
 
         // A plain post for a flow that promised encryption would be a downgrade.
         Oid4vpDirectPostResponse response = wallet.directPost(request, wallet.present(credential, request));
-        Assertions.assertEquals(400, response.getStatusCode());
-        Assertions.assertEquals("invalid_request", response.getError());
+        assertEquals(400, response.getStatusCode());
+        assertEquals("invalid_request", response.getError());
     }
 
     @Test
@@ -107,8 +171,8 @@ public class OID4VPDirectPostJwtTest extends OID4VPVerifierTestBase {
         JsonNode request = requestObject();
 
         Oid4vpDirectPostResponse response = wallet.directPostJwt(request, "not-a-jwe");
-        Assertions.assertEquals(400, response.getStatusCode());
-        Assertions.assertEquals("invalid_request", response.getError());
+        assertEquals(400, response.getStatusCode());
+        assertEquals("invalid_request", response.getError());
     }
 
     @Test
@@ -123,8 +187,8 @@ public class OID4VPDirectPostJwtTest extends OID4VPVerifierTestBase {
                 + "." + Base64Url.encode(new byte[16]);
 
         Oid4vpDirectPostResponse response = wallet.directPostJwt(request, jwe);
-        Assertions.assertEquals(400, response.getStatusCode());
-        Assertions.assertEquals("invalid_request", response.getError());
+        assertEquals(400, response.getStatusCode());
+        assertEquals("invalid_request", response.getError());
     }
 
     @Test
@@ -134,8 +198,8 @@ public class OID4VPDirectPostJwtTest extends OID4VPVerifierTestBase {
         String encrypted = wallet.encryptResponse(request, "", request.path("state").asText(),
                 OID4VCBasicWallet.encryptionJwk(request), OID4VCBasicWallet.encryptionJwk(request).path("kid").asText());
         Oid4vpDirectPostResponse response = wallet.directPostJwt(request, encrypted);
-        Assertions.assertEquals(400, response.getStatusCode());
-        Assertions.assertEquals("invalid_request", response.getError());
+        assertEquals(400, response.getStatusCode());
+        assertEquals("invalid_request", response.getError());
     }
 
     @Test
@@ -151,8 +215,8 @@ public class OID4VPDirectPostJwtTest extends OID4VPVerifierTestBase {
         String encrypted = wallet.encryptResponse(request, wallet.present(credential, request),
                 request.path("state").asText(), JsonSerialization.mapper.valueToTree(wrongKey), kid);
         Oid4vpDirectPostResponse response = wallet.directPostJwt(request, encrypted);
-        Assertions.assertEquals(400, response.getStatusCode());
-        Assertions.assertEquals("invalid_request", response.getError());
+        assertEquals(400, response.getStatusCode());
+        assertEquals("invalid_request", response.getError());
     }
 
     @Test
@@ -165,8 +229,8 @@ public class OID4VPDirectPostJwtTest extends OID4VPVerifierTestBase {
         String encrypted = wallet.encryptResponse(request, wallet.present(credential, request),
                 request.path("state").asText(), jwk, jwk.path("kid").asText(), "A192GCM");
         Oid4vpDirectPostResponse response = wallet.directPostJwt(request, encrypted);
-        Assertions.assertEquals(400, response.getStatusCode());
-        Assertions.assertEquals("invalid_request", response.getError());
+        assertEquals(400, response.getStatusCode());
+        assertEquals("invalid_request", response.getError());
     }
 
     @Test
@@ -177,8 +241,8 @@ public class OID4VPDirectPostJwtTest extends OID4VPVerifierTestBase {
         // The response decrypts, but the presentation then fails verification like a plain direct_post.
         String encrypted = wallet.encryptedResponse(request, wallet.present(credential, request, "not-the-issued-nonce"));
         Oid4vpDirectPostResponse response = wallet.directPostJwt(request, encrypted);
-        Assertions.assertEquals(400, response.getStatusCode());
-        Assertions.assertEquals("access_denied", response.getError());
+        assertEquals(400, response.getStatusCode());
+        assertEquals("access_denied", response.getError());
     }
 
     @Test
@@ -190,13 +254,13 @@ public class OID4VPDirectPostJwtTest extends OID4VPVerifierTestBase {
         String encrypted = wallet.encryptResponse(request, wallet.present(credential, request),
                 request.path("state").asText(), OID4VCBasicWallet.encryptionJwk(request), UUID.randomUUID().toString());
         Oid4vpDirectPostResponse response = wallet.directPostJwt(request, encrypted);
-        Assertions.assertEquals(400, response.getStatusCode());
-        Assertions.assertEquals("invalid_request", response.getError());
+        assertEquals(400, response.getStatusCode());
+        assertEquals("invalid_request", response.getError());
     }
 
     @Test
     public void invalidResponseModeIsRejectedOnUpdate() {
-        Assertions.assertThrows(BadRequestException.class,
+        assertThrows(BadRequestException.class,
                 () -> updateIdpConfig(OID4VPIdentityProviderConfig.RESPONSE_MODE, "fragment"));
     }
 
