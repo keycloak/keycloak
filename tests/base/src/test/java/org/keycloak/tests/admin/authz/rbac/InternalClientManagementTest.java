@@ -28,6 +28,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 @KeycloakIntegrationTest
@@ -93,6 +94,30 @@ public class InternalClientManagementTest extends AbstractAdminRBACTest {
     }
 
     @Test
+    public void testNonMasterRealmManageRealmAdminCanRenameAdminRealmRole() {
+        createRealm(adminClient, "myrealm");
+
+        // create admin and create-realm roles in myrealm
+        adminClient.realm("myrealm").roles().create(new RoleRepresentation(AdminRoles.ADMIN, null, false));
+        adminClient.realm("myrealm").roles().create(new RoleRepresentation(AdminRoles.CREATE_REALM, null, false));
+
+        // Grant manage-realm for "myrealm" to a master user
+        grantMasterRealmManagementRole("myrealm", masterUser.getUsername(), AdminRoles.MANAGE_REALM);
+
+        runAs(masterRealm.getName(), masterUser.getUsername(), client -> {
+            for (String name : Set.of(AdminRoles.ADMIN, AdminRoles.CREATE_REALM)) {
+                RoleRepresentation role = client.realm("myrealm").roles().get(name).toRepresentation();
+                // Should not throw ForbiddenException
+                client.realm("myrealm").roles().get(name).update(renamed(role));
+
+                // Verify the role was renamed
+                RoleRepresentation updatedRole = client.realm("myrealm").roles().get(renamed(role).getName()).toRepresentation();
+                assertEquals(renamed(role).getName(), updatedRole.getName());
+            }
+        });
+    }
+
+    @Test
     public void testMasterRealmManageRealmAdminCannotRenameAdminRealmRoleViaNameBasedEndpoint() {
         grantMasterRealmManagementRole(Config.getAdminRealm(), masterUser.getUsername(), AdminRoles.MANAGE_REALM);
 
@@ -125,7 +150,7 @@ public class InternalClientManagementTest extends AbstractAdminRBACTest {
     private RoleRepresentation renamed(RoleRepresentation original) {
         RoleRepresentation renamed = new RoleRepresentation();
         renamed.setId(original.getId());
-        renamed.setName(TEMP_ROLE_NAME);
+        renamed.setName(original.getName() + "_renamed");
         renamed.setDescription(original.getDescription());
         return renamed;
     }
