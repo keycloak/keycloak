@@ -3,6 +3,7 @@ package org.keycloak.tests.oauth;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.testframework.realm.ClientScopeBuilder;
 
 public class ParameterizedScopeBuilder {
@@ -52,6 +53,11 @@ public class ParameterizedScopeBuilder {
 
     public ParameterizedScopeBuilder regexp(String regexp) {
         builder.attribute(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, regexp);
+        return this;
+    }
+
+    public ParameterizedScopeBuilder mappers(ProtocolMapperRepresentation... mappers) {
+        builder.mappers(mappers);
         return this;
     }
 
