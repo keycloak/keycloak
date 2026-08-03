@@ -703,6 +703,15 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testHttp2HeaderListSizeMatchesHttp1HeaderSizeDefault() {
+        ConfigArgsConfigSource.setCliArgs("");
+        SmallRyeConfig config = createConfig();
+        assertEquals(config.getConfigValue("quarkus.http.limits.max-header-size").getValue(),
+                config.getConfigValue("quarkus.http.limits.max-header-list-size").getValue());
+        assertEquals("65535", config.getConfigValue("quarkus.http.limits.max-header-list-size").getValue());
+    }
+
+    @Test
     public void testQuarkusPropertyTakesPrecedenceOverDefault() {
         putEnvVar("QUARKUS_HTTP_PORT", "9090");
         ConfigArgsConfigSource.setCliArgs("");
