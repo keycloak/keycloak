@@ -85,22 +85,34 @@ test.describe.serial("Fine Grain SAML Endpoint Configuration", () => {
 });
 
 test.describe.serial("Clients SAML tests", () => {
-  const clientId = `saml-settings-${uuid()}`;
+  let clientId: string | undefined;
 
-  test.beforeAll(() =>
-    adminClient.createClient({
-      protocol: "saml",
-      clientId,
-    }),
-  );
-
-  test.afterAll(() => adminClient.deleteClient(clientId));
+  const getClientId = () => {
+    if (!clientId) {
+      throw new Error("SAML client for test was not initialized");
+    }
+    return clientId;
+  };
 
   test.beforeEach(async ({ page }) => {
+    clientId = `saml-settings-${uuid()}`;
+    await adminClient.createClient({
+      protocol: "saml",
+      clientId,
+    });
+
     await login(page);
     await goToClients(page);
-    await searchItem(page, "Search for client", clientId);
-    await clickTableRowItem(page, clientId);
+    await searchItem(page, "Search for client", getClientId());
+    await clickTableRowItem(page, getClientId());
+  });
+
+  test.afterEach(async () => {
+    const currentClientId = clientId;
+    clientId = undefined;
+    if (currentClientId) {
+      await adminClient.deleteClient(currentClientId);
+    }
   });
 
   test("should display the saml sections on details screen", async ({
@@ -209,8 +221,11 @@ test.describe.serial("Clients SAML tests", () => {
   });
 
   test("should check access settings", async ({ page }) => {
+    const currentClientId = getClientId();
     const validUrl =
-      "http://localhost:8180/realms/master/protocol/" + clientId + "/clients/";
+      "http://localhost:8180/realms/master/protocol/" +
+      currentClientId +
+      "/clients/";
     const invalidUrlErrorRoot =
       "Client could not be updated: invalid_inputRoot URL is not a valid URL";
     const invalidUrlErrorBase =
