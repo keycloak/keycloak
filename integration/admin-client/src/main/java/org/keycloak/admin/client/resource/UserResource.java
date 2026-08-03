@@ -138,6 +138,20 @@ public interface UserResource {
     void removeCredential(@PathParam("credentialId")String credentialId);
 
     /**
+     * Add a credential for a user
+     */
+    @POST
+    @Path("credentials")
+    Response createCredential(CredentialRepresentation credentialRepresentation);
+
+    /**
+     * Update an existing credential for a user
+     */
+    @PUT
+    @Path("credentials/{credentialId}")
+    void updateCredential(final @PathParam("credentialId") String credentialId, CredentialRepresentation credentialRepresentation);
+
+    /**
      * Update a credential label for a user
      */
     @PUT
