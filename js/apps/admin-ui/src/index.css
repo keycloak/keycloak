@@ -1384,6 +1384,19 @@ code, pre, kbd, samp,
   padding: 1.5rem;
 }
 
+/* Restore the tall bottom padding `.keycloak__form` reserves for the Save/Revert
+   bar, which is position: fixed at the bottom of the viewport and therefore
+   overlaps whatever the form ends with unless space is left for it.
+
+   The shorthand above is more specific than `.keycloak__form` (0,2,0 against
+   0,1,0) and, being a shorthand, reset that reserved space to 1.5rem. The bar is
+   ~75px tall, so the last row of any long form sat underneath it — on realm
+   settings that hid the SAML descriptor link entirely. */
+.pf-v5-c-page__main-section > .pf-v5-c-form.keycloak__form,
+.pf-v5-c-tab-content > .pf-v5-c-page__main-section > .pf-v5-c-form.keycloak__form {
+  padding-block-end: var(--pf-v5-global--spacer--4xl);
+}
+
 /* Toolbar sits above its table as one composed block */
 .pf-v5-c-toolbar {
   border-radius: var(--fidar-radius-lg) var(--fidar-radius-lg) 0 0;
