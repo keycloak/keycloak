@@ -188,18 +188,21 @@ test.describe("Authentication flow details", () => {
   });
 
   test("drags and drops execution", async ({ page }) => {
-    test.setTimeout(60_000);
     await using testBed = await createTestBed();
 
     await adminClient.copyFlow("browser", flowName, testBed.realm);
     await login(page, { to: toAuthentication({ realm: testBed.realm }) });
 
     await clickTableRowItem(page, flowName);
-    await dragExecutionAboveExecution(
+    const moved = await dragExecutionAboveExecution(
       page,
       "Identity Provider Redirector",
       "Kerberos",
     );
+    expect(
+      moved,
+      'Expected to move "Identity Provider Redirector" above "Kerberos"',
+    ).toBe(true);
 
     await assertNotificationMessage(page, "Flow successfully updated");
   });

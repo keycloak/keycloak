@@ -1,11 +1,15 @@
 import { type Locator, type Page, expect } from "@playwright/test";
 
+const TABLE_LOAD_TIMEOUT_MS = 5_000;
+
 export async function searchItem(
   page: Page,
   placeHolder: string,
   itemName: string,
 ) {
-  await page.locator("table tbody").waitFor();
+  await page
+    .locator("table tbody")
+    .waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
   await page.getByPlaceholder(placeHolder).fill(itemName);
   await page.keyboard.press("Enter");
 }
@@ -19,12 +23,14 @@ function escapeRegex(value: string) {
 }
 
 async function clickLinkWhenAvailable(link: Locator): Promise<boolean> {
-  if ((await link.count()) === 0 || !(await link.first().isVisible())) {
+  const candidate = link.first();
+  if ((await candidate.count()) === 0) {
     return false;
   }
 
   try {
-    await link.first().click({ timeout: 1_000 });
+    await candidate.waitFor({ state: "visible", timeout: 500 });
+    await candidate.click({ timeout: 500 });
     return true;
   } catch {
     return false;
@@ -33,11 +39,11 @@ async function clickLinkWhenAvailable(link: Locator): Promise<boolean> {
 
 export async function clickTableRowItem(page: Page, itemName: string) {
   const tableBody = page.locator("table tbody");
-  await tableBody.waitFor();
+  await tableBody.waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
 
   const exactNameRegex = new RegExp(`^${escapeRegex(itemName)}$`, "i");
 
-  for (let attempt = 0; attempt < 8; attempt++) {
+  for (let attempt = 0; attempt < 6; attempt++) {
     if (
       await clickLinkWhenAvailable(
         tableBody.getByRole("link", { name: itemName, exact: true }),
@@ -72,8 +78,6 @@ export async function clickTableRowItem(page: Page, itemName: string) {
     ) {
       return;
     }
-
-    await page.waitForTimeout(250);
   }
 
   throw new Error(`Table row item "${itemName}" not found`);
@@ -185,15 +189,9 @@ export async function getTableData(page: Page, name: string) {
 
   for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
     const row = rowsLocator.nth(rowIndex);
-    const cells = row.locator("td");
-    const cellCount = await cells.count();
-    const rowData: string[] = [];
-
-    for (let cellIndex = 0; cellIndex < cellCount; cellIndex++) {
-      rowData.push((await cells.nth(cellIndex).innerText()).trim());
-    }
-
-    tableData.push(rowData);
+    tableData.push(
+      (await row.locator("td").allInnerTexts()).map((t) => t.trim()),
+    );
   }
 
   return tableData;
@@ -212,7 +210,9 @@ async function getTableRows(page: Page, name: string): Promise<Locator> {
   const table = page
     .getByRole("grid")
     .and(page.getByLabel(name, { exact: true }));
-  await table.locator("tbody").waitFor();
+  await table
+    .locator("tbody")
+    .waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
   return table.locator("tbody tr");
 }
 
@@ -233,20 +233,23 @@ export async function clickSelectRow(
   row: number | string,
 ) {
   if (typeof row === "string") {
+    const rowName = row;
     let rows: string[][] = [];
     let rowIndex = -1;
 
-    for (let attempt = 0; attempt < 6; attempt++) {
-      rows = await getTableData(page, tableName);
-      rowIndex = rows.findIndex((r) => r.includes(row as string));
-      if (rowIndex !== -1) {
-        break;
-      }
-      await page.waitForTimeout(250);
-    }
-
-    if (rowIndex === -1) {
-      throw new Error(`Row ${row} not found: ${rows}`);
+    try {
+      await expect
+        .poll(
+          async () => {
+            rows = await getTableData(page, tableName);
+            rowIndex = rows.findIndex((r) => r.includes(rowName));
+            return rowIndex;
+          },
+          { timeout: TABLE_LOAD_TIMEOUT_MS },
+        )
+        .not.toBe(-1);
+    } catch {
+      throw new Error(`Row ${rowName} not found: ${JSON.stringify(rows)}`);
     }
     row = rowIndex;
   }

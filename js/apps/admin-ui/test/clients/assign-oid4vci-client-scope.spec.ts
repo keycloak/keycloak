@@ -10,17 +10,18 @@ import {
   assignOptionalOid4vciClientScope,
   createOid4vciClientScope,
   openClientScopeSetupTab,
-  skipIfOID4VCIFeatureDisabled,
 } from "./assign-oid4vci-client-scope.ts";
+import { skipIfOID4VCIFeatureDisabled } from "../utils/oid4vci.ts";
 
 test("OIDC client can assign OID4VCI client scopes", async ({ page }) => {
+  await skipIfOID4VCIFeatureDisabled();
+
   await using testBed = await createTestBed({
     verifiableCredentialsEnabled: true,
   });
 
   await login(page, { to: toClients({ realm: testBed.realm }) });
   await goToRealm(page, testBed.realm);
-  await skipIfOID4VCIFeatureDisabled();
 
   const clientScopeName = `oid4vci-scope-${uuid()}`;
   await goToClientScopes(page);

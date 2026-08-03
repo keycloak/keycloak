@@ -24,34 +24,19 @@ import { goToGroupDetails } from "./util.ts";
 
 test.describe.serial("Group test", () => {
   const groupName = `group-${uuid()}`;
-  let testBed: TestBed;
-  const users: { id: string; username: string }[] = [];
-  const usernamePrefix = `test-user-${uuid()}-`;
+  let testBed: TestBed | undefined;
 
   test.beforeAll(async () => {
     testBed = await createTestBed();
-    for (let i = 0; i < 5; i++) {
-      const username = `${usernamePrefix}${i}`;
-      const user = await adminClient.createUser({
-        username,
-        enabled: true,
-        realm: testBed.realm,
-      });
-      users.push({ id: user.id!, username });
-    }
   });
 
   test.afterAll(async () => {
-    await adminClient.deleteGroups(testBed.realm);
-    for (const { username } of users) {
-      await adminClient.deleteUser(username, testBed.realm, true);
-    }
-    await testBed[Symbol.asyncDispose]();
+    await testBed?.[Symbol.asyncDispose]();
   });
 
   test.beforeEach(async ({ page }) => {
     await login(page);
-    await goToRealm(page, testBed.realm);
+    await goToRealm(page, testBed!.realm);
     await goToGroups(page);
   });
 
@@ -71,7 +56,7 @@ test.describe.serial("Group test", () => {
 
     await searchGroup(page, secondGroupName);
     await assertRowExists(page, secondGroupName, true);
-    await adminClient.deleteGroups(testBed.realm);
+    await adminClient.deleteGroups(testBed!.realm);
   });
 
   test("Fail to create group with empty name", async ({ page }) => {
@@ -98,7 +83,7 @@ test.describe.serial("Search group under current group", () => {
   const predefinedGroups = ["level", "level1", "level2", "level3"].map(
     (group) => `${group}-${groupSuffix}`,
   );
-  let testBed: TestBed;
+  let testBed: TestBed | undefined;
 
   const placeholder = "Filter groups";
   const tableName = "Groups";
@@ -109,19 +94,19 @@ test.describe.serial("Search group under current group", () => {
 
   test.beforeEach(async ({ page }) => {
     for (const group of predefinedGroups) {
-      await adminClient.createGroup(group, testBed.realm);
+      await adminClient.createGroup(group, testBed!.realm);
     }
     await login(page);
-    await goToRealm(page, testBed.realm);
+    await goToRealm(page, testBed!.realm);
     await goToGroups(page);
   });
 
   test.afterEach(async () => {
-    await adminClient.deleteGroups(testBed.realm);
+    await adminClient.deleteGroups(testBed!.realm);
   });
 
   test.afterAll(async () => {
-    await testBed[Symbol.asyncDispose]();
+    await testBed?.[Symbol.asyncDispose]();
   });
 
   test("Search group that exists", async ({ page }) => {

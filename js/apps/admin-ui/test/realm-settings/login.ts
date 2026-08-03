@@ -15,7 +15,7 @@ export async function toggleLoginSettingAndExpectSuccess(
 
   const previousAlert = page.getByTestId("last-alert");
   if (await previousAlert.isVisible()) {
-    await previousAlert.locator("button").click();
+    await previousAlert.locator("button").first().click();
     await expect(previousAlert).toBeHidden();
   }
 

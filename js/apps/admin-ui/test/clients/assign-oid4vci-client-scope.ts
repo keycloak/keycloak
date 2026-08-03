@@ -1,26 +1,12 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import { clickSaveButton, selectItem } from "../utils/form.ts";
+import { OID4VCI_PROTOCOL } from "../utils/oid4vci.ts";
 import { clickTableRowItem, getRowByCellText } from "../utils/table.ts";
-import adminClient from "../utils/AdminClient.ts";
-
-const OID4VCI_SERVER_FEATURE = "OID4VC_VCI";
-const OID4VCI_PROTOCOL = "OpenID for Verifiable Credentials";
-const OID4VCI_UNAVAILABLE_MESSAGE =
-  "OID4VCI protocol is unavailable. Start Keycloak with verifiable credentials support enabled.";
-
-export async function skipIfOID4VCIFeatureDisabled() {
-  const isOID4VCIFeatureEnabled = await adminClient.isFeatureEnabled(
-    OID4VCI_SERVER_FEATURE,
-  );
-  // eslint-disable-next-line playwright/no-skipped-test -- Explicit environment gate for unsupported server features.
-  test.skip(!isOID4VCIFeatureEnabled, OID4VCI_UNAVAILABLE_MESSAGE);
-}
 
 export async function createOid4vciClientScope(
   page: Page,
   clientScopeName: string,
 ) {
-  await skipIfOID4VCIFeatureDisabled();
   await clickCreateClientScopeAction(page);
   await selectItem(page, "#kc-protocol", OID4VCI_PROTOCOL);
   await page.getByTestId("name").fill(clientScopeName);

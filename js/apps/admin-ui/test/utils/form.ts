@@ -51,6 +51,12 @@ export async function switchOn(page: Page, id: string | Locator) {
 
 export async function switchOff(page: Page, id: string | Locator) {
   const switchElement = typeof id === "string" ? page.locator(id) : id;
+  await expect(switchElement).toBeChecked();
+  await setSwitchState(switchElement, false);
+}
+
+export async function ensureSwitchOff(page: Page, id: string | Locator) {
+  const switchElement = typeof id === "string" ? page.locator(id) : id;
   await setSwitchState(switchElement, false);
 }
 

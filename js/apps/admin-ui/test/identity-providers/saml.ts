@@ -10,21 +10,20 @@ import {
   setUrl,
 } from "./main.ts";
 
+const EDITED_DISPLAY_NAME = "SAML edited for save";
+
 export async function editSAMLSettings(page: Page, samlProviderName: string) {
   const providerEnabledSwitch = page.locator("#-switch");
-  // Toggle provider state
-  if (await providerEnabledSwitch.isChecked()) {
-    await providerEnabledSwitch.click({ force: true });
-    await confirmModal(page);
-    await assertNotificationMessage(page, "Provider successfully updated");
-  }
+  await expect(providerEnabledSwitch).toBeChecked();
+  await providerEnabledSwitch.click({ force: true });
+  await confirmModal(page);
+  await assertNotificationMessage(page, "Provider successfully updated");
   await goToIdentityProviders(page);
   await expect(page.getByText("Disabled")).toBeVisible();
 
   await clickTableRowItem(page, samlProviderName);
-  if (!(await providerEnabledSwitch.isChecked())) {
-    await providerEnabledSwitch.click({ force: true });
-  }
+  await expect(providerEnabledSwitch).not.toBeChecked();
+  await providerEnabledSwitch.click({ force: true });
 
   // Verify and configure settings
   await setUrl(page, "singleSignOnService", "invalid");
@@ -60,10 +59,8 @@ export async function editSAMLSettings(page: Page, samlProviderName: string) {
 
   await page.getByTestId("config.sendIdTokenOnLogout").uncheck({ force: true });
 
-  // Ensure there is always a persisted change even when defaults already match.
-  await page
-    .getByTestId("displayName")
-    .fill(`SAML edited ${Date.now().toString().slice(-6)}`);
+  // Keep this deterministic while ensuring the form is dirty before saving.
+  await page.getByTestId("displayName").fill(EDITED_DISPLAY_NAME);
 
   await clickSaveButton(page);
 }

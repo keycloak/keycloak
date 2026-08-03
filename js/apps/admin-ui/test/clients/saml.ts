@@ -52,17 +52,8 @@ export async function clickPostBinding(page: Page) {
     "#attributes\\.saml🍺force🍺post🍺binding",
   );
   await expect(postBindingSwitch).toBeVisible();
-
-  const isReadOnly =
-    (await postBindingSwitch.getAttribute("aria-readonly")) === "true" ||
-    (await postBindingSwitch.getAttribute("readonly")) !== null;
-
-  if (isReadOnly || !(await postBindingSwitch.isEnabled())) {
-    return "read-only";
-  }
-
+  await expect(postBindingSwitch).toBeEnabled();
   await switchOff(page, postBindingSwitch);
-  return "toggled";
 }
 
 export async function saveSamlSettings(page: Page) {
@@ -78,7 +69,9 @@ export async function goToClientSettingsTab(page: Page) {
 }
 
 export async function clickClientSignature(page: Page) {
-  await clickSwitch(page, "#clientSignature");
+  const clientSignatureSwitch = page.locator("#clientSignature");
+  await expect(clientSignatureSwitch).toBeChecked();
+  await clickSwitch(page, clientSignatureSwitch);
 }
 
 // Assert that the number of certificates enabled matches the number of certificates displayed
@@ -97,7 +90,9 @@ export async function clickEncryptionAssertions(page: Page) {
 
 export async function clickOffEncryptionAssertions(page: Page) {
   // Toggling this switch can require confirmation in a modal before state flips.
-  await clickSwitch(page, "#encryptAssertions");
+  const encryptAssertionsSwitch = page.locator("#encryptAssertions");
+  await expect(encryptAssertionsSwitch).toBeChecked();
+  await clickSwitch(page, encryptAssertionsSwitch);
 }
 
 export async function clickGenerate(page: Page) {
