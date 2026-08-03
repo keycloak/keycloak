@@ -82,7 +82,10 @@ public interface CLIResult extends LaunchResult {
         }
     }
     
-    private static void noOutput(String reason, String message, Supplier<String> supplier, CLIResult result) {
+    private static void noOutput(String reason, String message, Supplier<String> supplier, CLIResult result, boolean allowRunning) {
+        if (!allowRunning && result.exitCode() == -1) {
+            throw new AssertionError("This assertion should not be used against a server with manual stop mode");
+        }
         assertThat(reason, supplier.get(), not(containsString(message)));
     }
     
@@ -109,7 +112,7 @@ public interface CLIResult extends LaunchResult {
     }
 
     default void assertNoError(String msg) {
-        noOutput("The error output contains: " + msg, msg, this::getErrorOutput, this);
+        noOutput("The error output contains: " + msg, msg, this::getErrorOutput, this, false);
     }
 
     default void assertWarning(String msg) {
@@ -125,10 +128,29 @@ public interface CLIResult extends LaunchResult {
     }
 
     default void assertNoMessage(String message) {
-        noOutput("The standard output contains: " + message, message, this::getOutput, this);
+        noOutput("The standard output contains: " + message, message, this::getOutput, this, false);
+    }
+    
+    /**
+     * Used to check that a message has not been seen given that the expected message has been.
+     */
+    default void assertNoMessageGiven(String expected, String notExpected) {
+        assertMessage(expected);
+        noOutput("The standard output contains: " + notExpected, notExpected, this::getOutput, this, true);
+    }
+    
+    /**
+     * Used to check that message, which is nominally expected at startup, has not been seen.
+     * May be asserted against a running server because the run method blocks until the server is ready. 
+     */
+    default void assertNoStartupMessage(String message) {
+        noOutput("The standard output contains: " + message, message, this::getOutput, this, true);
     }
 
     default void assertMessageWasShownExactlyNumberOfTimes(String message, long numberOfShownTimes) {
+        if (exitCode() == -1) {
+            throw new AssertionError("This assertion should not be used against a server with manual stop mode");
+        }
         long msgCount = getOutput().lines().filter(oneMessage -> oneMessage.contains(message)).count();
         assertThat(msgCount, equalTo(numberOfShownTimes));
     }
@@ -138,7 +160,7 @@ public interface CLIResult extends LaunchResult {
     }
 
     default void assertNoBuild() {
-        assertNoMessage("Server configuration updated and persisted");
+        assertNoStartupMessage("Server configuration updated and persisted");
     }
 
     default boolean isClustered() {
