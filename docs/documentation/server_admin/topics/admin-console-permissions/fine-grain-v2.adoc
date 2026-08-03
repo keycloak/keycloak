@@ -256,8 +256,15 @@ make them available from queries:
 * `Role`
 * `Aggregated`
 
-In case of using an `Aggregated` policy, all the underlying policies must be of type `User`, `Group`, or `Role`. Otherwise,
-the policy will always evaluate to `DENY` when performing partial evaluation.
+When using an `Aggregated` policy, underlying policies that support partial evaluation (`User`, `Group`, `Role`, or nested `Aggregated`)
+are evaluated during partial evaluation. Underlying policies of other types (such as `Time` or `JavaScript`) are skipped
+because they cannot be pre-evaluated at the database level. If an aggregated policy contains only unsupported policy types,
+the entire aggregated policy is excluded from partial evaluation.
+
+When an aggregated policy contains a mix of supported and unsupported policy types, only the supported policies contribute to the
+decision. Unsupported policies do not count as grants but are still considered in the total policy count, which means `Unanimous`
+and `Consensus` decision strategies become more conservative. For best results, use only `User`, `Group`, `Role`, or nested
+`Aggregated` policies as the underlying policies of an aggregated policy used in view-related permissions.
 
 By using any of the policies above, {project_name} can pre-calculate the set of resources that a realm administration can view
 by looking for a direct (if using a user policy) or indirect (if using a role or group policy) reference to the realm administrator.
