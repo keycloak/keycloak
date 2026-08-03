@@ -117,7 +117,11 @@ public final class ConformanceSigningKey {
         return realmDir;
     }
 
-    public static ConformanceSigningKey generate(String realmName, String kid, String name) {
+    /**
+     * Generates a CA-signed key. {@code leafEku} optionally restricts the leaf to a single extended key
+     * usage purpose; pass {@code null} to leave it unrestricted.
+     */
+    public static ConformanceSigningKey generate(String realmName, String kid, String name, KeyPurposeId leafEku) {
         try {
             if (!CryptoIntegration.isInitialised()) {
                 CryptoIntegration.setProvider(new DefaultCryptoProvider());
@@ -129,10 +133,9 @@ public final class ConformanceSigningKey {
 
             // The CA must be a proper v3 CA certificate with the CA basic constraint and keyCertSign key usage,
             // because X509TrustMaterial rejects trust anchors that are not CA certificates. The leaf must be a
-            // plain end-entity certificate carrying the attestation extended key usage, as the key-attestation
-            // validator rejects CA-capable or EKU-less leaves.
+            // plain end-entity certificate, as the key-attestation validator rejects CA-capable leaves.
             X509Certificate caCertificate = generateCaCertificate(caKeyPair, name + " CA");
-            X509Certificate certificate = generateLeafCertificate(keyPair, caKeyPair, caCertificate, name);
+            X509Certificate certificate = generateLeafCertificate(keyPair, caKeyPair, caCertificate, name, leafEku);
             return new ConformanceSigningKey(realmName, kid, keyPair, certificate, caCertificate);
         } catch (Exception e) {
             throw new RuntimeException("Failed to create conformance signing key " + kid, e);
@@ -214,16 +217,16 @@ public final class ConformanceSigningKey {
     }
 
     private static X509Certificate generateLeafCertificate(KeyPair keyPair, KeyPair caKeyPair,
-            X509Certificate caCertificate, String name) throws Exception {
+            X509Certificate caCertificate, String name, KeyPurposeId leafEku) throws Exception {
         X500Name issuer = new X500Name(caCertificate.getSubjectX500Principal().getName());
         X500Name subject = new X500Name("CN=" + name);
         X509v3CertificateBuilder builder = certificateBuilder(issuer, subject, keyPair);
         builder.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
         builder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature));
-        // The emailProtection extended key usage must match the attestation EKU the conformance realm trusts,
-        // configured as ATTESTER_ATTESTATION_EKU in VciConformanceRealmConfig.
-        builder.addExtension(Extension.extendedKeyUsage, false,
-                new ExtendedKeyUsage(KeyPurposeId.id_kp_emailProtection));
+        // A restrictive EKU is only needed for key attestation; other leaves must stay unrestricted.
+        if (leafEku != null) {
+            builder.addExtension(Extension.extendedKeyUsage, false, new ExtendedKeyUsage(leafEku));
+        }
         return sign(builder, caKeyPair);
     }
 
