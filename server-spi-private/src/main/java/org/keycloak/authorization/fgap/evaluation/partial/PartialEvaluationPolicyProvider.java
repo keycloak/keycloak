@@ -46,9 +46,16 @@ public interface PartialEvaluationPolicyProvider {
         DENY,
 
         /**
-         * The evaluation should be skipped and the next policy should be evaluated.
+         * The evaluation should be skipped and the next policy should be evaluated. It is up
+         * to the caller to interpret a {@code SKIP} as a {@code SKIP}, a {@code GRANT}, a {@code DENY}, or
+         * just ignore the policy evaluation.
          */
-        SKIP
+        SKIP,
+
+        /**
+         * The policy could not be evaluated because and should be unconditionally denied without applying logic inversion.
+         */
+        FORCE_DENY
     }
 
     /**

@@ -17,7 +17,9 @@
 package org.keycloak.authorization.policy.provider.group;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -107,7 +109,7 @@ public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPol
                         return GRANT;
                     }
 
-                    if (definition.isExtendChildren() && group.startsWith(allowedGroupPath)) {
+                    if (definition.isExtendChildren() && group.startsWith(allowedGroupPath + "/")) {
                         return GRANT;
                     }
                 }
@@ -134,18 +136,17 @@ public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPol
         StoreFactory storeFactory = provider.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(adminPermissionsClient);
         PolicyStore policyStore = storeFactory.getPolicyStore();
-        // we probably want to cache the ids of all groups a user belongs to, considering the full hierarchy
+        Set<String> visited = new HashSet<>();
         List<String> groupIds = user.getGroupsStream()
                 .flatMap(group -> {
                     List<String> ids = new ArrayList<>();
                     GroupModel current = group;
-                    while (current != null) {
+                    while (current != null && visited.add(current.getId())) {
                         ids.add(current.getId());
                         current = current.getParent();
                     }
                     return ids.stream();
                 })
-                .distinct()
                 .toList();
 
         return policyStore.findDependentPolicies(resourceServer, resourceType.getType(), groupResourceType == null ? null : groupResourceType.getType(), GroupPolicyProviderFactory.ID, "groups", groupIds);
