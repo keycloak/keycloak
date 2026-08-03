@@ -714,14 +714,14 @@ public abstract class OID4VCIssuerTestBase {
 
             CredentialScopeRepresentation keyAttestationScope = configureBinding(createCredentialScope(
                     keyAttestationCredentialScopeName,
-                    TEST_ISSUER_DID,
+                    null,
                     keyAttestationCredentialConfigurationIdName,
                     keyAttestationCredentialScopeName,
                     null,
-                    VCFormat.JWT_VC,
+                    VCFormat.SD_JWT_VC,
                     TEST_CREDENTIAL_MAPPERS_FILE,
                     List.of(MODERATE)
-            ), "jwt");
+            ), "jwt,attestation");
             realm.clientScopes(keyAttestationScope);
 
             realm.clientScopes(createCredentialScope(

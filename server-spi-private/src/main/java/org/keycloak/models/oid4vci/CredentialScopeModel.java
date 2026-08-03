@@ -411,7 +411,7 @@ public class CredentialScopeModel implements ClientScopeModel {
 
     public void setRequiredKeyAttestationKeyStorage(List<String> keyStorage) {
         clientScope.setAttribute(VC_KEY_ATTESTATION_REQUIRED_KEY_STORAGE, Optional.ofNullable(keyStorage)
-                .map(list -> String.join(",")).orElse(null));
+                .map(list -> String.join(",", list)).orElse(null));
     }
 
     public List<String> getRequiredKeyAttestationUserAuthentication() {
@@ -426,7 +426,7 @@ public class CredentialScopeModel implements ClientScopeModel {
 
     public void setRequiredKeyAttestationUserAuthentication(List<String> userAuthentication) {
         clientScope.setAttribute(VC_KEY_ATTESTATION_REQUIRED_USER_AUTH, Optional.ofNullable(userAuthentication)
-                .map(list -> String.join(",")).orElse(null));
+                .map(list -> String.join(",", list)).orElse(null));
     }
 
     @Override
