@@ -1422,16 +1422,17 @@ html[dir="rtl"] #password-new {
 
 @media (max-width: 640px) {
     .pf-v5-c-login {
-        --pf-v5-c-login__main-header--PaddingTop: 1.5rem;
-        --pf-v5-c-login__main-header--PaddingRight: 1.35rem;
-        --pf-v5-c-login__main-header--PaddingLeft: 1.35rem;
-        --pf-v5-c-login__main-header--md--PaddingRight: 1.35rem;
-        --pf-v5-c-login__main-header--md--PaddingLeft: 1.35rem;
-        --pf-v5-c-login__main-body--PaddingBottom: 1rem;
-        --pf-v5-c-login__main-body--PaddingRight: 1.35rem;
-        --pf-v5-c-login__main-body--PaddingLeft: 1.35rem;
-        --pf-v5-c-login__main-body--md--PaddingRight: 1.35rem;
-        --pf-v5-c-login__main-body--md--PaddingLeft: 1.35rem;
+        --pf-v5-c-login__main-header--PaddingTop: 1.75rem;
+        --pf-v5-c-login__main-header--PaddingRight: 1.5rem;
+        --pf-v5-c-login__main-header--PaddingLeft: 1.5rem;
+        --pf-v5-c-login__main-header--md--PaddingRight: 1.5rem;
+        --pf-v5-c-login__main-header--md--PaddingLeft: 1.5rem;
+        --pf-v5-c-login__main-body--PaddingBottom: 1.25rem;
+        --pf-v5-c-login__main-body--PaddingRight: 1.5rem;
+        --pf-v5-c-login__main-body--PaddingLeft: 1.5rem;
+        --pf-v5-c-login__main-body--md--PaddingRight: 1.5rem;
+        --pf-v5-c-login__main-body--md--PaddingLeft: 1.5rem;
+        --pf-v5-c-login__main-footer--PaddingBottom: 1.75rem;
         /* Base value is tuned for the desktop card; the fields themselves
            already meet the 48px touch target below, so the row spacing can
            come in without anything feeling cramped. */
@@ -1439,9 +1440,15 @@ html[dir="rtl"] #password-new {
     }
 
     .pf-v5-c-login__main {
-        inline-size: 100%;
-        margin-inline: 0.85rem;
-        border-radius: 20px;
+        /* The width has to leave room for the gutters. `inline-size: 100%` with
+           a margin beside it made the card exactly as wide as its container, so
+           the margin had nothing left to occupy and the card sat hard against
+           both screen edges at every phone width. Subtracting the gutters here
+           is what actually detaches it. */
+        inline-size: calc(100% - 2.5rem);
+        max-inline-size: 30rem;
+        margin-inline: auto;
+        border-radius: 22px;
     }
 
     #kc-page-title,
@@ -1713,8 +1720,14 @@ html.login-pf,
     overflow-wrap: anywhere;
 }
 
-/* Tablet — the panels have stacked by now, so let the card breathe wider. */
-@media (max-width: 1024px) {
+/* Tablet — the panels have stacked by now, so let the card breathe wider.
+
+   Lower-bounded at the phone breakpoint on purpose. This block sits after the
+   phone rules, so an unbounded max-width here would win on equal specificity and
+   pull the card back to the full container width, taking its side gutters with
+   it — which is what left it edge to edge on anything between 381px and 640px
+   while narrower phones looked correct. */
+@media (min-width: 641px) and (max-width: 1024px) {
     .pf-v5-c-login__main {
         inline-size: min(100%, 32rem);
     }
@@ -1741,24 +1754,44 @@ html.login-pf,
     div.pf-v5-c-login__main-header:has(.pf-v5-c-login__main-header-utilities) {
         grid-template-columns: 1fr;
         row-gap: 0.75rem;
+        /* Stacked, the selector lands directly on top of the first field's
+           label. Only applied when it is actually present, so screens without
+           a language choice keep the tighter title-to-field spacing. */
+        padding-block-end: 1.1rem;
+    }
+
+    /* Shrink it to its content rather than letting it span the card. At full
+       width it carries the same visual weight as the username and password
+       fields and reads as part of the form; it is a utility control and should
+       look like one. */
+    .pf-v5-c-login__main-header-utilities {
+        justify-self: start;
+    }
+
+    .pf-v5-c-login__main-header-utilities .pf-v5-c-form-control {
+        inline-size: auto;
+        min-inline-size: 8.5rem;
+        max-inline-size: 100%;
     }
 }
 
 /* Very narrow (small phones, split-screen multitasking). */
 @media (max-width: 380px) {
     .pf-v5-c-login {
-        --pf-v5-c-login__main-header--PaddingRight: 1rem;
-        --pf-v5-c-login__main-header--PaddingLeft: 1rem;
-        --pf-v5-c-login__main-header--md--PaddingRight: 1rem;
-        --pf-v5-c-login__main-header--md--PaddingLeft: 1rem;
-        --pf-v5-c-login__main-body--PaddingRight: 1rem;
-        --pf-v5-c-login__main-body--PaddingLeft: 1rem;
-        --pf-v5-c-login__main-body--md--PaddingRight: 1rem;
-        --pf-v5-c-login__main-body--md--PaddingLeft: 1rem;
+        --pf-v5-c-login__main-header--PaddingRight: 1.25rem;
+        --pf-v5-c-login__main-header--PaddingLeft: 1.25rem;
+        --pf-v5-c-login__main-header--md--PaddingRight: 1.25rem;
+        --pf-v5-c-login__main-header--md--PaddingLeft: 1.25rem;
+        --pf-v5-c-login__main-body--PaddingRight: 1.25rem;
+        --pf-v5-c-login__main-body--PaddingLeft: 1.25rem;
+        --pf-v5-c-login__main-body--md--PaddingRight: 1.25rem;
+        --pf-v5-c-login__main-body--md--PaddingLeft: 1.25rem;
     }
 
     .pf-v5-c-login__main {
-        margin-inline: 0.5rem;
+        /* Tighter than the 640px gutter, but the card still has to clear the
+           screen edge — see the width note there for why this is a calc. */
+        inline-size: calc(100% - 2rem);
     }
 
     #kc-recovery-codes-list li {
