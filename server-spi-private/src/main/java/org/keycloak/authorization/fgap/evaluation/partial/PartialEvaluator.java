@@ -112,6 +112,11 @@ public final class PartialEvaluator {
                         continue;
                     }
 
+                    if (Outcome.FORCE_DENY.equals(granted)) {
+                        deniedResources.addAll(ids);
+                        continue;
+                    }
+
                     if (Logic.NEGATIVE.equals(policy.getLogic())) {
                         granted = granted == Outcome.GRANT ? Outcome.DENY : Outcome.GRANT;
                     }
