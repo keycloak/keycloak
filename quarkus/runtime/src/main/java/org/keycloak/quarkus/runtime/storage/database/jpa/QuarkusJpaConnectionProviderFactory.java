@@ -251,8 +251,6 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
         try {
             operationalInfo = new LinkedHashMap<>();
             DatabaseMetaData md = connection.getMetaData();
-            operationalInfo.put("databaseUrl", md.getURL());
-            operationalInfo.put("databaseUser", md.getUserName());
             operationalInfo.put("databaseProduct", md.getDatabaseProductName() + " " + md.getDatabaseProductVersion());
             operationalInfo.put("databaseDriver", md.getDriverName() + " " + md.getDriverVersion());
             operationalInfo.put("migrationTimeout", getMigrationTransactionTimeout() + " seconds");
