@@ -1,6 +1,7 @@
 package org.keycloak.admin.api.client;
 
 import java.io.InputStream;
+import java.util.Objects;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -44,8 +45,15 @@ public interface ClientApi {
     })
     Response createOrUpdateClient(BaseClientRepresentation client);
 
-    default TypedResponse<BaseClientRepresentation> createOrUpdate(BaseClientRepresentation client) {
-        return new TypedResponse<>(createOrUpdateClient(client), BaseClientRepresentation.class);
+    /**
+     * Convenience alternative to {@link #createOrUpdateClient(BaseClientRepresentation)} that
+     * preserves the client subtype supplied by the caller.
+     */
+    default <T extends BaseClientRepresentation> TypedResponse<T> createOrUpdate(T client) {
+        Objects.requireNonNull(client, "client cannot be null");
+        @SuppressWarnings("unchecked")
+        Class<T> entityType = (Class<T>) client.getClass();
+        return new TypedResponse<>(createOrUpdateClient(client), entityType);
     }
 
     @PATCH

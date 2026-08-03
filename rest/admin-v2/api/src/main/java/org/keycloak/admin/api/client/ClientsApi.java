@@ -1,5 +1,6 @@
 package org.keycloak.admin.api.client;
 
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import jakarta.validation.Valid;
@@ -55,8 +56,15 @@ public interface ClientsApi {
     })
     Response createClient(@Valid BaseClientRepresentation client);
 
-    default TypedResponse<BaseClientRepresentation> create(BaseClientRepresentation client) {
-        return new TypedResponse<>(createClient(client), BaseClientRepresentation.class);
+    /**
+     * Convenience alternative to {@link #createClient(BaseClientRepresentation)} that preserves
+     * the client subtype supplied by the caller.
+     */
+    default <T extends BaseClientRepresentation> TypedResponse<T> create(T client) {
+        Objects.requireNonNull(client, "client cannot be null");
+        @SuppressWarnings("unchecked")
+        Class<T> entityType = (Class<T>) client.getClass();
+        return new TypedResponse<>(createClient(client), entityType);
     }
 
     @Path("{id}")

@@ -287,7 +287,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         try (var response = getClientsApi().client(clientId).createOrUpdate(rep)) {
             assertThat(response.getResponse().getStatus(), is(201));
-            BaseClientRepresentation client = response.readEntity();
+            OIDCClientRepresentation client = response.readEntity();
             assertThat(client.getDescription(), is("typed create"));
             assertClientUuid(client);
         }
@@ -295,7 +295,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setDescription("typed update");
         try (var response = getClientsApi().client(clientId).createOrUpdate(rep)) {
             assertThat(response.getResponse().getStatus(), is(200));
-            BaseClientRepresentation client = response.readEntity();
+            OIDCClientRepresentation client = response.readEntity();
             assertThat(client.getDescription(), is("typed update"));
             assertClientUuid(client);
         }
@@ -332,7 +332,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         try (var response = getClientsApi().create(rep)) {
             assertThat(response.getResponse().getStatus(), is(201));
-            BaseClientRepresentation client = response.readEntity();
+            OIDCClientRepresentation client = response.readEntity();
             assertThat(client.getEnabled(), is(true));
             assertThat(client.getClientId(), is(clientId));
             assertThat(client.getDescription(), is("I'm typed"));
