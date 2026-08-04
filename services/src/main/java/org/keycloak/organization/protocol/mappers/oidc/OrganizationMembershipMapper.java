@@ -59,6 +59,7 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
     public static final String PROVIDER_ID = "oidc-organization-membership-mapper";
     public static final String ADD_ORGANIZATION_ATTRIBUTES = "addOrganizationAttributes";
     public static final String ADD_ORGANIZATION_ID = "addOrganizationId";
+    public static final String ADD_ORGANIZATION_NAME = "addOrganizationName";
     public static final String ADD_ORGANIZATION_DOMAIN = "addOrganizationDomain";
 
     @Override
@@ -87,6 +88,13 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         property.setDefaultValue(Boolean.FALSE.toString());
         property.setHelpText(ADD_ORGANIZATION_ID + ".help");
+        properties.add(property);
+        property = new ProviderConfigProperty();
+        property.setName(ADD_ORGANIZATION_NAME);
+        property.setLabel(ADD_ORGANIZATION_NAME + ".label");
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        property.setDefaultValue(Boolean.FALSE.toString());
+        property.setHelpText(ADD_ORGANIZATION_NAME + ".help");
         properties.add(property);
         property = new ProviderConfigProperty();
         property.setName(ADD_ORGANIZATION_DOMAIN);
@@ -176,13 +184,17 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
 
             Map<String, Object> claims = new HashMap<>();
 
-            // Add organization attributes first
+            // Add organization attributes first so built-in claims override custom attributes with the same names
             if (isAddOrganizationAttributes(model)) {
                 claims.putAll(o.getAttributes());
             }
-            // Add organization ID last so it overrides any custom "id" attribute
+
             if (isAddOrganizationId(model)) {
                 claims.put(OAuth2Constants.ORGANIZATION_ID, o.getId());
+            }
+
+            if (isAddOrganizationName(model)) {
+                claims.put(OAuth2Constants.ORGANIZATION_NAME, o.getName());
             }
 
             if (isAddOrganizationDomain(model)) {
@@ -220,9 +232,10 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         if (!OIDCAttributeMapperHelper.isMultivalued(copy)) {
             config.put(ADD_ORGANIZATION_ATTRIBUTES, Boolean.FALSE.toString());
             config.put(ADD_ORGANIZATION_ID, Boolean.FALSE.toString());
+            config.put(ADD_ORGANIZATION_NAME, Boolean.FALSE.toString());
         }
 
-        if (isAddOrganizationAttributes(copy) || isAddOrganizationId(copy)) {
+        if (isAddOrganizationAttributes(copy) || isAddOrganizationId(copy) || isAddOrganizationName(copy)) {
             config.put(JSON_TYPE, "JSON");
         }
 
@@ -249,6 +262,10 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
 
     private boolean isAddOrganizationId(ProtocolMapperModel model) {
         return Boolean.parseBoolean(model.getConfig().getOrDefault(ADD_ORGANIZATION_ID, Boolean.FALSE.toString()));
+    }
+
+    private boolean isAddOrganizationName(ProtocolMapperModel model) {
+        return Boolean.parseBoolean(model.getConfig().getOrDefault(ADD_ORGANIZATION_NAME, Boolean.FALSE.toString()));
     }
 
     private boolean isAddOrganizationDomain(ProtocolMapperModel model) {
