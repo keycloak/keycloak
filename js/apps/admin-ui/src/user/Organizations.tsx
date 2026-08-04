@@ -22,6 +22,7 @@ import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { OrganizationModal } from "../organizations/OrganizationModal";
+import { InvitationAttributesModal } from "../organizations/InvitationAttributesModal";
 import { toEditOrganization } from "../organizations/routes/EditOrganization";
 import useToggle from "../utils/useToggle";
 import { UserParams } from "./routes/User";
@@ -61,6 +62,10 @@ export const Organizations = ({ user }: OrganizationProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showMemberships, toggleShowMemberships] = useToggle();
   const [selectedOrg, setSelectedOrg] = useState<OrganizationRepresentation>();
+  const [pendingInviteOrgs, setPendingInviteOrgs] = useState<
+    OrganizationRepresentation[]
+  >([]);
+  const [showAttributesModal, setShowAttributesModal] = useState(false);
 
   const membershipOptions = [
     { value: "Managed", label: "Managed" },
@@ -186,37 +191,60 @@ export const Organizations = ({ user }: OrganizationProps) => {
           existingOrgs={userOrgs}
           onClose={() => setOpenOrganizationPicker(false)}
           onAdd={async (orgs) => {
+            if (shouldJoin) {
+              try {
+                await Promise.all(
+                  orgs.map((org) =>
+                    adminClient.organizations.addMember({
+                      orgId: org.id!,
+                      userId: user.id!,
+                    }),
+                  ),
+                );
+                addAlert(t("userAddedOrganization", { count: orgs.length }));
+                refresh();
+              } catch (error) {
+                addError("userAddedOrganizationError", error);
+              }
+            } else {
+              setPendingInviteOrgs(orgs);
+              setShowAttributesModal(true);
+            }
+          }}
+        />
+      )}
+      {showAttributesModal && (
+        <InvitationAttributesModal
+          onSubmit={async (attributes) => {
             try {
+              const hasAttributes = Object.keys(attributes).length > 0;
               await Promise.all(
-                orgs.map((org) => {
-                  const form = new FormData();
-                  form.append("id", id!);
-                  return shouldJoin
-                    ? adminClient.organizations.addMember({
-                        orgId: org.id!,
-                        userId: `"${user.id!}"`,
-                      })
-                    : adminClient.organizations.inviteExistingUser(
-                        { orgId: org.id! },
-                        form,
-                      );
-                }),
+                pendingInviteOrgs.map((org) =>
+                  adminClient.organizations.inviteExistingUser(
+                    { orgId: org.id! },
+                    {
+                      id: id!,
+                      attributes: hasAttributes ? attributes : undefined,
+                    },
+                  ),
+                ),
               );
               addAlert(
-                t(
-                  shouldJoin
-                    ? "userAddedOrganization"
-                    : "userInvitedOrganization",
-                  { count: orgs.length },
-                ),
+                t("userInvitedOrganization", {
+                  count: pendingInviteOrgs.length,
+                }),
               );
               refresh();
             } catch (error) {
-              addError(
-                shouldJoin ? "userAddedOrganizationError" : "userInvitedError",
-                error,
-              );
+              addError("userInvitedError", error);
+            } finally {
+              setShowAttributesModal(false);
+              setPendingInviteOrgs([]);
             }
+          }}
+          onClose={() => {
+            setShowAttributesModal(false);
+            setPendingInviteOrgs([]);
           }}
         />
       )}

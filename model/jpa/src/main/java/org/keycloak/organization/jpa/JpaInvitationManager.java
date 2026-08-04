@@ -31,6 +31,13 @@ record JpaInvitationManager(KeycloakSession session, EntityManager em) implement
     @Override
     public OrganizationInvitationModel create(OrganizationModel organization, String email,
                                               String firstName, String lastName) {
+        return create(organization, email, firstName, lastName, null);
+    }
+
+    @Override
+    public OrganizationInvitationModel create(OrganizationModel organization, String email,
+                                              String firstName, String lastName,
+                                              Map<String, List<String>> attributes) {
         String id = KeycloakModelUtils.generateId();
         OrganizationInvitationEntity entity = new OrganizationInvitationEntity(
                 id, organization.getId(), email.trim(),
@@ -39,6 +46,10 @@ record JpaInvitationManager(KeycloakSession session, EntityManager em) implement
         );
 
         entity.setExpiresAt(getExpiration());
+
+        if (attributes != null) {
+            attributes.forEach(entity::setAttribute);
+        }
 
         em.persist(entity);
 

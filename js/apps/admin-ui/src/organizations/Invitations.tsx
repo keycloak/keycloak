@@ -8,7 +8,9 @@ import {
   DropdownList,
   MenuToggle,
   ToolbarItem,
+  Tooltip,
 } from "@patternfly/react-core";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
@@ -19,6 +21,7 @@ import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { useParams } from "../utils/useParams";
 import useToggle from "../utils/useToggle";
 import { InviteMemberModal } from "./InviteMemberModal";
+import { InvitationAttributesModal } from "./InvitationAttributesModal";
 import { MemberModal } from "../groups/MembersModal";
 import { EditOrganizationParams } from "./routes/EditOrganization";
 import { SearchInputComponent } from "../components/dynamic/SearchInputComponent";
@@ -70,6 +73,10 @@ export const Invitations = () => {
   const [searchTriggerText, setSearchTriggerText] = useState<string>("");
   const [filteredStatuses, setFilteredStatuses] = useState<string[]>([]);
   const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false);
+  const [pendingInviteUsers, setPendingInviteUsers] = useState<
+    UserRepresentation[]
+  >([]);
+  const [showAttributesModal, setShowAttributesModal] = useState(false);
 
   const statusOptions = Object.values(OrganizationInvitationStatus).map(
     (status: string) => ({
@@ -180,34 +187,51 @@ export const Invitations = () => {
       )}
       {openInviteRealmUser && (
         <MemberModal
-          titleKey="inviteRealmUser"
-          confirmLabelKey="send"
-          filterEmptyEmail
           membersQuery={() => adminClient.organizations.listMembers({ orgId })}
-          onAdd={async (selectedRows) => {
-            try {
-              await Promise.all(
-                selectedRows.map((user) => {
-                  const form = new FormData();
-                  form.append("id", user.id!);
-                  return adminClient.organizations.inviteExistingUser(
-                    { orgId },
-                    form,
-                  );
-                }),
-              );
-              addAlert(
-                t("organizationInvitationsSent", {
-                  count: selectedRows.length,
-                }),
-              );
-            } catch (error) {
-              addError("organizationInvitationsSentError", error);
-            }
+          filterEmptyEmail
+          titleKey="inviteRealmUser"
+          confirmLabelKey="next"
+          onAdd={async (users) => {
+            setPendingInviteUsers(users);
+            setShowAttributesModal(true);
           }}
           onClose={() => {
             toggleInviteRealmUser();
-            refresh();
+          }}
+        />
+      )}
+      {showAttributesModal && (
+        <InvitationAttributesModal
+          onSubmit={async (attributes) => {
+            try {
+              const hasAttributes = Object.keys(attributes).length > 0;
+              await Promise.all(
+                pendingInviteUsers.map((user) =>
+                  adminClient.organizations.inviteExistingUser(
+                    { orgId },
+                    {
+                      id: user.id!,
+                      attributes: hasAttributes ? attributes : undefined,
+                    },
+                  ),
+                ),
+              );
+              addAlert(
+                t("organizationInvitationsSent", {
+                  count: pendingInviteUsers.length,
+                }),
+              );
+              refresh();
+            } catch (error) {
+              addError("organizationInvitationsSentError", error);
+            } finally {
+              setShowAttributesModal(false);
+              setPendingInviteUsers([]);
+            }
+          }}
+          onClose={() => {
+            setShowAttributesModal(false);
+            setPendingInviteUsers([]);
           }}
         />
       )}
@@ -358,6 +382,26 @@ export const Invitations = () => {
             cellRenderer: (invitation) => (
               <InvitationStatusBadge status={invitation.status} />
             ),
+          },
+          {
+            name: "attributes",
+            displayKey: "attributes",
+            cellRenderer: (invitation) => {
+              const attrs = invitation.attributes;
+              if (!attrs || Object.keys(attrs).length === 0) {
+                return "-";
+              }
+              const tooltipContent = Object.entries(attrs)
+                .map(([key, values]) => `${key}: ${values.join(", ")}`)
+                .join("\n");
+              return (
+                <Tooltip content={<pre>{tooltipContent}</pre>}>
+                  <span className="pf-v5-u-display-block" tabIndex={0}>
+                    {Object.keys(attrs).length}
+                  </span>
+                </Tooltip>
+              );
+            },
           },
         ]}
         emptyState={

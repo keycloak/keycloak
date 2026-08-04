@@ -1,5 +1,6 @@
 package org.keycloak.organization;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -21,6 +22,23 @@ public interface InvitationManager {
      */
     OrganizationInvitationModel create(OrganizationModel organization, String email,
                                        String firstName, String lastName);
+
+    /**
+     * Creates a new invitation for a user to join an organization with custom attributes.
+     * The invitation will use the realm's default action token lifespan.
+     *
+     * @param organization the organization
+     * @param email the email address of the user to invite
+     * @param firstName the first name of the user (optional)
+     * @param lastName the last name of the user (optional)
+     * @param attributes custom attributes to attach to the invitation (optional)
+     * @return the created invitation
+     */
+    default OrganizationInvitationModel create(OrganizationModel organization, String email,
+                                               String firstName, String lastName,
+                                               Map<String, List<String>> attributes) {
+        return create(organization, email, firstName, lastName);
+    }
 
     /**
      * Retrieves an invitation by its ID for a specific organization.

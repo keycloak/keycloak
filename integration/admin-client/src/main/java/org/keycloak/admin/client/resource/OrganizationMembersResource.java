@@ -34,6 +34,8 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
+import org.keycloak.representations.idm.OrganizationInvitationExistingUserRequest;
+import org.keycloak.representations.idm.OrganizationInvitationUserRequest;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 
 public interface OrganizationMembersResource {
@@ -194,9 +196,19 @@ public interface OrganizationMembersResource {
                         @FormParam("lastName") String lastName);
 
     @POST
+    @Path("invite-user")
+    @Consumes(MediaType.APPLICATION_JSON)
+    Response inviteUser(OrganizationInvitationUserRequest req);
+
+    @POST
     @Path("invite-existing-user")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     Response inviteExistingUser(@FormParam("id") String id);
+
+    @POST
+    @Path("invite-existing-user")
+    @Consumes(MediaType.APPLICATION_JSON)
+    Response inviteExistingUser(OrganizationInvitationExistingUserRequest req);
 
     /**
      * @since Keycloak server 26

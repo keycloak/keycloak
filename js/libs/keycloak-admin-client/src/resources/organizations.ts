@@ -2,6 +2,10 @@ import type { KeycloakAdminClient } from "../client.js";
 import IdentityProviderRepresentation from "../defs/identityProviderRepresentation.js";
 import type OrganizationRepresentation from "../defs/organizationRepresentation.js";
 import type OrganizationInvitationRepresentation from "../defs/organizationInvitationRepresentation.js";
+import type {
+  InviteUserRequest,
+  InviteExistingUserRequest,
+} from "../defs/organizationInvitationRequest.js";
 import UserRepresentation from "../defs/userRepresentation.js";
 import Resource from "./resource.js";
 import { Groups } from "./groups.js";
@@ -128,7 +132,10 @@ export class Organizations extends Resource<{ realm?: string }> {
     urlParamKeys: ["userId"],
   });
 
-  public invite = this.makeUpdateRequest<{ orgId: string }, FormData>({
+  public invite = this.makeUpdateRequest<
+    { orgId: string },
+    FormData | InviteUserRequest
+  >({
     method: "POST",
     path: "/{orgId}/members/invite-user",
     urlParamKeys: ["orgId"],
@@ -136,7 +143,7 @@ export class Organizations extends Resource<{ realm?: string }> {
 
   public inviteExistingUser = this.makeUpdateRequest<
     { orgId: string },
-    FormData
+    FormData | InviteExistingUserRequest
   >({
     method: "POST",
     path: "/{orgId}/members/invite-existing-user",

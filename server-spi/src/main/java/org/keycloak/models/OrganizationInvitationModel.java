@@ -16,6 +16,9 @@
  */
 package org.keycloak.models;
 
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.common.util.Time;
 
 /**
@@ -139,6 +142,36 @@ public interface OrganizationInvitationModel {
      * @param inviteLink the invitation link
      */
     void setInviteLink(String inviteLink);
+
+    /**
+     * Returns the custom attributes associated with this invitation.
+     *
+     * @return a map of attribute names to their values
+     */
+    default Map<String, List<String>> getAttributes() {
+        return Map.of();
+    }
+
+    /**
+     * Replaces the values of a custom attribute.
+     *
+     * <p>The default implementation preserves binary compatibility for providers that do not support invitation attributes.
+     *
+     * @param name the attribute name
+     * @param values the attribute values
+     */
+    default void setAttribute(String name, List<String> values) {
+    }
+
+    /**
+     * Removes a custom attribute.
+     *
+     * <p>The default implementation preserves binary compatibility for providers that do not support invitation attributes.
+     *
+     * @param name the attribute name
+     */
+    default void removeAttribute(String name) {
+    }
 
     /**
      * Returns the current status of this invitation.
