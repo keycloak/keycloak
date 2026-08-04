@@ -9,7 +9,6 @@ import java.util.function.Function;
 
 import org.keycloak.common.util.TriConsumer;
 import org.keycloak.models.Model;
-import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.schema.ModelSchema;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -23,7 +22,7 @@ import static java.util.Optional.ofNullable;
  *
  * @see ModelSchema
  */
-public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
+public class Attribute<M extends Model, R> {
 
     public static final String RETURNED_ALWAYS = "always";
     public static final String RETURNED_DEFAULT = "default";
@@ -74,7 +73,7 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
      * @param name the name of the attribute from the {@link R} representation. It should be a simple attribute, meaning that it is not a complex attribute and does not have sub-attributes.
      * @return the builder
      */
-    public static <M extends Model, R extends ResourceTypeRepresentation> Builder<M, R> simple(String name) {
+    public static <M extends Model, R> Builder<M, R> simple(String name) {
         return (Builder<M, R>) new Builder<>(name, null).string();
     }
 
@@ -87,7 +86,7 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
      * @param complexType the type of the complex attribute.
      * @return the builder
      */
-    public static <M extends Model, R extends ResourceTypeRepresentation> Builder<M, R> complex(String name, Class<?> complexType) {
+    public static <M extends Model, R> Builder<M, R> complex(String name, Class<?> complexType) {
         Builder<M, R> builder = new Builder<>(name, complexType);
         builder.type = "complex";
         return builder;
@@ -328,7 +327,7 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
         return getName().contains(":");
     }
 
-    public static class Builder<M extends Model, R extends ResourceTypeRepresentation> {
+    public static class Builder<M extends Model, R> {
 
         private final Class<?> complexType;
         private final String name;
