@@ -1207,7 +1207,7 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public boolean removeIssuedVerifiableCredential(String userId, String issuedCredentialId) {
-        FederatedUserIssuedVerifiableCredentialEntity entity = em.find(FederatedUserIssuedVerifiableCredentialEntity.class, issuedCredentialId);
+        FederatedUserIssuedVerifiableCredentialEntity entity = em.find(FederatedUserIssuedVerifiableCredentialEntity.class, issuedCredentialId, LockModeType.PESSIMISTIC_WRITE);
         if (entity == null || !userId.equals(entity.getUserId())) {
             return false;
         }
