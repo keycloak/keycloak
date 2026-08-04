@@ -183,7 +183,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             String requestedProtocol = rep.getProtocol();
             if (requestedProtocol != null && !requestedProtocol.equals(existingProtocol)) {
                 throw new ErrorResponseException(
-                        "invalid_client_metadata",
+                        ErrorCodes.INVALID_CLIENT_METADATA,
                         "Protocol cannot be changed via registration access token",
                         Response.Status.BAD_REQUEST
                 );
