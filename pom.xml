@@ -99,7 +99,6 @@
         <jboss-servlet-api_4.0_spec>2.0.0.Final</jboss-servlet-api_4.0_spec>
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.1.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
-        <log4j2-api.version>2.26.0</log4j2-api.version> <!-- Odd name needs to align with Quarkus -->
         <resteasy.version>6.2.16.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20260101.1</owasp.html.sanitizer.version>
@@ -568,16 +567,6 @@
                 <artifactId>picketlink-wildfly-common</artifactId>
                 <version>${picketlink.version}</version>
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-core</artifactId>
-                <version>${log4j2-api.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-api</artifactId>
-                <version>${log4j2-api.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
