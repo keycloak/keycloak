@@ -71,7 +71,8 @@ public class TruststoreDistTest {
                 .get("https://mykeycloak.org:8443").then().body(Matchers.containsString("https://mykeycloak.org"));
         
         // ensure that the provider factories init with the correct truststore
-        result.getOutput().matches("File truststore provider initialized: [^\\n]*keycloak-truststore.p12");
+        // this is from the startup, so no additional waiting is necessary
+        assertTrue(result.getOutputStream().stream().anyMatch(s -> s.matches(".*File truststore provider initialized: .*keycloak-truststore.p12.*")));
     }
 
     @Test
