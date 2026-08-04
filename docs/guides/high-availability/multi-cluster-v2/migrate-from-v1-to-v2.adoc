@@ -136,6 +136,10 @@ The following changes are required:
       - stateless # <1>
 ----
 <1> Replaces the `multi-site` feature from v1.
++
+NOTE: If you are using an optimized custom image, the `stateless` feature is a build-time option.
+You need to rebuild the image with `--features=stateless` included in the build command.
+See <@links.operator id="customizing-keycloak" /> for details.
 
 .. Add a unique cluster name for each site:
 +
@@ -265,6 +269,7 @@ bin/kc.sh start \
     --db-pool-min-size=30 \
     --db-pool-max-size=30 \
     --features=stateless \
+    --health-enabled=true \
     --spi-cache-embedded--default--cluster-name=<CLUSTER_NAME> \
     --hostname=<KEYCLOAK_HOSTNAME> \
     --https-certificate-file=/path/to/tls.crt \
