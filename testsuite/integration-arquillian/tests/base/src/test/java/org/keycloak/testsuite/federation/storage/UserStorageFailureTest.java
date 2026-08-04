@@ -417,23 +417,23 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
     public void testUnavailableStorageDoesNotCacheEmptyGroups() {
         String groupName = "external-group";
 
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
-            UserStorageUtil.userCache(session).evict(realm);
-            if (session.groups().getGroupByName(realm, null, groupName) == null) {
-                realm.createGroup(groupName);
-            }
-            FailableHardcodedStorageProvider.groupName = groupName;
-
-            session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
-        });
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
-            UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
-            Assertions.assertTrue(user instanceof CachedUserModel);
-        });
-
         try {
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
+                UserStorageUtil.userCache(session).evict(realm);
+                if (session.groups().getGroupByName(realm, null, groupName) == null) {
+                    realm.createGroup(groupName);
+                }
+                FailableHardcodedStorageProvider.groupName = groupName;
+
+                session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
+            });
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
+                UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
+                Assertions.assertTrue(user instanceof CachedUserModel);
+            });
+
             toggleForceFailOnValidation(true);
             testingClient.server().run(session -> {
                 RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
