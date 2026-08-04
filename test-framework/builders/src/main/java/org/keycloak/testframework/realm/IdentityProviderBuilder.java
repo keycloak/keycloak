@@ -17,7 +17,6 @@
 
 package org.keycloak.testframework.realm;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -98,12 +97,6 @@ public class IdentityProviderBuilder extends Builder<IdentityProviderRepresentat
     public IdentityProviderBuilder attribute(String name, String value) {
         rep.setConfig(createIfNull(rep.getConfig(), HashMap::new));
         rep.getConfig().put(name, value);
-        return this;
-    }
-
-    public IdentityProviderBuilder type(String type) {
-        rep.setTypes(createIfNull(rep.getTypes(), ArrayList::new));
-        rep.getTypes().add(type);
         return this;
     }
 
