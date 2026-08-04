@@ -159,6 +159,11 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder identityProviderMappers(IdentityProviderMapperBuilder... identityProviderMappers) {
+        rep.setIdentityProviderMappers(combine(rep.getIdentityProviderMappers(), identityProviderMappers));
+        return this;
+    }
+
     public RealmBuilder loginWithEmailAllowed(boolean loginWithEmailAllowed) {
         rep.setLoginWithEmailAllowed(loginWithEmailAllowed);
         return this;
