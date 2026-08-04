@@ -41,6 +41,7 @@ import io.restassured.config.RedirectConfig;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
@@ -152,6 +153,54 @@ public class HttpDistTest {
                     req.authority(HostAndPort.create(authorityHost, authorityPort));
                     return req.send();
                 })
+                .map(HttpClientResponse::statusCode)
+                .toCompletionStage()
+                .toCompletableFuture()
+                .get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    @Launch({"start-dev"})
+    public void largeHeadersTest() throws Exception {
+        String largeValue = "a".repeat(32 * 1024);
+
+        Vertx vertx = Vertx.vertx();
+        try {
+            HttpClient http2Client = vertx.createHttpClient(new HttpClientOptions()
+                    .setSsl(true)
+                    .setTrustAll(true)
+                    .setVerifyHost(false)
+                    .setProtocolVersion(HttpVersion.HTTP_2)
+                    .setUseAlpn(true));
+            HttpClient http1Client = vertx.createHttpClient(new HttpClientOptions()
+                    .setSsl(true)
+                    .setTrustAll(true)
+                    .setVerifyHost(false));
+            try {
+                assertThat("Large headers under the limit are accepted over HTTP/2",
+                        largeHeaderRequest(http2Client, largeValue), Matchers.is(200));
+                assertThat("Large headers under the limit are accepted over HTTP/1.1",
+                        largeHeaderRequest(http1Client, largeValue), Matchers.is(200));
+            } finally {
+                http2Client.close().toCompletionStage().toCompletableFuture().get(5, TimeUnit.SECONDS);
+                http1Client.close().toCompletionStage().toCompletableFuture().get(5, TimeUnit.SECONDS);
+            }
+        } finally {
+            vertx.close().toCompletionStage().toCompletableFuture().get(5, TimeUnit.SECONDS);
+        }
+    }
+
+    private static int largeHeaderRequest(HttpClient client, String headerValue) throws Exception {
+        RequestOptions options = new RequestOptions()
+                .setServer(SocketAddress.inetSocketAddress(8443, "localhost"))
+                .setPort(8443)
+                .setSsl(true)
+                .setURI("/realms/master")
+                .setMethod(HttpMethod.GET)
+                .putHeader("X-Large-Header", headerValue);
+
+        return client.request(options)
+                .compose(HttpClientRequest::send)
                 .map(HttpClientResponse::statusCode)
                 .toCompletionStage()
                 .toCompletableFuture()

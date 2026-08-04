@@ -93,12 +93,16 @@ public class SAMLClientModelMapper extends BaseClientModelMapper<SAMLClientRepre
     private void setAttributeIfNotNull(ClientModel model, String key, String value) {
         if (value != null) {
             model.setAttribute(key, value);
+        } else {
+            model.removeAttribute(key);
         }
     }
 
     private void setBooleanAttributeIfNotNull(ClientModel model, String key, Boolean value) {
         if (value != null) {
             model.setAttribute(key, value.toString());
+        } else {
+            model.removeAttribute(key);
         }
     }
 }
