@@ -17,6 +17,10 @@
 
 package org.keycloak.admin.client;
 
+import java.util.function.Supplier;
+
+import org.keycloak.admin.client.token.ClientAssertion;
+
 import static org.keycloak.OAuth2Constants.CLIENT_CREDENTIALS;
 import static org.keycloak.OAuth2Constants.PASSWORD;
 
@@ -31,6 +35,7 @@ public class Config {
     private String password;
     private String clientId;
     private String clientSecret;
+    private Supplier<ClientAssertion> clientAssertionSupplier;
     private String grantType;
     private String scope;
     private boolean useDPoP = false;
@@ -40,12 +45,18 @@ public class Config {
     }
 
     public Config(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, String grantType, String scope) {
+        this(serverUrl, realm, username, password, clientId, clientSecret, null, grantType, scope);
+    }
+
+    public Config(String serverUrl, String realm, String username, String password, String clientId, String clientSecret,
+                  Supplier<ClientAssertion> clientAssertionSupplier, String grantType, String scope) {
         this.serverUrl = serverUrl;
         this.realm = realm;
         this.username = username;
         this.password = password;
         this.clientId = clientId;
         this.clientSecret = clientSecret;
+        this.clientAssertionSupplier = clientAssertionSupplier;
         this.grantType = grantType;
         checkGrantType(grantType);
         this.scope = scope;
@@ -99,8 +110,16 @@ public class Config {
         this.clientSecret = clientSecret;
     }
 
+    public Supplier<ClientAssertion> getClientAssertionSupplier() {
+        return clientAssertionSupplier;
+    }
+
+    public void setClientAssertionSupplier(Supplier<ClientAssertion> clientAssertionSupplier) {
+        this.clientAssertionSupplier = clientAssertionSupplier;
+    }
+
     public boolean isPublicClient() {
-        return clientSecret == null;
+        return clientSecret == null && clientAssertionSupplier == null;
     }
 
     public String getScope() {
