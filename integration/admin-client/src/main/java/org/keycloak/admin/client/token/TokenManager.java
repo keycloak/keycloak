@@ -32,6 +32,7 @@ import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.representations.AccessTokenResponse;
 
+import static org.keycloak.OAuth2Constants.CLIENT_CREDENTIALS;
 import static org.keycloak.OAuth2Constants.CLIENT_ID;
 import static org.keycloak.OAuth2Constants.GRANT_TYPE;
 import static org.keycloak.OAuth2Constants.PASSWORD;
@@ -53,11 +54,12 @@ public class TokenManager {
     private final TokenService tokenService;
     private final String accessTokenGrantType;
     private final KeyPair dpopKeyPair;
+    private final boolean sendClientIdInForm;
 
     public TokenManager(Config config, Client client) {
         this.config = config;
         WebTarget target = client.target(config.getServerUrl());
-        if (!config.isPublicClient()) {
+        if (!config.isPublicClient() && null != config.getClientSecret()) {
             target.register(new BasicAuthFilter(config.getClientId(), config.getClientSecret()));
         }
 
@@ -70,6 +72,7 @@ public class TokenManager {
 
         this.tokenService = Keycloak.getClientProvider().targetProxy(target, TokenService.class);
         this.accessTokenGrantType = config.getGrantType();
+        this.sendClientIdInForm = config.isPublicClient() || (CLIENT_CREDENTIALS.equals(accessTokenGrantType) && null == config.getClientSecret());
     }
 
     public String getAccessTokenString() {
@@ -96,7 +99,7 @@ public class TokenManager {
             form.param(SCOPE, config.getScope());
         }
 
-        if (config.isPublicClient()) {
+        if (sendClientIdInForm) {
             form.param(CLIENT_ID, config.getClientId());
         }
 
@@ -117,7 +120,7 @@ public class TokenManager {
         Form form = new Form().param(GRANT_TYPE, REFRESH_TOKEN)
                               .param(REFRESH_TOKEN, currentToken.getRefreshToken());
 
-        if (config.isPublicClient()) {
+        if (sendClientIdInForm) {
             form.param(CLIENT_ID, config.getClientId());
         }
 
@@ -139,7 +142,7 @@ public class TokenManager {
 
         Form form = new Form().param(REFRESH_TOKEN, currentToken.getRefreshToken());
 
-        if (config.isPublicClient()) {
+        if (sendClientIdInForm) {
             form.param(CLIENT_ID, config.getClientId());
         }
 
