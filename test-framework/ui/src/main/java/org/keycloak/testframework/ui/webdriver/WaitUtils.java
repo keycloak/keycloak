@@ -21,15 +21,9 @@ public class WaitUtils {
     }
 
     public WaitUtils waitForPage(AbstractPage page) {
-        return waitForPage(page, Duration.ofSeconds(5));
-    }
-
-    public WaitUtils waitForPage(AbstractPage page, Duration timeout) {
         String expectedPageId = page.getExpectedPageId();
         try {
-            new WebDriverWait(managed.driver(), timeout, Duration.ofMillis(50))
-                    .ignoring(StaleElementReferenceException.class)
-                    .until(d -> expectedPageId.equals(managed.page().getCurrentPageId()));
+            createDefaultWait().ignoring(StaleElementReferenceException.class).until(d -> expectedPageId.equals(managed.page().getCurrentPageId()));
         } catch (TimeoutException e) {
             Assertions.fail("Expected page '" + expectedPageId + "' to be loaded, but currently on page '" + managed.page().getCurrentPageId() + "' after timeout");
         }

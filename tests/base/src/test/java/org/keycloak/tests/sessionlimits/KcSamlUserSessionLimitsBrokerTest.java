@@ -46,8 +46,8 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ErrorPage;
-import org.keycloak.testframework.ui.page.IdpReviewProfilePage;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.page.LoginUpdateProfilePage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 import org.junit.jupiter.api.Assertions;
@@ -93,7 +93,7 @@ public class KcSamlUserSessionLimitsBrokerTest {
     ErrorPage errorPage;
 
     @InjectPage
-    IdpReviewProfilePage loginUpdateProfilePage;
+    LoginUpdateProfilePage loginUpdateProfilePage;
 
     @BeforeEach
     public void setup() {
