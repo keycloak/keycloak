@@ -34,6 +34,7 @@ import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.ParameterizedScopeUserPropertyMapper;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -70,6 +71,7 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
 import org.keycloak.testsuite.util.oauth.ciba.AuthenticationRequestAcknowledgement;
@@ -123,6 +125,7 @@ public class TokenExchangeDelegationTest {
         if (consents.stream().anyMatch(m -> oauth.getClientId().equals(m.get("clientId")))) {
             AccountHelper.revokeConsents(realm.admin(), USERNAME, oauth.getClientId());
         }
+        oauth.responseType(OAuth2Constants.CODE);
     }
 
     @Test
@@ -244,6 +247,59 @@ public class TokenExchangeDelegationTest {
         // logout
         LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
         Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
+    }
+
+    @Test
+    public void delegationImplicit() {
+        final ClientResource realmManagement = AdminApiUtil.findClientByClientId(realm.admin(), Constants.REALM_MANAGEMENT_CLIENT_ID);
+        final String clientUUID = realmManagement.toRepresentation().getId();
+        final RoleRepresentation impersonation = realmManagement.roles().get(AdminRoles.IMPERSONATION).toRepresentation();
+        administrator.admin().roles().clientLevel(clientUUID).add(List.of(impersonation));
+
+        // enable implicit flow for the client
+        ClientRepresentation clientRep = oauth.clientResource().toRepresentation();
+        clientRep.setImplicitFlowEnabled(Boolean.TRUE);
+        oauth.clientResource().update(clientRep);
+        realm.cleanup().add(r -> {
+            clientRep.setImplicitFlowEnabled(Boolean.FALSE);
+            r.clients().get(clientRep.getId()).update(clientRep);
+        });
+
+        // request the delegation to administrator and accept the delegation using implicit
+        final String scope = OIDCLoginProtocolFactory.DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + administrator.getUsername();
+        oauth.scope(scope).responseType(OAuth2Constants.TOKEN).openLoginForm();
+        oauth.fillLoginForm(USERNAME, PASSWORD);
+        grantPage.assertCurrent();
+        List<String> grants = grantPage.getDisplayedGrants();
+        MatcherAssert.assertThat(grants, Matchers.hasItem("Delegate token to administrator administrator?"));
+        grantPage.accept();
+
+        AuthorizationEndpointResponse res = new AuthorizationEndpointResponse(oauth);
+
+        Assertions.assertTrue(res.isRedirected());
+        Assertions.assertNotNull(res.getAccessToken());
+        AccessToken token = oauth.verifyToken(res.getAccessToken());
+        assertScopeContains(token.getScope(), scope);
+        assertMayActPresent(token, administrator.getId());
+
+        // logout
+        AdminApiUtil.findUserByUsernameId(realm.admin(), USERNAME).logout();
+
+        // remove the impersonation from the user and try again
+        administrator.admin().roles().clientLevel(clientUUID).remove(List.of(impersonation));
+
+        oauth.scope(scope).responseType(OAuth2Constants.TOKEN).openLoginForm();
+        oauth.fillLoginForm(USERNAME, PASSWORD);
+        res = new AuthorizationEndpointResponse(oauth);
+
+        Assertions.assertTrue(res.isRedirected());
+        Assertions.assertNotNull(res.getAccessToken());
+        token = oauth.verifyToken(res.getAccessToken());
+        assertScopeNotContains(token.getScope(), scope);
+        assertMayActNotPresent(token);
+
+        // logout
+        AdminApiUtil.findUserByUsernameId(realm.admin(), USERNAME).logout();
     }
 
     @Test

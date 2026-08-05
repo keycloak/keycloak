@@ -20,11 +20,9 @@ package org.keycloak.quarkus.deployment;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -1039,15 +1037,9 @@ class KeycloakProcessor {
 
             configureScriptDescriptor(descriptor, fileName -> {
                 // descriptor is at META-INF/
-                Path basePath = Path.of(url.getPath()).getParent().getParent();
-
-                String path = basePath.resolve(fileName).toString();
-                if (!path.startsWith(url.getProtocol())) {
-                    path = url.getProtocol() + ":" + path;
-                }
                 try {
-                    return new URI(path).toURL().openStream();
-                } catch (IOException | URISyntaxException e) {
+                    return new URL(url, "../" + fileName).openStream();
+                } catch (IOException e) {
                     throw new RuntimeException("Failed to read script file from: " + fileName);
                 }
             });

@@ -10,11 +10,15 @@ import java.util.Set;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -36,6 +40,7 @@ import org.keycloak.scim.resource.user.EnterpriseUser.Manager;
 import org.keycloak.scim.resource.user.GroupMembership;
 import org.keycloak.scim.resource.user.Name;
 import org.keycloak.scim.resource.user.User;
+import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
@@ -46,6 +51,9 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.userprofile.config.UPConfigUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.http.client.HttpClient;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -75,6 +83,9 @@ public class UserTest extends AbstractScimTest {
 
     @InjectScimClient(clientId = "noaccess-scim-client", clientSecret = "secret", attachTo = "noaccess-scim-client")
     ScimClient noAccessClient;
+
+    @InjectHttpClient
+    HttpClient httpClient;
 
     @BeforeEach
     public void onBefore() {
@@ -603,6 +614,29 @@ public class UserTest extends AbstractScimTest {
         assertNotNull(actual.getEnterpriseUser().getManager());
         assertEquals("567", actual.getEnterpriseUser().getManager().getValue());
         assertEquals("Amanda", actual.getFirstName());
+    }
+
+    @Test
+    public void testPatchWithNullSchemas() throws Exception {
+        User expected = client.users().create(createUser());
+
+        SimpleHttp http = SimpleHttp.create(httpClient);
+        AccessTokenResponse tokenResponse = http.doPost(keycloakUrls.getToken(realm.getName()))
+                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS)
+                .param(OAuth2Constants.CLIENT_ID, "scim-client")
+                .param(OAuth2Constants.CLIENT_SECRET, "secret")
+                .asJson(AccessTokenResponse.class);
+
+        String url = keycloakUrls.getBase() + "/realms/" + realm.getName() + "/scim/v2/Users/" + expected.getId();
+        try (SimpleHttpResponse response = http.doPatch(url)
+                .header("Authorization", "Bearer " + tokenResponse.getToken())
+                .header("Content-Type", "application/scim+json")
+                .entity(new StringEntity(
+                        "{\"schemas\": null, \"Operations\": [{\"op\": \"replace\", \"path\": \"active\", \"value\": false}]}",
+                        ContentType.create("application/scim+json")))
+                .asResponse()) {
+            assertEquals(400, response.getStatus());
+        }
     }
 
     @Test

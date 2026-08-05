@@ -44,6 +44,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -62,12 +63,11 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         IdentityProviderResource idpResource = managedRealm.admin().identityProviders().get(expected.getAlias());
         IdentityProviderRepresentation actual = idpResource.toRepresentation();
         Assertions.assertEquals(actual.getOrganizationId(), organization.getId());
+        // ignore organization id from repo when updating
         actual.setOrganizationId("somethingelse");
-        try {
-            idpResource.update(actual);
-            Assertions.fail("Should fail because it maps to an invalid org");
-        } catch (BadRequestException ignore) {
-        }
+        idpResource.update(actual);
+        actual = idpResource.toRepresentation();
+        assertEquals(actual.getOrganizationId(), organization.getId());
 
         OrganizationRepresentation secondOrg = createOrganization("secondorg");
         actual.setOrganizationId(secondOrg.getId());
@@ -233,8 +233,11 @@ public class OrganizationIdentityProviderTest extends AbstractOrganizationTest {
         idpRep.setAlias("newbroker");
         idpRep.setInternalId(null);
         try (Response response = managedRealm.admin().identityProviders().create(idpRep)) {
-            Assertions.assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            Assertions.assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            getCleanup().addCleanup(() -> managedRealm.admin().identityProviders().get("newbroker").remove());
         }
+        IdentityProviderRepresentation created = managedRealm.admin().identityProviders().get("newbroker").toRepresentation();
+        Assertions.assertNull(created.getOrganizationId());
     }
 
     @Test

@@ -44,6 +44,7 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.ietf.jgss.GSSCredential;
 import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
@@ -173,6 +174,8 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
     }
 
 
+    @Ignore("Credential delegation not supported: embedded Kerby KDC lacks FORWARDED flag (DIRKRB-458), " +
+            "and invokeLdap hardcodes localhost — needs rework for external KDCs")
     @Test
     public void credentialDelegationTest() throws Exception {
         Assume.assumeTrue("Ignoring test as the embedded server is not started", getKerberosRule().isStartEmbeddedLdapServer());
