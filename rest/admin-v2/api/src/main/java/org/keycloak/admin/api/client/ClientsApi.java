@@ -1,5 +1,6 @@
 package org.keycloak.admin.api.client;
 
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import jakarta.validation.Valid;
@@ -14,6 +15,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.api.ListOptions;
+import org.keycloak.admin.api.TypedResponse;
 import org.keycloak.common.constants.KeycloakOpenAPI;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 
@@ -53,6 +55,17 @@ public interface ClientsApi {
             @APIResponse(responseCode = "201", description = "Created", content = @Content(schema = @Schema(implementation = BaseClientRepresentation.class)))
     })
     Response createClient(@Valid BaseClientRepresentation client);
+
+    /**
+     * Convenience alternative to {@link #createClient(BaseClientRepresentation)} that preserves
+     * the client subtype supplied by the caller.
+     */
+    default <T extends BaseClientRepresentation> TypedResponse<T> create(T client) {
+        Objects.requireNonNull(client, "client cannot be null");
+        @SuppressWarnings("unchecked")
+        Class<T> entityType = (Class<T>) client.getClass();
+        return new TypedResponse<>(createClient(client), entityType);
+    }
 
     @Path("{id}")
     ClientApi client(@PathParam("id") String id);
