@@ -2,6 +2,7 @@ package org.keycloak.broker.oidc.mtls;
 
 import org.keycloak.crypto.KeyWrapper;
 
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -12,9 +13,11 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 
 /**
- * Builds an SSLContext that presents the IdP's client certificate (from a realm key) as the
- * TLS key material for tls_client_auth. Trust material is supplied by the caller (the global
- * Keycloak truststore); null means the JVM default trust managers are used.
+ * Builds the TLS key material that presents the IdP's client certificate (from a realm key) for
+ * tls_client_auth. Callers can obtain either the raw {@link KeyManager}s (so they survive an
+ * outbound HTTP client configured with {@code disable-trust-manager}) or a fully built
+ * {@link SSLContext}. Trust material is supplied by the caller (the global Keycloak truststore);
+ * null means the JVM default trust managers are used.
  */
 public final class IdpMtlsSslContextProvider {
 
@@ -23,7 +26,10 @@ public final class IdpMtlsSslContextProvider {
     private IdpMtlsSslContextProvider() {
     }
 
-    public static SSLContext buildSslContext(KeyWrapper key, TrustManager[] trustManagers) throws Exception {
+    /**
+     * Builds the {@link KeyManager}s that present the IdP client certificate for mTLS.
+     */
+    public static KeyManager[] buildKeyManagers(KeyWrapper key) throws Exception {
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
         ks.load(null, null);
 
@@ -42,9 +48,12 @@ public final class IdpMtlsSslContextProvider {
 
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         kmf.init(ks, EMPTY);
+        return kmf.getKeyManagers();
+    }
 
+    public static SSLContext buildSslContext(KeyWrapper key, TrustManager[] trustManagers) throws Exception {
         SSLContext ctx = SSLContext.getInstance("TLS");
-        ctx.init(kmf.getKeyManagers(), trustManagers, new SecureRandom());
+        ctx.init(buildKeyManagers(key), trustManagers, new SecureRandom());
         return ctx;
     }
 }

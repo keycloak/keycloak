@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,9 +31,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.KeyManager;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.QueryParam;
@@ -106,7 +103,6 @@ import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.truststore.TruststoreProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.util.Booleans;
 import org.keycloak.util.JsonSerialization;
@@ -751,26 +747,18 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             RealmModel realm = session.getContext().getRealm();
             String providerId = getConfig().getClientCertKeyProviderId();
             KeyWrapper key = new IdpClientCertificateResolver(session).resolve(realm, providerId);
-            SSLContext sslContext = IdpMtlsSslContextProvider.buildSslContext(key, getTruststoreTrustManagers());
+            KeyManager[] keyManagers = IdpMtlsSslContextProvider.buildKeyManagers(key);
             // Build the client through the HttpClientProvider so that the per-IdP mTLS client inherits the
             // server-wide outbound HTTP settings (proxy, timeouts, connection pool, cookie/redirect/retry
-            // policy, hostname verification and tracing) and only swaps in the client TLS key material.
-            return session.getProvider(HttpClientProvider.class).createHttpClient(sslContext);
+            // policy, truststore, hostname verification and tracing) and only adds the client TLS key
+            // material. Passing key managers (rather than a full SSLContext) keeps the certificate present
+            // even when the outbound client is configured with disable-trust-manager.
+            return session.getProvider(HttpClientProvider.class).createHttpClient(keyManagers);
         } catch (Exception e) {
             throw new IdentityBrokerException("Failed to build mTLS HTTP client for tls_client_auth", e);
         }
     }
 
-    private TrustManager[] getTruststoreTrustManagers() throws Exception {
-        TruststoreProvider tp = session.getProvider(TruststoreProvider.class);
-        KeyStore truststore = (tp == null) ? null : tp.getTruststore();
-        if (truststore == null) {
-            return null; // JVM default trust managers
-        }
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        tmf.init(truststore);
-        return tmf.getTrustManagers();
-    }
 
     protected JsonWebToken generateToken() {
         JsonWebToken jwt = new JsonWebToken();

@@ -23,6 +23,7 @@ import java.security.KeyStore;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 
 import org.keycloak.Config;
@@ -103,7 +104,12 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
 
             @Override
             public CloseableHttpClient createHttpClient(SSLContext sslContext) {
-                return buildHttpClient(session, sslContext);
+                return buildHttpClient(session, sslContext, null);
+            }
+
+            @Override
+            public CloseableHttpClient createHttpClient(KeyManager[] keyManagers) {
+                return buildHttpClient(session, null, keyManagers);
             }
 
             @Override
@@ -181,7 +187,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
         if (httpClient == null) {
             synchronized(this) {
                 if (httpClient == null) {
-                    httpClient = buildHttpClient(session, null);
+                    httpClient = buildHttpClient(session, null, null);
                 }
             }
         }
@@ -195,15 +201,25 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
      * @param session the current session
      * @param sslContext when non-null, this SSL context is used verbatim (taking precedence over the
      *                   server-wide client keystore/truststore SSL material) so that only the TLS key
-     *                   material is swapped while every other setting is preserved. Used for per-IdP
-     *                   {@code tls_client_auth} (mTLS) clients.
+     *                   material is swapped while every other setting is preserved. Note that a verbatim
+     *                   SSL context is discarded when {@code disable-trust-manager} is set; prefer
+     *                   {@code keyManagers} for {@code tls_client_auth} so the client certificate is
+     *                   presented under every supported outbound configuration.
+     * @param keyManagers when non-null, these client TLS key managers are merged into the server-wide TLS
+     *                    configuration (rather than replacing it) so client-certificate authentication is
+     *                    honored even with {@code disable-trust-manager}. Used for per-IdP
+     *                    {@code tls_client_auth} (mTLS) clients.
      * @return a configured client; the caller owns and must close clients built with a custom sslContext
+     *         or key managers
      */
-    CloseableHttpClient buildHttpClient(KeycloakSession session, SSLContext sslContext) {
+    CloseableHttpClient buildHttpClient(KeycloakSession session, SSLContext sslContext, KeyManager[] keyManagers) {
         HttpClientBuilder builder = newHttpClientBuilder(session);
         configureBuilder(builder, session);
         if (sslContext != null) {
             builder.sslContext(sslContext);
+        }
+        if (keyManagers != null) {
+            builder.keyManagers(keyManagers);
         }
         return builder.build();
     }
