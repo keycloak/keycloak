@@ -55,7 +55,25 @@ public class JsonLdContextDocumentLoaderTest {
             exchange.sendResponseHeaders(302, -1);
             exchange.close();
         });
+        server.createContext("/redirectToEvil", exchange -> {
+            exchange.getResponseHeaders().add("Location", "http://not-allowed.example.org/context");
+            exchange.sendResponseHeaders(302, -1);
+            exchange.close();
+        });
         server.createContext("/slow", exchange -> {
+            try {
+                Thread.sleep(30_000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            exchange.close();
+        });
+        server.createContext("/slowBody", exchange -> {
+            exchange.getResponseHeaders().set("Content-Type", "application/ld+json");
+            exchange.sendResponseHeaders(200, 1000);
+            OutputStream os = exchange.getResponseBody();
+            os.write("{\"@context\":".getBytes(StandardCharsets.UTF_8));
+            os.flush();
             try {
                 Thread.sleep(30_000);
             } catch (InterruptedException e) {
@@ -126,11 +144,28 @@ public class JsonLdContextDocumentLoaderTest {
         loader.loadDocument(URI.create(baseUrl + "/redirectToFile"), new DocumentLoaderOptions());
     }
 
+    @Test(expected = JsonLdError.class)
+    public void testRejectsRedirectToNonAllowlistedHost() throws JsonLdError {
+        // Redirect hops are validated against the same host allowlist as the initial URL.
+        JsonLdContextDocumentLoader loader = JsonLdContextDocumentLoader.forTesting(
+                Set.of("localhost"), Duration.ofSeconds(5), Duration.ofSeconds(5));
+        loader.loadDocument(URI.create(baseUrl + "/redirectToEvil"), new DocumentLoaderOptions());
+    }
+
     @Test(timeout = 5000, expected = JsonLdError.class)
     public void testRequestTimeout() throws JsonLdError {
         JsonLdContextDocumentLoader loader = JsonLdContextDocumentLoader.forTesting(
                 Set.of("localhost"), Duration.ofMillis(500), Duration.ofMillis(500));
         loader.loadDocument(URI.create(baseUrl + "/slow"), new DocumentLoaderOptions());
+    }
+
+    @Test(timeout = 5000, expected = JsonLdError.class)
+    public void testSlowBodyTimesOut() throws JsonLdError {
+        // The full body is consumed within the request timeout, so a server that sends
+        // headers and then stalls must time out instead of blocking the caller.
+        JsonLdContextDocumentLoader loader = JsonLdContextDocumentLoader.forTesting(
+                Set.of("localhost"), Duration.ofMillis(500), Duration.ofMillis(500));
+        loader.loadDocument(URI.create(baseUrl + "/slowBody"), new DocumentLoaderOptions());
     }
 
     private static void handleRequest(HttpExchange exchange, int status, String body, String contentType)

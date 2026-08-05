@@ -119,7 +119,8 @@ public class Ed255192018SuiteTest {
 
             @Override
             public byte[] sign(byte[] data) {
-                return new byte[]{1, 2, 3, 4};
+                // Return the input so the signature reflects the canonicalized payload.
+                return data.clone();
             }
         };
     }
