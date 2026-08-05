@@ -140,9 +140,13 @@ public class ScimJPAPredicateProvider {
             basePredicate = cb.equal(join.get("name"), modelAttributeName);
         }
 
-        if (value != null && !attrInfo.isCaseExact() && "string".equals(attrInfo.getType())) {
+        // compare case-insensitive attributes in lowercase. Attributes the model already stores in lowercase
+        // are compared directly so the database can use indexes on the column
+        if (value instanceof String && !attrInfo.isCaseExact()) {
             value = value.toString().toLowerCase();
-            expression = cb.lower((Expression<String>) expression);
+            if (!attrInfo.isStoredLowerCase()) {
+                expression = cb.lower((Expression<String>) expression);
+            }
         }
 
         Predicate predicate = operatorMap.get(operation).apply(cb, expression, value);
