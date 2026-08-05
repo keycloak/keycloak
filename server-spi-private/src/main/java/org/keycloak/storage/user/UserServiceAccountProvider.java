@@ -33,11 +33,10 @@ import org.keycloak.models.UserModel;
  *
  * <p>For service account lookup, local storage is consulted first for backward compatibility; if not found, providers are queried in the same order.
  *
- * <p>Providers implementing this interface should also implement {@link UserRegistrationProvider}
- * so that service account users can be removed when the owning client is deleted or has service
- * accounts disabled.
+ * <p>This capability extends {@link UserRegistrationProvider} because service account users must
+ * be removable when the owning client is deleted or has service accounts disabled.
  */
-public interface UserServiceAccountProvider {
+public interface UserServiceAccountProvider extends UserRegistrationProvider {
 
     /**
      * Creates a service account user in this storage provider.
@@ -45,10 +44,12 @@ public interface UserServiceAccountProvider {
      * <p>If this method returns null, then the next storage provider's method will be called.
      * If no storage providers handle the creation, the user will be created in local storage.
      *
-     * <p>The returned {@link UserModel} must support {@link UserModel#setEnabled(boolean)} and
-     * {@link UserModel#setServiceAccountClientLink(String)}, and must durably persist the client
-     * link so that it survives across sessions and is returned by
-     * {@link UserModel#getServiceAccountClientLink()} on subsequent lookups.
+     * <p>The returned {@link UserModel} must support {@link UserModel#setEnabled(boolean)},
+     * {@link UserModel#setServiceAccountClientLink(String)}, and {@link UserModel#setUsername(String)}.
+     * The username must be mutable because {@code ClientManager.clientIdChanged} renames
+     * the service account user whenever the owning client's {@code clientId} is updated.
+     * The client link must be durably persisted so that it survives across sessions and is
+     * returned by {@link UserModel#getServiceAccountClientLink()} on subsequent lookups.
      *
      * @param realm a reference to the realm
      * @param username the username for the service account (prefixed with "service-account-")

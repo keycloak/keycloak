@@ -204,6 +204,43 @@ public class ServiceAccountUserStorageTest {
     }
 
     @Test
+    public void serviceAccountRenamedWhenClientIdChanges() {
+        ClientResource client = createServiceAccountClient();
+
+        UserRepresentation serviceAccount = client.getServiceAccountUser();
+        assertThat(serviceAccount, notNullValue());
+        assertThat(serviceAccount.getUsername(), equalTo(SA_USERNAME));
+
+        String renamedClientId = "renamed-sa-client";
+        String renamedSaUsername = ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + renamedClientId;
+
+        ClientRepresentation rep = client.toRepresentation();
+        rep.setClientId(renamedClientId);
+        client.update(rep);
+
+        UserRepresentation renamedAccount = client.getServiceAccountUser();
+        assertThat(renamedAccount, notNullValue());
+        assertThat(renamedAccount.getUsername(), equalTo(renamedSaUsername));
+        assertThat("renamed service account should still be in the external provider",
+                StorageId.isLocalStorage(renamedAccount.getId()), is(false));
+
+        runOnServer.run(session -> {
+            ServiceAccountUserStorageFactory factory = (ServiceAccountUserStorageFactory) session.getKeycloakSessionFactory()
+                    .getProviderFactory(UserStorageProvider.class, ServiceAccountUserStorageFactory.PROVIDER_ID);
+            Assertions.assertTrue(factory.contains(renamedSaUsername),
+                    "renamed username should exist in the external provider");
+            Assertions.assertFalse(factory.contains(SA_USERNAME),
+                    "old username should no longer exist in the external provider");
+        });
+
+        oauth.client(renamedClientId, CLIENT_SECRET);
+        AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest();
+        assertThat(response.getStatusCode(), equalTo(200));
+        AccessToken token = oauth.verifyToken(response.getAccessToken());
+        assertThat(token.getOtherClaims().get(ServiceAccountConstants.CLIENT_ID), equalTo(renamedClientId));
+    }
+
+    @Test
     public void regularUsersNotRoutedToServiceAccountProvider() {
         UserRepresentation user = new UserRepresentation();
         user.setUsername("regular-user");

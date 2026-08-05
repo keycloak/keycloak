@@ -50,27 +50,34 @@ public class ServiceAccountUserStorage implements UserStorageProvider, UserLooku
     }
 
     private UserModel adapt(RealmModel realm, String username) {
-        return new AbstractUserAdapterFederatedStorage.Streams(session, realm, model) {
+        // mutable holder — anonymous inner class needs to update the username on rename
+        final String[] currentUsername = {username};
+        return new AbstractUserAdapterFederatedStorage(session, realm, model) {
 
             @Override
             public String getUsername() {
-                return username;
+                return currentUsername[0];
             }
 
             @Override
-            public void setUsername(String username) {
-                throw new UnsupportedOperationException();
+            public void setUsername(String newUsername) {
+                String oldUsername = currentUsername[0];
+                if (!oldUsername.equals(newUsername)) {
+                    String link = users.remove(oldUsername);
+                    users.put(newUsername, link != null ? link : "");
+                    currentUsername[0] = newUsername;
+                }
             }
 
             @Override
             public String getServiceAccountClientLink() {
-                String link = users.get(username);
+                String link = users.get(currentUsername[0]);
                 return link == null || link.isEmpty() ? null : link;
             }
 
             @Override
             public void setServiceAccountClientLink(String clientInternalId) {
-                users.put(username, clientInternalId);
+                users.put(currentUsername[0], clientInternalId);
             }
         };
     }
