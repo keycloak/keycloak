@@ -7,31 +7,22 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.utils.StringUtil;
 
-public class ClientDelegationScopeType implements ParameterizedScopeTypeProvider {
+public class ClientDelegationScopeType extends DelegationScopeType {
 
     public static final String TYPE = "client-delegation";
 
-    private final KeycloakSession session;
-
     public ClientDelegationScopeType() {
-        this.session = null;
     }
 
     public ClientDelegationScopeType(KeycloakSession session) {
-        this.session = session;
+        super(session);
     }
 
     @Override
     public String getTypeName() {
         return TYPE;
-    }
-
-    @Override
-    public boolean isRepeatable() {
-        return false;
     }
 
     @Override
@@ -47,19 +38,7 @@ public class ClientDelegationScopeType implements ParameterizedScopeTypeProvider
     }
 
     @Override
-    public void validateParameterWithUser(@Nonnull UserModel currentUser, @Nonnull ClientScopeModel scope, @Nonnull String parameter) throws InvalidScopeParameterException {
-        ClientModel targetClient = resolveClient(scope, parameter);
-        UserModel serviceAccountUser = session.users().getServiceAccount(targetClient);
-        if (serviceAccountUser == null) {
-            throw new InvalidScopeParameterException(
-                    String.format("Client '%s' does not have a service account in realm '%s'", targetClient.getClientId(), scope.getRealm().getName()));
-        }
-        if (serviceAccountUser.getId().equals(currentUser.getId())) {
-            throw new InvalidScopeParameterException("User cannot target themselves");
-        }
-    }
-
-    protected ClientModel resolveClient(ClientScopeModel scope, String parameter) throws InvalidScopeParameterException {
+    protected UserModel resolveUser(ClientScopeModel scope, String parameter) throws InvalidScopeParameterException {
         RealmModel realm = scope.getRealm();
         ClientModel client = realm.getClientByClientId(parameter);
         if (client == null) {
@@ -71,9 +50,11 @@ public class ClientDelegationScopeType implements ParameterizedScopeTypeProvider
         if (!client.isServiceAccountsEnabled()) {
             throw new InvalidScopeParameterException(String.format("Client '%s' does not have service accounts enabled in realm '%s'", parameter, realm.getName()));
         }
-        if (!Boolean.parseBoolean(client.getAttribute(OIDCConfigAttributes.CLIENT_DELEGATION_ENABLED))) {
-            throw new InvalidScopeParameterException(String.format("Client '%s' does not have client delegation enabled in realm '%s'", parameter, realm.getName()));
+        UserModel serviceAccountUser = session.users().getServiceAccount(client);
+        if (serviceAccountUser == null) {
+            throw new InvalidScopeParameterException(
+                    String.format("Client '%s' does not have a service account in realm '%s'", client.getClientId(), realm.getName()));
         }
-        return client;
+        return serviceAccountUser;
     }
 }

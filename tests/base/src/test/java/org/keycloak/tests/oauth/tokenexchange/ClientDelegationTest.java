@@ -154,7 +154,7 @@ public class ClientDelegationTest {
 
     @Test
     public void notEnabled() {
-        agentApp.updateWithCleanup(c -> c.attribute(OIDCConfigAttributes.CLIENT_DELEGATION_ENABLED, Boolean.FALSE.toString()));
+        agentApp.updateWithCleanup(c -> c.attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_DELEGATION_ENABLED, Boolean.FALSE.toString()));
         assertDelegationScopeRejected(AGENT_DELEGATION_SCOPE);
     }
 
@@ -183,7 +183,7 @@ public class ClientDelegationTest {
         assertMayActPresent(oauth.verifyToken(res.getAccessToken()), getServiceAccountUserId(), AGENT_CLIENT_ID);
 
         // disable client delegation and refresh — may_act should be stripped
-        agentApp.updateWithCleanup(c -> c.attribute(OIDCConfigAttributes.CLIENT_DELEGATION_ENABLED, Boolean.FALSE.toString()));
+        agentApp.updateWithCleanup(c -> c.attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_DELEGATION_ENABLED, Boolean.FALSE.toString()));
         res = oauth.scope(null).doRefreshTokenRequest(res.getRefreshToken());
         Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
         assertScopeNotContains(res.getScope(), AGENT_DELEGATION_SCOPE);
@@ -471,7 +471,7 @@ public class ClientDelegationTest {
                     .directAccessGrantsEnabled()
                     .defaultClientScopes("acr", "basic", "profile")
                     .optionalClientScopes("email")
-                    .attribute(OIDCConfigAttributes.CLIENT_DELEGATION_ENABLED, Boolean.TRUE.toString())
+                    .attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_DELEGATION_ENABLED, Boolean.TRUE.toString())
                     .attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED, Boolean.TRUE.toString())
                     .protocolMappers(audienceMapper);
         }

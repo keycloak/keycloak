@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -386,6 +387,13 @@ public class UserResource {
 
         auth.users().requireImpersonate(user);
 
+        var isServiceAccount = Optional.ofNullable(auth.adminAuth())
+                .map(AdminAuth::getUser)
+                .map(f -> f.getServiceAccountClientLink() != null)
+                .orElse(false);
+        if (isServiceAccount) {
+            throw ErrorResponse.error("Service accounts are not allowed to impersonate users", Status.FORBIDDEN);
+        }
         if (!user.isEnabled()) {
             throw ErrorResponse.error("User is disabled", Status.BAD_REQUEST);
         }

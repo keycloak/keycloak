@@ -55,6 +55,7 @@ export const CapabilityConfig = ({
     convertAttributeNameToForm<FormFields>("attributes.external.token.enabled"),
     false,
   );
+  const serviceAccountsEnabled = watch("serviceAccountsEnabled");
   const isFeatureEnabled = useIsFeatureEnabled();
   const { hasSomeAccess } = useAccess();
   const { realmRepresentation } = useRealm();
@@ -494,10 +495,10 @@ export const CapabilityConfig = ({
           )}
           {isFeatureEnabled(Feature.TokenExchangeDelegation) &&
             standardTokenExchangeEnabled?.toString() === "true" &&
-            !isPublicClient && (
+            serviceAccountsEnabled && (
               <DefaultSwitchControl
                 name={convertAttributeNameToForm<FormFields>(
-                  "attributes.client.delegation.enabled",
+                  "attributes.standard.token.exchange.delegation.enabled",
                 )}
                 label={t("clientDelegationEnabled")}
                 labelIcon={t("clientDelegationEnabledHelp")}

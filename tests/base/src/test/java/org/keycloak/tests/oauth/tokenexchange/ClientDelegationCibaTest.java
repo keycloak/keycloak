@@ -105,7 +105,7 @@ public class ClientDelegationCibaTest {
         assertMayActPresent(oauth.verifyToken(res.getAccessToken()), getServiceAccountUserId(), AGENT_CLIENT_ID);
 
         // disable delegation and refresh — may_act should be stripped
-        agentApp.updateWithCleanup(c -> c.attribute(OIDCConfigAttributes.CLIENT_DELEGATION_ENABLED, Boolean.FALSE.toString()));
+        agentApp.updateWithCleanup(c -> c.attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_DELEGATION_ENABLED, Boolean.FALSE.toString()));
         res = oauth.client(TEST_CLIENT_ID, TEST_CLIENT_SECRET).scope(null).doRefreshTokenRequest(res.getRefreshToken());
         Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
         assertScopeNotContains(res.getScope(), AGENT_DELEGATION_SCOPE);
@@ -116,7 +116,7 @@ public class ClientDelegationCibaTest {
 
     @Test
     public void delegationNotEnabled() throws Exception {
-        agentApp.updateWithCleanup(c -> c.attribute(OIDCConfigAttributes.CLIENT_DELEGATION_ENABLED, Boolean.FALSE.toString()));
+        agentApp.updateWithCleanup(c -> c.attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_DELEGATION_ENABLED, Boolean.FALSE.toString()));
 
         AccessTokenResponse res = cibaLogin(AGENT_DELEGATION_SCOPE, "delegation-disabled", false);
         assertScopeNotContains(res.getScope(), AGENT_DELEGATION_SCOPE);

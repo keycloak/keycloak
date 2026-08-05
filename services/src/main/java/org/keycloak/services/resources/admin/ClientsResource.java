@@ -46,6 +46,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -54,7 +55,6 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisteredContext;
 import org.keycloak.services.managers.ClientManager;
-import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.utils.SearchQueryUtils;
@@ -211,9 +211,9 @@ public class ClientsResource {
 
             ClientModel clientModel = ClientManager.createClient(session, realm, rep);
 
-            if (TRUE.equals(rep.isServiceAccountsEnabled())) {
-                new ClientManager(new RealmManager(session)).enableServiceAccount(clientModel);
-            }
+            boolean delegationEnabled = rep.getAttributes() != null
+                    && Boolean.parseBoolean(rep.getAttributes().get(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_DELEGATION_ENABLED));
+            ClientManager.updateClientServiceAccount(session, clientModel, rep.isServiceAccountsEnabled(), delegationEnabled);
 
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), clientModel.getId()).representation(rep).success();
 

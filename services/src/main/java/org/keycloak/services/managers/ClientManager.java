@@ -31,10 +31,12 @@ import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
@@ -254,6 +256,29 @@ public class ClientManager {
             if (serviceAccount != null || serviceAccountScopeAssigned) {
                 new ClientManager(new RealmManager(session)).disableServiceAccount(client);
             }
+        }
+    }
+
+    public static void updateClientServiceAccount(KeycloakSession session, ClientModel client, Boolean isServiceAccountEnabled, boolean isDelegationEnabled) {
+        updateClientServiceAccount(session, client, isServiceAccountEnabled);
+
+        if (!Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE_DELEGATION)) {
+            return;
+        }
+        UserModel serviceAccount = session.users().getServiceAccount(client);
+        if (serviceAccount == null) {
+            return;
+        }
+        RoleModel impersonationRole = client.getRealm().getRole(AdminRoles.IMPERSONATION);
+        if (impersonationRole == null) {
+            return;
+        }
+        if (isDelegationEnabled) {
+            if (!serviceAccount.hasRole(impersonationRole)) {
+                serviceAccount.grantRole(impersonationRole);
+            }
+        } else {
+            serviceAccount.deleteRoleMapping(impersonationRole);
         }
     }
 

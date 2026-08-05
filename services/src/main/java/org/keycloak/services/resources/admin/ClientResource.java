@@ -65,6 +65,7 @@ import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -844,7 +845,9 @@ public class ClientResource {
     }
 
     private void updateClientFromRep(ClientRepresentation rep, ClientModel client, KeycloakSession session) throws ModelDuplicateException {
-        updateClientServiceAccount(session, client, rep.isServiceAccountsEnabled());
+        boolean delegationEnabled = rep.getAttributes() != null
+                && Boolean.parseBoolean(rep.getAttributes().get(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_DELEGATION_ENABLED));
+        ClientManager.updateClientServiceAccount(session, client, rep.isServiceAccountsEnabled(), delegationEnabled);
 
         if (rep.getClientId() != null && !rep.getClientId().equals(client.getClientId())) {
             new ClientManager(new RealmManager(session)).clientIdChanged(client, rep);
