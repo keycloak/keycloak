@@ -7,6 +7,7 @@ import org.keycloak.authentication.authenticators.sessionlimits.UserSessionLimit
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
@@ -48,6 +49,41 @@ public class UserSessionLimitsUtil {
                     .readOnlyStreamUserSessions(realm, realm.getClientByClientId(clientId), -1, -1)
                     .filter(userSessionModel -> userSessionModel.getUser().getId().equals(user.getId()))
                     .count());
+        };
+    }
+
+    static RunOnServer configurePostBrokerFlow(String realmName, String idpAlias,
+            String behavior, String realmLimit, String clientLimit) {
+        return session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            session.getContext().setRealm(realm);
+            AuthenticationFlowModel postBrokerFlow = new AuthenticationFlowModel();
+            postBrokerFlow.setAlias("post-broker");
+            postBrokerFlow.setDescription("post-broker flow with session limits");
+            postBrokerFlow.setProviderId("basic-flow");
+            postBrokerFlow.setTopLevel(true);
+            postBrokerFlow.setBuiltIn(false);
+            postBrokerFlow = realm.addAuthenticationFlow(postBrokerFlow);
+            configureSessionLimits(realm, postBrokerFlow, behavior, realmLimit, clientLimit);
+            IdentityProviderModel idp = session.identityProviders().getByAlias(idpAlias);
+            idp.setPostBrokerLoginFlowId(postBrokerFlow.getId());
+            session.identityProviders().update(idp);
+        };
+    }
+
+    static RunOnServer removePostBrokerFlow(String realmName) {
+        return session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            AuthenticationFlowModel flow = realm.getFlowByAlias("post-broker");
+            if (flow != null) {
+                session.identityProviders().getAllStream()
+                        .filter(idp -> flow.getId().equals(idp.getPostBrokerLoginFlowId()))
+                        .forEach(idp -> {
+                            idp.setPostBrokerLoginFlowId(null);
+                            session.identityProviders().update(idp);
+                        });
+                realm.removeAuthenticationFlow(flow);
+            }
         };
     }
 
