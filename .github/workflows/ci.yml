@@ -50,6 +50,7 @@ jobs:
       ci-azure: ${{ steps.azure-tests.outputs.run-azure-tests }}
       ci-additional-dbs: ${{ steps.additional-dbs-tests.outputs.run-additional-dbs-tests }}
       ci-admin-v2: ${{ steps.conditional.outputs.admin-v2 }}
+      ci-jackson3: ${{ steps.conditional.outputs.ci-jackson3 }}
     permissions:
       contents: read
       pull-requests: read
@@ -1293,6 +1294,27 @@ jobs:
       - name: Run tests
         run: ./mvnw verify -pl rest/admin-v2/tests/pom.xml
 
+  jackson3-admin-client-tests:
+    name: Jackson 3 Admin Client
+    if: needs.conditional.outputs.ci-jackson3 == 'true'
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - conditional
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run Admin v2 tests with Jackson 3
+        run: ./mvnw verify -pl rest/admin-v2/tests/pom.xml -Pjackson3
+
+      - name: Run Base smoke tests with Jackson 3
+        run: ./mvnw verify -pl tests/base -Pjackson3
+
   mixed-cluster-compatibility-tests:
     name: Cluster Compatibility Tests
     if: needs.version-compatibility.outputs.matrix != 'skip'
@@ -1395,6 +1417,7 @@ jobs:
       - mixed-cluster-compatibility-tests
       - authzen-integration-tests
       - admin-v2-tests
+      - jackson3-admin-client-tests
       - testsuite-deprecation-check
       - stateless-tests
       - stateless-cluster-integration-tests

@@ -14,8 +14,6 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 
-import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
-
 /**
  * @since Keycloak server 26.4.0. All the child endpoints are also available since that version<p>
  *
@@ -25,7 +23,7 @@ import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
 public interface WorkflowsResource {
 
     @POST
-    @Consumes({MediaType.APPLICATION_JSON, YAMLMediaTypes.APPLICATION_JACKSON_YAML})
+    @Consumes({MediaType.APPLICATION_JSON, "application/yaml"})
     Response create(WorkflowRepresentation representation);
 
     @GET
