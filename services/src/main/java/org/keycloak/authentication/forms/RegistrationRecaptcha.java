@@ -17,28 +17,17 @@
 
 package org.keycloak.authentication.forms;
 
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import org.keycloak.authentication.ValidationContext;
-import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 
 public class RegistrationRecaptcha extends AbstractRegistrationRecaptcha {
@@ -77,10 +66,8 @@ public class RegistrationRecaptcha extends AbstractRegistrationRecaptcha {
     @Override
     protected boolean validate(ValidationContext context, String captcha, Map<String, String> config) {
         LOGGER.trace("Verifying reCAPTCHA using non-enterprise API");
-        CloseableHttpClient httpClient = context.getSession().getProvider(HttpClientProvider.class).getHttpClient();
 
-        HttpPost post = new HttpPost("https://www." + getRecaptchaDomain(config) + "/recaptcha/api/siteverify");
-        List<NameValuePair> formparams = new LinkedList<>();
+        String url = "https://www." + getRecaptchaDomain(config) + "/recaptcha/api/siteverify";
         String secret = config.get(SECRET_KEY);
         if (StringUtil.isNullOrEmpty(secret)) {
             // migrate old config name to the new one
@@ -90,24 +77,16 @@ public class RegistrationRecaptcha extends AbstractRegistrationRecaptcha {
                 config.remove(OLD_SECRET);
             }
         }
-        formparams.add(new BasicNameValuePair("secret", secret));
-        formparams.add(new BasicNameValuePair("response", captcha));
-        if (context.getConnection().getRemoteAddr() != null) {
-            formparams.add(new BasicNameValuePair("remoteip", context.getConnection().getRemoteAddr()));
-        }
 
         try {
-            UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, StandardCharsets.UTF_8);
-            post.setEntity(form);
-            try (CloseableHttpResponse response = httpClient.execute(post)) {
-                InputStream content = response.getEntity().getContent();
-                try {
-                    Map json = JsonSerialization.readValue(content, Map.class);
-                    return Boolean.TRUE.equals(json.get("success"));
-                } finally {
-                    EntityUtils.consumeQuietly(response.getEntity());
-                }
+            var request = SimpleHttp.create(context.getSession()).doPost(url)
+                    .param("secret", secret)
+                    .param("response", captcha);
+            if (context.getConnection().getRemoteAddr() != null) {
+                request.param("remoteip", context.getConnection().getRemoteAddr());
             }
+            Map json = request.asJson(Map.class);
+            return Boolean.TRUE.equals(json.get("success"));
         } catch (Exception e) {
             ServicesLogger.LOGGER.recaptchaFailed(e);
         }

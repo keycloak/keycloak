@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.CredentialInput;
@@ -50,7 +52,6 @@ import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 
-import org.apache.http.HttpStatus;
 import org.jboss.logging.Logger;
 
 /**
@@ -201,7 +202,7 @@ public class IpatuuraUserStorageProvider implements UserStorageProvider, UserLoo
         SimpleHttpResponse resp = ipatuura.createUser(username);
 
         try {
-            if (resp.getStatus() != HttpStatus.SC_CREATED) {
+            if (resp.getStatus() != Response.Status.CREATED.getStatusCode()) {
                 logger.warn("Unexpected create status code returned");
                 SCIMError error = resp.asJson(SCIMError.class);
                 logger.warn(error.getDetail());
@@ -225,7 +226,7 @@ public class IpatuuraUserStorageProvider implements UserStorageProvider, UserLoo
         SimpleHttpResponse resp = ipatuura.deleteUser(user.getUsername());
         Boolean status = false;
         try {
-            status = resp.getStatus() == HttpStatus.SC_NO_CONTENT;
+            status = resp.getStatus() == Response.Status.NO_CONTENT.getStatusCode();
             resp.close();
         } catch (IOException e) {
             logger.errorv("Error: {0}", e.getMessage());

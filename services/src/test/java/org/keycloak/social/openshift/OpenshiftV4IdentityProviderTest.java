@@ -1,7 +1,5 @@
 package org.keycloak.social.openshift;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -22,13 +20,12 @@ public class OpenshiftV4IdentityProviderTest {
     private final String TEST_OAUTH_METADATA_FILE = "/org/keycloak/test/social/openshift/OpenshiftV4-oauth-metadata.json";
 
     private URL oauthMetadataFile;
-    private String authMetadata;
-    private Map<String, String> oauthMetadataMap;
+    private Map<String, Object> oauthMetadataMap;
 
     @Before
     public void before() throws Exception {
         oauthMetadataFile = OpenshiftV4IdentityProviderTest.class.getResource(TEST_OAUTH_METADATA_FILE);
-        authMetadata = IOUtils.toString(oauthMetadataFile, StandardCharsets.UTF_8);
+        String authMetadata = IOUtils.toString(oauthMetadataFile, StandardCharsets.UTF_8);
 
         ObjectMapper objectMapper = new ObjectMapper();
         oauthMetadataMap = objectMapper.readValue(authMetadata, HashMap.class);
@@ -42,8 +39,8 @@ public class OpenshiftV4IdentityProviderTest {
         //when
         new OpenshiftV4IdentityProvider(null, config) {
             @Override
-            InputStream getOauthMetadataInputStream(KeycloakSession session, String baseUrl) {
-                return new ByteArrayInputStream(authMetadata.getBytes());
+            Map<String, Object> fetchOauthMetadata(KeycloakSession session, String baseUrl) {
+                return oauthMetadataMap;
             }
         };
 
@@ -62,7 +59,7 @@ public class OpenshiftV4IdentityProviderTest {
         try {
             new OpenshiftV4IdentityProvider(null, config) {
                 @Override
-                InputStream getOauthMetadataInputStream(KeycloakSession session, String baseUrl) {
+                Map<String, Object> fetchOauthMetadata(KeycloakSession session, String baseUrl) {
                     throw new RuntimeException("Failed : HTTP error code : 500");
                 }
             };

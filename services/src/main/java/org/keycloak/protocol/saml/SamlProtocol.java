@@ -19,10 +19,8 @@ package org.keycloak.protocol.saml;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -43,7 +41,6 @@ import jakarta.xml.soap.SOAPMessage;
 import org.keycloak.broker.saml.SAMLDataMarshaller;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
@@ -58,6 +55,8 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
@@ -107,13 +106,6 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 import org.w3c.dom.Document;
 
@@ -874,30 +866,18 @@ public class SamlProtocol implements LoginProtocol {
             return Response.serverError().build();
         }
 
-        CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
         for (int i = 0; i < 2; i++) { // follow redirects once
-            try {
-                List<NameValuePair> formparams = new ArrayList<NameValuePair>();
-                formparams.add(new BasicNameValuePair(GeneralConstants.SAML_REQUEST_KEY, logoutRequestString));
-                formparams.add(new BasicNameValuePair("BACK_CHANNEL_LOGOUT", "BACK_CHANNEL_LOGOUT")); // for Picketlink
-                // todo remove
-                // this
-                UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, StandardCharsets.UTF_8);
-                HttpPost post = new HttpPost(logoutUrl);
-                post.setEntity(form);
-                try (CloseableHttpResponse response = httpClient.execute(post)) {
-                    try {
-                        int status = response.getStatusLine().getStatusCode();
-                        if (status == 302 && !logoutUrl.endsWith("/")) {
-                            String redirect = response.getFirstHeader(HttpHeaders.LOCATION).getValue();
-                            String withSlash = logoutUrl + "/";
-                            if (withSlash.equals(redirect)) {
-                                logoutUrl = withSlash;
-                                continue;
-                            }
-                        }
-                    } finally {
-                        EntityUtils.consumeQuietly(response.getEntity());
+            try (SimpleHttpResponse response = SimpleHttp.create(session).doPost(logoutUrl)
+                    .param(GeneralConstants.SAML_REQUEST_KEY, logoutRequestString)
+                    .param("BACK_CHANNEL_LOGOUT", "BACK_CHANNEL_LOGOUT") // for Picketlink
+                    .asResponse()) {
+                int status = response.getStatus();
+                if (status == 302 && !logoutUrl.endsWith("/")) {
+                    String redirect = response.getFirstHeader(HttpHeaders.LOCATION);
+                    String withSlash = logoutUrl + "/";
+                    if (withSlash.equals(redirect)) {
+                        logoutUrl = withSlash;
+                        continue;
                     }
                 }
             } catch (IOException e) {

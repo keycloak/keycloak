@@ -33,7 +33,6 @@ import org.keycloak.services.resources.ServerMetadataResource;
 import org.keycloak.urls.UrlType;
 import org.keycloak.wellknown.WellKnownProvider;
 
-import org.apache.http.HttpHeaders;
 import org.jboss.logging.Logger;
 
 /**
@@ -63,7 +62,7 @@ public class JWTVCIssuerWellKnownProvider implements WellKnownProvider {
 
         addDeprecationHeadersIfOldRoute();
         // Keep Date explicit for RFC7231 compliance and conformance-suite header validation.
-        session.getContext().getHttpResponse().setHeader(HttpHeaders.DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)));
+        session.getContext().getHttpResponse().setHeader("Date", DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)));
 
         JWTVCIssuerMetadata config = new JWTVCIssuerMetadata();
         config.setIssuer(Urls.realmIssuer(frontendUriInfo.getBaseUri(), realm.getName()));
