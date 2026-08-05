@@ -383,7 +383,11 @@ public interface RealmModel extends RoleContainerModel {
      */
     Stream<ClientModel> searchClientByClientIdStream(String clientId, Integer firstResult, Integer maxResults);
 
+    long searchClientByClientIdCount(String clientId);
+
     Stream<ClientModel> searchClientByAttributes(Map<String, String> attributes, Integer firstResult, Integer maxResults);
+
+    long searchClientByAttributesCount(Map<String, String> attributes);
 
     Stream<ClientModel> searchClientByAuthenticationFlowBindingOverrides(Map<String, String> overrides, Integer firstResult, Integer maxResults);
 

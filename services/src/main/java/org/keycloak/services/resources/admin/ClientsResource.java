@@ -62,6 +62,8 @@ import org.keycloak.validation.ValidationUtil;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -176,6 +178,40 @@ public class ClientsResource {
         }
 
         return s;
+    }
+
+    /**
+     * Get clients count in the realm.
+     *
+     * @param search filter by clientId substring (case-insensitive)
+     * @param searchQuery filter by attribute using the format "key1:value1 key2:value2"
+     */
+    @Path("count")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK",
+            content = @Content(schema = @Schema(implementation = Long.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    @Operation(summary = "Get clients count in the realm.")
+    public Long getClientsCount(
+            @Parameter(description = "filter by clientId substring (case-insensitive)") @QueryParam("search") String search,
+            @Parameter(description = "filter by attribute, format is 'key1:value1 key2:value2'") @QueryParam("q") String searchQuery) {
+        auth.clients().requireList();
+        try {
+            if (searchQuery != null) {
+                Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
+                return realm.searchClientByAttributesCount(attributes);
+            } else if (search != null && !search.isBlank()) {
+                return realm.searchClientByClientIdCount(search);
+            }
+            return realm.getClientsCount();
+        } catch (ModelException e) {
+            throw new ErrorResponseException(Errors.INVALID_REQUEST, e.getMessage(), Response.Status.BAD_REQUEST);
+        }
     }
 
     private AuthorizationService getAuthorizationService(ClientModel clientModel) {

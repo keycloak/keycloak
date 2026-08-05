@@ -746,6 +746,79 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     @Override
+    public long searchClientsByClientIdCount(RealmModel realm, String clientId) {
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<Long> queryBuilder = builder.createQuery(Long.class);
+        Root<ClientEntity> root = queryBuilder.from(ClientEntity.class);
+
+        queryBuilder.select(builder.count(root.get("id")));
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        predicates.add(builder.equal(root.get("realmId"), realm.getId()));
+        predicates.add(builder.like(builder.lower(root.get("clientId")), builder.lower(builder.literal("%" + clientId + "%"))));
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.CLIENTS, realm, builder, queryBuilder, root));
+
+        queryBuilder.where(predicates.toArray(new Predicate[0]));
+
+        return em.createQuery(queryBuilder).getSingleResult();
+    }
+
+    @Override
+    public long searchClientsByAttributesCount(RealmModel realm, Map<String, String> attributes) {
+        Map<String, String> filteredAttributes = attributes;
+        if (clientSearchableAttributes != null) {
+            Set<String> notAllowed = attributes.keySet().stream().filter(attr -> !clientSearchableAttributes.contains(attr)).collect(Collectors.toSet());
+            if (!notAllowed.isEmpty()) {
+                throw new ModelException("Attributes [" + String.join(", ", notAllowed) + "] not allowed for search");
+            }
+            filteredAttributes = attributes.entrySet().stream().filter(e -> clientSearchableAttributes.contains(e.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        }
+
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<Long> queryBuilder = builder.createQuery(Long.class);
+        Root<ClientEntity> root = queryBuilder.from(ClientEntity.class);
+
+        queryBuilder.select(builder.count(root.get("id")));
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        predicates.add(builder.equal(root.get("realmId"), realm.getId()));
+
+        //noinspection resource
+        String dbProductName = em.unwrap(Session.class).doReturningWork(connection -> connection.getMetaData().getDatabaseProductName());
+
+        for (Map.Entry<String, String> entry : filteredAttributes.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+
+            Join<ClientEntity, ClientAttributeEntity> attributeJoin = root.join("attributes");
+
+            Predicate attrNamePredicate = builder.equal(attributeJoin.get("name"), key);
+
+            if (dbProductName.equals("Oracle")) {
+                Predicate attrValuePredicate = builder.equal(builder.function("DBMS_LOB.COMPARE", Integer.class, attributeJoin.get("value"), builder.literal(value)), 0);
+                predicates.add(builder.and(attrNamePredicate, attrValuePredicate));
+            } else if (dbProductName.equals("PostgreSQL")) {
+                Predicate attrValuePredicate1 = builder.equal(
+                        builder.function("substr", Integer.class, attributeJoin.get("value"), builder.literal(1), builder.literal(255)),
+                        builder.function("substr", Integer.class, builder.literal(value), builder.literal(1), builder.literal(255)));
+                Predicate attrValuePredicate2 = builder.equal(attributeJoin.get("value"), value);
+                predicates.add(builder.and(attrNamePredicate, attrValuePredicate1, attrValuePredicate2));
+            } else {
+                Predicate attrValuePredicate = builder.equal(attributeJoin.get("value"), value);
+                predicates.add(builder.and(attrNamePredicate, attrValuePredicate));
+            }
+        }
+
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.CLIENTS, realm, builder, queryBuilder, root));
+
+        queryBuilder.where(predicates.toArray(new Predicate[0]));
+
+        return em.createQuery(queryBuilder).getSingleResult();
+    }
+
+    @Override
     public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
         return searchForGroupByNameStream(realm, search, false, null, null).count();
     }

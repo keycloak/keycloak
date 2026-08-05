@@ -584,8 +584,16 @@ public class RealmModelDelegate implements RealmModel {
         return delegate.searchClientByClientIdStream(clientId, firstResult, maxResults);
     }
 
+    public long searchClientByClientIdCount(String clientId) {
+        return delegate.searchClientByClientIdCount(clientId);
+    }
+
     public Stream<ClientModel> searchClientByAttributes(Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         return delegate.searchClientByAttributes(attributes, firstResult, maxResults);
+    }
+
+    public long searchClientByAttributesCount(Map<String, String> attributes) {
+        return delegate.searchClientByAttributesCount(attributes);
     }
 
     public Stream<ClientModel> searchClientByAuthenticationFlowBindingOverrides(Map<String, String> overrides, Integer firstResult, Integer maxResults) {

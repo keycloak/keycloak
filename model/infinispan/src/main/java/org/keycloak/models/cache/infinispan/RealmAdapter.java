@@ -926,8 +926,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public long searchClientByClientIdCount(String clientId) {
+        return cacheSession.getClientDelegate().searchClientsByClientIdCount(this, clientId);
+    }
+
+    @Override
     public Stream<ClientModel> searchClientByAttributes(Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         return cacheSession.searchClientsByAttributes(this, attributes, firstResult, maxResults);
+    }
+
+    @Override
+    public long searchClientByAttributesCount(Map<String, String> attributes) {
+        return cacheSession.getClientDelegate().searchClientsByAttributesCount(this, attributes);
     }
 
     @Override
