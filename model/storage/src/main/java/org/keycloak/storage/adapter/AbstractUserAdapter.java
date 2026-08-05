@@ -254,19 +254,11 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
 
     }
 
-    /**
-     * Override this when implementing {@link org.keycloak.storage.user.UserServiceAccountProvider}
-     * to return the persisted client link for this service account user.
-     */
     @Override
     public String getServiceAccountClientLink() {
         return null;
     }
 
-    /**
-     * Override this when implementing {@link org.keycloak.storage.user.UserServiceAccountProvider}
-     * to durably persist the client link in your backing store.
-     */
     @Override
     public void setServiceAccountClientLink(String clientInternalId) {
         throw new ReadOnlyException("user is read only for this update");
