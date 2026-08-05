@@ -6,6 +6,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.Executors;
 
@@ -78,6 +79,18 @@ public class JsonLdContextDocumentLoaderTest {
                 Thread.sleep(30_000);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+            }
+            exchange.close();
+        });
+        server.createContext("/large", exchange -> {
+            byte[] body = new byte[2 * 1024 * 1024];
+            Arrays.fill(body, (byte) 'a');
+            exchange.getResponseHeaders().set("Content-Type", "application/ld+json");
+            exchange.sendResponseHeaders(200, body.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(body);
+            } catch (IOException ignored) {
+                // the client aborts the exchange once the size limit is exceeded
             }
             exchange.close();
         });
@@ -166,6 +179,15 @@ public class JsonLdContextDocumentLoaderTest {
         JsonLdContextDocumentLoader loader = JsonLdContextDocumentLoader.forTesting(
                 Set.of("localhost"), Duration.ofMillis(500), Duration.ofMillis(500));
         loader.loadDocument(URI.create(baseUrl + "/slowBody"), new DocumentLoaderOptions());
+    }
+
+    @Test(timeout = 5000, expected = JsonLdError.class)
+    public void testRejectsOversizedContext() throws JsonLdError {
+        // The body is buffered with a size limit, so an oversized response must be aborted
+        // instead of exhausting the heap.
+        JsonLdContextDocumentLoader loader = JsonLdContextDocumentLoader.forTesting(
+                Set.of("localhost"), Duration.ofSeconds(5), Duration.ofSeconds(5));
+        loader.loadDocument(URI.create(baseUrl + "/large"), new DocumentLoaderOptions());
     }
 
     private static void handleRequest(HttpExchange exchange, int status, String body, String contentType)
