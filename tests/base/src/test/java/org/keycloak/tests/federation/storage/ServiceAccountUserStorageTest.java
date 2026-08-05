@@ -184,6 +184,26 @@ public class ServiceAccountUserStorageTest {
     }
 
     @Test
+    public void serviceAccountRemovedFromExternalProviderOnClientDeletion() {
+        ClientResource client = createServiceAccountClient();
+        client.getServiceAccountUser();
+
+        runOnServer.run(session -> {
+            ServiceAccountUserStorageFactory factory = (ServiceAccountUserStorageFactory) session.getKeycloakSessionFactory()
+                    .getProviderFactory(UserStorageProvider.class, ServiceAccountUserStorageFactory.PROVIDER_ID);
+            Assertions.assertTrue(factory.contains(SA_USERNAME));
+        });
+
+        client.remove();
+
+        runOnServer.run(session -> {
+            ServiceAccountUserStorageFactory factory = (ServiceAccountUserStorageFactory) session.getKeycloakSessionFactory()
+                    .getProviderFactory(UserStorageProvider.class, ServiceAccountUserStorageFactory.PROVIDER_ID);
+            Assertions.assertFalse(factory.contains(SA_USERNAME));
+        });
+    }
+
+    @Test
     public void regularUsersNotRoutedToServiceAccountProvider() {
         UserRepresentation user = new UserRepresentation();
         user.setUsername("regular-user");
