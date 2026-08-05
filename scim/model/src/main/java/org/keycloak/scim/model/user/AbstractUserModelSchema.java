@@ -10,6 +10,9 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.Permissions;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.scim.resource.schema.AbstractModelSchema;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.user.User;
@@ -117,6 +120,24 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
 
     protected UserProfile getUserProfile() {
         return session.getProvider(UserProfileProvider.class).create(UserProfileContext.SCIM, Map.of());
+    }
+
+    protected boolean isEditableAttribute(String name) {
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+        UPConfig config = provider.getConfiguration();
+        UPAttribute upAttr = config.getAttribute(name);
+
+        if (upAttr == null) {
+            return true;
+        }
+
+        UPAttributePermissions permissions = upAttr.getPermissions();
+
+        if (permissions == null) {
+            return true;
+        }
+
+        return !permissions.getEdit().isEmpty();
     }
 
     protected boolean canViewGroup(GroupModel group) {
