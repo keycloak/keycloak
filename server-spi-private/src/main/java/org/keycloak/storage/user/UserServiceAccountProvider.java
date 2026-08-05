@@ -35,6 +35,9 @@ import org.keycloak.models.UserModel;
  *
  * <p>This capability extends {@link UserRegistrationProvider} because service account users must
  * be removable when the owning client is deleted or has service accounts disabled.
+ *
+ * <p>This interface currently resides in the private SPI ({@code server-spi-private}).
+ * Promoting it to the public {@code server-spi} is planned once the contract is proven.
  */
 public interface UserServiceAccountProvider extends UserRegistrationProvider {
 
