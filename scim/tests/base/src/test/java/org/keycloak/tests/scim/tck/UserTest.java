@@ -1580,6 +1580,83 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testPatchAndUpdateRespectEditPermissions() {
+        String attributeName = "scim.protectedAttribute";
+        String scimAttributePath = KEYCLOAK_USER_SCHEMA + ":protectedAttribute";
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+        UPAttribute upAttribute = new UPAttribute(attributeName, Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, scimAttributePath));
+        upAttribute.setPermissions(
+                new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of()));
+        upConfig.addOrReplaceAttribute(upAttribute);
+        realm.admin().users().userProfile().update(upConfig);
+
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+        try {
+            user = client.users().create(user);
+
+            // PATCH replace should not be able to write a view-only attribute
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .replace(scimAttributePath, "scim-patch")
+                    .build());
+            Map<String, List<String>> attributes = realm.admin().users().get(user.getId())
+                    .toRepresentation().getAttributes();
+            assertTrue(attributes == null || !attributes.containsKey(attributeName));
+
+            // PATCH add should not be able to write a view-only attribute
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .add(scimAttributePath, "scim-add")
+                    .build());
+            attributes = realm.admin().users().get(user.getId())
+                    .toRepresentation().getAttributes();
+            assertTrue(attributes == null || !attributes.containsKey(attributeName));
+
+            // temporarily allow admin edits so we can set the attribute value
+            upAttribute.setPermissions(
+                    new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+            upConfig.addOrReplaceAttribute(upAttribute);
+            realm.admin().users().userProfile().update(upConfig);
+            UserRepresentation rep = realm.admin().users().get(user.getId()).toRepresentation();
+            rep.singleAttribute(attributeName, "admin-set-value");
+            realm.admin().users().get(user.getId()).update(rep);
+            // restore view-only permissions
+            upAttribute.setPermissions(
+                    new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of()));
+            upConfig.addOrReplaceAttribute(upAttribute);
+            realm.admin().users().userProfile().update(upConfig);
+            attributes = realm.admin().users().get(user.getId()).toRepresentation().getAttributes();
+            assertNotNull(attributes);
+            assertEquals(List.of("admin-set-value"), attributes.get(attributeName));
+
+            // PATCH remove should not be able to remove a view-only attribute
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .remove(scimAttributePath)
+                    .build());
+            attributes = realm.admin().users().get(user.getId())
+                    .toRepresentation().getAttributes();
+            assertNotNull(attributes);
+            assertEquals(List.of("admin-set-value"), attributes.get(attributeName));
+
+            // PUT should not be able to write a view-only attribute
+            user.addSchema(KEYCLOAK_USER_SCHEMA);
+            user.setExtensions(new HashMap<>());
+            Map<Object, Object> extensionValues = new HashMap<>();
+            extensionValues.put("protectedAttribute", "scim-update");
+            user.getExtensions().put(KEYCLOAK_USER_SCHEMA, extensionValues);
+            client.users().update(user.getId(), user);
+            attributes = realm.admin().users().get(user.getId())
+                    .toRepresentation().getAttributes();
+            assertNotNull(attributes);
+            assertEquals(List.of("admin-set-value"), attributes.get(attributeName));
+        } finally {
+            if (user.getId() != null) {
+                client.users().delete(user.getId());
+            }
+        }
+    }
+
+    @Test
     public void testCreateDuplicate() {
         User user = new User();
         user.setUserName(KeycloakModelUtils.generateId());

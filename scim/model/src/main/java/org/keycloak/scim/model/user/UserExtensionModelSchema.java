@@ -171,6 +171,9 @@ public class UserExtensionModelSchema extends AbstractUserModelSchema {
                     if (getAttributeMapperByModelAttribute(name) == null) {
                         return;
                     }
+                    if (getUserProfile().getAttributes().isReadOnly(name)) {
+                        return;
+                    }
                     if (value == null) {
                         model.removeAttribute(name);
                     } else {
