@@ -207,6 +207,50 @@ public class OAuth2IdentityProviderConfigTest {
         }
     }
 
+    @Test
+    public void tlsClientAuthRejectsInsecureMtlsAliasWhenSslRequired() {
+        OAuth2IdentityProviderConfig c = config();
+        c.setAuthorizationUrl("https://idp/auth");
+        c.setTokenUrl("https://idp/token");
+        c.setClientAuthMethod(OIDCLoginProtocol.TLS_CLIENT_AUTH);
+        // An insecure mTLS alias must not slip past validation: it is preferred for backchannel calls
+        // and would otherwise receive the client certificate and credentials over plain HTTP.
+        c.setMtlsTokenUrl("http://mtls.idp/token");
+
+        org.keycloak.models.RealmModel realm = realmWithSsl(org.keycloak.common.enums.SslRequired.ALL);
+        try {
+            c.validate(sessionWithKeys(realm), realm);
+            org.junit.Assert.fail("expected IllegalArgumentException");
+        } catch (IllegalArgumentException expected) {
+            assertTrue(expected.getMessage().contains("mtls_token_url"));
+            assertTrue(expected.getMessage().toLowerCase().contains("secure connections"));
+        }
+    }
+
+    @Test
+    public void tlsClientAuthAcceptsSecureMtlsAliasesWhenSslRequired() throws Exception {
+        OAuth2IdentityProviderConfig c = config();
+        c.setAuthorizationUrl("https://idp/auth");
+        c.setTokenUrl("https://idp/token");
+        c.setClientAuthMethod(OIDCLoginProtocol.TLS_CLIENT_AUTH);
+        c.setClientCertKeyProviderId("kp-1");
+        c.setMtlsTokenUrl("https://mtls.idp/token");
+        c.setMtlsUserInfoUrl("https://mtls.idp/userinfo");
+        c.setMtlsTokenIntrospectionUrl("https://mtls.idp/introspect");
+
+        ComponentModel cm = new ComponentModel();
+        cm.setId("kp-1");
+        cm.setProviderType(KeyProvider.class.getName());
+
+        org.keycloak.models.RealmModel realm =
+                realmWithSslAndComponent(org.keycloak.common.enums.SslRequired.ALL, "kp-1", cm);
+
+        KeyWrapper key = usableKey("kp-1");
+
+        // should not throw: all mTLS aliases use https
+        c.validate(sessionWithKeys(realm, key), realm);
+    }
+
     // --- test stubs -------------------------------------------------------------------------------
 
     /**

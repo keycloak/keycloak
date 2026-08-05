@@ -321,6 +321,14 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
         }
 
         if (isTlsClientAuth()) {
+            // The mTLS endpoint aliases are preferred over the regular endpoints for backchannel calls when
+            // tls_client_auth is used (see selectEndpointForClientAuth). They must therefore honor the realm's
+            // SSL requirement as well; otherwise a discovery document could supply an insecure alias that
+            // receives the client certificate and backchannel credentials.
+            checkUrl(sslRequired, getMtlsTokenUrl(), "mtls_token_url");
+            checkUrl(sslRequired, getMtlsUserInfoUrl(), "mtls_userinfo_url");
+            checkUrl(sslRequired, getMtlsTokenIntrospectionUrl(), "mtls_tokenIntrospection_url");
+
             String keyProviderId = getClientCertKeyProviderId();
             if (keyProviderId == null || keyProviderId.trim().isEmpty()) {
                 throw new IllegalArgumentException(
