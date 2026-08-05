@@ -68,6 +68,8 @@ public class OTelHttpClientFactory extends DefaultHttpClientFactory implements E
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return Profile.isFeatureEnabled(Profile.Feature.OPENTELEMETRY) && Configuration.isTrue(TracingOptions.TRACING_ENABLED);
+        return Profile.isFeatureEnabled(Profile.Feature.HTTP_CLIENT)
+                && Profile.isFeatureEnabled(Profile.Feature.OPENTELEMETRY)
+                && Configuration.isTrue(TracingOptions.TRACING_ENABLED);
     }
 }

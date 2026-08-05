@@ -48,13 +48,14 @@ import jakarta.ws.rs.container.Suspended;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
+import jakarta.xml.soap.SOAPException;
+import jakarta.xml.soap.SOAPMessage;
 
 import org.keycloak.broker.saml.SAMLDataMarshaller;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
-import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyStatus;
 import org.keycloak.crypto.KeyUse;
@@ -138,10 +139,6 @@ import org.keycloak.timer.ScheduledTask;
 import org.keycloak.transaction.AsyncResponseTransaction;
 import org.keycloak.utils.MediaType;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 import org.w3c.dom.Document;
@@ -1448,74 +1445,66 @@ public class SamlService extends AuthorizationEndpointBase {
             EventBuilder event = new EventBuilder(realm, session, clientConnection);
 
             // Call Artifact Resolution Service
-            HttpClientProvider httpClientProvider = session.getProvider(HttpClientProvider.class);
-            CloseableHttpClient httpClient = httpClientProvider.getHttpClient();
-            HttpPost httpPost = Soap.createMessage().addToBody(doc).buildHttpPost(clientArtifactBindingURI);
-
             if (logger.isTraceEnabled()) {
                 logger.tracef("Resolving artifact %s", DocumentUtil.asString(doc));
             }
 
-            try (CloseableHttpResponse result = httpClient.execute(httpPost)) {
-                try {
-                    if (result.getStatusLine().getStatusCode() != Response.Status.OK.getStatusCode()) {
-                        throw new ProcessingException(String.format("Artifact resolution failed with status: %d", result.getStatusLine().getStatusCode()));
-                    }
-
-                    Document soapBodyContents = Soap.extractSoapMessage(result.getEntity().getContent());
-                    SAMLDocumentHolder samlDoc = SAML2Request.getSAML2ObjectFromDocument(soapBodyContents);
-                    if (!(samlDoc.getSamlObject() instanceof ArtifactResponseType)) {
-                        throw new ProcessingException("Message received from ArtifactResolveService is not an ArtifactResponseMessage");
-                    }
-
-                    if (logger.isTraceEnabled()) {
-                        logger.tracef("Resolved object: %s" + DocumentUtil.asString(samlDoc.getSamlDocument()));
-                    }
-
-                    ArtifactResponseType art = (ArtifactResponseType) samlDoc.getSamlObject();
-
-                    if (art.getAny() == null) {
-                        AsyncResponseTransaction.finishAsyncResponseInTransaction(session, asyncResponse,
-                                ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.ARTIFACT_RESOLUTION_SERVICE_INVALID_RESPONSE));
-                        return;
-                    }
-
-                    LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, "saml");
-                    if (factory == null) {
-                        logger.debugf("protocol %s not found", "saml");
-                        throw new NotFoundException("Protocol not found");
-                    }
-
-                    SamlService endpoint = (SamlService) factory.createProtocolEndpoint(session, event);
-                    BindingProtocol protocol;
-                    if (SamlProtocol.SAML_POST_BINDING.equals(bindingType)) {
-                        protocol = endpoint.newPostBindingProtocol();
-                    } else if (SamlProtocol.SAML_REDIRECT_BINDING.equals(bindingType)) {
-                        protocol = endpoint.newRedirectBindingProtocol();
-                    } else {
-                        throw new ConfigurationException("Invalid binding protocol: " + bindingType);
-                    }
-
-                    if (art.getAny() instanceof ResponseType) {
-                        Document clientMessage = SAML2Request.convert((ResponseType) art.getAny());
-                        String response = protocol.encodeSamlDocument(clientMessage);
-
-                        AsyncResponseTransaction.finishAsyncResponseInTransaction(session, asyncResponse,
-                                protocol.handleSamlResponse(response, relayState));
-                    } else if (art.getAny() instanceof RequestAbstractType) {
-                        Document clientMessage = SAML2Request.convert((RequestAbstractType) art.getAny());
-                        String request = protocol.encodeSamlDocument(clientMessage);
-                        AsyncResponseTransaction.finishAsyncResponseInTransaction(session, asyncResponse,
-                                protocol.handleSamlRequest(request, relayState));
-                    } else {
-                        throw new ProcessingException("Cannot recognise message contained in ArtifactResponse");
-                    }
-
-                } finally {
-                    EntityUtils.consumeQuietly(result.getEntity());
+            try {
+                SOAPMessage soapResponse = Soap.createMessage().addToBody(doc).call(clientArtifactBindingURI.toString(), session);
+                if (soapResponse == null) {
+                    throw new ProcessingException("Artifact resolution returned empty response");
                 }
 
-            } catch (IOException | ProcessingException | ParsingException | IllegalArgumentException e) {
+                Document soapBodyContents = Soap.extractSoapMessage(soapResponse);
+                SAMLDocumentHolder samlDoc = SAML2Request.getSAML2ObjectFromDocument(soapBodyContents);
+                if (!(samlDoc.getSamlObject() instanceof ArtifactResponseType)) {
+                    throw new ProcessingException("Message received from ArtifactResolveService is not an ArtifactResponseMessage");
+                }
+
+                if (logger.isTraceEnabled()) {
+                    logger.tracef("Resolved object: %s" + DocumentUtil.asString(samlDoc.getSamlDocument()));
+                }
+
+                ArtifactResponseType art = (ArtifactResponseType) samlDoc.getSamlObject();
+
+                if (art.getAny() == null) {
+                    AsyncResponseTransaction.finishAsyncResponseInTransaction(session, asyncResponse,
+                            ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.ARTIFACT_RESOLUTION_SERVICE_INVALID_RESPONSE));
+                    return;
+                }
+
+                LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, "saml");
+                if (factory == null) {
+                    logger.debugf("protocol %s not found", "saml");
+                    throw new NotFoundException("Protocol not found");
+                }
+
+                SamlService endpoint = (SamlService) factory.createProtocolEndpoint(session, event);
+                BindingProtocol protocol;
+                if (SamlProtocol.SAML_POST_BINDING.equals(bindingType)) {
+                    protocol = endpoint.newPostBindingProtocol();
+                } else if (SamlProtocol.SAML_REDIRECT_BINDING.equals(bindingType)) {
+                    protocol = endpoint.newRedirectBindingProtocol();
+                } else {
+                    throw new ConfigurationException("Invalid binding protocol: " + bindingType);
+                }
+
+                if (art.getAny() instanceof ResponseType) {
+                    Document clientMessage = SAML2Request.convert((ResponseType) art.getAny());
+                    String response = protocol.encodeSamlDocument(clientMessage);
+
+                    AsyncResponseTransaction.finishAsyncResponseInTransaction(session, asyncResponse,
+                            protocol.handleSamlResponse(response, relayState));
+                } else if (art.getAny() instanceof RequestAbstractType) {
+                    Document clientMessage = SAML2Request.convert((RequestAbstractType) art.getAny());
+                    String request = protocol.encodeSamlDocument(clientMessage);
+                    AsyncResponseTransaction.finishAsyncResponseInTransaction(session, asyncResponse,
+                            protocol.handleSamlRequest(request, relayState));
+                } else {
+                    throw new ProcessingException("Cannot recognise message contained in ArtifactResponse");
+                }
+
+            } catch (ProcessingException | ParsingException | IllegalArgumentException | SOAPException e) {
                 event.event(EventType.LOGIN);
                 event.detail(Details.REASON, e.getMessage());
                 event.error(Errors.IDENTITY_PROVIDER_ERROR);

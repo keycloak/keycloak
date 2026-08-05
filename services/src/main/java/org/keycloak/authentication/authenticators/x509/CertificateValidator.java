@@ -74,7 +74,6 @@ import org.keycloak.utils.OCSPProvider;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 
@@ -337,12 +336,13 @@ public class CertificateValidator {
             try {
                 logger.debugf("Loading CRL from %s", remoteURI.toString());
 
-                CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
                 HttpGet get = new HttpGet(remoteURI);
                 get.setHeader("Pragma", "no-cache");
                 get.setHeader("Cache-Control", "no-cache, no-store");
-                try (CloseableHttpResponse response = httpClient.execute(get)) {
-                    try (InputStream content = response.getEntity().getContent()) {
+                try (CloseableHttpResponse response = (CloseableHttpResponse) session.getProvider(HttpClientProvider.class)
+                        .getHttpClient().execute(get)) {
+                    try {
+                        InputStream content = response.getEntity().getContent();
                         return loadFromStream(cf, content);
                     } finally {
                         EntityUtils.consumeQuietly(response.getEntity());
