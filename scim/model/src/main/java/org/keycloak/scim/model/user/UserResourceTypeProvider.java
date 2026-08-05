@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -19,8 +20,10 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationStorageProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
+import org.keycloak.models.Permissions;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
@@ -210,15 +213,28 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     private List<Predicate> getUserPredicates(FilterContext filterContext, CriteriaBuilder cb, CriteriaQuery<?> query, Root<UserEntity> root) {
         List<Predicate> predicates = new ArrayList<>();
 
+        RealmModel realm = session.getContext().getRealm();
+        Permissions permissions = session.getContext().getPermissions();
+
+        BiPredicate<String, String> authCheck = (path, value) -> {
+            if ("groups.value".equalsIgnoreCase(path) || "groups".equalsIgnoreCase(path)) {
+                if (value == null) {
+                    return !realm.isAdminPermissionsEnabled();
+                }
+                GroupModel group = session.groups().getGroupById(realm, value);
+                return group != null && permissions.hasPermission(group, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
+            }
+            return true;
+        };
+
         // create filter predicate using the same query and root that will be used for execution
-        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, root);
+        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, root, authCheck);
         predicates.add(evaluator.visit(filterContext).predicate());
 
         // apply service account restriction
         predicates.add(root.get("serviceAccountClientLink").isNull());
 
         // apply realm restriction
-        RealmModel realm = session.getContext().getRealm();
         predicates.add(cb.equal(root.get("realmId"), realm.getId()));
 
         UserProvider userProvider = session.getProvider(UserProvider.class, "jpa");
