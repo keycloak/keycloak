@@ -8,6 +8,29 @@ function isPageClosedError(error: unknown): boolean {
   );
 }
 
+function toErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message.replace(/\s+/g, " ").trim();
+  }
+  return String(error);
+}
+
+async function getSwitchDebugName(switchElement: Locator): Promise<string> {
+  return (
+    (await switchElement.getAttribute("data-testid")) ??
+    (await switchElement.getAttribute("id")) ??
+    "unknown-switch"
+  );
+}
+
+async function logSwitchDebug(switchElement: Locator, messageParts: string[]) {
+  if (messageParts.length === 0) {
+    return;
+  }
+  const switchName = await getSwitchDebugName(switchElement);
+  console.info(`[switch:${switchName}] ${messageParts.join(" | ")}`);
+}
+
 export async function assertRequiredFieldError(page: Page, field: string) {
   await expect(page.getByTestId(field + "-helper")).toHaveText(/required/i);
 }
@@ -102,8 +125,16 @@ async function clickOption(page: Page, option: string) {
   await page.getByRole("option", { name: option }).click();
 }
 
-async function clickSwitchElement(switchElement: Locator) {
+type SwitchClickResult = {
+  strategy: "direct-click" | "label-force-click" | "force-click";
+  failures: string[];
+};
+
+async function clickSwitchElement(
+  switchElement: Locator,
+): Promise<SwitchClickResult> {
   await expect(switchElement).toBeVisible();
+  const failures: string[] = [];
 
   const switchId = await switchElement.getAttribute("id");
   const label = switchId
@@ -112,32 +143,53 @@ async function clickSwitchElement(switchElement: Locator) {
 
   try {
     await switchElement.click({ timeout: 3_000 });
-    return;
+    return { strategy: "direct-click", failures };
   } catch (error) {
     if (isPageClosedError(error)) {
       throw error;
     }
+    failures.push(`direct-click failed: ${toErrorMessage(error)}`);
   }
 
   if (label && (await label.count()) > 0) {
     try {
       await label.click({ force: true, timeout: 3_000 });
-      return;
+      return { strategy: "label-force-click", failures };
     } catch (error) {
       if (isPageClosedError(error)) {
         throw error;
       }
+      failures.push(`label-force-click failed: ${toErrorMessage(error)}`);
     }
   }
 
-  await switchElement.click({ force: true, timeout: 3_000 });
+  try {
+    await switchElement.click({ force: true, timeout: 3_000 });
+    return { strategy: "force-click", failures };
+  } catch (error) {
+    if (isPageClosedError(error)) {
+      throw error;
+    }
+    failures.push(`force-click failed: ${toErrorMessage(error)}`);
+    throw error;
+  }
 }
 
 async function setSwitchState(switchElement: Locator, checked: boolean) {
+  const debugEvents: string[] = [];
+  const targetState = checked ? "checked" : "unchecked";
+
   for (let attempt = 0; attempt < 3; attempt++) {
+    const attemptNumber = attempt + 1;
     await expect(switchElement).toBeVisible();
 
     if ((await switchElement.isChecked()) === checked) {
+      if (debugEvents.length > 0) {
+        await logSwitchDebug(switchElement, [
+          ...debugEvents,
+          `state already ${targetState} on attempt ${attemptNumber}`,
+        ]);
+      }
       return;
     }
 
@@ -151,14 +203,52 @@ async function setSwitchState(switchElement: Locator, checked: boolean) {
       if (isPageClosedError(error)) {
         throw error;
       }
+      debugEvents.push(
+        `attempt ${attemptNumber}: ${
+          checked ? "check" : "uncheck"
+        } failed (${toErrorMessage(error)})`,
+      );
     }
 
     if (await waitForSwitchState(switchElement, checked)) {
+      if (debugEvents.length > 0) {
+        await logSwitchDebug(switchElement, [
+          ...debugEvents,
+          `state reached via ${checked ? "check" : "uncheck"} on attempt ${attemptNumber}`,
+        ]);
+      }
       return;
     }
 
-    await clickSwitchElement(switchElement);
+    try {
+      const clickResult = await clickSwitchElement(switchElement);
+      if (
+        clickResult.strategy !== "direct-click" ||
+        clickResult.failures.length > 0
+      ) {
+        debugEvents.push(
+          `attempt ${attemptNumber}: click strategy ${clickResult.strategy}` +
+            (clickResult.failures.length > 0
+              ? ` after ${clickResult.failures.join("; ")}`
+              : ""),
+        );
+      }
+    } catch (error) {
+      if (isPageClosedError(error)) {
+        throw error;
+      }
+      debugEvents.push(
+        `attempt ${attemptNumber}: click strategy failed (${toErrorMessage(error)})`,
+      );
+    }
+
     if (await waitForSwitchState(switchElement, checked)) {
+      if (debugEvents.length > 0) {
+        await logSwitchDebug(switchElement, [
+          ...debugEvents,
+          `state reached after click on attempt ${attemptNumber}`,
+        ]);
+      }
       return;
     }
 
@@ -170,13 +260,30 @@ async function setSwitchState(switchElement: Locator, checked: boolean) {
       if (isPageClosedError(error)) {
         throw error;
       }
+      debugEvents.push(
+        `attempt ${attemptNumber}: keyboard toggle failed (${toErrorMessage(error)})`,
+      );
     }
 
     if (await waitForSwitchState(switchElement, checked)) {
+      if (debugEvents.length > 0) {
+        await logSwitchDebug(switchElement, [
+          ...debugEvents,
+          `state reached after keyboard toggle on attempt ${attemptNumber}`,
+        ]);
+      }
       return;
     }
+
+    debugEvents.push(
+      `attempt ${attemptNumber}: state still not ${targetState} after all strategies`,
+    );
   }
 
+  await logSwitchDebug(switchElement, [
+    ...debugEvents,
+    `failed to set state to ${targetState} after 3 attempts`,
+  ]);
   if (checked) {
     await expect(switchElement).toBeChecked();
   } else {

@@ -172,12 +172,28 @@ export async function dragExecutionAboveExecution(
   await sourceHandle.scrollIntoViewIfNeeded();
   await targetHandle.scrollIntoViewIfNeeded();
 
-  const hasMoved = async () => {
+  const getRowOrder = async () => {
     const rows = await treeGrid.getByRole("row").allInnerTexts();
-    const sourceIndex = rows.findIndex((row) => row.includes(sourceExecution));
-    const targetIndex = rows.findIndex((row) => row.includes(targetExecution));
+    return {
+      sourceIndex: rows.findIndex((row) => row.includes(sourceExecution)),
+      targetIndex: rows.findIndex((row) => row.includes(targetExecution)),
+    };
+  };
+
+  const initialOrder = await getRowOrder();
+  // Guard against upstream flow-order changes that could turn this test into a no-op.
+  expect(
+    initialOrder.sourceIndex,
+    `Expected "${sourceExecution}" to start below "${targetExecution}" so drag can be verified`,
+  ).toBeGreaterThan(initialOrder.targetIndex);
+
+  const hasMoved = async () => {
+    const { sourceIndex, targetIndex } = await getRowOrder();
     return (
-      sourceIndex !== -1 && targetIndex !== -1 && sourceIndex < targetIndex
+      sourceIndex !== -1 &&
+      targetIndex !== -1 &&
+      sourceIndex < targetIndex &&
+      sourceIndex !== initialOrder.sourceIndex
     );
   };
 
@@ -275,6 +291,10 @@ export async function dragExecutionAboveExecution(
     } catch {
       // Keep "moved" false and let the caller assert/fail with context.
     }
+  }
+
+  if (!moved) {
+    moved = await waitForMove();
   }
 
   return moved;

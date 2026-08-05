@@ -1,5 +1,10 @@
 import { type Page, expect } from "@playwright/test";
-import { selectItem } from "../utils/form.ts";
+import {
+  ensureSwitchOff,
+  selectItem,
+  switchOff,
+  switchOn,
+} from "../utils/form.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { confirmModal } from "../utils/modal.ts";
 import { goToIdentityProviders } from "../utils/sidebar.ts";
@@ -15,7 +20,7 @@ const EDITED_DISPLAY_NAME = "SAML edited for save";
 export async function editSAMLSettings(page: Page, samlProviderName: string) {
   const providerEnabledSwitch = page.locator("#-switch");
   await expect(providerEnabledSwitch).toBeChecked();
-  await providerEnabledSwitch.click({ force: true });
+  await switchOff(page, providerEnabledSwitch);
   await confirmModal(page);
   await assertNotificationMessage(page, "Provider successfully updated");
   await goToIdentityProviders(page);
@@ -23,7 +28,7 @@ export async function editSAMLSettings(page: Page, samlProviderName: string) {
 
   await clickTableRowItem(page, samlProviderName);
   await expect(providerEnabledSwitch).not.toBeChecked();
-  await providerEnabledSwitch.click({ force: true });
+  await switchOn(page, providerEnabledSwitch);
 
   // Verify and configure settings
   await setUrl(page, "singleSignOnService", "invalid");
@@ -54,10 +59,10 @@ export async function editSAMLSettings(page: Page, samlProviderName: string) {
     page.getByTestId("config.forceAuthn"),
   ];
   for (const field of switches) {
-    await field.check({ force: true });
+    await switchOn(page, field);
   }
 
-  await page.getByTestId("config.sendIdTokenOnLogout").uncheck({ force: true });
+  await ensureSwitchOff(page, page.getByTestId("config.sendIdTokenOnLogout"));
 
   // Keep this deterministic while ensuring the form is dirty before saving.
   await page.getByTestId("displayName").fill(EDITED_DISPLAY_NAME);
