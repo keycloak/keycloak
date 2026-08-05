@@ -837,6 +837,164 @@ public class AuthorizationTest extends AbstractScimTest {
     }
 
     @Test
+    public void testUsersFilterByHiddenGroupMembershipDeniedUnderFGAP() {
+        realm.updateWithCleanup(realm -> realm.adminPermissionsEnabled(true));
+
+        GroupRepresentation visibleGroup = createGroup("visible-group");
+        GroupRepresentation hiddenGroup = createGroup("hidden-group");
+        GroupRepresentation emptyHiddenGroup = createGroup("empty-hidden-group");
+        managedUser.admin().joinGroup(visibleGroup.getId());
+        managedUser.admin().joinGroup(hiddenGroup.getId());
+
+        UserPolicyRepresentation policy = createUserPolicy(getServiceAccount().getId());
+        createPermission(AdminPermissionsSchema.USERS_RESOURCE_TYPE,
+                Set.of(managedUser.getId()),
+                Set.of(AdminPermissionsSchema.VIEW),
+                policy.getName());
+        createPermission(AdminPermissionsSchema.GROUPS_RESOURCE_TYPE,
+                Set.of(visibleGroup.getId()),
+                Set.of(AdminPermissionsSchema.VIEW),
+                policy.getName());
+
+        User fetched = noAccessClient.users().get(managedUser.getId(), List.of("groups"));
+        assertNotNull(fetched.getGroups());
+        List<String> returnedGroupIds = fetched.getGroups().stream()
+                .map(GroupMembership::getValue)
+                .toList();
+        assertEquals(1, returnedGroupIds.size());
+        assertTrue(returnedGroupIds.contains(visibleGroup.getId()));
+
+        grantAdminRole(AdminRoles.QUERY_USERS);
+
+        ListResponse<User> hiddenGroupMembers = noAccessClient.users()
+                .getAll("groups.value eq \"" + hiddenGroup.getId() + "\"");
+        assertEquals(0, hiddenGroupMembers.getTotalResults());
+
+        ListResponse<User> emptyHiddenGroupMembers = noAccessClient.users()
+                .getAll("groups.value eq \"" + emptyHiddenGroup.getId() + "\"");
+        assertEquals(0, emptyHiddenGroupMembers.getTotalResults());
+
+        ListResponse<User> visibleGroupMembers = noAccessClient.users()
+                .getAll("groups.value eq \"" + visibleGroup.getId() + "\"");
+        assertEquals(1, visibleGroupMembers.getTotalResults());
+        assertEquals(managedUser.getId(), visibleGroupMembers.getResources().get(0).getId());
+
+        // case-insensitive path variants must also be blocked
+        ListResponse<User> caseBypass = noAccessClient.users()
+                .getAll("GROUPS.VALUE eq \"" + hiddenGroup.getId() + "\"");
+        assertEquals(0, caseBypass.getTotalResults());
+
+        caseBypass = noAccessClient.users()
+                .getAll("Groups.Value eq \"" + hiddenGroup.getId() + "\"");
+        assertEquals(0, caseBypass.getTotalResults());
+
+        // ne operator must not leak hidden group membership
+        ListResponse<User> neBypass = noAccessClient.users()
+                .getAll("groups.value ne \"" + visibleGroup.getId() + "\"");
+        assertEquals(0, neBypass.getTotalResults());
+
+        // pr operator must not leak group membership existence
+        ListResponse<User> prBypass = noAccessClient.users()
+                .getAll("groups.value pr");
+        assertEquals(0, prBypass.getTotalResults());
+
+        // parent path without .value must also be blocked
+        ListResponse<User> parentPathBypass = noAccessClient.users()
+                .getAll("groups eq \"" + hiddenGroup.getId() + "\"");
+        assertEquals(0, parentPathBypass.getTotalResults());
+
+        parentPathBypass = noAccessClient.users()
+                .getAll("groups pr");
+        assertEquals(0, parentPathBypass.getTotalResults());
+
+        // range operators must not leak hidden group membership
+        ListResponse<User> rangeBypass = noAccessClient.users()
+                .getAll("groups.value gt \"" + visibleGroup.getId() + "\"");
+        assertEquals(0, rangeBypass.getTotalResults());
+
+        // not(eq) must not invert an authorized predicate into a membership oracle
+        ListResponse<User> notBypass = noAccessClient.users()
+                .getAll("not (groups.value eq \"" + visibleGroup.getId() + "\")");
+        assertEquals(0, notBypass.getTotalResults());
+    }
+
+    @Test
+    public void testGroupsFilterByHiddenUserMembershipDeniedUnderFGAP() {
+        realm.updateWithCleanup(realm -> realm.adminPermissionsEnabled(true));
+
+        GroupRepresentation memberGroup = createGroup("member-group");
+        GroupRepresentation emptyGroup = createGroup("empty-member-group");
+        managedUser.admin().joinGroup(memberGroup.getId());
+
+        UserPolicyRepresentation policy = createUserPolicy(getServiceAccount().getId());
+        createPermission(AdminPermissionsSchema.GROUPS_RESOURCE_TYPE,
+                Set.of(memberGroup.getId(), emptyGroup.getId()),
+                Set.of(AdminPermissionsSchema.VIEW),
+                policy.getName());
+
+        Group fetched = noAccessClient.groups().get(memberGroup.getId(), List.of("members"));
+        assertNull(fetched.getMembers());
+
+        grantAdminRole(AdminRoles.QUERY_GROUPS);
+
+        ListResponse<Group> hiddenUserGroups = noAccessClient.groups()
+                .getAll("members.value eq \"" + managedUser.getId() + "\"");
+        assertEquals(0, hiddenUserGroups.getTotalResults());
+
+        ListResponse<Group> nonexistentUserGroups = noAccessClient.groups()
+                .getAll("members.value eq \"" + KeycloakModelUtils.generateId() + "\"");
+        assertEquals(0, nonexistentUserGroups.getTotalResults());
+
+        // case-insensitive path variants must also be blocked
+        ListResponse<Group> caseBypass = noAccessClient.groups()
+                .getAll("MEMBERS.VALUE eq \"" + managedUser.getId() + "\"");
+        assertEquals(0, caseBypass.getTotalResults());
+
+        caseBypass = noAccessClient.groups()
+                .getAll("Members.Value eq \"" + managedUser.getId() + "\"");
+        assertEquals(0, caseBypass.getTotalResults());
+
+        // ne operator must not leak hidden user membership
+        ListResponse<Group> neBypass = noAccessClient.groups()
+                .getAll("members.value ne \"" + KeycloakModelUtils.generateId() + "\"");
+        assertEquals(0, neBypass.getTotalResults());
+
+        // pr operator must not leak membership existence
+        ListResponse<Group> prBypass = noAccessClient.groups()
+                .getAll("members.value pr");
+        assertEquals(0, prBypass.getTotalResults());
+
+        // parent path without .value must also be blocked
+        ListResponse<Group> parentPathBypass = noAccessClient.groups()
+                .getAll("members eq \"" + managedUser.getId() + "\"");
+        assertEquals(0, parentPathBypass.getTotalResults());
+
+        parentPathBypass = noAccessClient.groups()
+                .getAll("members pr");
+        assertEquals(0, parentPathBypass.getTotalResults());
+
+        // range operators must not leak hidden user membership
+        ListResponse<Group> rangeBypass = noAccessClient.groups()
+                .getAll("members.value gt \"" + KeycloakModelUtils.generateId() + "\"");
+        assertEquals(0, rangeBypass.getTotalResults());
+
+        // not(eq) must not invert an authorized predicate into a membership oracle
+        ListResponse<Group> notBypass = noAccessClient.groups()
+                .getAll("not (members.value eq \"" + KeycloakModelUtils.generateId() + "\")");
+        assertEquals(0, notBypass.getTotalResults());
+
+        createPermission(AdminPermissionsSchema.USERS_RESOURCE_TYPE,
+                Set.of(managedUser.getId()),
+                Set.of(AdminPermissionsSchema.VIEW),
+                policy.getName());
+
+        ListResponse<Group> visibleUserGroups = noAccessClient.groups()
+                .getAll("members.value eq \"" + managedUser.getId() + "\"");
+        assertEquals(1, visibleUserGroups.getTotalResults());
+        assertEquals(memberGroup.getId(), visibleUserGroups.getResources().get(0).getId());
+    }
+
+    @Test
     public void testIdTokenAccessDenied() {
         ClientBuilder clientBuilder = ClientBuilder.create()
                 .clientId("scim-idtoken-client")
@@ -1055,8 +1213,12 @@ public class AuthorizationTest extends AbstractScimTest {
     }
 
     private GroupRepresentation createGroup() {
+        return createGroup("test-group");
+    }
+
+    private GroupRepresentation createGroup(String name) {
         GroupRepresentation group = new GroupRepresentation();
-        group.setName("test-group");
+        group.setName(name);
         try (Response response = realm.admin().groups().add(group)) {
             group.setId(ApiUtil.getCreatedId(response));
         }
