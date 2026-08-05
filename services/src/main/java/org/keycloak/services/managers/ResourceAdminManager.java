@@ -37,6 +37,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -55,13 +56,6 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.utils.StringUtil;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 
 /**
@@ -227,7 +221,6 @@ public class ResourceAdminManager {
                                                               AuthenticatedClientSessionModel clientSessionModel, String managementUrl) {
         UserModel user = clientSessionModel.getUserSession().getUser();
 
-        HttpPost post = null;
         ClientModel previousClient = session.getContext().getClient();
         try {
             session.getContext().setClient(resource);
@@ -240,36 +233,19 @@ public class ResourceAdminManager {
                         resource.getClientId(), clientSessionModel.getId(), managementUrl);
             }
 
-            post = new HttpPost(managementUrl);
-            List<NameValuePair> parameters = new LinkedList<>();
-            if (logoutToken != null) {
-                parameters.add(new BasicNameValuePair(OAuth2Constants.LOGOUT_TOKEN, token));
-            }
-            CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
-            UrlEncodedFormEntity formEntity;
-            formEntity = new UrlEncodedFormEntity(parameters);
-            post.setEntity(formEntity);
-            try (CloseableHttpResponse response = httpClient.execute(post)) {
-                try {
-                    int status = response.getStatusLine().getStatusCode();
-                    EntityUtils.consumeQuietly(response.getEntity());
-                    boolean success = status == 204 || status == 200;
-                    logger.debugf("Received response for backchannel-logout from client. " +
-                                  "clientId='%s' clientSessionId='%s' backchannelLogoutUrl='%s' status=%s success=%s",
-                            resource.getClientId(), clientSessionModel.getId(), managementUrl, status, success);
-                    return Response.status(status).build();
-                } finally {
-                    EntityUtils.consumeQuietly(response.getEntity());
-                }
-            }
+            int status = SimpleHttp.create(session).doPost(managementUrl)
+                    .param(OAuth2Constants.LOGOUT_TOKEN, token)
+                    .asStatus();
+            boolean success = status == 204 || status == 200;
+            logger.debugf("Received response for backchannel-logout from client. " +
+                          "clientId='%s' clientSessionId='%s' backchannelLogoutUrl='%s' status=%s success=%s",
+                    resource.getClientId(), clientSessionModel.getId(), managementUrl, status, success);
+            return Response.status(status).build();
         } catch (IOException e) {
             ServicesLogger.LOGGER.logoutFailed(e, resource.getClientId());
             return Response.serverError().build();
         } finally {
             session.getContext().setClient(previousClient);
-            if (post != null) {
-                post.reset();
-            }
         }
     }
 

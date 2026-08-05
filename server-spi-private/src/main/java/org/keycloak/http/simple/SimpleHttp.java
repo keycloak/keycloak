@@ -28,10 +28,18 @@ public class SimpleHttp {
         return new SimpleHttp(provider.getHttpClient(), provider.getMaxConsumedResponseSize());
     }
 
+    /**
+     * @deprecated Use {@link #create(KeycloakSession)} instead. Will be removed when Apache HTTP client dependency is dropped.
+     */
+    @Deprecated(forRemoval = true)
     public static SimpleHttp create(HttpClient httpClient) {
         return new SimpleHttp(httpClient, HttpClientProvider.DEFAULT_MAX_CONSUMED_RESPONSE_SIZE);
     }
 
+    /**
+     * @deprecated Apache-specific configuration type. Will be removed when Apache HTTP client dependency is dropped.
+     */
+    @Deprecated(forRemoval = true)
     public SimpleHttp withRequestConfig(RequestConfig requestConfig) {
         this.requestConfig = requestConfig;
         return this;

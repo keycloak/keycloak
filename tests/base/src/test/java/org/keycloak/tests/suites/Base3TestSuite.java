@@ -5,6 +5,7 @@ import org.junit.platform.suite.api.Suite;
 
 @Suite
 @SelectPackages({
+        "org.keycloak.tests.httpclient",
         "org.keycloak.tests.model",
         "org.keycloak.tests.oauth",
         "org.keycloak.tests.organization",

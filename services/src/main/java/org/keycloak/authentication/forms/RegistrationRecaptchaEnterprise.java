@@ -19,25 +19,20 @@
 
 package org.keycloak.authentication.forms;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authentication.ValidationContext;
-import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 
 public class RegistrationRecaptchaEnterprise extends AbstractRegistrationRecaptcha {
@@ -82,55 +77,46 @@ public class RegistrationRecaptchaEnterprise extends AbstractRegistrationRecaptc
     protected boolean validate(ValidationContext context, String captcha, Map<String, String> config) {
         LOGGER.trace("Requesting assessment of Google reCAPTCHA Enterprise");
         try {
-            HttpPost request = buildAssessmentRequest(captcha, config);
-            HttpClient httpClient = context.getSession().getProvider(HttpClientProvider.class).getHttpClient();
-            HttpResponse response = httpClient.execute(request);
+            String url = String.format("https://recaptchaenterprise.googleapis.com/v1/projects/%s/assessments?key=%s",
+                    config.get(PROJECT_ID), config.get(API_KEY));
 
-            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                LOGGER.errorf("Could not create reCAPTCHA assessment: %s", response.getStatusLine());
-                EntityUtils.consumeQuietly(response.getEntity());
-                throw new Exception(response.getStatusLine().getReasonPhrase());
+            RecaptchaAssessmentRequest body = new RecaptchaAssessmentRequest(
+                    captcha, config.get(SITE_KEY), config.get(ACTION));
+            LOGGER.tracef("Built assessment request: %s", body);
+
+            try (SimpleHttpResponse response = SimpleHttp.create(context.getSession()).doPost(url)
+                    .json(body)
+                    .asResponse()) {
+
+                if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+                    LOGGER.errorf("Could not create reCAPTCHA assessment: %d", response.getStatus());
+                    throw new Exception("reCAPTCHA assessment request failed with status " + response.getStatus());
+                }
+
+                RecaptchaAssessmentResponse assessment = response.asJson(RecaptchaAssessmentResponse.class);
+                LOGGER.tracef("Got assessment response: %s", assessment);
+
+                String tokenAction = assessment.getTokenProperties().getAction();
+                String expectedAction = assessment.getEvent().getExpectedAction();
+                if (!tokenAction.equals(expectedAction)) {
+                    // This may indicates that an attacker is attempting to falsify actions
+                    LOGGER.warnf("The action name of the reCAPTCHA token '%s' does not match the expected action '%s'!",
+                            tokenAction, expectedAction);
+                    return false;
+                }
+
+                boolean valid = assessment.getTokenProperties().isValid();
+                double score = assessment.getRiskAnalysis().getScore();
+                LOGGER.debugf("reCAPTCHA assessment: valid=%s, score=%f", valid, score);
+
+                return valid && score >= parseDoubleFromConfig(config, SCORE_THRESHOLD);
             }
-
-            RecaptchaAssessmentResponse assessment = JsonSerialization.readValue(
-                    response.getEntity().getContent(), RecaptchaAssessmentResponse.class);
-            LOGGER.tracef("Got assessment response: %s", assessment);
-
-            String tokenAction = assessment.getTokenProperties().getAction();
-            String expectedAction = assessment.getEvent().getExpectedAction();
-            if (!tokenAction.equals(expectedAction)) {
-                // This may indicates that an attacker is attempting to falsify actions
-                LOGGER.warnf("The action name of the reCAPTCHA token '%s' does not match the expected action '%s'!",
-                        tokenAction, expectedAction);
-                return false;
-            }
-
-            boolean valid = assessment.getTokenProperties().isValid();
-            double score = assessment.getRiskAnalysis().getScore();
-            LOGGER.debugf("reCAPTCHA assessment: valid=%s, score=%f", valid, score);
-
-            return valid && score >= parseDoubleFromConfig(config, SCORE_THRESHOLD);
 
         } catch (Exception e) {
             ServicesLogger.LOGGER.recaptchaFailed(e);
         }
 
         return false;
-    }
-
-    private HttpPost buildAssessmentRequest(String captcha, Map<String, String> config) throws IOException {
-
-        String url = String.format("https://recaptchaenterprise.googleapis.com/v1/projects/%s/assessments?key=%s",
-                config.get(PROJECT_ID), config.get(API_KEY));
-
-        HttpPost request = new HttpPost(url);
-        RecaptchaAssessmentRequest body = new RecaptchaAssessmentRequest(
-                captcha, config.get(SITE_KEY), config.get(ACTION));
-        request.setEntity(new StringEntity(JsonSerialization.writeValueAsString(body)));
-        request.setHeader("Content-type", "application/json; charset=utf-8");
-
-        LOGGER.tracef("Built assessment request: %s", body);
-        return request;
     }
 
     @Override
