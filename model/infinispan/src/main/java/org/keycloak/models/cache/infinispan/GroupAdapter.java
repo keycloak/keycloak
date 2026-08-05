@@ -205,7 +205,7 @@ public class GroupAdapter implements GroupModel {
     @Override
     public Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
         if (isUpdated()) return updated.getClientRoleMappingsStream(app);
-        return getRoleMappingsStream().filter(r -> RoleUtils.isClientRole(r, app));
+        return getRoleMappingsStream().filter(r -> RoleUtils.isRoleFromClient(r, app));
     }
 
     @Override

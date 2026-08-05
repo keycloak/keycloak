@@ -43,6 +43,7 @@ import org.keycloak.utils.StringUtil;
         @NamedQuery(name="getByDomainName", query="select distinct o from OrganizationEntity o inner join OrganizationDomainEntity d ON o.id = d.organization.id" +
                 " where o.realmId = :realmId and d.name in (:names)"),
         @NamedQuery(name="getCount", query="select count(o) from OrganizationEntity o where o.realmId = :realmId"),
+        @NamedQuery(name="clearOrganizationDefaultRolesByRealm", query="update OrganizationEntity o set o.defaultRoleId = null where o.realmId = :realmId"),
         @NamedQuery(name="deleteOrganizationsByRealm", query="delete from OrganizationEntity o where o.realmId = :realmId"),
         @NamedQuery(name="existsByRealm", query="select o.id from OrganizationEntity o where o.realmId = :realmId"),
 })
@@ -76,6 +77,9 @@ public class OrganizationEntity {
      */
     @Column(name = "GROUP_ID")
     private String groupId;
+
+    @Column(name = "DEFAULT_ROLE_ID", length = 36)
+    private String defaultRoleId;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy="organization")
     protected Set<OrganizationDomainEntity> domains = new HashSet<>();
@@ -144,6 +148,14 @@ public class OrganizationEntity {
 
     public void setGroupId(String groupId) {
         this.groupId = groupId;
+    }
+
+    public String getDefaultRoleId() {
+        return defaultRoleId;
+    }
+
+    public void setDefaultRoleId(String defaultRoleId) {
+        this.defaultRoleId = defaultRoleId;
     }
 
     public String getName() {

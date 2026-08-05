@@ -34,6 +34,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModelDefaultMethods;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
 
@@ -266,7 +267,7 @@ public abstract class AbstractInMemoryUserAdapter extends UserModelDefaultMethod
 
     @Override
     public Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
-        return getRoleMappingsStream().filter(r -> RoleUtils.isClientRole(r, app));
+        return getRoleMappingsStream().filter(r -> RoleUtils.isRoleFromClient(r, app));
     }
 
     @Override
@@ -277,6 +278,7 @@ public abstract class AbstractInMemoryUserAdapter extends UserModelDefaultMethod
 
     @Override
     public void grantRole(RoleModel role) {
+        OrganizationsValidation.validateOrganizationRoleMapping(this, role);
         roleIds.add(role.getId());
 
     }

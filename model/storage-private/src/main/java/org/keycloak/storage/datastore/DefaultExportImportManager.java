@@ -45,6 +45,7 @@ import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.exportimport.ExportAdapter;
 import org.keycloak.exportimport.ExportOptions;
 import org.keycloak.exportimport.util.ExportUtils;
+import org.keycloak.exportimport.util.OrganizationExportImportUtils;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.ModelVersion;
@@ -1760,6 +1761,7 @@ public class DefaultExportImportManager implements ExportImportManager {
                 OrganizationsValidation.validateUrl(orgRep.getRedirectUrl());
                 OrganizationModel orgModel = provider.create(orgRep.getId(), orgRep.getName(), orgRep.getAlias());
                 RepresentationToModel.toModel(orgRep, orgModel);
+                OrganizationExportImportUtils.importOrganizationRoles(session, newRealm, orgModel, orgRep);
 
                 for (IdentityProviderRepresentation identityProvider : Optional.ofNullable(orgRep.getIdentityProviders()).orElse(Collections.emptyList())) {
                     IdentityProviderModel idp = session.identityProviders().getByAlias(identityProvider.getAlias());
@@ -1772,6 +1774,9 @@ public class DefaultExportImportManager implements ExportImportManager {
 
                 for (MemberRepresentation member : Optional.ofNullable(orgRep.getMembers()).orElse(Collections.emptyList())) {
                     UserModel m = session.users().getUserByUsername(newRealm, member.getUsername());
+                    if (m == null) {
+                        throw new ModelException("Unable to find organization member specified by username: " + member.getUsername());
+                    }
                     if (MembershipType.MANAGED.equals(member.getMembershipType())) {
                         provider.addManagedMember(orgModel, m);
                     } else {
@@ -1779,6 +1784,7 @@ public class DefaultExportImportManager implements ExportImportManager {
                     }
                     // Import organization group memberships
                     importOrganizationGroupMemberships(member, m, newRealm);
+                    OrganizationExportImportUtils.importOrganizationMemberRoleMappings(orgModel, member, m);
                 }
             }
         }

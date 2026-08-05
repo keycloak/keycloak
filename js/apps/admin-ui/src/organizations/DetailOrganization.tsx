@@ -3,6 +3,7 @@ import {
   useAlerts,
   useFetch,
 } from "@keycloak/keycloak-ui-shared";
+import type OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
 import {
   ActionGroup,
   Button,
@@ -40,6 +41,7 @@ import {
 import { useAccess } from "../context/access/Access";
 import { AdminEvents } from "../events/AdminEvents";
 import { useState } from "react";
+import { OrganizationRoles } from "./OrganizationRoles";
 
 export default function DetailOrganization() {
   const { adminClient } = useAdminClient();
@@ -50,6 +52,8 @@ export default function DetailOrganization() {
   const { t } = useTranslation();
 
   const form = useForm<OrganizationFormType>();
+  const [organization, setOrganization] =
+    useState<OrganizationRepresentation>();
 
   const save = async (org: OrganizationFormType) => {
     try {
@@ -71,6 +75,7 @@ export default function DetailOrganization() {
       if (!org) {
         throw new Error(t("notFound"));
       }
+      setOrganization(org);
       form.reset({
         ...org,
         domains: org.domains?.map((d) => d.name),
@@ -92,11 +97,14 @@ export default function DetailOrganization() {
   const settingsTab = useTab("settings");
   const attributesTab = useTab("attributes");
   const membersTab = useTab("members");
+  const rolesTab = useTab("roles");
   const groupsTab = useTab("groups");
   const identityProvidersTab = useTab("identityProviders");
   const eventsTab = useTab("events");
 
   const { hasAccess } = useAccess();
+  const canManageOrganization =
+    organization?.access?.manage ?? hasAccess("manage-organizations");
   const [activeEventsTab, setActiveEventsTab] = useState("adminEvents");
 
   return (
@@ -166,6 +174,14 @@ export default function DetailOrganization() {
             {...membersTab}
           >
             <MembersSection />
+          </Tab>
+          <Tab
+            id="roles"
+            data-testid="rolesTab"
+            title={<TabTitleText>{t("roles")}</TabTitleText>}
+            {...rolesTab}
+          >
+            <OrganizationRoles canCreateRole={canManageOrganization} />
           </Tab>
           <Tab
             id="groups"

@@ -404,7 +404,7 @@ public class UserAdapter implements CachedUserModel {
     @Override
     public Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
         if (updated != null) return updated.getClientRoleMappingsStream(app);
-        return getRoleMappingsStream().filter(r -> RoleUtils.isClientRole(r, app));
+        return getRoleMappingsStream().filter(r -> RoleUtils.isRoleFromClient(r, app));
     }
 
     @Override

@@ -150,9 +150,7 @@ public class RoleMappingDeleteResource {
         if (role == null) {
             role = this.session.roles().getRoleById(this.realm, id);
         }
-        if (role == null) {
-            throw new NotFoundException("Could not find role");
-        }
+        if (role == null || role.isOrganizationRole()) throw new NotFoundException("Could not find role");
         auth.roles().requireManage(role);
 
         final RoleModel parentRole = role;
@@ -171,6 +169,7 @@ public class RoleMappingDeleteResource {
                 role = this.session.roles().getRoleById(this.realm, roleRequest.getRoleId());
             }
             if (role != null) {
+                if (role.isOrganizationRole()) throw new NotFoundException("Could not find role");
                 auth.roles().requireMapRole(role);
                 deleteAction.accept(role);
             }

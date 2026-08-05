@@ -20,6 +20,7 @@ package org.keycloak.broker.provider.mappersync;
 import java.util.Map;
 
 import org.keycloak.broker.provider.ConfigConstants;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -44,11 +45,22 @@ public class RoleConfigPropertyByRoleNameSynchronizer implements ConfigSynchroni
 
     @Override
     public void handleEvent(RoleModel.RoleNameChangeEvent event) {
+        RoleModel role = event.getRole();
+        RoleModel.Type roleType = role.getType();
+        String clientId = switch (roleType) {
+            case REALM -> null;
+            case CLIENT -> ((ClientModel) role.getContainer()).getClientId();
+            case ORGANIZATION -> null;
+        };
+        if (roleType == RoleModel.Type.ORGANIZATION) {
+            return;
+        }
+
         // first find all mappers that have a role config property that maps exactly to the changed path.
-        String currentRoleValue = KeycloakModelUtils.buildRoleQualifier(event.getClientId(), event.getPreviousName());
+        String currentRoleValue = KeycloakModelUtils.buildRoleQualifier(clientId, event.getPreviousName());
         event.getKeycloakSession().identityProviders().getMappersStream(Map.of(ConfigConstants.ROLE, currentRoleValue), null, null)
                 .forEach(idpMapper -> {
-                    String newRoleValue = KeycloakModelUtils.buildRoleQualifier(event.getClientId(), event.getNewName());
+                    String newRoleValue = KeycloakModelUtils.buildRoleQualifier(clientId, event.getNewName());
                     idpMapper.getConfig().put(ConfigConstants.ROLE, newRoleValue);
                     logEventProcessed(ConfigConstants.ROLE, currentRoleValue, newRoleValue, event.getRealm().getName(),
                             idpMapper.getName(), idpMapper.getIdentityProviderAlias());
