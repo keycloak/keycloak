@@ -7,6 +7,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -32,22 +33,23 @@ import com.apicatalog.jsonld.loader.HttpLoader;
  * without a request timeout or any restriction on the target:
  * <ul>
  *   <li><b>Allowlist</b> - only {@code https} is permitted and the host of every context URL must
- *   be in the allowlist. Well-known context hosts are allowed by default; additional hosts can be
- *   configured via the {@value #ALLOWED_HOSTS_PROPERTY} system property. The {@code https} scheme
- *   is also enforced on every redirect hop, while the host allowlist is deliberately only applied
- *   to the initial URL, because well-known contexts (e.g. on {@code w3id.org}) are legitimately
- *   served through redirects to other {@code https} hosts.</li>
- *   <li><b>Cache</b> - context documents are cached in memory keyed by URL, so each context is
- *   fetched at most once per server lifetime. Contexts are stable, so caching avoids repeated
- *   outbound requests and signature inconsistencies caused by content drift between issuances.</li>
- *   <li><b>Timeout</b> - connect and per-request timeouts are enforced so a slow or unresponsive
- *   context host cannot block the credential-issuance worker thread indefinitely.</li>
+ *   be in the allowlist. The policy applies to the initial URL and to every redirect hop;
+ *   well-known context redirect destinations are allowed by default and any other destination can
+ *   be allowed via the {@value #ALLOWED_HOSTS_PROPERTY} system property.</li>
+ *   <li><b>Cache</b> - context documents are cached in memory in a bounded LRU cache keyed by
+ *   URL, so each context is fetched at most once per server lifetime. Contexts are stable, so
+ *   caching avoids repeated outbound requests and signature inconsistencies caused by content
+ *   drift between issuances.</li>
+ *   <li><b>Timeout</b> - connect and per-request timeouts are enforced, and the full response
+ *   body is consumed within the request timeout, so a slow or unresponsive context host cannot
+ *   block the credential-issuance worker thread indefinitely.</li>
  * </ul>
  */
 public class JsonLdContextDocumentLoader implements DocumentLoader {
 
     /** Well-known hosts serving stable JSON-LD context documents for verifiable credentials. */
-    public static final Set<String> DEFAULT_ALLOWED_HOSTS = Set.of("www.w3.org", "w3id.org", "json-ld.org");
+    public static final Set<String> DEFAULT_ALLOWED_HOSTS = Set.of(
+            "www.w3.org", "w3id.org", "json-ld.org", "digitalbazaar.github.io");
 
     /**
      * System property to extend the allowlist of permitted context hosts with a comma-separated
@@ -64,7 +66,13 @@ public class JsonLdContextDocumentLoader implements DocumentLoader {
     private final Set<String> allowedHosts;
     private final boolean allowInsecureScheme;
     private final DocumentLoader delegate;
-    private final Map<URI, Document> cache = new ConcurrentHashMap<>();
+    private final Map<URI, Document> cache = new LinkedHashMap<>(16, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<URI, Document> eldest) {
+            return size() > MAX_CACHE_ENTRIES;
+        }
+    };
+    private final Map<URI, Object> locks = new ConcurrentHashMap<>();
 
     public JsonLdContextDocumentLoader() {
         this(resolveAllowedHosts(), false, CONNECT_TIMEOUT, REQUEST_TIMEOUT);
@@ -84,7 +92,7 @@ public class JsonLdContextDocumentLoader implements DocumentLoader {
                 .map(host -> host.toLowerCase(Locale.ROOT))
                 .collect(Collectors.toUnmodifiableSet());
         this.allowInsecureScheme = allowInsecureScheme;
-        this.delegate = new HttpLoader(new HardenedHttpClient(connectTimeout, requestTimeout, allowInsecureScheme));
+        this.delegate = new HttpLoader(new HardenedHttpClient(allowedHosts, connectTimeout, requestTimeout, allowInsecureScheme));
     }
 
     /** Shared instance used by the credential signing suites. */
@@ -96,28 +104,44 @@ public class JsonLdContextDocumentLoader implements DocumentLoader {
     public Document loadDocument(URI url, DocumentLoaderOptions options) throws JsonLdError {
         validate(url);
 
-        // Context documents are stable and treated as immutable, so caching by URL alone is
-        // sufficient; the options only tune how the document is fetched.
-        Document document = cache.get(url);
-        if (document == null) {
-            if (cache.size() >= MAX_CACHE_ENTRIES) {
-                // Contexts are few and stable; dropping the cache is simpler than an eviction
-                // policy and still bounds memory usage.
-                cache.clear();
-            }
-            document = delegate.loadDocument(url, options);
-            Document existing = cache.putIfAbsent(url, document);
-            if (existing != null) {
-                document = existing;
-            }
+        Document cached = getCached(url);
+        if (cached != null) {
+            return cached;
         }
-        return document;
+
+        // Coalesce concurrent misses for the same URL so only one request populates the cache.
+        Object lock = locks.computeIfAbsent(url, u -> new Object());
+        synchronized (lock) {
+            cached = getCached(url);
+            if (cached == null) {
+                cached = delegate.loadDocument(url, options);
+                putCached(url, cached);
+            }
+            locks.remove(url, lock);
+            return cached;
+        }
+    }
+
+    private Document getCached(URI url) {
+        synchronized (cache) {
+            return cache.get(url);
+        }
+    }
+
+    private void putCached(URI url, Document document) {
+        synchronized (cache) {
+            cache.put(url, document);
+        }
     }
 
     private void validate(URI url) throws JsonLdError {
         if (url == null) {
             throw new JsonLdError(JsonLdErrorCode.LOADING_DOCUMENT_FAILED, "Cannot load a null JSON-LD context URL.");
         }
+        validateTarget(url, allowedHosts, allowInsecureScheme);
+    }
+
+    private static void validateTarget(URI url, Set<String> allowedHosts, boolean allowInsecureScheme) throws JsonLdError {
         if (!isSchemeAllowed(url.getScheme(), allowInsecureScheme)) {
             throw new JsonLdError(JsonLdErrorCode.LOADING_DOCUMENT_FAILED,
                     "Refusing to load JSON-LD context from unsupported scheme '" + url.getScheme() + "': " + url);
@@ -125,7 +149,8 @@ public class JsonLdContextDocumentLoader implements DocumentLoader {
         String host = url.getHost();
         if (host == null || !allowedHosts.contains(host.toLowerCase(Locale.ROOT))) {
             throw new JsonLdError(JsonLdErrorCode.LOADING_DOCUMENT_FAILED,
-                    "Refusing to load JSON-LD context from host not in allowlist '" + host + "': " + url);
+                    "Refusing to load JSON-LD context from host not in allowlist '" + host + "': " + url
+                            + ". Add the host via -D" + ALLOWED_HOSTS_PROPERTY + "=... if it is trusted.");
         }
     }
 
@@ -151,31 +176,27 @@ public class JsonLdContextDocumentLoader implements DocumentLoader {
     }
 
     /**
-     * Enforces the {@code https} scheme for every request, including redirect hops performed by
-     * the loader, and applies a connect and a per-request timeout.
+     * Enforces the scheme and host allowlist for every request, including redirect hops performed
+     * by the loader, and applies a connect and a per-request timeout.
      */
     private static final class HardenedHttpClient implements HttpClient {
 
+        private final Set<String> allowedHosts;
         private final JdkHttpClient client;
         private final boolean allowInsecureScheme;
 
-        HardenedHttpClient(Duration connectTimeout, Duration requestTimeout, boolean allowInsecureScheme) {
+        HardenedHttpClient(Set<String> allowedHosts, Duration connectTimeout, Duration requestTimeout, boolean allowInsecureScheme) {
+            this.allowedHosts = allowedHosts;
             this.client = new JdkHttpClient(connectTimeout, requestTimeout);
             this.allowInsecureScheme = allowInsecureScheme;
         }
 
         @Override
         public HttpResponse send(URI targetUri, String requestProfile) throws JsonLdError {
-            if (!isSchemeAllowed(targetUri.getScheme(), allowInsecureScheme)) {
-                throw new JsonLdError(JsonLdErrorCode.LOADING_DOCUMENT_FAILED,
-                        "Refusing to follow JSON-LD context redirect to unsupported scheme '"
-                                + targetUri.getScheme() + "': " + targetUri);
-            }
+            // Every redirect hop is re-validated against the same scheme and host policy.
+            validateTarget(targetUri, allowedHosts, allowInsecureScheme);
             try {
                 return new HttpResponseImpl(client.send(targetUri, requestProfile == null ? "application/ld+json" : requestProfile));
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new JsonLdError(JsonLdErrorCode.LOADING_DOCUMENT_FAILED, e);
             } catch (IOException e) {
                 throw new JsonLdError(JsonLdErrorCode.LOADING_DOCUMENT_FAILED, e);
             }

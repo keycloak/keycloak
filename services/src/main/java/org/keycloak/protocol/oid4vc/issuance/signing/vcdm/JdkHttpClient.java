@@ -1,5 +1,6 @@
 package org.keycloak.protocol.oid4vc.issuance.signing.vcdm;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -9,6 +10,10 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Thin wrapper around the JDK HTTP client used to fetch JSON-LD context documents.
@@ -18,6 +23,8 @@ import java.util.Optional;
  * without a naming collision, which would otherwise force fully qualified names.
  */
 final class JdkHttpClient {
+
+    private static final int MAX_RESPONSE_SIZE = 1024 * 1024;
 
     private final HttpClient client;
     private final Duration requestTimeout;
@@ -30,14 +37,32 @@ final class JdkHttpClient {
         this.requestTimeout = requestTimeout;
     }
 
-    Response send(URI targetUri, String acceptHeader) throws IOException, InterruptedException {
+    Response send(URI targetUri, String acceptHeader) throws IOException {
         HttpRequest request = HttpRequest.newBuilder()
                 .GET()
                 .uri(targetUri)
                 .header("Accept", acceptHeader)
                 .timeout(requestTimeout)
                 .build();
-        return new Response(client.send(request, HttpResponse.BodyHandlers.ofInputStream()));
+        // The request timeout alone does not bound the body download, so the whole exchange
+        // (headers and body) is awaited with a hard deadline and cancelled on expiry. A server
+        // that sends headers and then stalls therefore times out instead of blocking the caller.
+        CompletableFuture<HttpResponse<byte[]>> future = client.sendAsync(request, HttpResponse.BodyHandlers.ofByteArray());
+        try {
+            HttpResponse<byte[]> response = future.get(requestTimeout.toMillis(), TimeUnit.MILLISECONDS);
+            if (response.body().length > MAX_RESPONSE_SIZE) {
+                throw new IOException("JSON-LD context document exceeds " + MAX_RESPONSE_SIZE + " bytes: " + targetUri);
+            }
+            return new Response(response);
+        } catch (TimeoutException e) {
+            future.cancel(true);
+            throw new IOException("Timed out fetching JSON-LD context document: " + targetUri, e);
+        } catch (ExecutionException e) {
+            throw new IOException("Failed to fetch JSON-LD context document: " + targetUri, e.getCause());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Interrupted while fetching JSON-LD context document: " + targetUri, e);
+        }
     }
 
     /**
@@ -45,9 +70,9 @@ final class JdkHttpClient {
      */
     static final class Response {
 
-        private final HttpResponse<InputStream> delegate;
+        private final HttpResponse<byte[]> delegate;
 
-        Response(HttpResponse<InputStream> delegate) {
+        Response(HttpResponse<byte[]> delegate) {
             this.delegate = delegate;
         }
 
@@ -56,7 +81,7 @@ final class JdkHttpClient {
         }
 
         InputStream body() {
-            return delegate.body();
+            return new ByteArrayInputStream(delegate.body());
         }
 
         Collection<String> links() {
@@ -72,7 +97,7 @@ final class JdkHttpClient {
         }
 
         void close() {
-            // The body stream is consumed and closed by the document reader.
+            // The body is fully buffered and has no resources to release.
         }
     }
 }
