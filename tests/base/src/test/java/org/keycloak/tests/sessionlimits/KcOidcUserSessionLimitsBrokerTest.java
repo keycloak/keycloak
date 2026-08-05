@@ -38,8 +38,8 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ErrorPage;
+import org.keycloak.testframework.ui.page.IdpReviewUserProfilePage;
 import org.keycloak.testframework.ui.page.LoginPage;
-import org.keycloak.testframework.ui.page.LoginUpdateProfilePage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 import org.junit.jupiter.api.Assertions;
@@ -88,7 +88,7 @@ public class KcOidcUserSessionLimitsBrokerTest {
     ErrorPage errorPage;
 
     @InjectPage
-    LoginUpdateProfilePage loginUpdateProfilePage;
+    IdpReviewUserProfilePage idpReviewUserProfilePage;
 
     @BeforeEach
     public void setup() {
@@ -165,8 +165,8 @@ public class KcOidcUserSessionLimitsBrokerTest {
 
     private void logInAsUserInIDPForFirstTime() {
         logInAsUserInIDP();
-        loginUpdateProfilePage.assertCurrent();
-        loginUpdateProfilePage.update("Firstname", "Lastname");
+        idpReviewUserProfilePage.assertCurrent();
+        idpReviewUserProfilePage.update("Firstname", "Lastname");
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
