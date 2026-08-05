@@ -28,9 +28,10 @@ import org.keycloak.models.UserModel;
  * that implement this interface can intercept service account creation and lookup,
  * allowing service account users to be stored in an external store.
  *
- * <p>All storage providers that implement this interface will be looped through in priority order.
- * If a method returns null, the next provider is tried. If no provider handles the request,
- * local storage is used as a fallback.
+ * <p>For service account creation, all enabled storage providers implementing this interface are tried in priority order.
+ * If a provider returns null, the next provider is tried; if none handle creation, local storage is used as a fallback.
+ *
+ * <p>For service account lookup, local storage is consulted first for backward compatibility; if not found, providers are queried in the same order.
  *
  * <p>Providers implementing this interface should also implement {@link UserRegistrationProvider}
  * so that service account users can be removed when the owning client is deleted or has service
