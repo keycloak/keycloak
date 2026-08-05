@@ -85,7 +85,7 @@ public class SAMLAudienceResolveProtocolMapper extends AbstractSAMLProtocolMappe
             // add as audience any SAML clientId with role included (same as OIDC)
             clientSessionCtx.getRolesStream()
                     .peek(r -> logger.tracef("Managing role: %s", r.getName()))
-                    .filter(RoleModel::isClientRole)
+                    .filter(role -> role.getType() == RoleModel.Type.CLIENT)
                     .map(r -> (ClientModel) r.getContainer())
                     // only adding SAML clients that are not this clientId (which is added by default)
                     .filter(app -> SamlProtocol.LOGIN_PROTOCOL.equals(app.getProtocol()) &&

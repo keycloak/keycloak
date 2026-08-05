@@ -34,6 +34,7 @@ import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModelDefaultMethods;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
@@ -165,7 +166,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
      */
     @Override
     public Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
-        return getRoleMappingsStream().filter(r -> RoleUtils.isClientRole(r, app));
+        return getRoleMappingsStream().filter(r -> RoleUtils.isRoleFromClient(r, app));
     }
 
     @Override
@@ -176,6 +177,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
 
     @Override
     public void grantRole(RoleModel role) {
+        OrganizationsValidation.validateOrganizationRoleMapping(this, role);
         if (hasDirectRole(role)) return;
         getFederatedStorage().grantRole(realm, this.getId(), role);
     }

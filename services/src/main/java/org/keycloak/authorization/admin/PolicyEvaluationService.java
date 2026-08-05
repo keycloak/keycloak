@@ -62,6 +62,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -382,10 +383,10 @@ public class PolicyEvaluationService {
             if (user != null) {
                 AccessToken finalAccessToken = accessToken;
                 user.getRoleMappingsStream().forEach(roleModel -> {
-                    if (roleModel.isClientRole()) {
+                    if (roleModel.getType() == RoleModel.Type.CLIENT) {
                         ClientModel client = (ClientModel) roleModel.getContainer();
                         finalAccessToken.addAccess(client.getClientId()).addRole(roleModel.getName());
-                    } else {
+                    } else if (roleModel.getType() == RoleModel.Type.REALM) {
                         realmAccess.addRole(roleModel.getName());
                     }
                 });

@@ -162,4 +162,79 @@ public interface RoleProvider extends Provider, RoleLookupProvider {
      * @param client Client.
      */
     void removeRoles(ClientModel client);
+
+    /**
+     * Adds an organization role with an automatically generated internal ID.
+     *
+     * @param organization Organization owning this role.
+     * @param name Role name.
+     * @return Model of the created role.
+     */
+    default RoleModel addOrganizationRole(OrganizationModel organization, String name) {
+        return addOrganizationRole(organization, null, name);
+    }
+
+    /**
+     * Adds an organization role with the given internal ID.
+     *
+     * @param organization Organization owning this role.
+     * @param id Internal ID, or {@code null} to let the store generate one.
+     * @param name Role name.
+     * @return Model of the created role.
+     */
+    default RoleModel addOrganizationRole(OrganizationModel organization, String id, String name) {
+        throw new UnsupportedOperationException("Organization roles are not supported by this provider");
+    }
+
+    /**
+     * Returns all roles owned by an organization.
+     *
+     * @param organization Organization owning the roles.
+     * @return Stream of roles. Never returns {@code null}.
+     */
+    default Stream<RoleModel> getOrganizationRolesStream(OrganizationModel organization) {
+        return getOrganizationRolesStream(organization, null, null);
+    }
+
+    /**
+     * Returns a page of roles owned by an organization.
+     *
+     * @param organization Organization owning the roles.
+     * @param first Index of the first result. Ignored if negative or {@code null}.
+     * @param max Maximum number of results. Ignored if negative or {@code null}.
+     * @return Stream of roles. Never returns {@code null}.
+     */
+    default Stream<RoleModel> getOrganizationRolesStream(OrganizationModel organization, Integer first, Integer max) {
+        throw new UnsupportedOperationException("Organization roles are not supported by this provider");
+    }
+
+    /**
+     * Counts all roles owned by an organization.
+     *
+     * @param organization Organization owning the roles.
+     * @return Number of roles.
+     */
+    default long getOrganizationRolesCount(OrganizationModel organization) {
+        return getOrganizationRolesCount(organization, null);
+    }
+
+    /**
+     * Counts roles matching a name or description within an organization.
+     *
+     * @param organization Organization owning the roles.
+     * @param search Case-insensitive substring to search for. Ignored if {@code null}.
+     * @return Number of matching roles.
+     */
+    default long getOrganizationRolesCount(OrganizationModel organization, String search) {
+        throw new UnsupportedOperationException("Organization roles are not supported by this provider");
+    }
+
+    /**
+     * Removes all roles owned by an organization.
+     *
+     * @param organization Organization owning the roles.
+     */
+    default void removeRoles(OrganizationModel organization) {
+        throw new UnsupportedOperationException("Organization roles are not supported by this provider");
+    }
 }

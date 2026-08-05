@@ -103,11 +103,14 @@ public class RolePolicyProvider implements PolicyProvider, PartialEvaluationPoli
             return subject != null && subject.hasRole(role);
         }
         String roleName = role.getName();
-        if (role.isClientRole()) {
-            ClientModel clientModel = realm.getClientById(role.getContainerId());
-            return identity.hasClientRole(clientModel.getClientId(), roleName);
-        }
-        return identity.hasRealmRole(roleName);
+        return switch (role.getType()) {
+            case CLIENT -> {
+                ClientModel clientModel = realm.getClientById(role.getContainerId());
+                yield identity.hasClientRole(clientModel.getClientId(), roleName);
+            }
+            case REALM -> identity.hasRealmRole(roleName);
+            case ORGANIZATION -> false;
+        };
     }
 
     private UserModel getSubject(Identity identity, RealmModel realm, AuthorizationProvider authorizationProvider) {
