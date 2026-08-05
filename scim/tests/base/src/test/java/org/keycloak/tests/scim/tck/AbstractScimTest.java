@@ -64,6 +64,9 @@ public abstract class AbstractScimTest {
         UPConfig originalConfig = configuration.clone();
         realm.cleanup().add(realm -> realm.users().userProfile().update(originalConfig));
 
+        UPAttributePermissions adminPermissions = new UPAttributePermissions(
+                Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN));
+
         for (String[] attr : new String[][] {
                 {"department", ENTERPRISE_USER_SCHEMA + ":department"},
                 {"division", ENTERPRISE_USER_SCHEMA + ":division"},
@@ -74,9 +77,7 @@ public abstract class AbstractScimTest {
                 {"managerName", ENTERPRISE_USER_SCHEMA + ":manager.displayName"}
         }) {
             UPAttribute upAttribute = new UPAttribute(attr[0], Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, attr[1]));
-            upAttribute.setPermissions(new UPAttributePermissions(
-                    Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER),
-                    Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER)));
+            upAttribute.setPermissions(adminPermissions);
             configuration.addOrReplaceAttribute(upAttribute);
         }
 
@@ -95,7 +96,7 @@ public abstract class AbstractScimTest {
                 return s + ":";
             }
         }).orElse("") + name));
-        upAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER), Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER)));
+        upAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
         upConfig.addOrReplaceAttribute(upAttribute);
         realm.admin().users().userProfile().update(upConfig);
         adminEvents.clear();
