@@ -17,6 +17,7 @@
 package org.keycloak.tests.providers.federation;
 
 import java.util.Map;
+import java.util.UUID;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
@@ -40,59 +41,69 @@ public class ServiceAccountUserStorage implements UserStorageProvider, UserLooku
 
     private final KeycloakSession session;
     private final ComponentModel model;
-    // username -> serviceAccountClientLink (clientInternalId)
-    private final Map<String, String> users;
+    // externalId -> user entry (mutable username + clientLink)
+    private final Map<String, UserEntry> users;
 
-    public ServiceAccountUserStorage(KeycloakSession session, ComponentModel model, Map<String, String> users) {
+    public ServiceAccountUserStorage(KeycloakSession session, ComponentModel model, Map<String, UserEntry> users) {
         this.session = session;
         this.model = model;
         this.users = users;
     }
 
-    private UserModel adapt(RealmModel realm, String username) {
-        // mutable holder — anonymous inner class needs to update the username on rename
-        final String[] currentUsername = {username};
+    static class UserEntry {
+        String username;
+        String serviceAccountClientLink;
+
+        UserEntry(String username) {
+            this.username = username;
+            this.serviceAccountClientLink = "";
+        }
+    }
+
+    private UserModel adapt(RealmModel realm, String externalId, UserEntry entry) {
         return new AbstractUserAdapterFederatedStorage(session, realm, model) {
 
             @Override
+            public String getId() {
+                return new StorageId(storageProviderModel.getId(), externalId).getId();
+            }
+
+            @Override
             public String getUsername() {
-                return currentUsername[0];
+                return entry.username;
             }
 
             @Override
             public void setUsername(String newUsername) {
-                String oldUsername = currentUsername[0];
-                if (!oldUsername.equals(newUsername)) {
-                    String link = users.remove(oldUsername);
-                    users.put(newUsername, link != null ? link : "");
-                    currentUsername[0] = newUsername;
-                }
+                entry.username = newUsername;
             }
 
             @Override
             public String getServiceAccountClientLink() {
-                String link = users.get(currentUsername[0]);
+                String link = entry.serviceAccountClientLink;
                 return link == null || link.isEmpty() ? null : link;
             }
 
             @Override
             public void setServiceAccountClientLink(String clientInternalId) {
-                users.put(currentUsername[0], clientInternalId);
+                entry.serviceAccountClientLink = clientInternalId;
             }
         };
     }
 
     @Override
     public UserModel addServiceAccountUser(RealmModel realm, String username) {
-        users.putIfAbsent(username, "");
-        return adapt(realm, username);
+        String externalId = UUID.randomUUID().toString();
+        UserEntry entry = new UserEntry(username);
+        users.put(externalId, entry);
+        return adapt(realm, externalId, entry);
     }
 
     @Override
     public UserModel getServiceAccount(ClientModel client) {
         return users.entrySet().stream()
-                .filter(e -> client.getId().equals(e.getValue()))
-                .map(e -> adapt(client.getRealm(), e.getKey()))
+                .filter(e -> client.getId().equals(e.getValue().serviceAccountClientLink))
+                .map(e -> adapt(client.getRealm(), e.getKey(), e.getValue()))
                 .findFirst()
                 .orElse(null);
     }
@@ -105,18 +116,24 @@ public class ServiceAccountUserStorage implements UserStorageProvider, UserLooku
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
-        return users.remove(user.getUsername()) != null;
+        String externalId = new StorageId(user.getId()).getExternalId();
+        return users.remove(externalId) != null;
     }
 
     @Override
     public UserModel getUserById(RealmModel realm, String id) {
-        String username = new StorageId(id).getExternalId();
-        return users.containsKey(username) ? adapt(realm, username) : null;
+        String externalId = new StorageId(id).getExternalId();
+        UserEntry entry = users.get(externalId);
+        return entry != null ? adapt(realm, externalId, entry) : null;
     }
 
     @Override
     public UserModel getUserByUsername(RealmModel realm, String username) {
-        return users.containsKey(username) ? adapt(realm, username) : null;
+        return users.entrySet().stream()
+                .filter(e -> username.equals(e.getValue().username))
+                .map(e -> adapt(realm, e.getKey(), e.getValue()))
+                .findFirst()
+                .orElse(null);
     }
 
     @Override

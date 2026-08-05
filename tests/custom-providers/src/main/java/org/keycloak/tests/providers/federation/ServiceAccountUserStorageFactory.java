@@ -27,7 +27,7 @@ public class ServiceAccountUserStorageFactory implements UserStorageProviderFact
 
     public static final String PROVIDER_ID = "service-account-user-storage";
 
-    private final Map<String, String> users = new ConcurrentHashMap<>();
+    private final Map<String, ServiceAccountUserStorage.UserEntry> users = new ConcurrentHashMap<>();
 
     @Override
     public ServiceAccountUserStorage create(KeycloakSession session, ComponentModel model) {
@@ -40,7 +40,7 @@ public class ServiceAccountUserStorageFactory implements UserStorageProviderFact
     }
 
     public boolean contains(String username) {
-        return users.containsKey(username);
+        return users.values().stream().anyMatch(e -> username.equals(e.username));
     }
 
     public void clear() {
