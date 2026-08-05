@@ -60,4 +60,11 @@ js/libs/ui-shared/                          ci ci-webauthn
 *.ts                                        codeql-typescript
 *.tsx                                       codeql-typescript
 
-rest/admin-v2/                              admin-v2
+rest/admin-v2/                              admin-v2 ci-jackson3
+integration/admin-client-jackson3/          ci-jackson3
+integration/admin-client-core/              ci-jackson3
+integration/admin-client/                   ci-jackson3
+core/src/main/java/org/keycloak/json/       ci-jackson3
+core/src/main/java/org/keycloak/representations/   ci-jackson3
+core/src/main/resources/META-INF/services/  ci-jackson3
+tests/base/                                 ci-jackson3
