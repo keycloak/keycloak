@@ -62,6 +62,7 @@ public class SimpleHttpRequest {
     private final RequestConfig requestConfig;
 
     private final ObjectMapper objectMapper;
+    private final SimpleHttp.OnCompletion onCompletion;
 
     private final String url;
     private final SimpleHttpMethod method;
@@ -71,13 +72,14 @@ public class SimpleHttpRequest {
 
     private final long maxConsumedResponseSize;
 
-    SimpleHttpRequest(String url, SimpleHttpMethod method, HttpClient client, RequestConfig requestConfig, long maxConsumedResponseSize, ObjectMapper objectMapper) {
+    SimpleHttpRequest(String url, SimpleHttpMethod method, HttpClient client, RequestConfig requestConfig, long maxConsumedResponseSize, ObjectMapper objectMapper, SimpleHttp.OnCompletion onCompletion) {
         this.client = client;
         this.requestConfig = requestConfig;
         this.url = url;
         this.method = method;
         this.maxConsumedResponseSize = maxConsumedResponseSize;
         this.objectMapper = objectMapper;
+        this.onCompletion = onCompletion;
     }
 
     public SimpleHttpRequest header(String name, String value) {
@@ -222,34 +224,52 @@ public class SimpleHttpRequest {
     }
 
     private SimpleHttpResponse makeRequest() throws IOException {
-        HttpRequestBase httpRequest = createHttpRequest();
+        // The whole request-building path is guarded, not just client.execute(): if request construction or
+        // serialization throws first (e.g. the "No content set" branch below, or getJsonEntity()), an owned
+        // CLOSE_CLIENT client would otherwise never be closed and leak.
+        try {
+            HttpRequestBase httpRequest = createHttpRequest();
 
-        if (httpRequest instanceof HttpPost || httpRequest instanceof  HttpPut || httpRequest instanceof HttpPatch) {
-            if (params != null) {
-                ((HttpEntityEnclosingRequestBase) httpRequest).setEntity(getFormEntityFromParameter());
-            } else if (entity instanceof HttpEntity) {
-                ((HttpEntityEnclosingRequestBase) httpRequest).setEntity((HttpEntity) entity);
-            } else if (entity != null) {
-                if (headers == null || !headers.containsKey(HttpHeaders.CONTENT_TYPE)) {
-                    header(HttpHeaders.CONTENT_TYPE, "application/json");
+            if (httpRequest instanceof HttpPost || httpRequest instanceof  HttpPut || httpRequest instanceof HttpPatch) {
+                if (params != null) {
+                    ((HttpEntityEnclosingRequestBase) httpRequest).setEntity(getFormEntityFromParameter());
+                } else if (entity instanceof HttpEntity) {
+                    ((HttpEntityEnclosingRequestBase) httpRequest).setEntity((HttpEntity) entity);
+                } else if (entity != null) {
+                    if (headers == null || !headers.containsKey(HttpHeaders.CONTENT_TYPE)) {
+                        header(HttpHeaders.CONTENT_TYPE, "application/json");
+                    }
+                    ((HttpEntityEnclosingRequestBase) httpRequest).setEntity(getJsonEntity());
+                } else {
+                    throw new IllegalStateException("No content set");
                 }
-                ((HttpEntityEnclosingRequestBase) httpRequest).setEntity(getJsonEntity());
-            } else {
-                throw new IllegalStateException("No content set");
+            }
+
+            if (headers != null) {
+                for (Map.Entry<String, String> h : headers.entrySet()) {
+                    httpRequest.setHeader(h.getKey(), h.getValue());
+                }
+            }
+
+            if (requestConfig != null) {
+                httpRequest.setConfig(requestConfig);
+            }
+
+            return new SimpleHttpResponse(client.execute(httpRequest), maxConsumedResponseSize, objectMapper, this::onCloseRequest);
+        } catch (IOException | RuntimeException e) {
+            onCloseRequest();
+            throw e;
+        }
+    }
+
+    private void onCloseRequest() {
+        if (onCompletion == SimpleHttp.OnCompletion.CLOSE_CLIENT && client instanceof java.io.Closeable) {
+            try {
+                ((java.io.Closeable) client).close();
+            } catch (IOException ignored) {
+                // best-effort close of the per-call client
             }
         }
-
-        if (headers != null) {
-            for (Map.Entry<String, String> h : headers.entrySet()) {
-                httpRequest.setHeader(h.getKey(), h.getValue());
-            }
-        }
-
-        if (requestConfig != null) {
-            httpRequest.setConfig(requestConfig);
-        }
-
-        return new SimpleHttpResponse(client.execute(httpRequest), maxConsumedResponseSize, objectMapper);
     }
 
     private URI appendParameterToUrl(String url) {
