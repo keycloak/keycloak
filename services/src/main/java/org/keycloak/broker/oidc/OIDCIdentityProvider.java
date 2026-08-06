@@ -61,7 +61,6 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.jose.JOSE;
@@ -180,7 +179,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
         String url = logoutUri.build().toString();
         try {
-            int status = SimpleHttp.create(session).doGet(url).asStatus();
+            int status = createBackchannelHttp().doGet(url).asStatus();
             boolean success = status >= 200 && status < 400;
             if (!success) {
                 logger.warn("Failed backchannel broker logout to: " + url);
@@ -570,7 +569,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             if (userInfoUrl != null && !userInfoUrl.isEmpty()) {
 
                 if (accessToken != null) {
-                    SimpleHttpResponse response = executeRequest(userInfoUrl, SimpleHttp.create(session).doGet(userInfoUrl).header("Authorization", "Bearer " + accessToken));
+                    SimpleHttpResponse response = executeRequest(userInfoUrl, createBackchannelHttp().doGet(userInfoUrl).header("Authorization", "Bearer " + accessToken));
                     String contentType = response.getFirstHeader(HttpHeaders.CONTENT_TYPE);
                     MediaType contentMediaType;
                     try {
@@ -668,7 +667,9 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     protected String getUserInfoUrl() {
-        return getConfig().getUserInfoUrl();
+        // For tls_client_auth this resolves to the RFC 8705 mtls_endpoint_aliases userinfo endpoint when
+        // the IdP published one; otherwise it falls back to the regular userinfo endpoint.
+        return getConfig().getUserInfoUrlForClientAuth();
     }
 
     private SimpleHttpResponse executeRequest(String url, SimpleHttpRequest request) throws IOException {
