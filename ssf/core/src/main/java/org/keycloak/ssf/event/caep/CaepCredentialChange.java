@@ -1,8 +1,11 @@
 package org.keycloak.ssf.event.caep;
 
+import java.util.Map;
+
 import org.keycloak.ssf.event.SsfEventValidationException;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -33,6 +36,9 @@ public class CaepCredentialChange extends CaepEvent {
      */
     @JsonProperty("credential_type")
     protected String credentialType;
+
+    @JsonIgnore
+    protected CaepCredentialType resolvedCredentialType;
 
     /**
      * This MUST be one of the following strings:
@@ -98,6 +104,7 @@ public class CaepCredentialChange extends CaepEvent {
 
     public void setCredentialType(String credentialType) {
         this.credentialType = credentialType;
+        this.resolvedCredentialType = CaepCredentialType.fromString(credentialType);
     }
 
     public ChangeType getChangeType() {
@@ -138,6 +145,10 @@ public class CaepCredentialChange extends CaepEvent {
 
     public void setFido2Aaguid(String fido2Aaguid) {
         this.fido2Aaguid = fido2Aaguid;
+    }
+
+    public CaepCredentialType getResolvedCredentialType() {
+        return resolvedCredentialType;
     }
 
     /**
@@ -202,6 +213,14 @@ public class CaepCredentialChange extends CaepEvent {
         public String getType() {
             return type;
         }
+    }
+
+    @Override
+    public Map<String, Object> createAdminDetails() {
+        var adminRepresentation = super.createAdminDetails();
+        adminRepresentation.put("credential_type", resolvedCredentialType.getType());
+        adminRepresentation.put("change_type", changeType);
+        return adminRepresentation;
     }
 
     @Override

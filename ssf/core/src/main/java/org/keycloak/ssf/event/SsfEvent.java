@@ -3,6 +3,7 @@ package org.keycloak.ssf.event;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -177,6 +178,17 @@ public abstract class SsfEvent {
 
     public void setAlias(String alias) {
         this.alias = alias;
+    }
+
+    /**
+     * Creates and returns a representation of the administrative details for an event.
+     * This representation is structured as a map with string keys and object values.
+     *
+     * @return a map containing the administrative representation
+     */
+    public Map<String, Object> createAdminDetails() {
+        Map<String, Object> adminRep = new LinkedHashMap<>();
+        return adminRep;
     }
 
     /**

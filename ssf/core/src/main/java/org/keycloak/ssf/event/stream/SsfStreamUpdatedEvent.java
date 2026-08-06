@@ -1,5 +1,7 @@
 package org.keycloak.ssf.event.stream;
 
+import java.util.Map;
+
 import org.keycloak.ssf.stream.StreamStatus;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -43,5 +45,15 @@ public class SsfStreamUpdatedEvent extends SsfStreamEvent {
 
     public void setReason(String reason) {
         this.reason = reason;
+    }
+
+    @Override
+    public Map<String, Object> createAdminDetails() {
+        var adminRepresentation = super.createAdminDetails();
+        adminRepresentation.put("status", status);
+        if (reason != null) {
+            adminRepresentation.put("reason", reason);
+        }
+        return adminRepresentation;
     }
 }
