@@ -95,9 +95,9 @@ Login failure counters::
 Brute-force detection counters are reset.
 Any ongoing lockouts are cleared.
 
-Action tokens in the {jdgserver_name} cache::
-Email verification links, password reset tokens, and OAuth codes that were stored in {jdgserver_name} are lost.
-Users with pending email verifications or password resets need to request new links.
+OAuth authorization codes::
+OAuth authorization codes that were stored in {jdgserver_name} are lost.
+Users with in-progress OAuth flows need to restart the authorization.
 
 [IMPORTANT]
 ====
@@ -169,7 +169,21 @@ See the <@links.ha id="multi-cluster-concepts-database-connections" /> {section}
 +
 See the <@links.ha id="multi-cluster-v2-deploy-keycloak-kubernetes" /> {section} for a complete example of the v2 {project_name} CR.
 
+. Deploy the updated {project_name} CR to all sites:
++
+[source,bash]
+----
+kubectl --namespace keycloak apply -f keycloak.yaml
+----
+
+. Verify the deployment.
++
+Follow the verification steps in the <@links.ha id="multi-cluster-v2-deploy-keycloak-kubernetes" /> {section}.
+Afterward, verify that the external load balancer routes traffic to all sites.
+
 . Remove the {jdgserver_name} deployment.
++
+Once the v2 deployment is verified, remove the v1 infrastructure.
 +
 --
 .. Delete the {jdgserver_name} `Cache` CRs:
@@ -194,6 +208,7 @@ kubectl --namespace keycloak delete secret remote-store-secret
 kubectl --namespace keycloak delete secret ispn-xsite-sa-token
 kubectl --namespace keycloak delete secret xsite-keystore-secret
 kubectl --namespace keycloak delete secret xsite-truststore-secret
+kubectl --namespace keycloak delete secret xsite-token-secret
 ----
 +
 Adjust the secret names to match your deployment.
@@ -216,25 +231,6 @@ Adjust these steps based on your fencing implementation.
 . Remove {jdgserver_name}-specific monitoring.
 +
 Remove any Prometheus `ServiceMonitor` or `PodMonitor` resources that target the {jdgserver_name} deployment, as well as any Grafana dashboards for {jdgserver_name} cache metrics.
-
-. Deploy the updated {project_name} CR to all sites:
-+
-[source,bash]
-----
-kubectl --namespace keycloak apply -f keycloak.yaml
-----
-
-. Verify the deployment.
-+
-Confirm that the {project_name} deployment is ready:
-+
-[source,bash]
-----
-kubectl wait --for=condition=Ready keycloaks.k8s.keycloak.org/keycloak
-kubectl wait --for=condition=RollingUpdate=False keycloaks.k8s.keycloak.org/keycloak
-----
-+
-Afterward, verify that the external load balancer routes traffic to all sites.
 
 == Changes to operational procedures
 
