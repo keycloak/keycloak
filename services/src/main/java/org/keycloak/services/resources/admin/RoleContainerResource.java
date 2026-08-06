@@ -617,6 +617,8 @@ public class RoleContainerResource extends RoleResource {
                                                     @Parameter(description = "if false, return a full representation of the {@code GroupRepresentation} objects.") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
 
         auth.roles().requireView(roleContainer);
+        auth.groups().requireList();
+
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
 
