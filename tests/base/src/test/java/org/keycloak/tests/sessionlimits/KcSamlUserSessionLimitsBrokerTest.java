@@ -16,20 +16,20 @@
  */
 package org.keycloak.tests.sessionlimits;
 
+import java.util.List;
 import java.util.Map;
 
 import org.keycloak.authentication.authenticators.sessionlimits.UserSessionLimitsAuthenticatorFactory;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.protocol.saml.mappers.UserPropertyAttributeStatementMapper;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
@@ -100,14 +100,11 @@ public class KcSamlUserSessionLimitsBrokerTest {
         deleteAllCookies(consumerRealm);
         deleteAllCookies(providerRealm);
 
-        runOnServer.run(session -> {
-            RealmModel realm = session.getContext().getRealm();
-            session.sessions().removeUserSessions(realm);
-            UserModel user = session.users().getUserByUsername(realm, USER_LOGIN);
-            if (user != null) {
-                session.users().removeUser(realm, user);
-            }
-        });
+        List<UserRepresentation> users = consumerRealm.admin().users().search(USER_LOGIN, true);
+        for (UserRepresentation user : users) {
+            consumerRealm.admin().users().get(user.getId()).logout();
+            consumerRealm.admin().users().get(user.getId()).remove();
+        }
 
         runOnServer.run(removePostBrokerFlow(CONSUMER_REALM));
     }
@@ -189,25 +186,37 @@ public class KcSamlUserSessionLimitsBrokerTest {
         driver.cookies().deleteAll();
     }
 
+    private static ProtocolMapperRepresentation createSamlUserPropertyMapper(
+            String name, String userAttribute, String samlAttributeName, String friendlyName) {
+        ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
+        mapper.setName(name);
+        mapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+        mapper.setProtocolMapper(UserPropertyAttributeStatementMapper.PROVIDER_ID);
+        Map<String, String> config = mapper.getConfig();
+        config.put(ProtocolMapperUtils.USER_ATTRIBUTE, userAttribute);
+        config.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, samlAttributeName);
+        config.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, "urn:oasis:names:tc:SAML:2.0:attrname-format:uri");
+        config.put(AttributeStatementHelper.FRIENDLY_NAME, friendlyName);
+        return mapper;
+    }
+
     public static class ProviderRealmConfig implements RealmConfig {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
             realm.name(PROVIDER_REALM);
             realm.users(UserBuilder.create(USER_LOGIN)
+                    .name("Firstname", "Lastname")
                     .email(USER_EMAIL)
                     .emailVerified(true)
                     .password(USER_PASSWORD)
                     .enabled(true));
 
-            ProtocolMapperRepresentation emailMapper = new ProtocolMapperRepresentation();
-            emailMapper.setName("email");
-            emailMapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
-            emailMapper.setProtocolMapper(UserPropertyAttributeStatementMapper.PROVIDER_ID);
-            Map<String, String> emailMapperConfig = emailMapper.getConfig();
-            emailMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, "email");
-            emailMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, "urn:oid:1.2.840.113549.1.9.1");
-            emailMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, "urn:oasis:names:tc:SAML:2.0:attrname-format:uri");
-            emailMapperConfig.put(AttributeStatementHelper.FRIENDLY_NAME, "email");
+            ProtocolMapperRepresentation emailMapper = createSamlUserPropertyMapper(
+                    "email", "email", "urn:oid:1.2.840.113549.1.9.1", "email");
+            ProtocolMapperRepresentation firstNameMapper = createSamlUserPropertyMapper(
+                    "firstName", "firstName", "urn:oid:2.5.4.42", "givenName");
+            ProtocolMapperRepresentation lastNameMapper = createSamlUserPropertyMapper(
+                    "lastName", "lastName", "urn:oid:2.5.4.4", "sn");
 
             String samlClientId = "http://localhost:8080/realms/" + CONSUMER_REALM;
             realm.clients(ClientBuilder.create(samlClientId)
@@ -224,7 +233,7 @@ public class KcSamlUserSessionLimitsBrokerTest {
                     .attribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "false")
                     .attribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "false")
                     .attribute(SamlConfigAttributes.SAML_ENCRYPT, "false")
-                    .protocolMappers(emailMapper));
+                    .protocolMappers(emailMapper, firstNameMapper, lastNameMapper));
             return realm;
         }
     }

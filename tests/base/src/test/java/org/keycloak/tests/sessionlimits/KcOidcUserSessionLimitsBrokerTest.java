@@ -16,12 +16,13 @@
  */
 package org.keycloak.tests.sessionlimits;
 
+import java.util.List;
+
 import org.keycloak.authentication.authenticators.sessionlimits.UserSessionLimitsAuthenticatorFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
@@ -38,7 +39,6 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ErrorPage;
-import org.keycloak.testframework.ui.page.IdpReviewUserProfilePage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
@@ -87,22 +87,16 @@ public class KcOidcUserSessionLimitsBrokerTest {
     @InjectPage
     ErrorPage errorPage;
 
-    @InjectPage
-    IdpReviewUserProfilePage idpReviewUserProfilePage;
-
     @BeforeEach
     public void setup() {
         deleteAllCookies(consumerRealm);
         deleteAllCookies(providerRealm);
 
-        runOnServer.run(session -> {
-            RealmModel realm = session.getContext().getRealm();
-            session.sessions().removeUserSessions(realm);
-            UserModel user = session.users().getUserByUsername(realm, USER_LOGIN);
-            if (user != null) {
-                session.users().removeUser(realm, user);
-            }
-        });
+        List<UserRepresentation> users = consumerRealm.admin().users().search(USER_LOGIN, true);
+        for (UserRepresentation user : users) {
+            consumerRealm.admin().users().get(user.getId()).logout();
+            consumerRealm.admin().users().get(user.getId()).remove();
+        }
 
         runOnServer.run(removePostBrokerFlow(CONSUMER_REALM));
     }
@@ -165,8 +159,6 @@ public class KcOidcUserSessionLimitsBrokerTest {
 
     private void logInAsUserInIDPForFirstTime() {
         logInAsUserInIDP();
-        idpReviewUserProfilePage.assertCurrent();
-        idpReviewUserProfilePage.update("Firstname", "Lastname");
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
@@ -189,6 +181,7 @@ public class KcOidcUserSessionLimitsBrokerTest {
         public RealmBuilder configure(RealmBuilder realm) {
             realm.name(PROVIDER_REALM);
             realm.users(UserBuilder.create(USER_LOGIN)
+                    .name("Firstname", "Lastname")
                     .email(USER_EMAIL)
                     .emailVerified(true)
                     .password(USER_PASSWORD)
