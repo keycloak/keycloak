@@ -1,5 +1,6 @@
 package org.keycloak.models.mapper;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -20,6 +21,7 @@ public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> 
         BiConsumer<T, Object> repSetter;
         Function<ClientModel, Object> modelGetter;
         BiConsumer<ClientModel, Object> modelSetter;
+        boolean readOnly;
         
         void fromModel(ClientModel model, T rep) {
             if (repSetter != null && modelGetter != null) {
@@ -47,19 +49,25 @@ public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> 
     }
  
     final Map<String, MappedField<BaseClientRepresentation>> fields = new LinkedHashMap<String, MappedField<BaseClientRepresentation>>();
-    
-    protected <F> void addMapping(String name, Function<T, F> repGetter, BiConsumer<T, F> repSetter, Function<ClientModel, F> modelGetter, BiConsumer<ClientModel, F> modelSetter) {
+    private Set<String> writableFields;
+
+    public Set<String> getFieldNames() {
+        return Collections.unmodifiableSet(fields.keySet());
+    }
+
+    protected <F> MappedField<?> addMapping(String name, Function<T, F> repGetter, BiConsumer<T, F> repSetter, Function<ClientModel, F> modelGetter, BiConsumer<ClientModel, F> modelSetter) {
         MappedField prop = new MappedField<>();
         prop.repGetter = repGetter;
         prop.repSetter = repSetter;
         prop.modelGetter = modelGetter;
         prop.modelSetter = modelSetter;
         this.fields.put(name, prop);
+        return prop;
     }
         
     public BaseClientModelMapper() {
         this.addMapping("protocol", BaseClientRepresentation::getProtocol, BaseClientRepresentation::setProtocol, ClientModel::getProtocol, ClientModel::setProtocol);
-        this.addMapping("uuid", BaseClientRepresentation::getUuid, BaseClientRepresentation::setUuid, ClientModel::getId, null);
+        this.addMapping("uuid", BaseClientRepresentation::getUuid, BaseClientRepresentation::setUuid, ClientModel::getId, null).readOnly = true;
         this.addMapping("enabled", BaseClientRepresentation::getEnabled, BaseClientRepresentation::setEnabled, ClientModel::isEnabled, (model, enabled) -> model.setEnabled(Boolean.TRUE.equals(enabled)));
         this.addMapping("clientId", BaseClientRepresentation::getClientId, BaseClientRepresentation::setClientId, ClientModel::getClientId, ClientModel::setClientId);
         this.addMapping("description", BaseClientRepresentation::getDescription, BaseClientRepresentation::setDescription, ClientModel::getDescription, ClientModel::setDescription);
@@ -68,6 +76,8 @@ public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> 
         // TODO: consider built-in logic for copying collections
         this.addMapping("redirectUris", BaseClientRepresentation::getRedirectUris, BaseClientRepresentation::setRedirectUris, model -> new LinkedHashSet<>(model.getRedirectUris()), (model, uris) -> model.setRedirectUris(new LinkedHashSet<>(uris)));
         this.addMapping("roles", BaseClientRepresentation::getRoles, BaseClientRepresentation::setRoles, model -> model.getRolesStream().map(RoleModel::getName).collect(Collectors.toSet()), null);
+        this.addMapping("createdTimestamp", BaseClientRepresentation::getCreatedTimestamp, BaseClientRepresentation::setCreatedTimestamp, ClientModel::getCreatedTimestamp, null).readOnly = true;
+        this.addMapping("updatedTimestamp", BaseClientRepresentation::getUpdatedTimestamp, BaseClientRepresentation::setUpdatedTimestamp, ClientModel::getLastModifiedTimestamp, null).readOnly = true;
     }
     
     @Override
@@ -101,5 +111,15 @@ public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> 
     }
 
     protected abstract T createClientRepresentation();
+    
+    public Set<String> getWritableFields() {
+        if (writableFields == null) {
+            writableFields = fields.entrySet().stream()
+                    .filter(e -> !e.getValue().readOnly)
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toUnmodifiableSet());
+        }
+        return writableFields;
+    }
 
 }

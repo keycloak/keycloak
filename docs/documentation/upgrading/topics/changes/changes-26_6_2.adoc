@@ -68,6 +68,10 @@ Since this release, when this option is set up, the attestation is required to b
 
 See chapter link:{adminguide_link}#_webauthn-policy[Managing policy] in the {adminguide_name} for more information.
 
+=== Workflow schedule synchronization across cluster nodes
+
+A new cluster event was introduced to synchronize workflow scheduled settings across cluster nodes. You might see errors when updating workflow definitions during a rolling update when upgrading from 26.6.x. Defer updating workflow definitions until the rolling update has completed.
+
 === Required actions are one-time actions by default
 
 Since this release, all _Required Actions_ are now one-time actions by default to ensure they cannot be reused once completed. This change impacts the email action tokens created by the `execute-actions-email` endpoint, which is executed via the **Credential reset** button in the Admin console. Any action token generated through this endpoint (with whatever reset actions) is now strictly one-time use, ensuring that once a user completes the required steps, the token is immediately invalidated.

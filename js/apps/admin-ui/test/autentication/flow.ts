@@ -89,7 +89,7 @@ export async function goToWebAuthnTab(page: Page) {
 
 export async function goToCIBAPolicyTab(page: Page) {
   await goToPoliciesTab(page);
-  await page.getByTestId("tab-ciba-policy").click();
+  await page.getByTestId("cibaPolicy").click();
 }
 
 export async function addPolicy(page: Page, value: string) {

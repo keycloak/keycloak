@@ -32,6 +32,7 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
+import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
@@ -180,6 +181,7 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
         // Send Nonce Request
         //
         String nonce = wallet.nonceRequest().send().getNonce();
+        Proofs jwtProofs = wallet.generateJwtProofs(ctx, nonce, ecKey);
 
         // Send Credential Request
         //
@@ -187,7 +189,7 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
         CredentialResponse credResponse = wallet.credentialRequest(ctx, tokenType, accessToken)
                 .credentialIdentifier(credIdentifier)
                 .dpopProof(wallet.generateSignedDPoPProof(credentialEndpoint, ecKey, accessToken))
-                .proofs(wallet.generateJwtProof(ctx, ecKey, nonce))
+                .proofs(jwtProofs)
                 .send().getCredentialResponse();
 
         assertFalse(credResponse.getCredentials().isEmpty(), "No credential");

@@ -50,7 +50,6 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.federation.FailableHardcodedStorageProvider;
 import org.keycloak.testsuite.federation.FailableHardcodedStorageProviderFactory;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
@@ -87,9 +86,6 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected LoginPage loginPage;
-
-    @Page
-    protected AppPage appPage;
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -244,8 +240,6 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         loginPage.login(username, password);
         System.out.println(driver.getCurrentUrl());
         System.out.println(driver.getPageSource());
-        Assertions.assertTrue(appPage.isCurrent());
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         oauth.openLogoutForm();
     }

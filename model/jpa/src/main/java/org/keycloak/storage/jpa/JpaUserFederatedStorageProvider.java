@@ -43,6 +43,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
@@ -65,6 +66,7 @@ import org.keycloak.storage.jpa.entity.FederatedUserConsentClientScopeEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserConsentEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserCredentialEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserGroupMembershipEntity;
+import org.keycloak.storage.jpa.entity.FederatedUserIssuedVerifiableCredentialEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserRequiredActionEntity;
 import org.keycloak.storage.jpa.entity.FederatedUserRequiredActionEntity.Key;
 import org.keycloak.storage.jpa.entity.FederatedUserRoleMappingEntity;
@@ -868,6 +870,8 @@ public class JpaUserFederatedStorageProvider implements
                 .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteFederatedUsersByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
+        num = em.createNamedQuery("deleteFederatedIssuedVcsByRealm")
+                .setParameter("realmId", realm.getId()).executeUpdate();
         num = em.createNamedQuery("deleteFederatedVerifiableCredentialsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
     }
@@ -888,6 +892,7 @@ public class JpaUserFederatedStorageProvider implements
         if (clientStorageId.isLocal()) {
             em.createNamedQuery("deleteFederatedUserConsentClientScopesByClient").setParameter("clientId", client.getId()).executeUpdate();
             em.createNamedQuery("deleteFederatedUserConsentsByClient").setParameter("clientId", client.getId()).executeUpdate();
+            em.createNamedQuery("deleteFederatedIssuedVcsByClient").setParameter("clientId", client.getId()).executeUpdate();
         } else {
             em.createNamedQuery("deleteFederatedUserConsentClientScopesByExternalClient")
                     .setParameter("clientStorageProvider", clientStorageId.getProviderId())
@@ -897,7 +902,6 @@ public class JpaUserFederatedStorageProvider implements
                     .setParameter("clientStorageProvider", clientStorageId.getProviderId())
                     .setParameter("externalClientId",clientStorageId.getExternalId())
                     .executeUpdate();
-
         }
     }
 
@@ -909,6 +913,9 @@ public class JpaUserFederatedStorageProvider implements
     @Override
     public void preRemove(ClientScopeModel clientScope) {
         em.createNamedQuery("deleteFederatedUserConsentClientScopesByClientScope")
+                .setParameter("scopeId", clientScope.getId())
+                .executeUpdate();
+        em.createNamedQuery("deleteFederatedIssuedVcsByClientScope")
                 .setParameter("scopeId", clientScope.getId())
                 .executeUpdate();
         em.createNamedQuery("deleteFederatedVerifiableCredentialsByClientScope")
@@ -954,6 +961,10 @@ public class JpaUserFederatedStorageProvider implements
                 .setParameter("userId", user.getId())
                 .setParameter("realmId", realm.getId())
                 .executeUpdate();
+        em.createNamedQuery("deleteFederatedIssuedVcsByUser")
+                .setParameter("userId", user.getId())
+                .setParameter("realmId", realm.getId())
+                .executeUpdate();
         em.createNamedQuery("deleteFederatedVerifiableCredentialsByUser")
                 .setParameter("userId", user.getId())
                 .setParameter("realmId", realm.getId())
@@ -990,6 +1001,9 @@ public class JpaUserFederatedStorageProvider implements
                     .setParameter("storageProviderId", model.getId())
                     .executeUpdate();
             em.createNamedQuery("deleteFederatedUsersByStorageProvider")
+                    .setParameter("storageProviderId", model.getId())
+                    .executeUpdate();
+            em.createNamedQuery("deleteFederatedIssuedVcsByStorageProvider")
                     .setParameter("storageProviderId", model.getId())
                     .executeUpdate();
             em.createNamedQuery("deleteFederatedVerifiableCredentialsByStorageProvider")
@@ -1106,9 +1120,12 @@ public class JpaUserFederatedStorageProvider implements
                 .orElse(null);
 
         if (found == null) return false;
-
+        em.createNamedQuery("deleteFederatedIssuedVcsByUserAndType")
+                .setParameter("userId", userId)
+                .setParameter("realmId", found.getRealmId())
+                .setParameter("verifiableCredentialId", found.getId())
+                .executeUpdate();
         em.remove(found);
-        // No issued VC records to delete here (issued VCs are linked to USER_VER_CREDENTIAL/USER_ENTITY only).
         em.flush();
         return true;
     }
@@ -1132,5 +1149,81 @@ public class JpaUserFederatedStorageProvider implements
     public UserVerifiableCredentialModel getVerifiableCredentialById(String id) {
         FederatedUserVerifiableCredentialEntity entity = em.find(FederatedUserVerifiableCredentialEntity.class, id);
         return entity != null ? toModel(entity) : null;
+    }
+
+    @Override
+    public IssuedVerifiableCredentialModel addIssuedVerifiableCredential(IssuedVerifiableCredentialModel issuedVc) {
+        RealmModel realm = session.getContext().getRealm();
+        String userId = issuedVc.getUserId();
+        createIndex(realm, userId);
+
+        FederatedUserIssuedVerifiableCredentialEntity entity = new FederatedUserIssuedVerifiableCredentialEntity();
+        entity.setId(KeycloakModelUtils.generateId());
+        entity.setUserId(userId);
+        entity.setRealmId(realm.getId());
+        entity.setStorageProviderId(new StorageId(userId).getProviderId());
+        entity.setVerifiableCredentialId(issuedVc.getVerifiableCredentialId());
+        entity.setClientId(issuedVc.getClientId());
+
+        String revision;
+        if (issuedVc.getRevision() != null) {
+            revision = issuedVc.getRevision();
+        } else {
+            FederatedUserVerifiableCredentialEntity vcEntity = em.find(FederatedUserVerifiableCredentialEntity.class, issuedVc.getVerifiableCredentialId());
+            if (vcEntity == null) {
+                throw new ModelException("Verifiable credential not found: " + issuedVc.getVerifiableCredentialId());
+            }
+            revision = vcEntity.getRevision();
+        }
+        entity.setRevision(revision);
+
+        long issuedAt = issuedVc.getIssuedAt() == null ? Time.currentTimeMillis() : issuedVc.getIssuedAt();
+        entity.setIssuedAt(issuedAt);
+        entity.setExpiresAt(issuedVc.getExpiresAt());
+
+        em.persist(entity);
+        em.flush();
+
+        IssuedVerifiableCredentialModel result = toModel(entity);
+        return result;
+    }
+
+    @Override
+    public Stream<IssuedVerifiableCredentialModel> getIssuedVerifiableCredentialsStreamByUser(String userId) {
+        TypedQuery<FederatedUserIssuedVerifiableCredentialEntity> query = em.createNamedQuery("federatedIssuedVcsByUser", FederatedUserIssuedVerifiableCredentialEntity.class);
+        query.setParameter("userId", userId);
+        return closing(query.getResultStream()).map(this::toModel);
+    }
+
+    @Override
+    public boolean removeIssuedVerifiableCredential(String issuedCredentialId) {
+        FederatedUserIssuedVerifiableCredentialEntity entity =  em.find(FederatedUserIssuedVerifiableCredentialEntity.class, issuedCredentialId);
+        if (entity == null) return false;
+
+        em.remove(entity);
+        em.flush();
+        return true;
+    }
+
+    @Override
+    public void removeExpiredIssuedVerifiableCredentials() {
+        long currentTime = Time.currentTimeMillis();
+        int deletedCount = em.createNamedQuery("deleteExpiredFederatedIssuedVcs")
+                .setParameter("currentTime", currentTime)
+                .executeUpdate();
+        logger.debugf("Deleted %d expired federated issued verifiable credentials", deletedCount);
+    }
+
+    private IssuedVerifiableCredentialModel toModel(FederatedUserIssuedVerifiableCredentialEntity entity) {
+        IssuedVerifiableCredentialModel model = new IssuedVerifiableCredentialModel(
+                entity.getUserId(),
+                entity.getVerifiableCredentialId(),
+                entity.getClientId()
+        );
+        model.setId(entity.getId());
+        model.setRevision(entity.getRevision());
+        model.setIssuedAt(entity.getIssuedAt());
+        model.setExpiresAt(entity.getExpiresAt());
+        return model;
     }
 }

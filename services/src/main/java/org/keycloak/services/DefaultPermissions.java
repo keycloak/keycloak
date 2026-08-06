@@ -8,7 +8,6 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.Model;
 import org.keycloak.models.Permissions;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.resources.admin.AdminAuth;
@@ -21,6 +20,7 @@ import org.keycloak.services.resources.admin.fgap.UserPermissionEvaluator;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.REALMS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
+
 
 public class DefaultPermissions implements Permissions {
 
@@ -114,11 +114,13 @@ public class DefaultPermissions implements Permissions {
 
     @Override
     public boolean isAdminUser(UserModel user) {
-        RealmModel realm = context.getRealm();
-        var evaluator = AdminPermissions.evaluator(session, realm, realm, user);
-        return evaluator.isRealmAdmin()
-                || evaluator.hasOneAdminRole(AdminRoles.ALL_REALM_ROLES)
-                || evaluator.hasOneAdminRole(AdminRoles.IMPERSONATION);
+        // Direct role mappings (with composite resolution)
+        if (user.getRoleMappingsStream()
+                .anyMatch(AdminRoles::isAdminRoleOrComposite)) {
+            return true;
+        }
+        // Group-inherited roles
+        return user.getGroupsStream().anyMatch(AdminRoles::groupHasAdminRoles);
     }
 
     private AdminPermissionEvaluator getEvaluator(AccessToken accessToken) {

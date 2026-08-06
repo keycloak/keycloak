@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -71,7 +70,6 @@ import org.keycloak.userprofile.validator.UsernameMutationValidator;
 import org.keycloak.utils.StringUtil;
 import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.validators.EmailValidator;
-import org.keycloak.validate.validators.PatternValidator;
 
 import org.jspecify.annotations.NonNull;
 
@@ -457,8 +455,6 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         metadata.addAttribute(UserModel.LOCALE, -1, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled)
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
 
-        addAttributeUserDid(metadata);
-
         return metadata;
     }
 
@@ -530,8 +526,6 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
                 .setAttributeDisplayName("${termsAndConditionsUserAttribute}")
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
 
-        addAttributeUserDid(metadata);
-
         return metadata;
     }
 
@@ -540,8 +534,6 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
 
         defaultProfile.addAttribute(UserModel.LOCALE, -1, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled)
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
-
-        addAttributeUserDid(defaultProfile);
 
         return defaultProfile;
     }
@@ -619,20 +611,5 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         RealmModel realm = context1.getRealm();
 
         return UpdateEmail.isEnabled(realm);
-    }
-
-    private static boolean isVerifiableCredentialsEnabled(AttributeContext context) {
-        RealmModel realm = context.getSession().getContext().getRealm();
-        return realm.isVerifiableCredentialsEnabled();
-    }
-
-    private void addAttributeUserDid(UserProfileMetadata metadata) {
-        Predicate<AttributeContext> required = AttributeMetadata.ALWAYS_FALSE;
-        Predicate<AttributeContext> selector = DeclarativeUserProfileProviderFactory::isVerifiableCredentialsEnabled;
-        Predicate<AttributeContext> readWriteAllowed = DeclarativeUserProfileProviderFactory::isVerifiableCredentialsEnabled;
-        AttributeValidatorMetadata validatorMetadata = new AttributeValidatorMetadata(PatternValidator.ID, new ValidatorConfig(Map.of(
-                "pattern", "^(did:[a-z0-9]+:.+)?$", // simplified pattern
-                "error-message", "Value must start with 'did:scheme:'")));
-        metadata.addAttribute(UserModel.DID, 10, List.of(validatorMetadata), selector, readWriteAllowed, required, readWriteAllowed).setAttributeDisplayName("${did}");
     }
 }

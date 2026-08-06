@@ -31,13 +31,13 @@ If it shows, the shutdown was graceful.
 INFO  [io.quarkus] (Shutdown thread) Keycloak stopped in ...s
 ----
 
-See the <@links.server id="container" anchor="custom-entrypoint-shell-scripts" /> {section} for details for possible causes when it does not show.
+See the <@links.server id="containers" anchor="custom-entrypoint-shell-scripts" /> {section} for details on possible causes when it does not show.
 
 === Verify the readiness probe in the load balancer
 
 Your load balancer should honor the {project_name} readiness probe to stop forwarding traffic to nodes shutting down.
 
-See <@links.server id="health" /> and <@links.server id="reverseproxy" /> {sections} for details.
+See <@links.observability id="health" /> and <@links.server id="reverseproxy" /> {sections} for details.
 
 == Supported Update Strategies
 

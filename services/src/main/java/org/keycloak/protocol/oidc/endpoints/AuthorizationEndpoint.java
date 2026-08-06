@@ -401,11 +401,12 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         }
     }
 
-    private Response buildAuthorizationCodeAuthorizationResponse(String requestUriParam) {
+    private Response buildAuthorizationCodeAuthorizationResponse(String requestUri) {
         this.event.event(EventType.LOGIN);
         authenticationSession.setAuthNote(Details.AUTH_TYPE, CODE_AUTH_TYPE);
+        authenticationSession.setAuthNote(Constants.AUTHORIZATION_REQUEST_URI, requestUri);
 
-        RequestUriType requestUriType = Optional.ofNullable(requestUriParam)
+        RequestUriType requestUriType = Optional.ofNullable(requestUri)
                 .map(AuthorizationEndpointRequestParserProcessor::getRequestUriType)
                 .orElse(null);
 

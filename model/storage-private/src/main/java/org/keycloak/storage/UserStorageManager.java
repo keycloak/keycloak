@@ -992,7 +992,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (StorageId.isLocalStorage(issuedVc.getUserId())) {
             return localStorage().addIssuedVerifiableCredential(issuedVc);
         } else {
-            throw new UnsupportedOperationException("Issued verifiable credential operations not yet supported on federated users");
+            return getFederatedStorage().addIssuedVerifiableCredential(issuedVc);
         }
     }
 
@@ -1001,22 +1001,25 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (StorageId.isLocalStorage(userId)) {
             return localStorage().getIssuedVerifiableCredentialsStreamByUser(userId);
         } else {
-            throw new UnsupportedOperationException("Issued verifiable credential operations not yet supported on federated users");
+            return getFederatedStorage().getIssuedVerifiableCredentialsStreamByUser(userId);
         }
     }
 
     @Override
     public boolean removeIssuedVerifiableCredential(String credentialId) {
-        if (StorageId.isLocalStorage(credentialId)) {
-            return localStorage().removeIssuedVerifiableCredential(credentialId);
-        } else {
-            throw new UnsupportedOperationException("Issued verifiable credential operations not yet supported on federated users");
+        if (localStorage().removeIssuedVerifiableCredential(credentialId)) {
+            return true;
         }
+        if (getFederatedStorage() != null) {
+            return getFederatedStorage().removeIssuedVerifiableCredential(credentialId);
+        }
+        return false;
     }
 
     @Override
     public void removeExpiredIssuedVerifiableCredentials() {
         localStorage().removeExpiredIssuedVerifiableCredentials();
+        if (getFederatedStorage() != null) getFederatedStorage().removeExpiredIssuedVerifiableCredentials();
     }
 
     @Override

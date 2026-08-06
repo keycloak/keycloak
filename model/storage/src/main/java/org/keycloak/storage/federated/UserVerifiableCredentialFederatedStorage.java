@@ -18,6 +18,7 @@ package org.keycloak.storage.federated;
 
 import java.util.stream.Stream;
 
+import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.UserVerifiableCredentialModel;
 
 public interface UserVerifiableCredentialFederatedStorage {
@@ -73,5 +74,34 @@ public interface UserVerifiableCredentialFederatedStorage {
      * @return the verifiable credential model, or {@code null} if not found
      */
     UserVerifiableCredentialModel getVerifiableCredentialById(String id);
+
+    /**
+     * Adds an issued verifiable credential for a federated user.
+     *
+     * @param issuedVc the issued verifiable credential to add
+     * @return the added issued credential with generated fields populated
+     */
+    IssuedVerifiableCredentialModel addIssuedVerifiableCredential(IssuedVerifiableCredentialModel issuedVc);
+
+    /**
+     * Gets all issued verifiable credentials for a federated user.
+     *
+     * @param userId the federated user ID
+     * @return stream of issued verifiable credentials
+     */
+    Stream<IssuedVerifiableCredentialModel> getIssuedVerifiableCredentialsStreamByUser(String userId);
+
+    /**
+     * Remove an issued verifiable credential by its ID.
+     *
+     * @param issuedCredentialId the ID of the issued verifiable credential to remove
+     * @return true if removed, false if not found
+     */
+    boolean removeIssuedVerifiableCredential(String issuedCredentialId);
+
+    /**
+     *  Remove expired issued verifiable credentials for all users.
+     */
+    void removeExpiredIssuedVerifiableCredentials();
 
 }

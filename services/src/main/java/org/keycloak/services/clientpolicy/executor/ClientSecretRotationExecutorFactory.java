@@ -22,16 +22,13 @@ public class ClientSecretRotationExecutorFactory implements ClientPolicyExecutor
     public static final String PROVIDER_ID = "secret-rotation";
 
     public static final String SECRET_EXPIRATION_PERIOD = "expiration-period";
-    public static final Integer DEFAULT_SECRET_EXPIRATION_PERIOD = Long.valueOf(
-        TimeUnit.DAYS.toSeconds(29)).intValue();
+    public static final Long DEFAULT_SECRET_EXPIRATION_PERIOD = TimeUnit.DAYS.toSeconds(29);
 
     public static final String SECRET_REMAINING_ROTATION_PERIOD = "remaining-rotation-period";
-    public static final Integer DEFAULT_SECRET_REMAINING_ROTATION_PERIOD = Long.valueOf(
-        TimeUnit.DAYS.toSeconds(10)).intValue();
+    public static final Long DEFAULT_SECRET_REMAINING_ROTATION_PERIOD = TimeUnit.DAYS.toSeconds(10);
 
     public static final String SECRET_ROTATED_EXPIRATION_PERIOD = "rotated-expiration-period";
-    public static final Integer DEFAULT_SECRET_ROTATED_EXPIRATION_PERIOD = Long.valueOf(
-        TimeUnit.DAYS.toSeconds(2)).intValue();
+    public static final Long DEFAULT_SECRET_ROTATED_EXPIRATION_PERIOD = TimeUnit.DAYS.toSeconds(2);
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     static {

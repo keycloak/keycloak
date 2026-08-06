@@ -20,7 +20,7 @@ package org.keycloak.representations;
 import java.util.Map;
 
 import org.keycloak.TokenCategory;
-import org.keycloak.util.JsonSerialization;
+import org.keycloak.json.KeycloakJsonMapperFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -61,6 +61,10 @@ public class IDToken extends JsonWebToken {
     // Financial API - Part 2: Read and Write API Security Profile
     // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
     public static final String S_HASH = "s_hash";
+
+    // RFC 8693 - OAuth 2.0 Token Exchange
+    public static final String MAY_ACT = "may_act";
+    public static final String ACT = "act";
 
     // NOTE!!!  WE used to use @JsonUnwrapped on a UserClaimSet object.  This screws up otherClaims and the won't work
     // anymore.  So don't have any @JsonUnwrapped!
@@ -341,12 +345,12 @@ public class IDToken extends JsonWebToken {
             return null;
         }
 
-        return JsonSerialization.mapper.convertValue(value, AddressClaimSet.class);
+        return KeycloakJsonMapperFactory.mapper().convertValue(value, AddressClaimSet.class);
     }
 
     @JsonIgnore
     public void setAddress(AddressClaimSet address) {
-        getOtherClaims().put(ADDRESS, JsonSerialization.mapper.convertValue(address, Map.class));
+        getOtherClaims().put(ADDRESS, KeycloakJsonMapperFactory.mapper().convertValue(address, Map.class));
     }
 
     @JsonIgnore

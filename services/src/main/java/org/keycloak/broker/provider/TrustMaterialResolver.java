@@ -57,6 +57,18 @@ public class TrustMaterialResolver {
         return resolveKeys(session, aliases, request).findFirst();
     }
 
+    public Stream<X509TrustMaterial> resolveX509Trust(KeycloakSession session, String aliases,
+                                                      TrustMaterialRequest request) {
+        if (Strings.isEmpty(aliases)) {
+            return Stream.empty();
+        }
+
+        return splitAliases(aliases).stream()
+                .map(alias -> resolveProvider(session, alias))
+                .flatMap(Optional::stream)
+                .flatMap(provider -> provider.resolveX509Trust(request));
+    }
+
     private Optional<TrustMaterialIdentityProvider<?>> resolveProvider(KeycloakSession session, String alias) {
         IdentityProviderModel model = session.identityProviders().getByAlias(alias);
         if (model == null || !model.isEnabled()) {

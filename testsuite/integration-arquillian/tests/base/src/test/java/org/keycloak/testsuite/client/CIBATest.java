@@ -2684,7 +2684,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 clientResource.update(clientRep);
             }
             // Re-enable user if permanently locked (permanent lockout disables the account)
-            List<UserRepresentation> users = managedRealm.admin().users().search("nutzername-gelb");
+            List<UserRepresentation> users = managedRealm.admin().users().search("nutzername-schwarz");
             if (!users.isEmpty()) {
                 UserRepresentation userToRestore = users.get(0);
                 userToRestore.setEnabled(true);

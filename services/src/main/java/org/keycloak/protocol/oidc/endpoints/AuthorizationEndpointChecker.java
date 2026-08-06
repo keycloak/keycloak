@@ -445,10 +445,6 @@ public class AuthorizationEndpointChecker {
                 event.error(Errors.INVALID_REQUEST);
                 throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
             }
-        } else {
-            // https://tools.ietf.org/html/rfc7636#section-4.3
-            // default code_challenge_method is plane
-            codeChallengeMethod = OIDCLoginProtocol.PKCE_METHOD_PLAIN;
         }
 
         if (!isValidPkceCodeChallenge(codeChallenge)) {

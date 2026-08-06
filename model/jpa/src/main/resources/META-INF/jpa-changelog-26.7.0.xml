@@ -311,6 +311,59 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.7.0-federated-issued-ver-credential">
+        <createTable tableName="FED_ISSUED_VER_CREDENTIAL">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_FED_ISSUED_VER_CREDENTIAL"/>
+            </column>
+            <column name="USER_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STORAGE_PROVIDER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VER_CREDENTIAL_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ISSUED_AT" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="EXPIRES_AT" type="BIGINT"/>
+            <column name="CLIENT_ID" type="VARCHAR(36)"/>
+            <column name="REVISION" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseColumnNames="VER_CREDENTIAL_ID"
+                                 baseTableName="FED_ISSUED_VER_CREDENTIAL"
+                                 constraintName="FK_FED_ISSUED_VC_VER_CRED"
+                                 referencedColumnNames="ID"
+                                 referencedTableName="FED_USER_VER_CREDENTIAL"/>
+
+        <createIndex tableName="FED_ISSUED_VER_CREDENTIAL" indexName="IDX_FED_ISSUED_VC_USER">
+            <column name="USER_ID"/>
+            <column name="REALM_ID"/>
+            <column name="ISSUED_AT"/>
+        </createIndex>
+
+        <createIndex tableName="FED_ISSUED_VER_CREDENTIAL" indexName="IDX_FED_ISSUED_VC_EXPIRES">
+            <column name="EXPIRES_AT"/>
+        </createIndex>
+
+        <createIndex tableName="FED_ISSUED_VER_CREDENTIAL" indexName="IDX_FED_ISSUED_VC_CRED_ID">
+            <column name="VER_CREDENTIAL_ID"/>
+        </createIndex>
+
+        <createIndex tableName="FED_ISSUED_VER_CREDENTIAL" indexName="IDX_FED_ISSUED_VC_STORAGE">
+            <column name="STORAGE_PROVIDER_ID"/>
+        </createIndex>
+
+    </changeSet>
+
     <changeSet author="keycloak" id="26.7.0-persistent-auth-session-root-table">
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <not>
@@ -421,6 +474,28 @@
         <createIndex tableName="LOGIN_FAILURE" indexName="IDX_LOGIN_FAILURE_EXPIRE">
             <column name="LAST_FAILURE"/>
         </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-add-timestamps-client">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <columnExists tableName="CLIENT" columnName="CREATED_TIMESTAMP"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="CLIENT">
+            <column name="CREATED_TIMESTAMP" type="BIGINT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-add-last-modified-timestamp-client">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <columnExists tableName="CLIENT" columnName="LAST_MODIFIED_TIMESTAMP"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="CLIENT">
+            <column name="LAST_MODIFIED_TIMESTAMP" type="BIGINT"/>
+        </addColumn>
     </changeSet>
 
     <changeSet author="keycloak" id="26.7.0-cluster-event">

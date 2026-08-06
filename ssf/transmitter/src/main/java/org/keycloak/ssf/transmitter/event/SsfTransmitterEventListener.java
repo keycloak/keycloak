@@ -200,7 +200,10 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
             return;
         }
 
-        if (!Boolean.parseBoolean(client.getAttribute(ClientStreamStore.SSF_ENABLED_KEY))) {
+        // Skip when the receiver is unconfigured or its client is disabled —
+        // no point tagging a user to receive events for a receiver that is
+        // off the air.
+        if (!SsfUtil.isReceiverEnabled(client)) {
             return;
         }
         if (!Boolean.parseBoolean(client.getAttribute(ClientStreamStore.SSF_AUTO_NOTIFY_ON_LOGIN_KEY))) {

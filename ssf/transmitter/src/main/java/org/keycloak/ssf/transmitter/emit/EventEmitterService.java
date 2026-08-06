@@ -20,12 +20,12 @@ import org.keycloak.ssf.subject.ComplexSubjectId;
 import org.keycloak.ssf.subject.OpaqueSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
 import org.keycloak.ssf.subject.SubjectUserLookup;
-import org.keycloak.ssf.transmitter.SsfTransmitter;
 import org.keycloak.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.ssf.transmitter.subject.SsfSubjectInclusionResolver;
+import org.keycloak.ssf.transmitter.support.SsfUtil;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;
@@ -106,9 +106,16 @@ public class EventEmitterService {
         // routes through the same gate, so a request targeting a
         // non-SSF client surfaces this as a 500 with the message —
         // intentional: the caller's configuration is wrong.
-        if (!isSsfReceiverClient(receiverClient)) {
+        if (!SsfUtil.isReceiverClient(receiverClient)) {
             throw new SsfException("Client '" + receiverClient.getClientId()
                     + "' is not an SSF Receiver");
+        }
+        // A disabled receiver keeps its stream config but is off the air —
+        // mirror the dispatch-path gate (SsfUtil#isReceiverEnabled)
+        // so synthetic emit doesn't deliver to a client the operator has
+        // switched off. Re-enabling the client resumes delivery
+        if (!receiverClient.isEnabled()) {
+            return EmitEventResult.dropped(EmitEventStatus.RECEIVER_DISABLED);
         }
         if (eventTypeAliasOrUri == null || eventTypeAliasOrUri.isBlank()) {
             return EmitEventResult.dropped(EmitEventStatus.INVALID_REQUEST);
@@ -271,13 +278,6 @@ public class EventEmitterService {
             org = orgProvider.getById(opaque.getId());
         }
         return org;
-    }
-
-    protected boolean isSsfReceiverClient(ClientModel client) {
-        // Delegates to the public helper so anyone (REST callers,
-        // extensions, tests) shares one definition of "is this client
-        // an SSF Receiver."
-        return SsfTransmitter.isReceiverClient(client);
     }
 
     protected boolean isStreamEvent(String eventTypeUri) {

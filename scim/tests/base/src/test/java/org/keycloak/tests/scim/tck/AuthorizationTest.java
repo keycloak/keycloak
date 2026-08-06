@@ -91,7 +91,11 @@ public class AuthorizationTest extends AbstractScimTest {
     @Test
     public void testUsersCanQueryIfQueryRoleGranted() {
         grantAdminRole(AdminRoles.QUERY_USERS);
-        assertEquals(1, noAccessClient.users().search("").getTotalResults());
+        ListResponse<User> response = noAccessClient.users().search("");
+        assertEquals(1, response.getTotalResults());
+        assertNotNull(response.getResources(), "Resources array should not be null");
+        assertEquals(1, response.getResources().size(), "Resources size should match totalResults");
+        assertEquals(1, response.getItemsPerPage(), "itemsPerPage should match resources size");
     }
 
     @Test
@@ -211,7 +215,11 @@ public class AuthorizationTest extends AbstractScimTest {
     public void testGroupsCanQueryIfQueryRoleGranted() {
         createGroup();
         grantAdminRole(AdminRoles.QUERY_GROUPS);
-        assertEquals(1, noAccessClient.groups().getAll("").getTotalResults());
+        ListResponse<Group> response = noAccessClient.groups().getAll("");
+        assertEquals(1, response.getTotalResults());
+        assertNotNull(response.getResources(), "Resources array should not be null");
+        assertEquals(1, response.getResources().size(), "Resources size should match totalResults");
+        assertEquals(1, response.getItemsPerPage(), "itemsPerPage should match resources size");
     }
 
     @Test
@@ -958,6 +966,88 @@ public class AuthorizationTest extends AbstractScimTest {
         assertAccessDenied(() -> publicScimClient.groups().getAll(""));
         assertAccessDenied(() -> publicScimClient.resourceTypes().getAll());
         assertAccessDenied(() -> publicScimClient.schemas().getAll());
+    }
+
+    @Test
+    public void testSubRealmAdminTreatedAsAdminInMasterRealm() {
+        RealmRepresentation masterRep = adminClient.realm("master").toRepresentation();
+        boolean wasScimEnabled = Boolean.TRUE.equals(masterRep.isScimApiEnabled());
+        if (!wasScimEnabled) {
+            masterRep.setScimApiEnabled(true);
+            adminClient.realm("master").update(masterRep);
+        }
+
+        try {
+            ClientRepresentation scimMasterClient = createScimClient("master", "scim-master-client");
+
+            try {
+                ClientRepresentation masterRealmMgmt = adminClient.realm("master").clients()
+                        .findByClientId("master-realm").get(0);
+                UserRepresentation scimServiceAccount = adminClient.realm("master").clients()
+                        .get(scimMasterClient.getId()).getServiceAccountUser();
+                RoleRepresentation manageUsersRole = adminClient.realm("master").clients()
+                        .get(masterRealmMgmt.getId()).roles().get(AdminRoles.MANAGE_USERS).toRepresentation();
+                adminClient.realm("master").users().get(scimServiceAccount.getId())
+                        .roles().clientLevel(masterRealmMgmt.getId()).add(List.of(manageUsersRole));
+
+                UserRepresentation subRealmAdmin = UserBuilder.create()
+                        .username("sub-realm-admin-user")
+                        .firstName("Sub")
+                        .lastName("Admin")
+                        .email("sub-realm-admin@keycloak.org")
+                        .enabled(true)
+                        .build();
+                try (Response response = adminClient.realm("master").users().create(subRealmAdmin)) {
+                    subRealmAdmin.setId(ApiUtil.getCreatedId(response));
+                }
+
+                try {
+                    String subRealmAdminClientId = realm.getName() + AdminRoles.APP_SUFFIX;
+                    List<ClientRepresentation> subRealmClients = adminClient.realm("master").clients()
+                            .findByClientId(subRealmAdminClientId);
+                    assertEquals(1, subRealmClients.size(),
+                            "Expected " + subRealmAdminClientId + " client in master realm");
+                    ClientRepresentation subRealmClient = subRealmClients.get(0);
+
+                    RoleRepresentation subRealmManageUsers = adminClient.realm("master").clients()
+                            .get(subRealmClient.getId()).roles().get(AdminRoles.MANAGE_USERS).toRepresentation();
+                    adminClient.realm("master").users().get(subRealmAdmin.getId())
+                            .roles().clientLevel(subRealmClient.getId()).add(List.of(subRealmManageUsers));
+
+                    String tokenEndpoint = keycloakUrls.getToken("master");
+                    ScimClient masterScimClient = ScimClient.create(httpClient)
+                            .withBaseUrl(keycloakUrls.getBase() + "/realms/master")
+                            .withAuthorization((http, request) -> {
+                                try {
+                                    AccessTokenResponse tokenResponse = http.doPost(tokenEndpoint)
+                                            .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS)
+                                            .param(OAuth2Constants.CLIENT_ID, "scim-master-client")
+                                            .param(OAuth2Constants.CLIENT_SECRET, "secret")
+                                            .asJson(AccessTokenResponse.class);
+                                    request.header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenResponse.getToken());
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            })
+                            .build();
+
+                    User scimUser = masterScimClient.users().get(subRealmAdmin.getId());
+                    assertNotNull(scimUser);
+                    assertEquals(subRealmAdmin.getUsername(), scimUser.getUserName());
+                    assertNull(scimUser.getFirstName());
+                    assertNull(scimUser.getActive());
+                } finally {
+                    adminClient.realm("master").users().get(subRealmAdmin.getId()).remove();
+                }
+            } finally {
+                adminClient.realm("master").clients().get(scimMasterClient.getId()).remove();
+            }
+        } finally {
+            if (!wasScimEnabled) {
+                masterRep.setScimApiEnabled(false);
+                adminClient.realm("master").update(masterRep);
+            }
+        }
     }
 
     private ClientRepresentation getScimClient() {

@@ -416,7 +416,6 @@ public class DenylistPasswordPolicyProviderFactory implements PasswordPolicyProv
 
         /**
          * Fast path: deserialise a pre-computed Bloom filter binary (.bloom).
-         * Emits a warning when the stored false-positive probability differs from the configured value.
          *
          * @return the deserialised {@link BloomFilter}
          * @throws IOException if the binary file cannot be read
@@ -431,13 +430,8 @@ public class DenylistPasswordPolicyProviderFactory implements PasswordPolicyProv
                     filter = BloomFilter.readFrom(in, Funnels.stringFunnel(StandardCharsets.UTF_8));
                 }
                 long loadTimeMillis = System.currentTimeMillis() - loadStartMillis;
-                LOG.infof("Loading pre-computed denylist finished: name=%s path=%s expectedFpp=%s loadTime=%dms",
-                        name, path, filter.expectedFpp(), loadTimeMillis);
-                if (Math.abs(filter.expectedFpp() - falsePositiveProbability) > 1e-9) {
-                    LOG.warnf("Pre-computed denylist '%s' has fpp=%.6f but configured fpp=%.6f. "
-                            + "Regenerate the .bloom file with 'kc.sh tools build-password-denylist' if this is unintended.",
-                            name, filter.expectedFpp(), falsePositiveProbability);
-                }
+                LOG.infof("Loading pre-computed denylist finished: name=%s path=%s loadTime=%dms",
+                        name, path, loadTimeMillis);
                 return filter;
             } catch (IOException e) {
                 throw new RuntimeException("Loading pre-computed denylist failed: path=" + path, e);

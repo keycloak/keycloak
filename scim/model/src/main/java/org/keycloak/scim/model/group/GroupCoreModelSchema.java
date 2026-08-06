@@ -216,6 +216,9 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
     }
 
     private void checkRequireManageGroupMembership(Permissions permissions, UserModel model) {
+        if (permissions.isAdminUser(model)) {
+            throw new ForbiddenException();
+        }
         if (!permissions.hasPermission(model, AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP)) {
             throw new ForbiddenException();
         }

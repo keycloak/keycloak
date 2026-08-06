@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>keycloak-integration-parent</artifactId>
+        <groupId>org.keycloak</groupId>
+        <version>999.0.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>keycloak-admin-client-jackson3</artifactId>
+    <name>Keycloak Admin REST Client (Jackson 3)</name>
+    <description>Jackson 3 provider for the Keycloak Admin REST Client. Use this instead of org.keycloak:keycloak-admin-client when your application uses Jackson 3</description>
+
+    <properties>
+        <maven.compiler.release>17</maven.compiler.release>
+        <version.tools.jackson>3.1.4</version.tools.jackson>
+        <version.resteasy.jackson.provider>1.0.0.Alpha1</version.resteasy.jackson.provider>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-client-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${version.tools.jackson}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.resteasy.providers</groupId>
+            <artifactId>resteasy-jackson-provider</artifactId>
+            <version>${version.resteasy.jackson.provider}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-client</artifactId>
+            <version>${resteasy.version}</version>
+        </dependency>
+    </dependencies>
+
+</project>

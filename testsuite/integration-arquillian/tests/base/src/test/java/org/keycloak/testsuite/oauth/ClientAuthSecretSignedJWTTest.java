@@ -380,7 +380,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
 
         // https://tools.ietf.org/html/rfc6749#section-5.2
         assertEquals(400, response.getStatusCode());
-        assertEquals("unauthorized_client", response.getError());
+        assertEquals("invalid_client", response.getError());
     }
 
     @Test
@@ -560,7 +560,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
 
     @NotNull
     private ClientSecretRotationExecutor.Configuration getClientProfileConfiguration(
-            int expirationPeriod, int rotatedExpirationPeriod, int remainExpirationPeriod) {
+            long expirationPeriod, long rotatedExpirationPeriod, long remainExpirationPeriod) {
         ClientSecretRotationExecutor.Configuration profileConfig = new ClientSecretRotationExecutor.Configuration();
         profileConfig.setExpirationPeriod(expirationPeriod);
         profileConfig.setRotatedExpirationPeriod(rotatedExpirationPeriod);

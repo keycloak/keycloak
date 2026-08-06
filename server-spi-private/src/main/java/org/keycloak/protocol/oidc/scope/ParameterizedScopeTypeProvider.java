@@ -18,10 +18,22 @@ import org.keycloak.provider.ProviderFactory;
  */
 public interface ParameterizedScopeTypeProvider extends Provider, ProviderFactory<ParameterizedScopeTypeProvider> {
 
+    int MAX_PARAMETER_LENGTH = 255;
+
     /**
      * @return the unique type name, also used as the provider ID
      */
     String getTypeName();
+
+    /**
+     * Whether this scope type allows the same parameterized scope to appear multiple times
+     * in a single request with different parameter values (e.g., {@code scope:val1 scope:val2}).
+     *
+     * @return {@code true} if multiple parameter values are allowed, {@code false} otherwise
+     */
+    default boolean isRepeatable() {
+        return true;
+    }
 
     /**
      * Validates the captured parameter value at request time (no authenticated user yet).
@@ -36,7 +48,8 @@ public interface ParameterizedScopeTypeProvider extends Provider, ProviderFactor
 
     /**
      * Validates the parameter when the authenticated user is known (code-to-token, refresh, token exchange).
-     * Use for authorization checks such as whether the user can act on the given parameter value.
+     * Use for authorization checks when the user is known after authorization. Default implementation
+     * is the same than the non-user variant.
      *
      * @param currentUser the authenticated user, never {@code null}
      * @param scope the client scope model, never {@code null}
@@ -44,6 +57,7 @@ public interface ParameterizedScopeTypeProvider extends Provider, ProviderFactor
      * @throws InvalidScopeParameterException if the parameter is invalid for the given user
      */
     default void validateParameterWithUser(@Nonnull UserModel currentUser, @Nonnull ClientScopeModel scope, @Nonnull String parameter) throws InvalidScopeParameterException {
+        validateParameter(scope, parameter);
     }
 
     @Override

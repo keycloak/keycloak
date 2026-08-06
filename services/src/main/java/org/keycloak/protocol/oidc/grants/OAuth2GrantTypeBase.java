@@ -219,7 +219,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         }
     }
 
-    protected void updateClientSession(AuthenticatedClientSessionModel clientSession) {
+    public void updateClientSession(AuthenticatedClientSessionModel clientSession) {
 
         if(clientSession == null) {
             ServicesLogger.LOGGER.clientSessionNull();
@@ -256,7 +256,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         }
     }
 
-    protected void updateUserSessionFromClientAuth(UserSessionModel userSession) {
+    public void updateUserSessionFromClientAuth(UserSessionModel userSession) {
         for (Map.Entry<String, String> attr : clientAuthAttributes.entrySet()) {
             userSession.setNote(attr.getKey(), attr.getValue());
         }

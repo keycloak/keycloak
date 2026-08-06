@@ -75,13 +75,14 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
         assumeTrue("Since the JS engine in real browser does check the expiration regularly in all tabs, this test only works with HtmlUnit", driver instanceof HtmlUnitDriver);
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             oauth.client("broker-app");
-            loginPage.open(bc.consumerRealmName());
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
             getLogger().infof("URL in tab 1: %s", driver.getCurrentUrl());
 
             // Open new tab 2
             tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
-            Assertions.assertTrue(loginPage.isCurrent("consumer"));
+            loginPage.assertCurrent();
             getLogger().infof("URL in tab2: %s", driver.getCurrentUrl());
 
             timeOffSet.set(7200000);
@@ -96,7 +97,7 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
             Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
                     "We must be on consumer realm right now");
             updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             // Go back to tab1 and click "login with IDP". Should be ideally logged-in automatically
             tabUtil.closeTab(1);
@@ -115,13 +116,14 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             // Open login page in tab1 and click "login with IDP"
             oauth.client("broker-app");
-            loginPage.open(bc.consumerRealmName());
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
             loginPage.clickSocial(bc.getIDPAlias());
 
             // Open login page in tab 2
             tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
-            Assertions.assertTrue(loginPage.isCurrent("consumer"));
+            loginPage.assertCurrent();
             getLogger().infof("URL in tab2: %s", driver.getCurrentUrl());
 
             timeOffSet.set(7200000);
@@ -136,7 +138,7 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
             Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
                     "We must be on consumer realm right now");
             updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             events.clear();
 
             // Login in provider realm will redirect back to consumer with "authentication_expired" error.
@@ -190,13 +192,14 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             // Open login page in tab1 and click "login with IDP"
             oauth.client("broker-app");
-            loginPage.open(bc.consumerRealmName());
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
             loginPage.clickSocial(bc.getIDPAlias());
 
             // Open login page in tab 2
             tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
-            Assertions.assertTrue(loginPage.isCurrent("consumer"));
+            loginPage.assertCurrent();
             getLogger().infof("URL in tab2: %s", driver.getCurrentUrl());
 
             timeOffSet.set(7200000);
@@ -211,7 +214,7 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
             Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
                     "We must be on consumer realm right now");
             updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             events.clear();
 
             // Login in provider realm will redirect back to consumer with "authentication_expired" error.
@@ -244,8 +247,8 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
                     .details(Details.REDIRECTED_TO_CLIENT, "false");
 
             // Being on "You are already logged-in" now. No way to redirect to client due "clientData" are null in "state" of OIDC IDP as OIDC IDP requires short state parameter
-            loginPage.assertCurrent("consumer");
-            Assertions.assertEquals("You are already logged in.", loginPage.getInstruction());
+            infoPage.assertCurrent();
+            Assertions.assertEquals("You are already logged in.", infoPage.getInfo());
         } finally {
             // Revert config
             idpRep.getConfig().put(OAuth2IdentityProviderConfig.REQUIRES_SHORT_STATE_PARAMETER, "false");
@@ -265,13 +268,14 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
         ) {
             // Open login page in tab1 and click "login with IDP"
             oauth.client("broker-app");
-            loginPage.open(bc.consumerRealmName());
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
             loginPage.clickSocial(bc.getIDPAlias());
 
             // Open login page in tab 2
             tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
-            Assertions.assertTrue(loginPage.isCurrent("consumer"));
+            loginPage.assertCurrent();
             getLogger().infof("URL in tab2: %s", driver.getCurrentUrl());
 
             timeOffSet.set(3600);
@@ -284,7 +288,7 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
             Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
                     "We must be on consumer realm right now");
             updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             events.clear();
 
             // Login in provider realm will redirect back to consumer with "authentication_expired" error. That one will handle the "authentication_expired" error and redirect back to "provider"
@@ -338,16 +342,16 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
                     .details(Details.IDENTITY_PROVIDER, bc.getIDPAlias()).getEvent();
 
             // Being redirected back to consumer and then back to client right away. Authentication session on "consumer" realm is still valid, so no error here.
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
             Assertions.assertNotNull(authzResponse.getCode());
             Assertions.assertNull(authzResponse.getError());
         }
     }
 
-    // Assert browser was redirected to the appPage with "error=temporarily_unavailable" and error_description corresponding to Constants.AUTHENTICATION_EXPIRED_MESSAGE
+    // Assert browser was redirected to the test app with "error=temporarily_unavailable" and error_description corresponding to Constants.AUTHENTICATION_EXPIRED_MESSAGE
     private void assertOnAppPageWithAlreadyLoggedInError() {
-        appPage.assertCurrent(); // Page "You are already logged in." should not be here
+        Assertions.assertTrue(oauth.parseLoginResponse().isError());
         AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
         Assertions.assertEquals(OAuthErrorException.TEMPORARILY_UNAVAILABLE, authzResponse.getError());
         Assertions.assertEquals(Constants.AUTHENTICATION_EXPIRED_MESSAGE, authzResponse.getErrorDescription());

@@ -6,11 +6,13 @@ import java.util.List;
 import java.util.Optional;
 
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserVerifiableCredentialModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
@@ -46,6 +48,23 @@ public class OID4VCUtil {
     }
 
     /**
+     * Returns the timestamp exposed by the user's password credential.
+     * <p>
+     * The combined credential stream is important for federated users because providers such as LDAP expose their
+     * password modification timestamp as federated credential metadata rather than as a locally stored credential.
+     *
+     * @return the credential timestamp, {@code 0} when the credential has no timestamp, or {@code -1} when no password
+     * credential metadata is available
+     */
+    public static long getPasswordCredentialTimestamp(UserModel user) {
+        return user.credentialManager().getCredentials()
+                .filter(credential -> PasswordCredentialModel.TYPE.equals(credential.getType()))
+                .mapToLong(credential -> Optional.ofNullable(credential.getCreatedDate()).orElse(0L))
+                .max()
+                .orElse(-1L);
+    }
+
+    /**
      * Check issued-credential present on the user with expected ID and expected issued-credential-id and credential-scope
      *
      * @param session kc session
@@ -54,8 +73,10 @@ public class OID4VCUtil {
      * @param expectedCredentialScope expected credential scope
      * @param expectedClient expected client
      * @throws IllegalStateException in case that issued-credential not present or does not match with user, client or clientScope
+     * @return issued verifiable credential model (as long as it is found)
+     * @throws IllegalStateException in case that issued verifiable credential is not found or is expired
      */
-    public static void checkIssuedVerifiableCredential(KeycloakSession session, UserModel user, String issuedCredentialId, CredentialScopeModel expectedCredentialScope, ClientModel expectedClient) {
+    public static IssuedVerifiableCredentialModel checkIssuedVerifiableCredential(KeycloakSession session, UserModel user, String issuedCredentialId, CredentialScopeModel expectedCredentialScope, ClientModel expectedClient) {
         if (issuedCredentialId == null) {
             throw new IllegalStateException("Issued credential ID not present");
         }
@@ -80,6 +101,16 @@ public class OID4VCUtil {
         if (!expectedCredentialScope.getId().equals(verifiableCredential.getClientScopeId())) {
             throw new IllegalStateException("Different client scope than client scope from issued-credential");
         }
+
+        IssuedVerifiableCredentialModel issuedCredential = issuedCred.get();
+
+        // Check issued-credential not expired
+        long currentTimeMs = Time.currentTimeMillis();
+        if (currentTimeMs > issuedCredential.getExpiresAt()) {
+            throw new IllegalStateException("Issued credential is expired");
+        }
+
+        return issuedCredential;
     }
 
     public static List<IssuedVerifiableCredentialModel> getIssuedVerifiableCredentialsByUserAndClient(KeycloakSession session, UserModel user, ClientModel client) {

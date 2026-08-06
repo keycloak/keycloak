@@ -28,8 +28,6 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientScopeBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
@@ -82,9 +80,6 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
     public AssertEvents events = new AssertEvents(this);
 
     @Page
-    protected AppPage appPage;
-
-    @Page
     protected LoginPage loginPage;
 
     @Page
@@ -133,8 +128,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
 
         registerPage.register("firstName", "", "registerUserSuccessLastNameOptional@email", "registerUserSuccessLastNameOptional", generatePassword());
 
-        appPage.assertCurrent();
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         String userId = EventAssertion.expectRegisterSuccess(events.poll()).clientId(oauth.getClientId())
                 .details(Details.USERNAME, "registerUserSuccessLastNameOptional").details(Details.EMAIL, "registerUserSuccessLastNameOptional@email").getEvent().getUserId();
@@ -155,8 +149,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
 
         registerPage.register("firstName", "", "registerUserSuccessLastNameRequiredForScope_notRequested@email", "registerUserSuccessLastNameRequiredForScope_notRequested", generatePassword());
 
-        appPage.assertCurrent();
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         String userId = EventAssertion.expectRegisterSuccess(events.poll()).clientId(oauth.getClientId())
                 .details(Details.USERNAME, "registerUserSuccessLastNameRequiredForScope_notRequested").details(Details.EMAIL, "registerUserSuccessLastNameRequiredForScope_notRequested@email").getEvent().getUserId();
@@ -185,8 +178,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         //submit correct form
         registerPage.register("firstName", "lastName", "registerUserSuccessLastNameRequiredForScope_requested@email", "registerUserSuccessLastNameRequiredForScope_requested", generatePassword());
 
-        appPage.assertCurrent();
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     @Test
@@ -211,8 +203,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         //submit correct form
         registerPage.register("firstName", "lastName", "registerUserSuccessLastNameRequiredForScope_clientDefault@email", "registerUserSuccessLastNameRequiredForScope_clientDefault", generatePassword());
 
-        appPage.assertCurrent();
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     @Test
@@ -229,8 +220,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
 
         registerPage.register("firstName", "last", "registerUserSuccessLastNameLengthValidation@email", "registerUserSuccessLastNameLengthValidation", generatePassword());
 
-        appPage.assertCurrent();
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         String userId = EventAssertion.expectRegisterSuccess(events.poll()).clientId(oauth.getClientId())
                 .details(Details.USERNAME, "registerUserSuccessLastNameLengthValidation").details(Details.EMAIL, "registerUserSuccessLastNameLengthValidation@email").getEvent().getUserId();
@@ -461,8 +451,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
 
         registerPage.register("FirstName", "LastName", "requiredReadOnlyAttributeNotRenderedAndNotBlockingRegistration@email", "requiredReadOnlyAttributeNotRenderedAndNotBlockingRegistration", generatePassword());
 
-        appPage.assertCurrent();
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 
@@ -486,7 +475,6 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
 
         registerPage.register("FirstAA", "LastAA", "attributeRequiredAndSelectedByScopeMustBeSet@email", "attributeRequiredAndSelectedByScopeMustBeSet", password, password, "DepartmentAA");
 
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         UserRepresentation user = VerifyProfileTest.getUserByUsername(managedRealm.admin(),"attributeRequiredAndSelectedByScopeMustBeSet");
@@ -511,7 +499,6 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         Assertions.assertTrue(registerPage.isDepartmentPresent());
         registerPage.register("FirstAA", "LastAA", "attributeNotRequiredAndSelectedByScopeCanBeIgnored@email", "attributeNotRequiredAndSelectedByScopeCanBeIgnored", generatePassword());
 
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         String userId = EventAssertion.expectRegisterSuccess(events.poll())
@@ -542,7 +529,6 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         final String password = generatePassword();
         registerPage.register("FirstAA", "LastAA", "attributeNotRequiredAndSelectedByScopeCanBeSet@email", "attributeNotRequiredAndSelectedByScopeCanBeSet", password, password, "Department AA");
 
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         String userId = EventAssertion.expectRegisterSuccess(events.poll())
@@ -572,7 +558,6 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         Assertions.assertFalse(registerPage.isDepartmentPresent());
         registerPage.register("FirstAA", "LastAA", "attributeRequiredButNotSelectedByScopeIsNotRendered@email", "attributeRequiredButNotSelectedByScopeIsNotRendered", generatePassword());
 
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         String userId = EventAssertion.expectRegisterSuccess(events.poll())
@@ -600,7 +585,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         registerPage.assertCurrent();
 
         registerPage.register("firstName", "lastName", null, "registerWithoutEmail", generatePassword());
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     @Test
@@ -661,7 +646,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
 
         registerPage.register("firstName", "lastName", null, "myusername", generatePassword());
 
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     @Test
@@ -680,7 +665,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
 
         registerPage.register("firstName", "lastName", null, "myusername1", generatePassword());
 
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     @Test
@@ -707,7 +692,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
 
         registerPage.registerWithEmailAsUsername("firstName", "lastName", "myusername1@keycloak.org", generatePassword());
 
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         UserRepresentation user = managedRealm.admin().users().search("myusername1@keycloak.org").get(0);
         assertEquals("myusername1@keycloak.org", user.getEmail());
         UserRepresentation rep = managedRealm.admin().users().get(user.getId()).toRepresentation();

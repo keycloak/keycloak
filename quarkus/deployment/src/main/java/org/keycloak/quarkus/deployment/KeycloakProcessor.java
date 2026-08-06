@@ -20,11 +20,9 @@ package org.keycloak.quarkus.deployment;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -161,6 +159,7 @@ import io.quarkus.vertx.http.deployment.HttpRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.ManagementInterfaceFilterBuildItem;
 import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
+import io.quarkus.vertx.http.deployment.VertxWebRouterBuildItem;
 import io.quarkus.vertx.http.runtime.security.SecurityHandlerPriorities;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.health.Readiness;
@@ -269,9 +268,9 @@ class KeycloakProcessor {
     @Produce(ProfileBuildItem.class)
     void configureProfile(KeycloakRecorder recorder) {
         Profile profile = getCurrentOrCreateFeatureProfile();
-
+        Profile.getInstance().logUnsupportedFeatures();
         // record the features so that they are not calculated again at runtime
-        recorder.configureProfile(profile.getName(), profile.getFeatures());
+        recorder.configureProfile(profile.getName(), profile.getFeatures(), profile.getEnablements());
     }
 
     @Record(ExecutionTime.STATIC_INIT)
@@ -291,24 +290,20 @@ class KeycloakProcessor {
                 );
     }
 
-    @Record(ExecutionTime.STATIC_INIT)
+    @Record(ExecutionTime.RUNTIME_INIT)
     @BuildStep
     @Consume(ConfigBuildItem.class)
-    void filterAllRequests(BuildProducer<FilterBuildItem> filters, KeycloakRecorder recorder) {
-        var filter = recorder.getRejectNonNormalizedPathFilter();
-        if (filter != null) {
-            filters.produce(new FilterBuildItem(filter, SecurityHandlerPriorities.CORS + 1));
-        }
+    void filterAllRequests(VertxWebRouterBuildItem vertxWebRouterBuildItem, KeycloakRecorder recorder) {
+        recorder.rejectNonNormalizedPathFilter(vertxWebRouterBuildItem.getHttpRouter());
+
+        recorder.misdirectedRequestFilter(vertxWebRouterBuildItem.getHttpRouter());
     }
 
-    @Record(ExecutionTime.STATIC_INIT)
+    @Record(ExecutionTime.RUNTIME_INIT)
     @BuildStep(onlyIf = IsManagementEnabled.class)
     @Consume(ConfigBuildItem.class)
-    void filterAllManagementRequests(BuildProducer<ManagementInterfaceFilterBuildItem> filters, KeycloakRecorder recorder) {
-        var filter = recorder.getRejectNonNormalizedPathFilter();
-        if (filter != null) {
-            filters.produce(new ManagementInterfaceFilterBuildItem(filter, SecurityHandlerPriorities.CORS + 1));
-        }
+    void filterAllManagementRequests(VertxWebRouterBuildItem vertxWebRouterBuildItem, BuildProducer<ManagementInterfaceFilterBuildItem> filters, KeycloakRecorder recorder) {
+        recorder.rejectNonNormalizedPathFilter(vertxWebRouterBuildItem.getManagementRouter());
     }
 
     @BuildStep(onlyIfNot = IsKeycloakDevMode.class)
@@ -345,7 +340,7 @@ class KeycloakProcessor {
     @Consume(ConfigBuildItem.class)
     @Consume(CryptoProviderInitBuildItem.class) // ensures the Providers are loaded prior to handle the keystore #49359
     void configureTruststore(KeycloakRecorder recorder) {
-        recorder.configureTruststore();
+        recorder.configureTruststore(getFipsMode());
     }
 
     /**
@@ -880,7 +875,7 @@ class KeycloakProcessor {
                     AdminRoot.class.getName())), false));
         }
 
-        if (!MultiSiteUtils.isMultiSiteEnabled()) {
+        if (!MultiSiteUtils.isMultiSiteEnabled() && !Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
             buildTimeConditionBuildItemBuildProducer.produce(new BuildTimeConditionBuildItem(index.getIndex().getClassByName(DotName.createSimple(
                     LoadBalancerResource.class.getName())), false));
         }
@@ -911,6 +906,10 @@ class KeycloakProcessor {
     @BuildStep
     @Record(ExecutionTime.STATIC_INIT)
     void setCryptoProvider(KeycloakRecorder recorder) {
+        recorder.setCryptoProvider(getFipsMode());
+    }
+
+    private FipsMode getFipsMode() {
         FipsMode fipsMode = getOptionalValue(NS_KEYCLOAK_PREFIX + SecurityOptions.FIPS_MODE.getKey())
                 .map(FipsMode::valueOfOption)
                 .orElse(FipsMode.DISABLED);
@@ -920,8 +919,7 @@ class KeycloakProcessor {
         } else if (fipsMode.isFipsEnabled() && !Profile.isFeatureEnabled(Profile.Feature.FIPS)) {
             throw new RuntimeException("FIPS mode cannot be enabled without enabling the FIPS feature --features=fips");
         }
-
-        recorder.setCryptoProvider(fipsMode);
+        return fipsMode;
     }
 
     @BuildStep(onlyIf = IsDevelopment.class)
@@ -1039,15 +1037,9 @@ class KeycloakProcessor {
 
             configureScriptDescriptor(descriptor, fileName -> {
                 // descriptor is at META-INF/
-                Path basePath = Path.of(url.getPath()).getParent().getParent();
-
-                String path = basePath.resolve(fileName).toString();
-                if (!path.startsWith(url.getProtocol())) {
-                    path = url.getProtocol() + ":" + path;
-                }
                 try {
-                    return new URI(path).toURL().openStream();
-                } catch (IOException | URISyntaxException e) {
+                    return new URL(url, "../" + fileName).openStream();
+                } catch (IOException e) {
                     throw new RuntimeException("Failed to read script file from: " + fileName);
                 }
             });

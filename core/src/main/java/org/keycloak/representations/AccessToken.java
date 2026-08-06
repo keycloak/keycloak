@@ -38,6 +38,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @version $Revision: 1 $
  */
 public class AccessToken extends IDToken {
+
     public static class Access implements Serializable {
         @JsonProperty("roles")
         protected Set<String> roles;
@@ -105,11 +106,15 @@ public class AccessToken extends IDToken {
     // KEYCLOAK-6771 Certificate Bound Token
     // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3.1
     public static class Confirmation {
+
         @JsonProperty("x5t#S256")
         protected String certThumbprint;
 
         @JsonProperty("jkt")
         protected String keyThumbprint;
+
+        @JsonProperty("kc-jkt-type")
+        protected String jktType;
 
         public String getCertThumbprint() {
             return certThumbprint;
@@ -121,10 +126,18 @@ public class AccessToken extends IDToken {
 
         public String getKeyThumbprint() {
             return keyThumbprint;
-    }
+        }
 
-    public void setKeyThumbprint(String keyThumbprint) {
+        public void setKeyThumbprint(String keyThumbprint) {
             this.keyThumbprint = keyThumbprint;
+        }
+
+        public String getJktType() {
+            return jktType;
+        }
+
+        public void setJktType(String jktType) {
+            this.jktType = jktType;
         }
     }
 

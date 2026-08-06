@@ -73,7 +73,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
                 }
             }
 
-            JWTClientValidator validator = new JWTClientValidator(context, this::verifySignature, getId());
+            JWTClientSecretValidator validator = new JWTClientSecretValidator(context, this::verifySignature, getId());
             if (!validator.validate()) return;
 
             context.success();

@@ -31,7 +31,7 @@ public class KcOidcBrokerPassMaxAgeTest extends AbstractBrokerTest {
     }
 
     private static class KcOidcBrokerConfigurationWithPassMaxAge extends KcOidcBrokerConfiguration {
-        
+
         @Override
         public IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode syncMode) {
             IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, TestKeycloakOidcIdentityProviderFactory.ID);
@@ -61,7 +61,8 @@ public class KcOidcBrokerPassMaxAgeTest extends AbstractBrokerTest {
         testSingleLogout();
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         loginPage.clickSocial(bc.getIDPAlias());
         waitForPage(driver, "sign in to", true);
@@ -78,7 +79,7 @@ public class KcOidcBrokerPassMaxAgeTest extends AbstractBrokerTest {
 
         // we should now see the login page of the consumer
         waitForPage(driver, "sign in to", true);
-        loginPage.assertCurrent(bc.consumerRealmName());
+        loginPage.assertCurrent();
         Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/protocol/openid-connect/auth"),
                 "Driver should be on the consumer realm page right now");
 
@@ -87,7 +88,7 @@ public class KcOidcBrokerPassMaxAgeTest extends AbstractBrokerTest {
         waitForPage(driver, "sign in to", true);
         Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
                 "Driver should be on the provider realm page right now");
-        loginPage.assertCurrent(bc.providerRealmName());
+        loginPage.assertCurrent();
 
         // reauthenticate with password
         loginPage.login(bc.getUserPassword());
@@ -103,7 +104,8 @@ public class KcOidcBrokerPassMaxAgeTest extends AbstractBrokerTest {
         testSingleLogout();
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         loginPage.clickSocial(bc.getIDPAlias());
         waitForPage(driver, "sign in to", true);
@@ -128,7 +130,7 @@ public class KcOidcBrokerPassMaxAgeTest extends AbstractBrokerTest {
 
         // we should now see the login page of the consumer
         waitForPage(driver, "sign in to", true);
-        loginPage.assertCurrent(bc.consumerRealmName());
+        loginPage.assertCurrent();
         Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/protocol/openid-connect/auth"),
                 "Driver should be on the consumer realm page right now");
 

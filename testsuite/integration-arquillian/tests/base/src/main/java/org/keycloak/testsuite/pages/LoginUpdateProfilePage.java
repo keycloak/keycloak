@@ -110,8 +110,9 @@ public class LoginUpdateProfilePage extends AbstractPage {
         return departmentInput.isEnabled();
     }
 
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).equals("Update Account Information");
+    @Override
+    public String getExpectedPageId() {
+        return "login-login-update-profile";
     }
 
     public UpdateProfileErrors getInputErrors() {

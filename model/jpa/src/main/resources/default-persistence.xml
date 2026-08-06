@@ -96,6 +96,7 @@
         <class>org.keycloak.storage.jpa.entity.FederatedUserRequiredActionEntity</class>
         <class>org.keycloak.storage.jpa.entity.FederatedUserRoleMappingEntity</class>
         <class>org.keycloak.storage.jpa.entity.FederatedUserVerifiableCredentialEntity</class>
+        <class>org.keycloak.storage.jpa.entity.FederatedUserIssuedVerifiableCredentialEntity</class>
 
         <!-- Organization -->
         <class>org.keycloak.models.jpa.entities.OrganizationEntity</class>

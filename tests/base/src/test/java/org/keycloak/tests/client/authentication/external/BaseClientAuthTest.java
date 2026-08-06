@@ -1,11 +1,16 @@
 package org.keycloak.tests.client.authentication.external;
 
+import java.io.IOException;
 import java.util.UUID;
 
 import org.keycloak.authentication.authenticators.client.FederatedJWTClientAuthenticator;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
+import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -16,6 +21,8 @@ import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -127,6 +134,55 @@ public class BaseClientAuthTest extends AbstractBaseClientAuthTest {
         JsonWebToken jwt = createDefaultToken();
         assertFailure(doClientGrant(jwt));
         assertFailure(null, TOKEN_ISSUER, EXTERNAL_CLIENT_ID, jwt.getId(), "client_not_found", events.poll());
+    }
+
+    @Test
+    public void testHS256AlgorithmConfusion() {
+        JsonWebToken token = createDefaultToken();
+        String encodedToken = new JWSBuilder().type("JWT").jsonContent(token).hmac256(identityProvider.getKeys().getKeyWrapper().getPublicKey().getEncoded());
+
+        AccessTokenResponse response = doClientGrant(encodedToken);
+        assertFailure("Invalid signature algorithm", response);
+    }
+
+
+    @Test
+    public void testHS256AlgorithmConfusionWithHardcodedPublicKey() {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.FALSE.toString());
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWKS_URL, "");
+            rep.getConfig().put(OIDCIdentityProviderConfig.PUBLIC_KEY_SIGNATURE_VERIFIER,
+                    PemUtils.encodeKey(identityProvider.getKeys().getKeyWrapper().getPublicKey()));
+        });
+
+        JsonWebToken token = createDefaultToken();
+        String encodedToken = new JWSBuilder().type("JWT").jsonContent(token).hmac256(identityProvider.getKeys().getKeyWrapper().getPublicKey().getEncoded());
+
+        AccessTokenResponse response = doClientGrant(encodedToken);
+        assertFailure("Invalid signature algorithm", response);
+    }
+
+    @Test
+    public void testHS256AlgorithmConfusionWithHardcodedJWKS() throws IOException {
+        // Remove "alg" from jwks (optional for RFC 7517)
+        JSONWebKeySet jwks = JsonSerialization.readValue(identityProvider.getKeys().getJwksString(), org.keycloak.jose.jwk.JSONWebKeySet.class);
+        // Remove alg
+        for (JWK key : jwks.getKeys()) {
+            key.setAlgorithm(null);
+        }
+        String jwksWithoutAlg = org.keycloak.util.JsonSerialization.writeValueAsString(jwks);
+
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.FALSE.toString());
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWKS_URL, "");
+            rep.getConfig().put(OIDCIdentityProviderConfig.PUBLIC_KEY_SIGNATURE_VERIFIER, jwksWithoutAlg);
+        });
+
+        JsonWebToken token = createDefaultToken();
+        String encodedToken = new JWSBuilder().type("JWT").jsonContent(token).hmac256(identityProvider.getKeys().getKeyWrapper().getPublicKey().getEncoded());
+
+        AccessTokenResponse response = doClientGrant(encodedToken);
+        assertFailure("Invalid signature algorithm", response);
     }
 
     @Override

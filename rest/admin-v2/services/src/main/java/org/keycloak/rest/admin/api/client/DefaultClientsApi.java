@@ -22,7 +22,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.services.client.ClientService;
 import org.keycloak.services.client.ClientService.ClientProjectionOptions;
-import org.keycloak.services.client.DefaultClientService;
+import org.keycloak.services.client.ClientService.ClientSortAndSliceOptions;
+import org.keycloak.services.client.ClientServiceFactory;
 import org.keycloak.services.client.query.ClientQueryException;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
@@ -39,7 +40,7 @@ public class DefaultClientsApi implements ClientsApi {
         this.session = session;
         this.realm = realm;
         this.permissions = permissions;
-        this.clientService = new DefaultClientService(session, realm, permissions);
+        this.clientService = ClientServiceFactory.create(session, realm, permissions);
     }
 
     @GET
@@ -48,9 +49,8 @@ public class DefaultClientsApi implements ClientsApi {
     public Stream<BaseClientRepresentation> getClients(ListOptions params) {
         try {
             var searchOptions = params.getQuery() != null ? new ClientService.ClientSearchOptions(params.getQuery()) : null;
-            var sortAndSliceOptions = ClientService.normalizePagination(params.getOffset(), params.getLimit());
             return clientService.getClients(realm, new ClientProjectionOptions(params.getFields()), searchOptions,
-                    sortAndSliceOptions);
+                    ClientSortAndSliceOptions.fromQuery(params));
         } catch (ClientQueryException e) {
             throw new BadRequestException(e.getMessage());
         }

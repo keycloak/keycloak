@@ -9,6 +9,8 @@ summary="REST API for managing Keycloak resources. Experimental feature.">
 
 <#include "/templates/experimental-feature.adoc">
 
+To provide feedback, use the https://github.com/keycloak/keycloak/discussions/50186[Client Admin API v2] GitHub Discussion.
+
 == Prerequisites
 
 The Admin API v2 requires the `client-admin-api:v2` feature:

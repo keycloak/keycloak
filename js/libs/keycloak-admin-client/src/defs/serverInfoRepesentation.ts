@@ -27,7 +27,12 @@ export interface ServerInfoRepresentation {
   componentTypes?: { [index: string]: ComponentTypeRepresentation[] };
   passwordPolicies?: PasswordPolicyTypeRepresentation[];
   enums?: { [index: string]: string[] };
-  parameterizedScopeTypes?: string[];
+  parameterizedScopeTypes?: ParameterizedScopeTypeRepresentation[];
+}
+
+export interface ParameterizedScopeTypeRepresentation {
+  name: string;
+  repeatable: boolean;
 }
 
 export interface ThemeInfoRepresentation {

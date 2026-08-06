@@ -41,7 +41,9 @@ Make sure you are installing from the *fast* channel:
 +
 image::configure-operator.png["Configure {project_name} Operator"]
 
-You may select to either have the Operator watch the namespace where it is installed, or to watch a single namespace of your choosing.
+You may select to have the Operator watch the namespace where it is installed, watch a single namespace of your choosing, or watch all namespaces in the cluster.
+
+For cluster-wide installation with OLM, see <<cluster_wide_installation>>.
 
 ==== Configuring Manual Approval for OLM Upgrades
 
@@ -96,50 +98,179 @@ spec:
 After installation, any upgrade will require manual approval through the OLM interface or via the CLI.
 
 <@profile.ifCommunity>
+[[installing_with_kubectl]]
 === Installing by using kubectl without Operator Lifecycle Manager
 
-You can install the Operator on a vanilla Kubernetes cluster by using `kubectl` commands:
-
-. Install the CRDs by entering the following commands:
-+
-[source,bash,subs="attributes+"]
-----
-kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{version}/kubernetes/keycloaks.k8s.keycloak.org-v1.yml
-kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{version}/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml
-----
-
-. Install the {project_name} Operator deployment in the `keycloak` namespace by executing the following commands:
-+
+Install the {project_name} Operator in the `keycloak` namespace by executing the following commands:
 [source,bash,subs="attributes+"]
 ----
 kubectl create namespace keycloak
-kubectl -n keycloak apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{version}/kubernetes/kubernetes.yml
+kubectl apply -k 'github.com/keycloak/keycloak-k8s-resources/kubernetes?ref={version}'
 ----
 
-The Operator will watch the namespace where it is installed. You may utilise a different namespace with the `-n` option,
-however you must also update the `ClusterRoleBinding` subject. For example, to install in the namespace `custom-namespace`,
-execute the following commands:
-+
+The Operator will watch the namespace where it is installed.
+
+To use a different installation namespace, create an overlay with the desired namespace:
 [source,bash,subs="attributes+"]
 ----
 kubectl create namespace custom-namespace
-kubectl -n custom-namespace apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{version}/kubernetes/kubernetes.yml
-kubectl patch clusterrolebinding keycloak-operator-clusterrole-binding --type='json' -p='[{"op": "replace", "path": "/subjects/0/namespace", "value":"custom-namespace"}]'
-# if you have existing keycloaks, restart the operator after patching the clusterrolebinding
-kubectl rollout restart -n custom-namespace Deployment/keycloak-operator
+
+cat <<EOF >./kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: custom-namespace
+
+resources:
+  - github.com/keycloak/keycloak-k8s-resources/kubernetes?ref={version}
+EOF
+
+kubectl apply -k ./
 ----
+
+For cluster-wide installation, see <<cluster_wide_installation>>.
+</@profile.ifCommunity>
+
+[[cluster_wide_installation]]
+=== Cluster-wide installation
+
+A single {project_name} Operator can reconcile custom resources in all namespaces in the cluster. This avoids running one Operator per namespace while still allowing {project_name} instances to be deployed in separate namespaces.
+
+The Operator supports the following OLM install modes (`MultiNamespace` is not supported):
+
+[cols="1,2",options="header"]
+|===
+| Install mode | Operator watches
+
+| `OwnNamespace`
+| The namespace where the Operator is installed
+
+| `SingleNamespace`
+| One namespace other than the Operator namespace
+
+| `AllNamespaces`
+| All namespaces in the cluster
+|===
+
+Install the cluster-wide Operator in a dedicated namespace rather than converting an existing single-namespace installation.
+
+[WARNING]
+====
+*Preview support*
+
+Cluster-wide installation is supported for common scenarios, but it is still considered in preview.
+====
+
+[[cluster_wide_limitations]]
+==== Limitations
+
+When the Operator watches all namespaces:
+
+* `spec.podTemplate.spec.serviceAccountName` cannot be used on a `Keycloak` custom resource. The Operator ignores this field and reports a warning.
+* The Operator does not support reconciling multiple {project_name} versions in one cluster. A single Operator version supports a single matching {project_name} version.
+* You need cluster-admin permissions, or equivalent permissions.
+
+==== Installing with OLM
+
+To install in `AllNamespaces` mode, subscribe to the Operator and approve the install plan.
+
+We recommend only using manual approval for the install plan.
+
+===== Using the OpenShift web console
+
+. Open the OpenShift Container Platform web console.
+
+. In the left column, click *Home*, *Operators*, *OperatorHub*.
+
+. Search for "keycloak" and select the {project_name} Operator from the *fast* channel.
+
+. On the install screen, select *All namespaces on the cluster* as the installation mode.
+
+. Select *Manual* approval for updates.
+
+. Complete the installation and approve the install plan when prompted.
+
+. Verify that the Operator pod is running in the operator namespace.
+
+===== Using the CLI
+
+Create a global OperatorGroup in the namespace where the Operator is installed by omitting `spec.targetNamespaces`:
+
+[source,yaml]
+----
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: keycloak-operator-group
+  namespace: <operator-namespace>
+spec: {}
+----
+
+Create a Subscription with `installPlanApproval: Manual`:
+
+[source,yaml]
+----
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: keycloak-operator
+  namespace: <operator-namespace>
+spec:
+  channel: fast
+  name: keycloak-operator
+  source: <catalog-source>
+  sourceNamespace: <catalog-namespace>
+  installPlanApproval: Manual
+----
+
+Approve the install plan, then verify that the Operator pod is running.
+
+<@profile.ifCommunity>
+==== Installing with kubectl
+
+Install the Operator cluster-wide by using the `cluster-wide` kustomization:
+
+[source,bash,subs="attributes+"]
+----
+kubectl create namespace keycloak-operator
+kubectl apply -k 'github.com/keycloak/keycloak-k8s-resources/kubernetes/cluster-wide?ref={version}'
+----
+
+This installs the Operator into the `keycloak-operator` namespace and configures it to watch resources in all namespaces.
+
+To use a different installation namespace, create an overlay with the `cluster-wide` kustomization:
+
+[source,bash,subs="attributes+"]
+----
+kubectl create namespace custom-namespace
+
+cat <<EOF >./kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: custom-namespace
+
+resources:
+  - github.com/keycloak/keycloak-k8s-resources/kubernetes/cluster-wide?ref={version}
+EOF
+
+kubectl apply -k ./
+----
+
+You can now create `Keycloak` custom resources in any namespace. The Operator reconciles resources cluster-wide.
 </@profile.ifCommunity>
 
 === Installing Multiple Operators
 
-It is currently not fully supported for the operator to watch multiple or all namespaces. In circumstances where you want to watch multiple namespaces, you can install multiple operators.
+In most cases, a single Operator installed in cluster-wide mode is simpler than installing multiple Operators. Install multiple Operators only when you need separate Operator instances, for example to run different {project_name} or Operator versions in parallel.
 
-If you do this please be aware:
+If you install multiple Operators, please be aware:
 
 - all Operators share the CRDs (Custom Resource Definitions) as they are installed cluster wide.
 - CRD revisions from newer Operator versions won't introduce breaking changes except for the eventual removal of fields that have been well deprecated. Thus newer CRDs are generally backward compatible.
 - the CRDs installed last will be the ones in use. This applies to OLM installations as well where the Operator version, that is installed as the last, also installs and overrides the CRDs if they exists in the cluster already.
 - older CRDs may not be forwards compatible with new fields used by newer operators. When using OLM it will check if your custom resources are compatible with the CRDs being installed, so the usage of new fields can prevent the simultaneous installation of older operator versions.
+- when using OLM, newer CRDs containing new API versions (e.g. `v2beta1`) will prevent the installation or upgrade of older operators that do not include those versions.
 - fields introduced by newer CRDs will not be supported by older Operators. Older operators will fail to handle CRs that use such new fields with an error deserializing an unrecognized field.
 
 It is therefore recommended in a multiple Operator install scenario that you keep versions aligned as closely as possible to minimize the potential problems with different versions.

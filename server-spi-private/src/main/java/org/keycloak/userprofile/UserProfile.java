@@ -129,4 +129,15 @@ public interface UserProfile {
      * @return the user representation
      */
     <R extends AbstractUserRepresentation> R toRepresentation(boolean full);
+
+    /**
+     * Returns the user representation with control over metadata inclusion.
+     *
+     * @param full if the full representation should be returned
+     * @param includeMetadata if user profile metadata should be included in the representation
+     * @return the user representation
+     */
+    default <R extends AbstractUserRepresentation> R toRepresentation(boolean full, boolean includeMetadata) {
+        return toRepresentation(full);
+    }
 }

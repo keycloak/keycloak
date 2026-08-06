@@ -46,12 +46,14 @@ import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.protocol.oidc.mappers.AllowedWebOriginsProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.AudienceResolveProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.FullNameMapper;
+import org.keycloak.protocol.oidc.mappers.ParameterizedScopeUserPropertyMapper;
 import org.keycloak.protocol.oidc.mappers.SubMapper;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.protocol.oidc.mappers.UserClientRoleMappingMapper;
 import org.keycloak.protocol.oidc.mappers.UserPropertyMapper;
 import org.keycloak.protocol.oidc.mappers.UserRealmRoleMappingMapper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
+import org.keycloak.protocol.oidc.scope.DelegationScopeType;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.IDToken;
@@ -70,6 +72,8 @@ import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_ADDITIONAL_R
 import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_ADDITIONAL_REQ_TOKEN_PARAMS_FAIL_FAST;
 import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_REQ_PARAMS_DEFAULT_MAX_SIZE;
 import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE;
+import static org.keycloak.representations.IDToken.MAY_ACT;
+import static org.keycloak.representations.JsonWebToken.SUBJECT;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -107,6 +111,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String AUDIENCE_RESOLVE = "audience resolve";
     public static final String ALLOWED_WEB_ORIGINS = "allowed web origins";
     public static final String ACR = "acr loa level";
+    public static final String DELEGATION_MAY_ACT_SUB = "may_act sub";
     public static final String ORGANIZATION = "organization";
     // microprofile-jwt claims
     public static final String UPN = "upn";
@@ -117,6 +122,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String MICROPROFILE_JWT_SCOPE = "microprofile-jwt";
     public static final String ACR_SCOPE = "acr";
     public static final String BASIC_SCOPE = "basic";
+    public static final String DELEGATION_SCOPE = "delegation";
 
     public static final String PROFILE_SCOPE_CONSENT_TEXT = "${profileScopeConsentText}";
     public static final String EMAIL_SCOPE_CONSENT_TEXT = "${emailScopeConsentText}";
@@ -269,6 +275,12 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             builtins.put(ACR, model);
         }
 
+        if (Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE_DELEGATION)) {
+            model = ParameterizedScopeUserPropertyMapper.create(
+                    DELEGATION_MAY_ACT_SUB, "id", MAY_ACT + "." + SUBJECT, "String", true, true, true);
+            builtins.put(DELEGATION_MAY_ACT_SUB, model);
+        }
+
         model = UserSessionNoteMapper.createClaimMapper(IDToken.AUTH_TIME, AuthenticationManager.AUTH_TIME,
                 IDToken.AUTH_TIME, "long",
                 true, true, false, true);
@@ -366,6 +378,19 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             organizationScope.setProtocol(getId());
             organizationScope.addProtocolMapper(OrganizationMembershipMapper.create(ORGANIZATION, true, true, true));
             newRealm.addDefaultClientScope(organizationScope, false);
+        }
+
+        if (Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE_DELEGATION)) {
+            ClientScopeModel delegationScope = newRealm.addClientScope(DELEGATION_SCOPE);
+            delegationScope.setDescription("OpenID Connect scope for token exchange delegation");
+            delegationScope.setIsParameterizedScope(true);
+            delegationScope.setDisplayOnConsentScreen(true);
+            delegationScope.setAttribute(ClientScopeModel.IS_ALWAYS_CONSENT, Boolean.TRUE.toString());
+            delegationScope.setAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, DelegationScopeType.TYPE);
+            delegationScope.setIncludeInTokenScope(true);
+            delegationScope.setProtocol(getId());
+            delegationScope.setConsentScreenText("${delegationScopeConsentText}");
+            delegationScope.addProtocolMapper(builtins.get(DELEGATION_MAY_ACT_SUB));
         }
     }
 
@@ -554,7 +579,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             }
         }
         if (rep.isBearerOnly() == null) newClient.setBearerOnly(false);
-        if (rep.getAdminUrl() == null && rep.getRootUrl() != null) {
+        if (rep.getAdminUrl() == null && rep.getRootUrl() != null && !rep.getRootUrl().equals(Constants.AUTH_ADMIN_URL_PROP) && !rep.getRootUrl().equals(Constants.AUTH_BASE_URL_PROP)) {
             newClient.setManagementUrl(rep.getRootUrl());
         }
 

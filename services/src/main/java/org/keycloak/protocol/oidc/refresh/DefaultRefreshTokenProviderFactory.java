@@ -6,7 +6,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 
 public class DefaultRefreshTokenProviderFactory implements RefreshTokenProviderFactory {
 
-    private static final String PROVIDER_ID = "default";
+    public static final String PROVIDER_ID = "default";
 
     @Override
     public RefreshTokenProvider create(KeycloakSession session) {

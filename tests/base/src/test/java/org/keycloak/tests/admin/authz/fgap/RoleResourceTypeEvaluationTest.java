@@ -47,6 +47,7 @@ import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMBERSHIP;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES;
@@ -76,8 +77,15 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
     public void testMapRoleClientScopeAllRoles() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
         UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
-        // we need to be able to list client scopes
-        createAllPermission(adminPermissionsClient, AdminPermissionsSchema.CLIENTS.getType(), onlyMyAdminUserPolicy, Set.of(VIEW));
+        // we need to be able to list and manage client scopes
+        createAllPermission(adminPermissionsClient, AdminPermissionsSchema.CLIENTS.getType(), onlyMyAdminUserPolicy, Set.of(VIEW, MANAGE));
+
+        // create a realm role to use in scope mapping tests
+        RoleRepresentation testRole = new RoleRepresentation();
+        testRole.setName("testScopeRole");
+        realm.admin().roles().create(testRole);
+        testRole = realm.admin().roles().get("testScopeRole").toRepresentation();
+        realm.cleanup().add(r -> r.roles().get("testScopeRole").remove());
 
         // create a client-scope
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
@@ -94,11 +102,133 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
         List<RoleRepresentation> availableRoles = clientScopeResource.getScopeMappings().realmLevel().listAvailable();
         assertThat(availableRoles, empty());
 
+        // adding a realm-level scope mapping should also fail without MAP_ROLE_CLIENT_SCOPE permission
+        try {
+            clientScopeResource.getScopeMappings().realmLevel().add(List.of(testRole));
+            fail("Expected ForbiddenException when adding realm scope mapping without MAP_ROLE_CLIENT_SCOPE permission");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+
         // grant the permission to map all roles to client scopes
         createAllPermission(adminPermissionsClient, rolesType, onlyMyAdminUserPolicy, Set.of(MAP_ROLE_CLIENT_SCOPE));
 
         availableRoles = clientScopeResource.getScopeMappings().realmLevel().listAvailable();
         assertThat(availableRoles, not(empty()));
+
+        // adding the scope mapping should now succeed
+        clientScopeResource.getScopeMappings().realmLevel().add(List.of(testRole));
+
+        // verify the role was added
+        List<RoleRepresentation> mappedRoles = clientScopeResource.getScopeMappings().realmLevel().listAll();
+        assertThat(mappedRoles, not(empty()));
+
+        // removing the scope mapping should also succeed
+        clientScopeResource.getScopeMappings().realmLevel().remove(List.of(testRole));
+    }
+
+    @Test
+    public void testMapRoleClientScopeWriteDeniedWithoutPermission() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createAllPermission(adminPermissionsClient, AdminPermissionsSchema.CLIENTS.getType(), onlyMyAdminUserPolicy, Set.of(VIEW, MANAGE));
+
+        // create two realm roles
+        RoleRepresentation allowedRole = new RoleRepresentation();
+        allowedRole.setName("allowedRole");
+        realm.admin().roles().create(allowedRole);
+        allowedRole = realm.admin().roles().get("allowedRole").toRepresentation();
+        realm.cleanup().add(r -> r.roles().get("allowedRole").remove());
+
+        RoleRepresentation deniedRole = new RoleRepresentation();
+        deniedRole.setName("deniedRole");
+        realm.admin().roles().create(deniedRole);
+        deniedRole = realm.admin().roles().get("deniedRole").toRepresentation();
+        realm.cleanup().add(r -> r.roles().get("deniedRole").remove());
+
+        // create a client-scope
+        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
+        clientScope.setName("test-client-scope");
+        clientScope.setProtocol("openid-connect");
+        try (Response response = realm.admin().clientScopes().create(clientScope)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+            clientScope.setId(ApiUtil.getCreatedId(response));
+            realm.cleanup().add(r -> r.clientScopes().get(clientScope.getId()).remove());
+        }
+
+        // grant MAP_ROLE_CLIENT_SCOPE only for a specific role
+        createPermission(adminPermissionsClient, allowedRole.getId(), rolesType, Set.of(MAP_ROLE_CLIENT_SCOPE), onlyMyAdminUserPolicy);
+
+        ClientScopeResource clientScopeResource = realmAdminClient.realm(realm.getName()).clientScopes().get(clientScope.getId());
+
+        // adding the allowed role should succeed
+        clientScopeResource.getScopeMappings().realmLevel().add(List.of(allowedRole));
+
+        // adding the denied role should fail
+        try {
+            clientScopeResource.getScopeMappings().realmLevel().add(List.of(deniedRole));
+            fail("Expected ForbiddenException when adding scope mapping for a role without MAP_ROLE_CLIENT_SCOPE permission");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+
+        // removing the allowed role should succeed
+        clientScopeResource.getScopeMappings().realmLevel().remove(List.of(allowedRole));
+
+        // add the denied role as super admin so we can test that a limited admin can't remove it
+        realm.admin().clientScopes().get(clientScope.getId()).getScopeMappings().realmLevel().add(List.of(deniedRole));
+
+        // removing the denied role should fail for the limited admin
+        try {
+            clientScopeResource.getScopeMappings().realmLevel().remove(List.of(deniedRole));
+            fail("Expected ForbiddenException when removing scope mapping for a role without MAP_ROLE_CLIENT_SCOPE permission");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+    }
+
+    @Test
+    public void testMapRoleClientScopeClientLevelRoles() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createAllPermission(adminPermissionsClient, AdminPermissionsSchema.CLIENTS.getType(), onlyMyAdminUserPolicy, Set.of(VIEW, MANAGE));
+
+        // create a client role
+        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
+        RoleRepresentation clientRole = new RoleRepresentation();
+        clientRole.setName("testClientRole");
+        clientRole.setClientRole(true);
+        realm.admin().clients().get(myclient.getId()).roles().create(clientRole);
+        clientRole = realm.admin().clients().get(myclient.getId()).roles().get("testClientRole").toRepresentation();
+
+        // create a client-scope
+        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
+        clientScope.setName("test-client-scope-for-client-roles");
+        clientScope.setProtocol("openid-connect");
+        try (Response response = realm.admin().clientScopes().create(clientScope)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+            clientScope.setId(ApiUtil.getCreatedId(response));
+            realm.cleanup().add(r -> r.clientScopes().get(clientScope.getId()).remove());
+        }
+
+        ClientScopeResource clientScopeResource = realmAdminClient.realm(realm.getName()).clientScopes().get(clientScope.getId());
+
+        // adding a client-level scope mapping should fail without MAP_ROLE_CLIENT_SCOPE permission
+        try {
+            clientScopeResource.getScopeMappings().clientLevel(myclient.getId()).add(List.of(clientRole));
+            fail("Expected ForbiddenException when adding client scope mapping without MAP_ROLE_CLIENT_SCOPE permission");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+
+        // grant MAP_ROLE_CLIENT_SCOPE for all roles
+        createAllPermission(adminPermissionsClient, rolesType, onlyMyAdminUserPolicy, Set.of(MAP_ROLE_CLIENT_SCOPE));
+
+        // adding the client-level scope mapping should now succeed
+        clientScopeResource.getScopeMappings().clientLevel(myclient.getId()).add(List.of(clientRole));
+
+        // removing the client-level scope mapping should also succeed
+        clientScopeResource.getScopeMappings().clientLevel(myclient.getId()).remove(List.of(clientRole));
     }
 
     @Test
@@ -134,6 +264,83 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
         createAllPermission(adminPermissionsClient, rolesType, onlyMyAdminUserPolicy, Set.of(MAP_ROLE_COMPOSITE));
 
         realmAdminClient.realm(realm.getName()).roles().get("myRole").addComposites(List.of(subRole));
+    }
+
+    @Test
+    public void testDeleteCompositeRoleRequiresMapCompositePermission() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
+        String myclientId = myclient.getId();
+
+        // create client sub-roles on myclient (using client roles avoids manage-realm bypassing canMapComposite)
+        RoleRepresentation allowedSubRole = new RoleRepresentation();
+        allowedSubRole.setName("allowedSubRole");
+        realm.admin().clients().get(myclientId).roles().create(allowedSubRole);
+        allowedSubRole = realm.admin().clients().get(myclientId).roles().get("allowedSubRole").toRepresentation();
+
+        RoleRepresentation restrictedSubRole = new RoleRepresentation();
+        restrictedSubRole.setName("restrictedSubRole");
+        realm.admin().clients().get(myclientId).roles().create(restrictedSubRole);
+        restrictedSubRole = realm.admin().clients().get(myclientId).roles().get("restrictedSubRole").toRepresentation();
+
+        // create parent realm role (for endpoint 1) and parent client role (for endpoints 2 & 3)
+        RoleRepresentation parentRealmRole = new RoleRepresentation();
+        parentRealmRole.setName("parentRealmRole");
+        realm.admin().roles().create(parentRealmRole);
+        parentRealmRole = realm.admin().roles().get("parentRealmRole").toRepresentation();
+        realm.cleanup().add(r -> r.roles().get("parentRealmRole").remove());
+
+        RoleRepresentation parentClientRole = new RoleRepresentation();
+        parentClientRole.setName("parentClientRole");
+        realm.admin().clients().get(myclientId).roles().create(parentClientRole);
+        parentClientRole = realm.admin().clients().get(myclientId).roles().get("parentClientRole").toRepresentation();
+
+        // grant myadmin manage-realm (required for realm role endpoint's requireManage(RealmModel))
+        String realmMgmtId = realm.admin().clients().findByClientId("realm-management").get(0).getId();
+        RoleRepresentation manageRealmRole = realm.admin().clients().get(realmMgmtId).roles().get("manage-realm").toRepresentation();
+        realm.admin().users().get(myadmin.getId()).roles().clientLevel(realmMgmtId).add(List.of(manageRealmRole));
+        realmAdminClient.tokenManager().grantToken();
+
+        // grant FGAP MANAGE on myclient (for client role endpoints' requireManage)
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createPermission(adminPermissionsClient, myclientId, AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, Set.of(MANAGE), policy);
+
+        // grant MAP_ROLE_COMPOSITE only on allowedSubRole
+        createPermission(adminPermissionsClient, allowedSubRole.getId(), rolesType, Set.of(MAP_ROLE_COMPOSITE), policy);
+
+        // as full admin, add both sub-roles as composites of both parent roles
+        realm.admin().roles().get("parentRealmRole").addComposites(List.of(allowedSubRole, restrictedSubRole));
+        realm.admin().clients().get(myclientId).roles().get("parentClientRole").addComposites(List.of(allowedSubRole, restrictedSubRole));
+
+        // --- Endpoint 1: DELETE /admin/realms/{realm}/roles/{role-name}/composites ---
+        try {
+            realmAdminClient.realm(realm.getName()).roles().get("parentRealmRole").deleteComposites(List.of(restrictedSubRole));
+            fail("Should not be able to delete composite without MAP_ROLE_COMPOSITE permission");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+        realmAdminClient.realm(realm.getName()).roles().get("parentRealmRole").deleteComposites(List.of(allowedSubRole));
+
+        // --- Endpoint 3: DELETE /admin/realms/{realm}/clients/{id}/roles/{role-name}/composites ---
+        try {
+            realmAdminClient.realm(realm.getName()).clients().get(myclientId).roles().get("parentClientRole").deleteComposites(List.of(restrictedSubRole));
+            fail("Should not be able to delete composite without MAP_ROLE_COMPOSITE permission");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+        realmAdminClient.realm(realm.getName()).clients().get(myclientId).roles().get("parentClientRole").deleteComposites(List.of(allowedSubRole));
+
+        // --- Endpoint 2: DELETE /admin/realms/{realm}/roles-by-id/{role-id}/composites ---
+        // re-add allowedSubRole as composite (was removed above)
+        realm.admin().clients().get(myclientId).roles().get("parentClientRole").addComposites(List.of(allowedSubRole));
+
+        try {
+            realmAdminClient.realm(realm.getName()).rolesById().deleteComposites(parentClientRole.getId(), List.of(restrictedSubRole));
+            fail("Should not be able to delete composite without MAP_ROLE_COMPOSITE permission");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+        realmAdminClient.realm(realm.getName()).rolesById().deleteComposites(parentClientRole.getId(), List.of(allowedSubRole));
     }
 
     @Test

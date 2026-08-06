@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -39,7 +40,6 @@ import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.admin.AuthorizationService;
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
@@ -101,6 +101,8 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
+
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 
 /**
@@ -204,6 +206,11 @@ public class ClientResource {
 
         ClientRepresentation representation = ModelToRepresentation.toRepresentation(client, session);
 
+        if (!auth.clients().canViewClientScopes()) {
+            representation.setDefaultClientScopes(Collections.emptyList());
+            representation.setOptionalClientScopes(Collections.emptyList());
+        }
+
         representation.setAccess(auth.clients().getAccess(client));
 
         return representation;
@@ -259,8 +266,6 @@ public class ClientResource {
         if (client == null) {
             throw new NotFoundException("Could not find client");
         }
-
-        AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, client.getId());
 
         ClientRepresentation clientRepresentation = new ClientRepresentation();
         clientRepresentation.setId(client.getId());
@@ -405,6 +410,10 @@ public class ClientResource {
     private Stream<ClientScopeRepresentation> getDefaultClientScopes(boolean defaultScope) {
         auth.clients().requireView(client);
 
+        if (!auth.clients().canViewClientScopes()) {
+            return Stream.empty();
+        }
+
         return client.getClientScopes(defaultScope).values().stream().map(ClientResource::toRepresentation);
     }
 
@@ -425,6 +434,9 @@ public class ClientResource {
         if (clientScope == null) {
             throw new jakarta.ws.rs.NotFoundException("Client scope not found");
         }
+        
+        auth.clients().requireManage(clientScope);
+        
         // Parameterized scopes currently require the caller to explicitly provide the scope parameter (e.g. "scope_name:value"),
         // so they cannot be included automatically as default scopes. This restriction may be lifted in the future.
         if (defaultScope && clientScope.isParameterizedScope()) {
@@ -451,6 +463,9 @@ public class ClientResource {
         if (clientScope == null) {
             throw new jakarta.ws.rs.NotFoundException("Client scope not found");
         }
+        
+        auth.clients().requireManage(clientScope);
+        
         client.removeClientScope(clientScope);
 
         adminEvent.operation(OperationType.DELETE).resource(ResourceType.CLIENT_SCOPE_CLIENT_MAPPING).resourcePath(session.getContext().getUri()).success();
@@ -575,8 +590,10 @@ public class ClientResource {
     @Operation( summary = "Get user sessions for client. Returns a list of user sessions associated with this client.\n")
     public Stream<UserSessionRepresentation> getUserSessions(@Parameter(description = "Paging offset") @QueryParam("first") Integer firstResult, @Parameter(description = "Maximum results size.") @QueryParam("max") @DefaultValue(Constants.DEFAULT_MAX_RESULTS_STR) Integer maxResults) {
         auth.clients().requireView(client);
-        return session.sessions()
-                .readOnlyStreamUserSessions(client.getRealm(), client, computeFirstResult(firstResult), computeMaxResults(maxResults))
+        return paginatedStream(session.sessions()
+                        .readOnlyStreamUserSessions(client.getRealm(), client, -1, -1)
+                        .filter(userSession -> auth.users().canView(userSession.getUser())),
+                computeFirstResult(firstResult), computeMaxResults(maxResults))
                 .map(ModelToRepresentation::toRepresentation);
     }
 
@@ -622,8 +639,10 @@ public class ClientResource {
     @Operation( summary = "Get offline sessions for client. Returns a list of offline user sessions associated with this client")
     public Stream<UserSessionRepresentation> getOfflineUserSessions(@Parameter(description = "Paging offset") @QueryParam("first") Integer firstResult, @Parameter(description = "Maximum results size.") @QueryParam("max") @DefaultValue(Constants.DEFAULT_MAX_RESULTS_STR) Integer maxResults) {
         auth.clients().requireView(client);
-        return session.sessions()
-                .readOnlyStreamOfflineUserSessions(client.getRealm(), client, computeFirstResult(firstResult), computeMaxResults(maxResults))
+        return paginatedStream(session.sessions()
+                        .readOnlyStreamOfflineUserSessions(client.getRealm(), client, -1, -1)
+                        .filter(userSession -> auth.users().canView(userSession.getUser())),
+                computeFirstResult(firstResult), computeMaxResults(maxResults))
                 .map(this::toUserSessionRepresentation);
     }
 
@@ -781,6 +800,8 @@ public class ClientResource {
 
             logger.debug("delete rotated secret");
 
+            // Always remove rotated secret attributes even when the feature is disabled,
+            // so stale secrets cannot become valid again if the feature is re-enabled.
             OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client);
 
             CredentialRepresentation rep = new CredentialRepresentation();
