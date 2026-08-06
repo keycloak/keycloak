@@ -151,15 +151,43 @@ public abstract class SsfEvent {
             }
         }
         StringJoiner rendered = new StringJoiner(", ");
-        for (Map.Entry<String, Object> entry : fields.entrySet()) {
+        for (var entry : fields.entrySet()) {
             Object value = entry.getValue();
             if (value == null) {
                 continue;
             }
-            rendered.add(entry.getKey() + "=" + (value instanceof String ? "'" + value + '\'' : value));
+            rendered.add(entry.getKey() + "=" + render(value));
         }
         String name = alias != null ? alias : getClass().getSimpleName();
-        return rendered.length() == 0 ? name : name + "::" + rendered;
+        return rendered.length() == 0 ? name : name + "{" + rendered + "}";
+    }
+
+    /**
+     * Renders a field value for {@link #toString()}, quoting {@link String}
+     * values at every nesting level so entries inside maps (extension
+     * {@link #attributes}, {@code reason_admin} / {@code reason_user}) read the
+     * same as top-level fields. Values originate from JSON payloads, which
+     * cannot form cycles, so the recursion is bounded.
+     */
+    private static String render(Object value) {
+        if (value instanceof String) {
+            return "'" + value + '\'';
+        }
+        if (value instanceof Map<?, ?> map) {
+            StringJoiner joiner = new StringJoiner(", ", "{", "}");
+            for (var entry : map.entrySet()) {
+                joiner.add(entry.getKey() + "=" + render(entry.getValue()));
+            }
+            return joiner.toString();
+        }
+        if (value instanceof Iterable<?> iterable) {
+            StringJoiner joiner = new StringJoiner(", ", "[", "]");
+            for (var element : iterable) {
+                joiner.add(render(element));
+            }
+            return joiner.toString();
+        }
+        return String.valueOf(value);
     }
 
     /**
@@ -168,8 +196,8 @@ public abstract class SsfEvent {
      * Subclasses override this (calling {@code super.appendFields(fields)} first)
      * instead of {@code toString()} itself. Values may be put unconditionally —
      * {@code null} entries are filtered and {@link String} values quoted centrally
-     * when rendering, and the extension {@link #attributes} map is appended
-     * automatically when non-empty.
+     * at every nesting level when rendering, and the extension {@link #attributes}
+     * map is appended automatically when non-empty.
      */
     protected void appendFields(Map<String, Object> fields) {
         fields.put("eventType", eventType);
