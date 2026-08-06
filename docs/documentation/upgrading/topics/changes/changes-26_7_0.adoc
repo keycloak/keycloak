@@ -294,6 +294,14 @@ The `KC_AUTH_SESSION_HASH` and `KEYCLOAK_SESSION` cookies are now hashed with SH
 
 No configuration change is required, and active sessions are not affected. After upgrading, an old `KEYCLOAK_SESSION` cookie no longer matches the new format and is silently replaced on the user's next request. Users with a valid session stay logged in; only users whose session has already expired have to log in again, as they normally would.
 
+=== New session-aware validation hook for identity provider configurations
+
+`IdentityProviderModel` gained a new `validate(KeycloakSession, RealmModel)` method that is now the entry point used when an identity provider is created, updated, or imported. The default implementation delegates to the existing `validate(RealmModel)` method, so custom identity providers that only override `validate(RealmModel)` keep working without any change.
+
+If your custom identity provider needs to validate configuration against server-side state that is only reachable through the `KeycloakSession` (for example resolving realm keys), override the new `validate(KeycloakSession, RealmModel)` method instead. Call `super.validate(session, realm)` to preserve the checks performed by the base and parent classes.
+
+This hook was introduced to support the new mutual TLS (`tls_client_auth`) client authentication method for OpenID Connect identity provider brokering, which resolves the configured client certificate from a realm key provider during validation.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
