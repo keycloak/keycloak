@@ -26,6 +26,8 @@ class Error {
     private static final Logger logger = Logger.getLogger(Error.class);
 
     static Response toResponse(KeycloakSession session, Exception e) {
+        session.getTransactionManager().setRollbackOnly();
+
         if (e instanceof ModelValidationException mve) {
             String language = session.getContext().getRequestHeaders().getHeaderString(HttpHeaders.ACCEPT_LANGUAGE);
             Properties messages = getMessageBundle(session, language);
@@ -33,7 +35,6 @@ class Error {
                     .replace("{{", "{").replace("}}", "}")
                     .replace("'", "");
             String message = MessageFormat.format(format, mve.getParameters());
-            session.getTransactionManager().setRollbackOnly();
             return invalidSyntax(message);
         } else if (e instanceof ModelDuplicateException) {
             return errorResponse(Status.CONFLICT, "uniqueness", "A resource with the same unique attribute already exists");
