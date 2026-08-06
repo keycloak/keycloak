@@ -58,13 +58,7 @@ public class RoleMappingDeleteResource {
         }
         auth.groups().requireManageMembership(group);
 
-        List<RoleRepresentation> reps = deleteRoleMappings(roles, role -> group.deleteRoleMapping(role));
-
-        adminEvent.operation(OperationType.DELETE)
-                .resourcePath(session.getContext().getUri())
-                .resource(ResourceType.REALM_ROLE_MAPPING)
-                .representation(reps)
-                .success();
+        deleteRoleMappings(roles, role -> group.deleteRoleMapping(role), ResourceType.REALM_ROLE_MAPPING, ResourceType.CLIENT_ROLE_MAPPING);
     }
 
     @POST
@@ -84,13 +78,7 @@ public class RoleMappingDeleteResource {
         }
         auth.users().requireMapRoles(user);
 
-        List<RoleRepresentation> reps = deleteRoleMappings(roles, role -> user.deleteRoleMapping(role));
-
-        adminEvent.operation(OperationType.DELETE)
-                .resourcePath(session.getContext().getUri())
-                .resource(ResourceType.REALM_ROLE_MAPPING)
-                .representation(reps)
-                .success();
+        deleteRoleMappings(roles, role -> user.deleteRoleMapping(role), ResourceType.REALM_ROLE_MAPPING, ResourceType.CLIENT_ROLE_MAPPING);
     }
 
     @POST
@@ -109,13 +97,7 @@ public class RoleMappingDeleteResource {
         }
         auth.clients().requireManage(clientScope);
 
-        List<RoleRepresentation> reps = deleteRoleMappings(roles, role -> clientScope.deleteScopeMapping(role));
-
-        adminEvent.operation(OperationType.DELETE)
-                .resourcePath(session.getContext().getUri())
-                .resource(ResourceType.CLIENT_SCOPE_MAPPING)
-                .representation(reps)
-                .success();
+        deleteRoleMappings(roles, role -> clientScope.deleteScopeMapping(role), ResourceType.REALM_SCOPE_MAPPING, ResourceType.CLIENT_SCOPE_MAPPING);
     }
 
     @POST
@@ -134,13 +116,7 @@ public class RoleMappingDeleteResource {
         }
         auth.clients().requireManage(client);
 
-        List<RoleRepresentation> reps = deleteRoleMappings(roles, role -> client.deleteScopeMapping(role));
-
-        adminEvent.operation(OperationType.DELETE)
-                .resourcePath(session.getContext().getUri())
-                .resource(ResourceType.CLIENT_SCOPE_MAPPING)
-                .representation(reps)
-                .success();
+        deleteRoleMappings(roles, role -> client.deleteScopeMapping(role), ResourceType.REALM_SCOPE_MAPPING, ResourceType.CLIENT_SCOPE_MAPPING);
     }
 
     @POST
@@ -163,17 +139,13 @@ public class RoleMappingDeleteResource {
         auth.roles().requireManage(role);
 
         final RoleModel parentRole = role;
-        List<RoleRepresentation> reps = deleteRoleMappings(roles, compositeRole -> parentRole.removeCompositeRole(compositeRole));
-
-        adminEvent.operation(OperationType.DELETE)
-                .resourcePath(session.getContext().getUri())
-                .resource(ResourceType.REALM_ROLE)
-                .representation(reps)
-                .success();
+        deleteRoleMappings(roles, compositeRole -> parentRole.removeCompositeRole(compositeRole), ResourceType.REALM_ROLE, ResourceType.CLIENT_ROLE);
     }
 
-    private List<RoleRepresentation> deleteRoleMappings(List<RoleDeleteRequest> roles, java.util.function.Consumer<RoleModel> deleteAction) {
-        List<RoleRepresentation> reps = new ArrayList<>();
+    private void deleteRoleMappings(List<RoleDeleteRequest> roles, java.util.function.Consumer<RoleModel> deleteAction, ResourceType realmResourceType, ResourceType clientResourceType) {
+        List<RoleRepresentation> realmRoles = new ArrayList<>();
+        java.util.Map<String, List<RoleRepresentation>> clientRoles = new java.util.HashMap<>();
+
         for (RoleDeleteRequest roleRequest : roles) {
             RoleModel role = this.realm.getRoleById(roleRequest.getRoleId());
             if (role == null) {
@@ -182,9 +154,31 @@ public class RoleMappingDeleteResource {
             if (role != null) {
                 auth.roles().requireMapRole(role);
                 deleteAction.accept(role);
-                reps.add(ModelToRepresentation.toBriefRepresentation(role));
+                RoleRepresentation rep = ModelToRepresentation.toBriefRepresentation(role);
+                if (role.isClientRole()) {
+                    clientRoles.computeIfAbsent(role.getContainerId(), k -> new ArrayList<>()).add(rep);
+                } else {
+                    realmRoles.add(rep);
+                }
             }
         }
-        return reps;
+
+        if (!realmRoles.isEmpty()) {
+            adminEvent.clone(session)
+                    .operation(OperationType.DELETE)
+                    .resourcePath(session.getContext().getUri())
+                    .resource(realmResourceType)
+                    .representation(realmRoles)
+                    .success();
+        }
+
+        for (java.util.Map.Entry<String, List<RoleRepresentation>> entry : clientRoles.entrySet()) {
+            adminEvent.clone(session)
+                    .operation(OperationType.DELETE)
+                    .resourcePath(session.getContext().getUri())
+                    .resource(clientResourceType)
+                    .representation(entry.getValue())
+                    .success();
+        }
     }
 }
