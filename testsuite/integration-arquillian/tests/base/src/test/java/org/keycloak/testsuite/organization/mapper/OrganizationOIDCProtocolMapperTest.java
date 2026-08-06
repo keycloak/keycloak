@@ -181,6 +181,28 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testOrganizationScopeValueContainingSeparatorCharacter() throws Exception {
+        // the alias itself contains the scope value separator (':'), exercising resolution of scopes like
+        // "organization:ABC:Google" where both the scope name and the value may contain the separator
+        OrganizationRepresentation orgA = createOrganization("orga", true);
+        orgA.setAlias("ABC:Google");
+        managedRealm.admin().organizations().get(orgA.getId()).update(orgA).close();
+        addMember(managedRealm.admin().organizations().get(orgA.getId()));
+
+        oauth.client("direct-grant", "password");
+        String orgScope = "organization:" + orgA.getAlias();
+        oauth.scope("openid " + orgScope);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+        assertThat(response.getScope(), containsString(orgScope));
+
+        AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations, containsInAnyOrder(orgA.getAlias()));
+    }
+
     @Test
     public void testOrganizationNotAddedByGroupMapper() throws Exception {
         OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());

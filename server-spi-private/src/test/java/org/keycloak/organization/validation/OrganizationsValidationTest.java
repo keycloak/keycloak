@@ -34,7 +34,7 @@ public class OrganizationsValidationTest {
     }
 
     @Test
-    public void validateAliasAcceptsBlankOrNull() {
+    public void validateAliasAcceptsEmptyOrNull() {
         OrganizationsValidation.validateAlias(null);
         OrganizationsValidation.validateAlias("");
     }
