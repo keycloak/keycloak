@@ -58,6 +58,7 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
         attributes.addAll(Attribute.<UserModel, User>simple("userName")
                 .required()
                 .notCaseExact()
+                .storedLowerCase()
                 .serverUnique()
                 .modelAttributeResolver(this::createModelAttributeResolver)
                 .withModelSetter(UserModel::setSingleAttribute)
@@ -65,6 +66,7 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
         attributes.addAll(Attribute.<UserModel, User>complex("emails", Email.class)
                 .modelAttributeResolver(this::createModelAttributeResolver)
                 .notCaseExact()
+                .storedLowerCase()
                 .globalUnique()
                 .multivalued()
                 .withModelSetter((TriConsumer<UserModel, String, Set<Email>>) (model, name, values) -> {
