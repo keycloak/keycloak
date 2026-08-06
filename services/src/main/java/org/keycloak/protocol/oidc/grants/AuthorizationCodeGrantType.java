@@ -125,6 +125,7 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "User not found", Response.Status.BAD_REQUEST);
         }
 
+        event.session(userSession);
         event.user(userSession.getUser());
 
         if (!user.isEnabled()) {
