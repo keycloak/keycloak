@@ -73,6 +73,9 @@ public class VciConformanceRealmConfig implements RealmConfig {
     public static final String CREDENTIAL_CONFIGURATION_ID = "conformance_sd_jwt_vc";
     public static final String CONFORMANCE_CALLBACK = OpenIdConformanceSuite.INTERNAL_BASE_URI + "/test/a/keycloak/callback";
     public static final String TRUST_IDP_ALIAS = "conformance-client-attester";
+    public static final String X509_TRUST_IDP_ALIAS = "conformance-attester-x509";
+    // The attester leaf certificate is generated with the emailProtection extended key usage.
+    private static final String ATTESTER_ATTESTATION_EKU = "1.3.6.1.5.5.7.3.4";
 
     @Override
     public RealmBuilder configure(RealmBuilder realm) {
@@ -108,7 +111,7 @@ public class VciConformanceRealmConfig implements RealmConfig {
                     }
                     components.add(KeyProvider.class.getName(), conformanceSigningKeyProvider());
                     components.add(KeyProvider.class.getName(), conformanceEcdhEncryptionKeyProvider());
-                    rep.setIdentityProviders(List.of(attesterTrustIdentityProvider()));
+                    rep.setIdentityProviders(List.of(attesterTrustIdentityProvider(), attesterX509TrustIdentityProvider()));
                 });
         return realm;
     }
@@ -126,13 +129,27 @@ public class VciConformanceRealmConfig implements RealmConfig {
         return trust;
     }
 
+    // Trusts the key attestation x5c certificate chain against the attester CA. Key attestations carry an x5c
+    // header, so Keycloak must be able to validate the chain against a configured X.509 trust domain.
+    private IdentityProviderRepresentation attesterX509TrustIdentityProvider() {
+        IdentityProviderRepresentation trust = new IdentityProviderRepresentation();
+        trust.setAlias(X509_TRUST_IDP_ALIAS);
+        trust.setProviderId(DefaultTrustIdentityProviderFactory.PROVIDER_ID);
+        trust.setEnabled(true);
+        trust.setConfig(Map.of(
+                DefaultTrustIdentityProviderConfig.USE_X509, "true",
+                DefaultTrustIdentityProviderConfig.TRUSTED_CERTIFICATES, VciAttesterKey.caCertificatePem(),
+                DefaultTrustIdentityProviderConfig.ATTESTATION_EXTENDED_KEY_USAGES, ATTESTER_ATTESTATION_EKU));
+        return trust;
+    }
+
     private ClientBuilder conformanceClient(String clientId, boolean wildcardRedirect) {
         return ClientBuilder.create(clientId)
                 .serviceAccountsEnabled(false)
                 .directAccessGrantsEnabled(false)
                 .authenticatorType(AttestationBasedClientAuthenticator.PROVIDER_ID)
                 .attribute(AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_CONFIG_TRUST_IDPS, TRUST_IDP_ALIAS)
-                .attribute(OID4VCIConstants.OID4VCI_ATTESTER_TRUST_IDPS_ATTR, TRUST_IDP_ALIAS)
+                .attribute(OID4VCIConstants.OID4VCI_ATTESTER_TRUST_IDPS_ATTR, TRUST_IDP_ALIAS + "," + X509_TRUST_IDP_ALIAS)
                 .defaultClientScopes("basic", "profile", "roles")
                 .optionalClientScopes(SD_JWT_SCOPE, "email")
                 .attribute(OID4VCI_ENABLED_ATTRIBUTE_KEY, "true")
