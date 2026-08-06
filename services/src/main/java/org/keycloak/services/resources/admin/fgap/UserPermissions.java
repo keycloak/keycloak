@@ -49,6 +49,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.authorization.Permission;
 
+import static org.keycloak.authorization.policy.evaluation.EvaluationContext.CLIENT_ID_ATTRIBUTE;
+
 /**
  * Manages default policies for all users.
  *
@@ -342,7 +344,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
             @Override
             public Map<String, Collection<String>> getBaseAttributes() {
                 Map<String, Collection<String>> attributes = super.getBaseAttributes();
-                attributes.put("kc.client.id", Arrays.asList(client.getClientId()));
+                attributes.put(CLIENT_ID_ATTRIBUTE, Arrays.asList(client.getClientId()));
                 return attributes;
             }
 
@@ -395,7 +397,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         if (requester != null) {
             // make sure the requesting client id is available from the context as we are using a user identity that does not rely on token claims
             additionalClaims = new HashMap<>();
-            additionalClaims.put("kc.client.id", Arrays.asList(requester.getClientId()));
+            additionalClaims.put(CLIENT_ID_ATTRIBUTE, Arrays.asList(requester.getClientId()));
         }
 
         return hasPermission(new DefaultEvaluationContext(new UserModelIdentity(root.realm, user), additionalClaims, session), USER_IMPERSONATED_SCOPE);
@@ -424,6 +426,11 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         if (!canImpersonate(user)) {
             throw new ForbiddenException();
         }
+    }
+
+    @Override
+    public boolean canDelegate(UserModel user, ClientModel requester) {
+        throw new UnsupportedOperationException("Delegation permissions are only supported with FGAP V2");
     }
 
     @Override

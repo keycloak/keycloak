@@ -156,6 +156,9 @@ public class ClientScopeAuthorizationRequestParser implements AuthorizationReque
                 } catch (InvalidScopeParameterException e) {
                     logger.warnf("Invalid scope parameter for '%s': %s", clientScopeModel.getName(), e.getMessage());
                     return Optional.empty();
+                } catch (UnsupportedOperationException e) {
+                    logger.warnf("Unsupported scope type operation for '%s': %s", clientScopeModel.getName(), e.getMessage());
+                    return Optional.empty();
                 }
                 return Optional.of(new IntermediaryScopeRepresentation(clientScopeModel, paramValue, requestScope));
             } else {
