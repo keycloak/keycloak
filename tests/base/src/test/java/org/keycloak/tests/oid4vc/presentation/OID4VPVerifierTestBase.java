@@ -226,9 +226,9 @@ public abstract class OID4VPVerifierTestBase extends OID4VCIssuerTestBase {
     protected String openWalletPage() {
         driver.open(authUrl());
         String html = driver.driver().getPageSource();
-        Matcher matcher = Pattern.compile("openid4vp://[^\"'\\s]+").matcher(html);
-        assertTrue(matcher.find(), "Wallet login page did not contain an openid4vp:// link");
-        return matcher.group().replace("&amp;", "&");
+        Matcher matcher = Pattern.compile("id=\"oid4vp-open-wallet\"[^>]*href=\"([^\"]+)\"").matcher(html);
+        assertTrue(matcher.find(), "Wallet login page did not contain the same device wallet link");
+        return matcher.group(1).replace("&amp;", "&");
     }
 
     // The cross device wallet url rendered into the QR code, exposed as a data attribute on the image.
