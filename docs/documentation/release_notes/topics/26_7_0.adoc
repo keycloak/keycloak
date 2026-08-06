@@ -13,6 +13,13 @@ If you are upgrading from a previous release, https://www.keycloak.org/docs/late
 
 = Security and Standards
 
+== Mutual TLS client authentication for OpenID Connect identity provider brokering
+// https://github.com/keycloak/keycloak/issues/38310
+
+When brokering an external OpenID Connect identity provider, {project_name} can now authenticate to the external provider using a client certificate over mutual TLS (`tls_client_auth`, as defined in https://datatracker.ietf.org/doc/html/rfc8705[RFC 8705]), in addition to the existing client secret and JWT-based methods.
+
+Select *X509 Certificate (mutual TLS)* as the *Client Authentication* method on the identity provider and choose the realm key provider that holds the client certificate. {project_name} presents that certificate on all backchannel calls to the external provider (token, refresh, introspection, and user info endpoints). Because the certificate is configured per identity provider, different realms and identity providers can present different client certificates, replacing the previous workaround of a single global outgoing client keystore combined with a placeholder client secret.
+
 == Stronger security for the Identity Brokering API
 // https://github.com/keycloak/keycloak/issues/47339
 

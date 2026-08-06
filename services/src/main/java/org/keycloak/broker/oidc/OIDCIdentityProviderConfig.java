@@ -21,6 +21,7 @@ import org.keycloak.broker.provider.SingleIssuerIdentityProviderConfig;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderType;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
 import static org.keycloak.common.util.UriUtils.checkUrl;
@@ -165,8 +166,8 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig imp
     }
 
     @Override
-    public void validate(RealmModel realm) {
-        super.validate(realm);
+    public void validate(KeycloakSession session, RealmModel realm) {
+        super.validate(session, realm);
         String issuer = getIssuer();
         if (issuer != null && issuer.contains(",")) {
             throw new IllegalArgumentException("Only one issuer is supported. Configure a separate identity provider for each issuer.");

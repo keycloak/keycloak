@@ -22,6 +22,7 @@ import java.util.Map;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.representations.MTLSEndpointAliases;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -81,7 +82,22 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
         if (rep.getIntrospectionEndpoint() != null) {
             config.setTokenIntrospectionUrl(rep.getIntrospectionEndpoint());
         }
+
+        // RFC 8705: preserve the mtls_endpoint_aliases so that tls_client_auth backchannel requests are
+        // sent to the certificate-authenticated endpoints rather than the regular ones. Always set all
+        // three fields (empty when the document omits the alias) so that re-importing a document without
+        // mtls_endpoint_aliases clears any previously imported aliases instead of leaving stale endpoints
+        // that would keep receiving the client certificate and backchannel credentials.
+        MTLSEndpointAliases mtlsAliases = rep.getMtlsEndpointAliases();
+        config.setMtlsTokenUrl(mtlsAliases != null ? nullToEmpty(mtlsAliases.getTokenEndpoint()) : "");
+        config.setMtlsUserInfoUrl(mtlsAliases != null ? nullToEmpty(mtlsAliases.getUserInfoEndpoint()) : "");
+        config.setMtlsTokenIntrospectionUrl(
+                mtlsAliases != null ? nullToEmpty(mtlsAliases.getIntrospectionEndpoint()) : "");
         return config.getConfig();
+    }
+
+    private static String nullToEmpty(String value) {
+        return value == null ? "" : value;
     }
 
 }

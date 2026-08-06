@@ -1,0 +1,36 @@
+{
+  "id": "mtls-idp-import-bug",
+  "realm": "mtls-idp-import-bug",
+  "enabled": true,
+  "sslRequired": "none",
+  "identityProviders": [
+    {
+      "alias": "mtls-oidc",
+      "providerId": "oidc",
+      "enabled": true,
+      "config": {
+        "clientId": "broker-client",
+        "clientAuthMethod": "tls_client_auth",
+        "clientCertKeyProviderId": "mtls-client-cert-key",
+        "authorizationUrl": "https://idp.example.org/auth",
+        "tokenUrl": "https://idp.example.org/token"
+      }
+    }
+  ],
+  "components": {
+    "org.keycloak.keys.KeyProvider": [
+      {
+        "id": "mtls-client-cert-key",
+        "name": "mtls-client-cert-key",
+        "providerId": "rsa-generated",
+        "subComponents": {},
+        "config": {
+          "priority": ["100"],
+          "enabled": ["true"],
+          "active": ["true"],
+          "keySize": ["2048"]
+        }
+      }
+    ]
+  }
+}
