@@ -1,7 +1,10 @@
 package org.keycloak.common.util;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -16,6 +19,151 @@ public class PathMatcherTest {
 
         Assertions.assertNotNull(matcher.matches("/api/v1/1/campaigns/summer"));
         Assertions.assertNull(matcher.matches("/api/v1/1/contentConnectorConfigs/29/contentConnectorContents"));
+    }
+
+    @Test
+    public void testMatrixParamsStripped() {
+        PathMatcher<String> matcher = createMatcher("/api/admin", "/*");
+        Assertions.assertEquals("/api/admin", matcher.matches("/api/admin;x=1"));
+        Assertions.assertEquals("/api/admin", matcher.matches("/api/admin;jsessionid=abc123"));
+        Assertions.assertEquals("/api/admin", matcher.matches("/api/admin;a=1;b=2"));
+    }
+
+    @Test
+    public void testMatrixParamsInMiddleSegment() {
+        PathMatcher<String> matcher = createMatcher("/api/admin/data", "/*");
+        Assertions.assertEquals("/api/admin/data", matcher.matches("/api;v=2/admin/data"));
+        Assertions.assertEquals("/api/admin/data", matcher.matches("/api/admin;x=1/data"));
+    }
+
+    @Test
+    public void testTrailingSlashStripped() {
+        PathMatcher<String> matcher = createMatcher("/api/admin", "/*");
+        Assertions.assertEquals("/api/admin", matcher.matches("/api/admin/"));
+    }
+
+    @Test
+    public void testDoubleSlashesCollapsed() {
+        PathMatcher<String> matcher = createMatcher("/api/admin", "/*");
+        Assertions.assertEquals("/api/admin", matcher.matches("/api//admin"));
+        Assertions.assertEquals("/api/admin", matcher.matches("//api///admin"));
+    }
+
+    @Test
+    public void testDotSegmentsResolved() {
+        PathMatcher<String> matcher = createMatcher("/api/admin", "/*");
+        Assertions.assertEquals("/api/admin", matcher.matches("/api/foo/../admin"));
+        Assertions.assertEquals("/api/admin", matcher.matches("/api/./admin"));
+    }
+
+    @Test
+    public void testPercentEncodedUnreservedDecoded() {
+        PathMatcher<String> matcher = createMatcher("/api/admin", "/*");
+        Assertions.assertEquals("/api/admin", matcher.matches("/api/%61dmin"));
+        Assertions.assertEquals("/api/admin", matcher.matches("/%61pi/%61dmin"));
+    }
+
+    @Test
+    public void testPercentEncodedReservedDecoded() {
+        PathMatcher<String> matcher = createMatcher("/api/admin area", "/*");
+        Assertions.assertEquals("/api/admin area", matcher.matches("/api/admin%20area"));
+    }
+
+    @Test
+    public void testPercentEncodedSlashDecoded() {
+        PathMatcher<String> matcher = createMatcher("/api/admin", "/*");
+        Assertions.assertEquals("/api/admin", matcher.matches("/api/%2Fadmin"));
+    }
+
+    @Test
+    public void testCombinedVectors() {
+        PathMatcher<String> matcher = createMatcher("/api/admin", "/*");
+        Assertions.assertEquals("/api/admin", matcher.matches("/api/admin;x=1/"));
+        Assertions.assertEquals("/api/admin", matcher.matches("//api/foo/../admin;y=2/"));
+        Assertions.assertEquals("/api/admin", matcher.matches("/api/./admin;session=abc"));
+    }
+
+    @Test
+    public void testRootPathPreserved() {
+        PathMatcher<String> matcher = createMatcher("/", "/api/admin");
+        Assertions.assertEquals("/", matcher.matches("/"));
+    }
+
+    @Test
+    public void testNormalUriUnchanged() {
+        PathMatcher<String> matcher = createMatcher("/api/admin", "/*");
+        Assertions.assertEquals("/api/admin", matcher.matches("/api/admin"));
+    }
+
+    @Test
+    public void testWildcardMatchingStillWorks() {
+        PathMatcher<String> matcher = createMatcher("/api/admin/*", "/other");
+        Assertions.assertEquals("/api/admin/*", matcher.matches("/api/admin/sub"));
+        Assertions.assertEquals("/api/admin/*", matcher.matches("/api/admin/sub/deep"));
+    }
+
+    @Test
+    public void testTemplateMatchingStillWorks() {
+        PathMatcher<String> matcher = createMatcher("/api/{id}/items", "/*");
+        Assertions.assertEquals("/api/{id}/items", matcher.matches("/api/123/items"));
+    }
+
+    @Test
+    public void testCurlyBracesInTargetUri() {
+        PathMatcher<String> matcher = createMatcher("/rest/{version}/carts/{cartId}/cartactions/{actionId}", "/*");
+        Assertions.assertNotNull(matcher.matches("/rest/v2/carts/{cartId}/cartactions/123"));
+    }
+
+    @Test
+    public void testMalformedUriReturnsNoMatch() {
+        PathMatcher<String> matcher = createMatcher("/api/admin", "/*");
+        Assertions.assertNull(matcher.matches("/api/foo/../admin%"));
+        Assertions.assertNull(matcher.matches("/api/admin%"));
+    }
+
+    @Test
+    public void testUriWithNoPathReturnsNoMatch() {
+        PathMatcher<String> matcher = createMatcher("/api/admin", "/*");
+        Assertions.assertNull(matcher.matches("foo:bar"));
+    }
+
+    @Test
+    public void testMutatedUriDoesNotFallThroughToWildcard() {
+        PathMatcher<String> matcher = createMatcher("/api/admin", "/*");
+
+        for (String mutated : Arrays.asList(
+                "/api/admin;x=1",
+                "/api/admin/",
+                "/api//admin",
+                "/api/foo/../admin",
+                "/api/%61dmin",
+                "/api/%2Fadmin",
+                "/api/admin;x=1/",
+                "//api/foo/../admin;y=2/"
+        )) {
+            String result = matcher.matches(mutated);
+            Assertions.assertNotNull(result, "Should match for: " + mutated);
+            Assertions.assertEquals("/api/admin", result,
+                    "Should match /api/admin, not /* for: " + mutated);
+        }
+    }
+
+    private PathMatcher<String> createMatcher(String... paths) {
+        Map<String, String> pathMap = new HashMap<>();
+        for (String p : paths) {
+            pathMap.put(p, p);
+        }
+        return new PathMatcher<String>() {
+            @Override
+            protected String getPath(String entry) {
+                return entry;
+            }
+
+            @Override
+            protected Collection<String> getPaths() {
+                return pathMap.values();
+            }
+        };
     }
 
     @Test
