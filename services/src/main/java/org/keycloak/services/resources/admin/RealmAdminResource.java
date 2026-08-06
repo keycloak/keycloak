@@ -299,7 +299,7 @@ public class RealmAdminResource {
             throw ErrorResponse.error("Can't assign a Parameterized Scope as a Default Scope", Status.BAD_REQUEST);
         }
 
-        ClientResource.validateClientScopeAssignment(session, clientScope, defaultScope, realm);
+        ClientResource.validateClientScopeAssignment(session, clientScope, defaultScope, realm, true);
         
         realm.addDefaultClientScope(clientScope, defaultScope);
 
