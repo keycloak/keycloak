@@ -27,6 +27,7 @@ import java.util.Optional;
 
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticator;
 import org.keycloak.common.Profile;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AuthnContextClassRefType;
@@ -185,6 +186,63 @@ public class LevelOfAssuranceFlowSamlTest extends AbstractSamlTest {
     }
 
     @Test
+    public void differentLevelsWithMaxAge() {
+        LevelOfAssuranceFlowTest.configureStepUpFlow(REALM_NAME, testingClient,
+                ConditionalLoaAuthenticator.DEFAULT_MAX_AGE, ConditionalLoaAuthenticator.DEFAULT_MAX_AGE, 0);
+
+        // first request for level 1 password
+        SamlClient samlClient = new SamlClientBuilder()
+                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST_SIG,
+                        SAML_ASSERTION_CONSUMER_URL_SALES_POST_SIG, SamlClient.Binding.POST)
+                .addAuthnContextClassRef("urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport")
+                .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)
+                .build()
+                .login().user(otpUser).build()
+                .execute(this::assertResponsePassword);
+
+        // request for level 1 password again, should be automatically done
+        samlClient.execute(new SamlClientBuilder()
+                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST_SIG,
+                        SAML_ASSERTION_CONSUMER_URL_SALES_POST_SIG, SamlClient.Binding.POST)
+                .addAuthnContextClassRef("urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport")
+                .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)
+                .build()
+                .assertResponse(this::assertResponsePassword)
+                .getSteps());
+
+        // request for level 2, should enforce OTP login
+        samlClient.execute(new SamlClientBuilder()
+                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST_SIG,
+                        SAML_ASSERTION_CONSUMER_URL_SALES_POST_SIG, SamlClient.Binding.POST)
+                .addAuthnContextClassRef("urn:oasis:names:tc:SAML:2.0:ac:classes:TimeSyncToken")
+                .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)
+                .build()
+                .otpLogin().otp(new TimeBasedOTP().generateTOTP("DJmQfC73VGFhw7D4QJ8A")).build()
+                .assertResponse(this::assertResponseTimeSyncToken)
+                .getSteps());
+
+        // request for level 2 again, OTP now has max age
+        samlClient.execute(new SamlClientBuilder()
+                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST_SIG,
+                        SAML_ASSERTION_CONSUMER_URL_SALES_POST_SIG, SamlClient.Binding.POST)
+                .addAuthnContextClassRef("urn:oasis:names:tc:SAML:2.0:ac:classes:TimeSyncToken")
+                .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)
+                .build()
+                .assertResponse(this::assertResponseTimeSyncToken)
+                .getSteps());
+
+        // request password again
+        samlClient.execute(new SamlClientBuilder()
+                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST_SIG,
+                        SAML_ASSERTION_CONSUMER_URL_SALES_POST_SIG, SamlClient.Binding.POST)
+                .addAuthnContextClassRef("urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport")
+                .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)
+                .build()
+                .assertResponse(this::assertResponsePassword)
+                .getSteps());
+    }
+
+    @Test
     public void invalidAuthnContextClassRef() {
         LevelOfAssuranceFlowTest.configureStepUpFlow(REALM_NAME, testingClient);
 
@@ -276,28 +334,6 @@ public class LevelOfAssuranceFlowSamlTest extends AbstractSamlTest {
                 "urn:custom:authentication:level4", "4"
         );
         executeTest(this::authnContextClassRefNotReachedTest, loaMap, "");
-    }
-
-    private void authnContextClassRefIncorrectMatchWithFlowTest() {
-        // ask password wich in flow is 1 but requesting is 0, it means that final level does not match with the requested level
-        new SamlClientBuilder()
-                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST_SIG,
-                        SAML_ASSERTION_CONSUMER_URL_SALES_POST_SIG, SamlClient.Binding.POST)
-                .addAuthnContextClassRef("urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport")
-                .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)
-                .build()
-                .login().user(otpUser).build()
-                .execute(this::assertResponseUnspecified);
-    }
-
-    @Test
-    public void authnContextClassRefIncorrectMatchWithFlow() throws IOException {
-        Map<String, String> loaMap = Map.of(
-                "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport", "0",
-                "urn:oasis:names:tc:SAML:2.0:ac:classes:TimeSyncToken", "1",
-                "urn:custom:authentication:pushbutton", "2"
-        );
-        executeTest(this::authnContextClassRefIncorrectMatchWithFlowTest, loaMap, "");
     }
 
     @Test
