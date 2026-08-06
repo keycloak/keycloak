@@ -503,7 +503,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         if (realm != null) {
             RealmBean realmBean = new RealmBean(realm);
             attributes.put("realm", realmBean);
-            attributes.put("title", getMessage("loginTitle", realmBean.getDisplayName()));
+            attributes.put("title", formatMessage(new FormMessage(null, "loginTitle", realmBean.getDisplayName()), messagesBundle, locale));
 
             IdentityProviderBean idpBean = new IdentityProviderBean(session, realm, baseUriWithCodeAndClientId, context);
 
