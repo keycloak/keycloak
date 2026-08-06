@@ -2,7 +2,14 @@ package org.keycloak.connections.httpclient;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.Socket;
+import java.security.Principal;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.X509KeyManager;
 
 import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.config.RequestConfig;
@@ -12,6 +19,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 
 public class HttpClientBuilderTest {
 
@@ -77,6 +85,80 @@ public class HttpClientBuilderTest {
         Field defaultConfig = httpClient.getClass().getDeclaredField("defaultConfig");
         defaultConfig.setAccessible(true);
         return (RequestConfig) defaultConfig.get(httpClient);
+    }
+
+    /**
+     * Regression test: when {@code disable-trust-manager} is set, the custom client TLS key material for
+     * tls_client_auth (mTLS) must still be presented. Previously the builder created a fresh SSLContext
+     * with no key managers in that case, silently dropping the certificate.
+     */
+    @Test
+    public void keyManagersSurviveDisableTrustManager() throws Exception {
+        KeyManager[] keyManagers = { new NoopKeyManager() };
+
+        HttpClientBuilder builder = new HttpClientBuilder()
+                .keyManagers(keyManagers)
+                .disableTrustManager();
+
+        // The key material must not be dropped when trust management is disabled.
+        assertSame("Client key managers must survive disable-trust-manager",
+                keyManagers, builder.effectiveKeyManagers());
+
+        // And the resulting context must be built successfully with that key material in place.
+        SSLContext ctx = builder.resolveSslContext();
+        assertNotNull("A usable SSLContext must be produced with disable-trust-manager and mTLS key material", ctx);
+        assertNotNull(ctx.getSocketFactory());
+    }
+
+    /**
+     * Sanity check that key managers are also honored on the normal (trust-manager-enabled) path.
+     */
+    @Test
+    public void keyManagersAreHonoredOnDefaultPath() throws Exception {
+        KeyManager[] keyManagers = { new NoopKeyManager() };
+
+        HttpClientBuilder builder = new HttpClientBuilder().keyManagers(keyManagers);
+
+        assertSame(keyManagers, builder.effectiveKeyManagers());
+
+        SSLContext ctx = builder.resolveSslContext();
+        assertNotNull(ctx);
+        assertNotNull(ctx.getSocketFactory());
+    }
+
+    /**
+     * Minimal X509KeyManager placeholder used to verify the builder retains configured key material.
+     */
+    private static class NoopKeyManager implements X509KeyManager {
+        @Override
+        public String[] getClientAliases(String keyType, Principal[] issuers) {
+            return new String[0];
+        }
+
+        @Override
+        public String chooseClientAlias(String[] keyType, Principal[] issuers, Socket socket) {
+            return null;
+        }
+
+        @Override
+        public String[] getServerAliases(String keyType, Principal[] issuers) {
+            return new String[0];
+        }
+
+        @Override
+        public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket) {
+            return null;
+        }
+
+        @Override
+        public X509Certificate[] getCertificateChain(String alias) {
+            return new X509Certificate[0];
+        }
+
+        @Override
+        public PrivateKey getPrivateKey(String alias) {
+            return null;
+        }
     }
 
 }

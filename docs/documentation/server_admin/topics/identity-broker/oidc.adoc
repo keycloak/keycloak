@@ -34,7 +34,10 @@ image:images/oidc-add-identity-provider.png[Add Identity Provider]
 |An endpoint the OIDC protocol defines. This endpoint points to user profile information.
 
 |Client Authentication
-|Defines the Client Authentication method {project_name} uses with the Authorization Code Flow. In the case of JWT signed with a private key, {project_name} uses the realm private key. In the other cases, define a client secret. See the https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication[Client Authentication specifications] for more information.
+|Defines the Client Authentication method {project_name} uses with the Authorization Code Flow. In the case of JWT signed with a private key, {project_name} uses the realm private key. In the case of *X509 Certificate (mutual TLS)*, {project_name} authenticates to the external IDP with a client certificate over mutual TLS (`tls_client_auth`, https://datatracker.ietf.org/doc/html/rfc8705[RFC 8705]) instead of a secret; you must select the realm key provider that holds the client certificate (see *Client Certificate Key Provider* below). In the other cases, define a client secret. See the https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication[Client Authentication specifications] for more information.
+
+|Client Certificate Key Provider
+|Applies only when *Client Authentication* is *X509 Certificate (mutual TLS)*. Selects the realm key provider (for example a `java-keystore` provider) whose private key and certificate chain {project_name} presents as the client certificate on all backchannel calls to the external IDP (token, refresh, introspection, and user info endpoints). Validation of the external IDP's server certificate follows the server-wide outbound HTTP trust and hostname-verification configuration: the {project_name} truststore is used when configured, hostname verification and certificate validation can be relaxed by `disable-trust-manager`, and the JVM default trust settings apply when no {project_name} truststore is present. Sourcing the certificate per identity provider allows different realms and identity providers to present different client certificates.
 
 |Client ID
 |A realm acting as an OIDC client to the external IDP. The realm must have an OIDC client ID if you use the Authorization Code Flow to interact with the external IDP.

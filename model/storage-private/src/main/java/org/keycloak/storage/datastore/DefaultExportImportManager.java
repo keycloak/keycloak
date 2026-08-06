@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.MediaType;
@@ -374,6 +375,17 @@ public class DefaultExportImportManager implements ExportImportManager {
             DefaultRequiredActions.addActions(newRealm);
         }
 
+        // Import key provider components before identity providers so that IdP validation, which may resolve
+        // component-backed state such as the client certificate key provider referenced by tls_client_auth
+        // (see OAuth2IdentityProviderConfig#validate), can find the referenced components. Only key providers are
+        // pre-imported here; dependency-sensitive components (e.g. LDAP role mappers referencing realm roles that
+        // are imported later) are left at their original position to avoid premature component-factory validation.
+        if (rep.getComponents() != null) {
+            MultivaluedHashMap<String, ComponentExportRepresentation> components = rep.getComponents();
+            String parentId = newRealm.getId();
+            importComponents(newRealm, components, parentId, KeyProvider.class.getName()::equals);
+        }
+
         importIdentityProviders(rep, newRealm, session);
         importIdentityProviderMappers(rep, session);
 
@@ -469,10 +481,12 @@ public class DefaultExportImportManager implements ExportImportManager {
             }
         }
 
+        // Import the remaining (non key-provider) components now that dependency-sensitive state such as realm
+        // roles and clients exists. Key providers were already imported above, before identity providers.
         if (rep.getComponents() != null) {
             MultivaluedHashMap<String, ComponentExportRepresentation> components = rep.getComponents();
             String parentId = newRealm.getId();
-            importComponents(newRealm, components, parentId);
+            importComponents(newRealm, components, parentId, providerType -> !KeyProvider.class.getName().equals(providerType));
         }
 
         importUserFederationProvidersAndMappers(session, rep, newRealm);
@@ -1279,8 +1293,15 @@ public class DefaultExportImportManager implements ExportImportManager {
     }
 
     protected static void importComponents(RealmModel newRealm, MultivaluedHashMap<String, ComponentExportRepresentation> components, String parentId) {
+        importComponents(newRealm, components, parentId, providerType -> true);
+    }
+
+    protected static void importComponents(RealmModel newRealm, MultivaluedHashMap<String, ComponentExportRepresentation> components, String parentId, Predicate<String> providerTypeFilter) {
         for (Map.Entry<String, List<ComponentExportRepresentation>> entry : components.entrySet()) {
             String providerType = entry.getKey();
+            if (!providerTypeFilter.test(providerType)) {
+                continue;
+            }
             for (ComponentExportRepresentation compRep : entry.getValue()) {
                 ComponentModel component = new ComponentModel();
                 component.setId(compRep.getId());
