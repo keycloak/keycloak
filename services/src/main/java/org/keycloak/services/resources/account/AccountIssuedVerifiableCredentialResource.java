@@ -97,6 +97,14 @@ public class AccountIssuedVerifiableCredentialResource {
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS);
         checkOid4VCIEnabled();
 
+        boolean isOwnedByUser = session.users()
+                .getIssuedVerifiableCredentialsStreamByUser(user.getId())
+                .anyMatch(model -> model.getId().equals(credentialId));
+
+        if (!isOwnedByUser) {
+            throw new NotFoundException("Issued credential not found");
+        }
+
         boolean removed = session.users().removeIssuedVerifiableCredential(credentialId);
         if (!removed) {
             logger.warn(String.format("Issued credential with ID '%s' not found for user '%s' in the realm '%s'.", credentialId, user.getUsername(), realm.getName()));
