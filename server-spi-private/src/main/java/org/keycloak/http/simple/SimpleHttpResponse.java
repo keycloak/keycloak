@@ -27,54 +27,64 @@ public class SimpleHttpResponse implements AutoCloseable {
     private final HttpResponse response;
     private final long maxConsumedResponseSize;
     private final ObjectMapper objectMapper;
+    private final Runnable onClose;
     private int statusCode = -1;
     private String responseString;
     private ContentType contentType;
 
     public SimpleHttpResponse(HttpResponse response, long maxConsumedResponseSize, ObjectMapper objectMapper) {
+        this(response, maxConsumedResponseSize, objectMapper, () -> {});
+    }
+
+    public SimpleHttpResponse(HttpResponse response, long maxConsumedResponseSize, ObjectMapper objectMapper, Runnable onClose) {
         this.response = response;
         this.maxConsumedResponseSize = maxConsumedResponseSize;
         this.objectMapper = objectMapper;
+        this.onClose = onClose;
     }
 
     private void readResponse() throws IOException {
         if (statusCode == -1) {
-            statusCode = response.getStatusLine().getStatusCode();
+            try {
+                statusCode = response.getStatusLine().getStatusCode();
 
-            InputStream is;
-            HttpEntity entity = response.getEntity();
-            if (entity != null) {
-                is = entity.getContent();
-                contentType = ContentType.getOrDefault(entity);
-                Charset charset = contentType.getCharset();
-                try {
-                    HeaderIterator it = response.headerIterator();
-                    while (it.hasNext()) {
-                        Header header = it.nextHeader();
-                        if (header.getName().equals("Content-Encoding") && header.getValue().equals("gzip")) {
-                            is = new GZIPInputStream(is);
+                InputStream is;
+                HttpEntity entity = response.getEntity();
+                if (entity != null) {
+                    is = entity.getContent();
+                    contentType = ContentType.getOrDefault(entity);
+                    Charset charset = contentType.getCharset();
+                    try {
+                        HeaderIterator it = response.headerIterator();
+                        while (it.hasNext()) {
+                            Header header = it.nextHeader();
+                            if (header.getName().equals("Content-Encoding") && header.getValue().equals("gzip")) {
+                                is = new GZIPInputStream(is);
+                            }
                         }
-                    }
 
-                    is = new SafeInputStream(is, maxConsumedResponseSize);
+                        is = new SafeInputStream(is, maxConsumedResponseSize);
 
-                    try (InputStreamReader reader = charset == null ? new InputStreamReader(is, StandardCharsets.UTF_8) :
+                        try (InputStreamReader reader = charset == null ? new InputStreamReader(is, StandardCharsets.UTF_8) :
                             new InputStreamReader(is, charset)) {
 
-                        StringWriter writer = new StringWriter();
+                            StringWriter writer = new StringWriter();
 
-                        char[] buffer = new char[1024 * 4];
-                        for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
-                            writer.write(buffer, 0, n);
+                            char[] buffer = new char[1024 * 4];
+                            for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
+                                writer.write(buffer, 0, n);
+                            }
+
+                            responseString = writer.toString();
                         }
-
-                        responseString = writer.toString();
-                    }
-                } finally {
-                    if (is != null) {
-                        is.close();
+                    } finally {
+                        if (is != null) {
+                            is.close();
+                        }
                     }
                 }
+            } finally {
+                onClose.run();
             }
         }
     }
