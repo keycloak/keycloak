@@ -62,6 +62,7 @@ public class SimpleHttpRequest {
     private final RequestConfig requestConfig;
 
     private final ObjectMapper objectMapper;
+    private final SimpleHttp.OnCompletion onCompletion;
 
     private final String url;
     private final SimpleHttpMethod method;
@@ -71,13 +72,14 @@ public class SimpleHttpRequest {
 
     private final long maxConsumedResponseSize;
 
-    SimpleHttpRequest(String url, SimpleHttpMethod method, HttpClient client, RequestConfig requestConfig, long maxConsumedResponseSize, ObjectMapper objectMapper) {
+    SimpleHttpRequest(String url, SimpleHttpMethod method, HttpClient client, RequestConfig requestConfig, long maxConsumedResponseSize, ObjectMapper objectMapper, SimpleHttp.OnCompletion onCompletion) {
         this.client = client;
         this.requestConfig = requestConfig;
         this.url = url;
         this.method = method;
         this.maxConsumedResponseSize = maxConsumedResponseSize;
         this.objectMapper = objectMapper;
+        this.onCompletion = onCompletion;
     }
 
     public SimpleHttpRequest header(String name, String value) {
@@ -249,7 +251,22 @@ public class SimpleHttpRequest {
             httpRequest.setConfig(requestConfig);
         }
 
-        return new SimpleHttpResponse(client.execute(httpRequest), maxConsumedResponseSize, objectMapper);
+        try {
+            return new SimpleHttpResponse(client.execute(httpRequest), maxConsumedResponseSize, objectMapper, this::onCloseRequest);
+        } catch (IOException | RuntimeException e) {
+            onCloseRequest();
+            throw e;
+        }
+    }
+
+    private void onCloseRequest() {
+        if (onCompletion == SimpleHttp.OnCompletion.CLOSE_CLIENT && client instanceof java.io.Closeable) {
+            try {
+                ((java.io.Closeable) client).close();
+            } catch (IOException ignored) {
+                // best-effort close of the per-call client
+            }
+        }
     }
 
     private URI appendParameterToUrl(String url) {
