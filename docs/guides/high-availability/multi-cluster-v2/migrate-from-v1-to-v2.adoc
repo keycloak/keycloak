@@ -23,7 +23,7 @@ The migration involves the following changes:
 |Component |Reason
 
 |External {jdgserver_name} cluster
-|Authentication sessions, action tokens and login failure counters are stored in the database instead.
+|Volatile data (authentication sessions, action tokens, login failure counters) is stored in the database instead.
 
 |{jdgserver_name} cross-site replication
 |No inter-site cache replication is needed; the database handles all cross-site data.
@@ -64,7 +64,6 @@ The load balancer should probe the {project_name} `/lb-check` endpoint.
 |Required for cross-cluster cache invalidation via the database outbox.
 
 |Increase the database connection pool size
-|Some data is now stored in database instead of Infinispan.
 
 |Remove external {jdgserver_name} connection options
 |Options such as `cache-remote-host`, `cache-remote-port`, `cache-remote-username`, and `cache-remote-password` are no longer used.
@@ -93,7 +92,6 @@ Users who are mid-login need to restart their login flow.
 
 Login failure counters::
 Brute-force detection counters are reset.
-Any ongoing temporary lockouts are cleared.
 
 Action tokens in the {jdgserver_name} cache::
 Email verification links, password reset tokens, and OAuth codes that were stored in {jdgserver_name} are lost.
@@ -226,8 +224,80 @@ kubectl --namespace keycloak apply -f keycloak.yaml
 
 . Verify the deployment.
 +
-Follow the verification steps in the <@links.ha id="multi-cluster-v2-deploy-keycloak-kubernetes" /> {section}.
 Afterward, verify that the external load balancer routes traffic to all sites.
+
+== Migrating on bare metal or virtual machines
+
+This procedure assumes an existing multi-cluster v1 deployment with an external {jdgserver_name} cluster.
+
+Perform the following steps on each {project_name} node at each site, unless stated otherwise:
+
+. Stop {project_name} on all nodes in all sites.
++
+Ensure that no {project_name} instances are running before proceeding.
+
+. Update the {project_name} startup command.
++
+The following changes are required:
++
+--
+.. Add `--features=stateless` to enable the stateless feature.
+.. Add `--spi-cache-embedded--default--cluster-name=<CLUSTER_NAME>` with a unique name for each site.
+.. Remove any `--cache-remote-*` options (`--cache-remote-host`, `--cache-remote-port`, `--cache-remote-username`, `--cache-remote-password`).
+.. Remove `--features=multi-site` if it was previously set.
+.. Increase the database connection pool size (`--db-pool-initial-size`, `--db-pool-min-size`, `--db-pool-max-size`).
+--
++
+The updated command should resemble:
++
+[source,bash]
+----
+bin/kc.sh start \
+    --db=postgres \
+    --db-url=jdbc:postgresql://<DATABASE_URL>:5432/keycloak \
+    --db-pool-initial-size=30 \
+    --db-pool-min-size=30 \
+    --db-pool-max-size=30 \
+    --features=stateless \
+    --spi-cache-embedded--default--cluster-name=<CLUSTER_NAME> \
+    --hostname=<KEYCLOAK_HOSTNAME> \
+    --https-certificate-file=/path/to/tls.crt \
+    --https-certificate-key-file=/path/to/tls.key
+----
++
+See the <@links.ha id="multi-cluster-v2-deploy-keycloak-bare-metal" /> {section} for a complete example.
+
+. Decommission the external {jdgserver_name} cluster.
++
+Stop all {jdgserver_name} nodes and remove the {jdgserver_name} installation.
+Remove any cross-site replication configuration, TLS certificates, and service accounts that were used for the {jdgserver_name} deployment.
+
+. Remove fencing automation and {jdgserver_name} monitoring.
++
+Remove any scripts, cron jobs, or monitoring integrations that handled {jdgserver_name}-related split-brain detection, failover, or health checks.
+
+. Start {project_name} on all nodes in all sites.
+
+. Verify the deployment.
++
+Confirm that each {project_name} node is ready by checking the health endpoint on the management port:
++
+[source,bash]
+----
+curl -sk -w '\n%{http_code}\n' https://localhost:9000/health/ready
+----
++
+A healthy node returns HTTP 200 with an overall status of `UP`.
+Repeat this check for each node in each site.
++
+Verify that `/lb-check` per site returns `200 OK` with status `UP`:
++
+[source,bash]
+----
+curl -sk -w '\n%{http_code}\n' https://<SITE_LB_HOSTNAME>/lb-check
+----
++
+Finally, verify that the external load balancer routes traffic to all sites.
 
 == Changes to operational procedures
 
