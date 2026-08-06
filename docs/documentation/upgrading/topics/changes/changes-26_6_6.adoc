@@ -1,0 +1,18 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+=== The `view-system` admin role no longer exists
+
+Since version 26.5.4, when introduced, the `view-system` admin role was marked as deprecated. In this release, the role
+has been removed for security reasons.
+
+Access to full server information is now restricted to users in the `master` realm holding the `manage-realm` role.
+
+If you are still relying on the `view-system` role, you should consider accessing the full server information using a user
+(or service account) from the `master` realm and granted with `manage-realm` admin roles.
+
+Before upgrading, you should check if any of your users, service accounts, or groups are still relying on the
+`view-system` role and review their access controls to ensure they have the necessary permissions to access the server
+information after the upgrade. The `manage-realm` admin role is a high-privileged role and should only be granted to
+highly-trusted accounts.
+
