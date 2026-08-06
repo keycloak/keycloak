@@ -22,6 +22,14 @@ public abstract class CaepEvent extends SsfEvent {
      */
     public static final String EVENT_TYPE_BASE_URI = "https://schemas.openid.net/secevent/caep/event-type/";
 
+    /**
+     * The legacy CAEP SSE subject attribute for backwards compatibility. In the OpenID Shared Signals and Events Framework Specification 1.0 - draft 01
+     * the subject attribute was used to identify the subject of the event.
+     * See: https://openid.net/specs/openid-sse-framework-1_0-ID1.html#rfc.section.3.3
+     *
+     * In SSF 1.0 the subject is encoded as the "sub_id" claim in the Security Event Token (SET).
+     * See: https://openid.github.io/sharedsignals/openid-sharedsignals-framework-1_0.html#section-3.1
+     */
     @JsonProperty("subject")
     @JsonDeserialize(using = SubjectIdJsonDeserializer.class)
     protected SubjectId subjectId;
