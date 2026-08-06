@@ -1024,7 +1024,7 @@ public class RepresentationToModel {
             identityProviderModel.setPostBrokerLoginFlowId(flowModel.getId());
         }
 
-        identityProviderModel.validate(realm);
+        identityProviderModel.validate(session, realm);
 
         return identityProviderModel;
     }
