@@ -105,6 +105,7 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
     private Class<?> complexType;
     private boolean required;
     private boolean caseExact;
+    private boolean storedLowerCase;
     private String uniqueness;
 
     private Attribute(String name, AttributeMapper<M, R> mapper, String parentName, String alias) {
@@ -215,6 +216,14 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
 
     public boolean isCaseExact() {
         return caseExact;
+    }
+
+    private void setStoredLowerCase(boolean storedLowerCase) {
+        this.storedLowerCase = storedLowerCase;
+    }
+
+    public boolean isStoredLowerCase() {
+        return storedLowerCase;
     }
 
     public void setUniqueness(String uniqueness) {
@@ -345,6 +354,7 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
         private TriConsumer<M, String, Set<?>> modelAdder;
         private boolean required;
         private boolean caseExact = true;
+        private boolean storedLowerCase;
         private String uniqueness = "none";
 
         private Builder(String name, Class<?> complexType) {
@@ -424,6 +434,7 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
             Attribute<M, R> attribute = assembleAttribute(name, null, null,
                     new AttributeMapper<>(modelSetter, representationSetter, modelRemover, modelAdder),
                     modelAttributeResolver, type, mutability, returned, multivalued, required, caseExact, uniqueness, complexType);
+            attribute.setStoredLowerCase(storedLowerCase);
             if (attributes.isEmpty()) {
                 // do not add the root attribute if there are subattributes
                 attributes.add(attribute);
@@ -477,6 +488,11 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
 
         public Builder<M, R> notCaseExact() {
             this.caseExact = false;
+            return this;
+        }
+
+        public Builder<M, R> storedLowerCase() {
+            this.storedLowerCase = true;
             return this;
         }
 

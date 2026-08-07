@@ -100,6 +100,27 @@ public class FilterTest extends AbstractScimTest {
     }
 
     @Test
+    public void testFiltersAreCaseInsensitiveForNotCaseExactAttributes() {
+        User bob = createUser("bob", "bob@keycloak.org");
+        createUser("alice", "alice@keycloak.org");
+
+        String filter = ResourceFilter.filter().eq("userName", "BOB").build();
+        assertSingleResult(client.users().getAll(filter), bob.getUserName());
+
+        filter = ResourceFilter.filter().eq("emails.value", "BOB@KEYCLOAK.ORG").build();
+        assertSingleResult(client.users().getAll(filter), bob.getUserName());
+
+        filter = ResourceFilter.filter().eq("emails", "Bob@Keycloak.org").build();
+        assertSingleResult(client.users().getAll(filter), bob.getUserName());
+
+        filter = ResourceFilter.filter().sw("emails.value", "BOB@").build();
+        assertSingleResult(client.users().getAll(filter), bob.getUserName());
+
+        filter = ResourceFilter.filter().co("userName", "OB").build();
+        assertSingleResult(client.users().getAll(filter), bob.getUserName());
+    }
+
+    @Test
     public void testNotEqualFilter() {
         User bob = createUser("bob");
         User alice = createUser("alice");
