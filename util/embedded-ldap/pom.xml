@@ -57,6 +57,10 @@
             <version>2.0.1.Final</version>
         </dependency>
         <dependency>
+            <groupId>org.apache.mina</groupId>
+            <artifactId>mina-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.directory.server</groupId>
             <artifactId>apacheds-core-annotations</artifactId>
             <exclusions>
@@ -69,6 +73,17 @@
         <dependency>
             <groupId>org.apache.directory.server</groupId>
             <artifactId>apacheds-interceptor-kerberos</artifactId>
+        </dependency>
+        <!-- Apache Kerby for KDC and keytab generation (replaces apacheds-protocol-kerberos removed in AM27) -->
+        <dependency>
+            <groupId>org.apache.kerby</groupId>
+            <artifactId>kerb-simplekdc</artifactId>
+            <version>${kerby.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kerby</groupId>
+            <artifactId>ldap-backend</artifactId>
+            <version>${kerby.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.directory.server</groupId>
