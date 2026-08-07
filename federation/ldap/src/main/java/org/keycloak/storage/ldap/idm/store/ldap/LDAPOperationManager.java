@@ -861,6 +861,10 @@ public class LDAPOperationManager {
             errorName = e.getClass().getSimpleName();
             tracing.error(e);
             throw e;
+        } catch (RuntimeException e) {
+            errorName = e.getClass().getSimpleName();
+            tracing.error(e);
+            throw e;
         } finally {
             recordLdapRequest("execute", operation.operationType(), success, startTimeNanos, errorName);
             tracing.endSpan();
