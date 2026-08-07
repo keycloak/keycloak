@@ -93,7 +93,7 @@ Users who are mid-login need to restart their login flow.
 
 Login failure counters::
 Brute-force detection counters are reset.
-Any ongoing lockouts are cleared.
+Any ongoing temporary lockouts are cleared.
 
 OAuth authorization codes::
 OAuth authorization codes that were stored in {jdgserver_name} are lost.
