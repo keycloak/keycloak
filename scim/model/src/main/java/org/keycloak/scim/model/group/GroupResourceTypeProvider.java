@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -32,7 +33,9 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
+import org.keycloak.models.Permissions;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.GroupAdapter;
 import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
@@ -185,13 +188,25 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     private List<Predicate> getGroupPredicates(ScimFilterParser.FilterContext filterContext, CriteriaBuilder cb, CriteriaQuery<?> query, Root<GroupEntity> root) {
         List<Predicate> predicates = new ArrayList<>();
 
+        RealmModel realm = session.getContext().getRealm();
+        Permissions permissions = session.getContext().getPermissions();
+
+        BiPredicate<String, String> authCheck = (path, value) -> {
+            if ("members.value".equalsIgnoreCase(path) || "members".equalsIgnoreCase(path)) {
+                if (value == null) {
+                    return !realm.isAdminPermissionsEnabled();
+                }
+                UserModel user = session.users().getUserById(realm, value);
+                return user != null && permissions.hasPermission(user, AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
+            }
+            return true;
+        };
+
         // create filter predicate using the same query and root that will be used for execution
-        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, root);
+        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, root, authCheck);
         predicates.add(evaluator.visit(filterContext).predicate());
 
         // apply realm restriction and group type restrictions
-        RealmModel realm = session.getContext().getRealm();
-
         predicates.add(cb.equal(root.get("realm"), realm.getId()));
         predicates.add(cb.equal(root.get("type"), GroupModel.Type.REALM.intValue()));
         predicates.add(cb.equal(root.get("parentId"), GroupEntity.TOP_PARENT_ID));
