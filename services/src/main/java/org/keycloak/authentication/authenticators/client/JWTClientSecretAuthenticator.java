@@ -30,8 +30,10 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.crypto.ClientSignatureVerifierProvider;
+import org.keycloak.events.Details;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -121,6 +123,9 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
                 jwt = context.getSession().tokens().decodeClientJWT(validator.getClientAssertion(),
                         wrapper.toRotatedClientModel(context.getSession()), JsonWebToken.class);
                 signatureValid = jwt != null;
+                if (signatureValid) {
+                    context.getEvent().detail(Details.CLIENT_AUTH_DETAIL, ClientSecretConstants.CLIENT_ROTATED_EVENT_DETAIL);
+                }
             }
         } catch (Exception e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;
