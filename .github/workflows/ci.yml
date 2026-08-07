@@ -259,7 +259,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          ./mvnw test -f quarkus/pom.xml -pl '!tests,!tests/junit5,!tests/integration,!dist'
+          ./mvnw test -B -f quarkus/pom.xml -pl '!tests,!tests/junit5,!tests/integration,!dist'
 
   quarkus-integration-tests:
     name: Quarkus IT
