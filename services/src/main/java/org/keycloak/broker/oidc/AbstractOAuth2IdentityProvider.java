@@ -375,7 +375,11 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
 
         if (Booleans.isTrue(getConfig().isStoreToken())) {
+            String originalToken = identity.getToken();
             refreshStoredToken(session, identity);
+            if (!java.util.Objects.equals(originalToken, identity.getToken())) {
+                session.users().updateFederatedIdentity(session.getContext().getRealm(), user, identity);
+            }
             response = exchangeStoredToken(uriInfo, null, null, userSession, user);
         }
 
