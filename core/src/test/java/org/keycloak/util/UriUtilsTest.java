@@ -17,6 +17,7 @@
 
 package org.keycloak.util;
 
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
 
 import org.junit.Test;
@@ -73,5 +74,13 @@ public class UriUtilsTest {
         assertEquals("http://localhost?param=test",UriUtils.stripQueryParam("http://localhost?login_hint=michael@me.com&param=test","login_hint"));
         assertEquals("http://localhost?pre=test&param=test",UriUtils.stripQueryParam("http://localhost?pre=test&login_hint=michael&param=test","login_hint"));
         assertEquals("http://localhost?pre=test&param=test",UriUtils.stripQueryParam("http://localhost?pre=test&login_hint=michael@me.com&param=test","login_hint"));
+    }
+
+    @Test
+    public void testDecodeQueryString() {
+        MultivaluedHashMap<String, String> actual = UriUtils.decodeQueryString("first%20name=Jane+Doe&empty");
+
+        assertEquals("Jane Doe", actual.getFirst("first name"));
+        assertEquals("", actual.getFirst("empty"));
     }
 }
