@@ -43,6 +43,9 @@ public abstract class AbstractClaimMapper extends AbstractIdentityProviderMapper
     public static final String CLAIM_VALUE = "claim.value";
 
     public static Object getClaimValue(JsonWebToken token, String claim) {
+        if (claim == null || claim.isEmpty()) {
+            return null;
+        }
 
         switch (claim) {
             case "sub":
@@ -74,6 +77,9 @@ public abstract class AbstractClaimMapper extends AbstractIdentityProviderMapper
     }
 
     public static Object getClaimValue(BrokeredIdentityContext context, String claim) {
+        if (claim == null || claim.isEmpty()) {
+            return null;
+        }
         {  // search access token
             JsonWebToken token = (JsonWebToken)context.getContextData().get(KeycloakOIDCIdentityProvider.VALIDATED_ACCESS_TOKEN);
             if (token != null) {
