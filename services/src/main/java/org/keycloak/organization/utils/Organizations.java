@@ -207,7 +207,7 @@ public class Organizations {
     }
 
     public static void validateDomain(String rawDomain) {
-        if (rawDomain == null) {
+        if (isBlank(rawDomain)) {
             return;
         }
 
