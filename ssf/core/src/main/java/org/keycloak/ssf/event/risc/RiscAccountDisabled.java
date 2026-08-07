@@ -1,5 +1,10 @@
 package org.keycloak.ssf.event.risc;
 
+import java.util.Map;
+
+import org.keycloak.ssf.event.InitiatingEntity;
+import org.keycloak.ssf.event.InitiatingEntityAware;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -8,7 +13,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * See: https://openid.net/specs/openid-risc-1_0-final.html
  */
-public class RiscAccountDisabled extends RiscEvent {
+public class RiscAccountDisabled extends RiscEvent implements InitiatingEntityAware {
 
     public static final String TYPE = "https://schemas.openid.net/secevent/risc/event-type/account-disabled";
 
@@ -28,6 +33,25 @@ public class RiscAccountDisabled extends RiscEvent {
     @JsonProperty("reason")
     protected String reason;
 
+    /**
+     * The time of the event (UNIX timestamp). RISC 1.0 lists no attributes for
+     * account-disabled, so this is a CAEP-defined claim carried as an extension —
+     * declared here rather than on {@link RiscEvent} because RISC does not define
+     * it profile-wide. Nullable so an absent timestamp is omitted from the wire
+     * JSON rather than serialized as {@code "event_timestamp": 0}.
+     */
+    @JsonProperty("event_timestamp")
+    protected Long eventTimestamp;
+
+    /**
+     * The entity that initiated the disablement. Distinguishes an administrator
+     * acting ({@link InitiatingEntity#ADMIN}) from Keycloak's own brute-force
+     * policy engine ({@link InitiatingEntity#POLICY}) — a distinction receivers
+     * act on, so it is emitted even though RISC does not define the claim.
+     */
+    @JsonProperty("initiating_entity")
+    protected InitiatingEntity initiatingEntity;
+
     public RiscAccountDisabled() {
         super(TYPE);
     }
@@ -40,10 +64,29 @@ public class RiscAccountDisabled extends RiscEvent {
         this.reason = reason;
     }
 
+    public Long getEventTimestamp() {
+        return eventTimestamp;
+    }
+
+    public void setEventTimestamp(long eventTimestamp) {
+        this.eventTimestamp = eventTimestamp;
+    }
+
     @Override
-    public String toString() {
-        return "AccountDisabled{" +
-               "reason='" + reason + '\'' +
-               '}';
+    public InitiatingEntity getInitiatingEntity() {
+        return initiatingEntity;
+    }
+
+    @Override
+    public void setInitiatingEntity(InitiatingEntity initiatingEntity) {
+        this.initiatingEntity = initiatingEntity;
+    }
+
+    @Override
+    protected void appendFields(Map<String, Object> fields) {
+        super.appendFields(fields);
+        fields.put("reason", reason);
+        fields.put("eventTimestamp", eventTimestamp);
+        fields.put("initiatingEntity", initiatingEntity);
     }
 }
