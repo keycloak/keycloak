@@ -13,6 +13,7 @@ import org.keycloak.protocol.oidc.token.TokenPostProcessor;
 import org.keycloak.protocol.oidc.token.TokenPostProcessorContext;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessToken.Access;
+import org.keycloak.util.TokenUtil;
 
 import static org.keycloak.models.utils.KeycloakModelUtils.removeTransientAdminRoles;
 
@@ -36,6 +37,8 @@ public class AdminRoleTokenPostProcessor implements TokenPostProcessor {
         UserModel user = userSession.getUser();
         RealmModel realm = session.getContext().getRealm();
         AccessToken accessToken = context.accessToken();
+
+        TokenUtil.convertTokenRolesFromOtherClaims(accessToken);
 
         removeTransientAdminRoles(realm, null, user, accessToken.getRealmAccess());
 

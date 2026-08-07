@@ -18,12 +18,24 @@
 package org.keycloak.jose;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import org.keycloak.common.util.Time;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
+import org.junit.Assert;
 import org.junit.Test;
+
+import static org.keycloak.representations.AccessToken.REALM_ACCESS;
+import static org.keycloak.representations.AccessToken.RESOURCE_ACCESS;
+import static org.keycloak.representations.AccessToken.ROLES;
 
 import static junit.framework.TestCase.assertFalse;
 import static org.junit.Assert.assertArrayEquals;
@@ -115,6 +127,117 @@ public class JsonWebTokenTest {
         JsonWebToken jsonWebToken = new JsonWebToken();
         jsonWebToken.nbf(notBeforeTime);
         assertFalse(jsonWebToken.isActive(allowedClockSkew));
+    }
+
+    @Test
+    public void testRealmAccessMerge() {
+        Set<String> role1Set = new HashSet<>(Collections.singleton("role1"));
+        Map<String, Object> map1 = new HashMap<>();
+        map1.put(ROLES, role1Set);
+
+        Set<String> role2Set = new HashSet<>(Collections.singleton("role2"));
+        Set<String> rolesSet = new HashSet<>(role1Set);
+        rolesSet.addAll(role2Set);
+
+        // No "otherClaims"
+        AccessToken at = new AccessToken();
+        at.setRealmAccess(new AccessToken.Access());
+        at.getRealmAccess().roles(role1Set);
+        TokenUtil.convertTokenRolesFromOtherClaims(at);
+        Assert.assertEquals(at.getRealmAccess().getRoles(), role1Set);
+        Assert.assertNull(at.getOtherClaims().get(REALM_ACCESS));
+
+        // Just "otherClaims"
+        at = new AccessToken();
+        at.getOtherClaims().put(REALM_ACCESS, map1);
+        TokenUtil.convertTokenRolesFromOtherClaims(at);
+        Assert.assertEquals(at.getRealmAccess().getRoles(), role1Set);
+        Assert.assertNull(at.getOtherClaims().get(REALM_ACCESS));
+
+        // Both
+        at = new AccessToken();
+        at.setRealmAccess(new AccessToken.Access());
+        at.getRealmAccess().roles(role2Set);
+        at.getOtherClaims().put(REALM_ACCESS, map1);
+        TokenUtil.convertTokenRolesFromOtherClaims(at);
+        Assert.assertEquals(at.getRealmAccess().getRoles(), rolesSet);
+        Assert.assertNull(at.getOtherClaims().get(REALM_ACCESS));
+
+        // Invalid stuff in "otherClaims"
+        at = new AccessToken();
+        at.setRealmAccess(new AccessToken.Access());
+        at.getRealmAccess().roles(role2Set);
+        at.getOtherClaims().put(REALM_ACCESS, role1Set);
+        TokenUtil.convertTokenRolesFromOtherClaims(at);
+        Assert.assertEquals(at.getRealmAccess().getRoles(), role2Set);
+        Assert.assertNotNull(at.getOtherClaims().get(REALM_ACCESS));
+    }
+
+    @Test
+    public void testResourceAccessMerge() throws IOException {
+        Set<String> role1Set = new HashSet<>(Collections.singleton("role1"));
+        Map<String, Object> map1 = new HashMap<>();
+        map1.put(ROLES, role1Set);
+
+        Set<String> role2Set = new HashSet<>(Collections.singleton("role2"));
+        Map<String, Object> map2 = new HashMap<>();
+        map2.put(ROLES, role2Set);
+
+        Set<String> rolesSet = new HashSet<>(role1Set);
+        rolesSet.addAll(role2Set);
+
+        AccessToken.Access access1 = new AccessToken.Access();
+        access1.roles(role1Set);
+        Map<String, AccessToken.Access> access1Map = new HashMap<>();
+        access1Map.put("client1", access1);
+
+        // No "otherClaims"
+        AccessToken at = new AccessToken();
+        at.setResourceAccess(access1Map);
+        TokenUtil.convertTokenRolesFromOtherClaims(at);
+        Assert.assertEquals(1, at.getResourceAccess().size());
+        Assert.assertEquals(role1Set, at.getResourceAccess().get("client1").getRoles());
+
+        // Just "otherClaims"
+        at = new AccessToken();
+        Map<?,?> map = JsonSerialization.readValue(JsonSerialization.writeValueAsString(access1Map), Map.class);
+        at.getOtherClaims().put(RESOURCE_ACCESS, map);
+        TokenUtil.convertTokenRolesFromOtherClaims(at);
+        Assert.assertEquals(1, at.getResourceAccess().size());
+        Assert.assertEquals(role1Set, at.getResourceAccess().get("client1").getRoles());
+
+        // Both - different clients
+        at = new AccessToken();
+        map = JsonSerialization.readValue(JsonSerialization.writeValueAsString(access1Map), Map.class);
+        at.getOtherClaims().put(RESOURCE_ACCESS, map);
+        Map<String, AccessToken.Access> accessMap = new HashMap<>();
+        accessMap.put("client2", access1);
+        at.setResourceAccess(accessMap);
+        TokenUtil.convertTokenRolesFromOtherClaims(at);
+        Assert.assertEquals(2, at.getResourceAccess().size());
+        Assert.assertEquals(role1Set, at.getResourceAccess().get("client1").getRoles());
+        Assert.assertEquals(role1Set, at.getResourceAccess().get("client2").getRoles());
+
+        // Both - same client
+        at = new AccessToken();
+        map = JsonSerialization.readValue(JsonSerialization.writeValueAsString(access1Map), Map.class);
+        at.getOtherClaims().put(RESOURCE_ACCESS, map);
+        accessMap = new HashMap<>();
+        AccessToken.Access access2 = new AccessToken.Access();
+        access2.roles(role2Set);
+        accessMap.put("client1", access2);
+        at.setResourceAccess(accessMap);
+        TokenUtil.convertTokenRolesFromOtherClaims(at);
+        Assert.assertEquals(1, at.getResourceAccess().size());
+        Assert.assertEquals(rolesSet, at.getResourceAccess().get("client1").getRoles());
+
+        // Invalid
+        at = new AccessToken();
+        at.setResourceAccess(access1Map);
+        at.getOtherClaims().put(RESOURCE_ACCESS, map1);
+        TokenUtil.convertTokenRolesFromOtherClaims(at);
+        Assert.assertEquals(1, at.getResourceAccess().size());
+        Assert.assertEquals(role1Set, at.getResourceAccess().get("client1").getRoles());
     }
 
 }
