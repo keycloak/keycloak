@@ -14,169 +14,130 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.oauth;
+package org.keycloak.tests.oauth;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
-import org.keycloak.common.Profile;
-import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
-import org.keycloak.common.util.UriUtils;
-import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.client.authentication.JWTClientSecretCredentialsProvider;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.idm.ClientPoliciesRepresentation;
-import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.condition.ClientAccessTypeCondition;
-import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
-import org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutor;
-import org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutorFactory;
+import org.keycloak.testframework.annotations.InjectEvents;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
-import org.keycloak.testsuite.AbstractAdminTest;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.util.ClientPoliciesUtil;
-import org.keycloak.testsuite.util.ServerURLs;
+import org.keycloak.testframework.events.Events;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ClientConfig;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.client.ClientSecretRotationUtils;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.http.HttpStatus;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.jboss.logging.Logger;
-import org.jetbrains.annotations.NotNull;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 
-@EnableFeature(value = Profile.Feature.CLIENT_SECRET_ROTATION)
-public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest(config = ClientSecretRotationUtils.ClientSecretRotationServerConfig.class)
+public class ClientAuthSecretSignedJWTTest {
 
-    private static final Logger logger = Logger.getLogger(ClientAuthSecretSignedJWTTest.class);
-    private static final String REALM_NAME = "test";
-    private static final String PROFILE_NAME = "ClientSecretRotationProfile";
-    private static final String POLICY_NAME = "ClientSecretRotationPolicy";
-    private static final String OIDC = "openid-connect";
-
-    // BCFIPS approved mode requires at least 112 bits (14 characters) long SecretKey for "client-secret-jwt" authentication
     private static final String CLIENT_SECRET = "atleast-14chars-password";
-    private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
+    @InjectRealm(config = ClientAuthSecretSignedJWTRealmConfig.class)
+    protected ManagedRealm realm;
 
-    @Override
-    public void beforeAbstractKeycloakTest() throws Exception {
-        super.beforeAbstractKeycloakTest();
-    }
+    @InjectOAuthClient(config = OAuthClientConfig.class)
+    OAuthClient oauth;
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation realm = AbstractAdminTest.loadJson(getClass().getResourceAsStream("/client-auth-test/testrealm-jwt-client-secret.json"), RealmRepresentation.class);
-        testRealms.add(realm);
-    }
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
+
+    @InjectEvents
+    Events events;
 
     // TEST SUCCESS
 
     @Test
-    public void testCodeToTokenRequestSuccess() throws Exception {
+    public void testCodeToTokenRequestSuccess() {
         testCodeToTokenRequestSuccess(Algorithm.HS256);
     }
 
     @Test
-    public void testCodeToTokenRequestSuccessHS384() throws Exception {
+    public void testCodeToTokenRequestSuccessHS384() {
         testCodeToTokenRequestSuccess(Algorithm.HS384);
     }
 
     @Test
-    public void testCodeToTokenRequestSuccessHS512() throws Exception {
+    public void testCodeToTokenRequestSuccessHS512() {
         testCodeToTokenRequestSuccess(Algorithm.HS512);
     }
 
-
     // Issue 34547
     @Test
-    public void testCodeToTokenRequestSuccessWhenClientHasGeneratedKeys() throws Exception {
+    public void testCodeToTokenRequestSuccessWhenClientHasGeneratedKeys() {
         // Test when client has public/private keys generated despite the fact that it uses client-secret for the client authentication (and not those keys)
-        AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").getCertficateResource("jwt.credential").generate();
+        oauth.clientResource().getCertficateResource("jwt.credential").generate();
+        realm.cleanup().add(this::removeCertificateInformation);
 
         testCodeToTokenRequestSuccess(Algorithm.HS256);
     }
 
     @Test
-    public void testCodeToTokenRequestFailureWhenClientHasPrivateKeyJWT() throws Exception {
+    public void testCodeToTokenRequestFailureWhenClientHasPrivateKeyJWT() {
         // Setup client for "private_key_jwt" authentication
-        ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
-        client.getCertficateResource("jwt.credential").generate();
-        ClientRepresentation clientRep = client.toRepresentation();
+        oauth.clientResource().getCertficateResource("jwt.credential").generate();
+        ClientRepresentation clientRep = oauth.clientResource().toRepresentation();
         clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
-        client.update(clientRep);
+        oauth.clientResource().update(clientRep);
+        realm.cleanup().add(this::removeCertificateInformation);
 
-        // Client should not be able to authenticate with "client_secret_jwt"
-        try {
-            oauth.client("test-app", "password");
-            oauth.doLogin("test-user@localhost", "password");
-            EventAssertion.expectLoginSuccess(events.poll()).clientId("test-app");
+        // Client should not be able to authenticate with "client_secret_jwt"oauth.client("test-app", "password");
+        doLogin();
 
-            String code = oauth.parseLoginResponse().getCode();
-            AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT(CLIENT_SECRET, 20, Algorithm.HS256));
-            assertEquals(400, response.getStatusCode());
-            assertEquals(OAuthErrorException.INVALID_CLIENT, response.getError());
-        } finally {
-            clientRep.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID);
-            client.update(clientRep);
-        }
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.accessTokenRequest(code)
+                .signedJwt(getClientSignedJWT(CLIENT_SECRET, Algorithm.HS256))
+                .send();
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_CLIENT, response.getError());
     }
 
     @Test
-    public void testInvalidIssuer() throws Exception {
-        oauth.client("test-app", "password");
-        oauth.doLogin("test-user@localhost", "password");
+    public void testInvalidIssuer() {
+        doLogin();
 
         String code = oauth.parseLoginResponse().getCode();
         JWTClientSecretCredentialsProvider jwtProvider = new JWTClientSecretCredentialsProvider() {
@@ -191,78 +152,44 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         };
         String algorithm = Algorithm.HS256;
         jwtProvider.setClientSecret(CLIENT_SECRET, algorithm);
-        String jwt = jwtProvider.createSignedRequestToken(oauth.getClientId(), getRealmInfoUrl(), algorithm);
-        AccessTokenResponse response = doAccessTokenRequest(code,
-                jwt);
+        String jwt = jwtProvider.createSignedRequestToken(oauth.getClientId(), realm.getBaseUrl(), algorithm);
+        AccessTokenResponse response = oauth.accessTokenRequest(code).signedJwt(jwt).send();
 
-        assertEquals(401, response.getStatusCode());
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatusCode());
         assertEquals("invalid_client", response.getError());
     }
 
     @Test
-    public void testCodeToTokenRequestFailureHS384Enforced() throws Exception {
-        ClientResource clientResource = null;
-        ClientRepresentation clientRep = null;
-        final String realmName = "test";
-        final String clientId = "test-app";
-        try {
-            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(realmName), clientId);
-            clientRep = clientResource.toRepresentation();
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(Algorithm.HS384);
-            clientResource.update(clientRep);
+    public void testCodeToTokenRequestFailureHS384Enforced() {
+        setAlgorithmForClient(Algorithm.HS384);
 
-            testCodeToTokenRequestSuccess(Algorithm.HS384);
-        } catch (Exception e) {
-            fail();
-        } finally {
-            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(realmName), clientId);
-            clientRep = clientResource.toRepresentation();
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(null);
-            clientResource.update(clientRep);
-        }
+        testCodeToTokenRequestSuccess(Algorithm.HS384);
     }
 
     @Test
-    public void testCodeToTokenRequestFailureHS512Enforced() throws Exception {
-        ClientResource clientResource = null;
-        ClientRepresentation clientRep = null;
-        final String realmName = "test";
-        final String clientId = "test-app";
-        try {
-            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(realmName), clientId);
-            clientRep = clientResource.toRepresentation();
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(Algorithm.HS512);
-            clientResource.update(clientRep);
+    public void testCodeToTokenRequestFailureHS512Enforced() {
+        setAlgorithmForClient(Algorithm.HS512);
 
-            oauth.client(clientId);
-            oauth.doLogin("test-user@localhost", "password");
-            EventAssertion.expectLoginSuccess(events.poll()).clientId(clientId);
-
-            String code = oauth.parseLoginResponse().getCode();
-            AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT(CLIENT_SECRET, 20, Algorithm.HS256));
-            assertEquals(400, response.getStatusCode());
-            assertEquals("invalid_client", response.getError());
-        } catch (Exception e) {
-            fail();
-        } finally {
-            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(realmName), clientId);
-            clientRep = clientResource.toRepresentation();
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(null);
-            clientResource.update(clientRep);
-        }
-    }
-
-    private void testCodeToTokenRequestSuccess(String algorithm) throws Exception {
-        oauth.client("test-app", "password");
-        oauth.doLogin("test-user@localhost", "password");
-        EventRepresentation loginEvent = events.poll();
-        EventAssertion.expectLoginSuccess(loginEvent)
-                .clientId("test-app");
+        doLogin();
 
         String code = oauth.parseLoginResponse().getCode();
-        AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT(CLIENT_SECRET, 20, algorithm));
+        AccessTokenResponse response = oauth.accessTokenRequest(code)
+                .signedJwt(getClientSignedJWT(CLIENT_SECRET, Algorithm.HS256))
+                .send();
+        assertEquals(400, response.getStatusCode());
+        assertEquals("invalid_client", response.getError());
+    }
+
+    private void testCodeToTokenRequestSuccess(String algorithm) {
+        EventRepresentation loginEvent = doLogin();
+
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.accessTokenRequest(code)
+                .signedJwt(getClientSignedJWT(CLIENT_SECRET, algorithm))
+                .send();
 
         assertEquals(200, response.getStatusCode());
+
         oauth.verifyToken(response.getAccessToken());
         oauth.parseRefreshToken(response.getRefreshToken());
         EventAssertion.expectCodeToTokenSuccess(events.poll())
@@ -275,55 +202,53 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
 
     /**
      * When there is a client secret rotation, the client must be able to authenticate itself by the rotated secret and the new secret. (As long as both secrets remain valid)
-     *
-     * @throws Exception
      */
     @Test
-    public void authenticateWithValidClientSecretWhenRotationPolicyIsEnableForHS256() throws Exception {
+    public void authenticateWithValidClientSecretWhenRotationPolicyIsEnableForHS256() {
         processAuthenticateWithAlgorithm(Algorithm.HS256);
     }
 
     @Test
-    public void authenticateWithValidClientSecretWhenRotationPolicyIsEnableForHS384() throws Exception {
+    public void authenticateWithValidClientSecretWhenRotationPolicyIsEnableForHS384() {
         processAuthenticateWithAlgorithm(Algorithm.HS384);
     }
 
     @Test
-    public void authenticateWithValidClientSecretWhenRotationPolicyIsEnableForHS512() throws Exception {
+    public void authenticateWithValidClientSecretWhenRotationPolicyIsEnableForHS512() {
         processAuthenticateWithAlgorithm(Algorithm.HS512);
     }
 
     @Test
-    public void regenerateClientSecretForClientSecretBasicWithIdTokenHs512() throws Exception {
+    public void regenerateClientSecretForClientSecretBasicWithIdTokenHs512() {
         ClientRepresentation clientRep = new ClientRepresentation();
         clientRep.setClientId("basic-hs512-client");
         clientRep.setName("basic-hs512-client");
-        clientRep.setProtocol(OIDC);
+        clientRep.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         clientRep.setBearerOnly(Boolean.FALSE);
         clientRep.setPublicClient(Boolean.FALSE);
         clientRep.setClientAuthenticatorType("client-secret");
         clientRep.setStandardFlowEnabled(Boolean.TRUE);
         clientRep.setAttributes(new HashMap<>());
         clientRep.getAttributes().put(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG, Algorithm.HS512);
-        clientRep.setRedirectUris(Collections.singletonList(
-                ServerURLs.getAuthServerContextRoot() + "/auth/realms/master/app/auth"));
+        clientRep.setRedirectUris(Collections.singletonList("http://127.0.0.1:8500/callback/oauth"));
 
-        Response resp = adminClient.realm(REALM_NAME).clients().create(clientRep);
-        assertEquals(Response.Status.CREATED.getStatusCode(), resp.getStatus());
-        String clientUuid = ApiUtil.getCreatedId(resp);
-        resp.close();
-        testContext.getOrCreateCleanup(REALM_NAME).addClientUuid(clientUuid);
+        String clientUuid;
+        try (Response resp = realm.admin().clients().create(clientRep)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), resp.getStatus());
+            clientUuid = ApiUtil.getCreatedId(resp);
+        }
+        realm.cleanup().add(r -> r.clients().get(clientUuid).remove());
 
-        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(clientUuid);
+        ClientResource clientResource = realm.admin().clients().get(clientUuid);
         String secret = clientResource.generateNewSecret().getValue();
         assertThat(secret.length(), is(SecretGenerator.equivalentEntropySize(
                 SecretGenerator.SECRET_LENGTH_512_BITS, SecretGenerator.ALPHANUM.length)));
     }
 
-    private void processAuthenticateWithAlgorithm(String algorithm) throws Exception{
-        String cidConfidential= createClientByAdmin("jwt-client","jwt-client",CLIENT_SECRET,algorithm);
-        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cidConfidential);
-        configureDefaultProfileAndPolicy();
+    private void processAuthenticateWithAlgorithm(String algorithm) {
+        String cidConfidential = createClientByAdmin("jwt-client", "jwt-client", CLIENT_SECRET, algorithm);
+        ClientResource clientResource = realm.admin().clients().get(cidConfidential);
+        ClientSecretRotationUtils.configureDefaultProfileAndPolicy(realm);
 
         int requiredSecretLength = SecretGenerator.equivalentEntropySize(
                 SecretGenerator.SECRET_LENGTH_512_BITS, SecretGenerator.ALPHANUM.length);
@@ -336,26 +261,50 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         assertThat(firstSecret, not(equalTo(newSecret)));
         assertThat(newSecret.length(), is(requiredSecretLength));
 
+        // test with first secret
         oauth.client("jwt-client");
-        oauth.doLogin("test-user@localhost", "password");
-        EventAssertion.expectLoginSuccess(events.poll()).clientId("jwt-client");
+        EventRepresentation loginEvent = doLogin();
         String code = oauth.parseLoginResponse().getCode();
-        AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT(firstSecret, 20, algorithm));
-        assertThat(response.getStatusCode(), is(HttpStatus.SC_OK));
+        AccessTokenResponse response = oauth.accessTokenRequest(code)
+                .signedJwt(getClientSignedJWT(firstSecret, algorithm))
+                .send();
+        assertThat(response.getStatusCode(), is(Response.Status.OK.getStatusCode()));
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(loginEvent.getSessionId())
+                .clientId(oauth.getClientId())
+                .details(Details.CODE_ID, loginEvent.getDetails().get(Details.CODE_ID))
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, JWTClientSecretAuthenticator.PROVIDER_ID)
+                .details(Details.CLIENT_AUTH_DETAIL, ClientSecretConstants.CLIENT_ROTATED_EVENT_DETAIL);
+
+        // test with new secret
+        oauth.openLoginForm();
+        loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).clientId(oauth.getClientId());
+        code = oauth.parseLoginResponse().getCode();
+        response = oauth.accessTokenRequest(code)
+                .signedJwt(getClientSignedJWT(newSecret, algorithm))
+                .send();
+        assertThat(response.getStatusCode(), is(Response.Status.OK.getStatusCode()));
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(loginEvent.getSessionId())
+                .clientId(oauth.getClientId())
+                .details(Details.CODE_ID, loginEvent.getDetails().get(Details.CODE_ID))
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, JWTClientSecretAuthenticator.PROVIDER_ID)
+                .withoutDetails(Details.CLIENT_AUTH_DETAIL);
     }
 
     // TEST ERRORS
 
     @Test
-    public void testAssertionInvalidSignature() throws Exception {
-        oauth.client("test-app", "password");
-        oauth.doLogin("test-user@localhost", "password");
-        EventRepresentation loginEvent = events.poll();
-        EventAssertion.expectLoginSuccess(loginEvent)
-                .clientId("test-app");
+    public void testAssertionInvalidSignature() {
+        doLogin();
 
         String code = oauth.parseLoginResponse().getCode();
-        AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT("ppassswordd", 20));
+        AccessTokenResponse response = oauth.accessTokenRequest(code)
+                .signedJwt(getClientSignedJWT("ppassswordd"))
+                .send();
 
         // https://tools.ietf.org/html/rfc6749#section-5.2
         assertEquals(400, response.getStatusCode());
@@ -363,20 +312,16 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testAssertionWithNoneAlgorithm() throws Exception {
-        oauth.client("test-app", "password");
-        oauth.doLogin("test-user@localhost", "password");
-        EventRepresentation loginEvent = events.poll();
-        EventAssertion.expectLoginSuccess(loginEvent)
-                .clientId("test-app");
+    public void testAssertionWithNoneAlgorithm() throws JWSInputException {
+        doLogin();
 
         String code = oauth.parseLoginResponse().getCode();
 
-        String client1Jwt = getClientSignedJWT("ppassswordd", 20);
+        String client1Jwt = getClientSignedJWT("ppassswordd");
         JsonWebToken client1JsonWebToken = new JWSInput(client1Jwt).readJsonContent(JsonWebToken.class);
         String request = new JWSBuilder().jsonContent(client1JsonWebToken).none();
 
-        AccessTokenResponse response = doAccessTokenRequest(code, request);
+        AccessTokenResponse response = oauth.accessTokenRequest(code).signedJwt(request).send();
 
         // https://tools.ietf.org/html/rfc6749#section-5.2
         assertEquals(400, response.getStatusCode());
@@ -384,17 +329,13 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testAssertionReuse() throws Exception {
-        oauth.client("test-app", "password");
-        oauth.doLogin("test-user@localhost", "password");
-        EventRepresentation loginEvent = events.poll();
-        EventAssertion.expectLoginSuccess(loginEvent)
-                .clientId("test-app");
+    public void testAssertionReuse() {
+        EventRepresentation loginEvent = doLogin();
 
         String code = oauth.parseLoginResponse().getCode();
-        String clientSignedJWT = getClientSignedJWT(CLIENT_SECRET, 20);
+        String clientSignedJWT = getClientSignedJWT(CLIENT_SECRET);
 
-        AccessTokenResponse response = doAccessTokenRequest(code, clientSignedJWT);
+        AccessTokenResponse response = oauth.accessTokenRequest(code).signedJwt(clientSignedJWT).send();
         assertEquals(200, response.getStatusCode());
         EventAssertion.expectCodeToTokenSuccess(events.poll())
                 .sessionId(loginEvent.getSessionId())
@@ -403,7 +344,6 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
                 .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
                 .details(Details.CLIENT_AUTH_METHOD, JWTClientSecretAuthenticator.PROVIDER_ID);
 
-
         // 2nd attempt to use same clientSignedJWT should fail
         oauth.openLoginForm();
         loginEvent = events.poll();
@@ -411,13 +351,12 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
                 .clientId("test-app");
 
         String code2 = oauth.parseLoginResponse().getCode();
-        response = doAccessTokenRequest(code2, clientSignedJWT);
+        response = oauth.accessTokenRequest(code2).signedJwt(clientSignedJWT).send();
         EventAssertion.assertError(events.poll())
                 .type(EventType.CODE_TO_TOKEN_ERROR)
                 .error("invalid_client_credentials")
                 .userId(null)
                 .sessionId(null);
-
 
         assertEquals(OAuthErrorException.INVALID_CLIENT, response.getError());
         assertEquals(400, response.getStatusCode());
@@ -425,14 +364,12 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
 
     /**
      * After a secret rotation the client should not be able to authenticate after the rotated secret expires
-     *
-     * @throws Exception
      */
     @Test
-    public void authenticateWithInvalidRotatedClientSecretPolicyIsEnable() throws Exception {
-        String cidConfidential= createClientByAdmin("jwt-client","jwt-client",CLIENT_SECRET,Algorithm.HS256);
-        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cidConfidential);
-        configureDefaultProfileAndPolicy();
+    public void authenticateWithInvalidRotatedClientSecretPolicyIsEnable() {
+        String cidConfidential = createClientByAdmin("jwt-client", "jwt-client", CLIENT_SECRET, Algorithm.HS256);
+        ClientResource clientResource = realm.admin().clients().get(cidConfidential);
+        ClientSecretRotationUtils.configureCustomProfileAndPolicy(realm, 60L, 30L, 20L);
         String firstSecret = clientResource.getSecret().getValue();
 
         //generate new secret, rotate the secret
@@ -443,155 +380,39 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         timeOffSet.set(31);
 
         oauth.client("jwt-client");
-        oauth.doLogin("test-user@localhost", "password");
-        EventRepresentation loginEvent = events.poll();
-        EventAssertion.expectLoginSuccess(loginEvent).clientId("jwt-client");
+        doLogin();
         String code = oauth.parseLoginResponse().getCode();
-        AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT(firstSecret, 20, Algorithm.HS256));
-        assertThat(response.getStatusCode(), is(HttpStatus.SC_BAD_REQUEST));
-
+        AccessTokenResponse response = oauth.accessTokenRequest(code)
+                .signedJwt(getClientSignedJWT(firstSecret, Algorithm.HS256))
+                .send();
+        assertThat(response.getStatusCode(), is(Response.Status.BAD_REQUEST.getStatusCode()));
     }
 
-    private String getClientSignedJWT(String secret, int timeout) {
-        return getClientSignedJWT(secret, timeout, Algorithm.HS256);
+    private String getClientSignedJWT(String secret) {
+        return getClientSignedJWT(secret, Algorithm.HS256);
     }
 
-    private String getClientSignedJWT(String secret, int timeout, String algorithm) {
+    private String getClientSignedJWT(String secret, String algorithm) {
         JWTClientSecretCredentialsProvider jwtProvider = new JWTClientSecretCredentialsProvider();
         jwtProvider.setClientSecret(secret, algorithm);
-        return jwtProvider.createSignedRequestToken(oauth.getClientId(), getRealmInfoUrl(), algorithm);
+        return jwtProvider.createSignedRequestToken(oauth.getClientId(), realm.getBaseUrl(), algorithm);
     }
 
-    private String getRealmInfoUrl() {
-        String authServerBaseUrl = UriUtils.getOrigin(oauth.getRedirectUri()) + "/auth";
-        return KeycloakUriBuilder.fromUri(authServerBaseUrl).path(ServiceUrlConstants.REALM_INFO_PATH).build("test").toString();
-    }
-
-    private AccessTokenResponse doAccessTokenRequest(String code, String signedJwt) throws Exception {
-        List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
-        parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
-        parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
-        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
-        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, signedJwt));
-
-        CloseableHttpResponse response = sendRequest(oauth.getEndpoints().getToken(), parameters);
-        return new AccessTokenResponse(response);
-    }
-
-    private CloseableHttpResponse sendRequest(String requestUrl, List<NameValuePair> parameters) throws Exception {
-        try (CloseableHttpClient client = new DefaultHttpClient()) {
-            HttpPost post = new HttpPost(requestUrl);
-            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-            post.setEntity(formEntity);
-            return client.execute(post);
-        }
-    }
-
-    //support methods
-    private void configureDefaultProfileAndPolicy() throws Exception {
-        // register profiles
-        ClientPoliciesUtil.ClientProfileBuilder profileBuilder = new ClientPoliciesUtil.ClientProfileBuilder();
-        ClientSecretRotationExecutor.Configuration profileConfig = getClientProfileConfiguration(60, 30, 20);
-
-        doConfigProfileAndPolicy(profileBuilder, profileConfig);
-    }
-
-    private void doConfigProfileAndPolicy(ClientPoliciesUtil.ClientProfileBuilder profileBuilder,
-                                          ClientSecretRotationExecutor.Configuration profileConfig) throws Exception {
-        String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
-                profileBuilder.createProfile(PROFILE_NAME, "Enable Client Secret Rotation")
-                        .addExecutor(ClientSecretRotationExecutorFactory.PROVIDER_ID, profileConfig)
-                        .toRepresentation()).toString();
-        updateProfiles(json);
-
-        // register policies
-        ClientAccessTypeCondition.Configuration config = new ClientAccessTypeCondition.Configuration();
-        config.setType(Arrays.asList(ClientAccessTypeConditionFactory.TYPE_CONFIDENTIAL));
-        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
-                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME,
-                                "Policy for Client Secret Rotation",
-                                Boolean.TRUE).addCondition(ClientAccessTypeConditionFactory.PROVIDER_ID, config)
-                        .addProfile(PROFILE_NAME).toRepresentation()).toString();
-        updatePolicies(json);
-    }
-
-    protected void updateProfiles(String json) throws ClientPolicyException {
-        try {
-            ClientProfilesRepresentation clientProfiles = JsonSerialization.readValue(json,
-                    ClientProfilesRepresentation.class);
-            adminClient.realm(REALM_NAME).clientPoliciesProfilesResource()
-                    .updateProfiles(clientProfiles);
-        } catch (BadRequestException e) {
-            throw new ClientPolicyException("update profiles failed",
-                    e.getResponse().getStatusInfo().toString());
-        } catch (Exception e) {
-            throw new ClientPolicyException("update profiles failed", e.getMessage());
-        }
-    }
-
-    protected void updateProfiles(ClientProfilesRepresentation reps) throws ClientPolicyException {
-        updateProfiles(convertToProfilesJson(reps));
-    }
-
-    protected void updatePolicies(String json) throws ClientPolicyException {
-        try {
-            ClientPoliciesRepresentation clientPolicies = json == null ? null
-                    : JsonSerialization.readValue(json, ClientPoliciesRepresentation.class);
-            adminClient.realm(REALM_NAME).clientPoliciesPoliciesResource()
-                    .updatePolicies(clientPolicies);
-        } catch (BadRequestException e) {
-            throw new ClientPolicyException("update policies failed",
-                    e.getResponse().getStatusInfo().toString());
-        } catch (IOException e) {
-            throw new ClientPolicyException("update policies failed", e.getMessage());
-        }
-    }
-
-    protected String convertToProfilesJson(ClientProfilesRepresentation reps) {
-        String json = null;
-        try {
-            json = objectMapper.writeValueAsString(reps);
-        } catch (JsonProcessingException e) {
-            fail();
-        }
-        return json;
-    }
-
-    @NotNull
-    private ClientSecretRotationExecutor.Configuration getClientProfileConfiguration(
-            long expirationPeriod, long rotatedExpirationPeriod, long remainExpirationPeriod) {
-        ClientSecretRotationExecutor.Configuration profileConfig = new ClientSecretRotationExecutor.Configuration();
-        profileConfig.setExpirationPeriod(expirationPeriod);
-        profileConfig.setRotatedExpirationPeriod(rotatedExpirationPeriod);
-        profileConfig.setRemainExpirationPeriod(remainExpirationPeriod);
-        return profileConfig;
-    }
-
-    protected String createClientByAdmin(String clientId, String clientName, String clientSecret,String signAlg) throws ClientPolicyException {
+    protected String createClientByAdmin(String clientId, String clientName, String clientSecret, String signAlg) {
         ClientRepresentation clientRep = getClientRepresentation(clientId, clientName, clientSecret,signAlg);
 
-        Response resp = adminClient.realm(REALM_NAME).clients().create(clientRep);
-        if (resp.getStatus() == Response.Status.BAD_REQUEST.getStatusCode()) {
-            String respBody = resp.readEntity(String.class);
-            Map<String, String> responseJson = null;
-            try {
-                responseJson = JsonSerialization.readValue(respBody, Map.class);
-            } catch (IOException e) {
-                fail();
-            }
-            throw new ClientPolicyException(responseJson.get(OAuth2Constants.ERROR),
-                    responseJson.get(OAuth2Constants.ERROR_DESCRIPTION));
+        try (Response resp = realm.admin().clients().create(clientRep)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), resp.getStatus());
+            // registered components will be removed automatically when a test method finishes regardless of its success or failure.
+            String cId = ApiUtil.getCreatedId(resp);
+            realm.cleanup().add(r -> {
+                oauth.client(oauth.clientResource().toRepresentation().getClientId());
+                r.clients().get(cId).remove();
+            });
+            return cId;
         }
-        resp.close();
-        assertEquals(Response.Status.CREATED.getStatusCode(), resp.getStatus());
-        // registered components will be removed automatically when a test method finishes regardless of its success or failure.
-        String cId = ApiUtil.getCreatedId(resp);
-        testContext.getOrCreateCleanup(REALM_NAME).addClientUuid(cId);
-        return cId;
     }
 
-    @NotNull
     private ClientRepresentation getClientRepresentation(String clientId, String clientName, String clientSecret, String signAlg) {
         ClientRepresentation clientRep = new ClientRepresentation();
         clientRep.setClientId(clientId);
@@ -600,8 +421,8 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         clientRep.setAttributes(new HashMap<>());
         clientRep.getAttributes()
                 .put(ClientSecretConstants.CLIENT_SECRET_CREATION_TIME,
-                        String.valueOf(Time.currentTime()));
-        clientRep.setProtocol(OIDC);
+                        String.valueOf(Time.currentTimeSeconds()));
+        clientRep.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         clientRep.setBearerOnly(Boolean.FALSE);
         clientRep.setPublicClient(Boolean.FALSE);
         clientRep.setServiceAccountsEnabled(Boolean.TRUE);
@@ -610,8 +431,62 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         clientRep.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID);
         clientRep.getAttributes().put(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG, signAlg);
 
-        clientRep.setRedirectUris(Collections.singletonList(
-                ServerURLs.getAuthServerContextRoot() + "/auth/realms/master/app/auth"));
+        clientRep.setRedirectUris(Collections.singletonList("http://127.0.0.1:8500/callback/oauth"));
         return clientRep;
+    }
+
+    private void removeCertificateInformation(RealmResource realm) {
+        // remove al certificate information
+        ClientResource clientRes = AdminApiUtil.findClientByClientId(realm, oauth.getClientId());
+        ClientRepresentation clientRep = clientRes.toRepresentation();
+        for (String attr : clientRep.getAttributes().keySet()) {
+            if (attr.startsWith("jwt.credential.")) {
+                clientRep.getAttributes().put(attr, "");
+            }
+        }
+        clientRep.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID);
+        clientRes.update(clientRep);
+    }
+
+    private EventRepresentation doLogin() {
+        oauth.doLogin("test-user@localhost", "password");
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).clientId(oauth.getClientId());
+        realm.cleanup().add(r -> AdminApiUtil.findUserByUsernameId(r, "test-user@localhost").logout());
+        return loginEvent;
+    }
+
+    private void setAlgorithmForClient(String algorithm) {
+        ClientRepresentation clientRep = oauth.clientResource().toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(algorithm);
+        oauth.clientResource().update(clientRep);
+        realm.cleanup().add(r -> {
+            ClientResource res = r.clients().get(clientRep.getId());
+            ClientRepresentation rep = res.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(rep).setTokenEndpointAuthSigningAlg("");
+            res.update(rep);
+        });
+    }
+
+    static class ClientAuthSecretSignedJWTRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return realm.users(UserBuilder.create("test-user@localhost").password("password")
+                    .name("Test", "User").email("test-user@localhost").emailVerified(true));
+        }
+    }
+
+    static class OAuthClientConfig implements ClientConfig {
+
+        @Override
+        public ClientBuilder configure(ClientBuilder client) {
+            return client.clientId("test-app")
+                    .secret(CLIENT_SECRET)
+                    .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                    .publicClient(false)
+                    .authenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID)
+                    .redirectUris("http://127.0.0.1:8500/callback/oauth");
+        }
     }
 }
