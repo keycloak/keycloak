@@ -110,7 +110,8 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
             return cors.add(Response.created(uri).entity(clientOIDC));
         } catch (ClientRegistrationException cre) {
             ServicesLogger.LOGGER.clientRegistrationException(cre.getMessage());
-            throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client metadata invalid", Response.Status.BAD_REQUEST);
+            String errorDescription = cre.getMessage() != null && !cre.getMessage().isBlank() ? cre.getMessage() : "Client metadata invalid";
+            throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, errorDescription, Response.Status.BAD_REQUEST);
         }
     }
 
@@ -162,7 +163,8 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
             return cors.add(Response.ok(clientOIDC));
         } catch (ClientRegistrationException cre) {
             ServicesLogger.LOGGER.clientRegistrationException(cre.getMessage());
-            throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client metadata invalid", Response.Status.BAD_REQUEST);
+            String errorDescription = cre.getMessage() != null && !cre.getMessage().isBlank() ? cre.getMessage() : "Client metadata invalid";
+            throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, errorDescription, Response.Status.BAD_REQUEST);
         }
     }
 

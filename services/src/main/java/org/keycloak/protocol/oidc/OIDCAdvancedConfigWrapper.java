@@ -486,6 +486,14 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         setAttribute(OIDCConfigAttributes.SECTOR_IDENTIFIER_URI, sectorIdentifierUri);
     }
 
+    public String getApplicationType() {
+        return getAttribute(OIDCConfigAttributes.APPLICATION_TYPE);
+    }
+
+    public void setApplicationType(String applicationType) {
+        setAttribute(OIDCConfigAttributes.APPLICATION_TYPE, applicationType);
+    }
+
     public List<String> getPostLogoutRedirectUris() {
         List<String> postLogoutRedirectUris = getAttributeMultivalued(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS);
         if(postLogoutRedirectUris == null || postLogoutRedirectUris.isEmpty()) {
