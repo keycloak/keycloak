@@ -120,6 +120,7 @@ public class AccountLoader {
         AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
                 .authenticate();
         if (authResult == null) {
+            Cors.builder().auth().allowAllOrigins().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).add();
             throw new NotAuthorizedException("Bearer token required");
         }
 
@@ -132,14 +133,12 @@ public class AccountLoader {
             accessToken = provider.transformAccessToken(accessToken, authResult.session());
         }
 
+        Cors.builder().checkAllowedOrigins(accessToken).allowedMethods("GET", "PUT", "POST", "DELETE").auth().add();
         if (!accessToken.hasAudience(client.getClientId())) {
             throw new NotAuthorizedException("Invalid audience for client " + client.getClientId());
         }
 
         Auth auth = new Auth(session.getContext().getRealm(), accessToken, authResult.user(), client, authResult.session(), false);
-
-        Cors.builder().checkAllowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().add();
-
         if (authResult.user().getServiceAccountClientLink() != null) {
             throw new NotAuthorizedException("Service accounts are not allowed to access this service");
         }
