@@ -31,7 +31,6 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.protocol.LoginProtocol.Error;
@@ -186,25 +185,18 @@ public abstract class AuthorizationEndpointBase {
             UserSessionModel userSession = manager.getUserSessionFromAuthenticationCookie(realm);
 
             if (userSession != null) {
-                UserModel user = userSession.getUser();
-                if (user != null && !user.isEnabled()) {
-                    authSession = createNewAuthenticationSession(manager, client);
-
-                    AuthenticationManager.backchannelLogout(session, userSession, true);
-                } else {
-                    String userSessionId = userSession.getId();
-                    rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, userSessionId);
-                    if (rootAuthSession == null) {
-                        // depending on the storage layer we don't want to re-create the root authentication session
-                        rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm, userSessionId);
-                    }
-                    authSession = rootAuthSession.createAuthenticationSession(client);
-                    // set auth session cookies because they can be missing if recovered from identity cookie
-                    manager.setAuthSessionCookie(rootAuthSession.getId());
-                    manager.setAuthSessionIdHashCookie(rootAuthSession.getId());
-                    logger.debugf("Sent request to authz endpoint. We don't have root authentication session with ID '%s' but we have userSession." +
-                            "Re-created root authentication session with same ID. Client is: %s . New authentication session tab ID: %s", userSessionId, client.getClientId(), authSession.getTabId());
+                String userSessionId = userSession.getId();
+                rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, userSessionId);
+                if (rootAuthSession == null) {
+                    // depending on the storage layer we don't want to re-create the root authentication session
+                    rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm, userSessionId);
                 }
+                authSession = rootAuthSession.createAuthenticationSession(client);
+                // set auth session cookies because they can be missing if recovered from identity cookie
+                manager.setAuthSessionCookie(rootAuthSession.getId());
+                manager.setAuthSessionIdHashCookie(rootAuthSession.getId());
+                logger.debugf("Sent request to authz endpoint. We don't have root authentication session with ID '%s' but we have userSession." +
+                        "Re-created root authentication session with same ID. Client is: %s . New authentication session tab ID: %s", userSessionId, client.getClientId(), authSession.getTabId());
             } else {
                 authSession = createNewAuthenticationSession(manager, client);
             }

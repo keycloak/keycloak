@@ -1596,7 +1596,14 @@ public class AuthenticationManager {
                 KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), context, newSession -> {
                     RealmModel realmModel = newSession.realms().getRealm(realm.getId());
                     UserSessionModel userSessionModel = newSession.sessions().getUserSession(realmModel, userSessionId);
+                    EventBuilder event = new EventBuilder(realmModel, newSession, connection);
                     backchannelLogout(newSession, realmModel, userSessionModel, uriInfo, connection, headers, true);
+                    event.clone()
+                            .event(EventType.LOGOUT)
+                            .detail(Details.REASON, "user session is invalid or user is blocked")
+                            .user(userSession.getUser())
+                            .session(userSession.getId())
+                            .success();
                 });
                 // remove the user session here so that the external persistent session tx becomes aware of the removal that happened
                 // during the backchannel logout.
@@ -1630,6 +1637,11 @@ public class AuthenticationManager {
 
             UserModel user = userSession.getUser();
             if (!TokenManager.isUserValid(session, realm, token, user)) {
+                if (isCookie) {
+                    // The caller will invalidate the cookie, so let's invalidate the session here.
+                    // The signatures on the cookie are valid, so this is safe to be done
+                    invalidUserSessionCallback.accept(userSession);
+                }
                 return null;
             }
 
