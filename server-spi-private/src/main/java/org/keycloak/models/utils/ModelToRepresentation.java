@@ -157,6 +157,7 @@ public class ModelToRepresentation {
     static {
         REALM_EXCLUDED_ATTRIBUTES.add("displayName");
         REALM_EXCLUDED_ATTRIBUTES.add("displayNameHtml");
+        REALM_EXCLUDED_ATTRIBUTES.add("displayNameShort");
         REALM_EXCLUDED_ATTRIBUTES.add("defaultSignatureAlgorithm");
         REALM_EXCLUDED_ATTRIBUTES.add("bruteForceProtected");
         REALM_EXCLUDED_ATTRIBUTES.add("permanentLockout");
@@ -493,6 +494,7 @@ public class ModelToRepresentation {
         rep.setRealm(realm.getName());
         rep.setDisplayName(realm.getDisplayName());
         rep.setDisplayNameHtml(realm.getDisplayNameHtml());
+        rep.setDisplayNameShort(realm.getDisplayNameShort());
         rep.setEnabled(realm.isEnabled());
         rep.setNotBefore(realm.getNotBefore());
         rep.setSslRequired(realm.getSslRequired().name().toLowerCase());
