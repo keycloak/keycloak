@@ -121,6 +121,10 @@ public final class LDAPContextManager implements AutoCloseable {
             errorName = e.getClass().getSimpleName();
             tracing.error(e);
             throw e;
+        } catch (RuntimeException e) {
+            errorName = e.getClass().getSimpleName();
+            tracing.error(e);
+            throw e;
         } finally {
             recordLdapRequest(success, startTimeNanos, errorName);
             tracing.endSpan();
