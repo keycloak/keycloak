@@ -1,8 +1,5 @@
 package org.keycloak.broker.kubernetes;
 
-import java.io.File;
-import java.nio.charset.StandardCharsets;
-
 import org.keycloak.crypto.PublicKeysWrapper;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
@@ -15,11 +12,8 @@ import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentatio
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.util.JWKSUtils;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHeaders;
 import org.jboss.logging.Logger;
-
-import static org.keycloak.broker.kubernetes.KubernetesConstants.SERVICE_ACCOUNT_TOKEN_PATH;
 
 public class KubernetesJwksEndpointLoader implements PublicKeyLoader {
 
@@ -39,16 +33,16 @@ public class KubernetesJwksEndpointLoader implements PublicKeyLoader {
 
         String token = getToken(issuer);
 
-        String wellKnownEndpoint = issuer + "/.well-known/openid-configuration";
+        String wellKnownEndpoint = KubernetesUtils.discoveryUrl(issuer);
 
-        SimpleHttpRequest wellKnownReqest = simpleHttp.doGet(wellKnownEndpoint).acceptJson();
-        if (token != null) {
-            wellKnownReqest.auth(token);
+        SimpleHttpRequest wellKnownRequest = simpleHttp.doGet(wellKnownEndpoint).acceptJson();
+        if (token != null && KubernetesUtils.isTrustedKubernetesApiUrl(issuer)) {
+            wellKnownRequest.auth(token);
         }
-        String jwksUri = wellKnownReqest.asJson(OIDCConfigurationRepresentation.class).getJwksUri();
+        String jwksUri = wellKnownRequest.asJson(OIDCConfigurationRepresentation.class).getJwksUri();
 
         SimpleHttpRequest jwksRequest = simpleHttp.doGet(jwksUri).header(HttpHeaders.ACCEPT, "application/jwk-set+json");
-        if (token != null) {
+        if (token != null && KubernetesUtils.isTrustedKubernetesApiJwksUrl(jwksUri, issuer)) {
             jwksRequest.auth(token);
         }
 
@@ -58,12 +52,10 @@ public class KubernetesJwksEndpointLoader implements PublicKeyLoader {
 
     private String getToken(String issuer) {
         try {
-            File file = new File(SERVICE_ACCOUNT_TOKEN_PATH);
-            if (!file.exists()) {
+            String token = KubernetesUtils.getServiceAccountToken();
+            if (token == null) {
                 return null;
             }
-
-            String token = FileUtils.readFileToString(file, StandardCharsets.UTF_8);
             JsonWebToken jwt = new JWSInput(token).readJsonContent(JsonWebToken.class);
             if (jwt.getIssuer().equals(issuer)) {
                 logger.trace("Including service account token in request");

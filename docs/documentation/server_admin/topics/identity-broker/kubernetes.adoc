@@ -8,11 +8,20 @@ This feature can be enabled and disabled with the feature `kubernetes-service-ac
 
 The default issuer URL for a Kubernetes cluster is `\https://kubernetes.default.svc.cluster.local`. You can discover
 this value by decoding a service account token to retrieve the value of the `iss` claim.
+For managed Kubernetes clusters where service account tokens use an external issuer, use automatic issuer discovery
+with the Kubernetes API server URL, such as `\https://kubernetes.default.svc`, as the discovery URL.
+If the issuer URL is configured, {project_name} uses the configured issuer instead of performing automatic discovery.
+Automatic issuer discovery runs when the identity provider is saved and persists the resolved issuer URL. It does not
+refresh the issuer URL automatically after save.
+In the Admin Console, select *In-cluster Kubernetes API server* to resolve the issuer from `\https://kubernetes.default.svc`.
+This URL is shown as read-only for in-cluster discovery. Select *External OIDC discovery URL* to resolve the issuer
+from another OIDC discovery endpoint. REST and import clients can set a custom issuer discovery URL when needed.
 
 Keycloak must be able to invoke the endpoint `<ISSUER>/.well-known/openid-configuration` and additionally the
-JWKS endpoint returned in the well-known configuration. By default, these endpoints require authentication with a
-service account token. {project_name} will automatically use the token from `/var/run/secrets/kubernetes.io/serviceaccount/token`
-if available and the token issuer matches the configured issuer.
+JWKS endpoint returned in the well-known configuration. {project_name} uses the token from
+`/var/run/secrets/kubernetes.io/serviceaccount/token` only for trusted Kubernetes API server URLs, such as
+`\https://kubernetes.default.svc`, during issuer discovery and JWKS loading. The service account token is not
+forwarded to external OIDC discovery or JWKS endpoints.
 
 Each identity provider must have a unique issuer. Each client must also have a unique subject identifier for each
 issuer. As the subject identifier is built from the namespace and service account name, each client must have its own
@@ -39,7 +48,13 @@ and make sure tokens can not be intercepted in communication between the client 
 |The alias for the identity provider is used to link a client to the provider
 
 |Kubernetes Issuer URL
-|The issuer URL of service account tokens. The URL `<ISSUER>.well-known/openid-configuration` must be available to {project_name})
+|The issuer URL of service account tokens. The URL `<ISSUER>/.well-known/openid-configuration` must be available to {project_name}.
+
+|Issuer discovery mode
+|Select *In-cluster Kubernetes API server* to resolve the issuer from `\https://kubernetes.default.svc`; {project_name} sends the pod service account token to this trusted Kubernetes API server. Select *External OIDC discovery URL* to provide another discovery URL. Discovery runs on save and is not refreshed automatically.
+
+|Issuer discovery URL
+|The Kubernetes API server or external OIDC discovery base URL used to resolve the issuer. This field is read-only and set to `\https://kubernetes.default.svc` for in-cluster discovery.
 
 |===
 +
