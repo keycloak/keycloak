@@ -526,6 +526,10 @@ public class LDAPOperationManager {
             // Never use connection pool to prevent password caching
             env.put("com.sun.jndi.ldap.connect.pool", "false");
 
+            if (config.isConnectionTrace()) {
+                env.put(LDAPConstants.CONNECTION_TRACE_BER, System.err);
+            }
+
             // Prepare to receive password policy response control.
             env.put(LdapContext.CONTROL_FACTORIES, PasswordPolicyControlFactory.class.getName());
 
