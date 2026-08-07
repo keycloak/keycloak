@@ -335,14 +335,6 @@ class KeycloakProcessor {
                 .build());
     }
 
-    @Record(ExecutionTime.STATIC_INIT)
-    @BuildStep
-    @Consume(ConfigBuildItem.class)
-    @Consume(CryptoProviderInitBuildItem.class) // ensures the Providers are loaded prior to handle the keystore #49359
-    void configureTruststore(KeycloakRecorder recorder) {
-        recorder.configureTruststore(getFipsMode());
-    }
-
     /**
      * Check whether JDBC driver is present for the specified DB
      *
@@ -905,8 +897,10 @@ class KeycloakProcessor {
     @Produce(CryptoProviderInitBuildItem.class)
     @BuildStep
     @Record(ExecutionTime.STATIC_INIT)
-    void setCryptoProvider(KeycloakRecorder recorder) {
-        recorder.setCryptoProvider(getFipsMode());
+    void initCrypto(KeycloakRecorder recorder) {
+        FipsMode fipsMode = getFipsMode();
+        recorder.setCryptoProvider(fipsMode);
+        recorder.configureTruststore(fipsMode);
     }
 
     private FipsMode getFipsMode() {

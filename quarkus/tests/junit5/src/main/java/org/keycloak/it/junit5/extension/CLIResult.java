@@ -20,7 +20,6 @@ package org.keycloak.it.junit5.extension;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -200,8 +199,4 @@ public interface CLIResult extends LaunchResult {
         }
     }
 
-    default void assertStringCount(String msg, int count) {
-        Pattern pattern = Pattern.compile(msg);
-        assertThat((int) pattern.matcher(getOutput()).results().count(), is(count));
-    }
 }

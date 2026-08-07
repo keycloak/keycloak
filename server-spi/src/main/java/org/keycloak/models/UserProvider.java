@@ -382,6 +382,15 @@ public interface UserProvider extends Provider,
     boolean removeIssuedVerifiableCredential(String credentialId);
 
     /**
+     * Remove an issued verifiable credential by its ID if it belongs to the specified user.
+     *
+     * @param userId the ID of the user owning the credential
+     * @param credentialId the ID of the issued credential to remove
+     * @return {@code true} if the credential was removed, {@code false} if it was not found or does not belong to the user
+     */
+    boolean removeIssuedVerifiableCredential(String userId, String credentialId);
+
+    /**
      * Remove all expired issued verifiable credentials across all realms.
      * This is called periodically by the scheduled cleanup task.
      */
