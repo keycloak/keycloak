@@ -2,6 +2,7 @@ package org.keycloak.tests.scim.tck;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
@@ -21,6 +22,9 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.scim.client.ScimClient;
 import org.keycloak.scim.client.ScimClientException;
 import org.keycloak.scim.protocol.request.PatchRequest;
@@ -40,13 +44,18 @@ import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.scim.client.annotations.InjectScimClient;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.userprofile.config.UPConfigUtils;
 
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.HttpClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.scim.model.user.AbstractUserModelSchema.ANNOTATION_SCIM_SCHEMA_ATTRIBUTE;
+import static org.keycloak.scim.model.user.UserExtensionModelSchema.KEYCLOAK_USER_SCHEMA;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -1047,6 +1056,147 @@ public class AuthorizationTest extends AbstractScimTest {
                 masterRep.setScimApiEnabled(false);
                 adminClient.realm("master").update(masterRep);
             }
+        }
+    }
+
+    @Test
+    public void testUserProfileViewPermissionEnforcedForScimReadAndFilter() {
+        String hiddenAttributeName = "scim.hiddenProfileAttribute";
+        String hiddenScimPath = KEYCLOAK_USER_SCHEMA + ":hiddenProfileAttribute";
+        String secretValue = "hidden-profile-value";
+
+        String visibleAttributeName = "scim.visibleProfileAttribute";
+        String visibleScimPath = KEYCLOAK_USER_SCHEMA + ":visibleProfileAttribute";
+        String visibleValue = "visible-profile-value";
+
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+        UPConfig originalConfig = upConfig.clone();
+        realm.cleanup().add(realm -> realm.users().userProfile().update(originalConfig));
+
+        // admin-only view attribute - should NOT be visible via SCIM
+        UPAttribute hiddenAttribute = new UPAttribute(hiddenAttributeName, Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, hiddenScimPath));
+        hiddenAttribute.setPermissions(
+                new UPAttributePermissions(
+                        Set.of(UPConfigUtils.ROLE_ADMIN),
+                        Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(hiddenAttribute);
+
+        // user-visible attribute - should be visible via SCIM
+        UPAttribute visibleAttribute = new UPAttribute(visibleAttributeName, Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, visibleScimPath));
+        visibleAttribute.setPermissions(
+                new UPAttributePermissions(
+                        Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER),
+                        Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER)));
+        upConfig.addOrReplaceAttribute(visibleAttribute);
+
+        realm.admin().users().userProfile().update(upConfig);
+
+        UserRepresentation user = managedUser.admin().toRepresentation();
+        user.setAttributes(Map.of(
+                hiddenAttributeName, List.of(secretValue),
+                visibleAttributeName, List.of(visibleValue)));
+        managedUser.admin().update(user);
+
+        // verify admin-only attribute is NOT returned in SCIM reads
+        grantAdminRole(AdminRoles.VIEW_USERS);
+        User fetched = noAccessClient.users().get(managedUser.getId(), List.of(hiddenScimPath));
+        Map<String, Object> extensions = fetched.getExtensions();
+        if (extensions != null && extensions.get(KEYCLOAK_USER_SCHEMA) != null) {
+            Object schemaValue = extensions.get(KEYCLOAK_USER_SCHEMA);
+            assertInstanceOf(Map.class, schemaValue);
+            assertNull(((Map<?, ?>) schemaValue).get("hiddenProfileAttribute"),
+                    "Admin-only attribute should not be visible via SCIM");
+        }
+
+        // verify user-visible attribute IS returned in SCIM reads
+        fetched = noAccessClient.users().get(managedUser.getId(), List.of(visibleScimPath));
+        extensions = fetched.getExtensions();
+        assertNotNull(extensions);
+        Object schemaValue = extensions.get(KEYCLOAK_USER_SCHEMA);
+        assertInstanceOf(Map.class, schemaValue);
+        assertEquals(visibleValue, ((Map<?, ?>) schemaValue).get("visibleProfileAttribute"));
+
+        // verify admin-only attribute cannot be used to filter users
+        grantAdminRole(AdminRoles.QUERY_USERS);
+        ListResponse<User> matchingUsers = noAccessClient.users()
+                .getAll(hiddenScimPath + " eq \"" + secretValue + "\"");
+        assertEquals(0, matchingUsers.getTotalResults(),
+                "Filter on admin-only attribute should not match any resources");
+
+        // verify user-visible attribute CAN be used to filter users
+        ListResponse<User> visibleMatch = noAccessClient.users()
+                .getAll(visibleScimPath + " eq \"" + visibleValue + "\"");
+        assertEquals(1, visibleMatch.getTotalResults());
+        assertEquals(managedUser.getId(), visibleMatch.getResources().get(0).getId());
+
+        // verify edit implies view: view={admin}, edit={user} should be readable via SCIM
+        String editImpliesViewName = "scim.editImpliesView";
+        String editImpliesViewScimPath = KEYCLOAK_USER_SCHEMA + ":editImpliesView";
+        String editImpliesViewValue = "edit-grants-view";
+
+        // verify empty view falls back to edit: view={}, edit={admin} should NOT be readable via SCIM
+        String noViewName = "scim.noViewFallback";
+        String noViewScimPath = KEYCLOAK_USER_SCHEMA + ":noViewFallback";
+        String noViewValue = "should-be-hidden";
+
+        // set values with permissive permissions first, then tighten
+        UPAttribute editImpliesViewAttr = new UPAttribute(editImpliesViewName, Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, editImpliesViewScimPath));
+        editImpliesViewAttr.setPermissions(
+                new UPAttributePermissions(
+                        Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER),
+                        Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER)));
+        upConfig.addOrReplaceAttribute(editImpliesViewAttr);
+
+        UPAttribute noViewAttr = new UPAttribute(noViewName, Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, noViewScimPath));
+        noViewAttr.setPermissions(
+                new UPAttributePermissions(
+                        Set.of(UPConfigUtils.ROLE_ADMIN),
+                        Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(noViewAttr);
+
+        realm.admin().users().userProfile().update(upConfig);
+
+        user = managedUser.admin().toRepresentation();
+        user.singleAttribute(editImpliesViewName, editImpliesViewValue);
+        user.singleAttribute(noViewName, noViewValue);
+        managedUser.admin().update(user);
+
+        // now tighten permissions to the edge-case configurations
+        editImpliesViewAttr.setPermissions(
+                new UPAttributePermissions(
+                        Set.of(UPConfigUtils.ROLE_ADMIN),
+                        Set.of(UPConfigUtils.ROLE_USER)));
+        upConfig.addOrReplaceAttribute(editImpliesViewAttr);
+
+        noViewAttr.setPermissions(
+                new UPAttributePermissions(
+                        Set.of(),
+                        Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(noViewAttr);
+
+        realm.admin().users().userProfile().update(upConfig);
+
+        // edit implies view: attribute with view={admin}, edit={user} should be readable via SCIM
+        fetched = noAccessClient.users().get(managedUser.getId(), List.of(editImpliesViewScimPath));
+        extensions = fetched.getExtensions();
+        assertNotNull(extensions, "Edit permission should grant view access");
+        schemaValue = extensions.get(KEYCLOAK_USER_SCHEMA);
+        assertInstanceOf(Map.class, schemaValue);
+        assertEquals(editImpliesViewValue, ((Map<?, ?>) schemaValue).get("editImpliesView"),
+                "Attribute with edit={user} should be readable via SCIM even if view={admin}");
+
+        // empty view falls back to edit: attribute with view={}, edit={admin} should NOT be readable
+        fetched = noAccessClient.users().get(managedUser.getId(), List.of(noViewScimPath));
+        extensions = fetched.getExtensions();
+        if (extensions != null && extensions.get(KEYCLOAK_USER_SCHEMA) != null) {
+            schemaValue = extensions.get(KEYCLOAK_USER_SCHEMA);
+            assertInstanceOf(Map.class, schemaValue);
+            assertNull(((Map<?, ?>) schemaValue).get("noViewFallback"),
+                    "Attribute with view={}, edit={admin} should not be visible via SCIM");
         }
     }
 
