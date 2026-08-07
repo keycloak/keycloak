@@ -38,6 +38,17 @@ Custom login themes that override `social-providers.ftl` or apply CSS targeting 
 
 Test your custom login theme to ensure the identity provider buttons display correctly.
 
+=== Token exchange delegation now requires FGAP V2 permissions
+
+The experimental token exchange delegation feature no longer uses the `impersonation` role from the `realm-management` client to authorize delegation. Instead, delegation is controlled exclusively through link:{adminguide_link}#_fine_grained_permissions[Fine-grained admin permissions version 2] (FGAP V2) using the new `delegate` scope on the Users resource type and the `delegate-members` scope on the Groups resource type.
+
+If you were previously using delegation with the `impersonation` role, you need to:
+
+. Enable Admin Permissions (FGAP V2) on your realm.
+. Create a User permission with the `delegate` scope and assign a policy targeting the administrators or service accounts that should be allowed to delegate. Alternatively, create a Group permission with the `delegate-members` scope to grant delegation for members of a specific group.
+
+FGAP V1 does not support delegation permissions.
+
 === Email is no longer marked as verified by other flows
 
 Previously, some flows marked the email of a user as verified even though their purpose was not email verification.

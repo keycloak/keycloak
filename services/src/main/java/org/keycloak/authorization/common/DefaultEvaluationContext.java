@@ -71,7 +71,7 @@ public class DefaultEvaluationContext implements EvaluationContext {
             attributes.put("kc.client.user_agent", userAgents);
         }
 
-        attributes.put("kc.realm.name", Arrays.asList(this.keycloakSession.getContext().getRealm().getName()));
+        attributes.put(REALM_NAME_ATTRIBUTE, Arrays.asList(this.keycloakSession.getContext().getRealm().getName()));
 
         if (claims != null) {
             for (Entry<String, List<String>> entry : claims.entrySet()) {
@@ -83,7 +83,7 @@ public class DefaultEvaluationContext implements EvaluationContext {
             AccessToken accessToken = KeycloakIdentity.class.cast(this.identity).getAccessToken();
 
             if (accessToken != null) {
-                attributes.put("kc.client.id", Arrays.asList(accessToken.getIssuedFor()));
+                attributes.put(CLIENT_ID_ATTRIBUTE, Arrays.asList(accessToken.getIssuedFor()));
             }
         }
 

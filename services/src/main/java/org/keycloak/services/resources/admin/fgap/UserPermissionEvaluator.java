@@ -18,10 +18,11 @@ package org.keycloak.services.resources.admin.fgap;
 
 import java.util.Map;
 
+import jakarta.ws.rs.ForbiddenException;
+
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.UserModel;
 
 /**
@@ -62,7 +63,7 @@ public interface UserPermissionEvaluator {
      */
     default void requireResetPassword(UserModel user) {
         if (!canResetPassword(user)) {
-            throw new jakarta.ws.rs.ForbiddenException();
+            throw new ForbiddenException();
         }
     }
 
@@ -129,13 +130,44 @@ public interface UserPermissionEvaluator {
     boolean canImpersonate();
 
     /**
-     * Returns {@code true} if the caller has the {@link ImpersonationConstants#IMPERSONATION_ROLE}.
+     * Returns {@code true} if the caller has the {@link AdminRoles#IMPERSONATION} role.
      * <p/>
-     * NOTE: If requester is provided, it's clientId is added to evaluation context.
+     * NOTE: If requester is provided, its clientId is added to evaluation context.
      * <p/>
      * Or if it has a permission to {@link AdminPermissionsSchema#IMPERSONATE} the user.
      */
     boolean canImpersonate(UserModel user, ClientModel requester);
+
+    /**
+     * Throws ForbiddenException if {@link #canDelegate(UserModel)} returns {@code false}.
+     */
+    default void requireDelegate(UserModel user) {
+        if (!canDelegate(user)) {
+            throw new ForbiddenException();
+        }
+    }
+
+    /**
+     * Returns {@code true} if the caller has a permission to {@link AdminPermissionsSchema#DELEGATE} users.
+     */
+    default boolean canDelegate() {
+        return canDelegate((UserModel) null);
+    }
+
+    /**
+     * Returns {@code true} if the caller has a permission to {@link AdminPermissionsSchema#DELEGATE} the user.
+     */
+    default boolean canDelegate(UserModel user) {
+        return canDelegate(user, null);
+    }
+
+    /**
+     * Returns {@code true} if the caller has a permission to {@link AdminPermissionsSchema#DELEGATE} the user.
+     * <p/>
+     * NOTE: The requester's clientId is added to the evaluation context for
+     * client-aware FGAP policy evaluation.
+     */
+    boolean canDelegate(UserModel user, ClientModel requester);
 
     /**
      * Returns Map with information what access the caller for the provided user has.
