@@ -451,4 +451,26 @@ test.describe.serial("Client authorization evaluate resource key", () => {
     await key.click();
     await expect(options).toHaveText(resourceNames);
   });
+
+  test("Should not satisfy a required select by clearing the input", async ({
+    page,
+  }) => {
+    await goToPermissionsSubTab(page);
+    await createPermission(page, "resource", {
+      name: "clear-input-permission",
+    });
+
+    // Clearing has to reset the consumer's value via onClear. Falling back to
+    // onSelect("") would store [""], which is non-empty and would let the
+    // required check pass with nothing actually selected.
+    const resources = page.locator("#resources").getByRole("combobox");
+    await resources.click();
+    await resources.pressSequentially("alpha");
+    await page.locator("#resources").getByLabel("Clear input value").click();
+
+    await clickSaveButton(page);
+    await expect(
+      page.getByText("Required field", { exact: true }),
+    ).toBeVisible();
+  });
 });

@@ -25,6 +25,7 @@ export const TypeaheadSelect = ({
   onSelect,
   onToggle,
   onFilter,
+  onClear,
   variant,
   validated,
   placeholderText,
@@ -200,7 +201,14 @@ export const TypeaheadSelect = ({
                 <Button
                   variant="plain"
                   onClick={() => {
-                    onSelect?.("");
+                    // Consumers that track their own value need to reset it
+                    // themselves: onSelect("") stores an empty entry rather
+                    // than an empty selection.
+                    if (onClear) {
+                      onClear();
+                    } else {
+                      onSelect?.("");
+                    }
                     stopFiltering();
                     textInputRef.current?.focus();
                   }}
