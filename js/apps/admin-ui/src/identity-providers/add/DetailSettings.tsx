@@ -435,6 +435,7 @@ export default function DetailSettings() {
   const isOIDC = provider.providerId!.includes("oidc");
   const isSAML = provider.providerId!.includes("saml");
   const isOAuth2 = provider.providerId!.includes("oauth2");
+  const isKeycloakOIDC = provider.providerId === "keycloak-oidc";
   const isSPIFFE = provider.providerId!.includes("spiffe");
   const isKubernetes = provider.providerId!.includes("kubernetes");
   const isJWTAuthorizationGrant = provider.providerId!.includes(
@@ -677,6 +678,7 @@ export default function DetailSettings() {
             isOIDC={isOIDC!}
             isSAML={isSAML!}
             isOAuth2={isOAuth2!}
+            isKeycloakOIDC={isKeycloakOIDC}
           />
 
           <FixedButtonsGroup

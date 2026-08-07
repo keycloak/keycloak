@@ -17,6 +17,7 @@ import {
   clickRevertButton,
   clickSaveButton,
   clickSaveMapper,
+  createKeycloakOIDCProvider,
   createOIDCProvider,
   goToMappersTab,
   setUrl,
@@ -41,6 +42,7 @@ test.describe.serial("OIDC identity provider test", () => {
       page,
       "Identity provider successfully created",
     );
+    await expect(page.locator("#isAccessTokenJWT")).toBeVisible();
     await assertAuthorizationUrl(page);
 
     await setUrl(page, "authorization", "invalid");
@@ -111,5 +113,30 @@ test.describe.serial("Edit OIDC Provider", () => {
     await addMapper(page, "oidc-role", "OIDC Claim to Role");
     await clickCancelMapper(page);
     await assertOnMappingPage(page);
+  });
+});
+
+test.describe.serial("Edit Keycloak OIDC Provider", () => {
+  const alias = `edit-keycloak-oidc-${uuid()}`;
+  const secret = "123";
+
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+    await goToIdentityProviders(page);
+    await createKeycloakOIDCProvider(page, alias, secret);
+    await assertNotificationMessage(
+      page,
+      "Identity provider successfully created",
+    );
+    await goToIdentityProviders(page);
+    await clickTableRowItem(page, alias);
+  });
+
+  test.afterEach(() => adminClient.deleteIdentityProvider(alias));
+
+  test("should hide the access token JWT switch for Keycloak OIDC", async ({
+    page,
+  }) => {
+    await expect(page.locator("#isAccessTokenJWT")).toHaveCount(0);
   });
 });
