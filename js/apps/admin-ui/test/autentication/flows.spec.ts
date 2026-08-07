@@ -24,11 +24,15 @@ import {
   addPolicy,
   addSubFlow,
   assertDefaultSwitchPolicyEnabled,
+  assertExecutionLevel,
+  assertExecutionRequirement,
   assertRowExists,
   assertSwitchPolicyChecked,
   clickDefaultSwitchPolicy,
   clickDeleteRow,
   clickSwitchPolicy,
+  dragExecutionToRow,
+  expandFlowRow,
   fillBindFlowModal,
   fillCreateForm,
   fillDuplicateFlowModal,
@@ -194,24 +198,44 @@ test.describe("Authentication flow details", () => {
 
     await clickTableRowItem(page, flowName);
 
-    const sourceBox = await page
-      .getByText("Identity Provider Redirector")
-      .boundingBox();
-    const targetBox = await page.getByText("Kerberos").boundingBox();
+    // dnd-kit only activates drags from the grip handle (PointerSensor + activation distance).
+    // Drop target hit-testing uses the row rect; the middle of a non-subflow row maps to
+    // "reorder-after", which is a no-op when moving an item from below onto that row — use the
+    // top band for "reorder-before" so the order actually changes.
+    const sourceRow = page.getByRole("row", {
+      name: /Identity Provider Redirector/,
+    });
+    const targetRow = page.getByRole("row", { name: /Kerberos/ }).first();
 
-    await page.mouse.move(
-      sourceBox!.x + sourceBox!.width / 2,
-      sourceBox!.y + sourceBox!.height / 2,
-    );
-    await page.mouse.down();
-    await page.mouse.move(
-      targetBox!.x + targetBox!.width / 2,
-      targetBox!.y + targetBox!.height / 2,
-      { steps: 10 },
-    );
-    await page.mouse.up();
+    await dragExecutionToRow(page, sourceRow, targetRow, {
+      yRatio: 0.12,
+      minYOffset: 8,
+    });
 
     await assertNotificationMessage(page, "Flow successfully updated");
+  });
+
+  test("drags execution into subflow by dropping on subflow row", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed();
+
+    await adminClient.copyFlow("browser", flowName, testBed.realm);
+    await login(page, { to: toAuthentication({ realm: testBed.realm }) });
+
+    await clickTableRowItem(page, flowName);
+
+    const sourceRow = page.getByRole("row", { name: /\bCookie\b/ }).first();
+    const subflowRow = page
+      .locator('tr[data-is-subflow="true"]')
+      .filter({ has: page.getByTestId(`${flowName} forms`) });
+
+    await dragExecutionToRow(page, sourceRow, subflowRow, { yRatio: 0.5 });
+
+    await assertNotificationMessage(page, "Flow successfully updated");
+    await expandFlowRow(page, `${flowName} forms`);
+    await assertExecutionLevel(page, /\bCookie\b/, 1);
+    await assertExecutionRequirement(page, /\bCookie\b/, "Alternative");
   });
 
   test("edits flow details", async ({ page }) => {

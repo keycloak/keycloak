@@ -1,3 +1,116 @@
 .pf-v5-c-table__tr:hover {
   background-color: var(--pf-v5-global--BackgroundColor--200);
 }
+
+tr.keycloak__authentication__flow-row {
+  position: relative;
+}
+
+tr.keycloak__authentication__drop-into {
+  background-color: var(--pf-v5-global--palette--blue-100) !important;
+  box-shadow: inset 0 0 0 4px var(--pf-v5-global--active-color--100);
+  z-index: 100;
+}
+
+tr.keycloak__authentication__drop-parent {
+  background-color: var(--pf-v5-global--palette--blue-50) !important;
+  box-shadow: inset 0 0 0 3px var(--pf-v5-global--active-color--100);
+  z-index: 99;
+}
+
+tr.keycloak__authentication__drop-pending-expand {
+  background-color: var(--pf-v5-global--palette--blue-50) !important;
+  box-shadow: inset 0 0 0 3px var(--pf-v5-global--active-color--100);
+  z-index: 98;
+}
+
+tr.keycloak__authentication__drop-line--before {
+  box-shadow: inset 0 3px 0 0 var(--pf-v5-global--success-color--100);
+}
+
+tr.keycloak__authentication__drop-line--after {
+  box-shadow: inset 0 -3px 0 0 var(--pf-v5-global--success-color--100);
+}
+
+.keycloak__authentication__flow-title-cell {
+  position: relative;
+}
+
+.keycloak__authentication__flow-row.is-dragging {
+  opacity: 0;
+}
+
+.keycloak__authentication__drag-cell {
+  padding: 0 !important;
+  vertical-align: middle;
+  width: 2.75rem;
+  min-width: 2.75rem;
+  max-width: 2.75rem;
+}
+
+.keycloak__authentication__drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 2.75rem;
+  min-width: 2.75rem;
+  max-width: 2.75rem;
+  padding: var(--pf-v5-global--spacer--sm);
+  cursor: grab;
+  color: var(--pf-v5-global--Color--200);
+}
+
+.keycloak__authentication__drag-handle:hover {
+  color: var(--pf-v5-global--Color--100);
+  background-color: var(--pf-v5-global--BackgroundColor--200);
+}
+
+.keycloak__authentication__drag-handle:active {
+  cursor: grabbing;
+}
+
+.keycloak__authentication__drag-handle:focus-visible {
+  outline: 2px solid var(--pf-v5-global--active-color--100);
+  outline-offset: 2px;
+}
+
+.keycloak__authentication__drag-overlay {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pf-v5-global--spacer--sm);
+  width: max-content;
+  max-width: 20rem;
+  padding: var(--pf-v5-global--spacer--md) var(--pf-v5-global--spacer--lg);
+  background-color: var(--pf-v5-global--BackgroundColor--100);
+  border: 2px solid var(--pf-v5-global--active-color--100);
+  border-radius: var(--pf-v5-global--BorderRadius--sm);
+  box-shadow: var(--pf-v5-global--BoxShadow--lg);
+  font-size: var(--pf-v5-global--FontSize--md);
+  line-height: var(--pf-v5-global--LineHeight--md);
+  cursor: grabbing;
+  pointer-events: none;
+}
+
+.keycloak__authentication__drag-overlay-handle,
+.keycloak__authentication__drag-overlay-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.keycloak__authentication__drag-overlay-handle {
+  color: var(--pf-v5-global--Color--200);
+}
+
+.keycloak__authentication__drag-overlay-icon {
+  color: var(--pf-v5-global--active-color--100);
+}
+
+.keycloak__authentication__drag-overlay-text {
+  max-width: 14rem;
+  font-weight: var(--pf-v5-global--FontWeight--bold);
+  color: var(--pf-v5-global--Color--100);
+  white-space: normal;
+  overflow-wrap: break-word;
+}
