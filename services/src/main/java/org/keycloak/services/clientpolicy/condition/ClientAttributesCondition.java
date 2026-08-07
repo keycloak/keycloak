@@ -29,6 +29,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.ClientModelContext;
 import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext;
+import org.keycloak.services.clientpolicy.context.admin.RoleMapperAssignmentContext;
 
 import org.jboss.logging.Logger;
 
@@ -75,6 +76,8 @@ public class ClientAttributesCondition extends AbstractClientPolicyConditionProv
             ClientModel client = session.getContext().getRealm().getClientByClientId(parc.getClientId());
             if (isAttributesMatched(client)) return ClientPolicyVote.YES;
             return ClientPolicyVote.NO;
+        } else if (context instanceof RoleMapperAssignmentContext roleMappingContext) {
+            return isAttributesMatched(roleMappingContext.getTargetClient()) ? ClientPolicyVote.YES : ClientPolicyVote.NO;
         } else if (context instanceof ClientModelContext clientModelContext) {
             ClientModel client = clientModelContext.getClient();
             if (isAttributesMatched(client)) return ClientPolicyVote.YES;
