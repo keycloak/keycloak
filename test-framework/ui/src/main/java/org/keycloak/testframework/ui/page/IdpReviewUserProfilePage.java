@@ -17,8 +17,6 @@
 
 package org.keycloak.testframework.ui.page;
 
-import java.time.Duration;
-
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 public class IdpReviewUserProfilePage extends LoginUpdateProfilePage {
@@ -34,6 +32,6 @@ public class IdpReviewUserProfilePage extends LoginUpdateProfilePage {
 
     @Override
     public void assertCurrent() {
-        driver.waiting().waitForPage(this, Duration.ofSeconds(10));
+        driver.waiting().waitForPage(this);
     }
 }

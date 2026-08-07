@@ -16,13 +16,10 @@
  */
 package org.keycloak.tests.sessionlimits;
 
-import java.util.List;
-
 import org.keycloak.authentication.authenticators.sessionlimits.UserSessionLimitsAuthenticatorFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
@@ -47,24 +44,25 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.broker.oidc.OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL;
+import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.CONSUMER_CLIENT_ID;
+import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.CONSUMER_CLIENT_SECRET;
+import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.CONSUMER_REALM;
 import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.ERROR_TO_DISPLAY;
+import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.PROVIDER_REALM;
+import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.USER_EMAIL;
+import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.USER_LOGIN;
+import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.USER_PASSWORD;
 import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.assertSessionCount;
+import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.cleanupBeforeTest;
 import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.configurePostBrokerFlow;
-import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.removePostBrokerFlow;
+import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.deleteAllCookies;
 
 @KeycloakIntegrationTest
 public class KcOidcUserSessionLimitsBrokerTest {
 
-    private static final String PROVIDER_REALM = "provider";
-    private static final String CONSUMER_REALM = "consumer";
     private static final String IDP_ALIAS = "kc-oidc-idp";
-    private static final String USER_LOGIN = "testuser";
-    private static final String USER_PASSWORD = "password";
-    private static final String USER_EMAIL = "user@localhost.com";
     private static final String BROKER_CLIENT_ID = "brokerapp";
     private static final String BROKER_CLIENT_SECRET = "secret";
-    private static final String CONSUMER_CLIENT_ID = "broker-app";
-    private static final String CONSUMER_CLIENT_SECRET = "broker-app-secret";
 
     @InjectRealm(ref = "provider", config = ProviderRealmConfig.class)
     ManagedRealm providerRealm;
@@ -89,16 +87,7 @@ public class KcOidcUserSessionLimitsBrokerTest {
 
     @BeforeEach
     public void setup() {
-        deleteAllCookies(consumerRealm);
-        deleteAllCookies(providerRealm);
-
-        List<UserRepresentation> users = consumerRealm.admin().users().search(USER_LOGIN, true);
-        for (UserRepresentation user : users) {
-            consumerRealm.admin().users().get(user.getId()).logout();
-            consumerRealm.admin().users().get(user.getId()).remove();
-        }
-
-        runOnServer.run(removePostBrokerFlow(CONSUMER_REALM));
+        cleanupBeforeTest(driver, consumerRealm, providerRealm, runOnServer);
     }
 
     @Test
@@ -107,8 +96,8 @@ public class KcOidcUserSessionLimitsBrokerTest {
                 UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION, "0", "1"));
 
         logInAsUserInIDPForFirstTime();
-        deleteAllCookies(consumerRealm);
-        deleteAllCookies(providerRealm);
+        deleteAllCookies(driver, consumerRealm);
+        deleteAllCookies(driver, providerRealm);
         logInAsUserInIDP();
 
         errorPage.assertCurrent();
@@ -121,8 +110,8 @@ public class KcOidcUserSessionLimitsBrokerTest {
                 UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION, "0", "1"));
 
         logInAsUserInIDPForFirstTime();
-        deleteAllCookies(consumerRealm);
-        deleteAllCookies(providerRealm);
+        deleteAllCookies(driver, consumerRealm);
+        deleteAllCookies(driver, providerRealm);
         logInAsUserInIDP();
 
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
@@ -135,8 +124,8 @@ public class KcOidcUserSessionLimitsBrokerTest {
                 UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION, "1", "0"));
 
         logInAsUserInIDPForFirstTime();
-        deleteAllCookies(consumerRealm);
-        deleteAllCookies(providerRealm);
+        deleteAllCookies(driver, consumerRealm);
+        deleteAllCookies(driver, providerRealm);
         logInAsUserInIDP();
 
         errorPage.assertCurrent();
@@ -149,8 +138,8 @@ public class KcOidcUserSessionLimitsBrokerTest {
                 UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION, "1", "0"));
 
         logInAsUserInIDPForFirstTime();
-        deleteAllCookies(consumerRealm);
-        deleteAllCookies(providerRealm);
+        deleteAllCookies(driver, consumerRealm);
+        deleteAllCookies(driver, providerRealm);
         logInAsUserInIDP();
 
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
@@ -169,11 +158,6 @@ public class KcOidcUserSessionLimitsBrokerTest {
         loginPage.assertCurrent();
         loginPage.fillLogin(USER_LOGIN, USER_PASSWORD);
         loginPage.submit();
-    }
-
-    private void deleteAllCookies(ManagedRealm realm) {
-        driver.driver().navigate().to(realm.getBaseUrl());
-        driver.cookies().deleteAll();
     }
 
     public static class ProviderRealmConfig implements RealmConfig {
