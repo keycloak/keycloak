@@ -226,9 +226,13 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
     public void testOrganizationScopeValueContainingSeparatorCharacter() throws Exception {
         // the alias itself contains the scope value separator (':'), exercising resolution of scopes like
         // "organization:ABC:Google" where both the scope name and the value may contain the separator
-        OrganizationRepresentation orgA = createOrganization("orga", true);
+        OrganizationRepresentation orgA = createRepresentation("orga", "orga.org");
         orgA.setAlias("ABC:Google");
-        realm.admin().organizations().get(orgA.getId()).update(orgA).close();
+        try (Response createResponse = realm.admin().organizations().create(orgA)) {
+            Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), createResponse.getStatus());
+            orgA.setId(ApiUtil.getCreatedId(createResponse));
+        }
+        realm.cleanup().add(r -> r.organizations().get(orgA.getId()).delete().close());
         addMember(realm.admin().organizations().get(orgA.getId()));
 
         oauth.client("direct-grant", "password");
