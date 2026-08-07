@@ -20,6 +20,8 @@ package org.keycloak.models.sessions.infinispan;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
@@ -27,6 +29,7 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
@@ -94,6 +97,16 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
     private RootAuthenticationSessionEntity getRootAuthenticationSessionEntity(String authSessionId) {
         SessionEntityWrapper<RootAuthenticationSessionEntity> entityWrapper = sessionTx.get(authSessionId);
         return entityWrapper==null ? null : entityWrapper.getEntity();
+    }
+
+    @Override
+    public Stream<RootAuthenticationSessionModel> getRootAuthenticationSessionsByAuthenticatedUser(RealmModel realm, UserModel user) {
+        return StreamSupport.stream(sessionTx.getCache().entrySet().stream()
+                        .filter(SessionWrapperPredicate.create(realm.getId()))
+                        .spliterator(), false)
+                .map(entry -> entry.getValue().getEntity())
+                .filter(entity -> entity.hasAuthenticationSessionForUser(user.getId()))
+                .map(entity -> (RootAuthenticationSessionModel) wrap(realm, entity));
     }
 
     @Override

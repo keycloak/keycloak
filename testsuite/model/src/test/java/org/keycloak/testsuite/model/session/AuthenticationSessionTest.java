@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.model.session;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -31,6 +32,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -180,6 +182,78 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
             RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, rootAuthSessionId.get());
             assertNull(rootAuthSession);
 
+            return null;
+        });
+    }
+
+    @Test
+    public void testGetRootAuthenticationSessionsByAuthenticatedUser() {
+        AtomicReference<String> user1Id = new AtomicReference<>();
+        AtomicReference<String> user2Id = new AtomicReference<>();
+        List<String> user1RootIds = new ArrayList<>();
+        AtomicReference<String> user2RootId = new AtomicReference<>();
+        AtomicReference<String> anonymousRootId = new AtomicReference<>();
+
+        withRealm(realmId, (session, realm) -> {
+            UserModel user1 = session.users().addUser(realm, "user1");
+            UserModel user2 = session.users().addUser(realm, "user2");
+            user1Id.set(user1.getId());
+            user2Id.set(user2.getId());
+            ClientModel client = realm.getClientByClientId("test-app");
+
+            // two separate in-progress authentication sessions authenticated as user1 (e.g. two devices)
+            for (int i = 0; i < 2; i++) {
+                RootAuthenticationSessionModel root = session.authenticationSessions().createRootAuthenticationSession(realm);
+                root.createAuthenticationSession(client).setAuthenticatedUser(user1);
+                user1RootIds.add(root.getId());
+            }
+            // one authenticated as user2
+            RootAuthenticationSessionModel root2 = session.authenticationSessions().createRootAuthenticationSession(realm);
+            root2.createAuthenticationSession(client).setAuthenticatedUser(user2);
+            user2RootId.set(root2.getId());
+
+            // one without an authenticated user (credentials not verified yet)
+            RootAuthenticationSessionModel anon = session.authenticationSessions().createRootAuthenticationSession(realm);
+            anon.createAuthenticationSession(client);
+            anonymousRootId.set(anon.getId());
+            return null;
+        });
+
+        // lookup returns exactly the root sessions of the requested authenticated user
+        withRealm(realmId, (session, realm) -> {
+            UserModel user1 = session.users().getUserById(realm, user1Id.get());
+            List<String> foundForUser1 = session.authenticationSessions()
+                    .getRootAuthenticationSessionsByAuthenticatedUser(realm, user1)
+                    .map(RootAuthenticationSessionModel::getId)
+                    .collect(Collectors.toList());
+            assertThat(foundForUser1, Matchers.containsInAnyOrder(user1RootIds.toArray(new String[0])));
+
+            UserModel user2 = session.users().getUserById(realm, user2Id.get());
+            List<String> foundForUser2 = session.authenticationSessions()
+                    .getRootAuthenticationSessionsByAuthenticatedUser(realm, user2)
+                    .map(RootAuthenticationSessionModel::getId)
+                    .collect(Collectors.toList());
+            assertThat(foundForUser2, Matchers.contains(user2RootId.get()));
+            return null;
+        });
+
+        // emulate "logout other sessions": remove all of user1's in-progress sessions except the current one
+        String currentRootId = user1RootIds.get(0);
+        withRealm(realmId, (session, realm) -> {
+            UserModel user1 = session.users().getUserById(realm, user1Id.get());
+            session.authenticationSessions().getRootAuthenticationSessionsByAuthenticatedUser(realm, user1)
+                    .filter(root -> !root.getId().equals(currentRootId))
+                    .collect(Collectors.toList())
+                    .forEach(root -> session.authenticationSessions().removeRootAuthenticationSession(realm, root));
+            return null;
+        });
+
+        // the current session survives; the other user1 session is gone; other users are untouched
+        withRealm(realmId, (session, realm) -> {
+            assertThat(session.authenticationSessions().getRootAuthenticationSession(realm, currentRootId), Matchers.notNullValue());
+            assertThat(session.authenticationSessions().getRootAuthenticationSession(realm, user1RootIds.get(1)), Matchers.nullValue());
+            assertThat(session.authenticationSessions().getRootAuthenticationSession(realm, user2RootId.get()), Matchers.notNullValue());
+            assertThat(session.authenticationSessions().getRootAuthenticationSession(realm, anonymousRootId.get()), Matchers.notNullValue());
             return null;
         });
     }

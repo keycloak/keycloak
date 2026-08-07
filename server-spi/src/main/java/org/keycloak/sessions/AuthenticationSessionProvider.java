@@ -18,10 +18,12 @@
 package org.keycloak.sessions;
 
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 
 /**
@@ -81,6 +83,18 @@ public interface AuthenticationSessionProvider extends Provider {
      */
     @Deprecated(since = "19.0", forRemoval = true)
     default void removeExpired(RealmModel realm) {}
+
+    /**
+     * Returns all root authentication sessions of the given realm that hold an in-progress authentication session for the given authenticated user.
+     * This is used to invalidate in-progress authentication sessions.
+     * 
+     * @param realm {@code RealmModel} Can't be {@code null}.
+     * @param user {@code UserModel} Can't be {@code null}.
+     * @return a stream of matching {@code RootAuthenticationSessionModel}s. Never returns {@code null}.
+     */
+    default Stream<RootAuthenticationSessionModel> getRootAuthenticationSessionsByAuthenticatedUser(RealmModel realm, UserModel user) {
+        return Stream.empty();
+    }
 
     /**
      * Removes all associated root authentication sessions to the given realm which was removed.

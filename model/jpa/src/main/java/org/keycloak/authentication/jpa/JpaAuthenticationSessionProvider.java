@@ -21,6 +21,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
@@ -32,6 +33,7 @@ import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -140,6 +142,18 @@ public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransactio
         if (entity != null) {
             em.remove(entity);
         }
+    }
+
+    @Override
+    public Stream<RootAuthenticationSessionModel> getRootAuthenticationSessionsByAuthenticatedUser(RealmModel realm, UserModel user) {
+        return getEntityManager()
+                .createNamedQuery("findRootAuthSessionIdsByUser", String.class)
+                .setParameter("realmId", realm.getId())
+                .setParameter("userId", user.getId())
+                .getResultList()
+                .stream()
+                .map(id -> getRootAuthenticationSession(realm, id))
+                .filter(Objects::nonNull);
     }
 
     @Override
