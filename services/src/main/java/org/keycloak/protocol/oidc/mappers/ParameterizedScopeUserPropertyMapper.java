@@ -37,6 +37,7 @@ public class ParameterizedScopeUserPropertyMapper extends ParameterizedScopeMapp
         property.setType(ProviderConfigProperty.USER_PROFILE_ATTRIBUTE_LIST_TYPE);
         configProperties.add(property);
 
+        addScopeConditionConfig(configProperties);
         OIDCAttributeMapperHelper.addAttributeConfig(configProperties, ParameterizedScopeUserPropertyMapper.class);
     }
 
@@ -112,11 +113,21 @@ public class ParameterizedScopeUserPropertyMapper extends ParameterizedScopeMapp
                                               String tokenClaimName, String claimType,
                                               boolean accessToken, boolean idToken, boolean introspectionEndpoint,
                                               boolean multivalued) {
+        return create(name, userAttribute, tokenClaimName, claimType, accessToken, idToken, introspectionEndpoint, multivalued, null);
+    }
+
+    public static ProtocolMapperModel create(String name, String userAttribute,
+                                              String tokenClaimName, String claimType,
+                                              boolean accessToken, boolean idToken, boolean introspectionEndpoint,
+                                              boolean multivalued, String scopeCondition) {
         ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(
                 name, userAttribute, tokenClaimName, claimType,
                 accessToken, idToken, false, introspectionEndpoint,
                 PROVIDER_ID);
         mapper.getConfig().put(ProtocolMapperUtils.MULTIVALUED, Boolean.toString(multivalued));
+        if (scopeCondition != null) {
+            mapper.getConfig().put(OIDCAttributeMapperHelper.SCOPE_CONDITION, scopeCondition);
+        }
         return mapper;
     }
 }
