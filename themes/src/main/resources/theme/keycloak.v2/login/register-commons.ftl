@@ -1,5 +1,5 @@
 <#macro termsAcceptance>
-    <#if termsAcceptanceRequired??>
+    <#if termsAcceptanceRequired!false>
         <div class="form-group">
             <div class="${properties.kcInputWrapperClass!}">
                 ${msg("termsTitle")}
