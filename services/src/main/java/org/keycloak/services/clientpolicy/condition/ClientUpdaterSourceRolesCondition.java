@@ -42,6 +42,7 @@ import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisteredContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdatedContext;
+import org.keycloak.services.clientpolicy.context.admin.ClientProtocolMapperContext;
 
 import org.jboss.logging.Logger;
 
@@ -102,6 +103,10 @@ public class ClientUpdaterSourceRolesCondition extends AbstractClientPolicyCondi
             } else {
                 throw new ClientPolicyException(OAuthErrorException.SERVER_ERROR, "unexpected context type.");
             }
+        case REGISTER_PROTOCOL_MAPPER:
+        case UPDATE_PROTOCOL_MAPPER:
+        case UNREGISTER_PROTOCOL_MAPPER:
+            return getVoteForRolesMatched(((ClientProtocolMapperContext) context).getAuthenticatedUser());
         default:
             return ClientPolicyVote.ABSTAIN;
         }
