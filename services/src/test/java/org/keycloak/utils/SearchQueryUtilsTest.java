@@ -68,6 +68,18 @@ public class SearchQueryUtilsTest {
         assertInvalidQuery("key:val\\");
         assertInvalidQuery("key\\");
         assertInvalidQuery("key:\"val\\");
+        assertInvalidQuery("\\");
+
+        // double-backslash at value boundary - i+=2 lands exactly at array end
+        testParseQuery("key:val\\\\",
+                "key", "val");
+        testParseQuery("key:\\\\",
+                "key", "");
+
+        // malformed inputs that don't crash but produce no key-value pairs
+        testParseQuery("\"key \\\"1\\\"");
+        testParseQuery("\"key \\\"");
+        testParseQuery("key \"");
     }
 
     private void assertInvalidQuery(String query) {
