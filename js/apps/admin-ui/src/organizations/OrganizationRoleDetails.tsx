@@ -40,7 +40,6 @@ import {
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { AdminEvents } from "../events/AdminEvents";
 import { useParams } from "../utils/useParams";
 import { OrganizationRoleComposites } from "./OrganizationRoleComposites";
 import { OrganizationRoleUsers } from "./OrganizationRoleUsers";
@@ -104,7 +103,6 @@ export default function OrganizationRoleDetails() {
   const associatedRolesTab = useRoutableTab(toTab("associated-roles"));
   const attributesTab = useRoutableTab(toTab("attributes"));
   const usersTab = useRoutableTab(toTab("users-in-role"));
-  const eventsTab = useRoutableTab(toTab("events"));
 
   const onSubmit: SubmitHandler<OrganizationRoleForm> = async (values) => {
     try {
@@ -245,17 +243,6 @@ export default function OrganizationRoleDetails() {
                   organizationId={orgId}
                   roleId={role.id}
                   canMapRole={canMapRole}
-                />
-              </Tab>
-            )}
-            {hasAccess("view-events") && (
-              <Tab
-                data-testid="organization-role-events-tab"
-                title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
-                {...eventsTab}
-              >
-                <AdminEvents
-                  resourcePath={`organizations/${orgId}/roles/${role.id}`}
                 />
               </Tab>
             )}

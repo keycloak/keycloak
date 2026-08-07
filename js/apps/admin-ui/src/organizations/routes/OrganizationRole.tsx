@@ -7,8 +7,7 @@ export type OrganizationRoleTab =
   | "details"
   | "associated-roles"
   | "attributes"
-  | "users-in-role"
-  | "events";
+  | "users-in-role";
 
 export type OrganizationRoleParams = {
   realm: string;

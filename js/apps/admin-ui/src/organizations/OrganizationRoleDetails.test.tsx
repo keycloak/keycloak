@@ -16,7 +16,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   params: { orgId: "org-id", roleId: "role-id" },
   manager: true,
-  viewEvents: true,
   addAlert: vi.fn(),
   addError: vi.fn(),
   findRole: vi.fn(),
@@ -64,7 +63,7 @@ vi.mock("../admin-client", () => ({
 vi.mock("../context/access/Access", () => ({
   useAccess: () => ({
     hasAccess: (access: string) =>
-      access === "manage-organizations" ? mocks.manager : mocks.viewEvents,
+      access === "manage-organizations" && mocks.manager,
   }),
 }));
 
@@ -186,12 +185,6 @@ vi.mock("./OrganizationRoleUsers", () => ({
   ),
 }));
 
-vi.mock("../events/AdminEvents", () => ({
-  AdminEvents: (props: any) => (
-    <div data-testid="events">{props.resourcePath}</div>
-  ),
-}));
-
 vi.mock("@keycloak/keycloak-ui-shared", async () => {
   const { useEffect } = await import("react");
   return {
@@ -245,7 +238,6 @@ describe("OrganizationRoleDetails", () => {
     vi.clearAllMocks();
     mocks.params = { orgId: "org-id", roleId: "role-id" };
     mocks.manager = true;
-    mocks.viewEvents = true;
     mocks.fetchErrors.length = 0;
     mocks.findRole.mockResolvedValue(role);
     mocks.findDefaultRole.mockResolvedValue({ ...role, id: "default-id" });
@@ -263,7 +255,7 @@ describe("OrganizationRoleDetails", () => {
     });
     expect(screen.getByTestId("composites").textContent).toBe("role-id:manage");
     expect(screen.getByTestId("users").textContent).toBe("role-id:map");
-    expect(screen.getByTestId("events").textContent).toContain("role-id");
+    expect(screen.queryByText("adminEvents")).toBeNull();
   });
 
   it("submits updates from the visible role form", async () => {
@@ -330,7 +322,6 @@ describe("OrganizationRoleDetails", () => {
   it("loads a protected default role in view-only mode", async () => {
     mocks.params = { orgId: "org-id", roleId: "default" };
     mocks.manager = false;
-    mocks.viewEvents = false;
     renderDetails();
 
     await waitFor(() => expect(mocks.findDefaultRole).toHaveBeenCalled());
@@ -338,7 +329,6 @@ describe("OrganizationRoleDetails", () => {
     expect(screen.queryByTestId("delete-organization-role")).toBeNull();
     expect(screen.queryByTestId("attributes-form")).toBeNull();
     expect(screen.queryByTestId("users")).toBeNull();
-    expect(screen.queryByTestId("events")).toBeNull();
     expect(screen.getByTestId("composites").textContent).toBe(
       "default-id:view",
     );
