@@ -136,8 +136,12 @@ public class UserTest extends AbstractScimTest {
     @Test
     public void testCreateWithExternalId() {
         UPConfig configuration = realm.admin().users().userProfile().getConfiguration();
-        configuration.addOrReplaceAttribute(new UPAttribute("myExternalId", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "externalId")));
+        UPAttribute externalIdAttr = new UPAttribute("myExternalId", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "externalId"));
+        externalIdAttr.setPermissions(new UPAttributePermissions(
+                Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER),
+                Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER)));
+        configuration.addOrReplaceAttribute(externalIdAttr);
         realm.admin().users().userProfile().update(configuration);
 
         User expected = new User();
@@ -153,12 +157,18 @@ public class UserTest extends AbstractScimTest {
     @Test
     public void testCreateWithFullNameAttributes() {
         UPConfig configuration = realm.admin().users().userProfile().getConfiguration();
-        configuration.addOrReplaceAttribute(new UPAttribute("middleName", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.middleName")));
-        configuration.addOrReplaceAttribute(new UPAttribute("honorificPrefix", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.honorificPrefix")));
-        configuration.addOrReplaceAttribute(new UPAttribute("honorificSuffix", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.honorificSuffix")));
+        UPAttributePermissions scimPermissions = new UPAttributePermissions(
+                Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER),
+                Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER));
+        for (String[] attr : new String[][] {
+                {"middleName", "name.middleName"},
+                {"honorificPrefix", "name.honorificPrefix"},
+                {"honorificSuffix", "name.honorificSuffix"}
+        }) {
+            UPAttribute upAttr = new UPAttribute(attr[0], Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, attr[1]));
+            upAttr.setPermissions(scimPermissions);
+            configuration.addOrReplaceAttribute(upAttr);
+        }
         realm.admin().users().userProfile().update(configuration);
 
         User expected = new User();
@@ -1260,7 +1270,7 @@ public class UserTest extends AbstractScimTest {
         // adds a user profile attribute
         UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
         UPAttribute upAttribute = new UPAttribute("keycloak.team", Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, KEYCLOAK_USER_SCHEMA + ".memberOf"));
-        upAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER), Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER)));
         upConfig.addOrReplaceAttribute(upAttribute);
         realm.admin().users().userProfile().update(upConfig);
         existing = realm.admin().users().get(existing.getId()).toRepresentation();
@@ -1269,7 +1279,7 @@ public class UserTest extends AbstractScimTest {
 
         String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
         upAttribute = new UPAttribute("keycloak.area", Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, customSchema + ".myattribute"));
-        upAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER), Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER)));
         upConfig.addOrReplaceAttribute(upAttribute);
         realm.admin().users().userProfile().update(upConfig);
         existing = realm.admin().users().get(existing.getId()).toRepresentation();
