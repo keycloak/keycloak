@@ -22,7 +22,9 @@ export const ScriptComponent = ({
       label={t(label!)}
       labelIcon={
         <HelpItem
-          helpText={<span style={{ whiteSpace: "pre-wrap" }}>{helpText}</span>}
+          helpText={
+            <span className="pf-v5-u-white-space-pre-wrap">{helpText}</span>
+          }
           fieldLabelId={`${label}`}
         />
       }

@@ -11,7 +11,7 @@
 }
 
 .keycloak__authentication__conditional_node {
-  border: 1px solid #777;
+  border: 1px solid var(--pf-v5-global--BorderColor--200);
   width: 80px;
   height: 80px;
   transform: rotate(45deg);
@@ -39,7 +39,7 @@
 .keycloak__authentication__subflow_node:hover,
 .keycloak__authentication__conditional_node.selected,
 .keycloak__authentication__conditional_node:hover {
-  box-shadow: 0 0 0 0.5px #1a192b;
+  box-shadow: 0 0 0 0.5px var(--pf-v5-global--Color--100);
 }
 
 .edgebutton {

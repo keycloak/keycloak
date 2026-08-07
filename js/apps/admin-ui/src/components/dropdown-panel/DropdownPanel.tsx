@@ -1,7 +1,5 @@
-import { useEffect, useRef } from "react";
-import { Icon } from "@patternfly/react-core";
-import { CaretDownIcon } from "@patternfly/react-icons";
-import "./dropdown-panel.css";
+import { useRef } from "react";
+import { MenuToggle, Panel, PanelMain, Popper } from "@patternfly/react-core";
 
 type DropdownPanelProps = {
   buttonText: string;
@@ -20,52 +18,44 @@ const DropdownPanel: React.FC<DropdownPanelProps> = ({
   marginRight,
   width,
 }) => {
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setSearchDropdownOpen(false);
-      }
-    };
+  const toggle = (
+    <MenuToggle
+      ref={toggleRef}
+      onClick={() => setSearchDropdownOpen(!searchDropdownOpen)}
+      isExpanded={searchDropdownOpen}
+      style={{ width, marginRight }}
+      data-testid="dropdown-panel-btn"
+    >
+      {buttonText}
+    </MenuToggle>
+  );
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [setSearchDropdownOpen]);
-
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        setSearchDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () =>
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [setSearchDropdownOpen]);
+  const panel = (
+    <Panel ref={panelRef} variant="raised">
+      <PanelMain>{children}</PanelMain>
+    </Panel>
+  );
 
   return (
-    <span ref={dropdownRef}>
-      <button
-        className="kc-dropdown-panel"
-        onClick={() => setSearchDropdownOpen(!searchDropdownOpen)}
-        aria-label={buttonText}
-        style={{ width, marginRight }}
-        data-testid="dropdown-panel-btn"
-      >
-        {buttonText}
-        <Icon className="kc-dropdown-panel-icon">
-          <CaretDownIcon />
-        </Icon>
-      </button>
-      {searchDropdownOpen && (
-        <div className="kc-dropdown-panel-content">{children}</div>
-      )}
-    </span>
+    <Popper
+      trigger={toggle}
+      triggerRef={toggleRef}
+      popper={panel}
+      popperRef={panelRef}
+      isVisible={searchDropdownOpen}
+      onDocumentClick={(event) => {
+        if (
+          event &&
+          toggleRef.current &&
+          !toggleRef.current.contains(event.target as Node)
+        ) {
+          setSearchDropdownOpen(false);
+        }
+      }}
+    />
   );
 };
 
