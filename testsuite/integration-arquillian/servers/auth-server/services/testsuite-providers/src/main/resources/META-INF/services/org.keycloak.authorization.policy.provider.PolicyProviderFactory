@@ -22,3 +22,4 @@ org.keycloak.testsuite.authorization.GrantResourceOwnerPolicyProvider
 org.keycloak.testsuite.authorization.ResourceVisibilityAttributePolicyProvider
 org.keycloak.testsuite.authorization.SpecificDomainOrAdminPolicyProvider
 org.keycloak.testsuite.authorization.SpecificAddressPolicyProvider
+org.keycloak.testsuite.authorization.ClaimAttributePolicyProvider
