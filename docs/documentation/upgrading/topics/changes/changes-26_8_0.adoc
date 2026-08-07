@@ -38,6 +38,12 @@ Custom login themes that override `social-providers.ftl` or apply CSS targeting 
 
 Test your custom login theme to ensure the identity provider buttons display correctly.
 
+=== Token introspection `act` claim now uses user ID for `sub`
+
+The token introspection endpoint previously set the `act.sub` field to the impersonator's username. It now uses the impersonator's user ID to be consistent with the `act` claim in JWT access tokens and ID tokens. The `preferred_username` field has been added to the introspection `act` object for consumers that need the impersonator's username.
+
+If you have resource servers that parse `act.sub` from introspection responses and expect a username, update them to read `act.preferred_username` instead.
+
 === Email is no longer marked as verified by other flows
 
 Previously, some flows marked the email of a user as verified even though their purpose was not email verification.
