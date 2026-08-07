@@ -15,7 +15,7 @@
 </#macro>
 
 <#macro script field="">
-    <script type="module">
+    <script type="module" nonce="${nonce.value}">
         <#outputformat "JavaScript">
         import { validatePassword } from "${url.resourcesPath}/js/password-policy.js";
 

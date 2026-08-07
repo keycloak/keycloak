@@ -62,6 +62,7 @@ import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.forms.login.freemarker.model.IdpReviewProfileBean;
 import org.keycloak.forms.login.freemarker.model.LoginBean;
 import org.keycloak.forms.login.freemarker.model.LogoutConfirmBean;
+import org.keycloak.forms.login.freemarker.model.NonceBean;
 import org.keycloak.forms.login.freemarker.model.OAuthGrantBean;
 import org.keycloak.forms.login.freemarker.model.OrganizationBean;
 import org.keycloak.forms.login.freemarker.model.PasswordPoliciesBean;
@@ -499,6 +500,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             baseUriBuilder.queryParam(LoginActionsService.SESSION_CODE, accessCode);
         }
         URI baseUriWithCodeAndClientId = baseUriBuilder.build();
+
+        attributes.put("nonce", new NonceBean());
 
         if (client != null) {
             attributes.put("client", new ClientBean(session, client));
