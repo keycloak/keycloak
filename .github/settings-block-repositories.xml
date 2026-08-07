@@ -1,0 +1,9 @@
+<settings>
+      <mirrors>
+        <mirror>
+          <id>block-external-repositories</id>
+          <url>file:///nosuch</url>
+          <mirrorOf>*,!central</mirrorOf>
+        </mirror>
+      </mirrors>
+</settings>
