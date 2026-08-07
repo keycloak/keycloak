@@ -28,7 +28,7 @@ import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.event.InitiatingEntity;
-import org.keycloak.ssf.event.SsfEvent;
+import org.keycloak.ssf.event.InitiatingEntityAware;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.ssf.event.risc.RiscAccountDisabled;
@@ -406,7 +406,7 @@ public class SecurityEventTokenMapper {
         credentialChangeEvent.setAttributeValue(KC_CREDENTIAL_USER_LABEL, kcUserLabel);
     }
 
-    protected void applyInitiatingEntity(Event userEvent, AdminEvent adminEvent, SsfEvent ssfEvent) {
+    protected void applyInitiatingEntity(Event userEvent, AdminEvent adminEvent, InitiatingEntityAware ssfEvent) {
         if (adminEvent != null) {
             ssfEvent.setInitiatingEntity(InitiatingEntity.ADMIN);
         } else {
@@ -415,7 +415,7 @@ public class SecurityEventTokenMapper {
     }
 
     /**
-     * Variant of {@link #applyInitiatingEntity(Event, AdminEvent, SsfEvent)} for
+     * Variant of {@link #applyInitiatingEntity(Event, AdminEvent, InitiatingEntityAware)} for
      * callers where "not admin-initiated" does not mean "user-initiated" —
      * e.g. brute-force lockout is Keycloak's own policy engine acting, not
      * an end-user choice, so defaulting to {@link InitiatingEntity#USER}
@@ -423,7 +423,7 @@ public class SecurityEventTokenMapper {
      * caller supply the correct value ({@link InitiatingEntity#POLICY} /
      * {@link InitiatingEntity#SYSTEM}) for its specific non-admin trigger(s).
      */
-    protected void applyInitiatingEntity(AdminEvent adminEvent, SsfEvent ssfEvent, InitiatingEntity nonAdminEntity) {
+    protected void applyInitiatingEntity(AdminEvent adminEvent, InitiatingEntityAware ssfEvent, InitiatingEntity nonAdminEntity) {
         ssfEvent.setInitiatingEntity(adminEvent != null ? InitiatingEntity.ADMIN : nonAdminEntity);
     }
 
