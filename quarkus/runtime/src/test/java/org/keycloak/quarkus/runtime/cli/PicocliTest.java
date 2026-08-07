@@ -310,6 +310,27 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void failOptimizedBeforeCommand() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("--optimized", "export", "--dir=data");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: '--optimized'"));
+    }
+
+    @Test
+    public void failPropertyMapperBeforeCommand() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("--dir=data", "export");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: '--dir'"));
+    }
+
+    @Test
+    public void failUnknownOptionBeforeCommand() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("--foobar", "export", "--dir=data");
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: '--foobar'"));
+    }
+
+    @Test
     public void failIfOptimizedUsedForFirstStartupExport() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--optimized", "--dir=data");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
@@ -525,7 +546,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         nonRunningPicocli = pseudoLaunch("start-dev", "--log=syslog", "--log-syslog-max-length=wrong");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString(
-                "Invalid value for option '--log-syslog-max-length': value wrong not in correct format (regular expression): [0-9]+[BbKkMmGgTtPpEeZzYy]?"));
+                "Invalid value for option '--log-syslog-max-length': No digits in memory size string"));
     }
 
     @Test

@@ -1,6 +1,7 @@
 package org.keycloak.workflow.admin.resource;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import jakarta.ws.rs.Consumes;
@@ -17,6 +18,8 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.workflow.Workflow;
@@ -24,6 +27,7 @@ import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
+import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
@@ -42,8 +46,10 @@ public class WorkflowsResource {
     private final KeycloakSession session;
     private final WorkflowProvider provider;
     private final AdminPermissionEvaluator auth;
+    private final AdminEventBuilder adminEvent;
+    private final String locale;
 
-    public WorkflowsResource(KeycloakSession session, AdminPermissionEvaluator auth) {
+    public WorkflowsResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         if (!Profile.isFeatureEnabled(Feature.WORKFLOWS)) {
             throw new NotFoundException();
         }
@@ -51,6 +57,8 @@ public class WorkflowsResource {
         this.session = session;
         this.provider = session.getProvider(WorkflowProvider.class);
         this.auth = auth;
+        this.adminEvent = adminEvent.resource(ResourceType.WORKFLOW);
+        this.locale = auth.adminAuth().getToken().getLocale();
     }
 
     @POST
@@ -67,9 +75,14 @@ public class WorkflowsResource {
     public Response create(WorkflowRepresentation rep) {
         try {
             Workflow workflow = provider.toModel(rep);
+            rep.setId(workflow.getId());
+            adminEvent.operation(OperationType.CREATE)
+                    .resourcePath(session.getContext().getUri(), workflow.getId())
+                    .representation(rep)
+                    .success();
             return Response.created(session.getContext().getUri().getRequestUriBuilder().path(workflow.getId()).build()).build();
         } catch (ModelException me) {
-            throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(session, locale, me, Response.Status.BAD_REQUEST);
         }
     }
 
@@ -93,7 +106,7 @@ public class WorkflowsResource {
             throw new NotFoundException("Workflow with id " + id + " not found");
         }
 
-        return new WorkflowResource(provider, workflow);
+        return new WorkflowResource(session, provider, workflow, adminEvent, locale);
     }
 
     @GET
@@ -160,14 +173,19 @@ public class WorkflowsResource {
         auth.realm().requireManageRealm();
 
         if (stepIdFrom == null || stepIdTo == null) {
-            throw ErrorResponse.error("Both 'from' and 'to' step ids must be provided for migration.", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(ErrorResponse.resolveMessage(session, locale, "workflowMigrateStepIdsRequired", null), Response.Status.BAD_REQUEST);
         }
 
         try {
             provider.migrateScheduledResources(stepIdFrom, stepIdTo);
+            adminEvent.operation(OperationType.ACTION)
+                    .resourcePath(session.getContext().getUri())
+                    .representation(Map.of("from", stepIdFrom, "to", stepIdTo))
+                    .success();
             return Response.noContent().build();
         } catch (ModelException me) {
-            throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(session, locale, me, Response.Status.BAD_REQUEST);
         }
     }
+
 }

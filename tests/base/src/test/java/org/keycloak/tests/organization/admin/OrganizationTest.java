@@ -498,7 +498,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         }
 
         // create another org in a different realm with the same internet domain - should be allowed.
-        createOrganization(secondRealm.admin(), "testorg", "acme.com");
+        createOrganization(secondRealm, "testorg", "acme.com");
 
         // try to remove a domain
         organization = realm.admin().organizations().get(existing.getId());
@@ -672,7 +672,9 @@ public class OrganizationTest extends AbstractOrganizationTest {
             realmRes = adminClient.realms().realm(realmRep.getRealm());
             realmRes.toRepresentation();
 
-            createOrganization(realmRes, "test-org", "test.org");
+            try (Response response = realmRes.organizations().create(createRepresentation("test-org", "test.org"))) {
+                assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            }
 
             List<OrganizationRepresentation> orgs = realmRes.organizations().list(-1, -1);
             assertThat(orgs, hasSize(1));

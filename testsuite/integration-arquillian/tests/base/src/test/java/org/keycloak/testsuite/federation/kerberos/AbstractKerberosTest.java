@@ -58,7 +58,6 @@ import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.KerberosRule;
 import org.keycloak.testsuite.util.KerberosUtils;
@@ -102,9 +101,6 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
     @Page
     protected LoginPage loginPage;
-
-    @Page
-    protected AppPage appPage;
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -159,7 +155,11 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
         getKerberosRule().setKrb5ConfPath(testingClient.testing());
 
-        spnegoSchemeFactory = new KeycloakSPNegoSchemeFactory(getKerberosConfig());
+        // Kerby KDC doesn't set the FORWARDED flag on TGS-REP (DIRKRB-458), causing
+        // JDK's KrbKdcRep.check() to reject the response with "Message stream modified (41)".
+        // Disable credential delegation when using the embedded Kerby KDC; external KDCs (e.g. MSAD) support it.
+        boolean credDelegEnabled = !getKerberosRule().isStartEmbeddedLdapServer();
+        spnegoSchemeFactory = new KeycloakSPNegoSchemeFactory(getKerberosConfig(), credDelegEnabled);
         initHttpClient(true);
         removeAllUsers();
 

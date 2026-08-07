@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
@@ -37,6 +38,16 @@ import org.keycloak.it.utils.RawKeycloakDistribution;
 import io.quarkus.test.junit.main.Launch;
 import io.restassured.RestAssured;
 import io.restassured.config.RedirectConfig;
+import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.RequestOptions;
+import io.vertx.core.net.HostAndPort;
+import io.vertx.core.net.SocketAddress;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -89,6 +100,111 @@ public class HttpDistTest {
         when().get("/realms/xxx/../master").then().statusCode(400);
         given().urlEncodingEnabled(false)
                 .when().get("/realms/master;xxx").then().statusCode(400);
+    }
+    
+    @Test
+    @Launch({"start-dev", "--hostname=https://example.com"})
+    public void misdirectedRequestDetection() throws Exception {        
+        Vertx vertx = Vertx.vertx();
+        try {
+            HttpClient client = vertx.createHttpClient(new HttpClientOptions()
+                    .setSsl(true)
+                    .setTrustAll(true)
+                    .setVerifyHost(false)
+                    .setProtocolVersion(HttpVersion.HTTP_2)
+                    .setUseAlpn(true));
+            try {
+                assertThat("Matching indicated to authority is allowed",
+                        misdirectedRequest(client, "servicehost.com", "servicehost.com", 8443), Matchers.is(200));
+
+                // null sniHostname → defaults to "localhost" (non-FQDN → Java skips SNI → indicatedServerName is null)
+                assertThat("No indicated name is allowed",
+                        misdirectedRequest(client, null, "example.com", 443), Matchers.is(200));
+
+                // connection originated from another backend, but we're reusing it for a request to the keycloak server
+                assertThat("Matching a known host is allowed",
+                        misdirectedRequest(client, "other-example.com", "example.com", 443), Matchers.is(200));
+
+                // connection originated from keycloak, but the browser is mistakenly reusing for another service
+                assertThat("Expected HTTP 421 Misdirected Request for SNI/authority mismatch",
+                        misdirectedRequest(client, "example.com", "misdirected.com", 443), Matchers.is(421));
+            } finally {
+                client.close().toCompletionStage().toCompletableFuture().get(5, TimeUnit.SECONDS);
+            }
+        } finally {
+            vertx.close().toCompletionStage().toCompletableFuture().get(5, TimeUnit.SECONDS);
+        }
+    }
+
+    private static int misdirectedRequest(HttpClient client, String sniHostname, String authorityHost, int authorityPort) throws Exception {
+        RequestOptions options = new RequestOptions()
+                .setServer(SocketAddress.inetSocketAddress(8443, "localhost"))
+                .setPort(8443)
+                .setSsl(true)
+                .setURI("/realms/master")
+                .setMethod(HttpMethod.GET);
+
+        if (sniHostname != null) {
+            options.setHost(sniHostname);
+        }
+
+        return client.request(options)
+                .compose(req -> {
+                    req.authority(HostAndPort.create(authorityHost, authorityPort));
+                    return req.send();
+                })
+                .map(HttpClientResponse::statusCode)
+                .toCompletionStage()
+                .toCompletableFuture()
+                .get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    @Launch({"start-dev"})
+    public void largeHeadersTest() throws Exception {
+        String largeValue = "a".repeat(32 * 1024);
+
+        Vertx vertx = Vertx.vertx();
+        try {
+            HttpClient http2Client = vertx.createHttpClient(new HttpClientOptions()
+                    .setSsl(true)
+                    .setTrustAll(true)
+                    .setVerifyHost(false)
+                    .setProtocolVersion(HttpVersion.HTTP_2)
+                    .setUseAlpn(true));
+            HttpClient http1Client = vertx.createHttpClient(new HttpClientOptions()
+                    .setSsl(true)
+                    .setTrustAll(true)
+                    .setVerifyHost(false));
+            try {
+                assertThat("Large headers under the limit are accepted over HTTP/2",
+                        largeHeaderRequest(http2Client, largeValue), Matchers.is(200));
+                assertThat("Large headers under the limit are accepted over HTTP/1.1",
+                        largeHeaderRequest(http1Client, largeValue), Matchers.is(200));
+            } finally {
+                http2Client.close().toCompletionStage().toCompletableFuture().get(5, TimeUnit.SECONDS);
+                http1Client.close().toCompletionStage().toCompletableFuture().get(5, TimeUnit.SECONDS);
+            }
+        } finally {
+            vertx.close().toCompletionStage().toCompletableFuture().get(5, TimeUnit.SECONDS);
+        }
+    }
+
+    private static int largeHeaderRequest(HttpClient client, String headerValue) throws Exception {
+        RequestOptions options = new RequestOptions()
+                .setServer(SocketAddress.inetSocketAddress(8443, "localhost"))
+                .setPort(8443)
+                .setSsl(true)
+                .setURI("/realms/master")
+                .setMethod(HttpMethod.GET)
+                .putHeader("X-Large-Header", headerValue);
+
+        return client.request(options)
+                .compose(HttpClientRequest::send)
+                .map(HttpClientResponse::statusCode)
+                .toCompletionStage()
+                .toCompletableFuture()
+                .get(10, TimeUnit.SECONDS);
     }
 
     @Test

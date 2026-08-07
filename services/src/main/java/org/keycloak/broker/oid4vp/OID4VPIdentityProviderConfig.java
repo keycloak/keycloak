@@ -18,6 +18,7 @@
 package org.keycloak.broker.oid4vp;
 
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.utils.StringUtil;
 
 public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
@@ -27,6 +28,7 @@ public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
     public static final String PRINCIPAL_ATTRIBUTE = "principalAttribute";
     public static final String WALLET_SCHEME = "walletScheme";
     public static final String SIGNING_KEY_ID = "signingKeyId";
+    public static final String RESPONSE_MODE = "responseMode";
 
     public static final String DEFAULT_WALLET_SCHEME = "openid4vp://";
 
@@ -68,6 +70,28 @@ public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
 
     public void setSigningKeyId(String signingKeyId) {
         getConfig().put(SIGNING_KEY_ID, signingKeyId);
+    }
+
+    public ResponseMode getResponseMode() {
+        String value = getConfig().get(RESPONSE_MODE);
+        return StringUtil.isBlank(value) ? ResponseMode.DIRECT_POST : ResponseMode.from(value);
+    }
+
+    public void setResponseMode(ResponseMode responseMode) {
+        getConfig().put(RESPONSE_MODE, responseMode.value());
+    }
+
+    public boolean isEncryptedResponse() {
+        return getResponseMode() == ResponseMode.DIRECT_POST_JWT;
+    }
+
+    @Override
+    public void validate(RealmModel realm) {
+        super.validate(realm);
+        String responseMode = getConfig().get(RESPONSE_MODE);
+        if (StringUtil.isNotBlank(responseMode)) {
+            ResponseMode.from(responseMode);
+        }
     }
 
     public String getWalletScheme() {

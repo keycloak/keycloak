@@ -155,7 +155,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -1157,7 +1156,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         try {
             oauth.client(clientBetaId);
             oauth.openLoginForm();
-            assertTrue(errorPage.isCurrent());
+            errorPage.assertCurrent();
             assertEquals(ERR_MSG_REQ_NOT_ALLOWED, errorPage.getError());
             EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
                     .details(Details.REASON, Details.CLIENT_POLICY_ERROR)

@@ -40,8 +40,8 @@ public class DeleteCredentialPage extends AbstractPage {
     private WebElement message;
 
     @Override
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).startsWith("Delete ");
+    public String getExpectedPageId() {
+        return "login-delete-credential";
     }
 
     public void confirm() {

@@ -217,6 +217,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         });
 
         oauth.doLogin("test-user@localhost", "password");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         runOnServerMaster.run(session -> {
             Statistics stats = statistics(session);

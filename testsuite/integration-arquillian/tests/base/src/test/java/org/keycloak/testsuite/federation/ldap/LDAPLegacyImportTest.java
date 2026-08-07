@@ -26,7 +26,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
@@ -100,10 +99,7 @@ public class LDAPLegacyImportTest extends AbstractLDAPTest {
     public void loginClassic() {
         oauth.openLoginForm();
         loginPage.login("marykeycloak", "password-app");
-
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
-
     }
 
     @Test
@@ -111,7 +107,6 @@ public class LDAPLegacyImportTest extends AbstractLDAPTest {
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
 
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(managedRealm.admin(), "johnkeycloak");

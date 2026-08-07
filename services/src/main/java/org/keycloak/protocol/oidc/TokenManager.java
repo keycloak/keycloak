@@ -183,7 +183,12 @@ public class TokenManager {
 
                 // Revoke timed out offline userSession
                 if (!AuthenticationManager.isSessionValid(realm, userSession)) {
-                    sessionManager.revokeOfflineUserSession(userSession);
+                    UserSessionModel offlineSession = userSession;
+                    // Revocation must persist even when the error response rolls back the main tx.
+                    KeycloakModelUtils.enlistAfterRollback(session, ctx -> {
+                        UserSessionModel us = ctx.findUserSession(offlineSession);
+                        if (us != null) new UserSessionManager(ctx.session()).revokeOfflineUserSession(us);
+                    });
                     throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Offline session not active", "Offline session not active");
                 }
 
@@ -194,7 +199,16 @@ public class TokenManager {
             // Find userSession regularly for online tokens
             userSession = session.sessions().getUserSession(realm, oldToken.getSessionState());
             if (!AuthenticationManager.isSessionValid(realm, userSession)) {
-                AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers, true);
+                if (userSession != null) {
+                    UserSessionModel onlineSession = userSession;
+                    // Logout must persist even when the error response rolls back the main tx.
+                    KeycloakModelUtils.enlistAfterRollback(session, ctx -> {
+                        UserSessionModel us = ctx.findUserSession(onlineSession);
+                        if (us != null) {
+                            AuthenticationManager.backchannelLogout(ctx.session(), ctx.realm(), us, uriInfo, connection, headers, true);
+                        }
+                    });
+                }
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session not active", "Session not active");
             }
         }
@@ -223,7 +237,12 @@ public class TokenManager {
 
         if (!AuthenticationManager.isClientSessionValid(realm, client, userSession, clientSession)) {
             logger.debug("Client session not active");
-            userSession.removeAuthenticatedClientSessions(Collections.singletonList(client.getId()));
+            UserSessionModel currentSession = userSession;
+            // Removal must persist even when the error response rolls back the main tx.
+            KeycloakModelUtils.enlistAfterRollback(session, ctx -> {
+                UserSessionModel us = ctx.findUserSession(currentSession);
+                if (us != null) us.removeAuthenticatedClientSessions(Collections.singletonList(client.getId()));
+            });
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Client session not active");
         }
 
@@ -347,51 +366,85 @@ public class TokenManager {
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token. Token client and authorized client don't match");
             }
 
-            // KEYCLOAK-6771 Certificate Bound Token
-            if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseMtlsHokToken()) {
-                if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(refreshToken, request, session)) {
-                    throw new OAuthErrorException(OAuthErrorException.UNAUTHORIZED_CLIENT, MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC);
-                }
-            }
-
-            // Verify RefreshToken Confirmation
-            //
-            AccessToken.Confirmation cnf = refreshToken.getConfirmation();
-            if (cnf != null && cnf.getKeyThumbprint() != null) {
-                String jktType = Optional.ofNullable(cnf.getJktType()).orElse(DPOP_JKT_TYPE);
-                switch (jktType) {
-                    case ABCA_JKT_TYPE -> {
-                        ABCAResult abcaResult = session.getAttribute(ABCAResult.ABCA_RESULT, ABCAResult.class);
-                        if (abcaResult == null) {
-                            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token. Client attestation must be used with this refresh token");
-                        }
-                        JWK jwk = abcaResult.getAttestationJwt().getConfirmation().getJwk();
-                        String thumbprint = JWKSUtils.computeThumbprint(jwk);
-                        if (!Objects.equals(thumbprint, cnf.getKeyThumbprint())) {
-                            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Attestation-Based Key mismatch");
-                        }
-                    }
-                    case DPOP_JKT_TYPE -> {
-                        DPoP dPoP = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
-                        if (dPoP == null) {
-                            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "DPoP proof is missing");
-                        }
-                        try {
-                            DPoPUtil.validateBinding(refreshToken, dPoP);
-                        } catch (VerificationException ex) {
-                            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, ex.getMessage());
-                        }
-                    }
-                    default -> {
-                        throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Unknown jkt type: " + jktType);
-                    }
-                }
-            }
+            verifyConfirmationBinding(session, client, request, refreshToken);
 
             return refreshToken;
 
         } catch (JWSInputException e) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", e);
+        }
+    }
+
+    private void verifyConfirmationBinding(KeycloakSession session, ClientModel client, HttpRequest request, RefreshToken refreshToken) throws OAuthErrorException {
+        AccessToken.Confirmation cnf = refreshToken.getConfirmation();
+        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
+        ABCAResult abcaResult = session.getAttribute(ABCAResult.ABCA_RESULT, ABCAResult.class);
+
+        // MTLS required but token has no certificate thumbprint
+        if (clientConfig.isUseMtlsHokToken() && (cnf == null || cnf.getCertThumbprint() == null)) {
+            throw new OAuthErrorException(OAuthErrorException.UNAUTHORIZED_CLIENT, MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC);
+        }
+
+        // DPoP required for public client but token has no DPoP binding (RFC 9449 §5)
+        if (clientConfig.isUseDPoP() && client.isPublicClient()) {
+            boolean dpopBound = cnf != null && cnf.getKeyThumbprint() != null && (cnf.getJktType() == null || DPOP_JKT_TYPE.equals(cnf.getJktType()));
+            if (!dpopBound) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "DPoP proof key binding is required");
+            }
+        }
+
+        // ABCA attestation present but token has no attestation binding
+        if (abcaResult != null) {
+            boolean abcaBound = cnf != null && cnf.getKeyThumbprint() != null && ABCA_JKT_TYPE.equals(cnf.getJktType());
+            if (!abcaBound) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Attestation-based key binding is required for this refresh token");
+            }
+        }
+
+        // No confirmation claim, nothing to verify
+        if (cnf == null) {
+            return;
+        }
+
+        // cnf present but no known binding type
+        if (cnf.getCertThumbprint() == null && cnf.getKeyThumbprint() == null) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token confirmation");
+        }
+
+        // Verify MTLS certificate binding (x5t#S256)
+        if (cnf.getCertThumbprint() != null) {
+            if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(refreshToken, request, session)) {
+                throw new OAuthErrorException(OAuthErrorException.UNAUTHORIZED_CLIENT, MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC);
+            }
+        }
+
+        // Verify key binding (DPoP or ABCA)
+        if (cnf.getKeyThumbprint() != null) {
+            String jktType = Optional.ofNullable(cnf.getJktType()).orElse(DPOP_JKT_TYPE);
+            switch (jktType) {
+                case ABCA_JKT_TYPE -> {
+                    if (abcaResult == null) {
+                        throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token. Client attestation must be used with this refresh token");
+                    }
+                    JWK jwk = abcaResult.getAttestationJwt().getConfirmation().getJwk();
+                    String thumbprint = JWKSUtils.computeThumbprint(jwk);
+                    if (!Objects.equals(thumbprint, cnf.getKeyThumbprint())) {
+                        throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Attestation-Based Key mismatch");
+                    }
+                }
+                case DPOP_JKT_TYPE -> {
+                    DPoP dPoP = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
+                    if (dPoP == null) {
+                        throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "DPoP proof is missing");
+                    }
+                    try {
+                        DPoPUtil.validateBinding(refreshToken, dPoP);
+                    } catch (VerificationException ex) {
+                        throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, ex.getMessage());
+                    }
+                }
+                default -> throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Unknown jkt type: " + jktType);
+            }
         }
     }
 
@@ -497,7 +550,6 @@ public class TokenManager {
 
         clientSession.detachFromUserSession();
     }
-
 
     public static Set<RoleModel> getAccess(UserModel user, ClientModel client, Stream<ClientScopeModel> clientScopes) {
         Set<RoleModel> roleMappings = RoleUtils.getDeepUserRoleMappings(user);
@@ -667,7 +719,7 @@ public class TokenManager {
                             anyInvalid.set(true);
                         }
                     })
-                    .collect(Collectors.toMap(ClientScopeModel::getName, Function.identity()));
+                    .collect(Collectors.toMap(ClientScopeModel::getName, Function.identity(), (a, b) -> a));
 
             if (anyInvalid.get()) {
                 return false;
@@ -1256,6 +1308,9 @@ public class TokenManager {
                     });
 
             refreshToken = refreshTokenProvider.generateRefreshToken(initialRefreshTokenContext);
+
+            String providerId = refreshToken.getProvider() != null ? refreshToken.getProvider() : refreshTokenProvider.getProviderId();
+            event.detail(Details.REFRESH_TOKEN_PROVIDER_ID, providerId);
 
             Boolean bindOnlyRefreshToken = session.getAttributeOrDefault(DPoPUtil.DPOP_BINDING_ONLY_REFRESH_TOKEN_SESSION_ATTRIBUTE, false);
             if (bindOnlyRefreshToken) {

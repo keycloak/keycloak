@@ -1,4 +1,5 @@
 import { expect, Locator, Page } from "@playwright/test";
+import { clickSelectRow } from "./table.ts";
 
 export async function assertRequiredFieldError(page: Page, field: string) {
   await expect(page.getByTestId(field + "-helper")).toHaveText(/required/i);
@@ -75,6 +76,19 @@ export async function clickCancelButton(page: Page) {
 
 async function clickOption(page: Page, option: string) {
   await page.getByRole("option", { name: option }).click();
+}
+
+export async function selectClient(page: Page, clientName: string) {
+  await page.getByTestId("select-client-button").click();
+  const modal = page.getByTestId("select-client-modal");
+  await modal.locator("table tbody").waitFor();
+  await modal.getByPlaceholder("Search for client").fill(clientName);
+  await page.keyboard.press("Enter");
+  await modal
+    .getByRole("gridcell", { name: clientName, exact: true })
+    .waitFor();
+  await clickSelectRow(page, "Clients", clientName);
+  await page.getByTestId("confirm").click();
 }
 
 export async function changeTimeUnit(

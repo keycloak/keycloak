@@ -115,7 +115,8 @@ public class OrganizationPostBrokerLoginTest extends AbstractInitializedBaseBrok
 
         // 4) First login via broker, run post-broker OTP setup
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         logInWithBroker(bc);
 
         // Post broker flow should require TOTPs
@@ -140,7 +141,8 @@ public class OrganizationPostBrokerLoginTest extends AbstractInitializedBaseBrok
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         // 5) Try re-login: user SHOULD be automatically redirected to the identity provider
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         // submit username/email to trigger organization resolution which should redirect to the provider
         loginPage.loginUsername(bc.getUserEmail());
 

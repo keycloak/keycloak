@@ -18,6 +18,7 @@
 package org.keycloak.broker.oid4vp;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.keycloak.Config;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
@@ -66,6 +67,17 @@ public class OID4VPIdentityProviderFactory extends AbstractIdentityProviderFacto
                         + "constraints CA=false and digitalSignature key usage, e.g. supplied through a Java keystore "
                         + "key provider.")
                 .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+            .property()
+                .name(OID4VPIdentityProviderConfig.RESPONSE_MODE)
+                .label("Response Mode")
+                .helpText("How the wallet returns the presentation. direct_post.jwt encrypts it with a fresh ephemeral "
+                        + "verifier key published in the request object, as required for HAIP compliance.")
+                .type(ProviderConfigProperty.LIST_TYPE)
+                .options(Stream.of(ResponseMode.values())
+                        .map(ResponseMode::value).toList())
+                .defaultValue(ResponseMode.DIRECT_POST.value())
+                .required(true)
                 .add()
             .property()
                 .name(OID4VPIdentityProviderConfig.WALLET_SCHEME)

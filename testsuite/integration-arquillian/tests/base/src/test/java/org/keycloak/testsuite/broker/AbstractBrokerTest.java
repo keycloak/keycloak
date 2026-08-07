@@ -65,7 +65,8 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
 
     protected void loginUser() {
         oauth.client("broker-app", "password");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithBroker(bc);
 
@@ -151,7 +152,8 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
         Integer userCount = adminClient.realm(bc.consumerRealmName()).users().count();
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         if (isUsingTransientSessions()) {
             // Assert that there has been no persistent user created
@@ -177,7 +179,8 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
         logoutFromConsumerRealm();
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/protocol/openid-connect/"),
                 "Should be on " + bc.consumerRealmName() + " realm on login page");

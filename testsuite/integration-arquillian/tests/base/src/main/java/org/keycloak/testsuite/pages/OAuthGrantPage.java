@@ -55,8 +55,8 @@ public class OAuthGrantPage extends LanguageComboboxAwarePage {
     }
 
     @Override
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).contains("Grant Access to ");
+    public String getExpectedPageId() {
+        return "login-login-oauth-grant";
     }
 
     public List<String> getDisplayedGrants() {

@@ -1,6 +1,5 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import {
-  AlertVariant,
   Button,
   Checkbox,
   Divider,
@@ -16,11 +15,7 @@ import {
   TreeViewDataItem,
 } from "@patternfly/react-core";
 
-import {
-  PaginatingTableToolbar,
-  useAlerts,
-  useFetch,
-} from "@keycloak/keycloak-ui-shared";
+import { PaginatingTableToolbar, useFetch } from "@keycloak/keycloak-ui-shared";
 import { AngleRightIcon, EllipsisVIcon } from "@patternfly/react-icons";
 import { useGroupResource } from "../../context/group-resource/GroupResourceContext";
 import { unionBy } from "lodash-es";
@@ -43,6 +38,7 @@ import "./group-tree.css";
 
 type ExtendedTreeViewDataItem = TreeViewDataItem & {
   access?: Record<string, boolean>;
+  group?: GroupRepresentation;
 };
 
 type GroupTreeContextMenuProps = {
@@ -178,11 +174,10 @@ export const GroupTree = ({
   const { t } = useTranslation();
   const { realm } = useRealm();
   const navigate = useNavigate();
-  const { addAlert } = useAlerts();
   const { hasAccess } = useAccess();
 
   const [data, setData] = useState<ExtendedTreeViewDataItem[]>();
-  const { subGroups, clear } = useSubGroups();
+  const { subGroups, setSubGroups, clear } = useSubGroups();
 
   const [search, setSearch] = useState("");
   const [max, setMax] = useState(20);
@@ -211,12 +206,22 @@ export const GroupTree = ({
       id: group.id,
       name: (
         <Tooltip content={group.name}>
-          <span>{group.name}</span>
+          <span
+            className={
+              !canViewDetails && !isOrgGroups && !group.access?.view
+                ? "keycloak-groups-tree__non-viewable"
+                : undefined
+            }
+          >
+            {group.name}
+          </span>
         </Tooltip>
       ),
+      group,
       access: group.access || {},
       children: hasSubGroups
-        ? search.length === 0
+        ? search.length === 0 &&
+          (!group.subGroups || group.subGroups.length === 0)
           ? LOADING_TREE
           : group.subGroups?.map((g) => mapGroup(g, refresh))
         : undefined,
@@ -340,26 +345,28 @@ export const GroupTree = ({
 
   const nav = (item: TreeViewDataItem, data: ExtendedTreeViewDataItem[]) => {
     if (item.id === "next") return;
-    setActiveItem(item);
 
     const path = findGroup(data, item.id!, []);
-    if (!subGroups.every(({ id }) => path.find((t) => t.id === id))) clear();
-    if (
-      canViewDetails ||
-      path.at(-1)?.access?.view ||
-      subGroups.at(-1)?.access?.view
-    ) {
-      navigate(
-        toGroups({
-          realm,
-          id: path.map((g) => g.id).join("/"),
-          orgId,
-        }),
-      );
-    } else {
-      addAlert(t("noViewRights"), AlertVariant.warning);
-      navigate(toGroups({ realm, orgId }));
+    if (!(canViewDetails || isOrgGroups || path.at(-1)?.access?.view)) {
+      return;
     }
+
+    setActiveItem(item);
+    const groups = path
+      .map((p) => p.group)
+      .filter((g): g is GroupRepresentation => g !== undefined);
+    if (groups.length === path.length) {
+      setSubGroups(groups);
+    } else if (!subGroups.every(({ id }) => path.find((t) => t.id === id))) {
+      clear();
+    }
+    navigate(
+      toGroups({
+        realm,
+        id: path.map((g) => g.id).join("/"),
+        orgId,
+      }),
+    );
   };
 
   return data ? (

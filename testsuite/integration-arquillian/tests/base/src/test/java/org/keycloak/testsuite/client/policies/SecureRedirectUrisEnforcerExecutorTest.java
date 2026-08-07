@@ -52,7 +52,6 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientProtoco
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureRedirectUrisEnforcerExecutorConfig;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPoliciesTest {
@@ -799,7 +798,7 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         oauth.client(clientId);
         oauth.redirectUri(redirectUri);
         oauth.openLoginForm();
-        assertTrue(errorPage.isCurrent());
+        errorPage.assertCurrent();
     }
 
     private void testSecureRedirectUrisEnforcerExecutor_successAuthorizationRequest(String clientId, String redirectUri) {

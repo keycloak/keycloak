@@ -51,6 +51,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.StripSecretsUtils;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
@@ -198,6 +199,9 @@ public class IdentityProviderResource {
         if (providerRep.getAlias() != null && !oldProviderAlias.equals(providerRep.getAlias())) {
             throw new IllegalArgumentException("Identity Provider alias cannot be changed");
         }
+
+        // organization-related information should not be processed by non-organization API
+        Organizations.stripOrganizationId(providerRep);
 
         IdentityProviderModel updated = RepresentationToModel.toModel(realm, providerRep, session);
 
