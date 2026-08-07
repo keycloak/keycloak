@@ -31,6 +31,7 @@ import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -63,6 +64,7 @@ import org.keycloak.models.cache.infinispan.entities.CachedRealm;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.client.ClientStorageProvider;
 
@@ -1708,7 +1710,10 @@ public class RealmAdapter implements CachedRealmModel {
 
           // invalidate entire user cache if we're dealing with user storage SPI
           if (UserStorageProvider.class.getName().equals(model.getProviderType())) {
-            userCache.evict(this);
+              ComponentModel existing = getComponent(model.getId());
+              if (existing == null || !isOnlyLastSyncUpdate(existing, model)) {
+                  userCache.evict(this);
+              }
           }
         }
 
@@ -1717,6 +1722,34 @@ public class RealmAdapter implements CachedRealmModel {
         if (ClientStorageProvider.class.getName().equals(model.getProviderType())) {
             cacheSession.evictRealmOnRemoval(this);
         }
+    }
+
+    /**
+     * Returns {@code true} if the only differences between the existing and incoming
+     * {@link ComponentModel} are the runtime sync-timestamp keys ({@code lastSync_FULL},
+     * {@code lastSync_CHANGED}). When that is the case the caller can safely skip
+     * a full user-cache eviction because no provider configuration has actually changed.
+     */
+    private boolean isOnlyLastSyncUpdate(ComponentModel existing, ComponentModel incoming) {
+        if (!Objects.equals(existing.getId(), incoming.getId())) return false;
+        if (!Objects.equals(existing.getName(), incoming.getName())) return false;
+        if (!Objects.equals(existing.getProviderId(), incoming.getProviderId())) return false;
+        if (!Objects.equals(existing.getProviderType(), incoming.getProviderType())) return false;
+        if (!Objects.equals(existing.getParentId(), incoming.getParentId())) return false;
+        if (!Objects.equals(existing.getSubType(), incoming.getSubType())) return false;
+
+        MultivaluedHashMap<String, String> existingConfig = new MultivaluedHashMap<>(existing.getConfig());
+        MultivaluedHashMap<String, String> incomingConfig = new MultivaluedHashMap<>(incoming.getConfig());
+
+        removeLastSyncKeys(existingConfig);
+        removeLastSyncKeys(incomingConfig);
+
+        return existingConfig.equals(incomingConfig);
+    }
+
+    private void removeLastSyncKeys(MultivaluedHashMap<String, String> config) {
+        config.remove(UserStorageProviderModel.LAST_SYNC + "_" + UserStorageProviderModel.SyncMode.FULL.name());
+        config.remove(UserStorageProviderModel.LAST_SYNC + "_" + UserStorageProviderModel.SyncMode.CHANGED.name());
     }
 
     @Override
