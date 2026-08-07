@@ -54,3 +54,23 @@ updates:
         update-types:
           - "minor"
           - "patch"
+
+  - package-ecosystem: docker
+    directories:
+      - "/quarkus/container"
+      - "/operator"
+      - "/test-framework/db-edb/container"
+    schedule:
+      interval: weekly
+      day: "sunday"
+      time: "03:00"
+      timezone: Etc/GMT
+    open-pull-requests-limit: 5
+    rebase-strategy: disabled
+    labels:
+      - area/dependencies
+      - team/cloud-native
+    groups:
+      ubi-base-images:
+        patterns:
+          - "registry.access.redhat.com/ubi9*"
