@@ -57,12 +57,33 @@ public class ClientScopesClientRegistrationPolicy implements ClientRegistrationP
         List<String> requestedOptionalScopeNames = context.getClient().getOptionalClientScopes();
 
         List<String> allowedScopeNames = new ArrayList<>();
-        allowedScopeNames.addAll(getAllowedScopeNames(realm, true));
+        List<String> allowedDefaultScopeNames = getAllowedScopeNames(realm, true);
+        allowedScopeNames.addAll(allowedDefaultScopeNames);
         allowedScopeNames.addAll(getAllowedScopeNames(realm, false));
 
 
         checkClientScopesAllowed(requestedDefaultScopeNames, allowedScopeNames);
         checkClientScopesAllowed(requestedOptionalScopeNames, allowedScopeNames);
+
+        if (componentModel.get(ClientScopesClientRegistrationPolicyFactory.ADD_DEFAULT_SCOPES, false) && (requestedDefaultScopeNames != null || requestedOptionalScopeNames != null)) {
+            // If the client explicitly requested scopes and add-default-scopes is enabled, ensure permitted realm default scopes are included as default scopes
+            List<String> defaultRealmScopes = realm.getDefaultClientScopesStream(true).map(ClientScopeModel::getName).filter(allowedDefaultScopeNames::contains).toList();
+            if (!defaultRealmScopes.isEmpty()) {
+                List<String> newDefaultScopes = requestedDefaultScopeNames == null ? new LinkedList<>() : new LinkedList<>(requestedDefaultScopeNames);
+                for (String s : defaultRealmScopes) {
+                    if (!newDefaultScopes.contains(s)) {
+                        newDefaultScopes.add(s);
+                    }
+                }
+                context.getClient().setDefaultClientScopes(newDefaultScopes);
+
+                if (requestedOptionalScopeNames != null) {
+                    List<String> newOptionalScopes = new LinkedList<>(requestedOptionalScopeNames);
+                    newOptionalScopes.removeIf(defaultRealmScopes::contains);
+                    context.getClient().setOptionalClientScopes(newOptionalScopes);
+                }
+            }
+        }
     }
 
     @Override
