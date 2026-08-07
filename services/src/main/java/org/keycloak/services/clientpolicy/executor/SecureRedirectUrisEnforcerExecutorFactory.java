@@ -35,6 +35,7 @@ public class SecureRedirectUrisEnforcerExecutorFactory implements ClientPolicyEx
 
     public static final String ALLOW_HTTP_SCHEME = "allow-http-scheme";
     public static final String ALLOW_WILDCARD_CONTEXT_PATH = "allow-wildcard-context-path";
+    public static final String ALLOW_WILDCARD_SUBDOMAIN = "allow-wildcard-subdomain";
     public static final String ALLOW_PERMITTED_DOMAINS = "allow-permitted-domains";
     public static final String OAUTH_2_0_COMPLIANT = "oauth-2-0-compliant";
     public static final String OAUTH_2_1_COMPLIANT = "oauth-2-1-compliant";
@@ -127,6 +128,18 @@ public class SecureRedirectUrisEnforcerExecutorFactory implements ClientPolicyEx
             .label("Allow wildcard in context-path")
             .helpText("If ON, then it will allow wildcard in context-path uris. " +
                 "For example, domain.example.com/*")
+            .type(ProviderConfigProperty.BOOLEAN_TYPE)
+            .defaultValue(false)
+            .add()
+
+            .property()
+            .name(ALLOW_WILDCARD_SUBDOMAIN)
+            .label("Allow wildcard subdomain")
+            .helpText("If ON, this executor permits client registration and update requests to use a wildcard in the first DNS label of HTTP(S) redirect URIs. " +
+                "For example, 'https://*.example.com/callback' or 'https://*-preview.example.com/callback'. " +
+                "Exactly one host wildcard is supported and it cannot cross dots. This setting is OFF by default. " +
+                "WARNING: Wildcard subdomains are not recommended for production use (see RFC 9700 section 4.1). " +
+                "Use with caution; a compromised subdomain can redirect to an attacker-controlled endpoint.")
             .type(ProviderConfigProperty.BOOLEAN_TYPE)
             .defaultValue(false)
             .add()
