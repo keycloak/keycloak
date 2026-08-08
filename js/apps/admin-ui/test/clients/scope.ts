@@ -1,6 +1,6 @@
 import { type Page, expect } from "@playwright/test";
-import { clickTableToolbarItem } from "../utils/table.ts";
 import { selectItem } from "../utils/form.ts";
+import { clickTableToolbarItem } from "../utils/table.ts";
 
 export async function goToClientScopesTab(page: Page) {
   await page.getByTestId("clientScopesTab").click();
@@ -11,7 +11,13 @@ export async function goToClientScopeEvaluateTab(page: Page) {
 }
 
 export async function clickAddClientScope(page: Page) {
-  await clickTableToolbarItem(page, "Add client scope");
+  try {
+    await clickTableToolbarItem(page, "Add client scope");
+    return;
+  } catch {
+    // Some contexts still use the legacy "Add scope" label.
+  }
+  await clickTableToolbarItem(page, "Add scope");
 }
 
 export async function clickAddScope(page: Page, option: string) {
