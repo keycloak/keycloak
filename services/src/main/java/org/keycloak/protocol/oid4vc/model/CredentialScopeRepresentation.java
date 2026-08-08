@@ -288,7 +288,7 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
 
     public CredentialScopeRepresentation setRequiredKeyAttestationKeyStorage(List<String> keyStorage) {
         return setAttribute(VC_KEY_ATTESTATION_REQUIRED_KEY_STORAGE, Optional.ofNullable(keyStorage)
-                .map(list -> String.join(",")).orElse(null));
+                .map(list -> String.join(",", list)).orElse(null));
     }
 
     public List<String> getRequiredKeyAttestationUserAuthentication() {
@@ -303,7 +303,7 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
 
     public CredentialScopeRepresentation setRequiredKeyAttestationUserAuthentication(List<String> userAuthentication) {
         return setAttribute(VC_KEY_ATTESTATION_REQUIRED_USER_AUTH, Optional.ofNullable(userAuthentication)
-                .map(list -> String.join(",")).orElse(null));
+                .map(list -> String.join(",", list)).orElse(null));
     }
 
     public <T> T getCredentialPolicyValue(CredentialClientPolicy<T> policy) {
