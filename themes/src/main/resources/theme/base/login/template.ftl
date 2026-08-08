@@ -53,15 +53,15 @@
             <script src="${script}" type="text/javascript"></script>
         </#list>
     </#if>
+    <#if !(skipSessionPolling?? && skipSessionPolling)>
     <script type="module">
         <#outputformat "JavaScript">
         import { startSessionPolling } from ${(url.resourcesPath + "/js/authChecker.js")?c};
 
-        startSessionPolling(
-            ${url.ssoLoginInOtherTabsUrl?c}
-        );
+        startSessionPolling(${(sessionPollingRedirectUrl!url.ssoLoginInOtherTabsUrl)?c});
         </#outputformat>
     </script>
+    </#if>
     <script type="module">
         document.addEventListener("click", (event) => {
             const link = event.target.closest("a[data-once-link]");
@@ -85,7 +85,7 @@
             link.setAttribute("aria-disabled", "true");
         });
     </script>
-    <#if authenticationSession??>
+    <#if authenticationSession?? && !(skipCheckAuthSession?? && skipCheckAuthSession)>
         <script type="module">
             <#outputformat "JavaScript">
             import { checkAuthSession } from ${(url.resourcesPath + "/js/authChecker.js")?c};

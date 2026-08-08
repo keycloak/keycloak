@@ -345,6 +345,13 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 attributes.put("logoutConfirm", new LogoutConfirmBean(accessCode, authenticationSession));
                 attributes.put("title", getMessage("logoutConfirmTitle"));
                 break;
+            case LOGIN_VERIFY_EMAIL_SUCCESS:
+                // Terminal page - the email is already verified, so there is nothing left to wait for or
+                // re-enter. Both session scripts would navigate back into the authentication flow, which
+                // completes and redirects to the client instead of leaving this confirmation on screen.
+                attributes.put(SKIP_SESSION_POLLING, Boolean.TRUE);
+                attributes.put(SKIP_CHECK_AUTH_SESSION, Boolean.TRUE);
+                break;
         }
 
         return processTemplate(theme, Templates.getTemplate(page), locale);
@@ -546,6 +553,13 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                         case LOGIN_PAGE_EXPIRED:
                             b = UriBuilder.fromUri(baseUri).path(uriInfo.getPath());
                             break;
+                        case LOGIN_VERIFY_EMAIL_SUCCESS:
+                            // The whole request is the state here: the signed token identifying the
+                            // registration lives in the query string, and there is no authentication session to
+                            // recover it from. Dropping the query would send the language links to an endpoint
+                            // that can no longer confirm anything.
+                            b = UriBuilder.fromUri(uriInfo.getRequestUri());
+                            break;
                         case INFO:
                         case ERROR:
                             if (isDetachedAuthenticationSession()) {
@@ -732,6 +746,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public Response createInfoPage() {
         return createResponse(LoginFormsPages.INFO);
+    }
+
+    @Override
+    public Response createVerifyEmailSuccessPage() {
+        return createResponse(LoginFormsPages.LOGIN_VERIFY_EMAIL_SUCCESS);
     }
 
     @Override
