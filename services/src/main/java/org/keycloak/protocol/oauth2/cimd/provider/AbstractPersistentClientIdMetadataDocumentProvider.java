@@ -291,7 +291,7 @@ public abstract class AbstractPersistentClientIdMetadataDocumentProvider<CONFIG 
     // the same as AbstractClientRegistrationProvider.getDefaultRolesStream
     private Stream<String> getDefaultRolesStream(ClientModel client) {
         return client.getRealm().getDefaultRole().getCompositesStream()
-                .filter(role -> role.isClientRole() && Objects.equals(role.getContainerId(), client.getId()))
+                .filter(role -> role.getType() == RoleModel.Type.CLIENT && Objects.equals(role.getContainerId(), client.getId()))
                 .map(RoleModel::getName);
     }
 

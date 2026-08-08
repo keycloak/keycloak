@@ -56,4 +56,11 @@ public interface OrganizationResource {
 
     @Path("groups")
     OrganizationGroupsResource groups();
+
+    /**
+     * @since Keycloak server 26.7.
+     * @return {@link OrganizationRolesResource} to manage organization roles
+     */
+    @Path("roles")
+    OrganizationRolesResource roles();
 }

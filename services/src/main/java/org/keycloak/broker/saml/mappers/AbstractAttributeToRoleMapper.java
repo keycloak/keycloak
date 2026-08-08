@@ -61,19 +61,26 @@ public abstract class AbstractAttributeToRoleMapper extends AbstractIdentityProv
         String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
         // KEYCLOAK-8730 if a previous mapper has already granted the same role, skip the checks so we don't accidentally remove a valid role.
         if (!context.hasMapperGrantedRole(roleName)) {
+            boolean hasRole = hasRoleMapping(session, realm, user, role);
             if (this.applies(mapperModel, context)) {
                 context.addMapperGrantedRole(roleName);
-                if ((!role.isClientRole() && user.getRealmRoleMappingsStream().noneMatch(r -> r.equals(role)))
-                    || (role.isClientRole() && user.getClientRoleMappingsStream(session.clients().getClientById(realm, role.getContainerId())).noneMatch(r -> r.equals(role)))) {
+                if (!hasRole) {
                     user.grantRole(role);
                 }
             } else {
-                if ((!role.isClientRole() && user.getRealmRoleMappingsStream().anyMatch(r -> r.equals(role)))
-                    || (role.isClientRole() && user.getClientRoleMappingsStream(session.clients().getClientById(realm, role.getContainerId())).anyMatch(r -> r.equals(role)))) {
+                if (hasRole) {
                     user.deleteRoleMapping(role);
                 }
             }
         }
+    }
+
+    private boolean hasRoleMapping(KeycloakSession session, RealmModel realm, UserModel user, RoleModel role) {
+        return switch (role.getType()) {
+            case REALM -> user.getRealmRoleMappingsStream().anyMatch(r -> r.equals(role));
+            case CLIENT -> user.getClientRoleMappingsStream(session.clients().getClientById(realm, role.getContainerId())).anyMatch(r -> r.equals(role));
+            case ORGANIZATION -> user.getRoleMappingsStream().anyMatch(r -> r.equals(role));
+        };
     }
 
     /**

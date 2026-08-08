@@ -26,6 +26,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.idm.MembershipType;
@@ -187,6 +188,29 @@ public interface OrganizationProvider extends Provider {
         }
 
         return result;
+    }
+
+    /**
+     * Returns the members of a given {@link OrganizationModel} that have the specified {@link RoleModel}.
+     *
+     * @param organization the organization
+     * @param role the role
+     * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
+     * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
+     * @return Stream of organization members with the given role. Never returns {@code null}.
+     */
+    default Stream<UserModel> getRoleMembersStream(OrganizationModel organization, RoleModel role, Integer first, Integer max) {
+        Stream<UserModel> roleMembers = getMembersStream(organization, (String) null, null, null, null)
+                .filter(user -> user.hasRole(role));
+
+        // Copied over from StreamsUtil from server-spi-private which is not available here
+        if (first != null && first > 0) {
+            roleMembers = roleMembers.skip(first);
+        }
+        if (max != null && max >= 0) {
+            roleMembers = roleMembers.limit(max);
+        }
+        return roleMembers;
     }
 
     /**

@@ -49,6 +49,7 @@ public class ProviderConfigProperty {
     public static final String SCRIPT_TYPE="Script";
     public static final String FILE_TYPE="File";
     public static final String ROLE_TYPE="Role";
+    public static final String ORGANIZATION_ROLE_TYPE="OrganizationRole";
     public static final String GROUP_TYPE="Group";
 
     /**

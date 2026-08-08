@@ -58,7 +58,7 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
             Set<String> clientContainerIds = new HashSet<>();
             roleModel.getCompositesStream().forEach(r -> {
                 ids.add(r.getId());
-                if (r.isClientRole()) {
+                if (r.getType() == RoleModel.Type.CLIENT) {
                     clientContainerIds.add(r.getContainerId());
                 }
             });

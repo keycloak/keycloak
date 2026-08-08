@@ -388,6 +388,7 @@ public class OrganizationMemberResource {
     private MemberRepresentation toRepresentation(UserModel member, boolean brief) {
         MemberRepresentation result = new MemberRepresentation(ModelToRepresentation.toRepresentation(session, member, brief));
         result.setMembershipType(provider.isManagedMember(organization, member) ? MembershipType.MANAGED : MembershipType.UNMANAGED);
+        result.setAccess(auth.users().getAccessForListing(member));
         return result;
     }
 }

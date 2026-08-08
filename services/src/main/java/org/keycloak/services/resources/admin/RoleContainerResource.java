@@ -187,7 +187,7 @@ public class RoleContainerResource extends RoleResource {
 
             rep.setId(role.getId());
 
-            if (role.isClientRole()) {
+            if (role.getType() == RoleModel.Type.CLIENT) {
                 adminEvent.resource(ResourceType.CLIENT_ROLE);
             } else {
                 adminEvent.resource(ResourceType.REALM_ROLE);
@@ -301,7 +301,7 @@ public class RoleContainerResource extends RoleResource {
 
         deleteRole(role);
 
-        if (role.isClientRole()) {
+        if (role.getType() == RoleModel.Type.CLIENT) {
             adminEvent.resource(ResourceType.CLIENT_ROLE);
         } else {
             adminEvent.resource(ResourceType.REALM_ROLE);
@@ -340,7 +340,7 @@ public class RoleContainerResource extends RoleResource {
         try {
             updateRole(rep, role, realm, session);
 
-            if (role.isClientRole()) {
+            if (role.getType() == RoleModel.Type.CLIENT) {
                 adminEvent.resource(ResourceType.CLIENT_ROLE);
             } else {
                 adminEvent.resource(ResourceType.REALM_ROLE);
