@@ -133,7 +133,7 @@ public class OrganizationMemberResource {
     @Operation(summary = "Invites an existing user or sends a registration link to a new user, based on the provided e-mail address.",
             description = "If the user with the given e-mail address exists, it sends an invitation link, otherwise it sends a registration link.")
     @APIResponses(value = {
-        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "201", description = "Created"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "409", description = "Conflict"),
@@ -151,7 +151,7 @@ public class OrganizationMemberResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Invites an existing user to the organization, using the specified user id")
     @APIResponses(value = {
-        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "201", description = "Created"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "500", description = "Internal Server Error")
