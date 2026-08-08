@@ -83,6 +83,7 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelValidationException;
@@ -287,9 +288,9 @@ public class RepresentationToModel {
                             cred.setPriority(10);
                         } else if (OTPCredentialModel.TOTP.equals(cred.getType()) || OTPCredentialModel.HOTP.equals(cred.getType())) {
                             OTPCredentialData credentialData = new OTPCredentialData(cred.getType(),
-                                    cred.getDigits() != null ? cred.getDigits() : 0,
+                                    cred.getDigits() != null ? cred.getDigits() : OTPPolicy.DEFAULT_POLICY.getDigits(),
                                     cred.getCounter() != null ? cred.getCounter() : 0,
-                                    cred.getPeriod() != null ? cred.getPeriod() : 0,
+                                    cred.getPeriod() != null ? cred.getPeriod() : OTPPolicy.DEFAULT_POLICY.getPeriod(),
                                     cred.getAlgorithm(), null);
                             OTPSecretData secretData = new OTPSecretData(cred.getHashedSaltedValue());
                             cred.setCredentialData(JsonSerialization.writeValueAsString(credentialData));
