@@ -34,6 +34,9 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.managers.ClientManager;
+import org.keycloak.services.managers.RealmManager;
 
 import org.jboss.logging.Logger;
 
@@ -47,6 +50,8 @@ public class ClientsPartialImport extends AbstractPartialImport<ClientRepresenta
     private static Set<String> INTERNAL_CLIENTS = Collections.unmodifiableSet(new HashSet(Constants.defaultClients));
 
     private static Logger logger = Logger.getLogger(ClientsPartialImport.class);
+
+    private final Set<String> serviceAccountsToRecreate = new HashSet<>();
 
     @Override
     public List<ClientRepresentation> getRepList(PartialImportRepresentation partialImportRep) {
@@ -94,6 +99,29 @@ public class ClientsPartialImport extends AbstractPartialImport<ClientRepresenta
     }
 
     @Override
+    public void prepare(PartialImportRepresentation partialImportRep, RealmModel realm, KeycloakSession session) {
+        super.prepare(partialImportRep, realm, session);
+
+        serviceAccountsToRecreate.clear();
+        for (ClientRepresentation clientRep : toOverwrite) {
+            if (Boolean.TRUE.equals(clientRep.isServiceAccountsEnabled())
+                    && !hasServiceAccountUser(partialImportRep, clientRep)) {
+                serviceAccountsToRecreate.add(clientRep.getClientId());
+            }
+        }
+    }
+
+    private boolean hasServiceAccountUser(PartialImportRepresentation partialImportRep, ClientRepresentation clientRep) {
+        List<UserRepresentation> users = partialImportRep.getUsers();
+        if (users == null) {
+            return false;
+        }
+
+        return users.stream()
+                .anyMatch(user -> clientRep.getClientId().equals(user.getServiceAccountClientId()));
+    }
+
+    @Override
     public void remove(RealmModel realm, KeycloakSession session, ClientRepresentation clientRep) {
         ClientModel clientModel = realm.getClientByClientId(getName(clientRep));
         // remove the associated service account if the account exists
@@ -120,6 +148,9 @@ public class ClientsPartialImport extends AbstractPartialImport<ClientRepresenta
         }
 
         ClientModel client = RepresentationToModel.createClient(session, realm, clientRep);
+        if (serviceAccountsToRecreate.contains(client.getClientId())) {
+            new ClientManager(new RealmManager(session)).enableServiceAccount(client);
+        }
         if(OIDCAdvancedConfigWrapper.fromClientModel(client).getPostLogoutRedirectUris() == null) {
             OIDCAdvancedConfigWrapper.fromClientModel(client).setPostLogoutRedirectUris(Collections.singletonList("+"));
         }
