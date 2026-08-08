@@ -76,7 +76,7 @@ image:images/tokens-tab.png[Tokens Tab]
 |The maximum time before clients must finish the Authorization Code Flow in OIDC.
 
 |User-Initiated Action Lifespan
-|The maximum time before a user's action permission expires. Keep this value short because users generally react to self-created actions quickly.
+|The maximum time before a user's action permission expires. This value should balance two competing objectives: On the one hand it should be short enough to mitigate a potential leak, while on the other hand it should allow for delayed email delivery, and potentially inexperienced users.
 
 |Default Admin-Initiated Action Lifespan
 |The maximum time before an action permission sent to a user by an administrator expires. Keep this value long to allow administrators to send e-mails to offline users. An administrator can override the default timeout before issuing the token.
