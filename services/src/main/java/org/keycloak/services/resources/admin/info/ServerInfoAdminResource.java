@@ -398,6 +398,9 @@ public class ServerInfoAdminResource {
                     rep.setConfigType(factory.getConfigType());
                     rep.setDefaultValue(factory.getDefaultConfigValue());
                     rep.setMultipleSupported(factory.isMultiplSupported());
+                    if (factory instanceof ConfiguredProvider configured) {
+                        rep.setHelpText(configured.getHelpText());
+                    }
                     return rep;
                 })
                 .collect(Collectors.toList());
