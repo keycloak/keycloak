@@ -53,6 +53,7 @@ import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.credential.CredentialMetadata;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.deployment.DeployedConfigurationsManager;
+import org.keycloak.device.DeviceActivityManager;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
@@ -95,6 +96,7 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.account.CredentialMetadataRepresentation;
+import org.keycloak.representations.account.DeviceRepresentation;
 import org.keycloak.representations.account.LocalizedMessage;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
@@ -851,6 +853,14 @@ public class ModelToRepresentation {
             rep.getClients().put(client.getId(), client.getClientId());
         }
         rep.setTransientUser(LightweightUserAdapter.isLightweightUser(session.getUser().getId()));
+        DeviceRepresentation device = DeviceActivityManager.getCurrentDevice(session);
+        if (device != null) {
+            rep.setOs(device.getOs());
+            rep.setOsVersion(device.getOsVersion());
+            rep.setBrowser(device.getBrowser());
+            rep.setDevice(device.getDevice());
+            rep.setMobile(device.isMobile());
+        }
         return rep;
     }
 
