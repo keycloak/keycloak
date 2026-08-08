@@ -1,9 +1,9 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation.js";
 import { expect, test } from "@playwright/test";
-import { toRealmSettings } from "../../src/realm-settings/routes/RealmSettings.tsx";
-import { toAddUser } from "../../src/user/routes/AddUser.tsx";
-import { toUser } from "../../src/user/routes/User.tsx";
-import { toUsers } from "../../src/user/routes/Users.tsx";
+import { toRealmSettings } from "../utils/routes.ts";
+import { toAddUser } from "../utils/routes.ts";
+import { toUser } from "../utils/routes.ts";
+import { toUsers } from "../utils/routes.ts";
 import { createTestBed } from "../support/testbed.ts";
 import adminClient from "../utils/AdminClient.ts";
 import {
