@@ -9,7 +9,6 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.TriConsumer;
@@ -30,6 +29,8 @@ import static org.keycloak.utils.StringUtil.isBlank;
 
 public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, Group> {
 
+    private static final String GROUP="Group";
+    private static final String USER="User";
     private final KeycloakSession session;
 
     public GroupCoreModelSchema(KeycloakSession session) {
@@ -66,14 +67,15 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
                 KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
                 RealmModel realm = session.getContext().getRealm();
                 Permissions permissions = session.getContext().getPermissions();
-                Stream<UserModel> members = Stream.empty();
+                List<Object> members = new ArrayList<>();
 
                 if (permissions.hasPermission(model, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW_MEMBERS)) {
-                    members = session.users().getGroupMembersStream(realm, model)
-                            .filter(this::canViewUser);
+                   members.addAll(session.users().getGroupMembersStream(realm, model)
+                            .filter(this::canViewUser).toList());
                 }
+                members.addAll(model.getSubGroupsStream().toList());
 
-                yield members.toList();
+                yield members;
             }
             default -> null;
         };
@@ -128,16 +130,24 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
                         // managing members on updates are not supported, client should use PATCH
                         throw new ModelValidationException("Managing members on updates are not supported");
                     }
-                }, (BiConsumer<Group, Collection<UserModel>>) (group, users) -> {
-                    for (UserModel user : Optional.ofNullable(users).orElse(List.of())) {
-                        if (!canViewUser(user)) {
-                            throw new ModelValidationException("User with id " + user.getId() + " not found");
-                        }
-
+                }, (BiConsumer<Group, Collection<Object>>) (group, members) -> {
+                    for (Object memberModel : Optional.ofNullable(members).orElse(List.of())) {
                         Member member = new Member();
-                        member.setValue(user.getId());
-                        member.setDisplay(user.getUsername());
-                        member.setType("User");
+                        if (memberModel instanceof UserModel user) {
+                             if (!canViewUser(user)) {
+                                  throw new ModelValidationException("User with id " + user.getId() + " not found");
+                             }
+                            member.setValue(user.getId());
+                            member.setDisplay(user.getUsername());
+                            member.setType(USER);
+                        } else if (memberModel instanceof GroupModel subGroup) {
+                            if (!canViewGroup(subGroup)) {
+                                throw new ModelValidationException("Group with id " + subGroup.getId() + " not found");
+                            }
+                            member.setValue(subGroup.getId());
+                            member.setDisplay(subGroup.getName());
+                            member.setType(GROUP);
+                        }
                         group.addMember(member);
                     }
                 })
@@ -147,12 +157,34 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
                     checkGroupMembershipPermission(session.getContext().getPermissions(), model);
 
                     for (Member member : values) {
-                        UserModel user = session.users().getUserById(realm, member.getValue());
-                        if (user == null || !canViewUser(user)) {
-                            throw new ModelValidationException("User with id " + member.getValue() + " not found");
+                        if (GROUP.equalsIgnoreCase(member.getType())) {
+                            GroupModel subGroup = session.groups().getGroupById(realm, member.getValue());
+                            if (subGroup == null || !canViewGroup(subGroup) || !model.getId().equals(subGroup.getParentId())) {
+                                throw new ModelValidationException("Group with id " + member.getValue() + " is not subgroup of " + model.getId());
+                            }
+                            checkGroupMembershipPermission(session.getContext().getPermissions(), subGroup);
+                            realm.moveGroup(subGroup, null);
+                        } else if (USER.equalsIgnoreCase(member.getType())) {
+                            UserModel user = session.users().getUserById(realm, member.getValue());
+                            if (user == null || !canViewUser(user)) {
+                                throw new ModelValidationException("User with id " + member.getValue() + " not found");
+                            }
+                            checkRequireManageGroupMembership(session.getContext().getPermissions(), user);
+                            user.leaveGroup(model);
+                        } else {
+                            UserModel user = session.users().getUserById(realm, member.getValue());
+                            if (user != null && canViewUser(user)) {
+                                checkRequireManageGroupMembership(session.getContext().getPermissions(), user);
+                                user.leaveGroup(model);
+                            } else {
+                                GroupModel subGroup = session.groups().getGroupById(realm, member.getValue());
+                                if (subGroup == null || !canViewGroup(subGroup) || !model.getId().equals(subGroup.getParentId())) {
+                                    throw new ModelValidationException("User or Group with id " + member.getValue() + " not found");
+                                }
+                                checkGroupMembershipPermission(session.getContext().getPermissions(), subGroup);
+                                realm.moveGroup(subGroup, null);
+                            }
                         }
-                        checkRequireManageGroupMembership(session.getContext().getPermissions(), user);
-                        user.leaveGroup(model);
                     }
                 })
                 .withModelAdder((TriConsumer<GroupModel, String, Set<Member>>) (model, name, values) -> {
@@ -161,12 +193,27 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
                     checkGroupMembershipPermission(session.getContext().getPermissions(), model);
 
                     for (Member member : values) {
-                        UserModel user = session.users().getUserById(realm, member.getValue());
-                        if (user == null || !canViewUser(user)) {
-                            throw new ModelValidationException("User with id " + member.getValue() + " not found");
+                        if (GROUP.equalsIgnoreCase(member.getType())) {
+                            if (model.getId().equals(member.getValue())) {
+                                throw new ModelValidationException("A group cannot be a member of itself");
+                            }
+
+                            GroupModel subGroup = session.groups().getGroupById(realm, member.getValue());
+                            if (subGroup == null || !canViewGroup(subGroup)) {
+                                throw new ModelValidationException("Group with id " + member.getValue() + " not found");
+                            }
+                            if (!model.getId().equals(subGroup.getParentId())) {
+                                checkGroupMembershipPermission(session.getContext().getPermissions(), subGroup);
+                                realm.moveGroup(subGroup, model);
+                            }
+                        } else {
+                            UserModel user = session.users().getUserById(realm, member.getValue());
+                            if (user == null || !canViewUser(user)) {
+                                throw new ModelValidationException("User with id " + member.getValue() + " not found");
+                            }
+                            checkRequireManageGroupMembership(session.getContext().getPermissions(), user);
+                            user.joinGroup(model);
                         }
-                        checkRequireManageGroupMembership(session.getContext().getPermissions(), user);
-                        user.joinGroup(model);
                     }
                 })
                 .build());
@@ -227,5 +274,10 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
     private boolean canViewUser(UserModel u) {
         Permissions permissions = session.getContext().getPermissions();
         return permissions.hasPermission(u, AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
+    }
+
+    private boolean canViewGroup(GroupModel u) {
+        Permissions permissions = session.getContext().getPermissions();
+        return permissions.hasPermission(u, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
     }
 }

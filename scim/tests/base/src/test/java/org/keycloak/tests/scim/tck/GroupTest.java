@@ -306,8 +306,8 @@ public class GroupTest extends AbstractScimTest {
         fetched = client.groups().get(group.getId(), List.of("members"), null);
         assertNotNull(fetched.getMembers());
         assertEquals(2, fetched.getMembers().size());
-        assertMember(fetched.getMembers(), userA.getId(), userA.getUserName());
-        assertMember(fetched.getMembers(), userB.getId(), userB.getUserName());
+        assertMember(fetched.getMembers(), userA.getId(), userA.getUserName(), "User");
+        assertMember(fetched.getMembers(), userB.getId(), userB.getUserName(), "User");
 
         // PATCH add a third member
         client.groups().patch(group.getId(), PatchRequest.create()
@@ -316,7 +316,7 @@ public class GroupTest extends AbstractScimTest {
         fetched = client.groups().get(group.getId(), List.of("members"), null);
         assertNotNull(fetched.getMembers());
         assertEquals(3, fetched.getMembers().size());
-        assertMember(fetched.getMembers(), userC.getId(), userC.getUserName());
+        assertMember(fetched.getMembers(), userC.getId(), userC.getUserName(), "User");
 
         // PATCH remove one member using value path filter
         client.groups().patch(group.getId(), PatchRequest.create()
@@ -325,8 +325,8 @@ public class GroupTest extends AbstractScimTest {
         fetched = client.groups().get(group.getId(), List.of("members"), null);
         assertNotNull(fetched.getMembers());
         assertEquals(2, fetched.getMembers().size());
-        assertMember(fetched.getMembers(), userA.getId(), userA.getUserName());
-        assertMember(fetched.getMembers(), userC.getId(), userC.getUserName());
+        assertMember(fetched.getMembers(), userA.getId(), userA.getUserName(), "User");
+        assertMember(fetched.getMembers(), userC.getId(), userC.getUserName(), "User");
 
         // capture groupId for use in lambdas
         String groupId = group.getId();
@@ -372,7 +372,77 @@ public class GroupTest extends AbstractScimTest {
         fetched = client.groups().get(group.getId(), List.of("members"));
         assertNotNull(fetched.getMembers());
         assertEquals(1, fetched.getMembers().size());
-        assertMember(fetched.getMembers(), userB.getId(), userB.getUserName());
+        assertMember(fetched.getMembers(), userB.getId(), userB.getUserName(), "User");
+    }
+
+    @Test
+    public void testSubGroupMembers() {
+        // create parent group and subgroup targets via SCIM
+        Group parentGroup = createScimGroup();
+        Group childGroupA = createScimGroup();
+        Group childGroupB = createScimGroup();
+
+        // create a user to verify mixed user + group members
+        User userA = createScimUser();
+
+        // PATCH add childGroupA (type = "Group") and userA (type = "User")
+        Member childMemberA = new Member();
+        childMemberA.setValue(childGroupA.getId());
+        childMemberA.setType("Group");
+
+        Member userMemberA = new Member();
+        userMemberA.setValue(userA.getId());
+        userMemberA.setType("User");
+
+        client.groups().patch(parentGroup.getId(), PatchRequest.create()
+                .addMember("Group", childMemberA.getValue())
+                .addMember("User", userMemberA.getValue())
+                .build());
+
+        // GET parent group with members parameter
+        List<Member> members = client.groups().get(parentGroup.getId(), List.of("members"), null).getMembers();;
+        assertNotNull(members);
+        assertEquals(2, members.size());
+
+        // assert both User and Group member entries are correctly present
+        assertMember(members, childGroupA.getId(), childGroupA.getDisplayName(), "Group");
+        assertMember(members, userA.getId(), userA.getUserName(), "User");
+
+        // PATCH add childGroupB
+        Member childMemberB = new Member();
+        childMemberB.setValue(childGroupB.getId());
+        childMemberB.setType("Group");
+
+        client.groups().patch(parentGroup.getId(), PatchRequest.create()
+                .addMember("Group", childMemberB.getValue())
+                .build());
+
+        members = client.groups().get(parentGroup.getId(), List.of("members"), null).getMembers();
+        assertNotNull(members);
+        assertEquals(3, members.size());
+        assertMember(members, childGroupB.getId(), childGroupB.getDisplayName(), "Group");
+
+        // PATCH remove childGroupA using value path filter
+        client.groups().patch(parentGroup.getId(), PatchRequest.create()
+                .remove("members[value eq \"" + childGroupA.getId() + "\"]")
+                .build());
+
+        members = client.groups().get(parentGroup.getId(), List.of("members"), null).getMembers();
+        assertNotNull(members);
+        assertEquals(2, members.size());
+
+        // childGroupA should no longer be present
+        assertTrue(members.stream().noneMatch(m -> childGroupA.getId().equals(m.getValue())));
+        assertMember(members, childGroupB.getId(), childGroupB.getDisplayName(), "Group");
+        assertMember(members, userA.getId(), userA.getUserName(), "User");
+
+        // PATCH remove remaining members
+        client.groups().patch(parentGroup.getId(), PatchRequest.create()
+                .remove("members[value eq \"" + childGroupB.getId() + "\"]")
+                .remove("members[value eq \"" + userA.getId() + "\"]")
+                .build());
+
+        assertNull(client.groups().get(parentGroup.getId(), List.of("members")).getMembers());
     }
 
     @Test
@@ -629,12 +699,20 @@ public class GroupTest extends AbstractScimTest {
         assertFalse(returnedGroupIds.contains(orgChildGroup.getId()));
     }
 
-    private static void assertMember(List<Member> members, String userId, String userName) {
+    private static void assertMember(List<Member> members, String id, String display, String type) {
         assertTrue(members.stream().anyMatch(m ->
-                userId.equals(m.getValue())
-                        && userName.equals(m.getDisplay())
-                        && "User".equals(m.getType())
-        ), "Expected member with userId=" + userId + " and userName=" + userName);
+                id.equals(m.getValue())
+                        && display.equals(m.getDisplay())
+                        && type.equals(m.getType())
+        ), "Expected member with id=" + id + ", display=" + display + ", type=" + type);
+    }
+
+    private Group createScimGroup() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        Group created = client.groups().create(group);
+        adminEvents.clear();
+        return created;
     }
 
     private User createScimUser() {
