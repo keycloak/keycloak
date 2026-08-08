@@ -134,9 +134,14 @@ vi.mock("@keycloak/keycloak-ui-shared", async () => {
     KeycloakDataTable: (props: any) => {
       const [rows, setRows] = useState<any[]>([]);
 
+      const load = (search?: string) =>
+        props.loader?.(0, 10, search).then((loadedRows: any[]) => {
+          setRows(loadedRows);
+        });
+
       useEffect(() => {
         let mounted = true;
-        props.loader?.().then((loadedRows: any[]) => {
+        props.loader?.(0, 10).then((loadedRows: any[]) => {
           if (mounted) {
             setRows(loadedRows);
           }
@@ -148,6 +153,12 @@ vi.mock("@keycloak/keycloak-ui-shared", async () => {
 
       return (
         <div data-testid={props.ariaLabelKey}>
+          {props.searchPlaceholderKey && (
+            <input
+              aria-label={props.searchPlaceholderKey}
+              onChange={(event) => load(event.currentTarget.value)}
+            />
+          )}
           {props.toolbarItem}
           {rows.length === 0 && props.emptyState}
           {rows.map((row) => {
@@ -275,6 +286,26 @@ describe("OrganizationRoleUsers", () => {
       ),
     );
     expect(mocks.addAlert).toHaveBeenCalled();
+  });
+
+  it("searches paginated role members", async () => {
+    renderUsers();
+    await screen.findByRole("row", { name: "user" });
+
+    fireEvent.change(screen.getByLabelText("searchMembers"), {
+      target: { value: "restricted" },
+    });
+
+    await waitFor(() =>
+      expect(mocks.listUsers).toHaveBeenCalledWith({
+        orgId: "org-id",
+        roleId: "role-id",
+        first: 0,
+        max: 10,
+        search: "restricted",
+        briefRepresentation: true,
+      }),
+    );
   });
 
   it("reports loader and mutation failures", async () => {

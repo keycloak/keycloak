@@ -720,8 +720,8 @@ public class OrganizationRolesResourceTest {
                     yield page(stream, (Integer) args[3], (Integer) args[4]);
                 }
                 case "getRoleMembersStream" -> {
-                    lastRoleMembersFirst = (Integer) args[2];
-                    lastRoleMembersMax = (Integer) args[3];
+                    lastRoleMembersFirst = (Integer) args[3];
+                    lastRoleMembersMax = (Integer) args[4];
                     yield page(roleMembers.stream()
                             .filter(user -> ((OrganizationModel) args[0]).isMember(user)), lastRoleMembersFirst, lastRoleMembersMax);
                 }

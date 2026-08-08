@@ -18,6 +18,7 @@ test.describe.serial("Organization roles", () => {
   const organizationName = "role-organization";
   const organizationAlias = "role-org";
   const memberName = "organization-role-member";
+  const secondMemberName = "alternate-organization-role-user";
 
   test.beforeAll(async () => {
     await adminClient.createRealm(realmName, { organizationsEnabled: true });
@@ -33,6 +34,16 @@ test.describe.serial("Organization roles", () => {
       enabled: true,
     });
     await adminClient.addOrgMember(organizationName, member.id!, realmName);
+    const secondMember = await adminClient.createUser({
+      realm: realmName,
+      username: secondMemberName,
+      enabled: true,
+    });
+    await adminClient.addOrgMember(
+      organizationName,
+      secondMember.id!,
+      realmName,
+    );
   });
 
   test.afterAll(() => adminClient.deleteRealm(realmName));
@@ -176,13 +187,26 @@ test.describe.serial("Organization roles", () => {
       await page.getByTestId("organization-role-users-tab").click();
       await page.getByRole("button", { name: "Assign members" }).click();
       await clickSelectRow(page, "Users", memberName);
+      await clickSelectRow(page, "Users", secondMemberName);
       await page.getByRole("button", { name: "Assign", exact: true }).click();
       await assertNotificationMessage(
         page,
-        "1 member assigned to the organization role",
+        "2 members assigned to the organization role",
       );
       await assertRowExists(page, memberName);
+      await assertRowExists(page, secondMemberName);
       await expect(page.getByRole("row", { name: memberName })).toBeVisible();
+
+      const search = page.getByPlaceholder("Search members");
+      await search.fill(secondMemberName);
+      await search.press("Enter");
+      await assertRowExists(page, secondMemberName);
+      await assertRowExists(page, memberName, false);
+
+      await search.fill("");
+      await search.press("Enter");
+      await assertRowExists(page, memberName);
+      await assertRowExists(page, secondMemberName);
 
       await clickRowKebabItem(page, memberName, "Remove");
       await confirmModal(page);

@@ -160,20 +160,24 @@ public class OrganizationMemberFgapTest {
                 .get(orgId).roles().get(roleId);
         assertTrue(restrictedRole.getAvailableUserMembers(null, null, true, 0, 10).isEmpty());
 
+        UserRepresentation alice = new UserRepresentation();
+        alice.setId(userAlice.getId());
+        realm.admin().organizations().get(orgId).roles().get(roleId).addUserMembers(List.of(alice));
+        assertTrue(restrictedRole.getUserMembers("alice", true, 0, 10).isEmpty());
+
         UserPolicyRepresentation policy = createAdminPolicy();
         PermissionTestUtils.createPermission(clientResource, Set.of(userAlice.getId()),
                 AdminPermissionsSchema.USERS.getType(), Set.of(VIEW, MANAGE), policy);
 
+        List<UserRepresentation> members = restrictedRole.getUserMembers("alice", true, 0, 10);
+        assertThat(members, hasSize(1));
+        assertEquals(userAlice.getId(), members.get(0).getId());
+        restrictedRole.deleteUserMembers(List.of(alice));
+        assertTrue(restrictedRole.getUserMembers("alice", true, 0, 10).isEmpty());
+
         List<UserRepresentation> candidates = restrictedRole.getAvailableUserMembers(null, null, true, 0, 10);
         assertThat(candidates, hasSize(1));
         assertEquals(userAlice.getId(), candidates.get(0).getId());
-
-        UserRepresentation alice = new UserRepresentation();
-        alice.setId(userAlice.getId());
-        restrictedRole.addUserMembers(List.of(alice));
-        assertThat(restrictedRole.getUserMembers(), hasSize(1));
-        restrictedRole.deleteUserMembers(List.of(alice));
-        assertTrue(restrictedRole.getUserMembers().isEmpty());
     }
 
     @Test

@@ -199,13 +199,17 @@ public class OrganizationRoleSpiTest {
                 user("member-b", role)));
 
         Assert.assertEquals(List.of("member-a", "member-b"),
-                provider.getRoleMembersStream(organization, role, 0, 2).map(UserModel::getUsername).toList());
+                provider.getRoleMembersStream(organization, role, "member", 0, 2).map(UserModel::getUsername).toList());
+        Assert.assertEquals(List.of("member-a"),
+                provider.getRoleMembersStream(organization, role, "member", 0, 1).map(UserModel::getUsername).toList());
         Assert.assertEquals(List.of("member-b"),
-                provider.getRoleMembersStream(organization, role, 1, 1).map(UserModel::getUsername).toList());
+                provider.getRoleMembersStream(organization, role, "member", 1, 1).map(UserModel::getUsername).toList());
+        Assert.assertEquals(List.of("member-b"),
+                provider.getRoleMembersStream(organization, role, "member-b", 0, 1).map(UserModel::getUsername).toList());
         Assert.assertEquals(List.of("member-a", "member-b"),
-                provider.getRoleMembersStream(organization, role, null, null).map(UserModel::getUsername).toList());
+                provider.getRoleMembersStream(organization, role, null, null, null).map(UserModel::getUsername).toList());
         Assert.assertEquals(List.of("member-a", "member-b"),
-                provider.getRoleMembersStream(organization, role, 0, -1).map(UserModel::getUsername).toList());
+                provider.getRoleMembersStream(organization, role, null, 0, -1).map(UserModel::getUsername).toList());
     }
 
     @Test
@@ -244,7 +248,8 @@ public class OrganizationRoleSpiTest {
         return (OrganizationProvider) Proxy.newProxyInstance(OrganizationProvider.class.getClassLoader(), new Class<?>[] { OrganizationProvider.class },
                 (proxy, method, args) -> {
                     if ("getMembersStream".equals(method.getName()) && method.getParameterTypes()[1] == String.class) {
-                        return members.stream();
+                        String search = (String) args[1];
+                        return members.stream().filter(user -> search == null || user.getUsername().contains(search));
                     }
                     if ("close".equals(method.getName())) {
                         return null;

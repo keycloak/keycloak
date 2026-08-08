@@ -156,8 +156,18 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
                 .resourceType(ResourceType.ORGANIZATION_ROLE_MAPPING)
                 .resourcePath(AdminEventPaths.organizationRoleUsersPath(organization.getId(), roleId));
         assertThat(roleResource.getUserMembers().stream().map(UserRepresentation::getId).toList(), containsInAnyOrder(user.getId(), secondUser.getId()));
-        assertThat(roleResource.getUserMembers(true, 0, 1), hasSize(1));
-        assertThat(roleResource.getUserMembers(true, 1, 1), hasSize(1));
+        assertThat(roleResource.getUserMembers(null, true, 0, 1), hasSize(1));
+        assertThat(roleResource.getUserMembers(null, true, 1, 1), hasSize(1));
+        assertThat(roleResource.getUserMembers("second-role-member", true, 0, 10).stream()
+                .map(UserRepresentation::getId).toList(), contains(secondUser.getId()));
+        assertTrue(roleResource.getUserMembers("missing-role-member", true, 0, 10).isEmpty());
+        List<String> firstSearchPage = roleResource.getUserMembers("role-member@neworg.org", true, 0, 1).stream()
+                .map(UserRepresentation::getId).toList();
+        List<String> secondSearchPage = roleResource.getUserMembers("role-member@neworg.org", true, 1, 1).stream()
+                .map(UserRepresentation::getId).toList();
+        assertThat(firstSearchPage, hasSize(1));
+        assertThat(secondSearchPage, hasSize(1));
+        assertThat(List.of(firstSearchPage.get(0), secondSearchPage.get(0)), containsInAnyOrder(user.getId(), secondUser.getId()));
         assertThat(roleResource.getAvailableUserMembers("available-role-member", false, true, null, null).stream()
                 .map(UserRepresentation::getId).toList(), contains(availableMember.getId()));
 
