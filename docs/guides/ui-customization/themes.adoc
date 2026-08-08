@@ -344,6 +344,19 @@ To reference images from common theme resources in email templates, use `url.res
 
 NOTE: Email clients require absolute URLs for images since they cannot resolve relative paths. Use `url.resourcesCommonUrl` or `url.resourcesUrl` instead of their `Path` counterparts (`url.resourcesCommonPath`, `url.resourcesPath`) in email templates.
 
+Alternatively, you can embed images inline using `cid:` references. {project_name} loads the matching file from the email theme resources directory and attaches it to the email as a MIME inline part. This works without external URLs and displays even when email clients block remote images.
+
+To embed an image from `themes/mytheme/email/resources/img/logo.png`, add the following to a custom HTML template:
+
+[source,html]
+----
+<img src="cid:img/logo.png" alt="My logo">
+----
+
+The path in the `cid:` reference is relative to the `email/resources/` directory of the theme. Use the same path you would pass to theme resources, for example `img/logo.png` for a file stored in `email/resources/img/logo.png`.
+
+NOTE: `cid:` references must be quoted in HTML attributes (for example `src="cid:img/logo.png"` or `url('cid:img/bg.png')` in CSS).
+
 [[custom-identity-providers-icons]]
 === Adding custom Identity Providers icons
 
