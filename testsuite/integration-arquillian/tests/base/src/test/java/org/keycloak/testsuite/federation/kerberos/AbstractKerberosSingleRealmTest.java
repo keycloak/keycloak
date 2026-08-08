@@ -118,6 +118,18 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
         Assertions.assertEquals(302, response.getStatus());
     }
 
+    @Test
+    public void spnegoMutualAuthenticationTest() {
+        Response response = spnegoLogin("hnelson", "secret");
+
+        Assertions.assertEquals(302, response.getStatus());
+        String negotiateHeader = response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE);
+        Assertions.assertNotNull(negotiateHeader);
+        Assertions.assertTrue(negotiateHeader.startsWith(KerberosConstants.NEGOTIATE + " "));
+        Assertions.assertTrue(negotiateHeader.length() > KerberosConstants.NEGOTIATE.length() + 1);
+        response.close();
+    }
+
 
     // KEYCLOAK-2102
     @Test

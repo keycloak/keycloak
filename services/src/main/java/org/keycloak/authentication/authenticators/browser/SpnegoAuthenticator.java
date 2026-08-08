@@ -104,7 +104,12 @@ public class SpnegoAuthenticator extends AbstractUsernameFormAuthenticator imple
             context.setUser(output.getAuthenticatedUser());
             if (output.getState() != null && !output.getState().isEmpty()) {
                 for (Map.Entry<String, String> entry : output.getState().entrySet()) {
-                    context.getAuthenticationSession().setUserSessionNote(entry.getKey(), entry.getValue());
+                    if (KerberosConstants.RESPONSE_TOKEN.equals(entry.getKey())) {
+                        String negotiateHeader = KerberosConstants.NEGOTIATE + " " + entry.getValue();
+                        context.getSession().getContext().getHttpResponse().setHeader(HttpHeaders.WWW_AUTHENTICATE, negotiateHeader);
+                    } else {
+                        context.getAuthenticationSession().setUserSessionNote(entry.getKey(), entry.getValue());
+                    }
                 }
             }
             context.success(UserCredentialModel.KERBEROS);
