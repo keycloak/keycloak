@@ -590,6 +590,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         }
 
         // now it is OK to retrieve the token from the session or the database
+        String oldToken = identity.getToken();
         try {
             Response response = identityProvider.retrieveToken(session, identity, userSession, authResult.user());
             event.success();
@@ -599,6 +600,10 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             event.detail(Details.REASON, e.getMessage());
             event.error(Errors.INVALID_REQUEST);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Failed to retrieve token from identity provider", Response.Status.BAD_REQUEST);
+        } finally {
+            if (Booleans.isTrue(model.isStoreToken()) && !Objects.equals(oldToken, identity.getToken())) {
+                session.users().updateFederatedIdentity(session.getContext().getRealm(), authResult.user(), identity);
+            }
         }
     }
 

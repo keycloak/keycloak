@@ -301,10 +301,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     }
 
-    @Override
-    public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
+    protected void refreshStoredToken(KeycloakSession session, FederatedIdentityModel identity) {
         try {
-            if (identity.getToken().startsWith("{")) {
+            if (identity.getToken() != null && identity.getToken().startsWith("{")) {
                 OAuthResponse previousResponse = JsonSerialization.readValue(identity.getToken(), OAuthResponse.class);
                 Long exp = previousResponse.getAccessTokenExpiration();
                 if (needsRefresh(exp) && previousResponse.getRefreshToken() != null) {
@@ -322,6 +321,11 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             throw new WebApplicationException("Unable to refresh token", e,
                     Response.status(Response.Status.BAD_GATEWAY).entity(error).type(MediaType.APPLICATION_JSON).build());
         }
+    }
+
+    @Override
+    public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
+        refreshStoredToken(session, identity);
         return Response.ok(identity.getToken()).type(MediaType.APPLICATION_JSON).build();
     }
 
@@ -371,6 +375,11 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
 
         if (Booleans.isTrue(getConfig().isStoreToken())) {
+            String originalToken = identity.getToken();
+            refreshStoredToken(session, identity);
+            if (!java.util.Objects.equals(originalToken, identity.getToken())) {
+                session.users().updateFederatedIdentity(session.getContext().getRealm(), user, identity);
+            }
             response = exchangeStoredToken(uriInfo, null, null, userSession, user);
         }
 
