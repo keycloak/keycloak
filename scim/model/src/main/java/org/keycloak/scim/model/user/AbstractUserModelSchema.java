@@ -36,8 +36,7 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
     @Override
     protected Set<String> getModelAttributeNames() {
         UserProfile profile = getUserProfile();
-        Attributes attributes = profile.getAttributes();
-        Set<String> names = new HashSet<>(attributes.nameSet());
+        Set<String> names = new HashSet<>(profile.getAttributes().getReadable().keySet());
 
         names.add(UserModel.ENABLED);
         names.add("groups");
