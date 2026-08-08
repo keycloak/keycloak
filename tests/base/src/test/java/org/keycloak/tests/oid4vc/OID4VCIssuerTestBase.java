@@ -147,6 +147,7 @@ public abstract class OID4VCIssuerTestBase {
     protected final Logger log = Logger.getLogger(getClass());
 
     public static final String OID4VCI_CLIENT_ID = "oid4vci-client";
+    public static final String OID4VCI_CLIENT_ID2 = "oid4vci-client2";
     public static final String OID4VCI_ABCA_CLIENT_ID = "oid4vci-client-abca";
     public static final String OID4VCI_PUBLIC_CLIENT_ID = "oid4vci-client-pub";
 
@@ -193,6 +194,9 @@ public abstract class OID4VCIssuerTestBase {
     @InjectClient(ref = OID4VCI_CLIENT_ID, config = OID4VCConfidentialClient.class)
     protected ManagedClient managedClient;
 
+    @InjectClient(ref = OID4VCI_CLIENT_ID2, config = OID4VCConfidentialClient2.class)
+    protected ManagedClient managedClient2;
+
     @InjectClient(ref = OID4VCI_ABCA_CLIENT_ID, config = OID4VCAttestationBasedClient.class)
     protected ManagedClient managedAttestationBasedClient;
 
@@ -228,6 +232,7 @@ public abstract class OID4VCIssuerTestBase {
     protected CredentialScopeRepresentation sdJwtNaturalPersonCredentialScope;
 
     protected ClientRepresentation client;
+    protected ClientRepresentation client2;
     protected ClientRepresentation abcaClient;
     protected ClientRepresentation pubClient;
     protected OID4VCBasicWallet wallet;
@@ -265,6 +270,7 @@ public abstract class OID4VCIssuerTestBase {
     void beforeEachBase() {
 
         client = managedClient.admin().toRepresentation();
+        client2 = managedClient2.admin().toRepresentation();
         pubClient = managedPublicClient.admin().toRepresentation();
         abcaClient = managedAttestationBasedClient.admin().toRepresentation();
 
@@ -1050,6 +1056,9 @@ public abstract class OID4VCIssuerTestBase {
         }
     }
 
+    /**
+     * Confidential OID4VCI Client with some test credential scopes
+     */
     public static class OID4VCConfidentialClient implements ClientConfig {
 
         @Override
@@ -1067,6 +1076,24 @@ public abstract class OID4VCIssuerTestBase {
                     .directAccessGrantsEnabled(true)
                     .defaultClientScopes("basic", "profile", "roles")
                     .optionalClientScopes(optionalClientScopes)
+                    .attribute(OID4VCI_ENABLED_ATTRIBUTE_KEY, "true")
+                    .redirectUris("*")
+                    .secret("test-secret");
+            return client;
+        }
+    }
+
+    /**
+     * Confidential OID4VCI Client with no optional client scopes
+     */
+    public static class OID4VCConfidentialClient2 implements ClientConfig {
+
+        @Override
+        public ClientBuilder configure(ClientBuilder client) {
+            client.clientId(OID4VCI_CLIENT_ID2)
+                    .serviceAccountsEnabled(true)
+                    .directAccessGrantsEnabled(true)
+                    .defaultClientScopes("basic", "profile", "roles")
                     .attribute(OID4VCI_ENABLED_ATTRIBUTE_KEY, "true")
                     .redirectUris("*")
                     .secret("test-secret");
