@@ -50,6 +50,9 @@ public class AdminEventBuilder {
     protected static final Logger logger = Logger.getLogger(AdminEventBuilder.class);
     protected final AdminAuth auth;
     protected final String ipAddress;
+    /**
+     * Realm associated with the event lifecycle.
+     */
     protected final RealmModel realm;
     protected final AdminEvent adminEvent;
     protected final Map<String, EventListenerProvider> listeners;
@@ -74,6 +77,7 @@ public class AdminEventBuilder {
             this.adminEvent = new AdminEvent();
             // Assumption: the following methods write information to the adminEvent only
             realm(realm);
+            targetRealm(realm);
             authRealm(auth.getRealm());
             authClient(auth.getClient());
             authUser(auth.getUser());
@@ -106,6 +110,12 @@ public class AdminEventBuilder {
     public AdminEventBuilder realm(RealmModel realm) {
         adminEvent.setRealmId(realm.getId());
         adminEvent.setRealmName(realm.getName());
+        return this;
+    }
+
+    public AdminEventBuilder targetRealm(RealmModel realm) {
+        adminEvent.setTargetRealmId(realm.getId());
+        adminEvent.setTargetRealmName(realm.getName());
         return this;
     }
 

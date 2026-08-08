@@ -172,6 +172,32 @@ public class JBossLoggingEventListenerProviderTest {
         });
     }
 
+    @Test
+    public void testAdminTargetRealm() {
+        String[][] cases = {
+                {"realm-id", "realm-name"},
+                {"different-realm-id", "realm-name"},
+                {"realm-id", "different-realm-name"},
+                {"different-realm-id", "different-realm-name"}
+        };
+        for (String[] c : cases) {
+            String realmId = c[0];
+            String realmName = c[1];
+            AdminEvent adminEvent = createEvent();
+            AuthDetails authDetails = adminEvent.getAuthDetails();
+            authDetails.setRealmId("realm-id");
+            authDetails.setRealmName("realm-name");
+            adminEvent.setAuthDetails(authDetails);
+            adminEvent.setTargetRealmId(realmId);
+            adminEvent.setTargetRealmName(realmName);
+            test(Map.of("success-level", "info"), adminEvent, false, message -> {
+                MatcherAssert.assertThat(message, Matchers.startsWith("INFO "));
+                assertAdminEvent(adminEvent, message);
+                assertAdminEventKey(message, "targetRealmId", adminEvent.getTargetRealmId());
+                assertAdminEventKey(message, "targetRealmName", adminEvent.getTargetRealmName());
+            });
+        }
+
     private static void test(AdminEvent adminEvent, boolean includeRepresentation, Consumer<String> assertMessage) {
         test(Map.of(), adminEvent, includeRepresentation, assertMessage);
     }
