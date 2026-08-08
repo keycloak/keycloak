@@ -280,13 +280,17 @@ public class RepresentationToModel {
                         logger.warnf("Using deprecated 'credentials' format in JSON representation for user '%s'. It will be removed in future versions", user.getUsername());
 
                         if (PasswordCredentialModel.TYPE.equals(cred.getType()) || PasswordCredentialModel.PASSWORD_HISTORY.equals(cred.getType())) {
-                            PasswordCredentialData credentialData = new PasswordCredentialData(cred.getHashIterations(), cred.getAlgorithm());
+                            PasswordCredentialData credentialData = new PasswordCredentialData(cred.getHashIterations() != null ? cred.getHashIterations() : 0, cred.getAlgorithm());
                             cred.setCredentialData(JsonSerialization.writeValueAsString(credentialData));
                             // Created this manually to avoid conversion from Base64 and back
                             cred.setSecretData("{\"value\":\"" + cred.getHashedSaltedValue() + "\",\"salt\":\"" + cred.getSalt() + "\"}");
                             cred.setPriority(10);
                         } else if (OTPCredentialModel.TOTP.equals(cred.getType()) || OTPCredentialModel.HOTP.equals(cred.getType())) {
-                            OTPCredentialData credentialData = new OTPCredentialData(cred.getType(), cred.getDigits(), cred.getCounter(), cred.getPeriod(), cred.getAlgorithm(), null);
+                            OTPCredentialData credentialData = new OTPCredentialData(cred.getType(),
+                                    cred.getDigits() != null ? cred.getDigits() : 0,
+                                    cred.getCounter() != null ? cred.getCounter() : 0,
+                                    cred.getPeriod() != null ? cred.getPeriod() : 0,
+                                    cred.getAlgorithm(), null);
                             OTPSecretData secretData = new OTPSecretData(cred.getHashedSaltedValue());
                             cred.setCredentialData(JsonSerialization.writeValueAsString(credentialData));
                             cred.setSecretData(JsonSerialization.writeValueAsString(secretData));
