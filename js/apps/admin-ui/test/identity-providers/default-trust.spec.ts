@@ -8,7 +8,7 @@ import { clickSaveButton, createDefaultTrustProvider } from "./main.ts";
 
 const alias = "default-trust";
 const addDefaultTrustProviderUrl =
-  "http://localhost:8080/admin/master/console/#/master/identity-providers/default-trust/add";
+  "http://localhost:8080/admin/master/console/master/identity-providers/default-trust/add";
 const jwksUrl = "https://localhost/realms/test/protocol/openid-connect/certs";
 const jwks = '{"keys":[]}';
 
@@ -26,7 +26,11 @@ test.describe.serial("Default Trust identity provider test", () => {
 
   test.afterEach(async ({}, testInfo) => {
     if (testInfo.title.includes("create and edit")) {
-      await adminClient.deleteIdentityProvider(alias);
+      try {
+        await adminClient.deleteIdentityProvider(alias);
+      } catch {
+        // The provider may already be deleted when creation fails.
+      }
     }
   });
 

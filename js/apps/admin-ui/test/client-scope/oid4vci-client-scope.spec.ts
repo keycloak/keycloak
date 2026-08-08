@@ -10,7 +10,7 @@ import {
   assertSaveButtonIsDisabled,
 } from "../utils/form.ts";
 import { clickTableRowItem, clickTableToolbarItem } from "../utils/table.ts";
-import { login } from "../utils/login.ts";
+import { login, navigateTo } from "../utils/login.ts";
 import { toClientScopes } from "../../src/client-scopes/routes/ClientScopes.tsx";
 
 // Helper function to create client scope (without selecting protocol)
@@ -51,11 +51,7 @@ async function navigateBackAndVerifyClientScope(
   testBed: Awaited<ReturnType<typeof createTestBed>>,
   clientScopeName: string,
 ) {
-  const currentUrl = page.url();
-  const baseUrl = currentUrl.split("#")[0];
-  await page.goto(
-    `${baseUrl}#${toClientScopes({ realm: testBed.realm }).pathname!}`,
-  );
+  await navigateTo(page, toClientScopes({ realm: testBed.realm }));
   await page.waitForLoadState("domcontentloaded");
 
   await page.getByPlaceholder("Search for client scope").fill(clientScopeName);
