@@ -1,13 +1,13 @@
 import { CallOptions } from "../api/methods";
+import { parseResponse } from "../api/parse-response";
+import { request } from "../api/request";
 import { MenuItem } from "../root/PageNav";
-import { joinPath } from "../utils/joinPath";
 
 export default async function fetchContentJson(
   opts: CallOptions,
 ): Promise<MenuItem[]> {
-  const response = await fetch(
-    joinPath(opts.context.environment.resourceUrl, "/content.json"),
-    opts,
-  );
-  return await response.json();
+  const response = await request("/content.json", opts.context, {
+    signal: opts.signal,
+  });
+  return parseResponse<MenuItem[]>(response);
 }

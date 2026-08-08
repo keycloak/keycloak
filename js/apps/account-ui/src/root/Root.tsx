@@ -1,4 +1,5 @@
 import {
+  ErrorBoundaryFallback,
   ErrorPage,
   useAlerts,
   useEnvironment,
@@ -91,5 +92,11 @@ export const Root = () => {
   if (!content) {
     return <Spinner />;
   }
-  return <RouterProvider router={createBrowserRouter(content)} />;
+  return (
+    <ErrorBoundaryFallback fallback={ErrorPage}>
+      <Suspense fallback={<KeycloakSpinner />}>
+        <RouterProvider router={createBrowserRouter(content)} />
+      </Suspense>
+    </ErrorBoundaryFallback>
+  );
 };
