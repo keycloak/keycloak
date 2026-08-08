@@ -28,9 +28,11 @@ import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.event.InitiatingEntity;
+import org.keycloak.ssf.event.InitiatingEntityAware;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
-import org.keycloak.ssf.event.caep.CaepEvent;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
+import org.keycloak.ssf.event.risc.RiscAccountDisabled;
+import org.keycloak.ssf.event.risc.RiscAccountEnabled;
 import org.keycloak.ssf.event.stream.SsfStreamUpdatedEvent;
 import org.keycloak.ssf.event.stream.SsfStreamVerificationEvent;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
@@ -63,6 +65,13 @@ public class SecurityEventTokenMapper {
     protected static final Pattern USER_RESET_PASSWORD_BY_ADMIN_PATH_PATTERN = Pattern.compile("^users/([^/]+)/reset-password$");
 
     protected static final Pattern USER_CREDENTIALS_CHANGED_BY_ADMIN_PATH_PATTERN = Pattern.compile("^users/([^/]+)/credentials/([^/]+)$");
+
+    // Bare "users/{id}" — the generic admin "update user" endpoint. Fires for
+    // every profile field change, so on its own it is not mapped by
+    // canConvert(AdminEvent); isEnabledStateChangeAdminEvent additionally
+    // requires the previous/updated "enabled" details UserResource attaches
+    // when that specific field changed.
+    protected static final Pattern USER_UPDATED_BY_ADMIN_PATH_PATTERN = Pattern.compile("^users/([^/]+)$");
 
     public static final String KC_CREDENTIAL_ID = "kc_credential_id";
 
@@ -304,6 +313,82 @@ public class SecurityEventTokenMapper {
         }
     }
 
+    /**
+     * Generates a RISC account-disabled event.
+     *
+     * @param userEvent the (possibly synthetic — see {@link #generateAccountStateChangeEventForAdminAction})
+     *                  user event carrying the affected user id
+     * @param adminEvent the admin event that triggered the disablement, or {@code null} for
+     *                   native triggers (currently only brute-force lockout) that aren't
+     *                   admin-initiated. Non-admin triggers are labeled
+     *                   {@link InitiatingEntity#POLICY} — brute-force lockout is Keycloak's
+     *                   own security policy engine acting, not an end-user choice, so it
+     *                   must not be reported to receivers as {@link InitiatingEntity#USER}.
+     * @param stream the receiving stream
+     * @param reason one of the {@code RiscAccountDisabled.REASON_*} constants, or another
+     *               value mutually understood by transmitter and receiver
+     */
+    public SsfSecurityEventToken generateAccountDisabledEvent(Event userEvent, AdminEvent adminEvent, StreamConfig stream, String reason) {
+        try {
+            String userId = userEvent.getUserId();
+
+            SsfSecurityEventToken eventToken = newSecurityEventToken(stream);
+            eventToken.setTxn(UUID.randomUUID().toString());
+            eventToken.setSubjectId(composeUserSubject(eventToken, userId, stream));
+
+            RiscAccountDisabled accountDisabledEvent = new RiscAccountDisabled();
+            accountDisabledEvent.setReason(reason);
+            accountDisabledEvent.setEventTimestamp(Time.currentTime());
+            applyInitiatingEntity(adminEvent, accountDisabledEvent, InitiatingEntity.POLICY);
+
+            Map<String, Object> events = new HashMap<>();
+            events.put(RiscAccountDisabled.TYPE, accountDisabledEvent);
+            eventToken.setEvents(events);
+
+            return eventToken;
+        } catch (Exception e) {
+            log.error("Error generating account disabled event", e);
+            return null;
+        }
+    }
+
+    /**
+     * Generates a RISC account-enabled event.
+     *
+     * @param userEvent the (possibly synthetic — see {@link #generateAccountStateChangeEventForAdminAction})
+     *                  user event carrying the affected user id
+     * @param adminEvent the admin event that triggered the re-activation, or {@code null} for
+     *                   native triggers that aren't admin-initiated. No such trigger exists yet
+     *                   (only the admin path calls this today), but a non-admin re-activation
+     *                   would be an automated/platform action rather than the user's own, so it
+     *                   is labeled {@link InitiatingEntity#SYSTEM} rather than
+     *                   {@link InitiatingEntity#USER} — update this if a future caller needs a
+     *                   more specific value.
+     * @param stream the receiving stream
+     */
+    public SsfSecurityEventToken generateAccountEnabledEvent(Event userEvent, AdminEvent adminEvent, StreamConfig stream) {
+        try {
+            String userId = userEvent.getUserId();
+
+            SsfSecurityEventToken eventToken = newSecurityEventToken(stream);
+            eventToken.setTxn(UUID.randomUUID().toString());
+            eventToken.setSubjectId(composeUserSubject(eventToken, userId, stream));
+
+            RiscAccountEnabled accountEnabledEvent = new RiscAccountEnabled();
+            accountEnabledEvent.setEventTimestamp(Time.currentTime());
+            applyInitiatingEntity(adminEvent, accountEnabledEvent, InitiatingEntity.SYSTEM);
+
+            Map<String, Object> events = new HashMap<>();
+            events.put(RiscAccountEnabled.TYPE, accountEnabledEvent);
+            eventToken.setEvents(events);
+
+            return eventToken;
+        } catch (Exception e) {
+            log.error("Error generating account enabled event", e);
+            return null;
+        }
+    }
+
     protected void applyCustomAttributes(Event userEvent, AdminEvent adminEvent, CaepCredentialChange credentialChangeEvent) {
         // Keycloak user events aren't required to carry a details map —
         // RESET_PASSWORD in particular doesn't populate it. Skip the
@@ -321,12 +406,25 @@ public class SecurityEventTokenMapper {
         credentialChangeEvent.setAttributeValue(KC_CREDENTIAL_USER_LABEL, kcUserLabel);
     }
 
-    protected void applyInitiatingEntity(Event userEvent, AdminEvent adminEvent, CaepEvent caepEvent) {
+    protected void applyInitiatingEntity(Event userEvent, AdminEvent adminEvent, InitiatingEntityAware ssfEvent) {
         if (adminEvent != null) {
-            caepEvent.setInitiatingEntity(InitiatingEntity.ADMIN);
+            ssfEvent.setInitiatingEntity(InitiatingEntity.ADMIN);
         } else {
-            caepEvent.setInitiatingEntity(InitiatingEntity.USER);
+            ssfEvent.setInitiatingEntity(InitiatingEntity.USER);
         }
+    }
+
+    /**
+     * Variant of {@link #applyInitiatingEntity(Event, AdminEvent, InitiatingEntityAware)} for
+     * callers where "not admin-initiated" does not mean "user-initiated" —
+     * e.g. brute-force lockout is Keycloak's own policy engine acting, not
+     * an end-user choice, so defaulting to {@link InitiatingEntity#USER}
+     * would misrepresent it to receivers. {@code nonAdminEntity} lets the
+     * caller supply the correct value ({@link InitiatingEntity#POLICY} /
+     * {@link InitiatingEntity#SYSTEM}) for its specific non-admin trigger(s).
+     */
+    protected void applyInitiatingEntity(AdminEvent adminEvent, InitiatingEntityAware ssfEvent, InitiatingEntity nonAdminEntity) {
+        ssfEvent.setInitiatingEntity(adminEvent != null ? InitiatingEntity.ADMIN : nonAdminEntity);
     }
 
     protected String narrowCaepCredentialType(String credentialType) {
@@ -601,6 +699,7 @@ public class SecurityEventTokenMapper {
             case UPDATE_CREDENTIAL,
                  REMOVE_CREDENTIAL,
                  RESET_PASSWORD -> !shouldIgnoreCredentialChange(event);
+            case USER_DISABLED_BY_PERMANENT_LOCKOUT -> true;
             default -> false;
         };
     }
@@ -608,10 +707,12 @@ public class SecurityEventTokenMapper {
     /**
      * Cheap predicate that returns {@code true} iff
      * {@link #toSecurityEventToken(AdminEvent, StreamConfig)} would produce a
-     * non-null SET for {@code adminEvent}. Currently the only mapped
-     * admin operation is the "log out all user sessions" path
-     * ({@code users/{userId}/logout}); everything else returns null and
-     * should short-circuit before any stream lookup happens.
+     * non-null SET for {@code adminEvent} — the admin paths mapped are
+     * "log out all user sessions" ({@code users/{userId}/logout}),
+     * admin-initiated password reset / credential management, and an
+     * enable/disable transition on the generic user update endpoint (see
+     * {@link #isEnabledStateChangeAdminEvent}); everything else returns
+     * null and should short-circuit before any stream lookup happens.
      */
     public boolean canConvert(AdminEvent adminEvent) {
         if (adminEvent == null) {
@@ -631,13 +732,41 @@ public class SecurityEventTokenMapper {
             }
         }
 
-        return false;
+        return isEnabledStateChangeAdminEvent(adminEvent);
     }
 
     protected List<Pattern> supportedAdminPathPatters() {
         return List.of(USER_LOGGED_OUT_BY_ADMIN_PATH_PATTERN,
                 USER_RESET_PASSWORD_BY_ADMIN_PATH_PATTERN,
                 USER_CREDENTIALS_CHANGED_BY_ADMIN_PATH_PATTERN);
+    }
+
+    /**
+     * True when {@code adminEvent} is a generic admin "update user" event
+     * (bare {@code users/{id}}, {@code OperationType.UPDATE}) that
+     * specifically flipped the {@code enabled} flag — i.e. the admin
+     * resource attached the {@link Details#PREVIOUS_ENABLED} /
+     * {@link Details#UPDATED_ENABLED} details with two different values.
+     * The bare update path is not in
+     * {@link #supportedAdminPathPatters()} because it fires for every user
+     * profile change, not just enable/disable — this predicate is the extra
+     * gate that narrows it down to the one transition RISC cares about.
+     */
+    protected boolean isEnabledStateChangeAdminEvent(AdminEvent adminEvent) {
+        if (adminEvent.getOperationType() != OperationType.UPDATE) {
+            return false;
+        }
+        String path = adminEvent.getResourcePath();
+        if (path == null || !USER_UPDATED_BY_ADMIN_PATH_PATTERN.matcher(path).matches()) {
+            return false;
+        }
+        Map<String, String> details = adminEvent.getDetails();
+        if (details == null) {
+            return false;
+        }
+        String previousEnabled = details.get(Details.PREVIOUS_ENABLED);
+        String updatedEnabled = details.get(Details.UPDATED_ENABLED);
+        return previousEnabled != null && updatedEnabled != null && !previousEnabled.equals(updatedEnabled);
     }
 
     protected boolean shouldIgnoreEvent(Event event) {
@@ -705,6 +834,10 @@ public class SecurityEventTokenMapper {
                 yield generateCredentialChangeEvent(event, adminEvent, stream,
                         CaepCredentialChange.ChangeType.UPDATE, "password");
             }
+
+            case USER_DISABLED_BY_PERMANENT_LOCKOUT ->
+                    generateAccountDisabledEvent(event, adminEvent, stream, RiscAccountDisabled.REASON_BRUTE_FORCE);
+
             // Add more event mappings here as needed.
             // Deliberately NOT mapped: UPDATE_PASSWORD / UPDATE_TOTP /
             // REMOVE_TOTP — these are deprecated event types Keycloak
@@ -769,7 +902,31 @@ public class SecurityEventTokenMapper {
             return generateCredentialChangeEventForAdminAction(userId, adminEvent, stream, changeType, credentialId, "credential_management");
         }
 
+        if (isEnabledStateChangeAdminEvent(adminEvent)) {
+            boolean nowEnabled = Boolean.parseBoolean(adminEvent.getDetails().get(Details.UPDATED_ENABLED));
+            return generateAccountStateChangeEventForAdminAction(userId, adminEvent, stream, nowEnabled);
+        }
+
         return null;
+    }
+
+    /**
+     * Builds a synthetic {@link Event} carrying just the user id — mirrors
+     * {@link #generateLogoutEventForAdminLogoutAllUserSessions} /
+     * {@link #generateCredentialChangeEventForAdminAction} — so the admin
+     * enable/disable path can reuse {@link #generateAccountDisabledEvent} /
+     * {@link #generateAccountEnabledEvent}, whose signature is shared with
+     * the natively-triggered (non-admin) paths.
+     */
+    protected SsfSecurityEventToken generateAccountStateChangeEventForAdminAction(String userId, AdminEvent adminEvent, StreamConfig stream, boolean nowEnabled) {
+
+        Event event = new Event();
+        event.setType(EventType.UPDATE_PROFILE);
+        event.setUserId(userId);
+
+        return nowEnabled
+                ? generateAccountEnabledEvent(event, adminEvent, stream)
+                : generateAccountDisabledEvent(event, adminEvent, stream, RiscAccountDisabled.REASON_ADMIN);
     }
 
     protected SsfSecurityEventToken generateCredentialChangeEventForAdminAction(String userId,
