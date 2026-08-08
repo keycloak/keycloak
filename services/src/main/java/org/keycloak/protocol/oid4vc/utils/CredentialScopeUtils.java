@@ -4,7 +4,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.models.ClientModel;
@@ -70,25 +72,46 @@ public class CredentialScopeUtils {
         return !credScopes.isEmpty() ? credScopes.get(0) : null;
     }
 
-    /**
+/**
      * Get the list of credential scopes associated by the given and requested by the given authorization request
      */
     public static List<CredentialScopeModel> getCredentialScopesForAuthorization(ClientModel client, AuthorizationEndpointRequest request) {
+        if (client == null || request == null) {
+            return List.of();
+        }
 
         List<String> requestScopes = Optional.ofNullable(request.getScope())
                 .map(it -> it.split("\\s"))
                 .map(Arrays::asList)
                 .orElse(List.of());
 
-        // Get the list of requested credential scopes that are associated with this client
-        //
-        Map<String, ClientScopeModel> clientScopes = client.getClientScopes(false);
-        List<CredentialScopeModel> credScopes = requestScopes.stream()
-                .filter(clientScopes::containsKey)
-                .map(clientScopes::get)
-                .filter(it -> OID4VC_PROTOCOL.equals(it.getProtocol()))
-                .map(CredentialScopeModel::new)
-                .toList();
+        // Derive realm directly from the client model
+        RealmModel realm = client.getRealm();
+
+        // Combine client scopes (default & optional) with realm optional client scopes
+        // Note: getDefaultClientScopesStream(false) retrieves Realm Optional Client Scopes
+        Map<String, ClientScopeModel> clientScopes = Stream.of(
+                        client.getClientScopes(true).values().stream(),
+                        client.getClientScopes(false).values().stream(),
+                        realm.getDefaultClientScopesStream(false)
+                )
+                .flatMap(Function.identity())
+                .collect(Collectors.toMap(
+                        ClientScopeModel::getName,
+                        Function.identity(),
+                        (existing, replacement) -> existing // Preserve client-level override priority
+                ));
+
+        List<CredentialScopeModel> credScopes = new ArrayList<>();
+        for (String scopeName : requestScopes) {
+            ClientScopeModel scopeModel = clientScopes.get(scopeName);
+            if (scopeModel != null) {
+                CredentialScopeModel credModel = parseCredentialScopeModel(scopeModel);
+                if (credModel != null) {
+                    credScopes.add(credModel);
+                }
+            }
+        }
 
         return credScopes;
     }

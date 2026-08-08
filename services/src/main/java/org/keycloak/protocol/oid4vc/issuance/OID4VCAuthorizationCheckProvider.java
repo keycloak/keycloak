@@ -39,7 +39,7 @@ public class OID4VCAuthorizationCheckProvider implements AuthorizationEndpointCh
 
         // Get the list of requested credential scopes that are associated with this client
         //
-        List<CredentialScopeModel> credScopes = CredentialScopeUtils.getCredentialScopesForAuthorization(client, request);
+        List<CredentialScopeModel> credScopes = CredentialScopeUtils.getCredentialScopesForAuthorization(session, client, request);
 
         // Proceed when there are requested credential scopes
         //
