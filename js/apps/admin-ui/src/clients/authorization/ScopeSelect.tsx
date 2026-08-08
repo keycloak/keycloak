@@ -5,8 +5,8 @@ import {
   useFetch,
 } from "@keycloak/keycloak-ui-shared";
 import { SelectOption } from "@patternfly/react-core";
-import { useRef, useState } from "react";
-import { Controller, useFormContext } from "react-hook-form";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 
@@ -27,7 +27,6 @@ export const ScopeSelect = ({
 
   const {
     control,
-    getValues,
     setValue,
     formState: { errors },
   } = useFormContext();
@@ -38,9 +37,20 @@ export const ScopeSelect = ({
   );
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
-  const firstUpdate = useRef(true);
+  const scopesById = useRef(new Map<string, ScopeRepresentation>());
+  const previousResourceId = useRef(resourceId);
 
-  const values: string[] | undefined = getValues("scopes");
+  // Avoid passing a defaultValue to useWatch, otherwise it can mask the form value during initialization.
+  const watchedValues = useWatch({ control, name: "scopes" });
+  const values: string[] = useMemo(
+    () => watchedValues ?? (preSelected ? [preSelected] : []),
+    [watchedValues, preSelected],
+  );
+
+  const cacheScopes = (scopes: ScopeRepresentation[]) =>
+    scopes.forEach(
+      (scope) => scope.id && scopesById.current.set(scope.id, scope),
+    );
 
   const toSelectOptions = (scopes: ScopeRepresentation[]) =>
     scopes.map((scope) => (
@@ -49,35 +59,62 @@ export const ScopeSelect = ({
       </SelectOption>
     ));
 
+  // Changing the resource invalidates the current scope selection.
+  useEffect(() => {
+    if (previousResourceId.current === resourceId) {
+        return;
+    }
+
+    previousResourceId.current = resourceId;
+
+    if (resourceId) {
+        setValue("scopes", []);
+    }
+  }, [resourceId]);
+
   useFetch(
     async (): Promise<ScopeRepresentation[]> => {
       if (!resourceId) {
         return adminClient.clients.listAllScopes(
           Object.assign(
-            { id: clientId, deep: false },
+            { id: clientId, deep: false, max: 1000 },
             search === "" ? null : { name: search },
           ),
         );
       }
-
-      if (resourceId && !firstUpdate.current) {
-        setValue("scopes", []);
-      }
-
-      firstUpdate.current = false;
       return adminClient.clients.listScopesByResource({
         id: clientId,
         resourceName: resourceId,
       });
     },
     (scopes) => {
+      cacheScopes(scopes);
       setScopes(scopes);
-      if (!search)
-        setSelectedScopes(
-          scopes.filter((s: ScopeRepresentation) => values?.includes(s.id!)),
-        );
     },
     [resourceId, search],
+  );
+
+  // Selected scopes may not exist in the currently loaded page, so resolve them independently by id.
+  useFetch(
+    async (): Promise<ScopeRepresentation[]> => {
+        const unknown = values.filter((id) => !scopesById.current.has(id));
+
+        const fetched = await Promise.all(
+            unknown.map((scopeId) =>
+                adminClient.clients
+                    .getAuthorizationScope({ id: clientId, scopeId })
+                    .catch(() => undefined),
+            ),
+        );
+
+        cacheScopes(fetched.filter((scope) => scope !== undefined));
+
+        return values
+            .map((id) => scopesById.current.get(id))
+            .filter((scope) => scope !== undefined);
+    },
+    setSelectedScopes,
+    [values],
   );
 
   return (
@@ -109,6 +146,7 @@ export const ScopeSelect = ({
               ? selectedScopes.filter((p) => p.id !== option.id)
               : [...selectedScopes, option];
 
+            cacheScopes(changedValue);
             field.onChange(changedValue.map((s) => s.id));
             setSelectedScopes(changedValue);
             setSearch("");
