@@ -30,6 +30,10 @@ When calling {project_name}'s experimental AuthZEN endpoints, the caller now nee
 
 The Admin REST API endpoints for listing client sessions (`GET /admin/realms/\{realm}/clients/\{id}/user-sessions` and `GET /admin/realms/\{realm}/clients/\{id}/offline-sessions`) now filter out sessions belonging to users that the caller does not have permission to view. Previously, any caller with the `view-clients` role could see all user sessions for a client, potentially exposing user identities to callers without the `view-users` role. After upgrading, callers without `view-users` permission will see fewer results from these endpoints.
 
+=== `show-config` will mask all SPI option values
+
+The `show-config` command will mask all SPI option values. The command is not currently aware of provider factory configuration property metadata, so it cannot determine if a property is marked as `isSecret`.
+
 === Redesigned identity provider buttons on the login page
 
 The social identity provider section on the login page has been redesigned with updated icons and layout.
