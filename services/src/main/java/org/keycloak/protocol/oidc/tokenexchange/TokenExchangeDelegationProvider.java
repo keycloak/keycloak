@@ -168,6 +168,20 @@ public class TokenExchangeDelegationProvider extends StandardTokenExchangeProvid
             event.error(Errors.INVALID_TOKEN);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Actor user is not allowed by the may_act claim inside the subject_token", Response.Status.BAD_REQUEST);
         }
+
+        Object clientIdObject = mayActMap.get(OAuth2Constants.CLIENT_ID);
+        if (clientIdObject instanceof String clientId) {
+            if (!clientId.equals(actorAccessToken.getIssuedFor())) {
+                event.detail(Details.REASON, "Actor token client does not match the client_id in the may_act claim");
+                event.error(Errors.INVALID_TOKEN);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Actor token client does not match the client_id in the may_act claim", Response.Status.BAD_REQUEST);
+            }
+            if (!clientId.equals(client.getClientId())) {
+                event.detail(Details.REASON, "Requesting client does not match the client_id in the may_act claim");
+                event.error(Errors.INVALID_TOKEN);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Requesting client does not match the client_id in the may_act claim", Response.Status.BAD_REQUEST);
+            }
+        }
     }
 
     @Override
