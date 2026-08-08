@@ -139,13 +139,17 @@ public class RoleMappingDeleteResource {
         auth.roles().requireManage(role);
 
         final RoleModel parentRole = role;
-        deleteRoleMappings(roles, compositeRole -> parentRole.removeCompositeRole(compositeRole), ResourceType.REALM_ROLE, ResourceType.CLIENT_ROLE);
+        List<RoleRepresentation> reps = deleteRoleMappings(roles, compositeRole -> parentRole.removeCompositeRole(compositeRole));
+
+        adminEvent.operation(OperationType.DELETE)
+                .resourcePath(session.getContext().getUri())
+                .resource(parentRole.isClientRole() ? ResourceType.CLIENT_ROLE : ResourceType.REALM_ROLE)
+                .representation(reps)
+                .success();
     }
 
-    private void deleteRoleMappings(List<RoleDeleteRequest> roles, java.util.function.Consumer<RoleModel> deleteAction, ResourceType realmResourceType, ResourceType clientResourceType) {
-        List<RoleRepresentation> realmRoles = new ArrayList<>();
-        java.util.Map<String, List<RoleRepresentation>> clientRoles = new java.util.HashMap<>();
-
+    private List<RoleRepresentation> deleteRoleMappings(List<RoleDeleteRequest> roles, java.util.function.Consumer<RoleModel> deleteAction) {
+        List<RoleRepresentation> reps = new ArrayList<>();
         for (RoleDeleteRequest roleRequest : roles) {
             RoleModel role = this.realm.getRoleById(roleRequest.getRoleId());
             if (role == null) {
@@ -154,12 +158,23 @@ public class RoleMappingDeleteResource {
             if (role != null) {
                 auth.roles().requireMapRole(role);
                 deleteAction.accept(role);
-                RoleRepresentation rep = ModelToRepresentation.toBriefRepresentation(role);
-                if (role.isClientRole()) {
-                    clientRoles.computeIfAbsent(role.getContainerId(), k -> new ArrayList<>()).add(rep);
-                } else {
-                    realmRoles.add(rep);
-                }
+                reps.add(ModelToRepresentation.toBriefRepresentation(role));
+            }
+        }
+        return reps;
+    }
+
+    private void deleteRoleMappings(List<RoleDeleteRequest> roles, java.util.function.Consumer<RoleModel> deleteAction, ResourceType realmResourceType, ResourceType clientResourceType) {
+        List<RoleRepresentation> reps = deleteRoleMappings(roles, deleteAction);
+
+        List<RoleRepresentation> realmRoles = new ArrayList<>();
+        java.util.Map<String, List<RoleRepresentation>> clientRoles = new java.util.HashMap<>();
+
+        for (RoleRepresentation rep : reps) {
+            if (Boolean.TRUE.equals(rep.getClientRole())) {
+                clientRoles.computeIfAbsent(rep.getContainerId(), k -> new ArrayList<>()).add(rep);
+            } else {
+                realmRoles.add(rep);
             }
         }
 
