@@ -94,6 +94,7 @@ public interface Details {
     String IMPERSONATOR_ID = "impersonator_id";
 
     String CLIENT_AUTH_METHOD = "client_auth_method";
+    String CLIENT_AUTH_DETAIL = "client_auth_detail";
 
     String SIGNATURE_REQUIRED = "signature_required";
     String SIGNATURE_ALGORITHM = "signature_algorithm";
