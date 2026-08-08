@@ -502,6 +502,11 @@ public class FilterTest extends AbstractScimTest {
         filter = ResourceFilter.filter().co("emails", "keycloak").build();
         response = client.users().getAll(filter);
         assertThat(response.getTotalResults(), is(2));
+
+        // using a mixed case email
+        filter = ResourceFilter.filter().eq("emails.value", "ALICE@KEYCLOAK.org").build();
+        response = client.users().getAll(filter);
+        assertSingleResult(response, alice.getUserName());
     }
 
     @Test
