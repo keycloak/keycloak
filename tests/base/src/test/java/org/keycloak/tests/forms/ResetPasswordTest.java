@@ -6,11 +6,13 @@ import jakarta.mail.internet.MimeMessage;
 
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.services.validation.Validation;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -206,6 +208,41 @@ public class ResetPasswordTest {
             .userId(user.getId());
 
         assertTrue(driver.page().getPageSource().contains("Happy days"));
+    }
+
+    @Test
+    public void resetPasswordMaxLengthUsername() {
+
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
+        loginPage.resetPassword();
+        resetPasswordPage.assertCurrent();
+        resetPasswordPage.changePassword("a".repeat(Validation.MAX_USERNAME_LENGTH + 1));
+        resetPasswordPage.assertCurrent();
+
+        EventAssertion.assertError(events.poll())
+                .type(EventType.RESET_PASSWORD_ERROR)
+                .userId(null)
+                .sessionId(null)
+                .error(Errors.USER_NOT_FOUND)
+                .withoutDetails(Details.USERNAME);
+    }
+
+    @Test
+    public void resetPasswordExactMaxLengthUsername() {
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
+        loginPage.resetPassword();
+        resetPasswordPage.assertCurrent();
+        resetPasswordPage.changePassword("a".repeat(Validation.MAX_USERNAME_LENGTH));
+        loginPage.assertCurrent();
+
+        EventAssertion.assertError(events.poll())
+                .type(EventType.RESET_PASSWORD_ERROR)
+                .userId(null)
+                .sessionId(null)
+                .error(Errors.USER_NOT_FOUND)
+                .details(Details.USERNAME, "a".repeat(Validation.MAX_USERNAME_LENGTH));
     }
 
     static class ConsumerRealmConfig implements RealmConfig {
