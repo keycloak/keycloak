@@ -7,6 +7,9 @@ import java.util.stream.Stream;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.Model;
+import org.keycloak.scim.model.resourcetype.definition.ScimResourceTypeDefinitions;
+import org.keycloak.scim.model.resourcetype.definition.ScimResourceTypeRepresentation;
+import org.keycloak.scim.model.resourcetype.definition.ScimResourceTypeStore;
 import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
@@ -56,12 +59,30 @@ public class ResourceTypeProvider implements ScimResourceTypeProvider<ResourceTy
     @Override
     public Stream<ResourceType> getAll(SearchRequest searchRequest) {
         if (hasDiscoveryEndpointPermission(session)) {
-            return session.getKeycloakSessionFactory().getProviderFactoriesStream(ScimResourceTypeProvider.class)
+            Stream<ResourceType> builtIn = session.getKeycloakSessionFactory().getProviderFactoriesStream(ScimResourceTypeProvider.class)
                     .map(ScimResourceTypeProviderFactory.class::cast)
                     .map(this::toRepresentation)
                     .filter(Objects::nonNull);
+
+            Stream<ResourceType> custom = new ScimResourceTypeStore(session).getCustomDefinitions()
+                    .map(this::toRepresentation);
+
+            return Stream.concat(builtIn, custom);
         }
         throw new ForbiddenException();
+    }
+
+    private ResourceType toRepresentation(ScimResourceTypeRepresentation definition) {
+        ResourceType representation = new ResourceType();
+
+        representation.setId(definition.getName());
+        representation.setName(definition.getName());
+        representation.setDescription(definition.getDescription() == null ? definition.getName() : definition.getDescription());
+        representation.setEndpoint(ScimResourceTypeDefinitions.resolveEndpoint(definition));
+        representation.setSchema(ScimResourceTypeDefinitions.resolveSchema(definition));
+        representation.setSchemaExtensions(new ArrayList<>());
+
+        return representation;
     }
 
     @Override
