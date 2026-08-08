@@ -108,13 +108,14 @@ public class OrganizationRoleMapperUtilsTest {
         OrganizationRoleClaims claims = OrganizationRoleClaims.from(context.organization, roles);
         Map<String, Object> organizationClaim = new LinkedHashMap<>();
         organizationClaim.put("groups", List.of("/engineering"));
+        organizationClaim.put(OrganizationRoleMapperUtils.ROLES, List.of("existing-organization"));
         organizationClaim.put(OrganizationRoleMapperUtils.REALM_ACCESS, Map.of(OrganizationRoleMapperUtils.ROLES, "existing-realm"));
         organizationClaim.put(OrganizationRoleMapperUtils.RESOURCE_ACCESS, Map.of("client", Map.of(OrganizationRoleMapperUtils.ROLES, List.of("existing-client"))));
 
         OrganizationRoleMapperUtils.addToOrganizationClaim(organizationClaim, claims);
 
         assertEquals(List.of("/engineering"), organizationClaim.get("groups"));
-        assertEquals(List.of("admin"), organizationClaim.get(OrganizationRoleMapperUtils.ORGANIZATION_ROLES));
+        assertEquals(List.of("admin", "existing-organization"), organizationClaim.get(OrganizationRoleMapperUtils.ROLES));
         assertEquals(Map.of(OrganizationRoleMapperUtils.ROLES, List.of("existing-realm", "realm")), organizationClaim.get(OrganizationRoleMapperUtils.REALM_ACCESS));
         assertEquals(Map.of("client", Map.of(OrganizationRoleMapperUtils.ROLES, List.of("client-role", "existing-client"))), organizationClaim.get(OrganizationRoleMapperUtils.RESOURCE_ACCESS));
     }
@@ -128,7 +129,7 @@ public class OrganizationRoleMapperUtilsTest {
 
         OrganizationRoleMapperUtils.addToOrganizationClaim(organizationClaim, claims);
 
-        assertEquals(List.of("admin"), organizationClaim.get(OrganizationRoleMapperUtils.ORGANIZATION_ROLES));
+        assertEquals(List.of("admin"), organizationClaim.get(OrganizationRoleMapperUtils.ROLES));
         assertTrue(!organizationClaim.containsKey(OrganizationRoleMapperUtils.REALM_ACCESS));
         assertTrue(!organizationClaim.containsKey(OrganizationRoleMapperUtils.RESOURCE_ACCESS));
     }

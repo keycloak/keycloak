@@ -78,7 +78,7 @@ public class OrganizationRoleMembershipMapper extends AbstractSAMLProtocolMapper
         }
 
         String prefix = "organization." + organization.getAlias() + ".";
-        addAttribute(attributeStatement, prefix + OrganizationRoleMapperUtils.ORGANIZATION_ROLES, "Organization Roles", claims.getOrganizationRoles());
+        addAttribute(attributeStatement, prefix + OrganizationRoleMapperUtils.ROLES, "Organization Roles", claims.getOrganizationRoles());
         addAttribute(attributeStatement, prefix + OrganizationRoleMapperUtils.REALM_ACCESS + "." + OrganizationRoleMapperUtils.ROLES, "Organization Realm Roles", claims.getRealmRoles());
         claims.getClientRoles().forEach((clientId, roles) -> addAttribute(attributeStatement,
                 prefix + OrganizationRoleMapperUtils.RESOURCE_ACCESS + "." + clientId + "." + OrganizationRoleMapperUtils.ROLES,

@@ -133,7 +133,8 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
                     clientRole.clientId(), clientRole.role().getName());
 
             Map<String, Object> otherData = organizationData(claims, OAuth2Constants.ORGANIZATION, "other");
-            List<String> otherRoles = (List<String>) otherData.get(OrganizationRoleMapperUtils.ORGANIZATION_ROLES);
+            List<String> otherRoles = (List<String>) otherData.get(OrganizationRoleMapperUtils.ROLES);
+            assertThat(otherData, not(hasKey("organization_roles")));
             assertThat(otherRoles, hasItem("other-admin"));
             assertThat(otherRoles, not(hasItem("acme-admin")));
             assertThat(otherRoles, not(hasItem("acme-auditor")));
@@ -181,7 +182,8 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
         AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
         Map<String, Object> organizationData = organizationData(accessToken.getOtherClaims(), claimName, "acme");
 
-        List<String> organizationRoles = (List<String>) organizationData.get(OrganizationRoleMapperUtils.ORGANIZATION_ROLES);
+        List<String> organizationRoles = (List<String>) organizationData.get(OrganizationRoleMapperUtils.ROLES);
+        assertThat(organizationData, not(hasKey("organization_roles")));
         assertThat(organizationRoles, hasItem("member"));
         assertThat(accessToken.getOtherClaims(), not(hasKey(OAuth2Constants.ORGANIZATION)));
         if (claimName.contains(".")) {
@@ -290,7 +292,8 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
     private static void assertRoleClaims(Map<String, Object> claims, String claimName, String organizationAlias,
             String directRole, String organizationComposite, String realmComposite, String clientId, String clientComposite) {
         Map<String, Object> data = organizationData(claims, claimName, organizationAlias);
-        List<String> organizationRoles = (List<String>) data.get(OrganizationRoleMapperUtils.ORGANIZATION_ROLES);
+        List<String> organizationRoles = (List<String>) data.get(OrganizationRoleMapperUtils.ROLES);
+        assertThat(data, not(hasKey("organization_roles")));
         assertThat(organizationRoles, hasItem(directRole));
         assertThat(organizationRoles, hasItem(organizationComposite));
 

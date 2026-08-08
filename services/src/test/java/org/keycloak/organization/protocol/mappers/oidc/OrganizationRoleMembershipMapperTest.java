@@ -80,7 +80,7 @@ public class OrganizationRoleMembershipMapperTest {
 
         Map<String, Object> organization = (Map<String, Object>) context.token.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         Map<String, Object> acme = (Map<String, Object>) organization.get("acme");
-        assertEquals(List.of("admin", "member"), acme.get(OrganizationRoleMapperUtils.ORGANIZATION_ROLES));
+        assertEquals(List.of("admin", "member"), acme.get(OrganizationRoleMapperUtils.ROLES));
         assertEquals(Map.of(OrganizationRoleMapperUtils.ROLES, List.of("realm-admin")), acme.get(OrganizationRoleMapperUtils.REALM_ACCESS));
         assertEquals(Map.of("service", Map.of(OrganizationRoleMapperUtils.ROLES, List.of("service-admin"))), acme.get(OrganizationRoleMapperUtils.RESOURCE_ACCESS));
     }
@@ -121,8 +121,8 @@ public class OrganizationRoleMembershipMapperTest {
         Map<String, Object> organization = (Map<String, Object>) context.token.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         Map<String, Object> acme = (Map<String, Object>) organization.get("acme");
         Map<String, Object> other = (Map<String, Object>) organization.get("other");
-        assertEquals(List.of("admin", "member"), acme.get(OrganizationRoleMapperUtils.ORGANIZATION_ROLES));
-        assertEquals(List.of("viewer"), other.get(OrganizationRoleMapperUtils.ORGANIZATION_ROLES));
+        assertEquals(List.of("admin", "member"), acme.get(OrganizationRoleMapperUtils.ROLES));
+        assertEquals(List.of("viewer"), other.get(OrganizationRoleMapperUtils.ROLES));
         assertFalse(other.containsKey(OrganizationRoleMapperUtils.REALM_ACCESS));
         assertFalse(other.containsKey(OrganizationRoleMapperUtils.RESOURCE_ACCESS));
     }
@@ -156,7 +156,7 @@ public class OrganizationRoleMembershipMapperTest {
         new OrganizationRoleMembershipMapper().setClaim(context.token, context.roleMapper, context.userSession, context.session, context.clientSessionContext);
         organization = (Map<String, Object>) context.token.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         Map<String, Object> acme = (Map<String, Object>) organization.get("acme");
-        assertEquals(List.of("admin", "member"), acme.get(OrganizationRoleMapperUtils.ORGANIZATION_ROLES));
+        assertEquals(List.of("admin", "member"), acme.get(OrganizationRoleMapperUtils.ROLES));
     }
 
     @Test

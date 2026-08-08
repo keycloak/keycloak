@@ -72,7 +72,7 @@ public class OrganizationRoleMembershipMapperTest {
                 context.session, context.userSession, null);
 
         Map<String, List<Object>> attributes = attributes(statement);
-        assertEquals(List.of("admin", "member"), attributes.get("organization.acme.organization_roles"));
+        assertEquals(List.of("admin", "member"), attributes.get("organization.acme.roles"));
         assertEquals(List.of("realm-admin"), attributes.get("organization.acme.realm_access.roles"));
         assertEquals(List.of("service-admin"), attributes.get("organization.acme.resource_access.service.roles"));
     }
@@ -87,7 +87,7 @@ public class OrganizationRoleMembershipMapperTest {
                 context.session, context.userSession, null);
 
         Map<String, List<Object>> attributes = attributes(statement);
-        assertEquals(List.of("admin"), attributes.get("organization.acme.organization_roles"));
+        assertEquals(List.of("admin"), attributes.get("organization.acme.roles"));
         assertFalse(attributes.containsKey("organization.acme.realm_access.roles"));
         assertFalse(attributes.containsKey("organization.acme.resource_access.service.roles"));
     }

@@ -34,7 +34,6 @@ import org.keycloak.models.utils.RoleUtils;
 
 public final class OrganizationRoleMapperUtils {
 
-    public static final String ORGANIZATION_ROLES = "organization_roles";
     public static final String REALM_ACCESS = "realm_access";
     public static final String RESOURCE_ACCESS = "resource_access";
     public static final String ROLES = "roles";
@@ -67,7 +66,7 @@ public final class OrganizationRoleMapperUtils {
         }
 
         if (!claims.getOrganizationRoles().isEmpty()) {
-            organizationClaim.put(ORGANIZATION_ROLES, claims.getOrganizationRoles());
+            mergeRoles(organizationClaim, ROLES, claims.getOrganizationRoles());
         }
 
         mergeRoles(organizationClaim, REALM_ACCESS, claims.getRealmRoles());
