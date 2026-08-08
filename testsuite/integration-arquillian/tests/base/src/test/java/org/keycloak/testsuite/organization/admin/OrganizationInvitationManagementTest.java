@@ -154,7 +154,7 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
         
         // Resend invitation
         try (Response response = organization.invitations().resend(invitationId)) {
-            assertThat(response.getStatus(), equalTo(204));
+            assertThat(response.getStatus(), equalTo(201));
         }
         
         // Verify invitation is still pending
@@ -519,7 +519,7 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
     
     private void sendInvitationToOrganization(OrganizationResource org, String email, String firstName, String lastName) {
         try (Response response = org.members().inviteUser(email, firstName, lastName)) {
-            assertThat(response.getStatus(), equalTo(204));
+            assertThat(response.getStatus(), equalTo(201));
         }
     }
 }
