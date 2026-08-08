@@ -17,8 +17,9 @@ import org.keycloak.ssf.event.SsfEventValidationException;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.metadata.DefaultSubjects;
 import org.keycloak.ssf.subject.ComplexSubjectId;
-import org.keycloak.ssf.subject.OpaqueSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
+import org.keycloak.ssf.subject.SubjectResolution;
+import org.keycloak.ssf.subject.SubjectResolver;
 import org.keycloak.ssf.subject.SubjectUserLookup;
 import org.keycloak.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
@@ -168,13 +169,37 @@ public class EventEmitterService {
         }
 
         // 5. Subject resolution + subscription filter. ComplexSubjectId
-        //    can carry a user, an org (via the tenant slot), or both —
-        //    we accept any resolvable combination and apply the
-        //    receiver's notify-attribute subscription on whichever
-        //    facets resolve.
+        //    can carry a user, an org (via the tenant slot), or both.
+        //    Every facet the emitter names must resolve — the sub_id
+        //    travels verbatim in the SET, so a user or tenant facet that
+        //    doesn't match anything is a subject error, not a facet to
+        //    silently ignore: otherwise a forged facet would reach the
+        //    receiver while only the other facet was actually gated.
         EmitSubjectResolution resolved = resolveSubject(subjectId);
         if (resolved.user() == null && resolved.organization() == null) {
             return EmitEventResult.dropped(EmitEventStatus.SUBJECT_NOT_FOUND);
+        }
+        if (subjectId instanceof ComplexSubjectId complex) {
+            if (complex.getUser() != null && resolved.user() == null) {
+                return EmitEventResult.dropped(EmitEventStatus.SUBJECT_NOT_FOUND,
+                        "User facet of the complex sub_id could not be resolved");
+            }
+            if (complex.getTenant() != null && resolved.organization() == null) {
+                return EmitEventResult.dropped(EmitEventStatus.SUBJECT_NOT_FOUND,
+                        "Tenant facet of the complex sub_id could not be resolved to an organization");
+            }
+            // A user+tenant subject must be internally consistent: the
+            // user has to be a member of the named organization.
+            // Without this, any subscribed tenant could be attached to
+            // any unsubscribed user and the tenant's subscription would
+            // carry the user subject past the per-user filter
+            // (keycloak/keycloak#50812) — and the receiver would be
+            // handed a user↔tenant association Keycloak knows is false.
+            if (resolved.user() != null && resolved.organization() != null
+                    && !isUserMemberOfOrganization(resolved.user(), resolved.organization())) {
+                return EmitEventResult.dropped(EmitEventStatus.SUBJECT_MISMATCH,
+                        "User subject is not a member of the tenant organization");
+            }
         }
         // Drop early so the emitter sees a clean status without
         // paying the SET signing cost for a filtered subject.
@@ -243,10 +268,12 @@ public class EventEmitterService {
      * tenant facet drives the org-level notify subscription. For a
      * non-complex {@link SubjectId} only the user is resolved.
      *
-     * <p>Org resolution treats an {@link OpaqueSubjectId} {@code id} as
-     * the org's alias first, falling back to the org UUID. Other
-     * {@link SubjectId} formats in the tenant slot are not currently
-     * understood — they resolve to no organization.
+     * <p>Org resolution delegates to
+     * {@link SubjectResolver#resolveOrganization} so the emit path
+     * understands the same tenant formats (opaque, iss_sub,
+     * email/domain, uri) as the subject-management endpoints —
+     * mandatory since a supplied-but-unresolved tenant facet fails the
+     * whole subject.
      */
     protected EmitSubjectResolution resolveSubject(SubjectId subjectId) {
         RealmModel realm = session.getContext().getRealm();
@@ -264,20 +291,24 @@ public class EventEmitterService {
     }
 
     protected OrganizationModel resolveOrganization(SubjectId tenantFacet) {
-        if (tenantFacet == null || !Organizations.isEnabled(session)) {
+        if (tenantFacet == null) {
             return null;
         }
-        if (!(tenantFacet instanceof OpaqueSubjectId opaque) || opaque.getId() == null) {
-            return null;
+        if (SubjectResolver.resolveOrganization(session, tenantFacet)
+                instanceof SubjectResolution.Organization org) {
+            return org.organization();
         }
-        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-        // Prefer alias (matches the admin shorthand 'org-alias' convention),
-        // then fall back to UUID for emitters that prefer stable identifiers.
-        OrganizationModel org = orgProvider.getByAlias(opaque.getId());
-        if (org == null) {
-            org = orgProvider.getById(opaque.getId());
-        }
-        return org;
+        return null;
+    }
+
+    /**
+     * Membership consistency check for user+tenant complex subjects.
+     * Only called when both facets resolved, which implies the
+     * Organizations feature is enabled (org resolution short-circuits
+     * to {@code null} otherwise).
+     */
+    protected boolean isUserMemberOfOrganization(UserModel user, OrganizationModel organization) {
+        return session.getProvider(OrganizationProvider.class).isMember(organization, user);
     }
 
     protected boolean isStreamEvent(String eventTypeUri) {
@@ -292,13 +323,30 @@ public class EventEmitterService {
      * Subscription gate that mirrors the native dispatcher's
      * {@code SubjectSubscriptionFilter} but operates on a pre-resolved
      * user / org pair so the emitter can also emit org-only events.
+     * The precedence matches the native filter's
+     * {@code evaluateSubjectSubscription}:
      *
-     * <ul>
-     *     <li>{@code default_subjects=ALL}: deliver unless either the
-     *         user or the org is explicitly excluded.</li>
-     *     <li>{@code default_subjects=NONE}: deliver only when at least
-     *         one of the user / org facets is explicitly notified.</li>
-     * </ul>
+     * <ol>
+     *     <li>Per-user explicit settings win over org state and the
+     *         {@code default_subjects} fallback — an admin who clicked
+     *         "Include" or "Ignore" on a specific user expects that
+     *         decision to stick regardless of org-level subscriptions.</li>
+     *     <li>{@code default_subjects=ALL}: deliver unless an org gate
+     *         is explicitly excluded.</li>
+     *     <li>{@code default_subjects=NONE}: deliver only when an org
+     *         gate is explicitly notified.</li>
+     * </ol>
+     *
+     * <p>For a user subject the org gates scan every organization the
+     * user belongs to, exactly like the native filter's
+     * {@code getByMember} scan — honouring only the tenant the emitter
+     * named would let a caller pick one non-excluded membership to
+     * sidestep an exclusion on another. The emitter-named tenant is
+     * itself one of those memberships, because {@link #emit} has
+     * already rejected user+tenant subjects whose user is not a member
+     * of the org (keycloak/keycloak#50812). The direct
+     * {@code resolved.organization()} checks apply only to tenant-only
+     * subjects, where the org itself is the subject.
      */
     protected boolean isSubjectDispatchable(EmitSubjectResolution resolved,
                                             StreamConfig stream,
@@ -306,19 +354,42 @@ public class EventEmitterService {
         String receiverClientId = receiverClient.getClientId();
         DefaultSubjects defaultSubjects = stream.getDefaultSubjects();
 
-        if (defaultSubjects == DefaultSubjects.ALL) {
-            boolean userExcluded = resolved.user() != null
-                    && subjectInclusionResolver.isUserExcluded(session, resolved.user(), receiverClientId);
-            boolean orgExcluded = resolved.organization() != null
-                    && subjectInclusionResolver.isOrganizationExcluded(session, resolved.organization(), receiverClientId);
-            return !userExcluded && !orgExcluded;
+        if (resolved.user() != null) {
+            if (subjectInclusionResolver.isUserNotified(session, resolved.user(), receiverClientId)) {
+                return true;
+            }
+            if (subjectInclusionResolver.isUserExcluded(session, resolved.user(), receiverClientId)) {
+                return false;
+            }
+            if (defaultSubjects == DefaultSubjects.ALL) {
+                return !isAnyUserOrganizationExcluded(resolved.user(), receiverClientId);
+            }
+            return isAnyUserOrganizationNotified(resolved.user(), receiverClientId);
         }
 
-        boolean userNotified = resolved.user() != null
-                && subjectInclusionResolver.isUserNotified(session, resolved.user(), receiverClientId);
-        boolean orgNotified = resolved.organization() != null
+        if (defaultSubjects == DefaultSubjects.ALL) {
+            return resolved.organization() == null
+                    || !subjectInclusionResolver.isOrganizationExcluded(session, resolved.organization(), receiverClientId);
+        }
+
+        return resolved.organization() != null
                 && subjectInclusionResolver.isOrganizationNotified(session, resolved.organization(), receiverClientId);
-        return userNotified || orgNotified;
+    }
+
+    protected boolean isAnyUserOrganizationExcluded(UserModel user, String receiverClientId) {
+        if (!Organizations.isEnabled(session)) {
+            return false;
+        }
+        return session.getProvider(OrganizationProvider.class).getByMember(user)
+                .anyMatch(org -> subjectInclusionResolver.isOrganizationExcluded(session, org, receiverClientId));
+    }
+
+    protected boolean isAnyUserOrganizationNotified(UserModel user, String receiverClientId) {
+        if (!Organizations.isEnabled(session)) {
+            return false;
+        }
+        return session.getProvider(OrganizationProvider.class).getByMember(user)
+                .anyMatch(org -> subjectInclusionResolver.isOrganizationNotified(session, org, receiverClientId));
     }
 
     /**
