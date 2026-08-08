@@ -15,6 +15,7 @@ export enum Feature {
   DeclarativeUI = "DECLARATIVE_UI",
   Organizations = "ORGANIZATION",
   OpenId4VCI = "OID4VC_VCI",
+  OpenId4VCIMdoc = "OID4VC_VCI_MDOC",
   QuickTheme = "QUICK_THEME",
   StandardTokenExchangeV2 = "TOKEN_EXCHANGE_STANDARD_V2",
   JWTAuthorizationGrant = "JWT_AUTHORIZATION_GRANT",
