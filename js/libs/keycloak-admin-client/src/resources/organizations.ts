@@ -313,6 +313,7 @@ export class Organizations extends Resource<{ realm?: string }> {
       briefRepresentation?: boolean;
       first?: number;
       max?: number;
+      search?: string;
     },
     UserRepresentation[]
   >({

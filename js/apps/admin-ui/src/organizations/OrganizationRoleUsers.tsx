@@ -43,13 +43,14 @@ export const OrganizationRoleUsers = ({
   const canManageUser = (user: UserRepresentation) =>
     user.access?.manage ?? canMapRole;
 
-  const loader = async (first?: number, max?: number) => {
+  const loader = async (first?: number, max?: number, search?: string) => {
     try {
       return await adminClient.organizations.listRoleUsers({
         orgId: organizationId,
         roleId,
         first,
         max,
+        search,
         briefRepresentation: true,
       });
     } catch (error) {
@@ -139,6 +140,7 @@ export const OrganizationRoleUsers = ({
         key={key}
         loader={loader}
         isPaginated
+        searchPlaceholderKey="searchMembers"
         canSelectAll={canMapRole}
         onSelect={
           canMapRole

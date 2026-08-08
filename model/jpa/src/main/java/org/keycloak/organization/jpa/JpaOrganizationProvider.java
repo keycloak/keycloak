@@ -480,7 +480,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public Stream<UserModel> getRoleMembersStream(OrganizationModel organization, RoleModel role, Integer first, Integer max) {
+    public Stream<UserModel> getRoleMembersStream(OrganizationModel organization, RoleModel role, String search, Integer first, Integer max) {
         throwExceptionIfObjectIsNull(organization, "Organization");
         throwExceptionIfObjectIsNull(role, "Role");
 
@@ -498,6 +498,10 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         predicates.add(builder.equal(groupMembership.get("groupId"), group.getId()));
         predicates.add(builder.equal(roleMapping.get("roleId"), role.getId()));
         predicates.add(builder.equal(roleMapping.get("user"), userJoin));
+
+        if (search != null) {
+            predicates.add(builder.or(getSearchOptionPredicateArray(search, false, builder, userJoin)));
+        }
 
         PartialEvaluationStorageProvider storageProvider = (PartialEvaluationStorageProvider) UserStoragePrivateUtil.userLocalStorage(session);
         predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, storageProvider, getRealm(), builder, queryBuilder, userJoin));

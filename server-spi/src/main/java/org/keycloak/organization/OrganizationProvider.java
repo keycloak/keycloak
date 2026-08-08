@@ -195,12 +195,13 @@ public interface OrganizationProvider extends Provider {
      *
      * @param organization the organization
      * @param role the role
+     * @param search a String representing either a member's username, e-mail, first name, or last name
      * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
      * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
      * @return Stream of organization members with the given role. Never returns {@code null}.
      */
-    default Stream<UserModel> getRoleMembersStream(OrganizationModel organization, RoleModel role, Integer first, Integer max) {
-        Stream<UserModel> roleMembers = getMembersStream(organization, (String) null, null, null, null)
+    default Stream<UserModel> getRoleMembersStream(OrganizationModel organization, RoleModel role, String search, Integer first, Integer max) {
+        Stream<UserModel> roleMembers = getMembersStream(organization, search, false, null, null)
                 .filter(user -> user.hasRole(role));
 
         // Copied over from StreamsUtil from server-spi-private which is not available here

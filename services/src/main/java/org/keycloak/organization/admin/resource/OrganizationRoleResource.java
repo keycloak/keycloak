@@ -358,7 +358,8 @@ public class OrganizationRoleResource extends RoleResource {
             @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = UserRepresentation.class, type = SchemaType.ARRAY))),
             @APIResponse(responseCode = "403", description = "Forbidden")
     })
-    public Stream<UserRepresentation> getUsersInRole(@Parameter(description = "Boolean which defines whether brief representations are returned") @QueryParam("briefRepresentation") Boolean briefRepresentation,
+    public Stream<UserRepresentation> getUsersInRole(@Parameter(description = "A String representing either a member's username, e-mail, first name, or last name.") @QueryParam("search") String search,
+                                                     @Parameter(description = "Boolean which defines whether brief representations are returned") @QueryParam("briefRepresentation") Boolean briefRepresentation,
                                                      @Parameter(description = "First result to return") @QueryParam("first") Integer firstResult,
                                                      @Parameter(description = "Maximum number of results to return") @QueryParam("max") @DefaultValue(Constants.DEFAULT_MAX_RESULTS_STR) Integer maxResults) {
         auth.roles().requireView(role);
@@ -372,7 +373,7 @@ public class OrganizationRoleResource extends RoleResource {
         int first = firstResult == null ? 0 : firstResult;
         int max = maxResults == null ? Constants.DEFAULT_MAX_RESULTS : maxResults;
 
-        return session.getProvider(OrganizationProvider.class).getRoleMembersStream(organization, role, first, max)
+        return session.getProvider(OrganizationProvider.class).getRoleMembersStream(organization, role, search, first, max)
                 .map(user -> toUserRepresentation(user, briefRep));
     }
 

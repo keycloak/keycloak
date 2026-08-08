@@ -111,7 +111,8 @@ public interface OrganizationRoleResource {
     @GET
     @Path("users")
     @Produces(MediaType.APPLICATION_JSON)
-    List<UserRepresentation> getUserMembers(@QueryParam("briefRepresentation") Boolean briefRepresentation,
+    List<UserRepresentation> getUserMembers(@QueryParam("search") String search,
+                                             @QueryParam("briefRepresentation") Boolean briefRepresentation,
                                              @QueryParam("first") Integer firstResult,
                                              @QueryParam("max") Integer maxResults);
 

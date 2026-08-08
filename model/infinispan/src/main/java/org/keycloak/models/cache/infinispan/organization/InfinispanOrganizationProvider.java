@@ -214,8 +214,8 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public Stream<UserModel> getRoleMembersStream(OrganizationModel organization, RoleModel role, Integer first, Integer max) {
-        return getDelegate().getRoleMembersStream(organization, role, first, max);
+    public Stream<UserModel> getRoleMembersStream(OrganizationModel organization, RoleModel role, String search, Integer first, Integer max) {
+        return getDelegate().getRoleMembersStream(organization, role, search, first, max);
     }
 
     @Override
