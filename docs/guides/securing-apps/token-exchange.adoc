@@ -379,6 +379,7 @@ The `may_act` claim declares that the specified administrator (actor) is authori
 
 If the administrator (actor) does not have impersonation permission, the delegation scope is silently dropped and the `may_act` claim is not included in the token. The consent for delegation is always required and is not stored permanently - the user must approve delegation each login session.
 
+[[_adding_additional_claims_to_may_act]]
 ==== Adding additional claims to `may_act`
 
 By default, only the actor's `sub` (user ID) is included in the `may_act` claim. Additional claims can be added by configuring extra "Parameterized Scope User Property" mappers on the `delegation` client scope in the Admin Console.
@@ -403,6 +404,26 @@ The resulting token will then include:
 ----
 
 Other useful claims to add include `may_act.email` (user property `email`) or `may_act.iss` (for cross-realm delegation scenarios).
+
+==== Configuring enforced claims
+
+During token exchange, {project_name} validates that certain claims in `may_act` match the actor token. The default enforced claims (`sub` and `iss`) are always checked and cannot be removed. Additional enforced claim names can be configured via the `may_act enforce_claims` mapper on the `delegation` client scope — these are merged with the defaults. Since `iss` is not included in `may_act` by default (no mapper adds it), it is silently skipped unless explicitly mapped. If an enforced claim is absent from `may_act`, it is always silently skipped. If the mapper is removed, {project_name} falls back to enforcing only the defaults (`sub` and `iss`).
+
+[source,json]
+----
+{
+  "may_act": {
+    "sub": "f1234567-89ab-cdef-0123-456789abcdef",
+    "enforce_claims": ["sub", "iss"]
+  }
+}
+----
+
+To enforce additional claims during token exchange:
+
+. Navigate to *Client scopes* -> *delegation* -> *Mappers* -> *may_act enforce_claims*.
+. Edit the *Token Claim Value* to include the additional claim names, for example `["sub","iss","email"]`.
+. Ensure the corresponding claim is also added to `may_act` via a mapper (see <<_adding_additional_claims_to_may_act>>).
 
 [[_legacy-token-exchange]]
 == Legacy token exchange
