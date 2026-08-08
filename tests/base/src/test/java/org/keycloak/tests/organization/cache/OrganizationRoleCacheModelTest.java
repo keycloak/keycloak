@@ -117,7 +117,7 @@ public class OrganizationRoleCacheModelTest {
             assertThat(organizationRole.getContainerId(), is(acme.getId()));
             assertThat(organizationRole.getContainer().getId(), is(acme.getId()));
             assertThat(acme.getRolesStream().map(RoleModel::getName).toList(),
-                    containsInAnyOrder(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-cache-acme", "project-admin", "direct-cache-role"));
+                    containsInAnyOrder(Constants.DEFAULT_ORGANIZATION_ROLES_ROLE_PREFIX + "-cache-acme", "project-admin", "direct-cache-role"));
             assertThat(acme.searchForRolesStream("project", null, null).map(RoleModel::getName).toList(), hasItem("project-admin"));
             assertThat(session.roles().getOrganizationRolesCount(acme, "project"), is(1L));
         });

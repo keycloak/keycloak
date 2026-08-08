@@ -153,7 +153,7 @@ public class OrganizationRolesResourceTest {
     public void itemUpdatesDeletesAndRejectsDefaultRoleRemoval() {
         TestContext context = new TestContext();
         TestRole role = context.addOrganizationRole("role-1", "member");
-        TestRole defaultRole = context.addOrganizationRole("role-2", "default-roles-acme");
+        TestRole defaultRole = context.addOrganizationRole("role-2", "default-roles-org-acme");
         role.attributes.put("old", List.of("value"));
         context.defaultRole = defaultRole.model;
         OrganizationRoleResource resource = new OrganizationRoleResource(context.session, context.organization, role.model, context.adminEvent, context.auth);
@@ -368,7 +368,7 @@ public class OrganizationRolesResourceTest {
     @Test
     public void defaultRoleRejectsUserMappingMutations() {
         TestContext context = new TestContext();
-        TestRole defaultRole = context.addOrganizationRole("role-1", "default-roles-acme");
+        TestRole defaultRole = context.addOrganizationRole("role-1", "default-roles-org-acme");
         TestUser member = context.addUser("member-id", "member");
         context.defaultRole = defaultRole.model;
         context.members.add(member.id);

@@ -223,7 +223,7 @@ test.describe.serial("Organization roles", () => {
 
   test("protects the default organization role", async ({ page }) => {
     const child = roleName("default-child");
-    const defaultRole = `default-roles-${organizationAlias}`;
+    const defaultRole = `default-roles-org-${organizationAlias}`;
 
     try {
       await createRole(page, child);

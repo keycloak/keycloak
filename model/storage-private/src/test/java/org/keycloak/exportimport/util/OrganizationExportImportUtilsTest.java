@@ -152,8 +152,8 @@ public class OrganizationExportImportUtilsTest {
         OrganizationExportImportUtils.exportOrganizationRoles(organization, representation);
 
         assertThat(representation.getRoles().stream().map(RoleRepresentation::getName).toList(),
-                containsInAnyOrder("default-roles-acme", "admin"));
-        assertThat(representation.getDefaultRole().getName(), is("default-roles-acme"));
+                containsInAnyOrder("default-roles-org-acme", "admin"));
+        assertThat(representation.getDefaultRole().getName(), is("default-roles-org-acme"));
     }
 
     @Test
@@ -180,8 +180,8 @@ public class OrganizationExportImportUtilsTest {
         OrganizationRepresentation exported = realm.getOrganizations().get(0);
         assertThat(exported.getAlias(), is("acme"));
         assertThat(exported.getRoles().stream().map(RoleRepresentation::getName).toList(),
-                containsInAnyOrder("default-roles-acme", "admin"));
-        assertThat(exported.getDefaultRole().getName(), is("default-roles-acme"));
+                containsInAnyOrder("default-roles-org-acme", "admin"));
+        assertThat(exported.getDefaultRole().getName(), is("default-roles-org-acme"));
         assertThat(exported.getIdentityProviders().stream().map(identity -> identity.getAlias()).toList(), contains("github"));
         assertThat(exported.getMembers(), hasSize(2));
         assertThat(exported.getMembers().get(0).getUsername(), is("alice"));
@@ -295,7 +295,7 @@ public class OrganizationExportImportUtilsTest {
     @Test
     public void importOrganizationRolesPreservesGeneratedRoleWhenCustomRoleIsDefault() {
         OrganizationModel organization = organization("org-1", "acme");
-        RoleRepresentation generated = roleRepresentation("default-id-acme", "default-roles-acme", "Generated default");
+        RoleRepresentation generated = roleRepresentation("default-id-acme", "default-roles-org-acme", "Generated default");
         RoleRepresentation customDefault = roleRepresentation("custom-default-id", "member", "Member");
         OrganizationRepresentation representation = new OrganizationRepresentation();
         representation.setDefaultRole(customDefault);
@@ -304,7 +304,7 @@ public class OrganizationExportImportUtilsTest {
         OrganizationExportImportUtils.importOrganizationRoles(session(), realm("realm-1"), organization, representation);
 
         assertThat(organization.getDefaultRole().getName(), is("member"));
-        assertThat(organization.getRolesStream().map(RoleModel::getName).toList(), containsInAnyOrder("default-roles-acme", "member"));
+        assertThat(organization.getRolesStream().map(RoleModel::getName).toList(), containsInAnyOrder("default-roles-org-acme", "member"));
         assertThat(organization.getRolesStream().toList(), hasSize(2));
     }
 
@@ -536,8 +536,8 @@ public class OrganizationExportImportUtilsTest {
         OrganizationHandler handler = new OrganizationHandler(id, alias);
         OrganizationModel organization = proxy(OrganizationModel.class, handler);
         handler.organization = organization;
-        handler.addRoleInternal("default-id-" + alias, "default-roles-" + alias);
-        handler.defaultRole = handler.rolesByName.get("default-roles-" + alias);
+        handler.addRoleInternal("default-id-" + alias, "default-roles-org-" + alias);
+        handler.defaultRole = handler.rolesByName.get("default-roles-org-" + alias);
         return organization;
     }
 

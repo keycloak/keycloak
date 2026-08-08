@@ -81,7 +81,7 @@ public class JpaUpdate26_7_0_OrganizationRolesTest {
 
             String defaultRoleId = organizationDefaultRole(connection, "org-1");
             assertThat(defaultRoleId, notNullValue());
-            assertThat(defaultRoleName(connection, defaultRoleId), is(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-acme"));
+            assertThat(defaultRoleName(connection, defaultRoleId), is(Constants.DEFAULT_ORGANIZATION_ROLES_ROLE_PREFIX + "-acme"));
             assertThat(roleType(connection, defaultRoleId), is(RoleModel.Type.ORGANIZATION.intValue()));
             assertThat(roleOrganization(connection, defaultRoleId), is("org-1"));
             assertThat(roleClientRealmConstraint(connection, defaultRoleId), is("org-1"));
@@ -102,7 +102,7 @@ public class JpaUpdate26_7_0_OrganizationRolesTest {
             executeStatements(database, connection, statements);
 
             String defaultRoleId = organizationDefaultRole(connection, "org-1");
-            assertThat(defaultRoleName(connection, defaultRoleId), is(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-acme-2"));
+            assertThat(defaultRoleName(connection, defaultRoleId), is(Constants.DEFAULT_ORGANIZATION_ROLES_ROLE_PREFIX + "-acme-2"));
         }
     }
 
@@ -115,7 +115,7 @@ public class JpaUpdate26_7_0_OrganizationRolesTest {
             assertThat(applyOrganizationRoleChangelog(connection, false), is(ORGANIZATION_ROLE_CHANGESETS));
 
             assertFinalOrganizationRoleSchema(connection);
-            assertMigratedOrganizationRoleData(connection, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-acme");
+            assertMigratedOrganizationRoleData(connection, Constants.DEFAULT_ORGANIZATION_ROLES_ROLE_PREFIX + "-acme");
         }
     }
 
@@ -128,7 +128,7 @@ public class JpaUpdate26_7_0_OrganizationRolesTest {
             assertThat(applyOrganizationRoleChangelog(connection, true), is(ORGANIZATION_ROLE_CHANGESETS));
 
             assertFinalOrganizationRoleSchema(connection);
-            assertMigratedOrganizationRoleData(connection, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-acme-2");
+            assertMigratedOrganizationRoleData(connection, Constants.DEFAULT_ORGANIZATION_ROLES_ROLE_PREFIX + "-acme-2");
         }
     }
 
@@ -184,7 +184,7 @@ public class JpaUpdate26_7_0_OrganizationRolesTest {
             task.jdbcConnection = (JdbcConnection) database.getConnection();
 
             CustomChangeException exception = assertThrows(CustomChangeException.class,
-                    () -> task.determineDefaultRoleName("org-1", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-acme", 2));
+                    () -> task.determineDefaultRoleName("org-1", Constants.DEFAULT_ORGANIZATION_ROLES_ROLE_PREFIX + "-acme", 2));
 
             assertThat(exception.getMessage(), containsString("Unable to determine default organization role name"));
         }
@@ -332,9 +332,9 @@ public class JpaUpdate26_7_0_OrganizationRolesTest {
     private void insertOrganizationRoleNameConflict(Connection connection) throws Exception {
         try (Statement statement = connection.createStatement()) {
             statement.execute("INSERT INTO KEYCLOAK_ROLE (ID, CLIENT_REALM_CONSTRAINT, CLIENT_ROLE, NAME, REALM_ID, ORG_ID) " +
-                    "VALUES ('existing-org-role', 'org-1', FALSE, 'default-roles-acme', 'realm-1', 'org-1')");
+                    "VALUES ('existing-org-role', 'org-1', FALSE, 'default-roles-org-acme', 'realm-1', 'org-1')");
             statement.execute("INSERT INTO KEYCLOAK_ROLE (ID, CLIENT_REALM_CONSTRAINT, CLIENT_ROLE, NAME, REALM_ID, ORG_ID) " +
-                    "VALUES ('existing-org-role-1', 'org-1', FALSE, 'default-roles-acme-1', 'realm-1', 'org-1')");
+                    "VALUES ('existing-org-role-1', 'org-1', FALSE, 'default-roles-org-acme-1', 'realm-1', 'org-1')");
         }
     }
 

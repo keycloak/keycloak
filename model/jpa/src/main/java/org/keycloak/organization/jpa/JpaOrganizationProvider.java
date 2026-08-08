@@ -974,7 +974,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     }
 
     private void createDefaultRole(OrganizationAdapter organization) {
-        RoleModel defaultRole = organization.addRole(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + organization.getAlias().toLowerCase(Locale.ROOT));
+        RoleModel defaultRole = organization.addRole(Constants.DEFAULT_ORGANIZATION_ROLES_ROLE_PREFIX + "-" + organization.getAlias().toLowerCase(Locale.ROOT));
         defaultRole.setDescription("${role_default-roles}");
         organization.setDefaultRole(defaultRole);
     }

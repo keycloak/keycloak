@@ -99,7 +99,7 @@ public class OrganizationRoleModelTest {
             assertThat(defaultRole.getType(), is(RoleModel.Type.ORGANIZATION));
             assertThat(defaultRole.getContainerId(), is(acme.getId()));
             assertThat(defaultRole.getContainer().getId(), is(acme.getId()));
-            assertThat(defaultRole.getName(), is(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-acme"));
+            assertThat(defaultRole.getName(), is(Constants.DEFAULT_ORGANIZATION_ROLES_ROLE_PREFIX + "-acme"));
             assertThrows(ModelDuplicateException.class, () -> acme.addRole("shared"));
             assertThat(session.roles().getOrganizationRole(acme, "shared").getId(), is(acmeRole.getId()));
             assertThat(session.roles().getOrganizationRole(other, "shared").getId(), is(otherRole.getId()));
@@ -111,7 +111,7 @@ public class OrganizationRoleModelTest {
             assertThat(session.roles().getRealmRole(realm, "shared").getId(), is(realmRole.getId()));
             assertThat(session.roles().getClientRole(client, "shared").getId(), is(clientRole.getId()));
             assertThat(acme.searchForRolesStream("shared", null, null).map(RoleModel::getName).toList(), contains("shared"));
-            assertThat(acme.getRolesStream().map(RoleModel::getName).toList(), containsInAnyOrder(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-acme", "shared"));
+            assertThat(acme.getRolesStream().map(RoleModel::getName).toList(), containsInAnyOrder(Constants.DEFAULT_ORGANIZATION_ROLES_ROLE_PREFIX + "-acme", "shared"));
             assertThat(session.roles().getOrganizationRolesCount(acme, "shared"), is(1L));
         });
     }
@@ -200,7 +200,7 @@ public class OrganizationRoleModelTest {
 
             assertThat(session.roles().getRoleById(realm, roleIds[0]), nullValue());
             assertThat(session.roles().getRoleById(realm, roleIds[1]), nullValue());
-            assertThat(session.roles().searchForRolesStream(realm, "default-roles-acme", null, null).toList(), empty());
+            assertThat(session.roles().searchForRolesStream(realm, "default-roles-org-acme", null, null).toList(), empty());
         });
     }
 

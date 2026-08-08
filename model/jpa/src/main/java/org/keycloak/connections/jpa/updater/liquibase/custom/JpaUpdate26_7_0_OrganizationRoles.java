@@ -120,7 +120,7 @@ public class JpaUpdate26_7_0_OrganizationRoles extends CustomKeycloakTask {
     private String determineDefaultRoleName(OrganizationRoleMigration organization) throws CustomChangeException {
         String alias = organization.alias();
         String name = alias == null || alias.isBlank() ? organization.name() : alias;
-        String baseRoleName = Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + name.toLowerCase(Locale.ROOT);
+        String baseRoleName = Constants.DEFAULT_ORGANIZATION_ROLES_ROLE_PREFIX + "-" + name.toLowerCase(Locale.ROOT);
 
         return determineDefaultRoleName(organization.id(), baseRoleName, Integer.MAX_VALUE);
     }
