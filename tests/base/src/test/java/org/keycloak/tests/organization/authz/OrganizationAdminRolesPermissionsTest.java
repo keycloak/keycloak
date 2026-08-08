@@ -821,7 +821,7 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             RealmResource manageOrgsResource = manageOrgsClient.realm(realm.getName());
 
             try (Response response = manageOrgsResource.organizations().get(orgId).members().inviteUser("newinvite@testInviteOrg.org", "New", "User")) {
-                assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
+                assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
             }
 
             invitationId = manageOrgsResource.organizations().get(orgId).invitations().list().get(0).getId();

@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.organization.admin;
 
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,9 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.updaters.OrganizationAttributeUpdater;
 
 import org.junit.Before;
@@ -40,6 +44,7 @@ import static org.keycloak.representations.idm.OrganizationInvitationRepresentat
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -72,6 +77,46 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
         super.configureTestRealm(testRealm);
         testRealm.setRegistrationAllowed(true);
         testRealm.setSmtpServer(smtpConfig);
+    }
+
+    @Test
+    public void testCreateInvitationReturnsLocation() {
+        try (Response response = organization.members().inviteUser("user@test-org.com", "John", "Doe")) {
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+
+            URI location = response.getLocation();
+            assertThat(location, notNullValue());
+
+            String invitationId = ApiUtil.getCreatedId(response);
+            assertThat(location.getPath(), endsWith("/admin/realms/" + TEST_REALM_NAME
+                    + "/organizations/" + organizationId + "/invitations/" + invitationId));
+            assertThat(organization.invitations().get(invitationId).getId(), equalTo(invitationId));
+        }
+    }
+
+    @Test
+    public void testCreateInvitationForExistingUserReturnsLocation() {
+        UserRepresentation user = UserBuilder.create()
+                .username("existing-user")
+                .email("existing-user@test-org.com")
+                .enabled(true)
+                .build();
+        try (Response response = managedRealm.admin().users().create(user)) {
+            user.setId(ApiUtil.getCreatedId(response));
+        }
+        getCleanup().addUserId(user.getId());
+
+        try (Response response = organization.members().inviteExistingUser(user.getId())) {
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+
+            URI location = response.getLocation();
+            assertThat(location, notNullValue());
+
+            String invitationId = ApiUtil.getCreatedId(response);
+            assertThat(location.getPath(), endsWith("/admin/realms/" + TEST_REALM_NAME
+                    + "/organizations/" + organizationId + "/invitations/" + invitationId));
+            assertThat(organization.invitations().get(invitationId).getId(), equalTo(invitationId));
+        }
     }
 
     @Test
@@ -154,7 +199,16 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
         
         // Resend invitation
         try (Response response = organization.invitations().resend(invitationId)) {
-            assertThat(response.getStatus(), equalTo(204));
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+
+            URI location = response.getLocation();
+            assertThat(location, notNullValue());
+
+            String resentInvitationId = ApiUtil.getCreatedId(response);
+            assertThat(resentInvitationId, not(equalTo(invitationId)));
+            assertThat(location.getPath(), endsWith("/admin/realms/" + TEST_REALM_NAME
+                    + "/organizations/" + organizationId + "/invitations/" + resentInvitationId));
+            assertThat(organization.invitations().get(resentInvitationId).getId(), equalTo(resentInvitationId));
         }
         
         // Verify invitation is still pending
@@ -519,7 +573,7 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
     
     private void sendInvitationToOrganization(OrganizationResource org, String email, String firstName, String lastName) {
         try (Response response = org.members().inviteUser(email, firstName, lastName)) {
-            assertThat(response.getStatus(), equalTo(204));
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
         }
     }
 }
