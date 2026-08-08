@@ -679,6 +679,7 @@ public class JpaUserFederatedStorageProvider implements
         model.setType(entity.getType());
         model.setCreatedDate(entity.getCreatedDate());
         model.setUserLabel(entity.getUserLabel());
+        model.setPriority(entity.getPriority());
 
         // Backwards compatibility - users from previous version still have "salt" in the DB filled.
         // We migrate it to new secretData format on-the-fly

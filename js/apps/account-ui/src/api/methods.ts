@@ -112,6 +112,20 @@ export async function getCredentials({ signal, context }: CallOptions) {
   return parseResponse<CredentialContainer[]>(response);
 }
 
+export async function moveCredentialToFirst(
+  context: KeycloakContext<BaseEnvironment>,
+  credentialId: string,
+): Promise<void> {
+  const response = await request(
+    `/credentials/${encodeURIComponent(credentialId)}/moveToFirst`,
+    context,
+    { method: "POST" },
+  );
+  if (!response.ok) {
+    throw await parseResponse(response);
+  }
+}
+
 export type LinkedAccountQueryParams = PaginationParams & {
   search?: string;
   linked?: boolean;
