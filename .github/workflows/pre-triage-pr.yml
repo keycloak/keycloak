@@ -1,0 +1,240 @@
+name: Pre-triage Pull Request
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened, synchronize, labeled, unlabeled, ready_for_review]
+    branches:
+      - main 
+
+jobs:
+  pre-triage:
+    env:
+      GH_TOKEN: ${{ github.token }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Check linked issues
+        id: check-linked-issues
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -uo pipefail
+          FAILED=0
+          ERRORS=""
+          MARKER="<!-- pre-triage-linked-issues -->"
+          SKIP_LABEL="skip-issue-check"
+          
+          HAS_SKIP_LABEL=$(gh api "repos/$REPO/issues/$PR_NUMBER/labels" \
+            --jq ".[] | select(.name == \"$SKIP_LABEL\") | .name" | head -1 || true)
+
+          # Append an error message to the ERRORS list and emit a CI annotation.
+          add_error() {
+            echo "::error::$1"
+            ERRORS="${ERRORS}"$'\n'"- $1"
+            FAILED=1
+          }
+          
+          # Remove HTML comments from markdown text so hidden examples/templates
+          # do not count as linked issues.
+          strip_html_comments() {
+            local text="$1"
+            perl -0pe 's/<!--.*?-->//gs' <<< "$text"
+          }
+
+          # Extract linked issue references from a block of text.
+          # Accepts all GitHub closing keywords (case-insensitive, with optional colon) followed by
+          # same-repo (#NNN), cross-repo (owner/repo#NNN), or URL references.
+          # Outputs one reference per line in the format "owner/repo#NNN".
+          extract_issues() {
+            local text="$1"
+            printf '%s\n' "$text" | perl -ne '
+              # Match GitHub closing keywords followed by a same-repo (#NNN),
+              # cross-repo (owner/repo#NNN), or URL issue reference.
+              while (/(?i:\b(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\b):?[ \t]+(?:(?:(?<cro>[\w-]+)\/(?<crr>[\w-]+)#)|#|(?:https:\/\/github\.com\/(?<urlo>[\w-]+)\/(?<urlr>[\w-]+)\/issues\/))(?<num>\d+)\b/g) {
+                my $owner = ($+{cro} // $+{urlo} // "");
+                my $repo  = ($+{crr} // $+{urlr} // "");
+                my $num   = $+{num};
+                if ($owner && $repo) {
+                  print "$owner/$repo#$num\n";
+                } else {
+                  print "'$REPO'#$num\n";
+                }
+              }
+            ' | sort -u || true
+          }
+          
+          # Collect all issue references mentioned across all commit messages in the PR.
+          # Returns one issue reference per line (may contain duplicates; caller can sort -u).
+          get_all_commit_issues() {
+            local all_commit_issues=""
+            local sha commit_msg issues
+
+            while IFS= read -r sha; do
+              if ! commit_msg=$(gh api "repos/$REPO/git/commits/$sha" --jq '.message' 2>&1); then
+                add_error "Failed to retrieve commit message for $sha: $commit_msg"
+                continue
+              fi
+
+              issues=$(extract_issues "$commit_msg")
+              all_commit_issues="${all_commit_issues}"$'\n'"${issues}"
+            done < <(gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/commits" --jq '.[].sha')
+
+            printf '%s\n' "$all_commit_issues"
+          }
+
+          if [ -z "$HAS_SKIP_LABEL" ]; then
+            # --- Check PR description ---
+            PR_BODY_NO_COMMENTS=$(strip_html_comments "$PR_BODY")
+            PR_ISSUES=$(extract_issues "$PR_BODY_NO_COMMENTS")
+
+            if [ -z "$PR_ISSUES" ]; then
+              add_error "PR description must contain a linked issue (e.g. 'Closes #NNN')"
+            fi
+
+            ALL_COMMIT_ISSUES=$(get_all_commit_issues)
+            COMMIT_ISSUES=$(printf '%s\n' "$ALL_COMMIT_ISSUES" | sort -u | grep -v '^$' || true)
+            
+            # TODO: determine if there are potential timing issues with querying closingIssuesReferences
+            # - it's not clear that they will be updated prior to when the workflow runs
+            # TODO: there's no PR event for manually linking/unlinking issues, so this check can be out-of-sync after that
+            
+            # Parse GraphQL closingIssuesReferences into owner/repo#NNN format
+            parse_closing_refs() {
+              local json="$1"
+              printf '%s\n' "$json" | jq -r '
+                .data.repository.pullRequest.closingIssuesReferences.nodes[]
+                | "\(.repository.owner.login)/\(.repository.name)#\(.number)"
+              ' 2>/dev/null | sort -u || true
+            }
+            
+            # Parse GraphQL closingIssuesReferences into owner/repo#NNN<TAB>closed
+            parse_closing_refs_with_state() {
+              local json="$1"
+              printf '%s\n' "$json" | jq -r '
+                .data.repository.pullRequest.closingIssuesReferences.nodes[]
+                | "\(.repository.owner.login)/\(.repository.name)#\(.number)\t\(.closed)"
+              ' 2>/dev/null | sort -u || true
+            }
+
+            # Extract repo info from REPO (format: owner/repo)
+            REPO_OWNER="${REPO%%/*}"
+            REPO_NAME="${REPO##*/}"
+
+            # Query GitHub for closing issue references
+            CLOSING_ISSUES_REFERENCES_RAW=$(
+              gh api graphql \
+                -F owner="$REPO_OWNER" \
+                -F repo="$REPO_NAME" \
+                -F prNumber="$PR_NUMBER" \
+                -f query='
+                  query($owner: String!, $repo: String!, $prNumber: Int!) {
+                    repository(owner: $owner, name: $repo) {
+                      pullRequest(number: $prNumber) {
+                        closingIssuesReferences(first: 50) {
+                          nodes {
+                            number
+                            closed
+                            repository {
+                              owner { login }
+                              name
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                '
+            )
+
+            CLOSING_ISSUES_REFERENCES=$(parse_closing_refs "$CLOSING_ISSUES_REFERENCES_RAW")
+            CLOSING_ISSUES_WITH_STATE=$(parse_closing_refs_with_state "$CLOSING_ISSUES_REFERENCES_RAW")
+            
+            if [ "$FAILED" -eq 0 ]; then
+              while IFS= read -r ref; do
+                [ -z "$ref" ] && continue
+                issue_repo="${ref%%#*}"
+                if [ "$issue_repo" != "$REPO" ]; then
+                  # TODO: uncomment to disallow even manual links to other repos
+                  # add_error "Manually linked issue $ref is from a different repository, please remove it."
+                  continue
+                fi
+
+                # Find matching line: owner/repo#NNN<TAB>true|false
+                state_line=$(printf '%s\n' "$CLOSING_ISSUES_WITH_STATE" | grep -F -- "^$ref"$'\t' || true)
+
+                is_closed="${state_line##*$'\t'}"
+                if [ "$is_closed" = "true" ]; then
+                  add_error "Issue $ref is not open (current state: closed)"
+                  continue
+                fi
+                
+                if ! printf '%s\n' "$PR_ISSUES" | grep -Fxq -- "$ref"; then
+                  add_error "Issue $ref is a manually linked GitHub issue, but it's not in the PR description."
+                fi
+              done <<< "$CLOSING_ISSUES_REFERENCES"
+            fi  
+            
+            if [ "$FAILED" -eq 0 ]; then
+              while IFS= read -r ref; do
+                [ -z "$ref" ] && continue
+                issue_repo="${ref%%#*}"
+                if [ "$issue_repo" != "$REPO" ]; then
+                  add_error "Issue $ref in the PR description is from a different repository - do not use a closing keyword with it."
+                  continue
+                fi
+                if ! printf '%s\n' "$COMMIT_ISSUES" | grep -Fxq -- "$ref"; then
+                  add_error "Issue $ref is linked in the PR description but not in a commit message"
+                  continue
+                fi
+                if ! printf '%s\n' "$CLOSING_ISSUES_REFERENCES" | grep -Fxq -- "$ref"; then
+                  add_error "$ref is linked in the PR description but is not an issue - do not use a closing keyword with it."
+                fi
+              done <<< "$PR_ISSUES"
+            fi
+
+            if [ "$FAILED" -eq 0 ]; then
+              while IFS= read -r ref; do
+                [ -z "$ref" ] && continue
+                if ! printf '%s\n' "$PR_ISSUES" | grep -Fxq -- "$ref"; then
+                  issue_repo="${ref%%#*}"
+                  if [ "$issue_repo" != "$REPO" ]; then
+                    add_error "Issue $ref in the commit messages is from a different repository - do not use a closing keyword with it."
+                  else
+                    # TODO: could check if this is a valid issue - once added to the PR description, it will be validated though
+                    add_error "$ref is linked in the commit messages but not in the PR description."
+                  fi
+                fi
+              done <<< "$COMMIT_ISSUES"
+            fi
+          else
+            echo "skipping linked issue check"
+          fi
+
+          # --- Find last existing bot comment with our marker ---
+          EXISTING_COMMENT_ID=$(gh api --paginate "repos/$REPO/issues/$PR_NUMBER/comments" | jq --arg marker "$MARKER" '.[] | select(.body | contains($marker)?) | .id' | tail -n1)
+          
+          if [ -n "$EXISTING_COMMENT_ID" ]; then
+            gh api "repos/$REPO/issues/comments/$EXISTING_COMMENT_ID" -X DELETE
+          fi
+          
+          if [ "$FAILED" -ne 0 ]; then
+            COMMENT_BODY="${MARKER}
+          Thank you for contributing this PR. The following linked issue checks failed:
+          ${ERRORS}
+
+          Please refer to [CONTRIBUTING.md](https://github.com/${REPO}/blob/main/CONTRIBUTING.md) for requirements."
+
+            gh pr comment "$PR_NUMBER" -R "$REPO" --body "$COMMENT_BODY"
+            gh pr edit "${{ github.event.pull_request.number }}" -R "$GITHUB_REPOSITORY" --add-label "action/waiting-for-author"
+            exit 1
+          else
+            echo "All linked issue checks passed."
+            gh pr edit "${{ github.event.pull_request.number }}" -R "$GITHUB_REPOSITORY" --remove-label "action/waiting-for-author"
+          fi
