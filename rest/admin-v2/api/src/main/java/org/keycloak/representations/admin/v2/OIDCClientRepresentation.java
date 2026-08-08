@@ -71,7 +71,8 @@ public class OIDCClientRepresentation extends BaseClientRepresentation {
     }
 
     public void setLoginFlows(Set<Flow> loginFlows) {
-        this.loginFlows = loginFlows;
+        markFieldAsExplicitlySet("loginFlows");
+        this.loginFlows = loginFlows == null ? new LinkedHashSet<>() : new LinkedHashSet<>(loginFlows);
     }
 
     public Auth getAuth() {
@@ -79,6 +80,7 @@ public class OIDCClientRepresentation extends BaseClientRepresentation {
     }
 
     public void setAuth(Auth auth) {
+        markFieldAsExplicitlySet("auth");
         this.auth = auth;
     }
 
@@ -87,7 +89,8 @@ public class OIDCClientRepresentation extends BaseClientRepresentation {
     }
 
     public void setWebOrigins(Set<String> webOrigins) {
-        this.webOrigins = webOrigins;
+        markFieldAsExplicitlySet("webOrigins");
+        this.webOrigins = webOrigins == null ? new LinkedHashSet<>() : new LinkedHashSet<>(webOrigins);
     }
 
     public Set<String> getServiceAccountRoles() {
@@ -95,7 +98,7 @@ public class OIDCClientRepresentation extends BaseClientRepresentation {
     }
 
     public void setServiceAccountRoles(Set<String> serviceAccountRoles) {
-        this.serviceAccountRoles = serviceAccountRoles;
+        this.serviceAccountRoles = serviceAccountRoles == null ? new LinkedHashSet<>() : new LinkedHashSet<>(serviceAccountRoles);
     }
 
     @ClientSecretNotBlank(groups = PutClient.class, affectedFieldNames = {"secret"})

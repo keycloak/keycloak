@@ -162,6 +162,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
     }
 
     public void setFrontChannelLogout(Boolean frontChannelLogout) {
+        markFieldAsExplicitlySet("frontChannelLogout");
         this.frontChannelLogout = frontChannelLogout;
     }
 

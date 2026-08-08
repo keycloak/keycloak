@@ -23,7 +23,7 @@ public class OIDCClientModelMapper extends BaseClientModelMapper<OIDCClientRepre
     
     public OIDCClientModelMapper() {
         addMapping("loginFlows", OIDCClientRepresentation::getLoginFlows, OIDCClientRepresentation::setLoginFlows, model -> createLoginFlows(model), (model, flows) -> setModelFromFlows(flows, model));
-        addMapping("auth", OIDCClientRepresentation::getAuth, OIDCClientRepresentation::setAuth, model -> getAuth(model), (model, auth) -> setAuth(model, auth));
+        addMapping("auth", OIDCClientRepresentation::getAuth, OIDCClientRepresentation::setAuth, model -> getAuth(model), this::setAuth);
         addMapping("webOrigins", OIDCClientRepresentation::getWebOrigins, OIDCClientRepresentation::setWebOrigins, model -> new LinkedHashSet<>(model.getWebOrigins()), (model, webOrigins) -> model.setWebOrigins(new LinkedHashSet<>(webOrigins)));
         addMapping("serviceAccountRoles", OIDCClientRepresentation::getServiceAccountRoles, OIDCClientRepresentation::setServiceAccountRoles, model -> getServiceAccountRoles(model), null);
     }
