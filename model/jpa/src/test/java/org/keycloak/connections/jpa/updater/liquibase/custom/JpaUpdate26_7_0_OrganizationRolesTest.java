@@ -67,73 +67,34 @@ public class JpaUpdate26_7_0_OrganizationRolesTest {
     );
 
     @Test
-    public void shouldMigrateRoleTypesAndExistingOrganizationDefaults() throws Exception {
-        try (Connection connection = DriverManager.getConnection("jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1")) {
-            createSchema(connection);
-            seedData(connection);
+    public void shouldMigrateOrganizationRolesAcrossDirectAndChangelogPaths() throws Exception {
+        for (boolean nameCollision : List.of(false, true)) {
+            String expectedRoleName = expectedDefaultRoleName(nameCollision);
+            try (Connection connection = newConnection()) {
+                createSchema(connection);
+                seedData(connection);
+                if (nameCollision) {
+                    insertOrganizationRoleNameConflict(connection);
+                }
 
-            Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
-            SqlStatement[] statements = new JpaUpdate26_7_0_OrganizationRoles().generateStatements(database);
-            executeStatements(database, connection, statements);
+                Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
+                executeStatements(database, connection, new JpaUpdate26_7_0_OrganizationRoles().generateStatements(database));
+                assertMigratedOrganizationRoleData(connection, expectedRoleName);
+            }
 
-            assertThat(roleType(connection, "realm-role"), is(RoleModel.Type.REALM.intValue()));
-            assertThat(roleType(connection, "client-role"), is(RoleModel.Type.CLIENT.intValue()));
+            try (Connection connection = newConnection()) {
+                createPre267Schema(connection);
+                seedPre267Data(connection);
 
-            String defaultRoleId = organizationDefaultRole(connection, "org-1");
-            assertThat(defaultRoleId, notNullValue());
-            assertThat(defaultRoleName(connection, defaultRoleId), is(Constants.DEFAULT_ORGANIZATION_ROLES_ROLE_PREFIX + "-acme"));
-            assertThat(roleType(connection, defaultRoleId), is(RoleModel.Type.ORGANIZATION.intValue()));
-            assertThat(roleOrganization(connection, defaultRoleId), is("org-1"));
-            assertThat(roleClientRealmConstraint(connection, defaultRoleId), is("org-1"));
-            assertThat(localRoleMappings(connection, "user-1", defaultRoleId), is(1));
-            assertThat(federatedRoleMappings(connection, "fed-user-1", defaultRoleId, "realm-1", "storage-1"), is(1));
+                assertThat(applyOrganizationRoleChangelog(connection, nameCollision), is(ORGANIZATION_ROLE_CHANGESETS));
+                assertFinalOrganizationRoleSchema(connection);
+                assertMigratedOrganizationRoleData(connection, expectedRoleName);
+            }
         }
     }
 
     @Test
-    public void shouldChooseAvailableDefaultOrganizationRoleName() throws Exception {
-        try (Connection connection = DriverManager.getConnection("jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1")) {
-            createSchema(connection);
-            seedData(connection);
-            insertOrganizationRoleNameConflict(connection);
-
-            Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
-            SqlStatement[] statements = new JpaUpdate26_7_0_OrganizationRoles().generateStatements(database);
-            executeStatements(database, connection, statements);
-
-            String defaultRoleId = organizationDefaultRole(connection, "org-1");
-            assertThat(defaultRoleName(connection, defaultRoleId), is(Constants.DEFAULT_ORGANIZATION_ROLES_ROLE_PREFIX + "-acme-2"));
-        }
-    }
-
-    @Test
-    public void shouldApplyOrganizationRoleChangelogWithoutNameCollisions() throws Exception {
-        try (Connection connection = DriverManager.getConnection("jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1")) {
-            createPre267Schema(connection);
-            seedPre267Data(connection);
-
-            assertThat(applyOrganizationRoleChangelog(connection, false), is(ORGANIZATION_ROLE_CHANGESETS));
-
-            assertFinalOrganizationRoleSchema(connection);
-            assertMigratedOrganizationRoleData(connection, Constants.DEFAULT_ORGANIZATION_ROLES_ROLE_PREFIX + "-acme");
-        }
-    }
-
-    @Test
-    public void shouldApplyOrganizationRoleChangelogWithNameCollisions() throws Exception {
-        try (Connection connection = DriverManager.getConnection("jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1")) {
-            createPre267Schema(connection);
-            seedPre267Data(connection);
-
-            assertThat(applyOrganizationRoleChangelog(connection, true), is(ORGANIZATION_ROLE_CHANGESETS));
-
-            assertFinalOrganizationRoleSchema(connection);
-            assertMigratedOrganizationRoleData(connection, Constants.DEFAULT_ORGANIZATION_ROLES_ROLE_PREFIX + "-acme-2");
-        }
-    }
-
-    @Test
-    public void shouldWrapRoleTypeMigrationFailures() throws Exception {
+    public void shouldReportOrganizationRoleMigrationFailures() throws Exception {
         try (Connection connection = DriverManager.getConnection("jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1")) {
             createRealmSchema(connection);
 
@@ -143,10 +104,7 @@ public class JpaUpdate26_7_0_OrganizationRolesTest {
 
             assertThat(exception.getMessage(), containsString("Exception when migrating role types"));
         }
-    }
 
-    @Test
-    public void shouldWrapOrganizationDefaultRoleMigrationFailures() throws Exception {
         try (Connection connection = DriverManager.getConnection("jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1")) {
             createRoleTypeSchema(connection);
 
@@ -156,10 +114,7 @@ public class JpaUpdate26_7_0_OrganizationRolesTest {
 
             assertThat(exception.getMessage(), containsString("Exception when migrating organization default roles"));
         }
-    }
 
-    @Test
-    public void shouldWrapRoleNameAvailabilityFailures() throws Exception {
         try (Connection connection = DriverManager.getConnection("jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1")) {
             createSchemaWithoutOrganizationRoleColumn(connection);
 
@@ -169,10 +124,7 @@ public class JpaUpdate26_7_0_OrganizationRolesTest {
 
             assertThat(exception.getMessage(), containsString("Exception when checking organization role name availability"));
         }
-    }
 
-    @Test
-    public void shouldFailWhenDefaultOrganizationRoleNameCannotBeDetermined() throws Exception {
         try (Connection connection = DriverManager.getConnection("jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1")) {
             createSchema(connection);
             seedData(connection);
@@ -188,6 +140,14 @@ public class JpaUpdate26_7_0_OrganizationRolesTest {
 
             assertThat(exception.getMessage(), containsString("Unable to determine default organization role name"));
         }
+    }
+
+    private Connection newConnection() throws Exception {
+        return DriverManager.getConnection("jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1");
+    }
+
+    private String expectedDefaultRoleName(boolean nameCollision) {
+        return Constants.DEFAULT_ORGANIZATION_ROLES_ROLE_PREFIX + "-acme" + (nameCollision ? "-2" : "");
     }
 
     private void createSchema(Connection connection) throws Exception {

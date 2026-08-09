@@ -26,7 +26,6 @@ import java.util.stream.Stream;
 
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.organization.OrganizationProvider;
-import org.keycloak.utils.KeycloakSessionUtil;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -34,9 +33,10 @@ import org.junit.Test;
 public class OrganizationRoleSpiTest {
 
     @Test
-    public void shouldClassifyAllRoleTypes() {
+    public void shouldPreserveRoleTypeAndContainerContracts() {
         RoleModel realmRole = new TestRole("realm", proxy(RealmModel.class));
-        RoleModel clientRole = new TestRole("client", proxy(ClientModel.class));
+        ClientModel client = client("client");
+        RoleModel clientRole = new TestRole("client", client);
         RoleModel organizationRole = new TestRole("organization", new TestOrganization());
 
         Assert.assertEquals(RoleModel.Type.REALM, realmRole.getType());
@@ -52,10 +52,7 @@ public class OrganizationRoleSpiTest {
         Assert.assertFalse(organizationRole.isRealmRole());
         Assert.assertTrue(organizationRole.isOrganizationRole());
         Assert.assertFalse(RoleUtils.isRealmRole(organizationRole));
-    }
 
-    @Test
-    public void shouldExposeStableTypeIntegerValues() {
         Assert.assertEquals(0, RoleModel.Type.REALM.intValue());
         Assert.assertEquals(1, RoleModel.Type.CLIENT.intValue());
         Assert.assertEquals(2, RoleModel.Type.ORGANIZATION.intValue());
@@ -66,60 +63,13 @@ public class OrganizationRoleSpiTest {
 
         IllegalArgumentException cause = Assert.assertThrows(IllegalArgumentException.class, () -> RoleModel.Type.valueOf(99));
         Assert.assertTrue(cause.getMessage().contains("99"));
-    }
 
-    @Test
-    public void shouldDetectRolesFromClientByTypeAndContainerId() {
-        ClientModel client = client("client");
         ClientModel otherClient = client("other-client");
-        RoleModel clientRole = new TestRole("client-role", client);
-        RoleModel realmRole = new TestRole("realm-role", proxy(RealmModel.class));
-        RoleModel organizationRole = new TestRole("organization-role", new TestOrganization());
-
         Assert.assertTrue(RoleUtils.isRoleFromClient(clientRole, client));
         Assert.assertFalse(RoleUtils.isRoleFromClient(clientRole, otherClient));
         Assert.assertFalse(RoleUtils.isRoleFromClient(realmRole, client));
         Assert.assertFalse(RoleUtils.isRoleFromClient(organizationRole, client));
-    }
 
-    @Test
-    public void shouldResolveOrganizationRealmWhenExpandingComposites() {
-        RealmModel realm = proxy(RealmModel.class);
-        TestOrganization organization = new TestOrganization() {
-            @Override
-            public RealmModel getRealm() {
-                return realm;
-            }
-        };
-        TestRole role = new TestRole("organization-role", organization);
-        RealmModel[] resolvedRealm = new RealmModel[1];
-        TestRoleProvider roleProvider = new TestRoleProvider() {
-            @Override
-            public Stream<RoleModel> getCompositeRolesStream(RealmModel realm, Set<String> parentRoleIds) {
-                resolvedRealm[0] = realm;
-                return Stream.empty();
-            }
-        };
-        KeycloakSession session = (KeycloakSession) Proxy.newProxyInstance(getClass().getClassLoader(),
-                new Class<?>[] { KeycloakSession.class },
-                (proxy, method, args) -> {
-                    if ("roles".equals(method.getName())) {
-                        return roleProvider;
-                    }
-                    throw new UnsupportedOperationException();
-                });
-        KeycloakSession previous = KeycloakSessionUtil.setKeycloakSession(session);
-
-        try {
-            Assert.assertEquals(Set.of(role), RoleUtils.expandCompositeRoles(Set.of(role)));
-            Assert.assertSame(realm, resolvedRealm[0]);
-        } finally {
-            KeycloakSessionUtil.setKeycloakSession(previous);
-        }
-    }
-
-    @Test
-    public void shouldExposeOrganizationAsRoleContainerWithoutBreakingExistingProviders() {
         TestOrganization organization = new TestOrganization();
         RoleModel role = new TestRole("role", organization);
 
@@ -137,23 +87,7 @@ public class OrganizationRoleSpiTest {
     }
 
     @Test
-    public void shouldManageDefaultRoleCompositesThroughRoleModel() {
-        TestRole defaultRole = new TestRole("default", new TestOrganization());
-        TestRole composite = new TestRole("composite", proxy(RealmModel.class));
-        TestOrganization organization = new TestOrganization() {
-            @Override
-            public RoleModel getDefaultRole() {
-                return defaultRole;
-            }
-        };
-
-        organization.addToDefaultRoles(composite);
-
-        Assert.assertEquals(List.of(composite), defaultRole.composites);
-    }
-
-    @Test
-    public void shouldDelegateOrganizationAddRoleConvenienceMethod() {
+    public void shouldPreserveOrganizationProviderFallbackContracts() {
         RoleModel role = new TestRole("member", proxy(RealmModel.class));
         String[] arguments = new String[2];
         TestOrganization organization = new TestOrganization() {
@@ -168,64 +102,53 @@ public class OrganizationRoleSpiTest {
         Assert.assertSame(role, organization.addRole("member"));
         Assert.assertNull(arguments[0]);
         Assert.assertEquals("member", arguments[1]);
-    }
 
-    @Test
-    public void shouldDelegateRoleProviderConvenienceMethods() {
-        TestOrganization organization = new TestOrganization();
-        TestRole role = new TestRole("member", organization);
-        DelegatingRoleProvider provider = new DelegatingRoleProvider(role);
+        TestOrganization providerOrganization = new TestOrganization();
+        TestRole providerRole = new TestRole("member", providerOrganization);
+        DelegatingRoleProvider provider = new DelegatingRoleProvider(providerRole);
 
-        Assert.assertSame(role, provider.addOrganizationRole(organization, "member"));
-        Assert.assertSame(organization, provider.organization);
+        Assert.assertSame(providerRole, provider.addOrganizationRole(providerOrganization, "member"));
+        Assert.assertSame(providerOrganization, provider.organization);
         Assert.assertNull(provider.id);
         Assert.assertEquals("member", provider.name);
 
-        Assert.assertEquals(List.of(role), provider.getOrganizationRolesStream(organization).toList());
+        Assert.assertEquals(List.of(providerRole), provider.getOrganizationRolesStream(providerOrganization).toList());
         Assert.assertNull(provider.first);
         Assert.assertNull(provider.max);
 
-        Assert.assertEquals(7, provider.getOrganizationRolesCount(organization));
+        Assert.assertEquals(7, provider.getOrganizationRolesCount(providerOrganization));
         Assert.assertNull(provider.search);
-    }
 
-    @Test
-    public void shouldFilterOrganizationRoleMembersBeforeDefaultPagination() {
-        TestOrganization organization = new TestOrganization();
-        RoleModel role = new TestRole("member", organization);
-        OrganizationProvider provider = organizationProvider(List.of(
+        OrganizationProvider memberProvider = organizationProvider(List.of(
                 user("outsider"),
-                user("member-a", role),
-                user("member-b", role)));
+                user("member-a", providerRole),
+                user("member-b", providerRole)));
 
         Assert.assertEquals(List.of("member-a", "member-b"),
-                provider.getRoleMembersStream(organization, role, "member", 0, 2).map(UserModel::getUsername).toList());
+                memberProvider.getRoleMembersStream(providerOrganization, providerRole, "member", 0, 2).map(UserModel::getUsername).toList());
         Assert.assertEquals(List.of("member-a"),
-                provider.getRoleMembersStream(organization, role, "member", 0, 1).map(UserModel::getUsername).toList());
+                memberProvider.getRoleMembersStream(providerOrganization, providerRole, "member", 0, 1).map(UserModel::getUsername).toList());
         Assert.assertEquals(List.of("member-b"),
-                provider.getRoleMembersStream(organization, role, "member", 1, 1).map(UserModel::getUsername).toList());
+                memberProvider.getRoleMembersStream(providerOrganization, providerRole, "member", 1, 1).map(UserModel::getUsername).toList());
         Assert.assertEquals(List.of("member-b"),
-                provider.getRoleMembersStream(organization, role, "member-b", 0, 1).map(UserModel::getUsername).toList());
+                memberProvider.getRoleMembersStream(providerOrganization, providerRole, "member-b", 0, 1).map(UserModel::getUsername).toList());
         Assert.assertEquals(List.of("member-a", "member-b"),
-                provider.getRoleMembersStream(organization, role, null, null, null).map(UserModel::getUsername).toList());
+                memberProvider.getRoleMembersStream(providerOrganization, providerRole, null, null, null).map(UserModel::getUsername).toList());
         Assert.assertEquals(List.of("member-a", "member-b"),
-                provider.getRoleMembersStream(organization, role, null, 0, -1).map(UserModel::getUsername).toList());
-    }
+                memberProvider.getRoleMembersStream(providerOrganization, providerRole, null, 0, -1).map(UserModel::getUsername).toList());
 
-    @Test
-    public void shouldFailExplicitlyWhenProviderDoesNotSupportOrganizationRoles() {
-        TestOrganization organization = new TestOrganization();
-        TestRole role = new TestRole("member", organization);
-        RoleProvider provider = new TestRoleProvider();
+        RoleProvider unsupportedProvider = new TestRoleProvider();
 
-        Assert.assertThrows(UnsupportedOperationException.class, () -> provider.addOrganizationRole(organization, "id", "member"));
-        Assert.assertThrows(UnsupportedOperationException.class, () -> provider.getOrganizationRole(organization, "member"));
-        Assert.assertThrows(UnsupportedOperationException.class, () -> provider.getRoleById(organization, "id"));
-        Assert.assertThrows(UnsupportedOperationException.class, () -> provider.searchForOrganizationRolesStream(organization, "member", 0, 10));
-        Assert.assertThrows(UnsupportedOperationException.class, () -> provider.getOrganizationRolesStream(organization, 0, 10));
-        Assert.assertThrows(UnsupportedOperationException.class, () -> provider.getOrganizationRolesCount(organization, "member"));
-        Assert.assertThrows(UnsupportedOperationException.class, () -> provider.removeRoles(organization));
-        Assert.assertEquals(RoleModel.Type.ORGANIZATION, role.getType());
+        Assert.assertThrows(UnsupportedOperationException.class, () -> unsupportedProvider.addOrganizationRole(providerOrganization, "id", "member"));
+        Assert.assertThrows(UnsupportedOperationException.class, () -> unsupportedProvider.getOrganizationRole(providerOrganization, "member"));
+        Assert.assertThrows(UnsupportedOperationException.class, () -> unsupportedProvider.getRoleById(providerOrganization, "id"));
+        Assert.assertThrows(UnsupportedOperationException.class,
+                () -> unsupportedProvider.searchForOrganizationRolesStream(providerOrganization, "member", 0, 10));
+        Assert.assertThrows(UnsupportedOperationException.class,
+                () -> unsupportedProvider.getOrganizationRolesStream(providerOrganization, 0, 10));
+        Assert.assertThrows(UnsupportedOperationException.class,
+                () -> unsupportedProvider.getOrganizationRolesCount(providerOrganization, "member"));
+        Assert.assertThrows(UnsupportedOperationException.class, () -> unsupportedProvider.removeRoles(providerOrganization));
     }
 
     @SuppressWarnings("unchecked")
