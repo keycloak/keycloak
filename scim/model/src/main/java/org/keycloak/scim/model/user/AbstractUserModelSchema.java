@@ -78,6 +78,9 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
         if (UserModel.EMAIL.equals(name)) {
             return model.getEmail() == null ? List.of() : List.of(model.getEmail());
         }
+        if (UserModel.CREATED_TIMESTAMP.equals(name)) {
+            return model.getCreatedTimestamp();
+        }
         UserProfile profile = session.getProvider(UserProfileProvider.class).create(UserProfileContext.SCIM, model);
         Attributes attributes = profile.getAttributes();
         return attributes.getFirst(name);
