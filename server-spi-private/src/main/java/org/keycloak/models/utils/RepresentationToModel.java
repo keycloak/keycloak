@@ -83,10 +83,10 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelValidationException;
+import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
@@ -273,7 +273,7 @@ public class RepresentationToModel {
     }
 
 
-    private static void convertDeprecatedCredentialsFormat(UserRepresentation user) {
+    private static void convertDeprecatedCredentialsFormat(RealmModel realm, UserRepresentation user) {
         if (user.getCredentials() != null) {
             for (CredentialRepresentation cred : user.getCredentials()) {
                 try {
@@ -281,16 +281,24 @@ public class RepresentationToModel {
                         logger.warnf("Using deprecated 'credentials' format in JSON representation for user '%s'. It will be removed in future versions", user.getUsername());
 
                         if (PasswordCredentialModel.TYPE.equals(cred.getType()) || PasswordCredentialModel.PASSWORD_HISTORY.equals(cred.getType())) {
-                            PasswordCredentialData credentialData = new PasswordCredentialData(cred.getHashIterations() != null ? cred.getHashIterations() : 0, cred.getAlgorithm());
+                            if (cred.getHashIterations() == null) {
+                                // The stored hash cannot be reproduced without the iteration count it was
+                                // generated with, so such a credential could never be verified. Reject it
+                                // instead of persisting an unusable password.
+                                throw new ModelValidationException("Credential of type '" + cred.getType()
+                                        + "' for user '" + user.getUsername() + "' is missing 'hashIterations'");
+                            }
+                            PasswordCredentialData credentialData = new PasswordCredentialData(cred.getHashIterations(), cred.getAlgorithm());
                             cred.setCredentialData(JsonSerialization.writeValueAsString(credentialData));
                             // Created this manually to avoid conversion from Base64 and back
                             cred.setSecretData("{\"value\":\"" + cred.getHashedSaltedValue() + "\",\"salt\":\"" + cred.getSalt() + "\"}");
                             cred.setPriority(10);
                         } else if (OTPCredentialModel.TOTP.equals(cred.getType()) || OTPCredentialModel.HOTP.equals(cred.getType())) {
+                            OTPPolicy otpPolicy = realm.getOTPPolicy();
                             OTPCredentialData credentialData = new OTPCredentialData(cred.getType(),
-                                    cred.getDigits() != null ? cred.getDigits() : OTPPolicy.DEFAULT_POLICY.getDigits(),
-                                    cred.getCounter() != null ? cred.getCounter() : 0,
-                                    cred.getPeriod() != null ? cred.getPeriod() : OTPPolicy.DEFAULT_POLICY.getPeriod(),
+                                    cred.getDigits() != null ? cred.getDigits() : otpPolicy.getDigits(),
+                                    cred.getCounter() != null ? cred.getCounter() : otpPolicy.getInitialCounter(),
+                                    cred.getPeriod() != null ? cred.getPeriod() : otpPolicy.getPeriod(),
                                     cred.getAlgorithm(), null);
                             OTPSecretData secretData = new OTPSecretData(cred.getHashedSaltedValue());
                             cred.setCredentialData(JsonSerialization.writeValueAsString(credentialData));
@@ -829,7 +837,7 @@ public class RepresentationToModel {
     }
 
     public static void createCredentials(UserRepresentation userRep, KeycloakSession session, RealmModel realm, UserModel user, boolean adminRequest) {
-        convertDeprecatedCredentialsFormat(userRep);
+        convertDeprecatedCredentialsFormat(realm, userRep);
         if (userRep.getCredentials() != null) {
             for (CredentialRepresentation cred : userRep.getCredentials()) {
                 if (cred.getId() != null && user.credentialManager().getStoredCredentialById(cred.getId()) != null) {
