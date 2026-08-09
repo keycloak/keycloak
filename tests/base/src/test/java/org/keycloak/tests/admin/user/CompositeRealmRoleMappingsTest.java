@@ -30,6 +30,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RoleBuilder;
@@ -136,6 +137,19 @@ public class CompositeRealmRoleMappingsTest {
         }
         try (Response r = realm.users().create(UserBuilder.create().username("USER_4").build())) {
             user4Id = ApiUtil.getCreatedId(r);
+        }
+
+        RoleRepresentation defaultRole = realm.roles()
+        .get("default-roles-" + managedRealm.getName()).toRepresentation();
+        for (String userId : List.of(user1Id, user2Id, user3Id, user4Id)) {
+        realm.users().get(userId).roles().realmLevel().remove(Collections.singletonList(defaultRole));
+        }
+
+        try (Response r = realm.clients().create(ClientBuilder.create().clientId("TEST_CLIENT").build())) {
+        String testClientId = ApiUtil.getCreatedId(r);
+        realm.clients().get(testClientId).roles().create(RoleBuilder.create().name("CLIENT_LEAF").build());
+        realm.users().get(user1Id).roles().clientLevel(testClientId).add(Collections.singletonList(
+                realm.clients().get(testClientId).roles().get("CLIENT_LEAF").toRepresentation()));
         }
 
         // USER_1: direct ROLE_NESTED_COMPOSITE (expands to all LEAF_* roles)
