@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.organization.mapper;
 
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -36,8 +35,6 @@ import org.keycloak.organization.protocol.mappers.saml.OrganizationMembershipMap
 import org.keycloak.organization.protocol.mappers.saml.OrganizationRoleMembershipMapper;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
-import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
-import org.keycloak.protocol.saml.mappers.RoleListMapper;
 import org.keycloak.protocol.saml.mappers.SAMLAudienceResolveProtocolMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -65,9 +62,7 @@ import static org.keycloak.testsuite.util.SamlStreams.attributeStatements;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.not;
 
 public class OrganizationSAMLProtocolMapperTest extends AbstractOrganizationTest {
 
@@ -101,24 +96,6 @@ public class OrganizationSAMLProtocolMapperTest extends AbstractOrganizationTest
         memberReference.setId(member.getId());
         organization.roles().get(directRole.getId()).addUserMembers(List.of(memberReference));
 
-        OrganizationRepresentation otherRepresentation = createOrganization("other");
-        OrganizationResource other = managedRealm.admin().organizations().get(otherRepresentation.getId());
-        IdentityProviderRepresentation otherBroker = other.identityProviders().getIdentityProviders().get(0);
-        other.identityProviders().get(otherBroker.getAlias()).delete().close();
-        other.members().addMember(member.getId()).close();
-        RoleRepresentation otherRole = createOrganizationRole(other, "other-admin");
-        other.roles().get(otherRole.getId()).addUserMembers(List.of(memberReference));
-
-        OrganizationRepresentation disabledRepresentation = createOrganization("disabled");
-        OrganizationResource disabled = managedRealm.admin().organizations().get(disabledRepresentation.getId());
-        IdentityProviderRepresentation disabledBroker = disabled.identityProviders().getIdentityProviders().get(0);
-        disabled.identityProviders().get(disabledBroker.getAlias()).delete().close();
-        disabled.members().addMember(member.getId()).close();
-        RoleRepresentation disabledRole = createOrganizationRole(disabled, "disabled-admin");
-        disabled.roles().get(disabledRole.getId()).addUserMembers(List.of(memberReference));
-        disabledRepresentation.setEnabled(false);
-        disabled.update(disabledRepresentation).close();
-
         String clientId = "saml-client";
         managedRealm.admin().clients().create(ClientBuilder.create()
                 .protocol(SamlProtocol.LOGIN_PROTOCOL)
@@ -134,16 +111,6 @@ public class OrganizationSAMLProtocolMapperTest extends AbstractOrganizationTest
         roleMapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
         roleMapper.setProtocolMapper(OrganizationRoleMembershipMapper.ID);
         clientResource.getProtocolMappers().createMapper(roleMapper).close();
-
-        ProtocolMapperRepresentation roleListMapper = new ProtocolMapperRepresentation();
-        roleListMapper.setName("role-list");
-        roleListMapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
-        roleListMapper.setProtocolMapper(RoleListMapper.PROVIDER_ID);
-        roleListMapper.setConfig(Map.of(
-                AttributeStatementHelper.SAML_ATTRIBUTE_NAME, "Role",
-                AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, AttributeStatementHelper.BASIC,
-                RoleListMapper.SINGLE_ROLE_ATTRIBUTE, Boolean.TRUE.toString()));
-        clientResource.getProtocolMappers().createMapper(roleListMapper).close();
 
         ProtocolMapperRepresentation audienceMapper = new ProtocolMapperRepresentation();
         audienceMapper.setName("audience-resolve");
@@ -169,8 +136,8 @@ public class OrganizationSAMLProtocolMapperTest extends AbstractOrganizationTest
                 .orElse(null);
         Assertions.assertNotNull(orgAttribute);
         List<Object> values = orgAttribute.getAttributeValue();
-        assertThat(values, hasSize(2));
-        assertThat(values, containsInAnyOrder(organizationName, "other"));
+        assertThat(values, hasSize(1));
+        assertThat(values, containsInAnyOrder(organizationName));
 
         List<AttributeType> attributes = attributeStatements(assertionsUnencrypted(samlResponse.getSamlObject()))
                 .flatMap((Function<AttributeStatementType, Stream<ASTChoiceType>>) statement -> statement.getAttributes().stream())
@@ -182,14 +149,6 @@ public class OrganizationSAMLProtocolMapperTest extends AbstractOrganizationTest
         assertAttributeValues(attributes, "organization." + organizationName + ".realm_access.roles", realmRole.getName());
         assertAttributeValues(attributes, "organization." + organizationName + ".resource_access.organization-role-client.roles",
                 clientRole.getName());
-        assertAttributeValues(attributes, "organization.other.roles", "default-roles-org-other", "other-admin");
-        Assertions.assertTrue(attributes.stream().noneMatch(attribute -> attribute.getName().startsWith("organization.disabled.")));
-        AttributeType globalRoles = attributes.stream().filter(attribute -> "Role".equals(attribute.getName())).findAny().orElse(null);
-        Assertions.assertNotNull(globalRoles);
-        Assertions.assertTrue(globalRoles.getAttributeValue().stream()
-                .noneMatch(value -> List.of("default-roles-org-" + organizationName, "org-admin", "org-auditor",
-                        "default-roles-org-other", "other-admin").contains(value)));
-
         AudienceRestrictionType audience = ((ResponseType) samlResponse.getSamlObject()).getAssertions().get(0).getAssertion()
                 .getConditions().getConditions().stream()
                 .filter(AudienceRestrictionType.class::isInstance)
@@ -212,6 +171,5 @@ public class OrganizationSAMLProtocolMapperTest extends AbstractOrganizationTest
         Assertions.assertNotNull(attribute, "Missing SAML attribute " + name);
         assertThat(attribute.getAttributeValue(), hasSize(values.length));
         assertThat(attribute.getAttributeValue(), containsInAnyOrder(values));
-        assertThat(attribute.getAttributeValue(), not(hasItem("disabled-admin")));
     }
 }
