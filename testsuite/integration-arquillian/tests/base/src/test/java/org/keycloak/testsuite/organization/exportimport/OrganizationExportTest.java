@@ -18,13 +18,19 @@
 package org.keycloak.testsuite.organization.exportimport;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Consumer;
 
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
@@ -42,15 +48,18 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
+import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.util.runonserver.ExportImportHelper;
+import org.keycloak.util.JsonSerialization;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;
@@ -64,6 +73,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OrganizationExportTest extends AbstractOrganizationTest {
@@ -186,7 +196,10 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
             organization.groups().group(devId).addMember(orgMembers.get(2).getId());
         }
 
-        RealmRepresentation importedSingleFileRealm = exportRemoveImportRealm(true);
+        RealmRepresentation importedSingleFileRealm = exportRemoveImportRealm(true,
+                exportedRealm -> validateExportedOrganizationRoles(exportedRealm, expectedManagedMembers,
+                        expectedUnmanagedMembers, expectedDefaultRoleNames, expectedCustomRoleNames,
+                        expectedCustomRoleIds, expectedCustomRoleMembers));
 
         validateImported(expectedOrganizations, expectedManagedMembers, expectedUnmanagedMembers, expectedGroupIds,
                 expectedDefaultRoleNames, expectedCustomRoleNames, expectedCustomRoleIds, expectedCustomRoleMembers, importedSingleFileRealm);
@@ -194,7 +207,10 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         managedRealm.admin().logoutAll();
         providerRealm.logoutAll();
 
-        RealmRepresentation importedDirRealm = exportRemoveImportRealm(false);
+        RealmRepresentation importedDirRealm = exportRemoveImportRealm(false,
+                exportedRealm -> validateExportedOrganizationRoles(exportedRealm, expectedManagedMembers,
+                        expectedUnmanagedMembers, expectedDefaultRoleNames, expectedCustomRoleNames,
+                        expectedCustomRoleIds, expectedCustomRoleMembers));
 
         validateImported(expectedOrganizations, expectedManagedMembers, expectedUnmanagedMembers, expectedGroupIds,
                 expectedDefaultRoleNames, expectedCustomRoleNames, expectedCustomRoleIds, expectedCustomRoleMembers, importedDirRealm);
@@ -292,6 +308,87 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
                 .map(UserRepresentation::getUsername)
                 .toList();
         assertThat(customRoleUsers, hasItem(expectedCustomRoleMembers.get(orgRep.getName())));
+    }
+
+    private void validateExportedOrganizationRoles(RealmRepresentation exportedRealm,
+            Map<String, List<String>> expectedManagedMembers, Map<String, List<String>> expectedUnmanagedMembers,
+            Map<String, String> expectedDefaultRoleNames, Map<String, String> expectedCustomRoleNames,
+            Map<String, String> expectedCustomRoleIds, Map<String, String> expectedCustomRoleMembers) {
+        List<String> organizationRoleNames = new ArrayList<>();
+
+        for (OrganizationRepresentation organization : exportedRealm.getOrganizations()) {
+            String organizationName = organization.getName();
+            String defaultRoleName = expectedDefaultRoleNames.get(organizationName);
+            String customRoleName = expectedCustomRoleNames.get(organizationName);
+            organizationRoleNames.add(defaultRoleName);
+            organizationRoleNames.add(customRoleName);
+
+            assertThat(organization.getDefaultRole().getName(), is(defaultRoleName));
+            assertThat(organization.getRoles().stream().map(RoleRepresentation::getName).toList(),
+                    containsInAnyOrder(defaultRoleName, customRoleName));
+
+            RoleRepresentation defaultRole = organization.getRoles().stream()
+                    .filter(role -> defaultRoleName.equals(role.getName()))
+                    .findFirst()
+                    .orElseThrow();
+            RoleRepresentation customRole = organization.getRoles().stream()
+                    .filter(role -> customRoleName.equals(role.getName()))
+                    .findFirst()
+                    .orElseThrow();
+            assertThat(customRole.getId(), is(expectedCustomRoleIds.get(organizationName)));
+            assertThat(defaultRole.getComposites().getOrganization(), containsInAnyOrder(customRoleName));
+            assertThat(defaultRole.getComposites().getRealm(), containsInAnyOrder("org-export-realm-role"));
+            assertThat(defaultRole.getComposites().getClient().get("org-export-test-client"),
+                    containsInAnyOrder("org-export-client-role"));
+
+            List<MemberRepresentation> managedMembers = organization.getMembers().stream()
+                    .filter(member -> MembershipType.MANAGED.equals(member.getMembershipType()))
+                    .toList();
+            assertThat(managedMembers.stream().map(MemberRepresentation::getUsername).toList(),
+                    containsInAnyOrder(expectedManagedMembers.get(organizationName).toArray()));
+            assertTrue(managedMembers.stream().allMatch(member -> member.getOrganizationRoles() == null
+                    || member.getOrganizationRoles().isEmpty()));
+
+            List<MemberRepresentation> unmanagedMembers = organization.getMembers().stream()
+                    .filter(member -> MembershipType.UNMANAGED.equals(member.getMembershipType()))
+                    .toList();
+            assertThat(unmanagedMembers.stream().map(MemberRepresentation::getUsername).toList(),
+                    containsInAnyOrder(expectedUnmanagedMembers.get(organizationName).toArray()));
+            MemberRepresentation mappedMember = unmanagedMembers.stream()
+                    .filter(member -> expectedCustomRoleMembers.get(organizationName).equals(member.getUsername()))
+                    .findFirst()
+                    .orElseThrow();
+            assertThat(mappedMember.getOrganizationRoles(), containsInAnyOrder(customRoleName));
+            assertTrue(organization.getMembers().stream()
+                    .flatMap(member -> Optional.ofNullable(member.getOrganizationRoles()).orElse(List.of()).stream())
+                    .noneMatch(defaultRoleName::equals));
+        }
+
+        assertGenericRolesDoNotContainOrganizationComposites(exportedRealm.getRoles());
+        assertGlobalMappingsDoNotContainOrganizationRoles(exportedRealm.getUsers(), organizationRoleNames);
+        assertGlobalMappingsDoNotContainOrganizationRoles(exportedRealm.getFederatedUsers(), organizationRoleNames);
+    }
+
+    private void assertGenericRolesDoNotContainOrganizationComposites(RolesRepresentation roles) {
+        if (roles == null) {
+            return;
+        }
+
+        List<RoleRepresentation> genericRoles = new ArrayList<>(Optional.ofNullable(roles.getRealm()).orElse(List.of()));
+        Optional.ofNullable(roles.getClient()).orElse(Map.of()).values().forEach(genericRoles::addAll);
+        assertTrue(genericRoles.stream().map(RoleRepresentation::getComposites).filter(Objects::nonNull)
+                .allMatch(composites -> composites.getOrganization() == null || composites.getOrganization().isEmpty()));
+    }
+
+    private void assertGlobalMappingsDoNotContainOrganizationRoles(List<UserRepresentation> users,
+            List<String> organizationRoleNames) {
+        Optional.ofNullable(users).orElse(List.of()).forEach(user -> {
+            assertTrue(Optional.ofNullable(user.getRealmRoles()).orElse(List.of()).stream()
+                    .noneMatch(organizationRoleNames::contains));
+            assertTrue(Optional.ofNullable(user.getClientRoles()).orElse(Map.of()).values().stream()
+                    .flatMap(List::stream)
+                    .noneMatch(organizationRoleNames::contains));
+        });
     }
 
     private void validateOrganizationGroups(OrganizationResource organization, Map<String, String> expectedGroupIds) {
@@ -406,7 +503,185 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         assertEquals("acme", orgs.get(0).getName());
     }
 
+    @Test
+    public void testOrganizationRoleImportValidationAndAtomicity() {
+        RealmRepresentation valid = importRealm("valid");
+        OrganizationRepresentation validOrganization = valid.getOrganizations().get(0);
+        RoleRepresentation generatedDefault = role("generated-default-id", "default-roles-org-import-org");
+        RoleRepresentation customDefault = role("custom-default-id", "member");
+        RoleRepresentation viewer = role("viewer-id", "viewer");
+        customDefault.setAttributes(Map.of("tier", List.of("base")));
+        RoleRepresentation.Composites customDefaultComposites = new RoleRepresentation.Composites();
+        customDefaultComposites.setOrganization(Set.of(viewer.getName()));
+        customDefault.setComposites(customDefaultComposites);
+        validOrganization.setRoles(List.of(generatedDefault, customDefault, viewer));
+        validOrganization.setDefaultRole(customDefault);
+        MemberRepresentation member = new MemberRepresentation();
+        member.setUsername("import-member");
+        member.setMembershipType(MembershipType.UNMANAGED);
+        member.setOrganizationRoles(List.of(viewer.getName()));
+        validOrganization.setMembers(List.of(member));
+
+        OrganizationRepresentation defaultOnlyOrganization = organization("default-only-org-id", "default-only-org");
+        RoleRepresentation defaultOnlyViewer = role("default-only-viewer-id", "viewer");
+        RoleRepresentation defaultOnlyRole = role(null, "member");
+        RoleRepresentation.Composites defaultOnlyComposites = new RoleRepresentation.Composites();
+        defaultOnlyComposites.setOrganization(Set.of(defaultOnlyViewer.getName()));
+        defaultOnlyRole.setComposites(defaultOnlyComposites);
+        defaultOnlyOrganization.setDefaultRole(defaultOnlyRole);
+        defaultOnlyOrganization.setRoles(List.of(defaultOnlyViewer));
+        valid.setOrganizations(List.of(validOrganization, defaultOnlyOrganization));
+
+        adminClient.realms().create(valid);
+        try {
+            RealmResource importedRealm = adminClient.realm(valid.getRealm());
+            List<OrganizationRepresentation> importedOrganizations = importedRealm.organizations().list(-1, -1);
+            OrganizationRepresentation importedOrganization = importedOrganizations.stream()
+                    .filter(organization -> validOrganization.getAlias().equals(organization.getAlias()))
+                    .findFirst()
+                    .orElseThrow();
+            OrganizationResource organization = importedRealm.organizations().get(importedOrganization.getId());
+            RoleRepresentation importedDefault = organization.roles().getDefault().toRepresentation();
+            assertEquals(customDefault.getName(), importedDefault.getName());
+            assertThat(organization.roles().list(false).stream().map(RoleRepresentation::getName).toList(),
+                    containsInAnyOrder(generatedDefault.getName(), customDefault.getName(), viewer.getName()));
+            assertThat(importedDefault.getAttributes().get("tier"), containsInAnyOrder("base"));
+            assertThat(organization.roles().get(importedDefault.getId()).getRoleComposites().stream()
+                    .map(RoleRepresentation::getName).toList(), containsInAnyOrder(viewer.getName()));
+            assertThat(organization.roles().get(viewer.getId()).getUserMembers().stream()
+                    .map(UserRepresentation::getUsername).toList(), containsInAnyOrder(member.getUsername()));
+
+            OrganizationRepresentation importedDefaultOnlyOrganization = importedOrganizations.stream()
+                    .filter(organizationRepresentation -> defaultOnlyOrganization.getAlias().equals(organizationRepresentation.getAlias()))
+                    .findFirst()
+                    .orElseThrow();
+            OrganizationResource defaultOnly = importedRealm.organizations().get(importedDefaultOnlyOrganization.getId());
+            RoleRepresentation importedDefaultOnlyRole = defaultOnly.roles().getDefault().toRepresentation();
+            assertEquals(defaultOnlyRole.getName(), importedDefaultOnlyRole.getName());
+            assertThat(defaultOnly.roles().list(false).stream().map(RoleRepresentation::getName).toList(),
+                    containsInAnyOrder(defaultOnlyRole.getName(), defaultOnlyViewer.getName()));
+            assertThat(defaultOnly.roles().get(importedDefaultOnlyRole.getId()).getRoleComposites().stream()
+                    .map(RoleRepresentation::getName).toList(), containsInAnyOrder(defaultOnlyViewer.getName()));
+            assertTrue(defaultOnly.members().getAll().isEmpty());
+        } finally {
+            adminClient.realm(valid.getRealm()).remove();
+        }
+
+        assertInvalidRealmImport("unnamed-role", realm -> realm.getOrganizations().get(0).setRoles(List.of(new RoleRepresentation())));
+        assertInvalidRealmImport("missing-organization-composite", realm -> {
+            RoleRepresentation role = role("role-id", "member");
+            RoleRepresentation.Composites composites = new RoleRepresentation.Composites();
+            composites.setOrganization(Set.of("missing"));
+            role.setComposites(composites);
+            realm.getOrganizations().get(0).setRoles(List.of(role));
+        });
+        assertInvalidRealmImport("cross-organization-composite", realm -> {
+            RoleRepresentation foreignRole = role("foreign-role-id", "foreign");
+            OrganizationRepresentation foreignOrganization = organization("foreign-org-id", "foreign-org");
+            foreignOrganization.setRoles(List.of(foreignRole));
+            realm.setOrganizations(List.of(realm.getOrganizations().get(0), foreignOrganization));
+
+            RoleRepresentation role = role("role-id", "member");
+            RoleRepresentation.Composites composites = new RoleRepresentation.Composites();
+            composites.setOrganization(Set.of(foreignRole.getName()));
+            role.setComposites(composites);
+            realm.getOrganizations().get(0).setRoles(List.of(role));
+        });
+        assertInvalidRealmImport("missing-realm-composite", realm -> {
+            RoleRepresentation role = role("role-id", "member");
+            RoleRepresentation.Composites composites = new RoleRepresentation.Composites();
+            composites.setRealm(Set.of("missing"));
+            role.setComposites(composites);
+            realm.getOrganizations().get(0).setRoles(List.of(role));
+        });
+        assertInvalidRealmImport("missing-client-composite", realm -> {
+            RoleRepresentation role = role("role-id", "member");
+            RoleRepresentation.Composites composites = new RoleRepresentation.Composites();
+            composites.setClient(Map.of("missing-client", List.of("missing-role")));
+            role.setComposites(composites);
+            realm.getOrganizations().get(0).setRoles(List.of(role));
+        });
+        assertInvalidRealmImport("missing-member", realm -> {
+            MemberRepresentation missing = new MemberRepresentation();
+            missing.setUsername("missing-member");
+            missing.setOrganizationRoles(List.of("default-roles-org-import-org"));
+            realm.getOrganizations().get(0).setMembers(List.of(missing));
+        });
+        assertInvalidRealmImport("missing-member-role", realm -> {
+            MemberRepresentation invalidMapping = new MemberRepresentation();
+            invalidMapping.setUsername("import-member");
+            invalidMapping.setOrganizationRoles(List.of("missing-role"));
+            realm.getOrganizations().get(0).setMembers(List.of(invalidMapping));
+        });
+        assertInvalidRealmImport("generic-organization-composite", realm -> {
+            RoleRepresentation genericRole = role("realm-role-id", "realm-role");
+            RoleRepresentation.Composites composites = new RoleRepresentation.Composites();
+            composites.setOrganization(Set.of("organization-role"));
+            genericRole.setComposites(composites);
+            RolesRepresentation roles = new RolesRepresentation();
+            roles.setRealm(List.of(genericRole));
+            realm.setRoles(roles);
+        });
+        assertInvalidRealmImport("generic-client-organization-composite", realm -> {
+            ClientRepresentation client = new ClientRepresentation();
+            client.setId("generic-client-id");
+            client.setClientId("generic-client");
+            client.setEnabled(true);
+            realm.setClients(List.of(client));
+
+            RoleRepresentation genericRole = role("client-role-id", "client-role");
+            RoleRepresentation.Composites composites = new RoleRepresentation.Composites();
+            composites.setOrganization(Set.of("organization-role"));
+            genericRole.setComposites(composites);
+            RolesRepresentation roles = new RolesRepresentation();
+            roles.setClient(Map.of(client.getClientId(), List.of(genericRole)));
+            realm.setRoles(roles);
+        });
+    }
+
+    private void assertInvalidRealmImport(String variant, Consumer<RealmRepresentation> mutation) {
+        RealmRepresentation realm = importRealm(variant);
+        mutation.accept(realm);
+
+        WebApplicationException exception = assertThrows(WebApplicationException.class, () -> adminClient.realms().create(realm));
+        assertTrue(exception.getResponse().getStatus() >= 400);
+        assertThrows(NotFoundException.class, () -> adminClient.realm(realm.getRealm()).toRepresentation(),
+                "Failed imports must not leave a partially-created realm");
+    }
+
+    private static RealmRepresentation importRealm(String variant) {
+        RealmRepresentation realm = new RealmRepresentation();
+        realm.setRealm("organization-role-import-" + variant);
+        realm.setEnabled(true);
+        realm.setOrganizationsEnabled(true);
+        realm.setUsers(List.of(UserBuilder.create().username("import-member").enabled(true).build()));
+
+        OrganizationRepresentation organization = organization("import-org-id", "import-org");
+        realm.setOrganizations(List.of(organization));
+        return realm;
+    }
+
+    private static OrganizationRepresentation organization(String id, String alias) {
+        OrganizationRepresentation organization = new OrganizationRepresentation();
+        organization.setId(id);
+        organization.setName(alias);
+        organization.setAlias(alias);
+        return organization;
+    }
+
+    private static RoleRepresentation role(String id, String name) {
+        RoleRepresentation role = new RoleRepresentation();
+        role.setId(id);
+        role.setName(name);
+        return role;
+    }
+
     private RealmRepresentation exportRemoveImportRealm(boolean file) {
+        return exportRemoveImportRealm(file, ignored -> {
+        });
+    }
+
+    private RealmRepresentation exportRemoveImportRealm(boolean file, Consumer<RealmRepresentation> exportValidator) {
         String fileOrDir;
 
         //export
@@ -422,6 +697,15 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_EXPORT));
         runOnServerMaster.run(ExportImportHelper.setRealmName(managedRealm.admin().toRepresentation().getRealm()));
         runOnServerMaster.run(ExportImportHelper.runExport());
+
+        String realmName = managedRealm.admin().toRepresentation().getRealm();
+        String realmFile = file ? fileOrDir : fileOrDir + File.separator + realmName + "-realm.json";
+        String serializedExport = runOnServerMaster.fetchString(session -> Files.readString(Path.of(realmFile)));
+        RealmRepresentation exportedRealm = Assertions.assertDoesNotThrow(() -> {
+            String exportedJson = JsonSerialization.readValue(serializedExport, String.class);
+            return JsonSerialization.readValue(exportedJson, RealmRepresentation.class);
+        });
+        exportValidator.accept(exportedRealm);
 
 
         // remove the realm and import it back

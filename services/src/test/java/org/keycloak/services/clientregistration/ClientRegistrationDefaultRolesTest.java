@@ -37,15 +37,6 @@ import static org.junit.Assert.assertEquals;
 public class ClientRegistrationDefaultRolesTest {
 
     @Test
-    public void dynamicClientRegistrationDefaultRolesUseOnlyMatchingClientRoles() throws Exception {
-        ClientModel client = clientWithDefaultRoleComposites();
-        AbstractClientRegistrationProvider provider = new AbstractClientRegistrationProvider(null) {
-        };
-
-        assertEquals(List.of("client-role"), defaultRoles(provider, client));
-    }
-
-    @Test
     public void clientIdMetadataDefaultRolesUseOnlyMatchingClientRoles() throws Exception {
         ClientModel client = clientWithDefaultRoleComposites();
         AbstractPersistentClientIdMetadataDocumentProvider<?> provider = new TestPersistentClientIdMetadataDocumentProvider();

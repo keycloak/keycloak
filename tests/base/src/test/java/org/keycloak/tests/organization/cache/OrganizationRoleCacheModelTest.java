@@ -17,15 +17,13 @@
 
 package org.keycloak.tests.organization.cache;
 
-import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.cache.CacheRealmProvider;
-import org.keycloak.models.jpa.entities.RoleEntity;
+import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -47,6 +45,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 @KeycloakIntegrationTest
 public class OrganizationRoleCacheModelTest {
@@ -80,23 +79,27 @@ public class OrganizationRoleCacheModelTest {
     }
 
     @Test
-    public void shouldCacheOrganizationRoleContainerAndLookups() {
+    public void shouldInvalidateOrganizationRoleLifecycleAcrossCachedLookups() {
         String[] ids = runOnServer.fetch(session -> {
             RealmModel realm = session.getContext().getRealm();
             OrganizationModel acme = getOrganization(session, ACME_ID);
             OrganizationModel other = getOrganization(session, OTHER_ID);
             ClientModel client = session.clients().getClientByClientId(realm, CLIENT_ID);
             RoleModel organizationRole = acme.addRole("project-admin");
-            RoleModel directRole = session.roles().addOrganizationRole(acme, "direct-cache-role");
+            RoleModel childRole = session.roles().addOrganizationRole(acme, "direct-cache-role");
             RoleModel otherRole = other.addRole("project-admin");
             RoleModel realmRole = session.roles().addRealmRole(realm, "cache-realm-role");
             RoleModel clientRole = session.roles().addClientRole(client, "cache-client-role");
+            UserModel user = session.users().addUser(realm, "cache-organization-role-member");
+            session.getProvider(OrganizationProvider.class).addMember(acme, user);
 
             assertThat(acme.getRole("project-admin").getId(), is(organizationRole.getId()));
 
-            return new String[] { organizationRole.getId(), directRole.getId(), otherRole.getId(), realmRole.getId(), clientRole.getId() };
+            return new String[] { organizationRole.getId(), childRole.getId(), otherRole.getId(), realmRole.getId(),
+                    clientRole.getId(), user.getId() };
         }, String[].class);
 
+        // Warm every organization-role cache path before mutating the backing models.
         runOnServer.run(session -> {
             RealmModel realm = session.getContext().getRealm();
             OrganizationModel acme = getOrganization(session, ACME_ID);
@@ -116,50 +119,68 @@ public class OrganizationRoleCacheModelTest {
             assertThat(organizationRole.isOrganizationRole(), is(true));
             assertThat(organizationRole.getContainerId(), is(acme.getId()));
             assertThat(organizationRole.getContainer().getId(), is(acme.getId()));
+            assertThat(acme.getDefaultRole(), notNullValue());
             assertThat(acme.getRolesStream().map(RoleModel::getName).toList(),
                     containsInAnyOrder(Constants.DEFAULT_ORGANIZATION_ROLES_ROLE_PREFIX + "-cache-acme", "project-admin", "direct-cache-role"));
             assertThat(acme.searchForRolesStream("project", null, null).map(RoleModel::getName).toList(), hasItem("project-admin"));
             assertThat(session.roles().getOrganizationRolesCount(acme, "project"), is(1L));
         });
-    }
 
-    @Test
-    public void shouldInvalidateStaleOrganizationRoleQueries() {
-        String roleId = runOnServer.fetch(session -> {
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
             OrganizationModel acme = getOrganization(session, ACME_ID);
+            RoleModel role = session.roles().getRoleById(acme, ids[0]);
+            RoleModel childRole = session.roles().getRoleById(acme, ids[1]);
+            RoleModel realmRole = session.roles().getRoleById(realm, ids[3]);
+            RoleModel clientRole = session.roles().getRoleById(realm, ids[4]);
+            UserModel user = session.users().getUserById(realm, ids[5]);
 
-            return acme.addRole("stale-cache-role").getId();
+            role.setName("renamed-project-admin");
+            role.addCompositeRole(childRole);
+            role.addCompositeRole(realmRole);
+            role.addCompositeRole(clientRole);
+            user.grantRole(role);
+        });
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            OrganizationModel acme = getOrganization(session, ACME_ID);
+            RoleModel role = session.roles().getRoleById(acme, ids[0]);
+            UserModel user = session.users().getUserById(realm, ids[5]);
+
+            assertThat(role.getName(), is("renamed-project-admin"));
+            assertThat(acme.getRole("project-admin"), nullValue());
+            assertThat(acme.getRole("renamed-project-admin").getId(), is(ids[0]));
+            assertThat(role.getCompositesStream().map(RoleModel::getId).toList(),
+                    containsInAnyOrder(ids[1], ids[3], ids[4]));
+            assertThat(user.hasDirectRole(role), is(true));
+            assertThat(acme.getRolesStream().map(RoleModel::getName).toList(), not(hasItem("project-admin")));
+            assertThat(acme.getRolesStream().map(RoleModel::getName).toList(), hasItem("renamed-project-admin"));
+        });
+
+        String recreatedRoleId = runOnServer.fetch(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            OrganizationModel acme = getOrganization(session, ACME_ID);
+            RoleModel role = session.roles().getRoleById(acme, ids[0]);
+            UserModel user = session.users().getUserById(realm, ids[5]);
+
+            user.deleteRoleMapping(role);
+            role.getCompositesStream().toList().forEach(role::removeCompositeRole);
+            session.roles().removeRole(role);
+            assertThat(session.roles().getRoleById(acme, ids[0]), nullValue());
+            assertThat(acme.getRole("renamed-project-admin"), nullValue());
+
+            return acme.addRole("renamed-project-admin").getId();
         }, String.class);
 
         runOnServer.run(session -> {
             OrganizationModel acme = getOrganization(session, ACME_ID);
 
-            assertThat(session.roles().getRoleById(acme, roleId).getName(), is("stale-cache-role"));
-            assertThat(acme.getRole("stale-cache-role").getId(), is(roleId));
-            assertThat(acme.getRolesStream().map(RoleModel::getName).toList(), hasItem("stale-cache-role"));
-        });
-
-        runOnServer.run(session -> {
-            RoleEntity entity = session.getProvider(JpaConnectionProvider.class).getEntityManager().find(RoleEntity.class, roleId);
-            entity.setName("fresh-cache-role");
-        });
-
-        runOnServer.run(session -> {
-            OrganizationModel acme = getOrganization(session, ACME_ID);
-
-            assertThat(session.roles().getRoleById(acme, roleId).getName(), is("stale-cache-role"));
-            assertThat(acme.getRole("stale-cache-role").getId(), is(roleId));
-        });
-
-        runOnServer.run(session -> {
-            OrganizationModel acme = getOrganization(session, ACME_ID);
-            session.getProvider(CacheRealmProvider.class).registerRoleInvalidation(roleId, "stale-cache-role", acme.getId());
-
-            assertThat(session.roles().getRoleById(acme, roleId).getName(), is("fresh-cache-role"));
-            assertThat(acme.getRole("stale-cache-role"), nullValue());
-            assertThat(acme.getRole("fresh-cache-role").getId(), is(roleId));
-            assertThat(acme.getRolesStream().map(RoleModel::getName).toList(), not(hasItem("stale-cache-role")));
-            assertThat(acme.getRolesStream().map(RoleModel::getName).toList(), hasItem("fresh-cache-role"));
+            assertNotEquals(ids[0], recreatedRoleId);
+            assertThat(session.roles().getRoleById(acme, ids[0]), nullValue());
+            assertThat(acme.getRole("renamed-project-admin").getId(), is(recreatedRoleId));
+            assertThat(acme.searchForRolesStream("renamed", null, null).map(RoleModel::getId).toList(),
+                    containsInAnyOrder(recreatedRoleId));
         });
     }
 

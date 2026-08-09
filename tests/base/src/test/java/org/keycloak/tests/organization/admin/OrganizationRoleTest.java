@@ -32,6 +32,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
@@ -218,6 +219,26 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
         assertFalse(parent.getId().equals(realmRole.getId()));
         assertEquals(realmRole.getId(), realm.admin().roles().get("shared-role").toRepresentation().getId());
 
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId("organization-role-isolation-client");
+        client.setEnabled(true);
+        String clientId;
+        try (Response response = realm.admin().clients().create(client)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            clientId = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.clients().get(clientId).remove());
+        realm.admin().clients().get(clientId).roles().create(new RoleRepresentation(sharedRoleName,
+                "Client role with the same name", true));
+        RoleRepresentation clientRole = realm.admin().clients().get(clientId).roles().get(sharedRoleName).toRepresentation();
+        assertThat(realm.admin().roles().list().stream().map(RoleRepresentation::getId).toList(),
+                hasItem(realmRole.getId()));
+        assertFalse(realm.admin().roles().list().stream().map(RoleRepresentation::getId).toList().contains(parent.getId()));
+        assertThat(realm.admin().clients().get(clientId).roles().list().stream().map(RoleRepresentation::getId).toList(),
+                hasItem(clientRole.getId()));
+        assertFalse(realm.admin().clients().get(clientId).roles().list().stream()
+                .map(RoleRepresentation::getId).toList().contains(parent.getId()));
+
         RoleRepresentation duplicate = new RoleRepresentation("shared-role", null, false);
         try (Response response = organizationResource.roles().create(duplicate)) {
             assertEquals(Response.Status.CONFLICT.getStatusCode(), response.getStatus());
@@ -255,6 +276,14 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
         assertTrue(parentResource.getUserMembers().isEmpty());
 
         parentResource.addUserMembers(List.of(firstUser, secondUser));
+        assertFalse(realm.admin().users().get(firstUser.getId()).roles().realmLevel().listAll().stream()
+                .map(RoleRepresentation::getId).toList().contains(parent.getId()));
+        assertFalse(realm.admin().users().get(firstUser.getId()).roles().clientLevel(clientId).listAll().stream()
+                .map(RoleRepresentation::getId).toList().contains(parent.getId()));
+        assertThrows(NotFoundException.class,
+                () -> realm.admin().users().get(firstUser.getId()).roles().realmLevel().add(List.of(parent)));
+        assertThrows(NotFoundException.class,
+                () -> realm.admin().users().get(firstUser.getId()).roles().clientLevel(clientId).add(List.of(parent)));
         assertThrows(NotFoundException.class, () -> parentResource.deleteUserMembers(List.of(firstUser, missingUser)));
         assertThat(parentResource.getUserMembers().stream().map(UserRepresentation::getId).toList(),
                 containsInAnyOrder(firstUser.getId(), secondUser.getId()));
@@ -264,13 +293,21 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
         assertThrows(BadRequestException.class, () -> defaultRole.deleteUserMembers(List.of(firstUser)));
 
         assertThrows(NotFoundException.class, () -> realm.admin().rolesById().getRole(parent.getId()));
+        assertThrows(NotFoundException.class, () -> realm.admin().rolesById().updateRole(parent.getId(), parent));
+        assertThrows(NotFoundException.class, () -> realm.admin().rolesById().deleteRole(parent.getId()));
         assertThrows(NotFoundException.class,
                 () -> realm.admin().rolesById().addComposites(parent.getId(), List.of(realmRole)));
+        assertThrows(BadRequestException.class,
+                () -> realm.admin().roles().get(realmRole.getName()).addComposites(List.of(parent)));
+        assertThrows(BadRequestException.class,
+                () -> realm.admin().clients().get(clientId).roles().get(clientRole.getName()).addComposites(List.of(parent)));
 
         GroupRepresentation group = createGroup(realm.admin(), "organization-role-isolation-group");
         realm.cleanup().add(r -> r.groups().group(group.getId()).remove());
         assertThrows(NotFoundException.class,
                 () -> realm.admin().groups().group(group.getId()).roles().realmLevel().add(List.of(parent)));
+        assertThrows(NotFoundException.class,
+                () -> realm.admin().groups().group(group.getId()).roles().clientLevel(clientId).add(List.of(parent)));
 
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName("organization-role-isolation-scope");
@@ -283,6 +320,12 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
         realm.cleanup().add(r -> r.clientScopes().get(clientScopeId).remove());
         assertThrows(NotFoundException.class,
                 () -> realm.admin().clientScopes().get(clientScopeId).getScopeMappings().realmLevel().add(List.of(parent)));
+        realm.admin().clientScopes().get(clientScopeId).getScopeMappings().clientLevel(clientId).add(List.of(parent));
+        assertThat(realm.admin().clientScopes().get(clientScopeId).getScopeMappings().clientLevel(clientId).listAll().stream()
+                .map(RoleRepresentation::getId).toList(), contains(clientRole.getId()));
+        realm.admin().clientScopes().get(clientScopeId).getScopeMappings().clientLevel(clientId).remove(List.of(clientRole));
+        assertThrows(NotFoundException.class,
+                () -> realm.admin().clientScopes().get(clientScopeId).getScopeMappings().clientLevel(clientId).add(List.of(assigned)));
 
         parentResource.deleteUserMembers(List.of(firstUser, secondUser));
         parentResource.deleteComposites(List.of(assigned, realmRole));

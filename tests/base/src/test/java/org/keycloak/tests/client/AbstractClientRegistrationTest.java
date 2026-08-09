@@ -121,7 +121,8 @@ public abstract class AbstractClientRegistrationTest {
 
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            realm.clients(ClientBuilder.create("myclient-test")
+            realm.organizationsEnabled(true)
+                    .clients(ClientBuilder.create("myclient-test")
                     .publicClient(true)
                     .directAccessGrantsEnabled(true));
 
