@@ -825,6 +825,24 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testPatchImmutableMetaCreated() {
+        User user = client.users().create(createUser());
+        adminEvents.clear();
+
+        try {
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .replace("meta.created", "2020-01-01T00:00:00Z")
+                    .build());
+            fail("should fail because meta.created is immutable");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("mutability", error.getScimType());
+        }
+    }
+
+    @Test
     public void testUserMembership() {
         GroupRepresentation groupA = createGroup("Group A");
         GroupRepresentation groupA1 = createSubGroup(groupA, "Group A1");

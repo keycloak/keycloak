@@ -75,6 +75,7 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
 
                 yield members.toList();
             }
+            case "createdTimestamp" -> model.getCreatedTimestamp();
             default -> null;
         };
     }
