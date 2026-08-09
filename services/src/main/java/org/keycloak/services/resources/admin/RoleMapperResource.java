@@ -52,6 +52,7 @@ import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -212,8 +213,8 @@ public class RoleMapperResource {
 
         Function<RoleModel, RoleRepresentation> toBriefRepresentation = briefRepresentation ?
                 ModelToRepresentation::toBriefRepresentation : ModelToRepresentation::toRepresentation;
-        return realm.getRolesStream()
-                .filter(roleMapper::hasRole)
+        return RoleUtils.getDeepRoleMappings(roleMapper).stream()
+                .filter(r -> RoleUtils.isRealmRole(r, realm))
                 .map(toBriefRepresentation);
     }
 
