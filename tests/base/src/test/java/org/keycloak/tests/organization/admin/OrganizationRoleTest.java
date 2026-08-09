@@ -22,12 +22,19 @@ import java.util.Map;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.GenericType;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
+import org.keycloak.admin.client.resource.BearerAuthFilter;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.OrganizationRoleResource;
+import org.keycloak.admin.ui.rest.model.RoleDeleteRequest;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AdminRoles;
@@ -39,6 +46,7 @@ import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -64,6 +72,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
 public class OrganizationRoleTest extends AbstractOrganizationTest {
+
+    @InjectAdminClient
+    Keycloak adminClient;
 
     @InjectAdminEvents
     AdminEvents adminEvents;
@@ -329,6 +340,156 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
 
         parentResource.deleteUserMembers(List.of(firstUser, secondUser));
         parentResource.deleteComposites(List.of(assigned, realmRole));
+    }
+
+    @Test
+    public void testAdminUiRoleMappingsFilterOrganizationRoles() {
+        OrganizationRepresentation organization = createOrganization("admin-ui-role-mappings");
+        OrganizationResource organizationResource = realm.admin().organizations().get(organization.getId());
+        RoleRepresentation organizationRole = createOrganizationRole(organizationResource, "admin-ui-organization-role");
+        MemberRepresentation member = addMember(organizationResource, "admin-ui-role-member@example.org");
+        UserRepresentation user = realm.admin().users().get(member.getId()).toRepresentation();
+        organizationResource.roles().get(organizationRole.getId()).addUserMembers(List.of(user));
+
+        String realmRoleName = "admin-ui-realm-role";
+        RoleRepresentation realmRole = new RoleRepresentation(realmRoleName, null, false);
+        realm.admin().roles().create(realmRole);
+        realm.cleanup().add(r -> r.roles().deleteRole(realmRoleName));
+        realmRole = realm.admin().roles().get(realmRoleName).toRepresentation();
+
+        String realmCompositeName = "admin-ui-realm-composite";
+        RoleRepresentation realmComposite = new RoleRepresentation(realmCompositeName, null, false);
+        realm.admin().roles().create(realmComposite);
+        realm.cleanup().add(r -> r.roles().deleteRole(realmCompositeName));
+        realmComposite = realm.admin().roles().get(realmCompositeName).toRepresentation();
+
+        ClientRepresentation roleClient = new ClientRepresentation();
+        roleClient.setClientId("admin-ui-role-source");
+        roleClient.setEnabled(true);
+        String roleClientId;
+        try (Response response = realm.admin().clients().create(roleClient)) {
+            roleClientId = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.clients().get(roleClientId).remove());
+        realm.admin().clients().get(roleClientId).roles().create(new RoleRepresentation("admin-ui-mapped-client-role", null, true));
+        realm.admin().clients().get(roleClientId).roles().create(new RoleRepresentation("admin-ui-available-client-role", null, true));
+        RoleRepresentation mappedClientRole = realm.admin().clients().get(roleClientId).roles()
+                .get("admin-ui-mapped-client-role").toRepresentation();
+
+        ClientRepresentation targetClient = new ClientRepresentation();
+        targetClient.setClientId("admin-ui-role-target");
+        targetClient.setEnabled(true);
+        String targetClientId;
+        try (Response response = realm.admin().clients().create(targetClient)) {
+            targetClientId = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.clients().get(targetClientId).remove());
+
+        GroupRepresentation group = createGroup(realm.admin(), "admin-ui-role-group");
+        realm.cleanup().add(r -> r.groups().group(group.getId()).remove());
+
+        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
+        clientScope.setName("admin-ui-role-client-scope");
+        clientScope.setProtocol("openid-connect");
+        String clientScopeId;
+        try (Response response = realm.admin().clientScopes().create(clientScope)) {
+            clientScopeId = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.clientScopes().get(clientScopeId).remove());
+
+        realm.admin().users().get(user.getId()).roles().realmLevel().add(List.of(realmRole));
+        realm.admin().users().get(user.getId()).roles().clientLevel(roleClientId).add(List.of(mappedClientRole));
+        realm.admin().groups().group(group.getId()).roles().realmLevel().add(List.of(realmRole));
+        realm.admin().groups().group(group.getId()).roles().clientLevel(roleClientId).add(List.of(mappedClientRole));
+        realm.admin().clientScopes().get(clientScopeId).getScopeMappings().realmLevel().add(List.of(realmRole));
+        realm.admin().clientScopes().get(clientScopeId).getScopeMappings().clientLevel(roleClientId).add(List.of(mappedClientRole));
+        realm.admin().clients().get(targetClientId).getScopeMappings().realmLevel().add(List.of(realmRole));
+        realm.admin().clients().get(targetClientId).getScopeMappings().clientLevel(roleClientId).add(List.of(mappedClientRole));
+        realm.admin().roles().get(realmComposite.getName()).addComposites(List.of(realmRole, mappedClientRole));
+
+        try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+            WebTarget uiExt = httpClient.target(keycloakUrls.getBaseUrl().toString())
+                    .path("admin").path("realms").path(realm.getName()).path("ui-ext")
+                    .register(new BearerAuthFilter(adminClient.tokenManager()));
+
+            assertAvailableClientRole(uiExt, "users", user.getId());
+            assertAvailableClientRole(uiExt, "groups", group.getId());
+            assertAvailableClientRole(uiExt, "clientScopes", clientScopeId);
+            assertAvailableClientRole(uiExt, "clients", targetClientId);
+
+            List<Map<String, Object>> effectiveClientRoles = getRoleMappings(uiExt, "effective-roles", "users", user.getId());
+            assertThat(effectiveClientRoles.stream().map(role -> role.get("role")).toList(),
+                    hasItem("admin-ui-mapped-client-role"));
+
+            List<Map<String, Object>> allEffectiveRoles = getRoleMappings(uiExt, "effective-roles-all", "users", user.getId());
+            assertThat(allEffectiveRoles.stream().map(role -> role.get("name")).toList(), hasItem(realmRole.getName()));
+            assertThat(allEffectiveRoles.stream().map(role -> role.get("name")).toList(),
+                    hasItem("admin-ui-mapped-client-role"));
+            assertFalse(allEffectiveRoles.stream().map(role -> role.get("name")).toList()
+                    .contains(organizationRole.getName()));
+
+            try (Response response = uiExt.path("role-mappings").path("roles").path(realmComposite.getId())
+                    .request(MediaType.APPLICATION_JSON).get()) {
+                assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+                Map<String, Object> mappings = response.readEntity(new GenericType<>() {});
+                assertTrue(mappings.containsKey("realmMappings"));
+                assertTrue(mappings.containsKey("clientMappings"));
+            }
+
+            assertNotFound(uiExt.path("available-roles").path("roles").path(organizationRole.getId())
+                    .queryParam("first", 0).queryParam("max", 10));
+            assertNotFound(uiExt.path("effective-roles-all").path("roles").path(organizationRole.getId()));
+            assertNotFound(uiExt.path("role-mappings").path("roles").path(organizationRole.getId()));
+            assertNotFound(uiExt.path("role-mapping-delete").path("roles").path(organizationRole.getId()),
+                    List.of(new RoleDeleteRequest(realmRole.getId(), realmRole.getName(), null)));
+            assertNotFound(uiExt.path("role-mapping-delete").path("users").path(user.getId()),
+                    List.of(new RoleDeleteRequest(organizationRole.getId(), organizationRole.getName(), null)));
+
+            assertThat(organizationResource.roles().get(organizationRole.getId()).getUserMembers().stream()
+                    .map(UserRepresentation::getId).toList(), contains(user.getId()));
+
+            try (Response response = uiExt.path("role-mapping-delete").path("users").path(user.getId())
+                    .request(MediaType.APPLICATION_JSON)
+                    .post(Entity.json(List.of(new RoleDeleteRequest(realmRole.getId(), realmRole.getName(), null))))) {
+                assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+            }
+            assertFalse(realm.admin().users().get(user.getId()).roles().realmLevel().listAll().stream()
+                    .map(RoleRepresentation::getId).toList().contains(realmRole.getId()));
+        }
+    }
+
+    private void assertAvailableClientRole(WebTarget uiExt, String type, String id) {
+        List<Map<String, Object>> roles = getRoleMappings(uiExt, "available-roles", type, id,
+                Map.of("search", "admin-ui-available-client-role", "first", 0, "max", 10));
+        assertThat(roles.stream().map(role -> role.get("role")).toList(), contains("admin-ui-available-client-role"));
+    }
+
+    private List<Map<String, Object>> getRoleMappings(WebTarget uiExt, String endpoint, String type, String id) {
+        return getRoleMappings(uiExt, endpoint, type, id, Map.of());
+    }
+
+    private List<Map<String, Object>> getRoleMappings(WebTarget uiExt, String endpoint, String type, String id,
+            Map<String, Object> query) {
+        WebTarget target = uiExt.path(endpoint).path(type).path(id);
+        for (Map.Entry<String, Object> parameter : query.entrySet()) {
+            target = target.queryParam(parameter.getKey(), parameter.getValue());
+        }
+        try (Response response = target.request(MediaType.APPLICATION_JSON).get()) {
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+            return response.readEntity(new GenericType<>() {});
+        }
+    }
+
+    private void assertNotFound(WebTarget target) {
+        try (Response response = target.request(MediaType.APPLICATION_JSON).get()) {
+            assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
+        }
+    }
+
+    private void assertNotFound(WebTarget target, List<RoleDeleteRequest> roles) {
+        try (Response response = target.request(MediaType.APPLICATION_JSON).post(Entity.json(roles))) {
+            assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
+        }
     }
 
     private RoleRepresentation createOrganizationRole(OrganizationResource organization, String name) {

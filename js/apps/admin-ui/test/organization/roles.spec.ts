@@ -115,44 +115,9 @@ test.describe.serial("Organization roles", () => {
     }
   };
 
-  test("creates and edits an organization role", async ({ page }) => {
-    const role = roleName("team-lead");
-
-    try {
-      await createRole(page, role);
-      await openRole(page, role);
-      await page.locator('textarea[name="description"]').fill("Leads the team");
-      await clickSaveButton(page);
-      await assertNotificationMessage(page, "Organization role saved");
-      await expect(page.locator('textarea[name="description"]')).toHaveValue(
-        "Leads the team",
-      );
-    } finally {
-      await cleanupRole(page, role);
-    }
-  });
-
-  test("assigns and removes organization role composites", async ({ page }) => {
+  test("manages roles, composites, and paginated members", async ({ page }) => {
     const parent = roleName("team-lead");
     const child = roleName("team-member");
-
-    try {
-      await createRole(page, parent);
-      await createRole(page, child);
-      await openRole(page, parent);
-      await addComposite(page, child);
-      await expect(page.getByRole("row", { name: child })).toBeVisible();
-      await removeComposite(page, child);
-      await expect(page.getByRole("row", { name: child })).toBeHidden();
-    } finally {
-      await cleanupRole(page, parent);
-      await cleanupRole(page, child);
-    }
-  });
-
-  test("shows effective organization role composites", async ({ page }) => {
-    const parent = roleName("effective-parent");
-    const child = roleName("effective-child");
     const nested = roleName("effective-nested");
 
     try {
@@ -165,29 +130,34 @@ test.describe.serial("Organization roles", () => {
       await returnToRoleList(page);
 
       await openRole(page, parent);
+      await page.locator('textarea[name="description"]').fill("Leads the team");
+      await clickSaveButton(page);
+      await assertNotificationMessage(page, "Organization role saved");
+      await expect(page.locator('textarea[name="description"]')).toHaveValue(
+        "Leads the team",
+      );
+
       await addComposite(page, child);
       await assertRowExists(page, nested, false);
 
       await page.getByTestId("hideInheritedRoles").click();
       await assertRowExists(page, nested);
-      await expect(page.getByRole("row", { name: nested })).toBeVisible();
-    } finally {
-      await cleanupRole(page, parent);
-      await cleanupRole(page, child);
-      await cleanupRole(page, nested);
-    }
-  });
+      await removeComposite(page, child);
+      await assertRowExists(page, child, false);
 
-  test("assigns and removes organization role members", async ({ page }) => {
-    const role = roleName("team-member");
-
-    try {
-      await createRole(page, role);
-      await openRole(page, role);
       await page.getByTestId("organization-role-users-tab").click();
       await page.getByRole("button", { name: "Assign members" }).click();
-      await clickSelectRow(page, "Users", memberName);
+
+      const candidateSearch = page.getByPlaceholder("Search user");
+      await candidateSearch.fill(secondMemberName);
+      await candidateSearch.press("Enter");
+      await assertRowExists(page, secondMemberName);
+      await assertRowExists(page, memberName, false);
       await clickSelectRow(page, "Users", secondMemberName);
+
+      await candidateSearch.fill("");
+      await candidateSearch.press("Enter");
+      await clickSelectRow(page, "Users", memberName);
       await page.getByRole("button", { name: "Assign", exact: true }).click();
       await assertNotificationMessage(
         page,
@@ -216,17 +186,29 @@ test.describe.serial("Organization roles", () => {
       );
       await assertRowExists(page, memberName, false);
       await expect(page.getByRole("row", { name: memberName })).toBeHidden();
+
+      await returnToRoleList(page);
+      await deleteRoleFromList(page, parent);
     } finally {
-      await cleanupRole(page, role);
+      await cleanupRole(page, parent);
+      await cleanupRole(page, child);
+      await cleanupRole(page, nested);
     }
   });
 
-  test("protects the default organization role", async ({ page }) => {
+  test("protects the default role and deletes regular roles", async ({
+    page,
+  }) => {
     const child = roleName("default-child");
+    const regularRole = roleName("delete-me");
     const defaultRole = `default-roles-org-${organizationAlias}`;
 
     try {
       await createRole(page, child);
+      await createRole(page, regularRole);
+      await deleteRoleFromList(page, regularRole);
+      await expect(page.getByRole("row", { name: regularRole })).toBeHidden();
+
       await assertRowExists(page, defaultRole);
       await openRole(page, defaultRole);
       await expect(page.getByTestId("delete-organization-role")).toBeHidden();
@@ -238,14 +220,7 @@ test.describe.serial("Organization roles", () => {
       await removeComposite(page, child);
     } finally {
       await cleanupRole(page, child);
+      await cleanupRole(page, regularRole);
     }
-  });
-
-  test("deletes a non-default organization role", async ({ page }) => {
-    const role = roleName("delete-me");
-
-    await createRole(page, role);
-    await deleteRoleFromList(page, role);
-    await expect(page.getByRole("row", { name: role })).toBeHidden();
   });
 });
