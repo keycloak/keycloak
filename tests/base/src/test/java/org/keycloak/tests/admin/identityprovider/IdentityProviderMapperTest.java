@@ -11,10 +11,14 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.broker.provider.HardcodedOrganizationRoleMapper;
+import org.keycloak.broker.provider.OrganizationRoleMapperHelper;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -264,6 +268,18 @@ public class IdentityProviderMapperTest extends AbstractIdentityProviderTest {
         expected.addAll(Arrays.asList(mapperIds));
 
         Assertions.assertEquals(expected, mapperTypes.keySet(), "mapperTypes");
+
+        IdentityProviderMapperTypeRepresentation organizationRoleMapper = mapperTypes.get(HardcodedOrganizationRoleMapper.PROVIDER_ID);
+        Assertions.assertEquals(HardcodedOrganizationRoleMapper.PROVIDER_ID, organizationRoleMapper.getId());
+        Assertions.assertEquals("Hardcoded Organization Role", organizationRoleMapper.getName());
+        Assertions.assertEquals("Role Importer", organizationRoleMapper.getCategory());
+        Assertions.assertFalse(organizationRoleMapper.getHelpText().isBlank());
+        ConfigPropertyRepresentation roleProperty = organizationRoleMapper.getProperties().stream()
+                .filter(property -> OrganizationRoleMapperHelper.ORGANIZATION_ROLE.equals(property.getName()))
+                .findAny()
+                .orElseThrow();
+        Assertions.assertEquals(ProviderConfigProperty.ORGANIZATION_ROLE_TYPE, roleProperty.getType());
+        Assertions.assertTrue(roleProperty.isRequired());
     }
 
     public static class IdentityProviderMapperServerConf implements KeycloakServerConfig {

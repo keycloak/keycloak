@@ -146,45 +146,28 @@ public class OrganizationRoleMembershipOIDCMapperTest extends AbstractOrganizati
         }
         assertThat(accessToken.getResourceAccess(), not(hasKey(clientRole.clientId())));
         assertThat(accessToken.getResourceAccess(), not(hasKey("acme")));
-    }
 
-    @Test
-    public void testCustomClaimName() throws Exception {
-        assertCustomClaimName("my_orgs");
-    }
+        assertCustomClaimName("my_orgs", "acme", "acme-admin");
+        assertCustomClaimName("custom.org", "acme", "acme-admin");
 
-    @Test
-    public void testDottedClaimName() throws Exception {
-        assertCustomClaimName("custom.org");
-    }
+        AccessTokenResponse responseWithoutOrganizationScope = authenticate("openid");
+        AccessToken accessTokenWithoutOrganizationScope = TokenVerifier.create(responseWithoutOrganizationScope.getAccessToken(), AccessToken.class).getToken();
 
-    @Test
-    public void testNoClaimWithoutOrganizationScope() throws Exception {
-        OrganizationResource organization = realm.admin().organizations().get(createOrganization("acme").getId());
-        MemberRepresentation member = addMember(organization, memberEmail, "Test", "User");
-        assignOrganizationRole(organization, createOrganizationRole(organization, "member"), member.getId());
-
-        AccessTokenResponse response = authenticate("openid");
-        AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
-
-        assertThat(accessToken.getOtherClaims(), not(hasKey(OAuth2Constants.ORGANIZATION)));
+        assertThat(accessTokenWithoutOrganizationScope.getOtherClaims(), not(hasKey(OAuth2Constants.ORGANIZATION)));
+        assertThat(accessTokenWithoutOrganizationScope.getOtherClaims(), not(hasKey("custom")));
     }
 
     @SuppressWarnings("unchecked")
-    private void assertCustomClaimName(String claimName) throws Exception {
-        OrganizationResource organization = realm.admin().organizations().get(createOrganization("acme").getId());
-        MemberRepresentation member = addMember(organization, memberEmail, "Test", "User");
-        RoleRepresentation role = createOrganizationRole(organization, "member");
-        assignOrganizationRole(organization, role, member.getId());
+    private void assertCustomClaimName(String claimName, String organizationAlias, String roleName) throws Exception {
         setMapperConfig(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, claimName);
 
-        AccessTokenResponse response = authenticate("openid organization");
+        AccessTokenResponse response = authenticate("openid organization:*");
         AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
-        Map<String, Object> organizationData = organizationData(accessToken.getOtherClaims(), claimName, "acme");
+        Map<String, Object> organizationData = organizationData(accessToken.getOtherClaims(), claimName, organizationAlias);
 
         List<String> organizationRoles = (List<String>) organizationData.get(OrganizationRoleMapperUtils.ROLES);
         assertThat(organizationData, not(hasKey("organization_roles")));
-        assertThat(organizationRoles, hasItem("member"));
+        assertThat(organizationRoles, hasItem(roleName));
         assertThat(accessToken.getOtherClaims(), not(hasKey(OAuth2Constants.ORGANIZATION)));
         if (claimName.contains(".")) {
             assertThat(accessToken.getOtherClaims(), not(hasKey(claimName)));
