@@ -88,11 +88,12 @@ public class ScimJPAPredicateEvaluator extends ScimFilterParserBaseVisitor<JPAFi
 
     @Override
     public JPAFilterResult visitValuePath(ScimFilterParser.ValuePathContext ctx) {
-        parentPath = ctx.ATTRPATH().getText();
+        String previousPath = parentPath;
+        parentPath = resolveAttrPath(ctx.ATTRPATH().getText());
         try {
             return visit(ctx.expression());
         } finally {
-            parentPath = null;
+            parentPath = previousPath;
         }
     }
 
