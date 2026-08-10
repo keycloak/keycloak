@@ -27,6 +27,9 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
 
     public static final String ANNOTATION_SCIM_SCHEMA_ATTRIBUTE = "kc.scim.schema.attribute";
     private final KeycloakSession session;
+    private UserProfile metadataProfile;
+    private UserModel cachedUser;
+    private Attributes cachedUserAttributes;
 
     public AbstractUserModelSchema(KeycloakSession session, String name) {
         super(name);
@@ -82,24 +85,17 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
         if (UserModel.CREATED_TIMESTAMP.equals(name)) {
             return model.getCreatedTimestamp();
         }
-        UserProfile profile = session.getProvider(UserProfileProvider.class).create(UserProfileContext.SCIM, model);
-        Attributes attributes = profile.getAttributes();
-        return attributes.getFirst(name);
+        return getUserAttributes(model).getFirst(name);
     }
 
     private Map<String, Object> getAttributeAnnotations(String name) {
-        AttributeMetadata metadata = getProfileAttributes().getMetadata(name);
+        AttributeMetadata metadata = getUserProfile().getAttributes().getMetadata(name);
 
         if (metadata == null) {
             return Map.of();
         }
 
         return ofNullable(metadata.getAnnotations()).orElse(Map.of());
-    }
-
-    private Attributes getProfileAttributes() {
-        UserProfile profile = session.getProvider(UserProfileProvider.class).create(UserProfileContext.SCIM, Map.of());
-        return profile.getAttributes();
     }
 
     protected String createModelAttributeResolver(Attribute<UserModel, User> attribute) {
@@ -119,7 +115,19 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
     }
 
     protected UserProfile getUserProfile() {
-        return session.getProvider(UserProfileProvider.class).create(UserProfileContext.SCIM, Map.of());
+        if (metadataProfile == null) {
+            metadataProfile = session.getProvider(UserProfileProvider.class).create(UserProfileContext.SCIM, Map.of());
+        }
+        return metadataProfile;
+    }
+
+    private Attributes getUserAttributes(UserModel model) {
+        if (cachedUser != model) {
+            UserProfile profile = session.getProvider(UserProfileProvider.class).create(UserProfileContext.SCIM, model);
+            cachedUserAttributes = profile.getAttributes();
+            cachedUser = model;
+        }
+        return cachedUserAttributes;
     }
 
     protected boolean canViewGroup(GroupModel group) {
