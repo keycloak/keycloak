@@ -117,11 +117,7 @@ public final class LDAPContextManager implements AutoCloseable {
                 setAdminConnectionAuthProperties(ldapContext);
             }
             success = true;
-        } catch (NamingException e) {
-            errorName = e.getClass().getSimpleName();
-            tracing.error(e);
-            throw e;
-        } catch (RuntimeException e) {
+        } catch (NamingException | RuntimeException e) {
             errorName = e.getClass().getSimpleName();
             tracing.error(e);
             throw e;

@@ -857,11 +857,7 @@ public class LDAPOperationManager {
             R execute = operation.execute(context);
             success = true;
             return execute;
-        } catch (NamingException e) {
-            errorName = e.getClass().getSimpleName();
-            tracing.error(e);
-            throw e;
-        } catch (RuntimeException e) {
+        } catch (NamingException | RuntimeException e) {
             errorName = e.getClass().getSimpleName();
             tracing.error(e);
             throw e;
