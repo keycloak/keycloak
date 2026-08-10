@@ -521,6 +521,9 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
         if (cNonceHandler == null) {
             throw new TokenVerificationException(attestationPoPJwt, "Client attestation challenge validation is not available");
         }
+        if (!cNonceHandler.supportsCNonceConsumption()) {
+            throw new TokenVerificationException(attestationPoPJwt, "Client attestation challenge consumption is not available");
+        }
 
         WellKnownProvider oidcProvider = session.getProvider(WellKnownProvider.class, OIDCWellKnownProviderFactory.PROVIDER_ID);
         OIDCConfigurationRepresentation oidcConfig = (OIDCConfigurationRepresentation) oidcProvider.getConfig();
@@ -532,11 +535,10 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
             if (cNonceHandler.supportsCNonceTokenRetrieval()) {
                 JsonWebToken challengeToken = cNonceHandler.verifyCNonceAndGetToken(challenge,
                         challengeAudiences, challengeDetails);
-                if (cNonceHandler.supportsCNonceConsumption()) {
-                    cNonceHandler.consumeCNonce(challenge, challengeToken);
-                }
+                cNonceHandler.consumeCNonce(challenge, challengeToken);
             } else {
                 cNonceHandler.verifyCNonce(challenge, challengeAudiences, challengeDetails);
+                cNonceHandler.consumeCNonce(challenge);
             }
         } catch (Exception ex) {
             throw new ClientAttestationChallengeException(
