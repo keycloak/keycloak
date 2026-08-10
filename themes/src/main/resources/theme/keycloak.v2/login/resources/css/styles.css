@@ -1829,6 +1829,22 @@ html.login-pf,
 }
 
 /* --------------------------------------------------------------------------
+   Device-grant hand-off
+   Manual route back to the native app, shown alongside the automatic redirect
+   in login-enhancements.js for the cases where the scheme is unclaimed.
+   -------------------------------------------------------------------------- */
+
+.kc-device-callback {
+    margin-block-start: 1.5rem;
+}
+
+.kc-device-callback .pf-v5-c-button {
+    /* The info page has no form, so nothing else here establishes the card's
+       content width for a block-level button. */
+    inline-size: 100%;
+}
+
+/* --------------------------------------------------------------------------
    Tenant logo inside the sign-in card
    Hidden until the image loads (see login-enhancements.js), so realms without
    branding show no reserved gap.

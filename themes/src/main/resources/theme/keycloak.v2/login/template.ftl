@@ -303,6 +303,28 @@
 
         <#nested "form">
 
+        <#-- OAuth 2.0 device grant: the browser leg is finished, so hand control
+             back to the app that started it. A Chrome Custom Tab cannot close
+             itself, so without this the user is stranded on a success page with no
+             route back to the app — the Keycloakify build used to bounce them.
+
+             Matched on the server-resolved header rather than on the page's text,
+             so the check holds in every locale, and it fails closed: if that
+             message key ever moves upstream the block simply stops rendering and
+             the page reads exactly as it does today.
+
+             The link is rendered even though the redirect is automatic. Navigating
+             to a custom scheme is silently ignored when nothing has registered it
+             (a desktop browser, or the app not installed), and there is no event to
+             detect that, so the manual route has to be on the page already. -->
+        <#if pageId == "info" && messageHeader?? && messageHeader == msg("oauth2DeviceVerificationCompleteHeader")
+             && properties.fidarDeviceCallbackUri?has_content>
+          <div id="kc-device-callback" class="kc-device-callback" data-callback-uri="${properties.fidarDeviceCallbackUri}">
+            <a href="${properties.fidarDeviceCallbackUri}"
+               class="${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!}">${msg("backToApplication")}</a>
+          </div>
+        </#if>
+
         <#if auth?has_content && auth.showTryAnotherWayLink()>
           <form id="kc-select-try-another-way-form" action="${url.loginAction}" method="post" novalidate="novalidate">
               <input type="hidden" name="tryAnotherWay" value="on"/>

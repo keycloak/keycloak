@@ -263,8 +263,38 @@ function setupRealmLogo() {
     });
 }
 
+/**
+ * OAuth 2.0 device grant: bounce back into the native app once the browser leg
+ * has completed.
+ *
+ * The markup is only emitted on the device-verification-complete info page (see
+ * template.ftl), so the presence of the container *is* the condition — nothing
+ * is sniffed from the page text here, unlike the Keycloakify build this
+ * replaces.
+ *
+ * The short pause lets the success message register before the app takes the
+ * foreground back; without it the tab appears to flicker and close. If no app
+ * has claimed the scheme the navigation is a no-op and the user stays put with
+ * the link that is already on the page.
+ */
+const DEVICE_CALLBACK_DELAY_MS = 1200;
+
+function setupDeviceCallback() {
+  const container = document.getElementById("kc-device-callback");
+  const uri = container?.dataset.callbackUri;
+
+  if (!uri) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    window.location.href = uri;
+  }, DEVICE_CALLBACK_DELAY_MS);
+}
+
 setupCapsLockWarning();
 setupRipple();
 setupSubmitState();
 setupThemeToggle();
 setupRealmLogo();
+setupDeviceCallback();
