@@ -70,6 +70,7 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
 
             if (permissions.hasPermission(model, AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW)) {
                 return model.getGroupsStream()
+                        .filter(group -> !isOrganizationGroup(group))
                         .filter(this::canViewGroup)
                         .toList();
             }
@@ -121,5 +122,12 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
 
     protected boolean canViewGroup(GroupModel group) {
         return session.getContext().getPermissions().hasPermission(group, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
+    }
+
+    /**
+     * Organization groups are only accessible through the Organization API and must not be exposed through SCIM.
+     */
+    protected static boolean isOrganizationGroup(GroupModel group) {
+        return GroupModel.Type.ORGANIZATION.equals(group.getType()) && group.getOrganization() != null;
     }
 }
