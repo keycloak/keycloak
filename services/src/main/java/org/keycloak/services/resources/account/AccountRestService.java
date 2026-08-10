@@ -396,7 +396,7 @@ public class AccountRestService {
      * Ends all active online and offline sessions of the user for the client with the given client id.
      * The client sessions are detached from the user sessions, and the client is notified
      * via backchannel logout when supported. A user session that no longer has any client
-     * sessions afterwards is removed. Offline sessions are not affected.
+     * sessions afterward is removed.
      *
      * @param clientId client id to end the sessions for
      * @return returns 204 if the sessions were ended

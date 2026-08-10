@@ -109,9 +109,13 @@ export async function deleteApplicationSessions(
   context: KeycloakContext<BaseEnvironment>,
   clientId: string,
 ) {
-  return request(`/applications/${clientId}/sessions`, context, {
-    method: "DELETE",
-  });
+  return request(
+    `/applications/${encodeURIComponent(clientId)}/sessions`,
+    context,
+    {
+      method: "DELETE",
+    },
+  );
 }
 
 export async function getCredentials({ signal, context }: CallOptions) {
