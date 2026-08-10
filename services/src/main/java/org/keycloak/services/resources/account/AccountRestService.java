@@ -393,7 +393,7 @@ public class AccountRestService {
     }
 
     /**
-     * Ends all active online sessions of the user for the client with the given client id.
+     * Ends all active online and offline sessions of the user for the client with the given client id.
      * The client sessions are detached from the user sessions, and the client is notified
      * via backchannel logout when supported. A user session that no longer has any client
      * sessions afterwards is removed. Offline sessions are not affected.
@@ -416,7 +416,7 @@ public class AccountRestService {
             throw ErrorResponse.error(msg, Response.Status.NOT_FOUND);
         }
 
-        session.sessions().getUserSessionsStream(realm, user)
+        Stream.concat(session.sessions().getUserSessionsStream(realm, user), session.sessions().getOfflineUserSessionsStream(realm, user))
                 .filter(userSession -> userSession.getAuthenticatedClientSessionByClient(client.getId()) != null)
                 .toList() // collect to avoid concurrent modification.
                 .forEach(userSession -> {

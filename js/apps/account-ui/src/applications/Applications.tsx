@@ -199,10 +199,12 @@ export const Applications = () => {
                     {application.offlineAccess ? ", " + t("offlineAccess") : ""}
                   </DataListCell>,
                   <DataListCell width={2} key={`status${application.clientId}`}>
-                    {application.inUse ? t("inUse") : t("notInUse")}
+                    {application.inUse || application.offlineAccess
+                      ? t("inUse")
+                      : t("notInUse")}
                   </DataListCell>,
                   <DataListCell width={2} key={`action${application.clientId}`}>
-                    {application.inUse &&
+                    {(application.inUse || application.offlineAccess) &&
                       application.clientId !== context.environment.clientId && (
                         <ContinueCancelModal
                           buttonTitle={t("endApplicationSession")}
