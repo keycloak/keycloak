@@ -38,6 +38,10 @@ public class Endpoints {
         return asString(OIDCLoginProtocolService.tokenUrl(getBase()));
     }
 
+    public String getClientAttestationChallenge() {
+        return asString(getBase().path(RealmsResource.class).path("{realm}/protocol/openid-connect/attestation/challenge"));
+    }
+
     public String getIntrospection() {
         return asString(OIDCLoginProtocolService.tokenIntrospectionUrl(getBase()));
     }
