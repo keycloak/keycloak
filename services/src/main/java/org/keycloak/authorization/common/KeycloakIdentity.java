@@ -53,7 +53,6 @@ import org.keycloak.util.JsonSerialization;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import static org.keycloak.models.utils.KeycloakModelUtils.removeTransientAdminRoles;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -323,7 +322,6 @@ public class KeycloakIdentity implements Identity {
         Access realmAccess = accessToken.getRealmAccess();
 
         if (realmAccess != null) {
-            removeTransientAdminRoles(realm, null, user, realmAccess);
             attributes.put("kc.realm.roles", realmAccess.getRoles());
         }
 
@@ -331,7 +329,6 @@ public class KeycloakIdentity implements Identity {
 
         if (resourceAccess != null) {
             resourceAccess.forEach((clientId, access) -> {
-                removeTransientAdminRoles(realm, clientId, user, access);
                 attributes.put("kc.client." + clientId + ".roles", access.getRoles());
             });
         }
