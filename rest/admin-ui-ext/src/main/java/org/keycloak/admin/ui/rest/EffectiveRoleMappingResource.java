@@ -186,7 +186,7 @@ public class EffectiveRoleMappingResource extends RoleMappingResource {
     }
 
     private Stream<RoleModel> addSubClientRoles(Stream<RoleModel> roles) {
-        return addSubRoles(roles).filter(RoleModel::isClientRole);
+        return addSubRoles(roles).filter(role -> role.getType() == RoleModel.Type.CLIENT);
     }
 
     private List<ClientRole> toSortedClientRoles(Stream<RoleModel> roles) {

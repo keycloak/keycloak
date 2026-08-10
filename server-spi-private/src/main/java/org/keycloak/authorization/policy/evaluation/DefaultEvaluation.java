@@ -221,7 +221,7 @@ public class DefaultEvaluation implements Evaluation {
                     return false;
                 }
 
-                Stream<RoleModel> roleMappings = user.getRoleMappingsStream().filter(isNotClientRole);
+                Stream<RoleModel> roleMappings = user.getRoleMappingsStream().filter(isRealmRole);
 
                 return RoleUtils.hasRole(roleMappings, session.getContext().getRealm().getRole(roleName));
             }
@@ -237,7 +237,7 @@ public class DefaultEvaluation implements Evaluation {
                 }
 
                 Set<RoleModel> roleMappings = user.getRoleMappingsStream()
-                        .filter(RoleModel::isClientRole)
+                        .filter(role -> role.getType() == RoleModel.Type.CLIENT)
                         .filter(role -> Objects.equals(((ClientModel) role.getContainer()).getClientId(), clientId))
                         .collect(Collectors.toSet());
 
@@ -266,7 +266,7 @@ public class DefaultEvaluation implements Evaluation {
             @Override
             public List<String> getUserRealmRoles(String id) {
                 return getUser(id, authorizationProvider.getKeycloakSession()).getRoleMappingsStream()
-                        .filter(isNotClientRole)
+                        .filter(isRealmRole)
                         .map(RoleModel::getName)
                         .collect(Collectors.toList());
             }
@@ -274,7 +274,7 @@ public class DefaultEvaluation implements Evaluation {
             @Override
             public List<String> getUserClientRoles(String id, String clientId) {
                 return getUser(id, authorizationProvider.getKeycloakSession()).getRoleMappingsStream()
-                        .filter(RoleModel::isClientRole)
+                        .filter(role -> role.getType() == RoleModel.Type.CLIENT)
                         .map(RoleModel::getName)
                         .collect(Collectors.toList());
             }
@@ -304,5 +304,5 @@ public class DefaultEvaluation implements Evaluation {
         this.decision.onDecision(this);
     }
 
-    private Predicate<RoleModel> isNotClientRole = ((Predicate<RoleModel>) RoleModel::isClientRole).negate();
+    private Predicate<RoleModel> isRealmRole = role -> role.getType() == RoleModel.Type.REALM;
 }
