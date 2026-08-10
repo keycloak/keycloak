@@ -160,7 +160,7 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
             throw new RuntimeException("Failed to convert representation to JSON", e);
         }
 
-        for (Entry<String, Attribute<M, R>> entry : getAttributeMappers().entrySet()) {
+        for (Entry<String, Attribute<M, R>> entry : getAttributes().entrySet()) {
             Attribute<M, R> attribute = entry.getValue();
             String scimName = attribute.getName();
             ObjectNode valueNode = resourceNode;
@@ -185,7 +185,7 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
     }
 
     private void populateResourceType(R resource, M model, List<String> requestedAttributes, List<String> excludedAttributes) {
-        for (Entry<String, Attribute<M, R>> entry : getAttributeMappers().entrySet()) {
+        for (Entry<String, Attribute<M, R>> entry : getAttributes().entrySet()) {
             Attribute<M, R> attribute = entry.getValue();
 
             if (!attribute.isExcluded(this, requestedAttributes, excludedAttributes)) {
