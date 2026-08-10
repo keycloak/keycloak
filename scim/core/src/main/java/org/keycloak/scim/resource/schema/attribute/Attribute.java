@@ -97,6 +97,8 @@ public class Attribute<M extends Model, R> {
     private final String parentName;
     private final String alias;
     private Function<Attribute<M, R>, String> modelAttributeResolver;
+    private String resolvedModelAttributeName;
+    private boolean modelAttributeNameResolved;
     private String type;
     private String mutability;
     private String returned = RETURNED_DEFAULT;
@@ -143,10 +145,11 @@ public class Attribute<M extends Model, R> {
      * @return the name of the attribute from the {@link Model} associated with this attribute or {@code null} if there is no mapping to this attribute
      */
     public String getModelAttributeName() {
-        if (modelAttributeResolver != null) {
-            return modelAttributeResolver.apply(this);
+        if (!modelAttributeNameResolved) {
+            resolvedModelAttributeName = modelAttributeResolver != null ? modelAttributeResolver.apply(this) : null;
+            modelAttributeNameResolved = true;
         }
-        return null;
+        return resolvedModelAttributeName;
     }
 
     private void setModelAttributeResolver(Function<Attribute<M, R>, String> resolver) {
