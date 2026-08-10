@@ -114,9 +114,7 @@ public class TLS13StartTlsHandler extends StartTlsHandler {
 
         StartTlsResponse res = new StartTlsResponseImpl(req.getMessageId());
         res.getLdapResult().setResultCode(ResultCodeEnum.SUCCESS);
-        res.setResponseName(EXTENSION_OID);
-
         session.getIoSession().write(res);
-        log.debug("StartTLS response sent (via StartTlsFilter bypass).");
+        log.debug("StartTLS response sent.");
     }
 }
