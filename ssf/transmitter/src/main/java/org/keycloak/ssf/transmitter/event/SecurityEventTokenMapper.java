@@ -864,7 +864,12 @@ public class SecurityEventTokenMapper {
     }
 
     protected boolean shouldIgnoreLogout(Event event) {
-        String reason = event.getDetails().get(Details.REASON);
+        // details can be null, e.g. for RP-initiated logouts without a post_logout_redirect_uri
+        Map<String, String> details = event.getDetails();
+        if (details == null) {
+            return false;
+        }
+        String reason = details.get(Details.REASON);
         return Details.USER_SESSION_EXPIRED_REASON.equals(reason) || Details.INVALID_USER_SESSION_REMEMBER_ME_REASON.equals(reason);
     }
 
