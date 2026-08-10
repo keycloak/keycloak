@@ -70,7 +70,7 @@ public final class LDAPContextManager implements AutoCloseable {
             return;
         }
         long durationNanos = System.nanoTime() - startTimeNanos;
-        requestTimer.withTags("operation", "connect", "operation_name", "", "outcome", success ? "success" : "error", "error", error != null ? error : "")
+        requestTimer.withTags("operation", "connect", "outcome", success ? "success" : "error", "error", error != null ? error : "")
                 .record(durationNanos, TimeUnit.NANOSECONDS);
     }
 

@@ -95,15 +95,15 @@ public class LDAPOperationManager {
         this.requestTimer = requestTimer;
     }
 
-    private void recordLdapRequest(String operation, String type, boolean success, long startTimeNanos, String error) {
+    private void recordLdapRequest(String operation, boolean success, long startTimeNanos, String error) {
         if (requestTimer == null) {
             logger.debugf("LDAP request timer is null, skipping metric recording for operation: %s", operation);
             return;
         }
         long durationNanos = System.nanoTime() - startTimeNanos;
-        logger.debugf("Recording LDAP metric - operation: %s, operation_name: %s, outcome: %s, error: %s, duration: %d ns",
-                operation, type, success ? "success" : "error", error, durationNanos);
-        requestTimer.withTags("operation", operation, "operation_name", type, "outcome", success ? "success" : "error", "error", error != null ? error : "")
+        logger.debugf("Recording LDAP metric - operation: %s, outcome: %s, error: %s, duration: %d ns",
+                operation, success ? "success" : "error", error, durationNanos);
+        requestTimer.withTags("operation", operation, "outcome", success ? "success" : "error", "error", error != null ? error : "")
                 .record(durationNanos, TimeUnit.NANOSECONDS);
     }
 
@@ -613,7 +613,7 @@ public class LDAPOperationManager {
             tracing.error(e);
             throw new AuthenticationException("Unexpected exception when validating password of user");
         } finally {
-            recordLdapRequest("authenticate", "", success, startTimeNanos, errorName);
+            recordLdapRequest("authenticate", success, startTimeNanos, errorName);
             if (tlsResponse != null) {
                 try {
                     tlsResponse.close();
@@ -862,7 +862,7 @@ public class LDAPOperationManager {
             tracing.error(e);
             throw e;
         } finally {
-            recordLdapRequest("execute", operation.operationType(), success, startTimeNanos, errorName);
+            recordLdapRequest(operation.operationType(), success, startTimeNanos, errorName);
             tracing.endSpan();
             if (perfLogger.isDebugEnabled()) {
                 long took = Time.currentTimeMillis() - start;
