@@ -257,7 +257,7 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
     }
 
     private static void checkGroupMembershipPermission(Permissions permissions, GroupModel group) {
-        if (GroupModel.Type.ORGANIZATION.equals(group.getType()) && group.getOrganization() != null) {
+        if (isOrganizationGroup(group)) {
             throw new ModelValidationException("Cannot access organization related group via non Organization API.");
         }
         if (permissions.isAdminGroup(group)) {

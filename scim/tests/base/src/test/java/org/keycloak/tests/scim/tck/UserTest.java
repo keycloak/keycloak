@@ -12,6 +12,7 @@ import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.GroupResource;
+import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.http.simple.SimpleHttp;
@@ -21,6 +22,8 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
@@ -1351,6 +1354,50 @@ public class UserTest extends AbstractScimTest {
         } finally {
             client.users().delete(user.getId());
         }
+    }
+
+    @Test
+    public void testOrganizationGroupsNotExposedOnUser() {
+        realm.updateWithCleanup(realm -> realm.organizationsEnabled(true));
+
+        OrganizationRepresentation orgRep = new OrganizationRepresentation();
+        String orgName = KeycloakModelUtils.generateId();
+        orgRep.setName(orgName);
+        orgRep.setAlias(orgName);
+        orgRep.addDomain(new OrganizationDomainRepresentation(orgName + ".org"));
+        try (Response response = realm.admin().organizations().create(orgRep)) {
+            orgRep.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(realm -> realm.organizations().get(orgRep.getId()).delete().close());
+
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
+
+        GroupRepresentation orgGroup = new GroupRepresentation();
+        orgGroup.setName(KeycloakModelUtils.generateId());
+        try (Response response = orgResource.groups().addTopLevelGroup(orgGroup)) {
+            orgGroup.setId(ApiUtil.getCreatedId(response));
+        }
+
+        GroupRepresentation realmGroup = createGroup(KeycloakModelUtils.generateId());
+
+        User user = createUser();
+        user.addGroup(realmGroup.getId());
+        User expected = client.users().create(user);
+
+        // organization membership is itself a membership in the organization's internal group
+        try (Response response = orgResource.members().addMember(expected.getId())) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+        }
+        orgResource.groups().group(orgGroup.getId()).addMember(expected.getId());
+
+        User actual = client.users().get(expected.getId(), List.of("groups"));
+        List<GroupMembership> groups = actual.getGroups();
+
+        assertNotNull(groups);
+        assertTrue(groups.stream().anyMatch(g -> realmGroup.getId().equals(g.getValue())));
+        assertTrue(groups.stream().noneMatch(g -> orgGroup.getId().equals(g.getValue())));
+        // neither the organization group nor the organization's internal group are exposed
+        assertEquals(1, groups.size());
     }
 
     private static void assertGroup(List<GroupMembership> groups, GroupRepresentation group, String type) {
