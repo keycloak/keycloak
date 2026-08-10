@@ -26,6 +26,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
@@ -61,6 +62,29 @@ public final class PermissionTestUtils {
                 UserPolicyRepresentation userPolicy = r.clients().get(client.toRepresentation().getId()).authorization().policies().user().findByName(name);
                 if (userPolicy != null) {
                     r.clients().get(client.toRepresentation().getId()).authorization().policies().user().findById(userPolicy.getId()).remove();
+                }
+            });
+        }
+        return policy;
+    }
+
+    public static ClientPolicyRepresentation createClientPolicy(ManagedRealm realm, ClientResource client, String name, String... clientIds) {
+        ClientPolicyRepresentation policy = new ClientPolicyRepresentation();
+        policy.setName(name);
+        for (String clientId : clientIds) {
+            String uuid = realm.admin().clients().findByClientId(clientId).stream()
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("Client '" + clientId + "' not found"))
+                    .getId();
+            policy.addClient(uuid);
+        }
+        policy.setLogic(Logic.POSITIVE);
+        try (Response response = client.authorization().policies().client().create(policy)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+            realm.cleanup().add(r -> {
+                ClientPolicyRepresentation clientPolicy = r.clients().get(client.toRepresentation().getId()).authorization().policies().client().findByName(name);
+                if (clientPolicy != null) {
+                    r.clients().get(client.toRepresentation().getId()).authorization().policies().client().findById(clientPolicy.getId()).remove();
                 }
             });
         }

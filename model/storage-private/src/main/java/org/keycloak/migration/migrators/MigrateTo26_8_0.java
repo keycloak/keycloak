@@ -16,6 +16,7 @@ public class MigrateTo26_8_0 extends RealmMigration {
 
     @Override
     public void migrateRealm(KeycloakSession session, RealmModel realm) {
+        AdminPermissionsSchema.SCHEMA.addResourceTypeScope(session, realm, AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, AdminPermissionsSchema.DELEGATE);
         AdminPermissionsSchema.SCHEMA.addResourceTypeScope(session, realm, AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.DELEGATE);
         AdminPermissionsSchema.SCHEMA.addResourceTypeScope(session, realm, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.DELEGATE_MEMBERS);
     }

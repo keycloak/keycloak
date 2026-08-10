@@ -194,6 +194,15 @@ public interface ClientPermissionEvaluator {
      */
     boolean canMapClientScopeRoles(ClientModel client);
 
+    /**
+     * Returns {@code true} if the caller has a permission to {@link AdminPermissionsSchema#DELEGATE} for the client.
+     * <p/>
+     * Only supported in V2. Returns {@code false} by default.
+     */
+    default boolean canDelegate(ClientModel client) {
+        return false;
+    }
+
     Map<String, Boolean> getAccess(ClientModel client);
 
     /**
