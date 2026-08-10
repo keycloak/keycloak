@@ -53,7 +53,13 @@ public class ScimBackedClientService implements ClientService {
                                                        ClientProjectionOptions projectionOptions,
                                                        ClientSearchOptions searchOptions,
                                                        ClientSortAndSliceOptions sortAndSliceOptions) {
-        if (!canUseJpaQuery(realm, searchOptions)) {
+        FilterContext filterContext;
+        try {
+            filterContext = parseQuery(searchOptions);
+        } catch (ClientQueryException e) {
+            return delegate.getClients(realm, projectionOptions, searchOptions, sortAndSliceOptions);
+        }
+        if (!canUseJpaQuery(realm, filterContext)) {
             return delegate.getClients(realm, projectionOptions, searchOptions, sortAndSliceOptions);
         }
 
@@ -64,9 +70,7 @@ public class ScimBackedClientService implements ClientService {
         int limit = sortAndSliceOptions.limit();
 
         try {
-            FilterContext filterContext = null;
-            if (searchOptions != null && !StringUtil.isBlank(searchOptions.query())) {
-                filterContext = QueryParseUtils.parse(searchOptions.query());
+            if (filterContext != null) {
                 QueryParseUtils.validate(filterContext);
             }
 
@@ -83,24 +87,26 @@ public class ScimBackedClientService implements ClientService {
         }
     }
 
+    private FilterContext parseQuery(ClientSearchOptions searchOptions) {
+        if (searchOptions == null || StringUtil.isBlank(searchOptions.query())) {
+            return null;
+        }
+        return QueryParseUtils.parse(searchOptions.query());
+    }
+
     private boolean canViewAll(RealmModel realm) {
         return AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || permissions.clients().canView();
     }
 
-    private boolean canUseJpaQuery(RealmModel realm, ClientSearchOptions searchOptions) {
+    private boolean canUseJpaQuery(RealmModel realm, FilterContext filterContext) {
         if (!canViewAll(realm)) {
             return false;
         }
-        if (searchOptions == null || StringUtil.isBlank(searchOptions.query())) {
+        if (filterContext == null) {
             return true;
         }
-        try {
-            var filterContext = QueryParseUtils.parse(searchOptions.query());
-            Set<String> queryFields = QueryFieldExtractor.extractFields(filterContext);
-            return ClientJpaQuerySchema.JPA_FIELDS.containsAll(queryFields);
-        } catch (ClientQueryException e) {
-            return false;
-        }
+        Set<String> queryFields = QueryFieldExtractor.extractFields(filterContext);
+        return ClientJpaQuerySchema.JPA_FIELDS.containsAll(queryFields);
     }
 
     private void validateProjectionFields(ClientProjectionOptions projectionOptions) {
