@@ -106,7 +106,7 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
     }
 
     @Test
-    public void testClientAttestationChallengeEndpoint() {
+    public void testClientAttestationChallengeEndpoint() throws VerificationException {
         var response = oauth.clientAttestationChallengeRequest().send();
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
 
