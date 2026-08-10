@@ -18,6 +18,7 @@ package org.keycloak.services.resources.admin.fgap;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import jakarta.ws.rs.ForbiddenException;
 
@@ -134,7 +135,15 @@ class UserPermissionsV2 extends UserPermissions {
 
     @Override
     public boolean canDelegate(UserModel user) {
-        return eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.DELEGATE);
+        // When the evaluator's identity is a service account, include CLIENT_ID_ATTRIBUTE
+        // from its associated client so that FGAP Client policies can match on the client_id.
+        DefaultEvaluationContext context = Optional.ofNullable(root.admin())
+                .map(UserModel::getServiceAccountClientLink)
+                .map(root.realm::getClientById)
+                .map(client -> new DefaultEvaluationContext(root.identity(), Map.of(CLIENT_ID_ATTRIBUTE, List.of(client.getClientId())), session))
+                .orElse(null);
+
+        return eval.hasPermission(new UserModelRecord(user), context, AdminPermissionsSchema.DELEGATE);
     }
 
     @Override
