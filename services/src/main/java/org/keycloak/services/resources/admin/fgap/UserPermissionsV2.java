@@ -27,7 +27,6 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.identity.UserModelIdentity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
-import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -134,15 +133,8 @@ class UserPermissionsV2 extends UserPermissions {
     }
 
     @Override
-    public boolean canDelegate(UserModel user, ClientModel requester) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE_DELEGATION)) {
-            return false;
-        }
-
-        DefaultEvaluationContext context = requester == null ? null :
-                new DefaultEvaluationContext(new UserModelIdentity(root.realm, user), Map.of(CLIENT_ID_ATTRIBUTE, List.of(requester.getClientId())), session);
-
-        return eval.hasPermission(new UserModelRecord(user), context, AdminPermissionsSchema.DELEGATE);
+    public boolean canDelegate(UserModel user) {
+        return eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.DELEGATE);
     }
 
     @Override

@@ -157,17 +157,7 @@ public interface UserPermissionEvaluator {
     /**
      * Returns {@code true} if the caller has a permission to {@link AdminPermissionsSchema#DELEGATE} the user.
      */
-    default boolean canDelegate(UserModel user) {
-        return canDelegate(user, null);
-    }
-
-    /**
-     * Returns {@code true} if the caller has a permission to {@link AdminPermissionsSchema#DELEGATE} the user.
-     * <p/>
-     * NOTE: The requester's clientId is added to the evaluation context for
-     * client-aware FGAP policy evaluation.
-     */
-    boolean canDelegate(UserModel user, ClientModel requester);
+    boolean canDelegate(UserModel user);
 
     /**
      * Returns Map with information what access the caller for the provided user has.

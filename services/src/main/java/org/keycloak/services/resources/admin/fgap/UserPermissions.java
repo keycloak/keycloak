@@ -429,7 +429,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
     }
 
     @Override
-    public boolean canDelegate(UserModel user, ClientModel requester) {
+    public boolean canDelegate(UserModel user) {
         throw new UnsupportedOperationException("Delegation permissions are only supported with FGAP V2");
     }
 
