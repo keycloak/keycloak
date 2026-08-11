@@ -1004,6 +1004,25 @@ public class AuthorizationTest extends AbstractScimTest {
     }
 
     @Test
+    public void testMembershipFiltersWorkWithFGAPDisabled() {
+        GroupRepresentation group = createGroup("fgap-off-group");
+        managedUser.admin().joinGroup(group.getId());
+
+        grantAdminRole(AdminRoles.VIEW_USERS);
+        grantAdminRole(AdminRoles.QUERY_GROUPS);
+
+        ListResponse<User> users = noAccessClient.users()
+                .getAll("groups.value eq \"" + group.getId() + "\"");
+        assertEquals(1, users.getTotalResults());
+        assertEquals(managedUser.getId(), users.getResources().get(0).getId());
+
+        ListResponse<Group> groups = noAccessClient.groups()
+                .getAll("members.value eq \"" + managedUser.getId() + "\"");
+        assertEquals(1, groups.getTotalResults());
+        assertEquals(group.getId(), groups.getResources().get(0).getId());
+    }
+
+    @Test
     public void testIdTokenAccessDenied() {
         ClientBuilder clientBuilder = ClientBuilder.create()
                 .clientId("scim-idtoken-client")
