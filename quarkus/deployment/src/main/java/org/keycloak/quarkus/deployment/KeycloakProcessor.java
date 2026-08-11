@@ -145,6 +145,7 @@ import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.deployment.builditem.StaticInitConfigBuilderBuildItem;
 import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
+import io.quarkus.hibernate.orm.deployment.JpaModelPersistenceUnitContributionBuildItem;
 import io.quarkus.hibernate.orm.deployment.PersistenceXmlDescriptorBuildItem;
 import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationRuntimeConfiguredBuildItem;
 import io.quarkus.hibernate.orm.deployment.spi.AdditionalJpaModelBuildItem;
@@ -511,6 +512,7 @@ class KeycloakProcessor {
             BuildProducer<AdditionalJpaModelBuildItem> additionalJpaModel,
             CombinedIndexBuildItem indexBuildItem,
             BuildProducer<HibernateOrmIntegrationRuntimeConfiguredBuildItem> runtimeConfigured,
+            BuildProducer<JpaModelPersistenceUnitContributionBuildItem> jpaModelPuContributions,
             KeycloakRecorder recorder) {
         ParsedPersistenceXmlDescriptor defaultUnitDescriptor = null;
         List<String> userManagedEntities = new ArrayList<>();
@@ -537,7 +539,7 @@ class KeycloakProcessor {
             throw new RuntimeException("No default persistence unit found.");
         }
 
-        configureDefaultPersistenceUnitEntities(defaultUnitDescriptor, indexBuildItem, userManagedEntities);
+        configureDefaultPersistenceUnitEntities(defaultUnitDescriptor, jpaModelPuContributions, indexBuildItem, userManagedEntities);
     }
 
     @BuildStep
@@ -626,19 +628,27 @@ class KeycloakProcessor {
                 .ifPresent(v -> unitProperties.put(AvailableSettings.LOG_SLOW_QUERY, v));
     }
 
-    private void configureDefaultPersistenceUnitEntities(ParsedPersistenceXmlDescriptor descriptor, CombinedIndexBuildItem indexBuildItem,
-            List<String> userManagedEntities) {
+    private void configureDefaultPersistenceUnitEntities(ParsedPersistenceXmlDescriptor descriptor,
+            BuildProducer<JpaModelPersistenceUnitContributionBuildItem> jpaModelPuContributions,
+            CombinedIndexBuildItem indexBuildItem, List<String> userManagedEntities) {
         IndexView index = indexBuildItem.getIndex();
         Collection<AnnotationInstance> annotations = index.getAnnotations(DotName.createSimple(Entity.class.getName()));
 
+        List<String> additionalEntities = new ArrayList<>();
         for (AnnotationInstance annotation : annotations) {
             AnnotationTarget target = annotation.target();
             String targetName = target.asClass().name().toString();
 
             if (!userManagedEntities.contains(targetName)
                     && (!targetName.startsWith("org.keycloak") || targetName.startsWith("org.keycloak.testsuite"))) {
-                descriptor.addClasses(targetName);
+                additionalEntities.add(targetName);
             }
+        }
+
+        if (!additionalEntities.isEmpty()) {
+            jpaModelPuContributions.produce(new JpaModelPersistenceUnitContributionBuildItem(
+                    descriptor.getName(), descriptor.getPersistenceUnitRootUrl(),
+                    additionalEntities, Collections.emptyList()));
         }
     }
 
