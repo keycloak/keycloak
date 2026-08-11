@@ -101,6 +101,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCProviderConfig;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -228,8 +229,18 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
                                                   @QueryParam("nonce") String nonce,
                                                   @QueryParam("hash") String hash
     ) {
+        OIDCLoginProtocol loginProtocol = (OIDCLoginProtocol) session.getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
+        OIDCProviderConfig oidcConfig = loginProtocol.getConfig();
+        if (!oidcConfig.isAllowClientInitiatedAccountLinking()) {
+            logger.warnf("Calling deprecated endpoint for client-initiated account linking. This endpoint will be removed in the future. Please use application initiated action (AIA) idp_link instead");
+            this.event.event(EventType.CLIENT_INITIATED_ACCOUNT_LINKING);
+            event.error(Errors.NOT_ALLOWED);
+            throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+        }
+
         logger.warnf("Calling deprecated endpoint for client-initiated account linking. This endpoint will be removed in the future. Please use application initiated action (AIA) idp_link instead");
         this.event.event(EventType.CLIENT_INITIATED_ACCOUNT_LINKING);
+
         checkRealm();
         ClientModel client = checkClient(clientId);
         redirectUri = RedirectUtils.verifyRedirectUri(session, redirectUri, client);

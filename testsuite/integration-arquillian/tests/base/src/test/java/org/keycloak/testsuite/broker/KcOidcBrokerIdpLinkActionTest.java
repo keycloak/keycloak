@@ -36,6 +36,8 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -57,6 +59,7 @@ import org.junit.Test;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test for client-initiated-account linking of the custom application
@@ -97,24 +100,42 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         getCleanup(bc.consumerRealmName()).addUserId(consumerUserID1);
     }
 
-    // Test deprecated mechanism for client-initiated account linking
+    // Test that the legacy client-initiated account linking endpoint is disabled by default
     @Test
-    public void testAccountLinkingSuccess_legacyClientInitiatedAccountLinking() throws Exception {
+    public void testLegacyClientInitiatedAccountLinking_disabledByDefault() throws Exception {
         String userSessionId = loginToConsumer();
 
-        // Redirect to link account on behalf of "broker-app" and login to the IDP
         URI clientInitiatedAccountLinkUri = BrokerUtil.createClientInitiatedLinkURI("broker-app", oauth.getRedirectUri(), bc.getIDPAlias(), bc.consumerRealmName(), userSessionId, new URI(OAuthClient.AUTH_SERVER_ROOT)).getAccountLinkUri();
         driver.navigate().to(clientInitiatedAccountLinkUri.toString());
-        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
-        grantPage.assertCurrent();
-        grantPage.accept();
+        // The endpoint should return an error page since the option is disabled by default
+        assertTrue("Legacy client-initiated account linking should be disabled by default", driver.getPageSource().contains("error") || driver.getCurrentUrl().contains("error"));
+        assertUserLinkedToIDP(false);
+    }
 
-        appPage.assertCurrent();
-        assertKcActionParams(null, null);
+    // Test deprecated mechanism for client-initiated account linking when explicitly enabled
+    @Test
+    public void testAccountLinkingSuccess_legacyClientInitiatedAccountLinking() throws Exception {
+        allowClientInitiatedAccountLinking(true);
+        try {
+            String userSessionId = loginToConsumer();
 
-        // Check that user is linked to the IDP
-        assertUserLinkedToIDP(true);
+            // Redirect to link account on behalf of "broker-app" and login to the IDP
+            URI clientInitiatedAccountLinkUri = BrokerUtil.createClientInitiatedLinkURI("broker-app", oauth.getRedirectUri(), bc.getIDPAlias(), bc.consumerRealmName(), userSessionId, new URI(OAuthClient.AUTH_SERVER_ROOT)).getAccountLinkUri();
+            driver.navigate().to(clientInitiatedAccountLinkUri.toString());
+            loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+
+            grantPage.assertCurrent();
+            grantPage.accept();
+
+            appPage.assertCurrent();
+            assertKcActionParams(null, null);
+
+            // Check that user is linked to the IDP
+            assertUserLinkedToIDP(true);
+        } finally {
+            allowClientInitiatedAccountLinking(false);
+        }
     }
 
     @Test
@@ -564,5 +585,9 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         events.assertEmpty();
     }
 
+    private void allowClientInitiatedAccountLinking(boolean allow) {
+        getTestingClient().testing().setSystemPropertyOnServer("oidc.allow-client-initiated-account-linking", String.valueOf(allow));
+        getTestingClient().testing().reinitializeProviderFactoryWithSystemPropertiesScope(LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc.");
+    }
 
 }

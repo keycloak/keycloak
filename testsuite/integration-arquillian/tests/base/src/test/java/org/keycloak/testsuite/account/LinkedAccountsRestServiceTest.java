@@ -26,6 +26,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.account.AccountLinkUriRepresentation;
 import org.keycloak.representations.account.LinkedAccountRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -159,32 +161,45 @@ public class LinkedAccountsRestServiceTest extends AbstractTestRealmKeycloakTest
 	}
 
     @Test
-
     public void testBuildLinkedAccountUri() throws IOException {
-        AccountLinkUriRepresentation rep = SimpleHttpDefault.doGet(getAccountUrl("linked-accounts/github?redirectUri=phonyUri"), client)
-                                       .auth(tokenUtil.getToken())
-                                       .asJson(new TypeReference<AccountLinkUriRepresentation>() {});
-        URI brokerUri = rep.getAccountLinkUri();
+        // Legacy endpoint is disabled by default
+        int status = SimpleHttpDefault.doGet(getAccountUrl("linked-accounts/github?redirectUri=phonyUri"), client)
+                .header("Accept", "application/json")
+                .auth(tokenUtil.getToken())
+                .asStatus();
+        assertEquals(404, status);
 
-        assertTrue(brokerUri.getPath().endsWith("/auth/realms/test/broker/github/link"));
+        // Enable legacy endpoint and verify it works
+        allowClientInitiatedAccountLinking(true);
+        try {
+            AccountLinkUriRepresentation rep = SimpleHttpDefault.doGet(getAccountUrl("linked-accounts/github?redirectUri=phonyUri"), client)
+                                           .header("Accept", "application/json")
+                                           .auth(tokenUtil.getToken())
+                                           .asJson(new TypeReference<AccountLinkUriRepresentation>() {});
+            URI brokerUri = rep.getAccountLinkUri();
 
-        List<NameValuePair> queryParams = URLEncodedUtils.parse(brokerUri, Charset.defaultCharset());
-        assertEquals(4, queryParams.size());
-        for (NameValuePair nvp : queryParams) {
-            switch (nvp.getName()) {
-                case "nonce" : {
-                    assertNotNull(nvp.getValue());
-                    assertEquals(rep.getNonce(), nvp.getValue());
-                    break;
+            assertTrue(brokerUri.getPath().endsWith("/auth/realms/test/broker/github/link"));
+
+            List<NameValuePair> queryParams = URLEncodedUtils.parse(brokerUri, Charset.defaultCharset());
+            assertEquals(4, queryParams.size());
+            for (NameValuePair nvp : queryParams) {
+                switch (nvp.getName()) {
+                    case "nonce" : {
+                        assertNotNull(nvp.getValue());
+                        assertEquals(rep.getNonce(), nvp.getValue());
+                        break;
+                    }
+                    case "hash" : {
+                        assertNotNull(nvp.getValue());
+                        assertEquals(rep.getHash(), nvp.getValue());
+                        break;
+                    }
+                    case "client_id" : assertEquals(ACCOUNT_CONSOLE_CLIENT_ID, nvp.getValue()); break;
+                    case "redirect_uri" : assertEquals("phonyUri", nvp.getValue());
                 }
-                case "hash" : {
-                    assertNotNull(nvp.getValue());
-                    assertEquals(rep.getHash(), nvp.getValue());
-                    break;
-                }
-                case "client_id" : assertEquals(ACCOUNT_CONSOLE_CLIENT_ID, nvp.getValue()); break;
-                case "redirect_uri" : assertEquals("phonyUri", nvp.getValue());
             }
+        } finally {
+            allowClientInitiatedAccountLinking(false);
         }
     }
 
@@ -368,4 +383,9 @@ public class LinkedAccountsRestServiceTest extends AbstractTestRealmKeycloakTest
 	private interface ThrowingRunnable {
 		void run() throws IOException;
 	}
+
+    private void allowClientInitiatedAccountLinking(boolean allow) {
+        getTestingClient().testing().setSystemPropertyOnServer("oidc.allow-client-initiated-account-linking", String.valueOf(allow));
+        getTestingClient().testing().reinitializeProviderFactoryWithSystemPropertiesScope(LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc.");
+    }
 }

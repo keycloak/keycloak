@@ -53,6 +53,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.utils.Organizations;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCProviderConfig;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.account.AccountLinkUriRepresentation;
 import org.keycloak.representations.account.LinkedAccountRepresentation;
@@ -255,6 +258,13 @@ public class LinkedAccountsResource {
     public Response buildLinkedAccountURI(@PathParam("providerAlias") String providerAlias,
                                      @QueryParam("redirectUri") String redirectUri) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
+
+        OIDCLoginProtocol loginProtocol = (OIDCLoginProtocol) session.getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
+        OIDCProviderConfig oidcConfig = loginProtocol.getConfig();
+        if (!oidcConfig.isAllowClientInitiatedAccountLinking()) {
+            throw ErrorResponse.error("Legacy client-initiated account linking is disabled. Use AIA with kc_action=idp_link instead.", Response.Status.NOT_FOUND);
+        }
+
         logger.warnf("Using deprecated endpoint of Account REST service for linking user '%s' in the realm '%s' to identity provider '%s'. It is recommended to use application initiated actions (AIA) for linking identity provider with the user.",
                 user.getUsername(),
                 realm.getName(),
