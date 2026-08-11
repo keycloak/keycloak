@@ -66,6 +66,19 @@ public abstract class CaepEvent extends SsfEvent {
         super(type);
     }
 
+    @Override
+    public Map<String, Object> createAdminDetails() {
+        Map<String, Object> adminRep = super.createAdminDetails();
+        if (eventTimestamp != null) {
+            adminRep.put("event_timestamp", eventTimestamp);
+        }
+        if (initiatingEntity != null) {
+            adminRep.put("initiating_entity", initiatingEntity);
+        }
+        // excluding reasonAdmin and reasonUser to avoid exposing PII here
+        return adminRep;
+    }
+
     public SubjectId getSubjectId() {
         return subjectId;
     }

@@ -209,12 +209,14 @@ public class EventEmitterService {
         // status enum (invalid_event_data) so callers get one stable
         // identifier that names both the failure category and the
         // offending alias.field — they can localise from there.
-        if (eventPayload instanceof SsfEvent typedEvent) {
-            try {
-                typedEvent.validate();
-            } catch (SsfEventValidationException e) {
-                return EmitEventResult.dropped(EmitEventStatus.INVALID_EVENT_DATA, e.getMessage());
-            }
+        if (!(eventPayload instanceof SsfEvent typedEvent)) {
+            return EmitEventResult.dropped(EmitEventStatus.INVALID_EVENT_DATA, "Event payload is not an ssf event");
+        }
+
+        try {
+            typedEvent.validate();
+        } catch (SsfEventValidationException e) {
+            return EmitEventResult.dropped(EmitEventStatus.INVALID_EVENT_DATA, e.getMessage());
         }
 
         // 6. Build the SET (sub_id verbatim from the emitter) and hand
@@ -232,7 +234,7 @@ public class EventEmitterService {
         log.debugf("SSF synthetic event dispatched. receiverClientId=%s streamId=%s eventType=%s jti=%s",
                 receiverClient.getClientId(), stream.getStreamId(), eventTypeUri, token.getJti());
 
-        return EmitEventResult.dispatched(token.getJti());
+        return EmitEventResult.dispatched(token.getJti(), typedEvent);
     }
 
     /**
