@@ -79,10 +79,7 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
             throw handleValidationException(ve);
         }
 
-        resource.setCreatedTimestamp(model.getCreatedTimestamp());
-        resource.setLastModifiedTimestamp(model.getLastModifiedTimestamp());
-
-        return resource;
+        return createResourceTypeInstance(model, null, null);
     }
 
     @Override
@@ -96,10 +93,8 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
         }
 
         model.setLastModifiedTimestamp(Time.currentTimeMillis());
-        resource.setCreatedTimestamp(model.getCreatedTimestamp());
-        resource.setLastModifiedTimestamp(model.getLastModifiedTimestamp());
 
-        return resource;
+        return createResourceTypeInstance(model, null, null);
     }
 
     @Override
