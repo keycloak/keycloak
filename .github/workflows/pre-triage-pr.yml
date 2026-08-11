@@ -6,6 +6,10 @@ on:
     branches:
       - main 
 
+concurrency:
+  group: pre-triage-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   pre-triage:
     env:
@@ -218,7 +222,7 @@ jobs:
           fi
 
           # --- Find last existing bot comment with our marker ---
-          EXISTING_COMMENT_ID=$(gh api --paginate "repos/$REPO/issues/$PR_NUMBER/comments" | jq --arg marker "$MARKER" '.[] | select(.body | contains($marker)?) | .id' | tail -n1)
+          EXISTING_COMMENT_ID=$(gh api --paginate "repos/$REPO/issues/$PR_NUMBER/comments" | jq --arg marker "$MARKER" '.[] | select(.user.login == "github-actions[bot]" and (.body | contains($marker)?)) | .id' | tail -n1)
           
           if [ -n "$EXISTING_COMMENT_ID" ]; then
             gh api "repos/$REPO/issues/comments/$EXISTING_COMMENT_ID" -X DELETE
