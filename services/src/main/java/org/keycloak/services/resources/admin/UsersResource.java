@@ -168,6 +168,7 @@ public class UsersResource {
             UserResource.updateUserFromRep(profile, user, rep, session, false);
             RepresentationToModel.createFederatedIdentities(rep, session, realm, user);
             RepresentationToModel.createGroups(session, rep, realm, user);
+            RepresentationToModel.createRoleMappings(rep, user, realm);
 
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
             RepresentationToModel.createVerifiableCredentials(rep, session, user);
