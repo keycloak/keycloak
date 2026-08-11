@@ -154,7 +154,12 @@ function setupThemeToggle() {
  *
  * The Fidar wordmark on the brand panel is unaffected — this is additive.
  */
-const BRANDING_API = "https://sdk.fidar.io/fidar/sdk/api";
+// This login page is served per-tenant at {tenant}.auth.fidar.io (or bare
+// auth.fidar.io on the shared/legacy host) — the branding API for that same
+// tenant lives at {tenant}.sdk.fidar.io / sdk.fidar.io respectively, never
+// at a single fixed production host. Swap the "auth" label for "sdk" in the
+// page's own hostname instead of hardcoding one tenant's domain.
+const BRANDING_API = `https://${window.location.hostname.replace(/(^|\.)auth\./, "$1sdk.")}/fidar/sdk/api`;
 const BRANDING_CACHE_PREFIX = "fidar_branding_";
 
 function readBrandingCache(realm) {
