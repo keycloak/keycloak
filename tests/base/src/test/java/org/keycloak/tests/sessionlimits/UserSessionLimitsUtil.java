@@ -1,7 +1,6 @@
 package org.keycloak.tests.sessionlimits;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.keycloak.authentication.authenticators.sessionlimits.UserSessionLimitsAuthenticatorFactory;
@@ -11,10 +10,8 @@ import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
-import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -32,20 +29,6 @@ public class UserSessionLimitsUtil {
     protected static final String CONSUMER_CLIENT_SECRET = "broker-app-secret";
 
     private UserSessionLimitsUtil() {}
-
-    static void cleanupBeforeTest(ManagedWebDriver driver, ManagedRealm consumerRealm,
-            ManagedRealm providerRealm, RunOnServerClient runOnServer) {
-        deleteAllCookies(driver, consumerRealm);
-        deleteAllCookies(driver, providerRealm);
-
-        List<UserRepresentation> users = consumerRealm.admin().users().search(USER_LOGIN, true);
-        for (UserRepresentation user : users) {
-            consumerRealm.admin().users().get(user.getId()).logout();
-            consumerRealm.admin().users().get(user.getId()).remove();
-        }
-
-        runOnServer.run(removePostBrokerFlow(CONSUMER_REALM));
-    }
 
     static void deleteAllCookies(ManagedWebDriver driver, ManagedRealm realm) {
         driver.driver().navigate().to(realm.getBaseUrl());
@@ -100,31 +83,6 @@ public class UserSessionLimitsUtil {
             IdentityProviderModel idp = session.identityProviders().getByAlias(idpAlias);
             idp.setPostBrokerLoginFlowId(postBrokerFlow.getId());
             session.identityProviders().update(idp);
-        };
-    }
-
-    static RunOnServer removePostBrokerFlow(String realmName) {
-        return session -> {
-            RealmModel realm = session.realms().getRealmByName(realmName);
-            AuthenticationFlowModel flow = realm.getFlowByAlias("post-broker");
-            if (flow != null) {
-                session.identityProviders().getAllStream()
-                        .filter(idp -> flow.getId().equals(idp.getPostBrokerLoginFlowId()))
-                        .forEach(idp -> {
-                            idp.setPostBrokerLoginFlowId(null);
-                            session.identityProviders().update(idp);
-                        });
-                realm.getAuthenticationExecutionsStream(flow.getId()).forEach(execution -> {
-                    String configId = execution.getAuthenticatorConfig();
-                    if (configId != null) {
-                        AuthenticatorConfigModel config = realm.getAuthenticatorConfigById(configId);
-                        if (config != null) {
-                            realm.removeAuthenticatorConfig(config);
-                        }
-                    }
-                });
-                realm.removeAuthenticationFlow(flow);
-            }
         };
     }
 
