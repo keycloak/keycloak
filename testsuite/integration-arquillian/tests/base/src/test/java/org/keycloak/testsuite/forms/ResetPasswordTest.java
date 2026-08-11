@@ -75,6 +75,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
+import org.keycloak.testsuite.pages.SelectAuthenticatorPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.BrowserTabUtil;
@@ -95,6 +96,7 @@ import org.keycloak.testsuite.util.TestAppHelper;
 
 import org.junit.*;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
@@ -118,6 +120,9 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
+
+    @Page
+    SelectAuthenticatorPage selectAuthenticatorPage;
 
     @Drone
     @SecondBrowser
@@ -1566,5 +1571,41 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             WaitUtils.waitUntilElement(appPage.getAccountLink()).is().clickable();
             appPage.assertCurrent();
         }
+    }
+
+    private void submitForm(String action, String name, String value) {
+        ((JavascriptExecutor) driver).executeScript(
+                "var form = document.createElement('form');" +
+                "document.body.appendChild(form);" +
+                "form.method = 'POST';" +
+                "form.action ='"+ action + "';" +
+                "var element1 = document.createElement('input');" +
+                "element1.name='" + name +"';" +
+                "element1.value='" + value + "';" +
+                "form.appendChild(element1);" +
+                "form.submit();");
+    }
+
+    @Test
+    public void resetPasswordTryAnotherWay() throws Exception {
+        oauth.openLoginForm();
+        loginPage.resetPassword();
+        resetPasswordPage.assertCurrent();
+        String resetPasswordUrl = driver.getCurrentUrl();
+
+        // force a tryAnotherWay to set AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED
+        submitForm(resetPasswordPage.getFormUrl(), "tryAnotherWay", "on");
+        selectAuthenticatorPage.assertCurrent();
+
+        // now execute the email action to send the email
+        WebElement form = driver.findElement(By.id("kc-select-credential-form"));
+        submitForm(form.getDomAttribute("action"), "username", "login-test");
+        loginPage.assertCurrent();
+        assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+
+        // back to reset credential and check we are still waiting the email
+        driver.navigate().to(resetPasswordUrl);
+        loginPage.assertCurrent();
+        assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
     }
 }
