@@ -395,6 +395,9 @@ HTTP(S):
                      The file path to a server certificate or certificate chain in PEM format.
 --https-certificate-key-file <file>
                      The file path to a private key in PEM format.
+--https-certificate-key-file-password <password>
+                     The password to decrypt an encrypted private key in PEM format (encrypted
+                       PKCS#8).
 --https-certificates-reload-period <reload period>
                      Interval on which to reload key store, trust store, and certificate files
                        referenced by https-* options. May be an ISO 8601 duration value, an integer
@@ -525,6 +528,12 @@ Management:
                        given, the value is inherited from HTTP options. Relevant only when
                        something is exposed on the management interface - see the guide for
                        details. Available only when http-management-scheme is inherited.
+--https-management-certificate-key-file-password <password>
+                     The password to decrypt an encrypted private key in PEM format for the
+                       management server. If not given, the value is inherited from HTTP options.
+                       Relevant only when something is exposed on the management interface - see
+                       the guide for details. Available only when http-management-scheme is
+                       inherited.
 --https-management-certificates-reload-period <reload period>
                      Interval on which to reload key store, trust store, and certificate files
                        referenced by https-management-* options for the management server. May be
