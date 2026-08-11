@@ -93,6 +93,14 @@ When {project_name} generates self-signed certificates (for example, during SAML
 
 If you have tooling that inspects the CN of {project_name}-generated certificates and expects it to match a value longer than 64 characters, be aware that the CN may now be shorter.
 
+=== Authentication flows with unavailable authenticator providers remain manageable
+
+Previously, `GET /admin/realms/\{realm}/authentication/flows/\{flowAlias}/executions` returned `404 Not Found` when any execution in the flow referenced an authenticator provider that is no longer registered on the server, for example after a provider was uninstalled or renamed. This made the whole flow unusable in the Admin Console.
+
+The endpoint now returns `200 OK`. Executions whose provider cannot be resolved are returned with the new `providerUnavailable` field set to `true`, `configurable` set to `false`, and `displayName` set to the raw provider ID. In the Admin Console, these executions are marked with a *Provider unavailable* label, their configuration action is hidden, and they cannot be moved to another flow. They can still be set to *Disabled*, removed, or reordered within their own flow.
+
+If you have tooling that relied on the previous `404` response to detect broken flows, check the `providerUnavailable` field on the returned executions instead.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
