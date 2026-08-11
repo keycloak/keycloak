@@ -16,6 +16,7 @@
  */
 package org.keycloak.organization.admin.resource;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -36,10 +37,13 @@ import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -54,6 +58,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ServicesLogger;
@@ -96,10 +101,6 @@ public class OrganizationInvitationResource {
         this.organization = organization;
         this.adminEvent = adminEvent.resource(ResourceType.ORGANIZATION_MEMBERSHIP);
         this.auth = auth;
-    }
-
-    public Response inviteUser(String email, String firstName, String lastName) {
-        return inviteUser(email, firstName, lastName, null);
     }
 
     public Response inviteUser(String email, String firstName, String lastName, String clientId) {
@@ -288,6 +289,25 @@ public class OrganizationInvitationResource {
         throw ErrorResponse.error("Unable to resolve a redirect uri for the client", Status.BAD_REQUEST);
     }
 
+    private String resolveClientIdFromInviteLink(String inviteLink) {
+        if (StringUtil.isBlank(inviteLink)) {
+            return null;
+        }
+        try {
+            MultivaluedHashMap<String, String> params = UriUtils.decodeQueryString(URI.create(inviteLink).getRawQuery());
+            String tokenValue = params.getFirst(Constants.TOKEN);
+            if (tokenValue == null) {
+                tokenValue = params.getFirst("key");
+            }
+            if (tokenValue == null) {
+                return null;
+            }
+            return new JWSInput(tokenValue).readJsonContent(JsonWebToken.class).getIssuedFor();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private static class InvitationTarget {
         final String clientId;
         final String redirectUri;
@@ -403,8 +423,9 @@ public class OrganizationInvitationResource {
         InvitationManager invitationManager = provider.getInvitationManager();
 
         OrganizationInvitationModel invitation = verifyInvitationById(invitationManager, id);
+        String clientId = resolveClientIdFromInviteLink(invitation.getInviteLink());
         invitationManager.remove(id);
-        return inviteUser(invitation.getEmail(), invitation.getFirstName(), invitation.getLastName());
+        return inviteUser(invitation.getEmail(), invitation.getFirstName(), invitation.getLastName(), clientId);
     }
 
     private OrganizationInvitationModel verifyInvitationById(InvitationManager invitationManager, String id) {

@@ -478,6 +478,44 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testResendInvitationPreservesCustomClientId() throws IOException, MessagingException {
+        String email = "invitedresendclient@email";
+        String firstName = "Homer";
+        String lastName = "Simpson";
+
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+
+        try (
+            ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, "broker-app")
+                .setBaseUrl(OAuthClient.APP_AUTH_ROOT)
+                .update();
+            Response response = organization.members().inviteUser(email, firstName, lastName, "broker-app")
+        ) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+
+            URI firstLink = URI.create(getInvitationLinkFromEmail());
+            NameValuePair firstClientIdParam = URLEncodedUtils.parse(firstLink, StandardCharsets.UTF_8).stream()
+                    .filter((np) -> Constants.CLIENT_ID.equals(np.getName()))
+                    .findAny().orElse(null);
+            assertThat(firstClientIdParam, notNullValue());
+            assertThat(firstClientIdParam.getValue(), equalTo("broker-app"));
+
+            List<OrganizationInvitationRepresentation> invitations = organization.invitations().list();
+            assertThat(invitations, Matchers.hasSize(1));
+            try (Response resendResponse = organization.invitations().resend(invitations.get(0).getId())) {
+                assertThat(resendResponse.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+            }
+
+            URI resendLink = URI.create(getInvitationLinkFromEmail());
+            NameValuePair resendClientIdParam = URLEncodedUtils.parse(resendLink, StandardCharsets.UTF_8).stream()
+                    .filter((np) -> Constants.CLIENT_ID.equals(np.getName()))
+                    .findAny().orElse(null);
+            assertThat(resendClientIdParam, notNullValue());
+            assertThat(resendClientIdParam.getValue(), equalTo("broker-app"));
+        }
+    }
+
+    @Test
     public void testRegistrationEnabledWhenInvitingNewUser() throws Exception {
         String email = "inviteduser@email";
 
