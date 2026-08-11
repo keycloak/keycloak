@@ -69,7 +69,7 @@ public class WebAuthnRegisterPage extends LogoutSessionsPage {
 
     public void registerWebAuthnCredential(String authenticatorLabel) {
         if (!isRegisterAlertPresent(ALERT_DEFAULT_TIMEOUT)) {
-            throw new TimeoutException("Cannot register Passkey due to missing prompt for registration");
+            throw new TimeoutException("Cannot register Quantum Pass due to missing prompt for registration");
         }
 
         Alert promptDialog = driver.switchTo().alert();
@@ -87,7 +87,7 @@ public class WebAuthnRegisterPage extends LogoutSessionsPage {
             // label edit after registering authenticator by .create()
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(seconds));
             Alert promptDialog = wait.until(ExpectedConditions.alertIsPresent());
-            assertThat(promptDialog.getText(), CoreMatchers.is("Please input your registered passkey's label"));
+            assertThat(promptDialog.getText(), CoreMatchers.is("Please input your registered Quantum Pass's label"));
             return true;
         } catch (TimeoutException e) {
             return false;
@@ -116,7 +116,7 @@ public class WebAuthnRegisterPage extends LogoutSessionsPage {
     @Override
     public boolean isCurrent() {
         final String formTitle = getFormTitle();
-        return formTitle != null && formTitle.equals("Passkey Registration") &&
+        return formTitle != null && formTitle.equals("Quantum Pass Registration") &&
                 driver.findElement(By.id("registerWebAuthn")).isDisplayed();
     }
 

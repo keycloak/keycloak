@@ -291,7 +291,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         selectAuthenticatorPage.assertCurrent();
         assertThat(selectAuthenticatorPage.getLoginMethodHelpText(SelectAuthenticatorPage.SECURITY_KEY),
-                is("Use your Passkey for passwordless sign in."));
+                is("Use your Quantum Pass for passwordless sign in."));
         selectAuthenticatorPage.selectLoginMethod(SelectAuthenticatorPage.SECURITY_KEY);
 
         webAuthnLoginPage.assertCurrent();
@@ -399,7 +399,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         selectAuthenticatorPage.assertCurrent();
         assertThat(selectAuthenticatorPage.getLoginMethodHelpText(SelectAuthenticatorPage.SECURITY_KEY),
-                is("Use your Passkey for passwordless sign in."));
+                is("Use your Quantum Pass for passwordless sign in."));
         selectAuthenticatorPage.selectLoginMethod(SelectAuthenticatorPage.SECURITY_KEY);
 
         webAuthnLoginPage.assertCurrent();
@@ -413,7 +413,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
         webAuthnLoginPage.clickAuthenticate();
 
         webAuthnErrorPage.assertCurrent();
-        assertThat(webAuthnErrorPage.getError(), is("Unknown user authenticated by the Passkey."));
+        assertThat(webAuthnErrorPage.getError(), is("Unknown user authenticated by the Quantum Pass."));
     }
 
     @Test

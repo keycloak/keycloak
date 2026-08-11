@@ -134,7 +134,7 @@ No manual action is required — the migration ensures existing scopes continue 
 
 When user self-registration is enabled for the realm together with *Verify Email*, users will not see a password field by default
 on the registration screen. After registering their profile, the user is required to verify their email and then can set up a password
-(or optionally other credentials like OTP or Passkey) as a subsequent step. It is possible to disable this and keep the old behavior by
+(or optionally other credentials like OTP or Quantum Pass) as a subsequent step. It is possible to disable this and keep the old behavior by
 enabling the switch *Always set password on register form* in the realm registration flow, on the *Password validation* authenticator. Note
 that this option is deprecated and exists mostly for backward compatibility. It may be removed in the future.
 
@@ -270,7 +270,7 @@ The old provider can be removed once all sessions using the old key have expired
 Several visual changes were made to the login theme in this release:
 
 * Action buttons across login theme pages now use a consistent horizontal layout.
-* The passkey authentication page and the signing-in page in the account console now display vendor-specific icons for registered passkeys and security keys, making it easier to identify the correct device.
+* The Quantum Pass authentication page and the signing-in page in the account console now display vendor-specific icons for registered Quantum Passes and security keys, making it easier to identify the correct device.
 
 If you use a custom theme that overrides these pages, verify that your customizations work as expected after upgrading.
 

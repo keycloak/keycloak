@@ -56,15 +56,15 @@ image:images/account-console-signing-in.png[Signing in]
 
 . Click *Account Security* in the menu.
 . Click *Signing In*.
-. Click *Set up a Passkey*.
+. Click *Set up a Quantum Pass*.
 +
 .Signing In
-image:images/account-console-signing-in-webauthn-2factor.png[Signing in with a Passkey]
+image:images/account-console-signing-in-webauthn-2factor.png[Signing in with a Quantum Pass]
 
-. Prepare your Passkey. How you prepare this key depends on the type of Passkey you use. For example, for a USB based Yubikey, you may need to put your key into the USB port on your laptop.
-. Click *Register* to register your Passkey.
+. Prepare your Quantum Pass. How you prepare this key depends on the type of Quantum Pass you use. For example, for a USB based Yubikey, you may need to put your key into the USB port on your laptop.
+. Click *Register* to register your Quantum Pass.
 . Log out and log in again.
-. Assuming authentication flow was correctly set, a message appears asking you to authenticate with your Passkey as second factor.
+. Assuming authentication flow was correctly set, a message appears asking you to authenticate with your Quantum Pass as second factor.
 
 ==== Passwordless authentication with WebAuthn
 
@@ -76,15 +76,15 @@ image:images/account-console-signing-in-webauthn-2factor.png[Signing in with a P
 
 . Click *Account Security* in the menu.
 . Click *Signing In*.
-. Click *Set up a Passkey* in the *Passwordless* section.
+. Click *Set up a Quantum Pass* in the *Passwordless* section.
 +
 .Signing In
-image:images/account-console-signing-in-webauthn-passwordless.png[Signing in with a Passkey]
+image:images/account-console-signing-in-webauthn-passwordless.png[Signing in with a Quantum Pass]
 
-. Prepare your Passkey. How you prepare this key depends on the type of Passkey you use. For example, for a USB based Yubikey, you may need to put your key into the USB port on your laptop.
-. Click *Register* to register your Passkey.
+. Prepare your Quantum Pass. How you prepare this key depends on the type of Quantum Pass you use. For example, for a USB based Yubikey, you may need to put your key into the USB port on your laptop.
+. Click *Register* to register your Quantum Pass.
 . Log out and log in again.
-. Assuming authentication flow was correctly set, a message appears asking you to authenticate with your Passkey as second factor. You no longer need to provide your password to log in.
+. Assuming authentication flow was correctly set, a message appears asking you to authenticate with your Quantum Pass as second factor. You no longer need to provide your password to log in.
 
 === Viewing device activity
 

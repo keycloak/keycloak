@@ -4,7 +4,7 @@
 This release delivers advancements to optimize your system and improve the experience of users, developers and administrators:
 
 * *Account recovery* with 2FA recovery codes, protecting users from lockout.
-* Simplified experiences for application developers with *streamlined WebAuthn/Passkey registration* and *simplified account linking* to identity providers via application initiated actions.
+* Simplified experiences for application developers with *streamlined WebAuthn/Quantum Pass registration* and *simplified account linking* to identity providers via application initiated actions.
 * Broader connectivity with the ability to *broker with any OAuth 2.0 compliant authorization server*, and enhanced *trusted email verification* for OpenID Connect providers.
 * *Asynchronous logging* for higher throughput and lower latency, ensuring more efficient deployments.
 * For administrators, *experimental rolling updates for patch releases* mean minimized downtime and smoother upgrades.
@@ -26,11 +26,11 @@ For more information about this 2FA method, see the link:{adminguide_link}#_reco
 
 The time it takes to run imports, exports or migrations involving a large number of realms has been improved. There is no longer a cumulative performance degradation for each additional realm processed.
 
-= Simplified registration for WebAuthn and Passkeys
+= Simplified registration for WebAuthn and Quantum Passes
 
-Both WebAuthn Register actions (`webauthn-register` and `webauthn-register-passwordless`) which are also used for Passkeys now support a parameter `skip_if_exists` when initiated by the application (AIA).
+Both WebAuthn Register actions (`webauthn-register` and `webauthn-register-passwordless`) which are also used for Quantum Passes now support a parameter `skip_if_exists` when initiated by the application (AIA).
 
-This should make it more convenient to use the AIA in scenarios where a user has already set up WebAuthn or Passkeys.
+This should make it more convenient to use the AIA in scenarios where a user has already set up WebAuthn or Quantum Passes.
 The parameter allows skipping the action if the user already has a credential of that type.
 
 For more information, see the link:{adminguide_link}#_webauthn_aia[Registering WebAuthn credentials using AIA] chapter in the {adminguide_name}.
@@ -79,10 +79,10 @@ This can reduce the service's downtime even further, as downtime is only needed 
 
 Read more on how to enable this feature in https://www.keycloak.org/server/update-compatibility#rolling-updates-for-patch-releases[update compatibility command].
 
-= Passkeys integrated in the default username forms
+= Quantum Passes integrated in the default username forms
 
-In this release {project_name} integrates *Passkeys* in the default authentications forms. A new switch *Enable Passkeys* is available in the configuration, *Authentication* → *Policies* → *Webauthn Passwordless Policy*, that seamlessly incorporates passkeys support to the realm. With just one click, {project_name} offers conditional and modal user interfaces in the default login forms to allow users to authenticate with a passkey.
+In this release {project_name} integrates *Quantum Pass* in the default authentications forms. A new switch *Enable Quantum Passes* is available in the configuration, *Authentication* → *Policies* → *Webauthn Passwordless Policy*, that seamlessly incorporates Quantum Passes support to the realm. With just one click, {project_name} offers conditional and modal user interfaces in the default login forms to allow users to authenticate with a Quantum Pass.
 
-The *Passkeys* feature is still in preview. Follow the https://www.keycloak.org/server/features[Enabling and disabling features] {section} to enable it.
+The *Quantum Pass* feature is still in preview. Follow the https://www.keycloak.org/server/features[Enabling and disabling features] {section} to enable it.
 
-For more information, see link:{adminguide_link}#passkeys_server_administration_guide[Passkeys section in the {adminguide_name}].
+For more information, see link:{adminguide_link}#passkeys_server_administration_guide[Quantum Passes section in the {adminguide_name}].

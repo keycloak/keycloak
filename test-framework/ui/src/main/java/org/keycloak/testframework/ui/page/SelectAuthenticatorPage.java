@@ -19,7 +19,7 @@ public class SelectAuthenticatorPage extends AbstractLoginPage {
     public static final String PASSWORD = "Password";
 
     // Corresponds to the WebAuthn authenticators
-    public static final String SECURITY_KEY = "Passkey";
+    public static final String SECURITY_KEY = "Quantum Pass";
 
     public SelectAuthenticatorPage(ManagedWebDriver driver) {
         super(driver);

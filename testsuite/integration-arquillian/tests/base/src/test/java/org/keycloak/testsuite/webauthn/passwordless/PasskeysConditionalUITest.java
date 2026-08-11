@@ -127,7 +127,7 @@ public class PasskeysConditionalUITest extends AbstractWebAuthnVirtualTest {
             oauth.openLoginForm();
             WaitUtils.waitForPageToLoad();
             loginPage.assertCurrent();
-            MatcherAssert.assertThat(PageUtils.getPageTitle(driver), Matchers.is("Passkey login"));
+            MatcherAssert.assertThat(PageUtils.getPageTitle(driver), Matchers.is("Quantum Pass login"));
         }
     }
 }

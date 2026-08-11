@@ -175,12 +175,12 @@ Additionally, the *Organization Group Membership* protocol mapper (OIDC and SAML
 
 For more details, see the link:{adminguide_link}#pass:a[_managing_groups_][Managing organization groups] guide.
 
-== Better passkey compatibility with new WebAuthn policy options
+== Better Quantum Pass compatibility with new WebAuthn policy options
 // https://github.com/keycloak/keycloak/issues/42513
 
-Passkeys let users sign in with biometrics or a security key instead of a password. To work correctly, the server must tell the browser whether it prefers a discoverable credential (a passkey stored on the device) or not — and the previous Yes/No option could not express the increasingly common `preferred` value.
+Quantum Passes let users sign in with biometrics or a security key instead of a password. To work correctly, the server must tell the browser whether it prefers a discoverable credential (a Quantum Pass stored on the device) or not — and the previous Yes/No option could not express the increasingly common `preferred` value.
 
-The WebAuthn Policy and WebAuthn Passwordless Policy now provide a `Discoverable credential` option that follows the current https://www.w3.org/TR/webauthn/#dom-authenticatorselectioncriteria-residentkey[WebAuthn specification], supporting `required`, `preferred`, and `discouraged` values. This improves compatibility with passkey providers such as iCloud Keychain, Google Password Manager, and 1Password. The previous `Require Discoverable Credential` option is now deprecated and planned for removal in a future release.
+The WebAuthn Policy and WebAuthn Passwordless Policy now provide a `Discoverable credential` option that follows the current https://www.w3.org/TR/webauthn/#dom-authenticatorselectioncriteria-residentkey[WebAuthn specification], supporting `required`, `preferred`, and `discouraged` values. This improves compatibility with Quantum Pass providers such as iCloud Keychain, Google Password Manager, and 1Password. The previous `Require Discoverable Credential` option is now deprecated and planned for removal in a future release.
 
 == Easier realm discovery by display name search
 // https://github.com/keycloak/keycloak/issues/45292

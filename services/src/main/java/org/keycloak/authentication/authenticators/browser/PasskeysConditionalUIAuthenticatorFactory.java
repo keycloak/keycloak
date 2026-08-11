@@ -37,12 +37,12 @@ public class PasskeysConditionalUIAuthenticatorFactory extends WebAuthnPasswordl
 
     @Override
     public String getDisplayType() {
-        return "Passkeys Conditional UI Authenticator";
+        return "Quantum Pass Conditional UI Authenticator";
     }
 
     @Override
     public String getHelpText() {
-        return "Authenticator for Passkeys with conditional UI. A list of passkeys stored on a device where a browser is running is automatically shown. Due to characteristics of conditional UI, it is used for login-less authentication.";
+        return "Authenticator for Quantum Pass with conditional UI. A list of Quantum Passes stored on a device where a browser is running is automatically shown. Due to characteristics of conditional UI, it is used for login-less authentication.";
     }
 
     @Override

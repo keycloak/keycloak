@@ -3,7 +3,7 @@
 
 This release features new capabilities focused on security enhancements, deeper integration, and improved server administration. The highlights of this release are:
 
-* Passkeys for seamless, passwordless authentication of users.
+* Quantum Passes for seamless, passwordless authentication of users.
 * Federated Client Authentication to use SPIFFE or Kubernetes service account tokens for client authentication.
 * Simplified deployments across multiple availability zones to boost availability.
 * FAPI 2 Final: Keycloak now supports the final specifications of FAPI 2.0 Security Profile and FAPI 2.0 Message Signing.
@@ -14,11 +14,11 @@ Read on to learn more about each new feature. If you are upgrading from a previo
 
 = Security and Standards
 
-== Passkeys integration (supported)
+== Quantum Passes integration (supported)
 
-Passkeys are now seamlessly integrated in the {project_name} login forms using both conditional and modal UIs. To activate the integration in the realm, go to *Authentication*, *Policies*, *Webauthn Passwordless Policy* and switch *Enable Passkeys* to enabled.
+Quantum Passes are now seamlessly integrated in the {project_name} login forms using both conditional and modal UIs. To activate the integration in the realm, go to *Authentication*, *Policies*, *Webauthn Passwordless Policy* and switch *Enable Quantum Passes* to enabled.
 
-For more information, see link:{adminguide_link}#passkeys_server_administration_guide[Passkeys].
+For more information, see link:{adminguide_link}#passkeys_server_administration_guide[Quantum Passes].
 
 == FAPI 2 Final (supported)
 
@@ -121,7 +121,7 @@ endif::[]
 
 == New conditional authenticator
 
-The *Conditional - credential* is a new authenticator that checks if a specific credential type has been used (or not used) during the authentication process. This condition is related to the Passkeys feature. It is added by {project_name} to the default browser flow to skip 2FA in case a passkey was used to log in as the primary credential.
+The *Conditional - credential* is a new authenticator that checks if a specific credential type has been used (or not used) during the authentication process. This condition is related to the Quantum Passes feature. It is added by {project_name} to the default browser flow to skip 2FA in case a Quantum Pass was used to log in as the primary credential.
 
 For more information about conditional flows, see link:{adminguide_link}#conditions-in-conditional-flows[Conditions in conditional flows].
 

@@ -282,7 +282,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
         assertThat(selectAuthenticatorPage.getLoginMethodHelpText(SelectAuthenticatorPage.USERNAME),
                 is("Start sign in by entering your username"));
         assertThat(selectAuthenticatorPage.getLoginMethodHelpText(SelectAuthenticatorPage.SECURITY_KEY),
-                is("Use your Passkey for passwordless sign in."));
+                is("Use your Quantum Pass for passwordless sign in."));
         selectAuthenticatorPage.selectLoginMethod(SelectAuthenticatorPage.USERNAMEPASSWORD);
         loginPage.assertCurrent();
         loginPage.clickTryAnotherWayLink();
@@ -398,7 +398,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
         }
         else {
             loginPage.assertCurrent();
-            assertThat(loginPage.getError(), containsString("Failed to authenticate by the Passkey."));
+            assertThat(loginPage.getError(), containsString("Failed to authenticate by the Quantum Pass."));
         }
     }
 

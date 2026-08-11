@@ -84,7 +84,7 @@ public class WebAuthnErrorTest extends AbstractWebAuthnAccountTest {
             WaitUtils.pause((timeoutSec + 1) * 1000);
 
             webAuthnErrorPage.assertCurrent();
-            assertThat(webAuthnErrorPage.getError(), is("Failed to authenticate by the Passkey."));
+            assertThat(webAuthnErrorPage.getError(), is("Failed to authenticate by the Quantum Pass."));
             assertThat("execution value should be a double-quoted JS string via ?c",
                     driver.getPageSource(), containsString("getElementById('executionValue').value = \""));
         }

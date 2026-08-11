@@ -139,9 +139,9 @@ by the `kc_action` parameter (used for instance when updating password in the Ac
 actions during authentication, all actions are sorted together regardless of whether those are actions set during authentication (for instance by the `kc_action` parameter) or actions added to the user account manually by an administrator.
 Thanks to https://github.com/thomasdarimont[Thomas Darimont] and https://github.com/danielFesenmeyer[Daniel Fesenmeyer] for the contributions.
 
-= Passkeys improvements
+= Quantum Passes improvements
 
-The support for Passkeys conditional UI was added. When the Passkeys preview feature is enabled, there is a dedicated authenticator available, which means you can select from a list of available passkeys accounts
+The support for Quantum Passes conditional UI was added. When the Quantum Passes preview feature is enabled, there is a dedicated authenticator available, which means you can select from a list of available Quantum Passes accounts
 and authenticate a user based on that. Thanks to https://github.com/tnorimat[Takashi Norimatsu] for the contribution.
 
 = Default client profile for SAML

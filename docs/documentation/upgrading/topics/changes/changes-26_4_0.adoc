@@ -375,10 +375,10 @@ The timestamp of the last refresh token update of OpenID Connect clients is curr
 
 This is now deprecated for removal without a replacement.
 
-=== Passkeys Conditional UI Authenticator requires a feature
+=== Quantum Pass Conditional UI Authenticator requires a feature
 
-The *Passkeys Conditional UI Authenticator* authenticator was deprecated in the version 26.3.0, but you can still use it if you enable
-`passkeys_conditional_ui_authenticator` during server startup. As a result, you can re-configure authentication flows for passkeys authentication as described in link:{adminguide_link}#passkeys_server_administration_guide[Passkeys]. Nonetheless, both this startup option and the *Passkeys Conditional UI Authenticator* are deprecated.
+The *Quantum Pass Conditional UI Authenticator* authenticator was deprecated in the version 26.3.0, but you can still use it if you enable
+`passkeys_conditional_ui_authenticator` during server startup. As a result, you can re-configure authentication flows for Quantum Passes authentication as described in link:{adminguide_link}#passkeys_server_administration_guide[Quantum Passes]. Nonetheless, both this startup option and the *Quantum Pass Conditional UI Authenticator* are deprecated.
 
 === Modifying default cache configurations in the cache config file
 

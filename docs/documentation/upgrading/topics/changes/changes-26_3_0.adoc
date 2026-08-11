@@ -70,7 +70,7 @@ For more information, see link:{adminguide_link}#_identity_broker_first_login[th
 
 === Signing out from other devices now disabled by default
 
-Previously, when a user updated their credentials, like changing their password or adding another factor like an OTP or Passkey, they had a checkbox *Sign out from other devices* which was checked by default. Since this release, {project_name} displays the checkbox *Sign out from other devices* not checked by default. This checkbox should now be intentionally enabled by the user to logout all the other related sessions associated to the same user.
+Previously, when a user updated their credentials, like changing their password or adding another factor like an OTP or Quantum Pass, they had a checkbox *Sign out from other devices* which was checked by default. Since this release, {project_name} displays the checkbox *Sign out from other devices* not checked by default. This checkbox should now be intentionally enabled by the user to logout all the other related sessions associated to the same user.
 
 === Signing out from other devices logs out offline sessions
 
@@ -193,9 +193,9 @@ recommended to use the configuration option *Warning Threshold* of the *Recovery
 
 The `org.keycloak.Config.Scope.getPropertyNames` method has been deprecated for removal.
 
-=== Deprecation of the Passkeys Conditional UI Authenticator
+=== Deprecation of the Quantum Pass Conditional UI Authenticator
 
-The preview feature *Passkeys* recently introduced a new *Passkeys Conditional UI Authenticator* that you can use to integrate the passkey auto-fill or conditional UI feature in your login flow. Passkeys are now being seamlessly integrated into {project_name} inside the default username forms. Therefore, the old authenticator is invalid and it is deprecated in this release. The factory and implementation classes will be removed when *Passkeys* are supported in {project_name}.
+The preview feature *Quantum Pass* recently introduced a new *Quantum Pass Conditional UI Authenticator* that you can use to integrate the Quantum Pass auto-fill or conditional UI feature in your login flow. Quantum Passes are now being seamlessly integrated into {project_name} inside the default username forms. Therefore, the old authenticator is invalid and it is deprecated in this release. The factory and implementation classes will be removed when *Quantum Pass* are supported in {project_name}.
 
 == Removed features
 
