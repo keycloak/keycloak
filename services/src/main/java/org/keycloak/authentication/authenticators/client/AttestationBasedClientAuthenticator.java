@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -38,6 +39,7 @@ import org.keycloak.broker.provider.TrustMaterialRequest;
 import org.keycloak.broker.provider.TrustMaterialResolver;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
@@ -47,10 +49,12 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandler;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtCNonceHandler;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -95,6 +99,8 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
 
     public static final String OAUTH_CLIENT_ATTESTATION_JWT_TYPE = "oauth-client-attestation+jwt";
     public static final String OAUTH_CLIENT_ATTESTATION_POP_JWT_TYPE = "oauth-client-attestation-pop+jwt";
+    private static final int CLIENT_ATTESTATION_POP_REPLAY_WINDOW_SECONDS = 300;
+    private static final int CLIENT_ATTESTATION_POP_ALLOWED_CLOCK_SKEW_SECONDS = 15;
 
     /**
      * Comma-separated aliases of trust-material identity providers that expose the trusted attester keys.
@@ -457,7 +463,7 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
         };
 
         TokenVerifier.Predicate<JsonWebToken> iatCheck = (t) -> {
-            if (t.getIat() == 0)
+            if (t.getIat() == null || t.getIat() == 0)
                 throw new TokenVerificationException(t, "The iat (issued at) claim MUST specify the time at which the Client Attestation PoP was issued.");
             return true;
         };
@@ -500,14 +506,63 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
             throw new TokenSignatureInvalidException(attestationPoPJwt, "Invalid token signature");
         }
 
+        ensureClientAttestationPoPNotReplayed(session, attestationJwt, attestationPoPJwt, clientKey);
         validateClientAttestationChallenge(session, attestationPoPJwt);
+        markClientAttestationPoPAsUsed(session, attestationJwt, attestationPoPJwt, clientKey);
 
         abcaResult.setAttestationPoPJwt(attestationPoPJwt);
+    }
 
-        // [TODO] The authorization server can utilize the jti value for replay attack detection
-        // [TODO] The authorization server may reject JWTs with an "iat" claim value that is unreasonably far in the past
+    private void ensureClientAttestationPoPNotReplayed(KeycloakSession session, ClientAttestationJwt attestationJwt,
+            ClientAttestationPoPJwt attestationPoPJwt, KeyWrapper clientKey) throws TokenVerificationException {
+        getClientAttestationPoPReplayEntryLifespan(attestationPoPJwt);
 
-        // [TODO] Additional checks to guarantee replay protection for the Client Attestation PoP JWT might need to be applied
+        String cacheKey = getClientAttestationPoPReplayCacheKey(attestationJwt, attestationPoPJwt, clientKey);
+        if (session.singleUseObjects().contains(cacheKey)) {
+            throw new TokenVerificationException(attestationPoPJwt, "Client Attestation PoP JWT has already been used");
+        }
+    }
+
+    private void markClientAttestationPoPAsUsed(KeycloakSession session, ClientAttestationJwt attestationJwt,
+            ClientAttestationPoPJwt attestationPoPJwt, KeyWrapper clientKey) throws TokenVerificationException {
+        long lifespan = getClientAttestationPoPReplayEntryLifespan(attestationPoPJwt);
+        String cacheKey = getClientAttestationPoPReplayCacheKey(attestationJwt, attestationPoPJwt, clientKey);
+
+        SingleUseObjectProvider singleUseStore = session.singleUseObjects();
+        if (!singleUseStore.putIfAbsent(cacheKey, lifespan)) {
+            throw new TokenVerificationException(attestationPoPJwt, "Client Attestation PoP JWT has already been used");
+        }
+    }
+
+    private long getClientAttestationPoPReplayEntryLifespan(ClientAttestationPoPJwt attestationPoPJwt)
+            throws TokenVerificationException {
+        long now = Time.currentTime();
+        Long issuedAt = attestationPoPJwt.getIat();
+        if (issuedAt == null || issuedAt == 0) {
+            throw new TokenVerificationException(attestationPoPJwt, "The iat (issued at) claim MUST specify the time at which the Client Attestation PoP was issued.");
+        }
+        if (issuedAt > now + CLIENT_ATTESTATION_POP_ALLOWED_CLOCK_SKEW_SECONDS) {
+            throw new TokenVerificationException(attestationPoPJwt, "Client Attestation PoP JWT was issued in the future");
+        }
+
+        long lifespan = issuedAt + CLIENT_ATTESTATION_POP_REPLAY_WINDOW_SECONDS
+                + CLIENT_ATTESTATION_POP_ALLOWED_CLOCK_SKEW_SECONDS - now;
+        if (lifespan <= 0) {
+            throw new TokenVerificationException(attestationPoPJwt, "Client Attestation PoP JWT was issued too far in the past");
+        }
+        return lifespan;
+    }
+
+    private String getClientAttestationPoPReplayCacheKey(ClientAttestationJwt attestationJwt,
+            ClientAttestationPoPJwt attestationPoPJwt, KeyWrapper clientKey) {
+        String clientInstanceKeyHash = HashUtils.sha256UrlEncodedHash(
+                Base64Url.encode(clientKey.getPublicKey().getEncoded()), StandardCharsets.UTF_8);
+        String replayKeyMaterial = String.join("\n", attestationJwt.getSubject(), clientInstanceKeyHash,
+                attestationPoPJwt.getId());
+        String replayKeyHash = HashUtils.sha256UrlEncodedHash(replayKeyMaterial, StandardCharsets.UTF_8);
+
+        // Scope the jti cache key to the attested client instance key, so unrelated instances can choose the same jti.
+        return AttestationBasedClientAuthenticator.class.getName().toLowerCase(Locale.ROOT) + ".pop-replay." + replayKeyHash;
     }
 
     private void validateClientAttestationChallenge(KeycloakSession session, ClientAttestationPoPJwt attestationPoPJwt)
