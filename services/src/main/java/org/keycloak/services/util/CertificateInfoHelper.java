@@ -181,8 +181,7 @@ public class CertificateInfoHelper {
             }
             return jwks;
         } catch (IOException e) {
-            logger.warn("Failed to parse JWKS for private key stripping, storing as-is", e);
-            return jwks;
+            throw new IllegalArgumentException("Failed to parse JWKS for private key stripping", e);
         }
     }
 

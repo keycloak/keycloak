@@ -151,6 +151,8 @@ public class ClientAttributeCertificateResource {
             return info;
         } catch (IllegalStateException ise) {
             throw new ErrorResponseException("certificate-not-found", "Certificate or key with given alias not found in the keystore", Response.Status.BAD_REQUEST);
+        } catch (IllegalArgumentException iae) {
+            throw new ErrorResponseException("invalid-jwks", "Could not parse the provided JWKS", Response.Status.BAD_REQUEST);
         }
     }
 
@@ -174,6 +176,8 @@ public class ClientAttributeCertificateResource {
             return info;
         } catch (IllegalStateException ise) {
             throw new ErrorResponseException("certificate-not-found", "Certificate or key with given alias not found in the keystore", Response.Status.BAD_REQUEST);
+        } catch (IllegalArgumentException iae) {
+            throw new ErrorResponseException("invalid-jwks", "Could not parse the provided JWKS", Response.Status.BAD_REQUEST);
         }
     }
 
@@ -191,7 +195,7 @@ public class ClientAttributeCertificateResource {
         sanitized.setCertificate(info.getCertificate());
         sanitized.setPublicKey(info.getPublicKey());
         sanitized.setKid(info.getKid());
-        sanitized.setJwks(info.getJwks());
+        sanitized.setJwks(info.getJwks() != null ? CertificateInfoHelper.stripPrivateKeyParams(info.getJwks()) : null);
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(sanitized).success();
     }
 
