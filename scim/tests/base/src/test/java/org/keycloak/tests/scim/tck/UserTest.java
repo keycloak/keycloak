@@ -74,6 +74,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -1644,11 +1645,19 @@ public class UserTest extends AbstractScimTest {
             Map<Object, Object> extensionValues = new HashMap<>();
             extensionValues.put("protectedAttribute", "scim-update");
             user.getExtensions().put(KEYCLOAK_USER_SCHEMA, extensionValues);
-            client.users().update(user.getId(), user);
+            User updated = client.users().update(user.getId(), user);
             attributes = realm.admin().users().get(user.getId())
                     .toRepresentation().getAttributes();
             assertNotNull(attributes);
             assertEquals(List.of("admin-set-value"), attributes.get(attributeName));
+
+            // verify the SCIM response reflects the actual stored value, not the sent value
+            Map<String, Object> responseExtensions = updated.getExtensions();
+            if (responseExtensions != null && responseExtensions.containsKey(KEYCLOAK_USER_SCHEMA)) {
+                Map<String, Object> schemaValues = (Map<String, Object>) responseExtensions.get(KEYCLOAK_USER_SCHEMA);
+                assertNotEquals("scim-update", schemaValues.get("protectedAttribute"),
+                        "PUT response should not echo back the value that was not persisted");
+            }
         } finally {
             if (user.getId() != null) {
                 client.users().delete(user.getId());
