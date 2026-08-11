@@ -27,8 +27,8 @@ import org.keycloak.protocol.oidc.ClientAttestationChallengeResponse;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.CorsErrorResponseException;
-import org.keycloak.services.cors.Cors;
 import org.keycloak.services.Urls;
+import org.keycloak.services.cors.Cors;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.ProfileHelper;
 
