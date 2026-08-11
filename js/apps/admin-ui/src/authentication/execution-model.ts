@@ -1,8 +1,18 @@
 import type AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
+import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 
 export type ExpandableExecution = AuthenticationExecutionInfoRepresentation & {
   executionList?: ExpandableExecution[];
   isCollapsed: boolean;
+};
+
+export const containsOrphan = (
+  ex: AuthenticationFlowRepresentation | ExpandableExecution,
+): boolean => {
+  if ("providerUnavailable" in ex && ex.providerUnavailable) {
+    return true;
+  }
+  return !!(ex as ExpandableExecution).executionList?.some(containsOrphan);
 };
 
 export class IndexChange {
