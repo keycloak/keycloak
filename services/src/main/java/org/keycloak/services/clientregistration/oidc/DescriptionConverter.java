@@ -323,7 +323,8 @@ public class DescriptionConverter {
             JWK publicKeyJWk = JWKSUtils.getKeyForUse(keySet, JWK.Use.SIG);
 
             try {
-                configWrapper.setJwksString(JsonSerialization.writeValueAsPrettyString(clientOIDC.getJwks()));
+                configWrapper.setJwksString(CertificateInfoHelper.stripPrivateKeyParams(
+                        JsonSerialization.writeValueAsPrettyString(clientOIDC.getJwks())));
             } catch (IOException e) {
                 throw new ClientRegistrationException("Illegal jwks format");
             }

@@ -105,22 +105,28 @@ public class ClientAttributeCertificateResource {
     /**
      * Generate a new certificate with new key pair
      *
+     * @deprecated Clients should generate their own key pairs and upload only the public key/certificate.
+     *
      * @return
      */
+    @Deprecated
     @POST
     @NoCache
     @Path("generate")
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ATTRIBUTE_CERTIFICATE)
-    @Operation( summary = "Generate a new certificate with new key pair")
+    @Operation(summary = "Generate a new certificate with new key pair", deprecated = true)
     public CertificateRepresentation generate() {
         auth.clients().requireConfigure(client);
 
         CertificateRepresentation info = KeycloakModelUtils.generateKeyPairCertificate(client.getClientId());
+        CertificateRepresentation infoForStorage = new CertificateRepresentation();
+        infoForStorage.setCertificate(info.getCertificate());
+        CertificateInfoHelper.updateClientModelCertificateInfo(client, infoForStorage, attributePrefix);
 
-        CertificateInfoHelper.updateClientModelCertificateInfo(client, info, attributePrefix);
-
-        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(info).success();
+        CertificateRepresentation sanitized = new CertificateRepresentation();
+        sanitized.setCertificate(info.getCertificate());
+        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(sanitized).success();
 
         return info;
     }
@@ -175,9 +181,18 @@ public class ClientAttributeCertificateResource {
         if (OIDCLoginProtocol.LOGIN_PROTOCOL.equals(client.getProtocol()) && info.getJwks() != null) {
             CertificateInfoHelper.updateClientModelJwksString(client, attributePrefix, info.getJwks());
         } else {
-            CertificateInfoHelper.updateClientModelCertificateInfo(client, info, attributePrefix);
+            CertificateRepresentation infoForStorage = new CertificateRepresentation();
+            infoForStorage.setCertificate(info.getCertificate());
+            infoForStorage.setPublicKey(info.getPublicKey());
+            infoForStorage.setKid(info.getKid());
+            CertificateInfoHelper.updateClientModelCertificateInfo(client, infoForStorage, attributePrefix);
         }
-        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(info).success();
+        CertificateRepresentation sanitized = new CertificateRepresentation();
+        sanitized.setCertificate(info.getCertificate());
+        sanitized.setPublicKey(info.getPublicKey());
+        sanitized.setKid(info.getKid());
+        sanitized.setJwks(info.getJwks());
+        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(sanitized).success();
     }
 
     /**
@@ -185,14 +200,17 @@ public class ClientAttributeCertificateResource {
      *
      * @param config Keystore configuration as JSON
      * @return
+     *
+     * @deprecated Clients should manage their own private keys.
      */
+    @Deprecated
     @POST
     @NoCache
     @Path("/download")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ATTRIBUTE_CERTIFICATE)
-    @Operation( summary = "Get a keystore file for the client, containing private key and public certificate")
+    @Operation( summary = "Get a keystore file for the client, containing the public certificate", deprecated = true)
     public byte[] getKeystore(@Parameter(description = "Keystore configuration as JSON") final KeyStoreConfig config) {
         auth.clients().requireView(client);
 
@@ -224,7 +242,10 @@ public class ClientAttributeCertificateResource {
      *
      * @param config Keystore configuration as JSON
      * @return
+     *
+     * @deprecated Clients should generate their own key pairs and upload only the  public key/certificate.
      */
+    @Deprecated
     @POST
     @NoCache
     @Path("/generate-and-download")
@@ -235,7 +256,7 @@ public class ClientAttributeCertificateResource {
             "Generate a new keypair and certificate, and get the private key file\n" +
                     "\n" +
                     "Generates a keypair and certificate and serves the private key in a specified keystore format.\n" +
-                    "Only generated public certificate is saved in Keycloak DB - the private key is not.")
+                    "Only generated public certificate is saved in Keycloak DB - the private key is not.", deprecated = true)
     public byte[] generateAndGetKeystore(@Parameter(description = "Keystore configuration as JSON") final KeyStoreConfig config) {
         auth.clients().requireConfigure(client);
 

@@ -98,17 +98,19 @@ export const SamlKeysDialog = ({
 
   const generate = async () => {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
       const key = await adminClient.clients.generateKey({
         id,
         attr,
       });
-      setKeys(key);
       saveAs(
         new Blob([key.privateKey!], {
           type: "application/octet-stream",
         }),
         "private.key",
       );
+      // Clear private key from display state — it is not stored on server
+      setKeys({ ...key, privateKey: undefined });
 
       addAlert(t("generateSuccess"), AlertVariant.success);
     } catch (error) {
