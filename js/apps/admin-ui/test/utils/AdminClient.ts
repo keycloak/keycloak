@@ -355,14 +355,15 @@ class AdminClient {
   ): Promise<boolean> {
     await this.#login();
     const features = (await this.#client.serverInfo.find({ realm })).features;
-    const normalizeFeatureName = (name?: string) => name?.replace(/_V\d+$/, "");
+    const normalizeServerFeatureName = (name?: string) =>
+      name?.replace(/_V\d+$/, "");
 
     return (
       features?.some(
         (feature) =>
           feature.enabled &&
-          normalizeFeatureName(feature.name) ===
-            normalizeFeatureName(featureName),
+          (feature.name === featureName ||
+            normalizeServerFeatureName(feature.name) === featureName),
       ) ?? false
     );
   }

@@ -74,7 +74,8 @@ export async function fillEmailAndOptionalUsername(
 ) {
   await page.getByTestId("email").fill(email);
   const usernameField = page.getByTestId("username");
-  if (await usernameField.isVisible()) {
-    await usernameField.fill(username);
-  }
+  await expect(
+    usernameField,
+    `Expected username field to be hidden when "Email as username" is enabled (fallback username: "${username}")`,
+  ).toBeHidden();
 }

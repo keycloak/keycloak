@@ -51,13 +51,18 @@ async function clickCreateClientScopeAction(page: Page) {
   const createScopeButton = page.getByRole("button", {
     name: /Create client scope/i,
   });
-  if ((await createScopeButton.count()) > 0) {
+  const createScopeLink = page.getByRole("link", {
+    name: /Create client scope/i,
+  });
+
+  await expect(createScopeButton.or(createScopeLink).first()).toBeVisible({
+    timeout: 15_000,
+  });
+
+  if (await createScopeButton.first().isVisible()) {
     await createScopeButton.first().click();
     return;
   }
 
-  await page
-    .getByRole("link", { name: /Create client scope/i })
-    .first()
-    .click();
+  await createScopeLink.first().click();
 }

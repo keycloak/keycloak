@@ -62,6 +62,7 @@ test.describe.serial("User profile tabs", () => {
 
   test.afterEach(async () => {
     await adminClient.deleteUser("testuser7", realmName, true);
+    await adminClient.deleteUser("testuser8", realmName, true);
     await adminClient.deleteUser("testuser8@gmail.com", realmName, true);
     await adminClient.deleteUser("testuser9@gmail.com", realmName, true);
     await adminClient.deleteUser("testuser10", realmName, true);

@@ -11,12 +11,25 @@ export async function goToClientScopeEvaluateTab(page: Page) {
 }
 
 export async function clickAddClientScope(page: Page) {
-  try {
+  const toolbar = page.getByTestId("table-toolbar");
+  const addClientScopeAction = toolbar
+    .getByRole("button", { name: /^Add client scope$/i })
+    .or(toolbar.getByRole("link", { name: /^Add client scope$/i }))
+    .first();
+  const addScopeAction = toolbar
+    .getByRole("button", { name: /^Add scope$/i })
+    .or(toolbar.getByRole("link", { name: /^Add scope$/i }))
+    .first();
+
+  await expect(addClientScopeAction.or(addScopeAction).first()).toBeVisible({
+    timeout: 5_000,
+  });
+
+  if (await addClientScopeAction.isVisible()) {
     await clickTableToolbarItem(page, "Add client scope");
     return;
-  } catch {
-    // Some contexts still use the legacy "Add scope" label.
   }
+
   await clickTableToolbarItem(page, "Add scope");
 }
 
