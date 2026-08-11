@@ -365,7 +365,7 @@ public class SAMLClientModelMapperTest {
     }
 
     @TestOnServer
-    public void toModel_doesNotSetNullAttributes(KeycloakSession session) {
+    public void toModel_removesAttributesWhenNull(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("master");
         session.getContext().setRealm(realm);
 
@@ -374,19 +374,21 @@ public class SAMLClientModelMapperTest {
             // Pre-set some attributes
             clientModel.setAttribute(SAML_NAME_ID_FORMAT, "existing-format");
             clientModel.setAttribute(SAML_SIGNATURE_ALGORITHM, "existing-algorithm");
+            clientModel.setAttribute(SAML_SIGNING_CERTIFICATE, "existing-cert");
 
             SAMLClientRepresentation rep = new SAMLClientRepresentation();
             rep.setEnabled(true);
             rep.setClientId("test-saml-tomodel-null");
             rep.setRedirectUris(Set.of());
-            // Leave SAML-specific fields null
+            // Leave SAML-specific fields null (null means remove existing attribute)
 
             SAMLClientModelMapper mapper = getModelMapper(session);
             mapper.toModel(rep, clientModel);
 
-            // Existing attributes should remain unchanged when rep values are null
-            assertThat(clientModel.getAttribute(SAML_NAME_ID_FORMAT), is("existing-format"));
-            assertThat(clientModel.getAttribute(SAML_SIGNATURE_ALGORITHM), is("existing-algorithm"));
+            // Existing attributes should be removed when rep values are null
+            assertThat(clientModel.getAttribute(SAML_NAME_ID_FORMAT), nullValue());
+            assertThat(clientModel.getAttribute(SAML_SIGNATURE_ALGORITHM), nullValue());
+            assertThat(clientModel.getAttribute(SAML_SIGNING_CERTIFICATE), nullValue());
         } finally {
             realm.removeClient(clientModel.getId());
         }

@@ -17,6 +17,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
@@ -561,6 +562,43 @@ public class SsfTransmitterEventEmitterTests {
                 "rejected admin emit must not produce a push");
     }
 
+    @Test
+    public void emit_persistsOnlyExplicitlyAllowedEventPayloadInAdminEventRepresentation() throws Exception {
+        realm.admin().clearAdminEvents();
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+
+        try (SimpleHttpResponse res = emit(mgmtToken, "CaepCredentialChange", TEST_EMAIL,
+                Map.of(
+                        "credential_type", "MY_CREDENTIAL_TYPE",
+                        "change_type", "update",
+                        "sensitive_subject_email", TEST_EMAIL,
+                        "reason_admin", Map.of("en", TEST_EMAIL),
+                        "reason_user", Map.of("en", TEST_EMAIL)
+                        ))) {
+            Assertions.assertEquals(200, res.getStatus(),
+                    "emit should succeed for a properly authorized management client");
+        }
+
+        AdminEventRepresentation emitAdminEvent = realm.admin().getAdminEvents().stream()
+                .filter(event -> event.getResourcePath() != null)
+                .filter(event -> event.getResourcePath().endsWith("events/emit"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("emit admin event was not stored"));
+
+        JsonNode representation = JsonSerialization.mapper.readTree(emitAdminEvent.getRepresentation());
+
+        Assertions.assertTrue(representation.has("eventData"));
+        JsonNode eventDataNode = representation.path("eventData");
+        Assertions.assertEquals("custom", eventDataNode.get("credential_type").asText());
+        Assertions.assertEquals("update", eventDataNode.get("change_type").asText());
+
+        Assertions.assertFalse(eventDataNode.has("sensitive_subject_email"),
+                "admin event representation should NOT contain unknown caller-supplied event payload attributes");
+        Assertions.assertFalse(eventDataNode.has("reason_admin"));
+        Assertions.assertFalse(eventDataNode.has("reason_user"));
+    }
+
+
     // --- helpers ---------------------------------------------------------
 
     protected String emitEndpointUrl() {
@@ -861,6 +899,7 @@ public class SsfTransmitterEventEmitterTests {
 
             realm.eventsEnabled(true);
             realm.adminEventsEnabled(true);
+            realm.adminEventsDetailsEnabled(true);
             realm.eventsListeners("jboss-logging", "ssf-events");
 
             realm.users(

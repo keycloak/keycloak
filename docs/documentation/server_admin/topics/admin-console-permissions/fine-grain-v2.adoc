@@ -135,6 +135,29 @@ set of management operations:
 | *manage-membership-of-members* | Defines if a realm administrator can grant or deny `manage-group-membership` for members of a group.
 |===
 
+====== Group hierarchy and permission inheritance
+
+The `view-members`, `manage-members`, and `impersonate-members` scopes cascade through the group hierarchy. When you grant or deny one of these scopes on a group, the permission applies to all descendant groups unless a more specific permission exists on a descendant.
+
+*Deny cascading:* A deny on a parent group prevents access to members of the parent and all its descendant groups (children, grandchildren, and so on).
+
+*Allow carve-outs:* You can override a parent deny by granting an explicit allow for the same scope on a specific child group. The allow applies only to direct members of that child group. It does not cascade further to the child's own descendants. Members of deeper descendant groups remain denied unless they also have an explicit allow.
+
+A direct `view` permission on a specific user does not override a group membership deny. Group membership denies take precedence over user-level permissions. The only way to restore access to a user in a denied group subtree is to grant an explicit allow for the member scope (such as `view-members`) on the specific group the user belongs to.
+
+For example, given a hierarchy `Department > Team A > Subteam X`:
+
+* Denying `view-members` on `Department` denies access to members of `Department`, `Team A`, and `Subteam X`.
+* Adding an explicit allow for `view-members` on `Team A` restores access to direct members of `Team A` only. Members of `Subteam X` remain denied.
+* To also restore access to `Subteam X` members, you must add a separate allow for `view-members` on `Subteam X`.
+* Granting a direct `view` permission on a specific user in `Team A` does not restore access if the group deny is in effect.
+
+====== Search visibility for group member permissions
+
+When `view-members` is granted on a parent group, members of child groups are accessible via direct user lookup (for example, `GET /admin/realms/{realm}/users/{userId}`) but may not appear in user search or count results. The search mechanism uses a partial evaluation that matches users against the specific groups referenced in the permission, not against their descendants.
+
+To ensure that members of child groups appear in search and count results, grant `view-members` on each child group explicitly.
+
 When a delegated administrator has `view` permission on a group but not on its ancestor groups, the Admin REST API returns the full group hierarchy so the administrator can understand where the group belongs. Ancestor groups without `view` permission are returned as stripped representations containing only `id`, `name`, `path`, `parentId`, and `description`. Sensitive fields such as `attributes`, `realmRoles`, `clientRoles`, and `access` are omitted from these ancestors.
 
 The `subGroupCount` field on stripped ancestors reflects the number of visible children included in the response rather than the total child count. In the admin console, non-viewable ancestor groups appear greyed out and are not clickable.
@@ -256,8 +279,15 @@ make them available from queries:
 * `Role`
 * `Aggregated`
 
-In case of using an `Aggregated` policy, all the underlying policies must be of type `User`, `Group`, or `Role`. Otherwise,
-the policy will always evaluate to `DENY` when performing partial evaluation.
+When using an `Aggregated` policy, underlying policies that support partial evaluation (`User`, `Group`, `Role`, or nested `Aggregated`)
+are evaluated during partial evaluation. Underlying policies of other types (such as `Time` or `JavaScript`) are skipped
+because they cannot be pre-evaluated at the database level. If an aggregated policy contains only unsupported policy types,
+the entire aggregated policy is excluded from partial evaluation.
+
+When an aggregated policy contains a mix of supported and unsupported policy types, only the supported policies contribute to the
+decision. Unsupported policies do not count as grants but are still considered in the total policy count, which means `Unanimous`
+and `Consensus` decision strategies become more conservative. For best results, use only `User`, `Group`, `Role`, or nested
+`Aggregated` policies as the underlying policies of an aggregated policy used in view-related permissions.
 
 By using any of the policies above, {project_name} can pre-calculate the set of resources that a realm administration can view
 by looking for a direct (if using a user policy) or indirect (if using a role or group policy) reference to the realm administrator.

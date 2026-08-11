@@ -190,7 +190,7 @@ public class CredentialScopeModel implements ClientScopeModel {
     }
 
     public String getCredentialConfigurationId() {
-        return Optional.ofNullable(clientScope.getAttribute(VC_CONFIGURATION_ID)).orElse(clientScope.getName());
+        return clientScope.getAttribute(VC_CONFIGURATION_ID);
     }
 
     public void setCredentialConfigurationId(String credentialConfigurationId) {

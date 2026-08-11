@@ -520,7 +520,9 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     void registerOrgGroupsMembershipInvalidation(OrganizationModel organization, UserModel member) {
-        userCache.registerInvalidation(cacheKeyOrgGroupsByMember(organization, member));
+        if (userCache != null) {
+            userCache.registerInvalidation(cacheKeyOrgGroupsByMember(organization, member));
+        }
     }
 
     private boolean isRealmCacheKeyInvalid(String cacheKey) {

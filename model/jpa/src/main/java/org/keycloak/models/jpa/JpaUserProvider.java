@@ -1198,6 +1198,17 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         return true;
     }
 
+    @Override
+    public boolean removeIssuedVerifiableCredential(String userId, String credentialId) {
+        IssuedVerifiableCredentialEntity entity = em.find(IssuedVerifiableCredentialEntity.class, credentialId, LockModeType.PESSIMISTIC_WRITE);
+        if (entity == null || !userId.equals(entity.getUser().getId())) {
+            return false;
+        }
+        em.remove(entity);
+        em.flush();
+        return true;
+    }
+
     // Could override this to provide a custom behavior.
     protected void ensureEmailConstraint(List<UserEntity> users, RealmModel realm) {
         UserEntity user = users.get(0);

@@ -520,8 +520,8 @@ spec:
   expose:
     type: Route
   configMapName: "cluster-config"
-  image: 
-  version: 16.0.12
+  image:
+  version: 16.0.14
   configListener:
     enabled: false
   container:

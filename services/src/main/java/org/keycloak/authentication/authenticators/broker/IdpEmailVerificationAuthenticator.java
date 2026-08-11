@@ -62,6 +62,8 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
 
     public static final String VERIFY_ACCOUNT_IDP_USERNAME = "VERIFY_ACCOUNT_IDP_USERNAME";
 
+    public static final String IDP_LINK_CONFIRMATION_EMAIL_KEY = "IDP_LINK_CONFIRMATION_EMAIL_KEY";
+
     @Override
     protected void authenticateImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
         KeycloakSession session = context.getSession();
@@ -95,8 +97,8 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
         UserModel existingUser = getExistingUser(session, realm, authSession);
 
         // Do not allow resending e-mail by simple page refresh
-        if (! Objects.equals(authSession.getAuthNote(Constants.VERIFY_EMAIL_KEY), existingUser.getEmail())) {
-            authSession.setAuthNote(Constants.VERIFY_EMAIL_KEY, existingUser.getEmail());
+        if (! Objects.equals(authSession.getAuthNote(IDP_LINK_CONFIRMATION_EMAIL_KEY), existingUser.getEmail())) {
+            authSession.setAuthNote(IDP_LINK_CONFIRMATION_EMAIL_KEY, existingUser.getEmail());
             sendVerifyEmail(session, context, existingUser, brokerContext);
         } else {
             showEmailSentPage(context, brokerContext);
@@ -108,7 +110,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
         logger.debugf("Re-sending email requested for user, details follow");
 
         // This will allow user to re-send email again
-        context.getAuthenticationSession().removeAuthNote(Constants.VERIFY_EMAIL_KEY);
+        context.getAuthenticationSession().removeAuthNote(IDP_LINK_CONFIRMATION_EMAIL_KEY);
 
         authenticateImpl(context, serializedCtx, brokerContext);
     }

@@ -3,7 +3,7 @@ package org.keycloak.representations.idm.oid4vc;
 import java.io.IOException;
 
 import org.keycloak.common.util.Base64Url;
-import org.keycloak.util.JsonSerialization;
+import org.keycloak.json.KeycloakJsonMapperFactory;
 
 public class VerifiableCredentialOfferActionConfig {
 
@@ -59,13 +59,13 @@ public class VerifiableCredentialOfferActionConfig {
 
     // Encode to the string, which can be used as parameter of AIA
     public String asEncodedParameter() throws IOException {
-        byte[] bytes = JsonSerialization.writeValueAsBytes(this);
+        byte[] bytes = KeycloakJsonMapperFactory.mapper().writeValueAsBytes(this);
         return Base64Url.encode(bytes);
     }
 
     // Encode to the string, which can be used as parameter of AIA
     public static VerifiableCredentialOfferActionConfig decodeConfig(String configStr) throws IOException {
         byte[] bytes = Base64Url.decode(configStr);
-        return JsonSerialization.readValue(bytes, VerifiableCredentialOfferActionConfig.class);
+        return KeycloakJsonMapperFactory.mapper().readValue(bytes, VerifiableCredentialOfferActionConfig.class);
     }
 }

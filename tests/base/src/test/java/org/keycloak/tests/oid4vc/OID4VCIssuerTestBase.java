@@ -43,6 +43,7 @@ import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.EventType;
+import org.keycloak.json.RawJsonValue;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderModel;
@@ -124,6 +125,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
+import static org.keycloak.OID4VCConstants.KeyAttestationResistanceLevels.MODERATE;
 import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_CONFIG_TRUST_IDPS;
@@ -131,9 +133,7 @@ import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.constants.OID4VCIConstants.OID4VCI_ATTESTER_TRUST_IDPS_ATTR;
 import static org.keycloak.models.Constants.CREATE_DEFAULT_CLIENT_SCOPES;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT_DEFAULT;
 import static org.keycloak.protocol.oidc.OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS;
 
@@ -167,6 +167,8 @@ public abstract class OID4VCIssuerTestBase {
 
     public static final String jwtTypeCredentialScopeName = "jwt-credential";
     public static final String jwtTypeCredentialConfigurationIdName = "jwt-credential-config-id";
+    public static final String keyAttestationCredentialScopeName = "key-attestation-credential";
+    public static final String keyAttestationCredentialConfigurationIdName = "key-attestation-credential-config-id";
     public static final String minimalJwtTypeCredentialScopeName = "vc-with-minimal-config";
     public static final String minimalJwtTypeCredentialConfigurationIdName = "vc-with-minimal-config-id";
 
@@ -220,6 +222,7 @@ public abstract class OID4VCIssuerTestBase {
 
     protected CredentialScopeRepresentation jwtTypeCredentialScope;
     protected CredentialScopeRepresentation sdJwtTypeCredentialScope;
+    protected CredentialScopeRepresentation keyAttestationCredentialScope;
     protected CredentialScopeRepresentation minimalJwtTypeCredentialScope;
     protected CredentialScopeRepresentation jwtNaturalPersonCredentialScope;
     protected CredentialScopeRepresentation sdJwtNaturalPersonCredentialScope;
@@ -267,6 +270,7 @@ public abstract class OID4VCIssuerTestBase {
 
         jwtTypeCredentialScope = requireExistingCredentialScope(jwtTypeCredentialScopeName);
         sdJwtTypeCredentialScope = requireExistingCredentialScope(sdJwtTypeCredentialScopeName);
+        keyAttestationCredentialScope = requireExistingCredentialScope(keyAttestationCredentialScopeName);
         minimalJwtTypeCredentialScope = requireExistingCredentialScope(minimalJwtTypeCredentialScopeName);
         jwtNaturalPersonCredentialScope = requireExistingCredentialScope(jwtTypeNaturalPersonScopeName);
         sdJwtNaturalPersonCredentialScope = requireExistingCredentialScope(sdJwtTypeNaturalPersonScopeName);
@@ -685,7 +689,7 @@ public abstract class OID4VCIssuerTestBase {
 
             // Explicitly enable cryptographic binding + proof types for test credential configurations.
             // The issuer metadata only advertises binding/proofs when it is explicitly configured as required.
-            CredentialScopeRepresentation sdJwtScope = createCredentialScope(
+            CredentialScopeRepresentation sdJwtScope = configureBinding(createCredentialScope(
                     sdJwtTypeCredentialScopeName,
                     null,
                     sdJwtTypeCredentialConfigurationIdName,
@@ -694,15 +698,10 @@ public abstract class OID4VCIssuerTestBase {
                     VCFormat.SD_JWT_VC,
                     null,
                     null
-            );
-            Map<String, String> sdJwtAttrs = Optional.ofNullable(sdJwtScope.getAttributes()).orElseGet(HashMap::new);
-            sdJwtScope.setBindingRequired(true);
-            sdJwtAttrs.put(VC_BINDING_REQUIRED_PROOF_TYPES, "jwt");
-            sdJwtAttrs.put(VC_CRYPTOGRAPHIC_BINDING_METHODS, CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
-            sdJwtScope.setAttributes(sdJwtAttrs);
+            ), "jwt");
             realm.clientScopes(sdJwtScope);
 
-            CredentialScopeRepresentation jwtVcScope = createCredentialScope(
+            CredentialScopeRepresentation jwtVcScope = configureBinding(createCredentialScope(
                     jwtTypeCredentialScopeName,
                     TEST_ISSUER_DID,
                     jwtTypeCredentialConfigurationIdName,
@@ -711,13 +710,20 @@ public abstract class OID4VCIssuerTestBase {
                     VCFormat.JWT_VC,
                     TEST_CREDENTIAL_MAPPERS_FILE,
                     null
-            );
-            Map<String, String> jwtVcAttrs = Optional.ofNullable(jwtVcScope.getAttributes()).orElseGet(HashMap::new);
-            jwtVcAttrs.put(VC_BINDING_REQUIRED, "true");
-            jwtVcAttrs.put(VC_BINDING_REQUIRED_PROOF_TYPES, "jwt,attestation");
-            jwtVcAttrs.put(VC_CRYPTOGRAPHIC_BINDING_METHODS, CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
-            jwtVcScope.setAttributes(jwtVcAttrs);
+            ), "jwt,attestation");
             realm.clientScopes(jwtVcScope);
+
+            CredentialScopeRepresentation keyAttestationScope = configureBinding(createCredentialScope(
+                    keyAttestationCredentialScopeName,
+                    TEST_ISSUER_DID,
+                    keyAttestationCredentialConfigurationIdName,
+                    keyAttestationCredentialScopeName,
+                    null,
+                    VCFormat.JWT_VC,
+                    TEST_CREDENTIAL_MAPPERS_FILE,
+                    List.of(MODERATE)
+            ), "jwt");
+            realm.clientScopes(keyAttestationScope);
 
             realm.clientScopes(createCredentialScope(
                     minimalJwtTypeCredentialScopeName,
@@ -730,8 +736,8 @@ public abstract class OID4VCIssuerTestBase {
                     null
             ));
 
-            realm.users(createUser("John Doe", Map.of("did", "did:key:1234"), List.of(), Collections.emptyMap()));
-            realm.users(createUser("Alice Wonderland", Map.of("did", "did:key:5678"), List.of(), Map.of()));
+            realm.users(createUser("John Doe", Map.of(), List.of(), Collections.emptyMap()));
+            realm.users(createUser("Alice Wonderland", Map.of(), List.of(), Map.of()));
 
             // Add Client Policies
             //
@@ -755,7 +761,7 @@ public abstract class OID4VCIssuerTestBase {
 
             ClientPolicyExecutorRepresentation executor = new ClientPolicyExecutorRepresentation();
             executor.setExecutorProviderId(CredentialClientPolicyExecutorFactory.PROVIDER_ID);
-            executor.setConfiguration(JsonNodeFactory.instance.objectNode());
+            executor.setConfiguration(RawJsonValue.of(JsonNodeFactory.instance.objectNode()));
             profile.setExecutors(List.of(executor));
 
             return profile;
@@ -771,7 +777,7 @@ public abstract class OID4VCIssuerTestBase {
             //
             ClientPolicyExecutorRepresentation confidentialClientEnforcer = new ClientPolicyExecutorRepresentation();
             confidentialClientEnforcer.setExecutorProviderId(ConfidentialClientAcceptExecutorFactory.PROVIDER_ID);
-            confidentialClientEnforcer.setConfiguration(JsonNodeFactory.instance.objectNode());
+            confidentialClientEnforcer.setConfiguration(RawJsonValue.of(JsonNodeFactory.instance.objectNode()));
 
             // secure-client-authenticator
             //
@@ -783,21 +789,21 @@ public abstract class OID4VCIssuerTestBase {
                     .add("client-x509")
                     .add("attestation-based"); // added for Attestation-Based Client Authentication (ABCA)
             secureClientAuthenticatorConfig.put("default-client-authenticator", "attestation-based");
-            secureClientAuthenticator.setConfiguration(secureClientAuthenticatorConfig);
+            secureClientAuthenticator.setConfiguration(RawJsonValue.of(secureClientAuthenticatorConfig));
 
             // secure-client-uris
             //
             ClientPolicyExecutorRepresentation secureClientUris = new ClientPolicyExecutorRepresentation();
             secureClientUris.setExecutorProviderId(SecureClientUrisExecutorFactory.PROVIDER_ID);
-            secureClientUris.setConfiguration(JsonNodeFactory.instance.objectNode()
-                    .put("allow-http-on-localhost", true));
+            secureClientUris.setConfiguration(RawJsonValue.of(JsonNodeFactory.instance.objectNode()
+                    .put("allow-http-on-localhost", true)));
 
             // secure-signature-algorithm
             //
             ClientPolicyExecutorRepresentation secureSigningAlgorithm = new ClientPolicyExecutorRepresentation();
             secureSigningAlgorithm.setExecutorProviderId(SecureSigningAlgorithmExecutorFactory.PROVIDER_ID);
-            secureSigningAlgorithm.setConfiguration(JsonNodeFactory.instance.objectNode()
-                    .put("default-algorithm", "PS256"));
+            secureSigningAlgorithm.setConfiguration(RawJsonValue.of(JsonNodeFactory.instance.objectNode()
+                    .put("default-algorithm", "PS256")));
 
             // consent-required (not used)
             //
@@ -806,50 +812,50 @@ public abstract class OID4VCIssuerTestBase {
             //
             ClientPolicyExecutorRepresentation secureSigningAlgorithmForSignedJwt = new ClientPolicyExecutorRepresentation();
             secureSigningAlgorithmForSignedJwt.setExecutorProviderId(SecureSigningAlgorithmForSignedJwtExecutorFactory.PROVIDER_ID);
-            secureSigningAlgorithmForSignedJwt.setConfiguration(JsonNodeFactory.instance.objectNode()
-                    .put("require-client-assertion", false));
+            secureSigningAlgorithmForSignedJwt.setConfiguration(RawJsonValue.of(JsonNodeFactory.instance.objectNode()
+                    .put("require-client-assertion", false)));
 
             // full-scope-disabled
             //
             ClientPolicyExecutorRepresentation fullScopeDisabled = new ClientPolicyExecutorRepresentation();
             fullScopeDisabled.setExecutorProviderId(FullScopeDisabledExecutorFactory.PROVIDER_ID);
-            fullScopeDisabled.setConfiguration(JsonNodeFactory.instance.objectNode()
-                    .put("auto-configure", false));
+            fullScopeDisabled.setConfiguration(RawJsonValue.of(JsonNodeFactory.instance.objectNode()
+                    .put("auto-configure", false)));
 
             // reject-implicit-grant
             //
             ClientPolicyExecutorRepresentation rejectImplicitGrant = new ClientPolicyExecutorRepresentation();
             rejectImplicitGrant.setExecutorProviderId(RejectImplicitGrantExecutorFactory.PROVIDER_ID);
-            rejectImplicitGrant.setConfiguration(JsonNodeFactory.instance.objectNode()
-                    .put("auto-configure", false));
+            rejectImplicitGrant.setConfiguration(RawJsonValue.of(JsonNodeFactory.instance.objectNode()
+                    .put("auto-configure", false)));
 
             // pkce-enforcer
             //
             ClientPolicyExecutorRepresentation pkceEnforcer = new ClientPolicyExecutorRepresentation();
             pkceEnforcer.setExecutorProviderId(PKCEEnforcerExecutorFactory.PROVIDER_ID);
-            pkceEnforcer.setConfiguration(JsonNodeFactory.instance.objectNode()
-                    .put("auto-configure", false));
+            pkceEnforcer.setConfiguration(RawJsonValue.of(JsonNodeFactory.instance.objectNode()
+                    .put("auto-configure", false)));
 
             // secure-client-authentication-assertion
             //
             ClientPolicyExecutorRepresentation secureClientAuthenticationAssertion = new ClientPolicyExecutorRepresentation();
             secureClientAuthenticationAssertion.setExecutorProviderId(SecureClientAuthenticationAssertionExecutorFactory.PROVIDER_ID);
-            secureClientAuthenticationAssertion.setConfiguration(JsonNodeFactory.instance.objectNode());
+            secureClientAuthenticationAssertion.setConfiguration(RawJsonValue.of(JsonNodeFactory.instance.objectNode()));
 
             // secure-par-content
             //
             ClientPolicyExecutorRepresentation secureParContents = new ClientPolicyExecutorRepresentation();
             secureParContents.setExecutorProviderId(SecureParContentsExecutorFactory.PROVIDER_ID);
-            secureParContents.setConfiguration(JsonNodeFactory.instance.objectNode());
+            secureParContents.setConfiguration(RawJsonValue.of(JsonNodeFactory.instance.objectNode()));
 
             // dpop-bind-enforcer
             //
             ClientPolicyExecutorRepresentation dpopBindEnforcerExecutor = new ClientPolicyExecutorRepresentation();
             dpopBindEnforcerExecutor.setExecutorProviderId(DPoPBindEnforcerExecutorFactory.PROVIDER_ID);
-            dpopBindEnforcerExecutor.setConfiguration(JsonNodeFactory.instance.objectNode()
+            dpopBindEnforcerExecutor.setConfiguration(RawJsonValue.of(JsonNodeFactory.instance.objectNode()
                     .put("auto-configure", false)
                     .put("enforce-authorization-code-binding-to-dpop", false)
-                    .put("allow-only-refresh-token-binding", false));
+                    .put("allow-only-refresh-token-binding", false)));
 
             profile.setExecutors(List.of(
                     confidentialClientEnforcer,
@@ -882,7 +888,7 @@ public abstract class OID4VCIssuerTestBase {
                     "key", OID4VCI_ENABLED_ATTRIBUTE_KEY,
                     "value", String.valueOf(true)
             ))));
-            condition.setConfiguration(config);
+            condition.setConfiguration(RawJsonValue.of(config));
 
             policy.setConditions(List.of(condition));
             policy.setProfiles(List.of(profile.getName()));
@@ -904,7 +910,7 @@ public abstract class OID4VCIssuerTestBase {
                     "key", OID4VCI_ENABLED_ATTRIBUTE_KEY,
                     "value", String.valueOf(true)
             ))));
-            condition.setConfiguration(config);
+            condition.setConfiguration(RawJsonValue.of(config));
 
             policy.setConditions(List.of(condition));
             policy.setProfiles(List.of(profile.getName()));
@@ -956,6 +962,14 @@ public abstract class OID4VCIssuerTestBase {
             }
 
             return cs;
+        }
+
+        private CredentialScopeRepresentation configureBinding(CredentialScopeRepresentation scope,
+                                                               String proofTypes) {
+            scope.setBindingRequired(true);
+            scope.setCryptographicBindingMethods(CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
+            scope.getAttributes().put(VC_BINDING_REQUIRED_PROOF_TYPES, proofTypes);
+            return scope;
         }
 
         private UserRepresentation createUser(
@@ -1117,7 +1131,7 @@ public abstract class OID4VCIssuerTestBase {
 
         static List<ProtocolMapperRepresentation> getProtocolMappers(String scopeName) {
             return List.of(
-                    getSubjectIdMapper(CLAIM_NAME_SUBJECT_ID, UserModel.DID),
+                    getSubjectIdMapper(CLAIM_NAME_SUBJECT_ID, UserModel.USERNAME),
                     getUserAttributeMapper("email", "email"),
                     getUserAttributeMapper("firstName", "firstName"),
                     getUserAttributeMapper("lastName", "lastName"),

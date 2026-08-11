@@ -47,6 +47,7 @@ import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest
 import org.keycloak.protocol.oidc.par.ParResponse;
 import org.keycloak.protocol.oidc.par.clientpolicy.context.PushedAuthorizationRequestContext;
 import org.keycloak.protocol.oidc.par.endpoints.request.ParEndpointRequestParserProcessor;
+import org.keycloak.protocol.oidc.utils.ContentTypeValidationUtil;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.cors.Cors;
@@ -85,6 +86,7 @@ public class ParEndpoint extends AbstractParEndpoint {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
     public Response request() {
+        ContentTypeValidationUtil.requireValidContentType(httpRequest.getHttpHeaders(), MediaType.APPLICATION_FORM_URLENCODED_TYPE);
 
         ProfileHelper.requireFeature(Profile.Feature.PAR);
 

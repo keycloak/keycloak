@@ -255,6 +255,64 @@ public class UserSyncTest extends KeycloakModelTest {
     }
 
     @Test
+    public void testEmailLowercasedWithAlwaysReadValueFromLDAP() {
+        withRealm(realmId, (session, realm) -> {
+            UserStorageProviderModel providerModel = new UserStorageProviderModel(realm.getComponent(userFederationId));
+            providerModel.setCachePolicy(CacheableStorageProviderModel.CachePolicy.NO_CACHE);
+            realm.updateComponent(providerModel);
+
+            ComponentModel emailMapper = LDAPTestUtils.getSubcomponentByName(realm, providerModel, "email");
+            emailMapper.put(UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, true);
+            realm.updateComponent(emailMapper);
+
+            return null;
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            LDAPTestUtils.addLDAPUser(ldapFedProvider, realm, "mixedcaseuser", "Test", "User", "Mixed.Case@Email.ORG", null, "5678");
+            return null;
+        });
+
+        // Import enabled: email should be lowercased
+        withRealm(realmId, (session, realm) -> {
+            UserModel user = session.users().getUserByUsername(realm, "mixedcaseuser");
+            assertThat(user, is(notNullValue()));
+            assertThat(user.getEmail(), is(equalTo("mixed.case@email.org")));
+            return null;
+        });
+
+        // Toggle import to disabled
+        withRealm(realmId, (session, realm) -> {
+            UserStorageProviderModel providerModel = new UserStorageProviderModel(realm.getComponent(userFederationId));
+            providerModel.setImportEnabled(false);
+            realm.updateComponent(providerModel);
+            return null;
+        });
+
+        // Import disabled: original LDAP casing should be preserved
+        withRealm(realmId, (session, realm) -> {
+            UserModel user = session.users().getUserByUsername(realm, "mixedcaseuser");
+            assertThat(user, is(notNullValue()));
+            assertThat(user.getEmail(), is(equalTo("Mixed.Case@Email.ORG")));
+            return null;
+        });
+
+        // Cleanup: re-enable import and reset always-read-from-LDAP
+        withRealm(realmId, (session, realm) -> {
+            UserStorageProviderModel providerModel = new UserStorageProviderModel(realm.getComponent(userFederationId));
+            providerModel.setImportEnabled(true);
+            realm.updateComponent(providerModel);
+
+            ComponentModel emailMapper = LDAPTestUtils.getSubcomponentByName(realm, providerModel, "email");
+            emailMapper.put(UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, false);
+            realm.updateComponent(emailMapper);
+            return null;
+        });
+    }
+
+    @Test
     public void testInvalidUsersAreDeleted() {
         withRealm(realmId, (session, realm) -> {
             UserStorageProviderModel providerModel = new UserStorageProviderModel(realm.getComponent(userFederationId));

@@ -523,4 +523,11 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.7.0-50970">
+        <createIndex tableName="WORKFLOW_STATE" indexName="IDX_WORKFLOW_STATE_SCHEDULED">
+            <column name="WORKFLOW_ID" />
+            <column name="SCHEDULED_STEP_TIMESTAMP" />
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>

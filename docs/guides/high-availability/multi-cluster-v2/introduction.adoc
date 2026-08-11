@@ -99,6 +99,7 @@ Additional performance tuning and security hardening are still recommended when 
 == Operational procedures
 
 * <@links.ha id="multi-cluster-v2-upgrades" />
+* <@links.ha id="multi-cluster-v2-migrate-from-v1-to-v2" />
 
 </@profile.ifCommunity>
 

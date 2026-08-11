@@ -139,6 +139,25 @@ export async function selectResource(page: Page, resourceName: string) {
   await page.getByRole("option", { name: resourceName }).click();
 }
 
+export async function goToEvaluateSubTab(page: Page) {
+  await page.getByTestId("authorizationEvaluate").click();
+}
+
+export function getEvaluateResourceKeyInput(page: Page, rowIndex = 0) {
+  return page
+    .locator(`#resources\\.${rowIndex}\\.key`)
+    .getByRole("combobox", { name: "Select or type a key" });
+}
+
+// The evaluate form renders several selects, so option queries have to be
+// scoped to the key select rather than run against the whole page.
+export function getEvaluateResourceKeyOptions(page: Page, rowIndex = 0) {
+  return page
+    .locator(".kc-attribute-key-selectable")
+    .nth(rowIndex)
+    .getByRole("option");
+}
+
 export async function goToExportSubTab(page: Page) {
   await page.getByTestId("authorizationExport").click();
 }

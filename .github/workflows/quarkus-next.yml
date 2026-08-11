@@ -30,7 +30,7 @@ jobs:
       quarkus-version: ${{ steps.quarkus-version.outputs.version }}
       qosdk-version: ${{ steps.qosdk-version.outputs.version }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: quarkusio/quarkus
           ref: ${{ env.QUARKUS_BRANCH }}
@@ -42,7 +42,7 @@ jobs:
           version=$(grep -m1 '<version>' quarkus/pom.xml | sed 's/.*<version>\(.*\)<\/version>.*/\1/')
           echo "version=$version" >> $GITHUB_OUTPUT
 
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: quarkiverse/quarkus-operator-sdk
           ref: main
@@ -50,7 +50,7 @@ jobs:
 
       # JDK 17 to match how Quarkus and QOSDK build and publish their own snapshots
       - name: Setup Java
-        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
         with:
           distribution: temurin
           java-version: 17
@@ -98,7 +98,7 @@ jobs:
     permissions:
       contents: write # Required to push changes to the repository
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
           fetch-depth: 0
