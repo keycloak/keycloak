@@ -5,20 +5,28 @@ import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantTypeFactory;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.ClientNotificationEndpointRequest;
+import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
+import org.keycloak.protocol.oidc.scope.ParameterizedScopeTypeProvider;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -34,6 +42,7 @@ import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.ProtocolMapperBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
@@ -43,6 +52,7 @@ import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.OAuthGrantPage;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.suites.DatabaseTest;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
@@ -64,6 +74,7 @@ public class ParameterizedScopesOAuthGrantTest {
 
     private static final String THIRD_PARTY_APP = "third-party";
     private static final String DEFAULT_USERNAME = "test-user@localhost";
+    private static final String DEFAULT_ADMIN_USERNAME = "administrator@localhost";
     private static final String DEFAULT_PASSWORD = "password";
 
     private static String PARAMETERIZED_SCOPE_ID;
@@ -105,6 +116,7 @@ public class ParameterizedScopesOAuthGrantTest {
         if (userConsents.stream().anyMatch(m -> THIRD_PARTY_APP.equals(m.get("clientId")))) {
             AccountHelper.revokeConsents(realm.admin(), DEFAULT_USERNAME, THIRD_PARTY_APP);
         }
+        oauth.responseType(OAuth2Constants.CODE);
     }
 
     @Test
@@ -561,6 +573,41 @@ public class ParameterizedScopesOAuthGrantTest {
     }
 
     @Test
+    public void consentPageExcludesInvalidUsernameScopeParam() {
+        realm.updateClientScope(PARAMETERIZED_SCOPE_ID, s -> s.attribute(ClientScopeModel.CONSENT_SCREEN_TEXT, ""));
+
+        ClientScopeRepresentation usernameScope = ParameterizedScopeBuilder.create("user-scope")
+                .parameterizedScopeType("username")
+                .displayOnConsentScreen(true)
+                .build();
+        String usernameScopeId = ApiUtil.getCreatedId(realm.admin().clientScopes().create(usernameScope));
+        thirdParty.admin().addOptionalClientScope(usernameScopeId);
+        realm.cleanup().add(r -> {
+            r.clients().get(thirdParty.getId()).removeOptionalClientScope(usernameScopeId);
+            r.clientScopes().get(usernameScopeId).remove();
+        });
+
+        oauth.client(THIRD_PARTY_APP, "password");
+        oauth.scope("foo-parameter-scope:param1 user-scope:nonexistent-user");
+        oauth.openLoginForm();
+        oauth.fillLoginForm(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        grantPage.assertCurrent();
+
+        List<String> grants = grantPage.getDisplayedGrants();
+        Assertions.assertTrue(grants.contains("foo-parameter-scope: param1"),
+                "Valid string scope should be on consent page");
+        Assertions.assertTrue(grants.stream().noneMatch(g -> g.contains("user-scope")),
+                "Invalid username scope should NOT be on consent page");
+        grantPage.accept();
+
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
+        Assertions.assertTrue(res.isSuccess());
+        MatcherAssert.assertThat(scopesOf(res), Matchers.hasItems("foo-parameter-scope:param1"));
+        MatcherAssert.assertThat(scopesOf(res), Matchers.not(Matchers.hasItems("user-scope:nonexistent-user")));
+    }
+
+    @Test
     public void oauthGrantCustomRegexScopeValidation() {
         ClientScopeRepresentation customScope = ParameterizedScopeBuilder.create("custom-regex-scope")
                 .parameterizedScopeType("custom")
@@ -592,6 +639,138 @@ public class ParameterizedScopesOAuthGrantTest {
         MatcherAssert.assertThat(scopesOf(res), Matchers.hasItems("custom-regex-scope:abc"));
     }
 
+    @Test
+    public void customRegexScopeRejectsExcessivelyLongParameter() {
+        createAndAssignOptionalScope(ParameterizedScopeBuilder.create("length-scope")
+                .parameterizedScopeType("custom").regexp("[a-z]+").build());
+
+        oauth.client(THIRD_PARTY_APP, "password");
+        assertLongParameterRejected("length-scope");
+
+        // parameter at max length should be accepted
+        String maxParam = "a".repeat(ParameterizedScopeTypeProvider.MAX_PARAMETER_LENGTH);
+        oauth.scope("length-scope:" + maxParam);
+        oauth.openLoginForm();
+        oauth.fillLoginForm(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        grantPage.assertCurrent();
+        grantPage.accept();
+
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
+        MatcherAssert.assertThat(scopesOf(res), Matchers.hasItems("length-scope:" + maxParam));
+    }
+
+    @Test
+    public void stringScopeRejectsExcessivelyLongParameter() {
+        createAndAssignOptionalScope(ParameterizedScopeBuilder.create("length-scope")
+                .parameterizedScopeType("string").build());
+        oauth.client(THIRD_PARTY_APP, "password");
+        assertLongParameterRejected("length-scope");
+    }
+
+    @Test
+    public void integerScopeRejectsExcessivelyLongParameter() {
+        createAndAssignOptionalScope(ParameterizedScopeBuilder.create("length-scope")
+                .parameterizedScopeType("integer").build());
+        oauth.client(THIRD_PARTY_APP, "password");
+        assertLongParameterRejected("length-scope");
+    }
+
+    @Test
+    public void booleanScopeRejectsExcessivelyLongParameter() {
+        createAndAssignOptionalScope(ParameterizedScopeBuilder.create("length-scope")
+                .parameterizedScopeType("boolean").build());
+        oauth.client(THIRD_PARTY_APP, "password");
+        assertLongParameterRejected("length-scope");
+    }
+
+    @Test
+    public void delegationScopeWithImplicitFlow() {
+        // create impersonation parameterized role with a hardcoded claim
+        createAndAssignOptionalScope(ParameterizedScopeBuilder.create("delegated-act")
+                .parameterizedScopeType("delegation")
+                .mappers(ProtocolMapperBuilder.create().name("Hardcoded Claim")
+                        .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                        .protocolMapper(HardcodedClaim.PROVIDER_ID)
+                        .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "matched_scope")
+                        .config(HardcodedClaim.CLAIM_VALUE, "implicit-delegation")
+                        .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, Boolean.TRUE.toString())
+                        .build())
+                .build());
+
+        // change the app to allow implicit flow and no consent required
+        ClientRepresentation rep = thirdParty.admin().toRepresentation();
+        rep.setConsentRequired(Boolean.FALSE);
+        rep.setImplicitFlowEnabled(Boolean.TRUE);
+        thirdParty.admin().update(rep);
+        realm.cleanup().add(r -> {
+            rep.setConsentRequired(Boolean.TRUE);
+            rep.setImplicitFlowEnabled(Boolean.FALSE);
+            r.clients().get(thirdParty.getId()).update(rep);
+        });
+
+        // add impersonation to the admin user
+        final ClientResource realmManagement = AdminApiUtil.findClientByClientId(realm.admin(), Constants.REALM_MANAGEMENT_CLIENT_ID);
+        final String clientUUID = realmManagement.toRepresentation().getId();
+        final RoleRepresentation impersonation = realmManagement.roles().get(AdminRoles.IMPERSONATION).toRepresentation();
+        AdminApiUtil.findUserByUsernameId(realm.admin(), DEFAULT_ADMIN_USERNAME).roles()
+                .clientLevel(clientUUID).add(List.of(impersonation));
+
+        // implicit flow login with the delegation scope granted
+        String requestedScope = "delegated-act:" + DEFAULT_ADMIN_USERNAME;
+        oauth.client(THIRD_PARTY_APP)
+                .responseType(OAuth2Constants.TOKEN)
+                .scope(requestedScope)
+                .openLoginForm();
+
+        oauth.fillLoginForm(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        AuthorizationEndpointResponse res = new AuthorizationEndpointResponse(oauth);
+
+        Assertions.assertTrue(res.isRedirected());
+        Assertions.assertNotNull(res.getAccessToken());
+
+        AccessToken token = oauth.verifyToken(res.getAccessToken());
+        MatcherAssert.assertThat(List.of(token.getScope().split(" ")), Matchers.hasItem(requestedScope));
+        Assertions.assertEquals("implicit-delegation", token.getOtherClaims().get("matched_scope"));
+
+        // logout and remove the permission
+        AccountHelper.logout(realm.admin(), DEFAULT_USERNAME);
+        AdminApiUtil.findUserByUsernameId(realm.admin(), DEFAULT_ADMIN_USERNAME).roles()
+                .clientLevel(clientUUID).remove(List.of(impersonation));
+
+        // implicit flow login with the delegation scope not granted
+        oauth.client(THIRD_PARTY_APP)
+                .responseType(OAuth2Constants.TOKEN)
+                .scope(requestedScope)
+                .openLoginForm();
+        oauth.fillLoginForm(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        res = new AuthorizationEndpointResponse(oauth);
+
+        Assertions.assertTrue(res.isRedirected());
+        Assertions.assertNotNull(res.getAccessToken());
+
+        token = oauth.verifyToken(res.getAccessToken());
+        MatcherAssert.assertThat(List.of(token.getScope().split(" ")), Matchers.not(Matchers.hasItem(requestedScope)));
+        Assertions.assertNull(token.getOtherClaims().get("matched_scope"));
+    }
+
+    private String createAndAssignOptionalScope(ClientScopeRepresentation scope) {
+        String scopeId = ApiUtil.getCreatedId(realm.admin().clientScopes().create(scope));
+        thirdParty.admin().addOptionalClientScope(scopeId);
+        realm.cleanup().add(r -> {
+            r.clients().get(thirdParty.getId()).removeOptionalClientScope(scopeId);
+            r.clientScopes().get(scopeId).remove();
+        });
+        return scopeId;
+    }
+
+    private void assertLongParameterRejected(String scopeName) {
+        String longParam = "a".repeat(ParameterizedScopeTypeProvider.MAX_PARAMETER_LENGTH + 1);
+        oauth.scope(scopeName + ":" + longParam);
+        oauth.openLoginForm();
+        Assertions.assertEquals(OAuthErrorException.INVALID_SCOPE, oauth.parseLoginResponse().getError());
+    }
+
     private static List<String> scopesOf(AccessTokenResponse res) {
         return List.of(res.getScope().split(" "));
     }
@@ -617,6 +796,12 @@ public class ParameterizedScopesOAuthGrantTest {
             realm.users(UserBuilder.create(DEFAULT_USERNAME)
                     .email(DEFAULT_USERNAME)
                     .name("Test", "User")
+                    .emailVerified(true)
+                    .password(DEFAULT_PASSWORD)
+                    .enabled(true),
+                    UserBuilder.create(DEFAULT_ADMIN_USERNAME)
+                    .email(DEFAULT_ADMIN_USERNAME)
+                    .name("Admin", "User")
                     .emailVerified(true)
                     .password(DEFAULT_PASSWORD)
                     .enabled(true));

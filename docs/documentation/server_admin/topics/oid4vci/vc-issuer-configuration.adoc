@@ -196,15 +196,32 @@ This enables the OID4VCI functionality for the realm. Once enabled, the **OID4VC
 
 ==== Key Management Configuration
 
-Because EC (Elliptic Curve) cryptography is strongly encouraged in the OpenID4VC ecosystem, add a **P-256 Elliptic Curve key pair** to the realm's set of keys under *Realm Settings > Keys > Providers*. This will later enable configuring the signing of issued VCs with the `ES256` algorithm.
+Credentials are signed with a realm signing key. For SD-JWT VCs, the selected key must also provide an X.509 certificate chain that satisfies the https://openid.net/specs/openid4vc-high-assurance-interoperability-profile-1_0-final.html#section-6.1.1[HAIP issuer key resolution requirements]:
 
-.Adding ECDSA Key Provider
-image::images/oid4vci/screenshot-realm-ecdsa-generated-provider.png[Adding ECDSA key provider in Realm Settings, width=650]
+* The first certificate must be the leaf certificate for the credential signing key.
+* The leaf certificate must not be self-signed.
+* Any intermediate certificates must follow the leaf certificate in chain order.
+* The trust anchor must not be included in the `x5c` JOSE header. If the configured chain ends with a self-signed root certificate, {project_name} removes it when creating the SD-JWT VC. Any non-self-signed trust anchor must be omitted from the configured chain.
+
+[IMPORTANT]
+====
+Do not use a generated realm key to sign SD-JWT VCs. A generated key either has no certificate or uses a self-signed certificate, so SD-JWT VC issuance fails. This restriction does not apply to JWT VCs.
+====
+
+Elliptic Curve cryptography with the P-256 curve and `ES256` algorithm is recommended for OpenID4VC. To configure a suitable signing key:
+
+. Obtain a P-256 private key and a corresponding leaf certificate issued by a certificate authority. Include intermediate certificates when applicable.
+. Store the private key and its certificate chain in a supported Java keystore. The private-key entry must contain the leaf certificate first, followed by any intermediate certificates. You may append a self-signed root certificate, but you must not append a non-self-signed certificate that is intended to be the trust anchor.
+. In the Admin Console, go to *Realm Settings* > *Keys* > *Providers*.
+. Add a *java-keystore* provider and configure the keystore path, type, passwords, and key alias.
+. Set *Algorithm* to `ES256` and *Key use* to `sig`.
+. Make the provider active and assign it sufficient priority to become the active `ES256` realm key. Alternatively, explicitly select this key as the *Signing Key ID* when configuring the credential client scope.
 
 [NOTE]
 ====
-For a detailed guide on configuring realm keys, refer to the {project_name} documentation:
-<<realm_keys,Managing Realm Keys>>.
+The keystore may contain a self-signed root certificate so that {project_name} can load and validate the complete chain. {project_name} removes a trailing self-signed root certificate from the SD-JWT VC `x5c` header. It does not remove a non-self-signed trust anchor, which must therefore be omitted from the configured chain.
+
+For details about the keystore location and provider fields, see <<realm_keys,Configuring realm keys>>.
 ====
 
 ==== Configuring Realm-Level OID4VCI Attributes
@@ -383,11 +400,11 @@ After selecting the OID4VCI protocol, the following configuration fields become 
 
 | Signing Key ID
 | (default realm key)
-| Select a specific realm key for signing this credential. The signing algorithm updates automatically.
+| Select a specific realm key for signing this credential. The signing algorithm updates automatically. For SD-JWT VCs, the selected key must have a non-self-signed leaf certificate and the required certificate chain.
 
 | Credential Signing Algorithm
 | (auto)
-| The algorithm used to sign the credential. Automatically populated when a signing key is selected.
+| The algorithm used to sign the credential. Automatically populated when a signing key is selected. If no key is selected, the active realm signing key for this algorithm is used and must satisfy the SD-JWT certificate requirements.
 
 | Hash Algorithm
 | `sha-256`
@@ -429,6 +446,8 @@ image::images/oid4vci/screenshot-oid4vci-scope-form.png[OID4VCI configuration fi
 [NOTE]
 ====
 When you select a **Signing Key ID**, the **Credential Signing Algorithm** is automatically populated with the corresponding algorithm of the selected key. To override the algorithm, leave the signing key field empty and set the algorithm manually.
+
+For an SD-JWT VC, issuance fails with a `CredentialSignerException` if the resolved signing key has no certificate chain or its leaf certificate is self-signed. Verify that the selected key, or the active realm key for the configured algorithm, is backed by the intended keystore provider.
 ====
 
 ===== Understanding Credential Lifetime vs. Refresh Interval
@@ -623,5 +642,7 @@ For a **complete reference implementation**, see the sample project:
 https://github.com/adorsys/{project_name}-ssi-deployment/tree/main[{project_name} SSI Deployment^].
 
 include::requesting-credentials.adoc[]
+
+include::wallet-integration.adoc[]
 
 include::proofs.adoc[]

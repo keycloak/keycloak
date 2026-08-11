@@ -4,9 +4,11 @@ import {
   ActionGroup,
   Alert,
   Button,
+  Divider,
   FormHelperText,
   HelperText,
   HelperTextItem,
+  Title,
 } from "@patternfly/react-core";
 import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
@@ -256,6 +258,15 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     defaultValue: clientScope?.attributes?.["vc.binding_required"] ?? "false",
   });
 
+  const keyAttestationRequired = useWatch({
+    control,
+    name: convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.vc.key_attestations_required",
+    ),
+    defaultValue:
+      clientScope?.attributes?.["vc.key_attestations_required"] ?? "false",
+  });
+
   const isSigningKeySelected = useWatch({
     control,
     name: convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
@@ -313,6 +324,11 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const repeatableFieldName =
     convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
       "attributes.parameterized.scope.repeatable",
+    );
+
+  const allowUserDataAccessFieldName =
+    convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.parameterized.scope.allow.user.data",
     );
 
   useEffect(() => {
@@ -380,6 +396,9 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             />
             {parameterizedScope === "true" && (
               <>
+                <Title headingLevel="h2" size="lg">
+                  {t("parameterizedScopeSettings")}
+                </Title>
                 <SelectControl
                   id="kc-parameter-type"
                   name={parameterTypeFieldName}
@@ -417,6 +436,16 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                   labelIcon={t("repeatableScopeHelp")}
                   stringify
                 />
+                {parameterType === "username" && (
+                  <DefaultSwitchControl
+                    name={allowUserDataAccessFieldName}
+                    defaultValue="false"
+                    label={t("allowUserDataAccess")}
+                    labelIcon={t("allowUserDataAccessHelp")}
+                    stringify
+                  />
+                )}
+                <Divider className="pf-v5-u-mb-sm" />
               </>
             )}
           </>
@@ -790,6 +819,38 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                     },
                   }}
                 />
+                <DefaultSwitchControl
+                  name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                    "attributes.vc.key_attestations_required",
+                  )}
+                  defaultValue={
+                    clientScope?.attributes?.["vc.key_attestations_required"] ??
+                    "false"
+                  }
+                  label={t("keyAttestationsRequired")}
+                  labelIcon={t("keyAttestationsRequiredHelp")}
+                  stringify
+                />
+                {keyAttestationRequired === "true" && (
+                  <>
+                    <TextControl
+                      name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                        "attributes.vc.key_attestations_required.key_storage",
+                      )}
+                      label={t("keyAttestationKeyStorage")}
+                      labelIcon={t("keyAttestationKeyStorageHelp")}
+                      rules={{ validate: validateCommaSeparatedList }}
+                    />
+                    <TextControl
+                      name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                        "attributes.vc.key_attestations_required.user_authentication",
+                      )}
+                      label={t("keyAttestationUserAuthentication")}
+                      labelIcon={t("keyAttestationUserAuthenticationHelp")}
+                      rules={{ validate: validateCommaSeparatedList }}
+                    />
+                  </>
+                )}
               </>
             )}
             <TextAreaControl

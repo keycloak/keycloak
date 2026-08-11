@@ -21,6 +21,8 @@ export default tseslint.config(
       "**/dist/",
       "**/lib/",
       "**/target/",
+      "**/.wireit/",
+      "**/src/generated/doc-examples/",
       "./apps/keycloak-server/server/",
     ],
   },

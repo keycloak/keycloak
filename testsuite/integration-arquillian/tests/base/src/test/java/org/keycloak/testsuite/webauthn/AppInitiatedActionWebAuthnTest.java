@@ -39,7 +39,6 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.actions.AbstractAppInitiatedActionTest;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -241,8 +240,6 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
         passwordPage.assertCurrent();
         passwordPage.login(getPassword(DEFAULT_USERNAME));
 
-        appPage.assertCurrent();
-        assertThat(appPage.getRequestType(), is(AppPage.RequestType.AUTH_RESPONSE));
         assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventRepresentation eventRep = events.poll();

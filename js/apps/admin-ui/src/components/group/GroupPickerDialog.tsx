@@ -23,6 +23,7 @@ import {
   ModalVariant,
 } from "@patternfly/react-core";
 import { AngleRightIcon } from "@patternfly/react-icons";
+import { NetworkError } from "@keycloak/keycloak-admin-client/lib/utils/fetchWithError";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
@@ -58,6 +59,7 @@ export const GroupPickerDialog = ({
 }: GroupPickerDialogProps) => {
   const { adminClient } = useAdminClient();
   const groupResource = useGroupResource();
+  const isOrgGroups = groupResource.isOrgGroups();
 
   const { t } = useTranslation();
   const [selectedRows, setSelectedRows] = useState<SelectableGroup[]>([]);
@@ -92,7 +94,18 @@ export const GroupPickerDialog = ({
         groups = await groupResource.find(args);
       } else {
         if (!navigation.map(({ id }) => id).includes(groupId)) {
-          group = await groupResource.findOne({ id: groupId });
+          try {
+            group = await groupResource.findOne({ id: groupId });
+          } catch (error) {
+            if (
+              error instanceof NetworkError &&
+              error.response.status === 403
+            ) {
+              group = undefined;
+            } else {
+              throw error;
+            }
+          }
           if (!group) {
             throw new Error(t("notFound"));
           }
@@ -245,6 +258,7 @@ export const GroupPickerDialog = ({
             : groups
                 .map((g) => deepGroup([g]))
                 .flat()
+                .filter((g) => isOrgGroups || g.access)
                 .map((g) => (
                   <GroupRow
                     key={g.id}

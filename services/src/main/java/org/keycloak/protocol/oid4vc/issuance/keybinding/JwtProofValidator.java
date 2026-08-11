@@ -46,6 +46,7 @@ import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
+import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
 import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
 import org.keycloak.protocol.oid4vc.model.Proofs;
@@ -175,7 +176,7 @@ public class JwtProofValidator extends AbstractProofValidator {
                 }
             }
         } else if (jwsHeader.getX5c() != null && !jwsHeader.getX5c().isEmpty()) {
-            jwk = AttestationValidatorUtil.resolveJwkFromValidatedX5c(jwsHeader.getX5c(), jwsHeader.getAlgorithm().name());
+            jwk = AttestationValidatorUtil.resolveJwkFromProofX5c(jwsHeader.getX5c(), jwsHeader.getAlgorithm().name());
         } else {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Missing binding key. JWT must contain either jwk, kid, or x5c in header.");
         }
@@ -313,6 +314,11 @@ public class JwtProofValidator extends AbstractProofValidator {
     private KeyAttestationInfo resolveHeaderAttestation(VCIssuanceContext vcIssuanceContext, Map<String, Object> headerClaims)
             throws JWSInputException, VerificationException {
         if (!headerClaims.containsKey(KEY_ATTESTATION_CLAIM)) {
+            KeyAttestationsRequired attestationRequirements = AttestationValidatorUtil.getAttestationRequirements(vcIssuanceContext, ProofType.JWT);
+            if (attestationRequirements != null) {
+                throw new VCIssuerException(ErrorType.INVALID_PROOF,
+                        "key_attestation JWT header claim is required by the credential configuration but was not provided");
+            }
             return KeyAttestationInfo.absent();
         }
 
@@ -331,7 +337,6 @@ public class JwtProofValidator extends AbstractProofValidator {
         if (attestedKeys == null || attestedKeys.isEmpty()) {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "key_attestation does not contain attested keys");
         }
-
         return new KeyAttestationInfo(attestedKeys);
     }
 
@@ -456,11 +461,17 @@ public class JwtProofValidator extends AbstractProofValidator {
         if (cNonceHandler == null) {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "CNonce handler not configured");
         }
+        if (!cNonceHandler.supportsCNonceTokenRetrieval()) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "CNonce handler does not support token retrieval");
+        }
         try {
-            cNonceHandler.verifyCNonce(proofPayload.getNonce(),
-                    List.of(OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(keycloakContext)),
-                    Map.of(JwtCNonceHandler.SOURCE_ENDPOINT,
-                            OID4VCIssuerWellKnownProvider.getNonceEndpoint(keycloakContext)));
+            vcIssuanceContext.addVerifiedCNonce(
+                    proofPayload.getNonce(),
+                    cNonceHandler.verifyCNonceAndGetToken(
+                            proofPayload.getNonce(),
+                            List.of(OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(keycloakContext)),
+                            Map.of(JwtCNonceHandler.SOURCE_ENDPOINT,
+                                    OID4VCIssuerWellKnownProvider.getNonceEndpoint(keycloakContext))));
         } catch (VerificationException e) {
             throw new VCIssuerException(ErrorType.INVALID_NONCE, e.getMessage());
         }

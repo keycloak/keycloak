@@ -71,6 +71,8 @@ export async function clickSearchButton(page: Page) {
   await page.getByTestId("search-btn").click();
 }
 
+export { selectClient } from "../utils/form.ts";
+
 export async function deletePermission(page: Page, name: string) {
   await clickRowKebabItem(page, name, "Delete");
   await confirmModal(page);

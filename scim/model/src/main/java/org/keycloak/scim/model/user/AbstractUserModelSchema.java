@@ -36,8 +36,7 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
     @Override
     protected Set<String> getModelAttributeNames() {
         UserProfile profile = getUserProfile();
-        Attributes attributes = profile.getAttributes();
-        Set<String> names = new HashSet<>(attributes.nameSet());
+        Set<String> names = new HashSet<>(profile.getAttributes().getReadable().keySet());
 
         names.add(UserModel.ENABLED);
         names.add("groups");
@@ -78,6 +77,9 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
         }
         if (UserModel.EMAIL.equals(name)) {
             return model.getEmail() == null ? List.of() : List.of(model.getEmail());
+        }
+        if (UserModel.CREATED_TIMESTAMP.equals(name)) {
+            return model.getCreatedTimestamp();
         }
         UserProfile profile = session.getProvider(UserProfileProvider.class).create(UserProfileContext.SCIM, model);
         Attributes attributes = profile.getAttributes();

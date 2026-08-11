@@ -35,6 +35,7 @@ import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.ssf.SsfException;
+import org.keycloak.ssf.event.SsfEvent;
 import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.subject.ComplexSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
@@ -1179,12 +1180,6 @@ public class SsfAdminResource {
         // event log mirrors what the operator did, not what the dispatcher
         // chose to do downstream — the latter is captured in the result
         // `status` carried in the representation.
-        //
-        // Representation is a slim summary (event type, subject reference,
-        // result status + jti). We deliberately do NOT include the verbatim
-        // event body from the request, which can be arbitrarily large and
-        // may carry payload-specific PII; admins who need that detail can
-        // still grep the SSF metric / outbox row by jti.
         Map<String, Object> auditRep = createEmitEventAuditRepresentation(request, emitResult);
         UserModel user = auth.adminAuth().getUser();
         adminEvent.operation(OperationType.ACTION)
@@ -1200,6 +1195,19 @@ public class SsfAdminResource {
                 emitResult.message())).build();
     }
 
+    /**
+     * Creates an audit representation of the event emitted. By default we deliberately do NOT include the verbatim event body
+     * from the request, which can be arbitrarily large and may carry payload-specific PII; admins who need that detail can still grep the SSF metric / outbox row by jti.
+     *
+     * Subclasses may add bounded, non-sensitive metadata, but must not persist caller-supplied event payloads or other free-form values.
+     *
+     * @param request the request containing event emission details such as event type,
+     *                subject type, and subject value.
+     * @param emitResult the result of the emission, containing the status and
+     *                   optionally a unique identifier (jti).
+     * @return a map representing the audit metadata of the emitted event. Keys include
+     *         "eventType", "subjectType", "subjectValue", "status", and optionally "jti".
+     */
     protected Map<String, Object> createEmitEventAuditRepresentation(SsfEmitEventRequest request, EmitEventResult emitResult) {
         Map<String, Object> auditRep = new LinkedHashMap<>();
         auditRep.put("eventType", request.getEventType());
@@ -1213,10 +1221,24 @@ public class SsfAdminResource {
         if (emitResult.jti() != null) {
             auditRep.put("jti", emitResult.jti());
         }
-        if (request.getEvent() != null) {
-            auditRep.put("eventData", request.getEvent());
+        if (emitResult.event() != null) {
+            // ssfEvent is already validated here
+            Map<String, Object> adminFields = createAdminDetails(emitResult.event());
+            if (adminFields != null && !adminFields.isEmpty()) {
+                auditRep.put("eventData", adminFields);
+            }
         }
         return auditRep;
+    }
+
+    /**
+     * Creates a map containing administrative details for the provided SsfEvent.
+     *
+     * @param ssfEvent the event object from which administrative details are created
+     * @return a map with key-value pairs representing administrative details of the event
+     */
+    protected Map<String, Object> createAdminDetails(SsfEvent ssfEvent) {
+        return ssfEvent.createAdminDetails();
     }
 
     /**

@@ -91,7 +91,7 @@ public class Profile {
 
         TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW, 1, true, null, null),
         TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.DEFAULT, 2),
-        TOKEN_EXCHANGE_DELEGATION("Token Exchange Delegation", Type.EXPERIMENTAL, Feature.PARAMETERIZED_SCOPES),
+        TOKEN_EXCHANGE_DELEGATION("Token Exchange Delegation", Type.EXPERIMENTAL, Feature.PARAMETERIZED_SCOPES, Feature.TOKEN_EXCHANGE_STANDARD_V2),
 
         JWT_AUTHORIZATION_GRANT("JWT Profile for Oauth 2.0 Authorization Grant", Type.DEFAULT),
 
@@ -145,6 +145,7 @@ public class Profile {
         OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
         OID4VC_VCI_PREAUTH_CODE("Support for credential offers with `pre-authorized_code` grant.", Type.EXPERIMENTAL, OID4VC_VCI),
         OID4VC_VCI_REST_CREDENTIAL_OFFER("Support for the REST endpoint to create credential offers.", Type.EXPERIMENTAL, OID4VC_VCI),
+        OID4VC_VP("Support for the OID4VP protocol as part of OID4VC.", Type.EXPERIMENTAL),
 
         OPENTELEMETRY("OpenTelemetry support", Type.DEFAULT),
         OPENTELEMETRY_LOGS("OpenTelemetry Logs support", Type.PREVIEW, OPENTELEMETRY),
@@ -158,6 +159,7 @@ public class Profile {
         PASSKEYS_CONDITIONAL_UI_AUTHENTICATOR("Passkeys conditional UI authenticator", Type.DEPRECATED, FeatureUpdatePolicy.ROLLING_NO_UPGRADE, Feature.PASSKEYS),
 
         USER_EVENT_METRICS("Collect metrics based on user events", Type.DEFAULT),
+        LDAP_METRICS("Collect metrics based on LDAP interactions", Type.EXPERIMENTAL),
 
         IPA_TUURA_FEDERATION("IPA-Tuura user federation provider", Type.EXPERIMENTAL),
 

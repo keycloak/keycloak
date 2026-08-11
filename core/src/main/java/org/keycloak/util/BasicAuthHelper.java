@@ -32,7 +32,9 @@ import java.util.Base64;
  */
 public class BasicAuthHelper {
     public static String createHeader(String username, String password) {
-        return "Basic " + Base64.getEncoder().encodeToString((username + ':' + password).getBytes(StandardCharsets.UTF_8));
+        return "Basic " + Base64.getEncoder().encodeToString(
+                ((username != null ? username : "") + ':' + (password != null ? password : ""))
+                        .getBytes(StandardCharsets.UTF_8));
     }
 
     public static String[] parseHeader(String header) {
@@ -66,8 +68,8 @@ public class BasicAuthHelper {
         public static String createHeader(String username, String password) {
             try {
                 return BasicAuthHelper.createHeader(
-                    URLEncoder.encode(username, "UTF-8"),
-                    URLEncoder.encode(password, "UTF-8")
+                    username != null ? URLEncoder.encode(username, "UTF-8") : "",
+                    password != null ? URLEncoder.encode(password, "UTF-8") : ""
                 );
             } catch (UnsupportedEncodingException e) {
                 return null;

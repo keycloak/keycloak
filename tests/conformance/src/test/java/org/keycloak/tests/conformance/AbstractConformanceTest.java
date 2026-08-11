@@ -18,6 +18,7 @@
 package org.keycloak.tests.conformance;
 
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.keycloak.testframework.https.CertificatesConfig;
@@ -30,6 +31,7 @@ import org.keycloak.tests.conformance.runner.BrowserInteraction;
 import org.keycloak.tests.conformance.runner.ConformanceModuleResult;
 import org.keycloak.tests.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.tests.conformance.runner.ConformanceResult;
+import org.keycloak.tests.conformance.runner.ModuleRun;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
@@ -47,9 +49,8 @@ public abstract class AbstractConformanceTest {
 
     private static final Logger LOGGER = Logger.getLogger(AbstractConformanceTest.class);
 
-    // Not used directly, but required to start the Keycloak server with TLS enabled
     @InjectCertificates(config = TlsCertificates.class)
-    ManagedCertificates certificates;
+    protected ManagedCertificates certificates;
 
     @InjectConformanceSuite
     protected OpenIdConformanceSuite suite;
@@ -76,10 +77,19 @@ public abstract class AbstractConformanceTest {
                         expectedResult, browserInteraction));
     }
 
+    /**
+     * Drives the system under test once the module waits for it, e.g. delivers an OID4VP verifier
+     * request.
+     */
+    protected Consumer<ModuleRun> interaction(ConformanceModuleVariant moduleVariant) {
+        return null;
+    }
+
     @ParameterizedTest
     @MethodSource("moduleVariants")
     public void conformance(ConformanceModuleVariant moduleVariant) {
-        ConformanceModuleResult result = suite.client().run(moduleVariant, suiteConfig(moduleVariant));
+        ConformanceModuleResult result = suite.client()
+                .run(moduleVariant, suiteConfig(moduleVariant), interaction(moduleVariant));
         if (!result.finishedWith(moduleVariant.expectedResult())) {
             LOGGER.errorf("Full logs of failed conformance module %s:%n%s", result.module(), result.logs().toPrettyString());
             Assertions.fail(result.failureSummary());

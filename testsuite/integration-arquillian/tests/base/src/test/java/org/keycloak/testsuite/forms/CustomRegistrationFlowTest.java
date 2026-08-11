@@ -25,8 +25,6 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.AuthenticationExecutionBuilder;
 import org.keycloak.testframework.realm.AuthenticationFlowBuilder;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
@@ -79,9 +77,6 @@ public class CustomRegistrationFlowTest extends AbstractFlowTest {
     public AssertEvents events = new AssertEvents(this);
 
     @Page
-    protected AppPage appPage;
-
-    @Page
     protected LoginPage loginPage;
 
     @Page
@@ -98,7 +93,7 @@ public class CustomRegistrationFlowTest extends AbstractFlowTest {
         oauth.openLoginForm();
         loginPage.clickRegister();
 
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         String userId = EventAssertion.expectRegisterSuccess(events.poll()).clientId(oauth.getClientId())
                 .details(Details.USERNAME, PassThroughRegistration.username).details(Details.EMAIL, PassThroughRegistration.email).getEvent().getUserId();

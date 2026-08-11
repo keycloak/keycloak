@@ -214,12 +214,15 @@ public class LDAPEmbeddedServer {
 
 
     public void start() throws Exception {
+        long t0 = System.currentTimeMillis();
         log.info("Starting LDAP server..");
         ldapServer.start();
+        long elapsed = System.currentTimeMillis() - t0;
         // Verify the server started properly
         if (ldapServer.isStarted() && ldapServer.getDirectoryService().isStarted()) {
-            log.info("LDAP server started.");
-        } else if(!ldapServer.isStarted()) {
+            log.infof("LDAP server started in %d ms (port=%d, startTLS=%s, ssl=%s).",
+                    elapsed, bindPort, enableStartTLS, enableSSL);
+        } else if (!ldapServer.isStarted()) {
             throw new RuntimeException("Failed to start the LDAP server!");
         } else if (!ldapServer.getDirectoryService().isStarted()) {
             throw new RuntimeException("Failed to start the directory service for the LDAP server!");
@@ -321,13 +324,13 @@ public class LDAPEmbeddedServer {
             }
             if (enableStartTLS) {
                 try {
-                    ldapServer.addExtendedOperationHandler(new StartTlsHandler());
+                    ldapServer.addExtendedOperationHandler(new TLS13StartTlsHandler());
                 } catch (Exception e) {
                     throw new IllegalStateException("Cannot add the StartTLS extension handler: ", e);
                 }
                 for (ExtendedOperationHandler eoh : ldapServer.getExtendedOperationHandlers()) {
                     if (eoh.getOid().equals(StartTlsHandler.EXTENSION_OID)) {
-                        log.info("Enabled StartTLS support on the LDAP server.");
+                        log.info("Enabled StartTLS support on the LDAP server (using TLS13StartTlsHandler).");
                         break;
                     }
                 }
@@ -419,8 +422,10 @@ public class LDAPEmbeddedServer {
 
 
     protected void stopLdapServer() {
+        long t0 = System.currentTimeMillis();
         log.info("Stopping LDAP server.");
         ldapServer.stop();
+        log.infof("LDAP server stopped in %d ms.", System.currentTimeMillis() - t0);
     }
 
 

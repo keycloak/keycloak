@@ -18,6 +18,7 @@ package org.keycloak.protocol.oidc.rar.parsers;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -133,20 +134,27 @@ public class ClientScopeAuthorizationRequestParser implements AuthorizationReque
      * @return see description
      */
     private Optional<IntermediaryScopeRepresentation> getMatchingClientScope(UserModel user, String requestScope, Collection<ClientScopeModel> optionalScopes) {
-        for (ClientScopeModel clientScopeModel : optionalScopes) {
+        List<ClientScopeModel> sorted = optionalScopes.stream()
+                .sorted(Comparator.comparingInt((ClientScopeModel s) -> s.getName().length()).reversed())
+                .toList();
+
+        for (ClientScopeModel clientScopeModel : sorted) {
             if (clientScopeModel.isParameterizedScope()) {
                 String paramValue = clientScopeModel.getParameterFromScope(requestScope).orElse(null);
                 if (paramValue == null) {
                     continue;
                 }
                 try {
+                    if (paramValue.length() > ParameterizedScopeTypeProvider.MAX_PARAMETER_LENGTH) {
+                        throw new InvalidScopeParameterException("parameter value exceeds maximum length of " + ParameterizedScopeTypeProvider.MAX_PARAMETER_LENGTH);
+                    }
                     if (user != null) {
                         resolveType(clientScopeModel).validateParameterWithUser(user, clientScopeModel, paramValue);
                     } else {
                         resolveType(clientScopeModel).validateParameter(clientScopeModel, paramValue);
                     }
                 } catch (InvalidScopeParameterException e) {
-                    logger.warnf("Invalid scope parameter for '%s': %s", requestScope, e.getMessage());
+                    logger.warnf("Invalid scope parameter for '%s': %s", clientScopeModel.getName(), e.getMessage());
                     return Optional.empty();
                 }
                 return Optional.of(new IntermediaryScopeRepresentation(clientScopeModel, paramValue, requestScope));

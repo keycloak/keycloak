@@ -199,6 +199,10 @@ public class ClientSecretRotationExecutor implements
         @Override
         public boolean validateConfig() {
             logger.debugv("Validating configuration: [ expirationPeriod: {0}, rotatedExpirationPeriod: {1}, remainExpirationPeriod: {2} ]", expirationPeriod, rotatedExpirationPeriod, remainExpirationPeriod);
+            if (expirationPeriod == null || rotatedExpirationPeriod == null || remainExpirationPeriod == null) {
+                return false;
+            }
+
             // expiration must be a positive value greater than 0 (seconds)
             if (expirationPeriod <= 0) {
                 return false;

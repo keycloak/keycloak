@@ -6,6 +6,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.utils.StringUtil;
 
 /**
@@ -35,12 +36,21 @@ public class UsernameScopeType implements ParameterizedScopeTypeProvider {
         return new UsernameScopeType(session);
     }
 
+    /**
+     * Checks whether the authenticated user is allowed to access the target user's data for this scope.
+     */
+    public boolean canAccessTargetUser(ClientScopeModel scope, UserModel currentUser, UserModel targetUser) {
+        if (scope.isAllowUserDataAccess()) {
+            return true;
+        }
+        return AdminPermissions.evaluator(session, scope.getRealm(), scope.getRealm(), currentUser).users().canView(targetUser);
+    }
+
     @Override
     public void validateParameter(@Nonnull ClientScopeModel scope, @Nonnull String parameter) throws InvalidScopeParameterException {
         if (StringUtil.isBlank(parameter)) {
             throw new InvalidScopeParameterException("Username parameter must not be blank");
         }
-        resolveUser(scope, parameter);
     }
 
     @Override

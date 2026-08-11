@@ -43,7 +43,6 @@ import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.common.constants.ServiceAccountConstants;
-import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
@@ -73,6 +72,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.util.EntityUtils;
 import org.hamcrest.CoreMatchers;
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
@@ -99,17 +99,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @KeycloakIntegrationTest
 public class ClientRegistrationTest extends AbstractClientRegistrationTest {
-
-    private static final String CLIENT_ID = "test-client";
-    private static final String CLIENT_SECRET = "test-client-secret";
-
-    private ClientRepresentation buildClient() {
-    	ClientRepresentation client = new ClientRepresentation();
-        client.setClientId(CLIENT_ID);
-        client.setSecret(CLIENT_SECRET);
-
-        return client;
-    }
 
     private ClientRepresentation registerClient(boolean cleanup) throws ClientRegistrationException {
     	return registerClient(buildClient(), cleanup);
@@ -299,13 +288,13 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         Set<String> requestedClientScopes = new HashSet<>(optionalClientScopes);
         Set<String> registeredClientScopes = new HashSet<>(createdClient.getOptionalClientScopes());
         assertEquals(requestedClientScopes, registeredClientScopes);
-        assertTrue(CollectionUtil.collectionEquals(createdClient.getDefaultClientScopes(), Set.of("basic")));
+        MatcherAssert.assertThat(createdClient.getDefaultClientScopes(), Matchers.containsInAnyOrder("web-origins", "basic", "acr", "roles", "profile", "email"));
 
         authManageClients();
         ClientRepresentation obtainedClient = reg.get(CLIENT_ID);
         registeredClientScopes = new HashSet<>(obtainedClient.getOptionalClientScopes());
         assertEquals(requestedClientScopes, registeredClientScopes);
-        assertTrue(CollectionUtil.collectionEquals(obtainedClient.getDefaultClientScopes(), Set.of("basic")));
+        MatcherAssert.assertThat(obtainedClient.getDefaultClientScopes(), Matchers.containsInAnyOrder("web-origins", "basic", "acr", "roles", "profile", "email"));
 
 
         optionalClientScopes = new ArrayList<>(List.of("address", "phone"));
@@ -314,7 +303,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         requestedClientScopes = new HashSet<>(optionalClientScopes);
         registeredClientScopes = new HashSet<>(updatedClient.getOptionalClientScopes());
         assertEquals(requestedClientScopes, registeredClientScopes);
-        assertTrue(CollectionUtil.collectionEquals(updatedClient.getDefaultClientScopes(), Set.of("basic")));
+        MatcherAssert.assertThat(updatedClient.getDefaultClientScopes(), Matchers.containsInAnyOrder("web-origins", "basic", "acr", "roles", "profile", "email"));
     }
 
     @Test
@@ -423,6 +412,58 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         assertFalse(authzSettings.getResources().isEmpty());
         assertFalse(authzSettings.getScopes().isEmpty());
         assertFalse(authzSettings.getPolicies().isEmpty());
+    }
+
+    //#51340
+    @Test
+    public void updateProtocolViaRegistrationTokenShouldBeRejected() throws ClientRegistrationException {
+        // Register an OIDC client using manage-clients bearer token; capture the RAT.
+        authManageClients();
+        ClientRepresentation created = registerClient(buildClient(), true);
+        assertEquals("openid-connect", created.getProtocol());
+        reg.auth(Auth.token(created.getRegistrationAccessToken()));
+
+        // Attempt to change protocol to saml (should be rejected with 400)
+        ClientRepresentation update = new ClientRepresentation();
+        update.setClientId(created.getClientId());
+        update.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+
+        try {
+            reg.update(update);
+            fail("Expected ClientRegistrationException — protocol change via RAT must be rejected");
+        } catch (ClientRegistrationException e) {
+            HttpErrorException cause = (HttpErrorException) e.getCause();
+            assertThat(cause.getStatusLine().getStatusCode(), is(400));
+
+            OAuth2ErrorRepresentation errorRep;
+            try {
+                errorRep = JsonSerialization.readValue(cause.getErrorResponse(), OAuth2ErrorRepresentation.class);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+            assertThat(errorRep.getError(), is(INVALID_CLIENT_METADATA));
+            assertThat(errorRep.getErrorDescription(), CoreMatchers.containsString("Protocol cannot be changed"));
+        }
+
+        // Verify the protocol is still openid-connect
+        reg.auth(Auth.token(created.getRegistrationAccessToken()));
+        ClientRepresentation afterAttempt = reg.get(created.getClientId());
+        assertThat(afterAttempt.getProtocol(), is("openid-connect"));
+    }
+
+    @Test
+    public void updateProtocolViaAdminTokenShouldSucceed() throws ClientRegistrationException {
+        authManageClients();
+        ClientRepresentation created = registerClient(buildClient(), true);
+        assertEquals("openid-connect", created.getProtocol());
+
+        // Re-auth as manage-clients admin, not via RAT.
+        authManageClients();
+        ClientRepresentation update = reg.get(created.getClientId());
+        update.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+
+        ClientRepresentation updated = reg.update(update);
+        assertThat(updated.getProtocol(), is(SamlProtocol.LOGIN_PROTOCOL));
     }
 
     private void testClientUriValidation(String expectedRootUrlError, String expectedBaseUrlError, String expectedBackchannelLogoutUrlError, String expectedRedirectUrisError, String... testUrls) {
@@ -783,7 +824,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         Set<String> requestedClientScopes = new HashSet<>(optionalClientScopes);
         Set<String> registeredClientScopes = new HashSet<>(client.getOptionalClientScopes());
         assertTrue(requestedClientScopes.equals(registeredClientScopes));
-        assertTrue(CollectionUtil.collectionEquals(client.getDefaultClientScopes(), Set.of("basic")));
+        MatcherAssert.assertThat(client.getDefaultClientScopes(), Matchers.containsInAnyOrder("web-origins", "basic", "acr", "roles", "profile", "email"));
     }
 
     @Test

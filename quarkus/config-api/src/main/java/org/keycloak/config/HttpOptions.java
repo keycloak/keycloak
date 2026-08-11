@@ -3,6 +3,7 @@ package org.keycloak.config;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import org.keycloak.common.crypto.FipsMode;
 
@@ -51,6 +52,12 @@ public class HttpOptions {
             .description("Configures the server to require/request client authentication.")
             .defaultValue(ClientAuth.none)
             .buildTime(true)
+            .build();
+
+    public static final Option<Boolean> HTTPS_SNI_ENABLED = new OptionBuilder<>("https-sni-enabled", Boolean.class)
+            .category(OptionCategory.HTTP)
+            .synthetic()
+            .defaultValue(Optional.empty())
             .build();
 
     public static final Option<String> HTTPS_CIPHER_SUITES = new OptionBuilder<>("https-cipher-suites", String.class)

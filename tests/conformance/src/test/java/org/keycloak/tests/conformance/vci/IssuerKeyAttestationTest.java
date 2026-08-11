@@ -17,10 +17,6 @@
 
 package org.keycloak.tests.conformance.vci;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -30,16 +26,16 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
-import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.conformance.runner.BrowserInteraction;
 import org.keycloak.tests.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.tests.conformance.runner.ConformanceResult;
 
 /**
  * Issues a credential whose configuration requires key attestations, so the suite includes a valid key attestation
- * that Keycloak must accept.
+ * that Keycloak must accept. The attestation x5c chain is trusted through the {@code conformance-attester-x509}
+ * trust-material identity provider configured by {@link VciConformanceRealmConfig}.
  */
-@KeycloakIntegrationTest(config = IssuerKeyAttestationTest.KeyAttestationServerConfig.class)
+@KeycloakIntegrationTest(config = VciConformanceRealmConfig.ServerConfig.class)
 public class IssuerKeyAttestationTest extends AbstractVciConformanceTest {
 
     @InjectRealm(config = KeyAttestationRequiredRealmConfig.class, lifecycle = LifeCycle.METHOD)
@@ -55,29 +51,6 @@ public class IssuerKeyAttestationTest extends AbstractVciConformanceTest {
                 "oid4vci-1_0-issuer-happy-flow",
                 ConformanceResult.PASSED,
                 BrowserInteraction.LOGIN);
-    }
-
-    public static class KeyAttestationServerConfig extends VciConformanceRealmConfig.ServerConfig {
-
-        // TODO Drop this truststore path once Keycloak trusts key attestation keys via a trust material identity
-        // provider instead of validating the x5c chain against the server truststore.
-        private static final String ATTESTER_CA_PATH = writeAttesterCaCertificate();
-
-        @Override
-        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return super.configure(config).option("truststore-paths", ATTESTER_CA_PATH);
-        }
-
-        private static String writeAttesterCaCertificate() {
-            try {
-                Path caPath = Files.createTempFile("oid4vci-conformance-attester-ca", ".pem");
-                Files.writeString(caPath, VciAttesterKey.caCertificatePem(), StandardCharsets.UTF_8);
-                caPath.toFile().deleteOnExit();
-                return caPath.toString();
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to write the attester CA certificate for the truststore", e);
-            }
-        }
     }
 
     public static class KeyAttestationRequiredRealmConfig extends VciConformanceRealmConfig {

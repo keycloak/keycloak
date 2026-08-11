@@ -18,6 +18,8 @@ import org.keycloak.provider.ProviderFactory;
  */
 public interface ParameterizedScopeTypeProvider extends Provider, ProviderFactory<ParameterizedScopeTypeProvider> {
 
+    int MAX_PARAMETER_LENGTH = 255;
+
     /**
      * @return the unique type name, also used as the provider ID
      */

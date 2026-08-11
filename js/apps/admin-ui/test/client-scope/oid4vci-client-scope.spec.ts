@@ -73,6 +73,11 @@ const OID4VCI_FIELDS = {
   REFRESH_INTERVAL_IN_SECONDS: "attributes.vc🍺refresh_interval_in_seconds",
   BINDING_METHODS: "attributes.vc🍺cryptographic_binding_methods_supported",
   BINDING_SUPPORTED_PROOF_TYPES: "attributes.vc🍺binding_required_proof_types",
+  KEY_ATTESTATIONS_REQUIRED: "attributes.vc.key_attestations_required",
+  KEY_ATTESTATION_KEY_STORAGE:
+    "attributes.vc🍺key_attestations_required🍺key_storage",
+  KEY_ATTESTATION_USER_AUTHENTICATION:
+    "attributes.vc🍺key_attestations_required🍺user_authentication",
   FORMAT: "#kc-vc-format",
   TOKEN_JWS_TYPE: "attributes.vc🍺credential_build_config🍺token_jws_type",
   SIGNING_KEY_ID: "#kc-signing-key-id",
@@ -104,6 +109,8 @@ const TEST_VALUES = {
     '[{"name": "Test Credential", "locale": "en-US", "logo": {"uri": "https://example.com/logo.png", "alt_text": "Logo"}, "background_color": "#12107c", "text_color": "#FFFFFF"}]',
   SUPPORTED_CREDENTIAL_TYPES: "VerifiableCredential,UniversityDegreeCredential",
   VERIFIABLE_CREDENTIAL_TYPE: "TestCredentialType",
+  KEY_ATTESTATION_KEY_STORAGE: "iso_18045_high,iso_18045_moderate",
+  KEY_ATTESTATION_USER_AUTHENTICATION: "iso_18045_moderate",
 } as const;
 const TOKEN_JWS_TYPE_WARNING_PREFIX =
   "The configured Token JWS Type does not match the recommended value for the selected credential format.";
@@ -770,6 +777,17 @@ test.describe("OID4VCI Client Scope Functionality", () => {
       .getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES)
       .fill("jwt");
 
+    await switchToggle(
+      page,
+      page.getByTestId(OID4VCI_FIELDS.KEY_ATTESTATIONS_REQUIRED),
+    );
+    await page
+      .getByTestId(OID4VCI_FIELDS.KEY_ATTESTATION_KEY_STORAGE)
+      .fill(TEST_VALUES.KEY_ATTESTATION_KEY_STORAGE);
+    await page
+      .getByTestId(OID4VCI_FIELDS.KEY_ATTESTATION_USER_AUTHENTICATION)
+      .fill(TEST_VALUES.KEY_ATTESTATION_USER_AUTHENTICATION);
+
     await clickSaveButton(page);
     await expect(page.getByText("Client scope created")).toBeVisible();
 
@@ -784,6 +802,15 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await expect(
       page.getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES),
     ).toHaveValue("jwt");
+    await expect(
+      page.getByTestId(OID4VCI_FIELDS.KEY_ATTESTATIONS_REQUIRED),
+    ).toBeChecked();
+    await expect(
+      page.getByTestId(OID4VCI_FIELDS.KEY_ATTESTATION_KEY_STORAGE),
+    ).toHaveValue(TEST_VALUES.KEY_ATTESTATION_KEY_STORAGE);
+    await expect(
+      page.getByTestId(OID4VCI_FIELDS.KEY_ATTESTATION_USER_AUTHENTICATION),
+    ).toHaveValue(TEST_VALUES.KEY_ATTESTATION_USER_AUTHENTICATION);
   });
 
   test("should default to sha-256 when hash algorithm is not set", async ({

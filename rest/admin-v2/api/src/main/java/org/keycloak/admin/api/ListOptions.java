@@ -37,7 +37,7 @@ public class ListOptions {
     @QueryParam("offset")
     protected Integer offset;
     
-    private transient List<SortOption> parsedSort;
+    private transient List<SortSegment> parsedSortSegments;
 
     public ListOptions fields(Set<String> fields) {
         this.setFields(fields);
@@ -54,7 +54,7 @@ public class ListOptions {
         return this;
     }
 
-    public ListOptions sort(List<SortOption> sort) {
+    public <F extends SortField> ListOptions sort(List<SortOption<F>> sort) {
         this.setSort(sort);
         return this;
     }
@@ -102,48 +102,79 @@ public class ListOptions {
         this.offset = offset;
     }
 
-    public List<SortOption> getSort() {
+    /**
+     * Parses the raw {@code sort} query parameter into an ordered list of segments
+     * (field name + direction), without resolving field names against any
+     * resource-specific field set. Use {@link #getSort(SortFieldResolver)} to resolve
+     * segments into typed {@link SortOption}s.
+     */
+    public List<SortSegment> getSortSegments() {
         if (sort == null) {
             return null;
         }
         if (sort.isEmpty()) {
             return List.of();
         }
-        if (parsedSort != null) {
-            return parsedSort;
+        if (parsedSortSegments != null) {
+            return parsedSortSegments;
         }
-        parsedSort = Arrays.stream(sort.split(","))
+        parsedSortSegments = Arrays.stream(sort.split(","))
                 .map(String::trim)
                 .filter(segment -> !segment.isEmpty())
                 .map(ListOptions::parseSortSegment)
                 .collect(Collectors.toUnmodifiableList());
-        if (parsedSort.isEmpty()) {
+        if (parsedSortSegments.isEmpty()) {
             throw new IllegalArgumentException("sort must specify at least one field");
         }
-        return parsedSort;
+        return parsedSortSegments;
     }
 
-    public void setSort(List<SortOption> sort) {
-        parsedSort = List.copyOf(sort);
+    /**
+     * Resolves the parsed {@code sort} segments against a resource-specific set of
+     * sortable fields.
+     *
+     * @throws IllegalArgumentException if a segment's field name cannot be resolved by {@code resolver}
+     */
+    public <F extends SortField> List<SortOption<F>> getSort(SortFieldResolver<F> resolver) {
+        List<SortSegment> segments = getSortSegments();
+        if (segments == null) {
+            return null;
+        }
+        if (segments.isEmpty()) {
+            return List.of();
+        }
+        return segments.stream()
+                .map(segment -> {
+                    F field = resolver.resolve(segment.fieldName()).orElseThrow(() ->
+                            new IllegalArgumentException(String.format("%s is not a sortable field", segment.fieldName())));
+                    return SortOption.of(field, segment.order());
+                })
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    public <F extends SortField> void setSort(List<SortOption<F>> sort) {
         if (sort == null) {
+            parsedSortSegments = null;
             this.sort = null;
         } else if (sort.isEmpty()) {
+            parsedSortSegments = List.of();
             this.sort = "";
         } else {
+            parsedSortSegments = sort.stream()
+                    .map(option -> new SortSegment(option.field().toQueryValue(), option.order()))
+                    .collect(Collectors.toUnmodifiableList());
             this.sort = sort.stream().map(SortOption::toQuerySegment).collect(Collectors.joining(","));
         }
     }
 
-    private static SortOption parseSortSegment(String segment) {
+    private static SortSegment parseSortSegment(String segment) {
         String[] parts = segment.split("\\|", 2);
         String fieldName = parts[0].trim();
         if (fieldName.isEmpty()) {
             throw new IllegalArgumentException("sort must specify at least one field");
         }
-        ClientField field = ClientField.fromApiName(fieldName).orElseThrow(() ->
-                new IllegalArgumentException(String.format("%s is not a sortable field", fieldName)));
         SortOrder order = parts.length == 1 ? SortOrder.ASC : parseSortOrder(parts[1].trim());
-        return SortOption.of(field, order);
+        return new SortSegment(fieldName, order);
     }
 
     private static SortOrder parseSortOrder(String value) {
