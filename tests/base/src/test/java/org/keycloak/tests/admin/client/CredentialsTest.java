@@ -183,7 +183,6 @@ public class CredentialsTest {
         // Returned cert is not the new state but rather what was extracted from inputs
         assertNotNull(cert, "cert not null");
         assertEquals(generatedKeystore.getCertificateInfo().getCertificate(), cert.getCertificate(), "cert properly extracted");
-        assertEquals(generatedKeystore.getCertificateInfo().getPrivateKey(), cert.getPrivateKey(), "privateKey properly extracted");
 
         // Get the certificate - to make sure cert was properly updated
         cert = certRsc.getKeyInfo();

@@ -44,11 +44,9 @@ public interface ClientAttributeCertificateResource {
 
     /**
      * Generate a new certificate with new key pair
-     *
-     * @return
-     *
      * @deprecated Clients should generate their own key pairs and upload only the public key/certificate.
      *
+     * @return
      */
     @Deprecated
     @POST
@@ -82,13 +80,11 @@ public interface ClientAttributeCertificateResource {
 
     /**
      * Get a keystore file for the client, containing private key and public certificate
+     * @deprecated Clients should manage their own private keys.
      *
      * @param config Keystore configuration as JSON. Parameters "keySize" and "validity" of the config are supported since Keycloak 26.3. Key size is 4096 by default and validity is 3 years by default.
      *               For older versions than Keycloak 26.3, the key size is 2048 and validity is 10 years.
      * @return
-     *
-     * @deprecated Clients should manage their own private keys.
-     *
      */
     @Deprecated
     @POST
@@ -102,12 +98,10 @@ public interface ClientAttributeCertificateResource {
      *
      * Generates a keypair and certificate and serves the private key in a specified keystore format.
      * Only generated public certificate is saved in Keycloak DB - the private key is not.
+     * @deprecated Clients should generate their own key pairs and upload only the public key/certificate.
      *
      * @param config Keystore configuration as JSON
      * @return
-     *
-     * @deprecated Clients should generate their own key pairs and upload only the public key/certificate
-     *
      */
     @Deprecated
     @POST
