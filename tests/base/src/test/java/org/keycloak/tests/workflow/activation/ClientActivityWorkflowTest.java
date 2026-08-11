@@ -4,6 +4,8 @@ import java.time.Duration;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.workflow.WorkflowProvider;
+import org.keycloak.models.workflow.WorkflowStateProvider;
 import org.keycloak.models.workflow.client.DisableClientStepProviderFactory;
 import org.keycloak.models.workflow.events.ClientActivityWorkflowEventFactory;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
@@ -22,6 +24,8 @@ import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -39,14 +43,7 @@ public class ClientActivityWorkflowTest extends AbstractWorkflowTest {
 
     @Test
     public void testActivateWorkflowOnClientActivity() {
-        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(ClientActivityWorkflowEventFactory.ID)
-                .concurrency().restartInProgress("true") // this setting enables restarting the workflow
-                .withSteps(
-                        WorkflowStepRepresentation.create().of(DisableClientStepProviderFactory.ID)
-                                .after(Duration.ofDays(5))
-                                .build()
-                ).build()).close();
+        createWorkflow();
 
         // login with alice - the login event carries the client, so this attaches the workflow to the
         // client used for the login and schedules the first step
@@ -75,6 +72,35 @@ public class ClientActivityWorkflowTest extends AbstractWorkflowTest {
         runScheduledSteps(Duration.ofDays(10));
 
         assertClientEnabled(false, "phase3: step due after day 9");
+    }
+
+    @Test
+    public void testFailedLoginDoesNotActivateWorkflow() {
+        createWorkflow();
+
+        // a failed attempt carries the client on the error event but must not activate the workflow -
+        // otherwise spamming bad credentials against a dormant client would keep its idle clock alive
+        oauth.openLoginForm();
+        loginPage.fillLogin(userAlice.getUsername(), "wrong-password");
+        loginPage.submit();
+
+        runOnServer.run((session -> {
+            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+            WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
+            provider.getWorkflows().forEach(workflow ->
+                    assertThat(stateProvider.getScheduledStepsByWorkflow(workflow.getId()).toList(), empty()));
+        }));
+    }
+
+    private void createWorkflow() {
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(ClientActivityWorkflowEventFactory.ID)
+                .concurrency().restartInProgress("true") // this setting enables restarting the workflow
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(DisableClientStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build()
+                ).build()).close();
     }
 
     private void login() {
