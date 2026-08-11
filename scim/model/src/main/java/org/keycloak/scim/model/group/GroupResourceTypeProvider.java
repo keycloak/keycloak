@@ -192,8 +192,11 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
         // unaffected. When FGAP is disabled, all operators are allowed.
         BiPredicate<String, String> authCheck = (path, value) -> {
             if ("members.value".equalsIgnoreCase(path) || "members".equalsIgnoreCase(path)) {
+                if (!realm.isAdminPermissionsEnabled()) {
+                    return true;
+                }
                 if (value == null) {
-                    return !realm.isAdminPermissionsEnabled();
+                    return false;
                 }
                 UserModel user = session.users().getUserById(realm, value);
                 return user != null && permissions.hasPermission(user, AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
