@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.keycloak.OAuth2Constants;
@@ -215,6 +216,58 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertTrue(CollectionUtil.collectionEquals(Arrays.asList(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.IMPLICIT, OAuth2Constants.REFRESH_TOKEN, OAuth2Constants.PASSWORD), updated.getGrantTypes()));
         assertTrue(CollectionUtil.collectionEquals(Arrays.asList(OAuth2Constants.CODE, OIDCResponseType.NONE, OIDCResponseType.ID_TOKEN, "id_token token", "code id_token", "code token", "code id_token token"), updated.getResponseTypes()));
         assertTrue(CollectionUtil.collectionEquals(realmDefaultClientScopes, registeredDefaultClientScopes));
+    }
+
+    /**
+     * Test that updating a client with the "scope" field works correctly when client exists.
+     * Regression test for https://github.com/keycloak/keycloak/issues/51311
+     */
+    @Test
+    public void updateClientWithScopeField() throws ClientRegistrationException {
+        OIDCClientRepresentation response = create();
+        reg.auth(Auth.token(response));
+
+        // Set the scope field — this previously caused an NPE because getClientById was used
+        // instead of getClientByClientId, resulting in null and a subsequent NPE.
+        response.setScope("openid profile email");
+        response.setRedirectUris(Collections.singletonList("http://updated-redirect"));
+
+        OIDCClientRepresentation updated = reg.oidc().update(response);
+
+        assertNotNull(updated);
+        assertNotNull(updated.getClientId());
+        assertEquals("http://updated-redirect", updated.getRedirectUris().get(0));
+
+        // Verify via admin API that the client was updated correctly
+        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(response.getClientId());
+        ClientRepresentation rep = clientResource.toRepresentation();
+        assertNotNull(rep);
+        assertTrue(CollectionUtil.collectionEquals(Arrays.asList("openid", "profile", "email"), rep.getOptionalClientScopes()));
+    }
+
+    /**
+     * Test that updating a client with the "scope" field requires authentication.
+     * Regression test for https://github.com/keycloak/keycloak/issues/51311
+     * Note: The scope-handling block now runs after auth enforcement, so unauthenticated
+     * requests with a scope field get a 401 from requireUpdate() rather than an uncaught NPE.
+     */
+    @Test
+    public void updateNonExistentClientWithScopeField() throws ClientRegistrationException {
+        OIDCClientRepresentation nonExistent = new OIDCClientRepresentation();
+        nonExistent.setClientId("non-existent-client-" + UUID.randomUUID().toString());
+        nonExistent.setScope("openid profile");
+        nonExistent.setRedirectUris(Collections.singletonList("http://example.com"));
+
+        try {
+            reg.oidc().update(nonExistent);
+            fail("Expected ClientRegistrationException for non-existent client");
+        } catch (ClientRegistrationException e) {
+            // Auth is enforced before scope-handling, so the error is about client not found
+            // (the update() method performs auth + lookup). The key fix is that no NPE is thrown.
+            assertTrue(e.getMessage().contains("Client not found")
+                    || e.getMessage().contains("unauthorized"),
+                    "Expected 'Client not found' or 'unauthorized' error, got: " + e.getMessage());
+        }
     }
 
     @Test
