@@ -216,6 +216,12 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
         RealmModel realm = session.getContext().getRealm();
         Permissions permissions = session.getContext().getPermissions();
 
+        // When FGAP is enabled, only the eq operator is supported for groups.value filters. The callback
+        // verifies that the caller has VIEW permission on the specific group being matched. Other operators
+        // (ne, pr, gt, co, etc.) cannot be safely authorized through value comparison because they can match
+        // rows the caller is not permitted to see, so they silently return empty results for this path.
+        // This restriction only applies to the groups.value/groups paths; all other filter attributes are
+        // unaffected. When FGAP is disabled, all operators are allowed.
         BiPredicate<String, String> authCheck = (path, value) -> {
             if ("groups.value".equalsIgnoreCase(path) || "groups".equalsIgnoreCase(path)) {
                 if (value == null) {
