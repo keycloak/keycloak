@@ -26,10 +26,10 @@ import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 
 /**
@@ -121,11 +121,11 @@ public class LDAPUserMultipleCredentialTest extends AbstractLDAPTest {
             loginTotpPage.clickTryAnotherWayLink();
             selectAuthenticatorPage.assertCurrent();
             // make sure password method exists as well
-            Assert.assertEquals(Arrays.asList(SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION, SelectAuthenticatorPage.PASSWORD), selectAuthenticatorPage.getAvailableLoginMethods());
+            Assertions.assertEquals(Arrays.asList(SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION, SelectAuthenticatorPage.PASSWORD), selectAuthenticatorPage.getAvailableLoginMethods());
 
         } finally {
             // Revert flow binding
-            resetDefaultBrowserFlow(testRealm());
+            resetDefaultBrowserFlow(managedRealm.admin());
         }
     }
 

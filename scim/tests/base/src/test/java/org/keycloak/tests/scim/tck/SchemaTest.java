@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest(config = ScimServerConfig.class)
@@ -21,12 +22,16 @@ public class SchemaTest extends AbstractScimTest {
 
     @Test
     public void testGetAllSchemas() {
+        addEnterpriseUserUserProfileAttributes();
+        String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
+        addOrReplaceUPAttribute(customSchema, "myattribute");
+
         ListResponse<Schema> response = client.schemas().getAll();
 
         assertNotNull(response);
         assertNotNull(response.getResources());
-        assertEquals(3, response.getTotalResults());
-        assertEquals(3, response.getResources().size());
+        assertEquals(4, response.getTotalResults());
+        assertEquals(4, response.getResources().size());
 
         // Verify all expected schemas are present
         List<String> schemaIds = response.getResources().stream()
@@ -36,6 +41,41 @@ public class SchemaTest extends AbstractScimTest {
         assertTrue(schemaIds.contains(Scim.USER_CORE_SCHEMA));
         assertTrue(schemaIds.contains(Scim.GROUP_CORE_SCHEMA));
         assertTrue(schemaIds.contains(Scim.ENTERPRISE_USER_SCHEMA));
+        assertTrue(schemaIds.contains(customSchema));
+    }
+
+    @Test
+    public void testSchemasWithNoAttributesNotReturned() {
+        // Extension schemas with no user profile attributes mapped should not be returned
+        // (e.g., EnterpriseUser schema when no UP attributes have the kc.scim.schema.attribute annotation)
+        ListResponse<Schema> response = client.schemas().getAll();
+
+        assertNotNull(response);
+        assertNotNull(response.getResources());
+
+        List<String> schemaIds = response.getResources().stream()
+                .map(Schema::getId)
+                .toList();
+
+        // Core schemas are always present regardless of attributes
+        assertTrue(schemaIds.contains(Scim.USER_CORE_SCHEMA));
+        assertTrue(schemaIds.contains(Scim.GROUP_CORE_SCHEMA));
+
+        // EnterpriseUser schema should not be listed when no UP attributes are mapped to it
+        assertFalse(schemaIds.contains(Scim.ENTERPRISE_USER_SCHEMA),
+                "Schemas with no attributes should not be returned from the /Schemas endpoint");
+
+        // Only core schemas should be returned
+        assertEquals(2, response.getTotalResults());
+
+        // After adding enterprise user attributes, the schema should appear
+        addEnterpriseUserUserProfileAttributes();
+        response = client.schemas().getAll();
+        schemaIds = response.getResources().stream()
+                .map(Schema::getId)
+                .toList();
+        assertTrue(schemaIds.contains(Scim.ENTERPRISE_USER_SCHEMA),
+                "Schema should be returned once attributes are mapped to it");
     }
 
     @Test
@@ -111,6 +151,7 @@ public class SchemaTest extends AbstractScimTest {
 
     @Test
     public void testGetEnterpriseUserSchema() {
+        addEnterpriseUserUserProfileAttributes();
         Schema schema = client.schemas().get(Scim.ENTERPRISE_USER_SCHEMA);
 
         assertNotNull(schema);
@@ -147,6 +188,37 @@ public class SchemaTest extends AbstractScimTest {
     }
 
     @Test
+    public void testGetCustomSchema() {
+        String fooSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
+        addOrReplaceUPAttribute(fooSchema, "myattribute");
+        addOrReplaceUPAttribute(fooSchema, "team");
+
+        String barSchema = "urn:my:params:scim:schemas:extension:other:1.0:User";
+        addOrReplaceUPAttribute(barSchema, "other");
+
+        Schema schema = client.schemas().get(fooSchema);
+        assertNotNull(schema);
+        assertEquals(fooSchema, schema.getId());
+        assertEquals(fooSchema, schema.getName());
+        assertNull(schema.getDescription());
+        assertNotNull(schema.getAttributes());
+        Set<String> attributeNames = schema.getAttributes().stream()
+                .map(Schema.Attribute::getName)
+                .collect(Collectors.toSet());
+        assertEquals(2, attributeNames.size());
+        assertAttribute(findAttribute(schema, "myattribute"), "string", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "team"), "string", false, false, true, "readWrite", "none");
+
+        schema = client.schemas().get(barSchema);
+        attributeNames = schema.getAttributes().stream()
+                .map(Schema.Attribute::getName)
+                .collect(Collectors.toSet());
+        assertEquals(1, attributeNames.size());
+        // Simple string attributes
+        assertAttribute(findAttribute(schema, "other"), "string", false, false, true, "readWrite", "none");
+    }
+
+    @Test
     public void testNoDuplicateAttributes() {
         // Verify that attributes are not duplicated even when multiple SCIM paths
         // map to the same top-level attribute
@@ -168,6 +240,7 @@ public class SchemaTest extends AbstractScimTest {
         assertEquals(1, nameCount, "name attribute should appear exactly once");
 
         // Verify EnterpriseUser manager appears only once
+        addEnterpriseUserUserProfileAttributes();
         Schema enterpriseSchema = client.schemas().get(Scim.ENTERPRISE_USER_SCHEMA);
         List<String> enterpriseNames = enterpriseSchema.getAttributes().stream()
                 .map(Schema.Attribute::getName)

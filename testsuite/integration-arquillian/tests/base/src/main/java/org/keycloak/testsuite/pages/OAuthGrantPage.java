@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -55,8 +55,8 @@ public class OAuthGrantPage extends LanguageComboboxAwarePage {
     }
 
     @Override
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).contains("Grant Access to ");
+    public String getExpectedPageId() {
+        return "login-login-oauth-grant";
     }
 
     public List<String> getDisplayedGrants() {
@@ -73,8 +73,8 @@ public class OAuthGrantPage extends LanguageComboboxAwarePage {
     public void assertGrants(String... expectedGrants) {
         List<String> displayed = getDisplayedGrants();
         List<String> expected = Arrays.asList(expectedGrants);
-        Assert.assertTrue("Not matched grants. Displayed grants: " + displayed + ", expected grants: " + expected,
-                displayed.containsAll(expected) && expected.containsAll(displayed));
+        Assertions.assertTrue(displayed.containsAll(expected) && expected.containsAll(displayed),
+                "Not matched grants. Displayed grants: " + displayed + ", expected grants: " + expected);
     }
 
 }

@@ -16,7 +16,6 @@
  */
 package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -38,8 +37,13 @@ public class CredentialOfferState {
     private CredentialsOffer credentialsOffer;
     private String targetClientId;
     private String targetUserId;
+    private String originatingUserId;
+    private String originatingUserSessionId;
+    private Boolean originatingUserSessionOffline;
+    private Long originatingUserPasswordCredentialCreatedDate;
     private String nonce;
     private String txCode;
+    private Long createdAt;
     private long expiresAt;
     private List<OID4VCAuthorizationDetail> authDetails;
 
@@ -66,8 +70,10 @@ public class CredentialOfferState {
         this.credentialsOffer = credOffer;
         this.targetClientId = clientId;
         this.targetUserId = userId;
+        this.createdAt = Time.currentTimeSeconds();
         this.expiresAt = expiresAt;
-        this.nonce = Base64Url.encode(RandomSecret.createRandomSecret(64));
+        String nonceSecret = Base64Url.encode(RandomSecret.createRandomSecret(64));
+        this.nonce = CredentialOfferLookupKey.embed(nonceSecret, credentialsOfferId);
         if (authDetailsProvider != null) {
             this.authDetails = authDetailsProvider.apply(credentialsOfferId);
         }
@@ -94,6 +100,38 @@ public class CredentialOfferState {
         return targetUserId;
     }
 
+    public String getOriginatingUserId() {
+        return originatingUserId;
+    }
+
+    public void setOriginatingUserId(String originatingUserId) {
+        this.originatingUserId = originatingUserId;
+    }
+
+    public String getOriginatingUserSessionId() {
+        return originatingUserSessionId;
+    }
+
+    public void setOriginatingUserSessionId(String originatingUserSessionId) {
+        this.originatingUserSessionId = originatingUserSessionId;
+    }
+
+    public Boolean getOriginatingUserSessionOffline() {
+        return originatingUserSessionOffline;
+    }
+
+    public void setOriginatingUserSessionOffline(Boolean originatingUserSessionOffline) {
+        this.originatingUserSessionOffline = originatingUserSessionOffline;
+    }
+
+    public Long getOriginatingUserPasswordCredentialCreatedDate() {
+        return originatingUserPasswordCredentialCreatedDate;
+    }
+
+    public void setOriginatingUserPasswordCredentialCreatedDate(Long originatingUserPasswordCredentialCreatedDate) {
+        this.originatingUserPasswordCredentialCreatedDate = originatingUserPasswordCredentialCreatedDate;
+    }
+
     public String getNonce() {
         return nonce;
     }
@@ -102,12 +140,18 @@ public class CredentialOfferState {
         return txCode;
     }
 
+    public Long getCreatedAt() {
+        return createdAt;
+    }
+
     public long getExpiresAt() {
         return expiresAt;
     }
 
     public List<OID4VCAuthorizationDetail> getAuthorizationDetails() {
-        return Collections.unmodifiableList(authDetails != null ? authDetails : List.of());
+        return Optional.ofNullable(authDetails).orElse(List.of()).stream()
+                .map(OID4VCAuthorizationDetail::clone)
+                .toList();
     }
 
     public OID4VCAuthorizationDetail getAuthorizationDetails(String credConfigId) {
@@ -118,9 +162,29 @@ public class CredentialOfferState {
                 .orElse(null);
     }
 
+    public boolean matchAuthorizationDetails(List<OID4VCAuthorizationDetail> otherAuthDetails) {
+        if (authDetails == null && otherAuthDetails == null) { return true; }
+        if (authDetails == null || otherAuthDetails == null) { return false; }
+        if (authDetails.size() != otherAuthDetails.size()) { return false; }
+        for (int i = 0; i < authDetails.size(); i++) {
+            var authDetail = authDetails.get(i);
+            var otherDetail = otherAuthDetails.get(i);
+            if (otherDetail.getIssuedCredentialId() != null) {
+                otherDetail = otherDetail.clone();
+                otherDetail.setIssuedCredentialId(null);
+            }
+            // Unexpected issued_credential_id in authorization_details
+            assert authDetail.getIssuedCredentialId() == null;
+            if (!authDetail.equals(otherDetail)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @JsonIgnore
     public boolean isExpired() {
-        int currentTime = Time.currentTime();
+        long currentTime = Time.currentTimeSeconds();
         return expiresAt <= currentTime;
     }
 

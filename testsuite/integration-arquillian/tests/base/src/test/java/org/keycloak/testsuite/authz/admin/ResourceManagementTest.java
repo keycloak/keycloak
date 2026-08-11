@@ -39,12 +39,12 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  *
@@ -175,7 +175,7 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
         permission.addResource(r1.getName());
         permission.addScope("GET");
 
-        getClientResource().authorization().permissions().scope().create(permission);
+        getClientResource().authorization().permissions().scope().create(permission).close();
 
         ResourceRepresentation r2 = new ResourceRepresentation();
 
@@ -191,7 +191,7 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
         permission.addResource(r2.getName());
         permission.addScope("GET");
 
-        getClientResource().authorization().permissions().scope().create(permission);
+        getClientResource().authorization().permissions().scope().create(permission).close();
 
         ResourceRepresentation rInstance = new ResourceRepresentation();
 
@@ -223,8 +223,10 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
         ResourceRepresentation newResource = createResource();
 
         try {
+            newResource.setId(null);
+            newResource.setOwner((ResourceOwnerRepresentation) null);
             doCreateResource(newResource);
-            fail("Can not create resources with the same name and owner");
+            fail("Cannot create resources with the same name and owner");
         } catch (Exception e) {
             assertEquals(HttpResponseException.class, e.getCause().getClass());
             assertEquals(409, HttpResponseException.class.cast(e.getCause()).getStatusCode());
@@ -443,4 +445,85 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
         ResourcesResource resources = getClientResource().authorization().resources();
         resources.resource(resource.getId()).remove();
     }
+
+    @Test
+    public void failCreateWithMalformedUriTemplate() {
+        ResourceRepresentation newResource = new ResourceRepresentation();
+
+        newResource.setName("Malformed URI Template Resource");
+        newResource.setUris(new HashSet<>(Arrays.asList("/api/{clientId")));
+
+        try {
+            doCreateResource(newResource);
+            fail("Cannot create a resource with a malformed URI template");
+        } catch (Exception e) {
+            assertEquals(HttpResponseException.class, e.getCause().getClass());
+            assertEquals(400, HttpResponseException.class.cast(e.getCause()).getStatusCode());
+        }
+    }
+
+    @Test
+    public void failCreateWithSlashInPlaceholderName() {
+        ResourceRepresentation newResource = new ResourceRepresentation();
+
+        newResource.setName("Slash In Placeholder Resource");
+        newResource.setUris(new HashSet<>(Arrays.asList("/api/{client/id}/foo")));
+
+        try {
+            doCreateResource(newResource);
+            fail("Cannot create a resource with a slash inside a placeholder name");
+        } catch (Exception e) {
+            assertEquals(HttpResponseException.class, e.getCause().getClass());
+            assertEquals(400, HttpResponseException.class.cast(e.getCause()).getStatusCode());
+        }
+    }
+
+    @Test
+    public void failCreateWithWildcardInMiddleOfPath() {
+        ResourceRepresentation newResource = new ResourceRepresentation();
+
+        newResource.setName("Wildcard In Middle Resource");
+        newResource.setUris(new HashSet<>(Arrays.asList("/api/*/info")));
+
+        try {
+            doCreateResource(newResource);
+            fail("Cannot create a resource with a wildcard in the middle of a path");
+        } catch (Exception e) {
+            assertEquals(HttpResponseException.class, e.getCause().getClass());
+            assertEquals(400, HttpResponseException.class.cast(e.getCause()).getStatusCode());
+        }
+    }
+
+    @Test
+    public void failCreateWithSuffixPatternInMiddleOfPath() {
+        ResourceRepresentation newResource = new ResourceRepresentation();
+
+        newResource.setName("Suffix Pattern In Middle Resource");
+        newResource.setUris(new HashSet<>(Arrays.asList("/a/b/c/*.html/c/d")));
+
+        try {
+            doCreateResource(newResource);
+            fail("Cannot create a resource with a suffix pattern in the middle of a path");
+        } catch (Exception e) {
+            assertEquals(HttpResponseException.class, e.getCause().getClass());
+            assertEquals(400, HttpResponseException.class.cast(e.getCause()).getStatusCode());
+        }
+    }
+
+    @Test
+    public void failCreateWithMultipleWildcards() {
+        ResourceRepresentation newResource = new ResourceRepresentation();
+
+        newResource.setName("Multiple Wildcards Resource");
+        newResource.setUris(new HashSet<>(Arrays.asList("/api/*/info/*")));
+
+        try {
+            doCreateResource(newResource);
+            fail("Cannot create a resource with multiple wildcards");
+        } catch (Exception e) {
+            assertEquals(HttpResponseException.class, e.getCause().getClass());
+            assertEquals(400, HttpResponseException.class.cast(e.getCause()).getStatusCode());
+        }
+    }
+
 }

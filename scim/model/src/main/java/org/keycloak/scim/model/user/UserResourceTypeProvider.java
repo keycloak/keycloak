@@ -27,7 +27,6 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.UserAdapter;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
-import org.keycloak.scim.filter.FilterUtils;
 import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.filter.ScimFilterParser.FilterContext;
 import org.keycloak.scim.model.filter.ScimAttributeJpaExpressionResolver;
@@ -41,7 +40,6 @@ import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.userprofile.ValidationException.Error;
-import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
@@ -49,7 +47,12 @@ import static org.keycloak.utils.StreamsUtil.closing;
 public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<UserModel, User> implements ScimAttributeJpaExpressionResolver {
 
     public UserResourceTypeProvider(KeycloakSession session) {
-        super(session, new UserCoreModelSchema(session), List.of(new UserEnterpriseModelSchema(session)));
+        super(session, new UserCoreModelSchema(session), List.of(new UserEnterpriseModelSchema(session), new UserExtensionModelSchema(session)));
+    }
+
+    @Override
+    public String getDescription() {
+        return "User Account";
     }
 
     @Override
@@ -99,7 +102,13 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     @Override
     protected UserModel getModel(String id) {
         RealmModel realm = session.getContext().getRealm();
-        return session.users().getUserById(realm, id);
+        UserModel model = session.users().getUserById(realm, id);
+
+        if (model == null || model.getServiceAccountClientLink() == null) {
+            return model;
+        }
+
+        return null;
     }
 
     @Override
@@ -108,17 +117,29 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     }
 
     @Override
+    protected User createResourceTypeInstance(UserModel model, List<String> attributes, List<String> excludedAttributes) {
+        if (session.getContext().getPermissions().isAdminUser(model)) {
+            User user = new User();
+
+            user.addSchema(getSchema());
+            user.setId(model.getId());
+            user.setUserName(model.getUsername());
+
+            return user;
+        }
+        return super.createResourceTypeInstance(model, attributes, excludedAttributes);
+    }
+
+    @Override
     protected Stream<UserModel> getModels(SearchRequest searchRequest) {
         RealmModel realm = session.getContext().getRealm();
         Integer firstResult = searchRequest.getStartIndex() != null ? searchRequest.getStartIndex() - 1 : null;
         Integer maxResults = searchRequest.getCount();
-        maxResults = maxResults != null ? Math.min(maxResults, DEFAULT_MAX_RESULTS) : DEFAULT_MAX_RESULTS;
+        maxResults = maxResults != null ? Math.max(0, Math.min(maxResults, DEFAULT_MAX_RESULTS)) : DEFAULT_MAX_RESULTS;
 
-        if (StringUtil.isNotBlank(searchRequest.getFilter())) {
-            // parse filter into AST
-            ScimFilterParser.FilterContext filterContext = FilterUtils.parseFilter(searchRequest.getFilter());
+        ScimFilterParser.FilterContext filterContext = searchRequest.getFilterContext();
 
-            // execute JPA query with filter
+        if (filterContext != null) {
             EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<UserEntity> query = cb.createQuery(UserEntity.class);
@@ -129,7 +150,6 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
             // apply distinct and order by username to ensure consistency with no-filter case
             query.where(predicates).distinct(true).orderBy(cb.asc(root.get("username")));
 
-            // execute query and convert to UserModel stream
             return closing(paginateQuery(em.createQuery(query), firstResult, maxResults).getResultStream()
                     .map(entity -> new UserAdapter(session, realm, em, entity)));
         } else {
@@ -140,11 +160,9 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     @Override
     public Long count(SearchRequest searchRequest) {
         RealmModel realm = session.getContext().getRealm();
-        if (StringUtil.isNotBlank(searchRequest.getFilter())) {
-            // parse filter into AST
-            ScimFilterParser.FilterContext filterContext = FilterUtils.parseFilter(searchRequest.getFilter());
+        ScimFilterParser.FilterContext filterContext = searchRequest.getFilterContext();
 
-            // execute JPA count query with filter
+        if (filterContext != null) {
             EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<Long> query = cb.createQuery(Long.class);
@@ -217,5 +235,10 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
             return join.get("groupId");
         }
         return null;
+    }
+
+    @Override
+    protected boolean isManageable(UserModel model) {
+        return !session.getContext().getPermissions().isAdminUser(model);
     }
 }

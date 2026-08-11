@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -18,6 +19,7 @@ import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionsUtil;
 import org.keycloak.config.TransactionOptions;
+import org.keycloak.config.WildcardOptionsUtil;
 import org.keycloak.config.database.Database;
 import org.keycloak.config.database.Database.Vendor;
 import org.keycloak.quarkus.runtime.cli.Picocli;
@@ -32,6 +34,7 @@ import io.smallrye.config.ConfigValue;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.config.DatabaseOptions.DB;
+import static org.keycloak.config.DatabaseOptions.DB_KIND;
 import static org.keycloak.config.DatabaseOptions.DB_MTLS_KEY_STORE_FILE;
 import static org.keycloak.config.DatabaseOptions.DB_MTLS_KEY_STORE_PASSWORD;
 import static org.keycloak.config.DatabaseOptions.DB_MTLS_KEY_STORE_TYPE;
@@ -42,10 +45,6 @@ import static org.keycloak.config.DatabaseOptions.DB_TLS_TRUST_STORE_FILE;
 import static org.keycloak.config.DatabaseOptions.DB_TLS_TRUST_STORE_PASSWORD;
 import static org.keycloak.config.DatabaseOptions.DB_TLS_TRUST_STORE_TYPE;
 import static org.keycloak.config.DatabaseOptions.DB_URL;
-import static org.keycloak.config.DatabaseOptions.Datasources.OPTIONS_DATASOURCES;
-import static org.keycloak.config.DatabaseOptions.Datasources.getDatasourceOption;
-import static org.keycloak.config.DatabaseOptions.Datasources.getKeyForDatasource;
-import static org.keycloak.config.DatabaseOptions.Datasources.getNamedKey;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMappers.Datasources.appendDatasourceMappers;
@@ -54,10 +53,14 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     private static final Option<String> SYNTHETIC_RUNTIME_DB_OPTION = DB.toBuilder().synthetic().buildTime(false).build();
     public static final String PG_TARGET_SERVER_TYPE = "quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType";
+    public static final String PG_LOG_SERVER_ERROR_DETAIL = "quarkus.datasource.jdbc.additional-jdbc-properties.logServerErrorDetail";
     public static final String MSSQL_SEND_STRING_PARAMETER_AS_UNICODE = "quarkus.datasource.jdbc.additional-jdbc-properties.sendStringParametersAsUnicode";
     public static final String CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.connectTimeout";
+    public static final String SOCKET_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.socketTimeout";
     public static final String ORACLEDB_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.oracle.net.CONNECT_TIMEOUT";
+    public static final String ORACLEDB_CONNECTION_PROPERTIES = "quarkus.datasource.jdbc.additional-jdbc-properties.ConnectionProperties";
     public static final String MSSQL_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.loginTimeout";
+    private static final String ORACLE_NET_CONNECT_TIMEOUT = "oracle.net.CONNECT_TIMEOUT";
     public static final String JDBC_LOGIN_TIMEOUT = "quarkus.datasource.jdbc.login-timeout";
     public static final String JDBC_ACQUISITION_TIMEOUT = "quarkus.datasource.jdbc.acquisition-timeout";
 
@@ -72,7 +75,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
 
     @Override
     public List<PropertyMapper<?>> getPropertyMappers() {
-        List<PropertyMapper<?>> mappers = List.of(
+        List<PropertyMapper<?>> allSourceMappers = List.of(
                 fromOption(DatabaseOptions.DB_DIALECT)
                         .mapFrom(DB, DatabasePropertyMappers::transformDialect)
                         .build(),
@@ -80,11 +83,6 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .mapFrom(DB, DatabasePropertyMappers::getXaOrNonXaDriver)
                         .to("quarkus.datasource.jdbc.driver")
                         .paramLabel("driver")
-                        .build(),
-                fromOption(DB)
-                        .to("quarkus.datasource.db-kind")
-                        .transformer(DatabasePropertyMappers::toDatabaseKind)
-                        .paramLabel("vendor")
                         .build(),
                 fromOption(DatabaseOptions.DB_URL)
                         .to("quarkus.datasource.jdbc.url")
@@ -105,12 +103,25 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getConnectTimeout(EnumSet.of(Database.Vendor.MYSQL, Database.Vendor.MARIADB, Database.Vendor.POSTGRES, Database.Vendor.TIDB), "connectTimeout"))
                         .build(),
                 fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(ORACLEDB_CONNECTION_PROPERTIES)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getOracleConnectTimeout(true))
+                        .build(),
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
                         .to(ORACLEDB_CONNECT_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getConnectTimeout(EnumSet.of(Database.Vendor.ORACLE), "oracle.net.CONNECT_TIMEOUT"))
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getOracleConnectTimeout(false))
                         .build(),
                 fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
                         .to(MSSQL_CONNECT_TIMEOUT)
                         .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getConnectTimeout(EnumSet.of(Database.Vendor.MSSQL), "loginTimeout"))
+                        .build(),
+                /* For MySQL based databases, setting the login timeout is not sufficient as there are some additional SQL statements running
+                   directly after the login. Once the connection is later acquired for a transaction, the UpdateSocketTimeoutOnConnectionAcquireInterceptor
+                   will then later overwrite the socket timeout.
+                   See https://github.com/keycloak/keycloak/issues/47174 for the discussion.
+                 */
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(SOCKET_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getSocketTimeout(EnumSet.of(Database.Vendor.MYSQL, Database.Vendor.MARIADB, Database.Vendor.TIDB), "socketTimeout"))
                         .build(),
                 fromOption(DatabaseOptions.DB_URL_HOST)
                         .paramLabel("hostname")
@@ -149,18 +160,10 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .to("quarkus.datasource.jdbc.max-size")
                         .paramLabel("size")
                         .build(),
-                fromOption(DatabaseOptions.DB_POOL_MAX_LIFETIME)
-                        .to("quarkus.datasource.jdbc.max-lifetime")
-                        .mapFrom(DB, DatabasePropertyMappers::transformPoolMaxLifetime)
-                        .paramLabel("duration")
-                        .build(),
                 fromOption(DatabaseOptions.DB_SQL_JPA_DEBUG)
                         .build(),
                 fromOption(DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES)
                         .paramLabel("milliseconds")
-                        .build(),
-                fromOption(DatabaseOptions.DB_ENABLED_DATASOURCE)
-                        .to("quarkus.datasource.\"<datasource>\".active")
                         .build(),
                 // Database TLS configuration
                 fromOption(DB_TLS_MODE)
@@ -240,19 +243,43 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 setInputTlsJdbcProperty(DB_MTLS_KEY_STORE_PASSWORD, "sslpassword", EnumSet.of(Database.Vendor.POSTGRES))
         );
 
-        List<PropertyMapper<?>> result = appendDatasourceMappers(mappers, Map.of(
+        List<PropertyMapper<?>> result = appendDatasourceMappers(allSourceMappers, Map.of(
                 // Inherit options from the DB mappers
-                DB, PropertyMapper.Builder::removeMapFrom,
                 DB_POOL_INITIAL_SIZE, mapper -> mapper.mapFrom(DB_POOL_INITIAL_SIZE),
                 DB_POOL_MAX_SIZE, mapper -> mapper.mapFrom(DB_POOL_MAX_SIZE)
         ));
 
-        // finally add mappers that aren't intended to work with other datasources
+        // finally add mappers that aren't intended to work with all datasources
         // - also this usage of isEnabled won't work correctly with wildcard mappers
         result.addAll(List.of(
+                fromOption(DB)
+                        .to("quarkus.datasource.db-kind")
+                        .transformer(DatabasePropertyMappers::toDatabaseKind)
+                        .paramLabel("vendor")
+                        .build(),
+                fromOption(DB_KIND)
+                        .to("quarkus.datasource.\"<datasource>\".db-kind")
+                        .transformer(DatabasePropertyMappers::toDatabaseKind)
+                        .paramLabel("vendor")
+                        .build(),
+                fromOption(DatabaseOptions.DB_HEALTH_EXCLUDE)
+                        .to("quarkus.datasource.\"<datasource>\".health-exclude")
+                        .build(),
+                fromOption(DatabaseOptions.DB_POOL_MAX_LIFETIME)
+                        .to("quarkus.datasource.jdbc.max-lifetime")
+                        .mapFrom(DB, DatabasePropertyMappers::transformPoolMaxLifetime)
+                        .paramLabel("duration")
+                        .build(),
+                fromOption(DatabaseOptions.DB_ENABLED_DATASOURCE)
+                        .to("quarkus.datasource.\"<datasource>\".active")
+                        .build(),
                 fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> "primary")
                         .to(PG_TARGET_SERVER_TYPE)
                         .isEnabled(DatabasePropertyMappers::isPostgresqlTargetServerTypeEnabled)
+                        .build(),
+                fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> "false")
+                        .to(PG_LOG_SERVER_ERROR_DETAIL)
+                        .isEnabled(DatabasePropertyMappers::isPostgresqlLogServerErrorDetailEnabled)
                         .build(),
                 fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> "false")
                         .to(MSSQL_SEND_STRING_PARAMETER_AS_UNICODE)
@@ -300,6 +327,19 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         return dbUrl == null || !dbUrl.contains("targetServerType");
     }
 
+    public static boolean isPostgresqlLogServerErrorDetailEnabled() {
+        String db = Configuration.getConfigValue(DB).getValue();
+        Database.Vendor vendor = Database.getVendor(db).orElse(null);
+        if (vendor != Database.Vendor.POSTGRES) {
+            return false;
+        }
+
+        String dbUrl = Configuration.getConfigValue(DatabaseOptions.DB_URL).getValue();
+
+        // logServerErrorDetail already set to same or different value in db-url, ignore
+        return dbUrl == null || !dbUrl.contains("logServerErrorDetail");
+    }
+
     public static boolean isMssqlSendStringParametersAsUnicode() {
         String db = Configuration.getConfigValue(DB).getValue();
         Database.Vendor vendor = Database.getVendor(db).orElse(null);
@@ -327,31 +367,95 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
             String db = getDatasourceOptionValue(DB, datasource).orElse(null);
             Database.Vendor vendor = Database.getVendor(db).orElse(null);
 
-            if (!validForVendors.contains(vendor)) {
-                // this jdbc property is not for this vendor
-                return null;
-            }
-
-            String dbDriver = getDatasourceOptionValue(DatabaseOptions.DB_DRIVER, datasource).orElse(null);
-            if (!Objects.equals(Database.getDriver(db, true).orElse(null), dbDriver) &&
-                    !Objects.equals(Database.getDriver(db, false).orElse(null), dbDriver)) {
-                // Custom JDBC driver (e.g. AWS JDBC Wrapper) — do not inject defaults
-                return null;
-            }
-
-            String dbUrl = findDatabaseUrl(datasource).orElse("");
-            String dbUrlProperties = getDatasourceOptionValue(DatabaseOptions.DB_URL_PROPERTIES, datasource).orElse("");
-
-            // Property already set explicitly by the user — do not override
-            if  (dbUrl.contains(timeoutProperty) || dbUrlProperties.contains(timeoutProperty)) {
+            if (checkSettingsAndVendor(validForVendors, timeoutProperty, datasource, vendor, db)) {
                 return null;
             }
 
             if (vendor == Vendor.MSSQL || vendor == Vendor.POSTGRES) {
                 return durationToSeconds(value);
             }
+            if (vendor == Vendor.MYSQL || vendor == Vendor.MARIADB || vendor == Vendor.TIDB) {
+                return durationToMillis(value);
+            }
+
+            // We don't know if it is seconds or milliseconds for other databases.
+            throw new IllegalArgumentException("Vendor " + vendor + " not supported for socket timeout calculation");
+        };
+    }
+
+    private static ValueMapper getOracleConnectTimeout(boolean forXa) {
+        return (String datasource, String value, ConfigSourceInterceptorContext context) -> {
+            String db = getDatasourceOptionValue(DB, datasource).orElse(null);
+            Database.Vendor vendor = Database.getVendor(db).orElse(null);
+
+            if (checkSettingsAndVendor(EnumSet.of(Database.Vendor.ORACLE), ORACLE_NET_CONNECT_TIMEOUT, datasource, vendor, db)) {
+                return null;
+            }
+
+            var key = StringUtil.isNotBlank(datasource) ? TransactionOptions.getNamedTxXADatasource(datasource) : TransactionOptions.TRANSACTION_XA_ENABLED.getKey();
+            boolean isXaEnabled = Configuration.isKcPropertyTrue(key);
+
+            if (forXa != isXaEnabled) {
+                return null;
+            }
+
+            if (forXa) {
+                String connectionPropertiesKey = StringUtil.isNotBlank(datasource)
+                        ? "quarkus.datasource.\"" + datasource + "\".jdbc.additional-jdbc-properties.ConnectionProperties"
+                        : ORACLEDB_CONNECTION_PROPERTIES;
+                ConfigValue existing = context.proceed(connectionPropertiesKey);
+                if (existing != null && existing.getValue() != null) {
+                    if (!existing.getValue().contains(ORACLE_NET_CONNECT_TIMEOUT)) {
+                        log.warnf("Custom ConnectionProperties does not contain '%s'; the socket connect timeout will not be set.",
+                                ORACLE_NET_CONNECT_TIMEOUT);
+                    }
+                    return null;
+                }
+                return ORACLE_NET_CONNECT_TIMEOUT + "=" + durationToMillis(value);
+            }
             return durationToMillis(value);
         };
+    }
+
+    private static ValueMapper getSocketTimeout(Collection<Database.Vendor> validForVendors, String timeoutProperty) {
+        return (String datasource, String value, ConfigSourceInterceptorContext context) -> {
+            String db = getDatasourceOptionValue(DB, datasource).orElse(null);
+            Database.Vendor vendor = Database.getVendor(db).orElse(null);
+
+            if (checkSettingsAndVendor(validForVendors, timeoutProperty, datasource, vendor, db)) {
+                return null;
+            }
+
+            if (vendor == Vendor.MYSQL || vendor == Vendor.MARIADB || vendor == Vendor.TIDB) {
+                return durationToMillis(value);
+            }
+
+            // We don't know if it is seconds or milliseconds for other database.
+            throw new IllegalArgumentException("Vendor " + vendor + " not supported for socket timeout calculation");
+        };
+    }
+
+    private static boolean checkSettingsAndVendor(Collection<Vendor> validForVendors, String timeoutProperty, String datasource, Vendor vendor, String db) {
+        if (!validForVendors.contains(vendor)) {
+            // this jdbc property is not for this vendor
+            return true;
+        }
+
+        String dbDriver = getDatasourceOptionValue(DatabaseOptions.DB_DRIVER, datasource).orElse(null);
+        if (!Objects.equals(Database.getDriver(db, true).orElse(null), dbDriver) &&
+                !Objects.equals(Database.getDriver(db, false).orElse(null), dbDriver)) {
+            // Custom JDBC driver (e.g. AWS JDBC Wrapper) — do not inject defaults
+            return true;
+        }
+
+        String dbUrl = findDatabaseUrl(datasource).orElse("");
+        String dbUrlProperties = getDatasourceOptionValue(DatabaseOptions.DB_URL_PROPERTIES, datasource).orElse("");
+
+        // Property already set explicitly by the user — do not override
+        if  (dbUrl.contains(timeoutProperty) || dbUrlProperties.contains(timeoutProperty)) {
+            return true;
+        }
+        return false;
     }
 
     private static String durationToMillis(String value) {
@@ -362,62 +466,8 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         return String.valueOf(DurationConverter.parseDuration(value).toSeconds());
     }
 
-    /**
-     * Starting with H2 version 2.x, marking "VALUE" as a non-keyword is necessary as some columns are named "VALUE" in the Keycloak schema.
-     * <p />
-     * Alternatives considered and rejected:
-     * <ul>
-     * <li>customizing H2 Database dialect -&gt; wouldn't work for existing Liquibase scripts.</li>
-     * <li>adding quotes to <code>@Column(name="VALUE")</code> annotations -&gt; would require testing for all DBs, wouldn't work for existing Liquibase scripts.</li>
-     * </ul>
-     * Downsides of this solution: Release notes needed to point out that any H2 JDBC URL parameter with <code>NON_KEYWORDS</code> needs to add the keyword <code>VALUE</code> manually.
-     * @return JDBC URL with <code>NON_KEYWORDS=VALUE</code> appended if the URL doesn't contain <code>NON_KEYWORDS=</code> yet
-     */
-    private static String addH2NonKeywords(String jdbcUrl) {
-        if (!jdbcUrl.contains("NON_KEYWORDS=")) {
-            jdbcUrl = jdbcUrl + ";NON_KEYWORDS=VALUE";
-        }
-        return jdbcUrl;
-    }
-
-    /**
-     * Required so that the H2 db instance is closed only when the Agroal connection pool is closed during
-     * Keycloak shutdown. We cannot rely on the default H2 ShutdownHook as this can result in the DB being
-     * closed before dependent resources, e.g. JDBC_PING2, are shutdown gracefully. This solution also
-     * requires the Agroal min-pool connection size to be at least 1.
-     */
-    private static String addH2CloseOnExit(String jdbcUrl) {
-        if (!jdbcUrl.contains("DB_CLOSE_ON_EXIT=")) {
-            jdbcUrl = jdbcUrl + ";DB_CLOSE_ON_EXIT=FALSE";
-        }
-        if (!jdbcUrl.contains("DB_CLOSE_DELAY=")) {
-            jdbcUrl = jdbcUrl + ";DB_CLOSE_DELAY=0";
-        }
-        return jdbcUrl;
-    }
-
-    private static String amendH2(String jdbcUrl) {
-        return addH2CloseOnExit(addH2NonKeywords(jdbcUrl));
-    }
-
     private static String getDatabaseUrl(String name, String value, ConfigSourceInterceptorContext c) {
-        String url = Database.getDefaultUrl(name, value).orElse(null);
-        if (isDevModeDatabase(value)) {
-            String key = Optional.ofNullable(name).map(
-                            n -> DatabaseOptions.Datasources.getNamedKey(DatabaseOptions.DB_URL_PROPERTIES, n).orElseThrow())
-                    .orElse(DatabaseOptions.DB_URL_PROPERTIES.getKey());
-            String urlProps = Configuration.getKcConfigValue(key).getValue();
-            if (urlProps != null) {
-                url += urlProps;
-            }
-            url = amendH2(url);
-        } else if (Database.getVendor(value).filter(Vendor.ORACLE::equals).isPresent()) {
-            var tlsMode = getDatabaseTlsMode(name);
-            if (tlsMode != DatabaseOptions.DatabaseTlsMode.DISABLED) {
-                url = Database.ORACLE_URL_PREFIX + "tcps:" + url.substring(Database.ORACLE_URL_PREFIX.length());
-            }
-        }
-        return url;
+        return Database.getDefaultUrl(option -> getDatasourceOptionValue(option, name).orElse(null), name, value).orElse(null);
     }
 
     private static String getXaOrNonXaDriver(String name, String value, ConfigSourceInterceptorContext context) {
@@ -458,31 +508,33 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         };
     }
 
-    public static final class Datasources {
+    public static final class Datasources extends org.keycloak.config.DatabaseOptions.Datasources {
 
         /**
          * Automatically create mappers for datasource options
          */
         static List<PropertyMapper<?>> appendDatasourceMappers(List<PropertyMapper<?>> mappers, Map<Option<?>, Consumer<PropertyMapper.Builder<?>>> transformDatasourceMappers) {
-            List<PropertyMapper<?>> datasourceMappers = new ArrayList<>(OPTIONS_DATASOURCES.size() + mappers.size());
+            List<PropertyMapper<?>> datasourceMappers = new ArrayList<>(mappers.size() * 2);
 
+            Map<String, Option<?>> cachedDatasourceOptions = new HashMap<>();
+            cachedDatasourceOptions.put(DB.getKey(), DB_KIND);
+            mappers.stream().map(PropertyMapper::getOption).forEach(o -> cachedDatasourceOptions.computeIfAbsent(o.getKey(), k -> getDatasourceOption(o)));
+            
             for (var parent : mappers) {
                 var parentOption = parent.getOption();
 
-                var datasourceOption = getDatasourceOption(parentOption);
-                if (datasourceOption.isEmpty()) {
-                    log.debugf("No datasource option found for '%s'", parentOption.getKey());
-                    continue;
-                }
+                var datasourceOption = cachedDatasourceOptions.get(parentOption.getKey());
 
-                var created = fromOption(datasourceOption.get())
+                var created = fromOption(datasourceOption)
                         .isMasked(parent.isMask())
                         .transformer(parent.getMapper());
 
                 if (parent.getMapFrom() != null) {
-                    var wildcardMapFromOption = getKeyForDatasource(parent.getMapFrom())
-                            .orElseThrow(() -> new IllegalArgumentException("Option '%s' in mapFrom() method for mapper '%s' does not have any associated wildcard option".formatted(parent.getMapFrom(), datasourceOption.get().getKey())));
-                    created.wildcardMapFrom(wildcardMapFromOption, parent.getParentMapper() != null ? (name, value, context) -> parent.getParentMapper().map(name, value, context) : null);
+                    Option<?> mapFrom = cachedDatasourceOptions.get(parent.getMapFrom());
+                    if (mapFrom == null) {
+                        throw new IllegalArgumentException("Option '%s' in mapFrom() method for mapper '%s' does not have any associated wildcard option".formatted(parent.getMapFrom(), datasourceOption.getKey()));
+                    }
+                    created.wildcardMapFrom(mapFrom, parent.getParentMapper() != null ? (name, value, context) -> parent.getParentMapper().map(name, value, context) : null);
                 }
 
                 if (parent.getParamLabel() != null) {
@@ -499,7 +551,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                     customTransformer.accept(created);
                 }
 
-                Option<String> primaryOption = getDatasourceOption(DB).orElseThrow();
+                Option<String> primaryOption = DB_KIND;
 
                 PropertyMapper<?> mapper = created.build();
                 // if we're not the DB option, nor mapped directly from the DB option, then
@@ -613,12 +665,11 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         return findTlsTrustStoreFile(datasource).isEmpty() ? value : null;
     }
 
-    private static Optional<String> getDatasourceOptionValue(Option<?> opt, String datasource) {
-        var option = datasource == null ?
-                Optional.of(opt.getKey()) :
-                getNamedKey(opt, datasource);
-        return option.map(Configuration::getKcConfigValue)
-                .map(ConfigValue::getValue);
+    public static Optional<String> getDatasourceOptionValue(Option<?> opt, String datasource) {
+        if (datasource == null) {
+            return Configuration.getOptionalKcValue(opt);
+        }
+        return opt.getWildcardKey().map(k -> WildcardOptionsUtil.getWildcardNamedKey(k, datasource)).flatMap(Configuration::getOptionalKcValue);
     }
 
     private static Optional<String> findDatabaseUrl(String datasource) {
@@ -631,7 +682,6 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
 
     private static DatabaseOptions.DatabaseTlsMode getDatabaseTlsMode(String datasource) {
         return getDatasourceOptionValue(DB_TLS_MODE, datasource)
-                .map(String::toUpperCase)
                 .map(DatabaseOptions.DatabaseTlsMode::fromCliValue)
                 .orElse(DatabaseOptions.DatabaseTlsMode.DISABLED);
     }

@@ -32,12 +32,12 @@ import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.TokenUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.NameValuePair;
@@ -55,11 +55,11 @@ import static org.keycloak.models.Constants.ACCOUNT_CONSOLE_CLIENT_ID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:ssilvert@redhat.com">Stan Silvert</a>
@@ -92,7 +92,7 @@ public class LinkedAccountsRestServiceTest extends AbstractTestRealmKeycloakTest
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         testRealm.getUsers().add(UserBuilder.create().username("no-account-access").password("password").build());
-        testRealm.getUsers().add(UserBuilder.create().username("view-account-access").role("account", "view-profile").password("password").build());
+        testRealm.getUsers().add(UserBuilder.create().username("view-account-access").clientRoles("account", "view-profile").password("password").build());
 
         String[] providers = new String[]{"saml:mysaml:saml-idp", "oidc:myoidc:oidc-idp", "github", "gitlab", "twitter", "facebook", "bitbucket", "microsoft"};
         for (int i = 0; i < providers.length; i++) {
@@ -101,7 +101,7 @@ public class LinkedAccountsRestServiceTest extends AbstractTestRealmKeycloakTest
                     .providerId(idpInfo[0])
                     .alias(idpInfo.length == 1 ? idpInfo[0] : idpInfo[1])
                     .displayName(idpInfo.length == 1 ? null : idpInfo[2])
-                    .setAttribute("guiOrder", String.valueOf(i))
+                    .attribute("guiOrder", String.valueOf(i))
                     .build());
         }
 
@@ -351,7 +351,7 @@ public class LinkedAccountsRestServiceTest extends AbstractTestRealmKeycloakTest
 	}
 
 	private void runUsingShowInAccountConsoleValue(String identityProviderAlias, String showInAccountConsoleValue, ThrowingRunnable runnable) throws IOException {
-		IdentityProviderResource identityProviderResource = testRealm().identityProviders().get(identityProviderAlias);
+		IdentityProviderResource identityProviderResource = managedRealm.admin().identityProviders().get(identityProviderAlias);
 		IdentityProviderRepresentation representation = identityProviderResource.toRepresentation();
 		String attribute = "showInAccountConsole";
 		String genuineValue = representation.getConfig().get(attribute);

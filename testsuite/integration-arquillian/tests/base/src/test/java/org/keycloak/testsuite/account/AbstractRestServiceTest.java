@@ -19,16 +19,17 @@ package org.keycloak.testsuite.account;
 import java.io.IOException;
 import java.util.List;
 
+import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.TokenUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -41,8 +42,10 @@ import org.junit.Test;
 import static org.keycloak.common.Profile.Feature.ACCOUNT_API;
 import static org.keycloak.testsuite.util.oauth.OAuthClient.APP_ROOT;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -83,17 +86,17 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         testRealm.getUsers().add(UserBuilder.create().username("no-account-access").password("password").build());
-        testRealm.getUsers().add(UserBuilder.create().username("view-account-access").role("account", "view-profile").password("password").build());
-        testRealm.getUsers().add(UserBuilder.create().username("view-applications-access").addRoles("user", "offline_access").role("account", "view-applications").role("account", "manage-consent").password("password").build());
-        testRealm.getUsers().add(UserBuilder.create().username("view-consent-access").role("account", "view-consent").password("password").build());
-        testRealm.getUsers().add(UserBuilder.create().username("manage-consent-access").role("account", "manage-consent").role("account", "view-profile").password("password").build());
-        testRealm.getUsers().add(UserBuilder.create().username("manage-account-access").role("account", "view-profile").role("account", "manage-account").addRoles("user", "offline_access").password("password").build());
+        testRealm.getUsers().add(UserBuilder.create().username("view-account-access").clientRoles("account", "view-profile").password("password").build());
+        testRealm.getUsers().add(UserBuilder.create().username("view-applications-access").realmRoles("user", "offline_access").clientRoles("account", "view-applications").clientRoles("account", "manage-consent").password("password").build());
+        testRealm.getUsers().add(UserBuilder.create().username("view-consent-access").clientRoles("account", "view-consent").password("password").build());
+        testRealm.getUsers().add(UserBuilder.create().username("manage-consent-access").clientRoles("account", "manage-consent").clientRoles("account", "view-profile").password("password").build());
+        testRealm.getUsers().add(UserBuilder.create().username("manage-account-access").clientRoles("account", "view-profile").clientRoles("account", "manage-account").realmRoles("user", "offline_access").password("password").build());
 
         org.keycloak.representations.idm.ClientRepresentation inUseApp = ClientBuilder.create().clientId("in-use-client")
                 .id(KeycloakModelUtils.generateId())
                 .name("In Use Client")
                 .baseUrl(inUseClientAppUri)
-                .directAccessGrants()
+                .directAccessGrantsEnabled()
                 .secret("secret1").build();
         testRealm.getClients().add(inUseApp);
 
@@ -101,14 +104,14 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
                 .id(KeycloakModelUtils.generateId())
                 .name("Offline Client")
                 .baseUrl(offlineClientAppUri)
-                .directAccessGrants()
+                .directAccessGrantsEnabled()
                 .secret("secret1").build();
         testRealm.getClients().add(offlineApp);
 
         org.keycloak.representations.idm.ClientRepresentation offlineApp2 = ClientBuilder.create().clientId("offline-client-without-base-url")
                 .id(KeycloakModelUtils.generateId())
                 .name("Offline Client Without Base URL")
-                .directAccessGrants()
+                .directAccessGrantsEnabled()
                 .secret("secret1").build();
         testRealm.getClients().add(offlineApp2);
 
@@ -116,7 +119,7 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
                 .id(KeycloakModelUtils.generateId())
                 .name("Always Display Client")
                 .baseUrl(alwaysDisplayClientAppUri)
-                .directAccessGrants()
+                .directAccessGrantsEnabled()
                 .alwaysDisplayInConsole(true)
                 .secret("secret1").build();
         testRealm.getClients().add(alwaysDisplayApp);
@@ -136,6 +139,14 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
     @Test
     @DisableFeature(value = ACCOUNT_API, skipRestart = true)
     public void testFeatureDoesntWorkWhenDisabled() {
+        checkIfFeatureWorks(false);
+    }
+
+    @Test
+    @DisableFeature(value = ACCOUNT_API, skipRestart = true)
+    public void testVersionedApiDoesntWorkWhenDisabled() {
+        apiVersion = AccountRestApiVersion.DEFAULT.getStrVersion();
+        assertThat(getAccountUrl(""), containsString(apiVersion));
         checkIfFeatureWorks(false);
     }
 

@@ -19,9 +19,11 @@ package org.keycloak.operator.crds.v2beta1.realmimport;
 import org.keycloak.operator.Constants;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.crd.generator.annotation.SchemaSwap;
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -47,6 +49,9 @@ import io.sundr.builder.annotations.BuildableReference;
 @SchemaSwap(originalType = ComponentExportRepresentation.class, fieldName = "subComponents", depth = 10)
 @SchemaSwap(originalType = ScopeRepresentation.class, fieldName = "policies")
 @SchemaSwap(originalType = ScopeRepresentation.class, fieldName = "resources")
+// RawJsonValue is not recognized by the CRD generator as a free-form type; use JsonNode for schema generation
+@SchemaSwap(originalType = RealmRepresentation.class, fieldName = "clientProfiles", targetType = JsonNode.class)
+@SchemaSwap(originalType = RealmRepresentation.class, fieldName = "clientPolicies", targetType = JsonNode.class)
 public class KeycloakRealmImport extends CustomResource<KeycloakRealmImportSpec, KeycloakRealmImportStatus> implements Namespaced {
 
     @JsonIgnore

@@ -36,8 +36,8 @@ import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 
 import com.google.common.collect.ImmutableMap;
 import org.apache.tools.ant.filters.StringInputStream;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.util.KeyUtils.generateNewRealmKey;
 
@@ -47,7 +47,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
 
@@ -206,8 +206,8 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
     public void testKeysDescriptors() throws IOException, ParsingException, URISyntaxException {
         // No keys by default
         SPSSODescriptorType spDescriptor = getExportedSamlProvider();
-        Assert.assertNotNull("KeyDescriptor is null", spDescriptor.getKeyDescriptor());
-        Assert.assertEquals("KeyDescriptor.size", 0, spDescriptor.getKeyDescriptor().size());
+        Assertions.assertNotNull(spDescriptor.getKeyDescriptor(), "KeyDescriptor is null");
+        Assertions.assertEquals(0, spDescriptor.getKeyDescriptor().size(), "KeyDescriptor.size");
 
         // Enable signing for IDP. Only signing key is present
         try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
@@ -215,10 +215,10 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
                 .update())
         {
             spDescriptor = getExportedSamlProvider();
-            Assert.assertEquals("KeyDescriptor.size", 1, spDescriptor.getKeyDescriptor().size());
+            Assertions.assertEquals(1, spDescriptor.getKeyDescriptor().size(), "KeyDescriptor.size");
             Map<String, String> certs = convertCerts(spDescriptor);
-            Assert.assertEquals(1, certs.size());
-            Assert.assertNotNull(certs.get("signing"));
+            Assertions.assertEquals(1, certs.size());
+            Assertions.assertNotNull(certs.get("signing"));
         }
 
         // Enable signing and encryption. Both keys are present and mapped to same realm key
@@ -228,14 +228,14 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
                 .update())
         {
             spDescriptor = getExportedSamlProvider();
-            Assert.assertEquals("KeyDescriptor.size", 2, spDescriptor.getKeyDescriptor().size());
+            Assertions.assertEquals(2, spDescriptor.getKeyDescriptor().size(), "KeyDescriptor.size");
             Map<String, String> certs = convertCerts(spDescriptor);
-            Assert.assertEquals(2, certs.size());
+            Assertions.assertEquals(2, certs.size());
             String signingCert = certs.get("signing");
             String encCert = certs.get("encryption");
-            Assert.assertNotNull(signingCert);
-            Assert.assertNotNull(encCert);
-            Assert.assertNotEquals(signingCert, encCert);
+            Assertions.assertNotNull(signingCert);
+            Assertions.assertNotNull(encCert);
+            Assertions.assertNotEquals(signingCert, encCert);
             hasEncAlgorithms(spDescriptor, SAMLEncryptionAlgorithms.RSA_OAEP.getXmlEncIdentifiers());
         }
 
@@ -247,14 +247,14 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
                 .update())
         {
             spDescriptor = getExportedSamlProvider();
-            Assert.assertEquals("KeyDescriptor.size", 2, spDescriptor.getKeyDescriptor().size());
+            Assertions.assertEquals(2, spDescriptor.getKeyDescriptor().size(), "KeyDescriptor.size");
             Map<String, String> certs = convertCerts(spDescriptor);
-            Assert.assertEquals(2, certs.size());
+            Assertions.assertEquals(2, certs.size());
             String signingCert = certs.get("signing");
             String encCert = certs.get("encryption");
-            Assert.assertNotNull(signingCert);
-            Assert.assertNotNull(encCert);
-            Assert.assertNotEquals(signingCert, encCert);
+            Assertions.assertNotNull(signingCert);
+            Assertions.assertNotNull(encCert);
+            Assertions.assertNotEquals(signingCert, encCert);
             hasEncAlgorithms(spDescriptor, SAMLEncryptionAlgorithms.RSA_OAEP.getXmlEncIdentifiers());
         }
     }

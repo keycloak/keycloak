@@ -29,13 +29,13 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.GroupAdapter;
 import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
-import org.keycloak.scim.filter.FilterUtils;
 import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.model.filter.ScimAttributeJpaExpressionResolver;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
@@ -44,7 +44,6 @@ import org.keycloak.scim.resource.group.Group;
 import org.keycloak.scim.resource.group.Member;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider;
-import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
@@ -52,7 +51,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
 public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<GroupModel, Group> implements ScimAttributeJpaExpressionResolver {
 
     public GroupResourceTypeProvider(KeycloakSession session) {
-        super(session, new GroupCoreModelSchema());
+        super(session, new GroupCoreModelSchema(session));
     }
 
     @Override
@@ -66,11 +65,26 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     }
 
     @Override
+    protected Group createResourceTypeInstance(GroupModel model, List<String> attributes, List<String> excludedAttributes) {
+        if (session.getContext().getPermissions().isAdminGroup(model)) {
+            Group group = new Group();
+
+            group.addSchema(getSchema());
+            group.setId(model.getId());
+            group.setDisplayName(model.getName());
+
+            return group;
+        }
+
+        return super.createResourceTypeInstance(model, attributes, excludedAttributes);
+    }
+
+    @Override
     public Group update(Group resource) {
         List<Member> members = resource.getMembers();
 
         if (!Optional.ofNullable(members).orElse(List.of()).isEmpty()) {
-            throw new ModelValidationException("Managing members on updates are not supported");
+            throw new ModelValidationException("Managing members on updates is not supported");
         }
 
         return super.update(resource);
@@ -87,7 +101,13 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     @Override
     protected GroupModel getModel(String id) {
         RealmModel realm = session.getContext().getRealm();
-        return session.groups().getGroupById(realm, id);
+        GroupModel model = session.groups().getGroupById(realm, id);
+
+        if (model == null || Type.REALM.equals(model.getType())) {
+            return model;
+        }
+
+        return null;
     }
 
     @Override
@@ -100,13 +120,11 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
         RealmModel realm = session.getContext().getRealm();
         Integer firstResult = searchRequest.getStartIndex() != null ? searchRequest.getStartIndex() - 1 : null;
         Integer maxResults = searchRequest.getCount();
-        maxResults = maxResults != null ? Math.min(maxResults, DEFAULT_MAX_RESULTS) : DEFAULT_MAX_RESULTS;
+        maxResults = maxResults != null ? Math.max(0, Math.min(maxResults, DEFAULT_MAX_RESULTS)) : DEFAULT_MAX_RESULTS;
 
-        if (StringUtil.isNotBlank(searchRequest.getFilter())) {
-            // parse filter into AST
-            ScimFilterParser.FilterContext filterContext = FilterUtils.parseFilter(searchRequest.getFilter());
+        ScimFilterParser.FilterContext filterContext = searchRequest.getFilterContext();
 
-            // execute JPA query with filter
+        if (filterContext != null) {
             EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<GroupEntity> query = cb.createQuery(GroupEntity.class);
@@ -116,7 +134,6 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
             // apply distinct and order by name to ensure consistency with no-filter case
             query.where(predicates).distinct(true).orderBy(cb.asc(root.get("name")));
 
-            // execute query and convert to UserModel stream
             return closing(paginateQuery(em.createQuery(query), firstResult, maxResults).getResultStream()
                     .map(entity -> new GroupAdapter(session, realm, em, entity)));
         } else {
@@ -127,11 +144,9 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     @Override
     public Long count(SearchRequest searchRequest) {
         RealmModel realm = session.getContext().getRealm();
-        if (StringUtil.isNotBlank(searchRequest.getFilter())) {
-            // parse filter into AST
-            ScimFilterParser.FilterContext filterContext = FilterUtils.parseFilter(searchRequest.getFilter());
+        ScimFilterParser.FilterContext filterContext = searchRequest.getFilterContext();
 
-            // execute JPA query with filter
+        if (filterContext != null) {
             EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<Long> query = cb.createQuery(Long.class);
@@ -187,5 +202,10 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
             return join.get("user").get("id");
         }
         return null;
+    }
+
+    @Override
+    protected boolean isManageable(GroupModel model) {
+        return !session.getContext().getPermissions().isAdminGroup(model);
     }
 }

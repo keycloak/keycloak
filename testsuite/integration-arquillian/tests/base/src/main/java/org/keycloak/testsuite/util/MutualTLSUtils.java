@@ -47,6 +47,8 @@ public class MutualTLSUtils {
     public static final String OBB_KEYSTOREPATH = System.getProperty("obb.client.certificate.keystore");
     public static final String OBB_KEYSTOREPASSWORD = System.getProperty("obb.client.certificate.keystore.passphrase");
 
+    public static final String CA_CERTIFICATE_SUBJECT_DN = "EMAILADDRESS=contact@keycloak.org, CN=Keycloak CA, OU=Keycloak, O=Red Hat, L=Boston, ST=MA, C=US";
+
     public static CloseableHttpClient newCloseableHttpClientWithDefaultKeyStoreAndTrustStore() {
         return newCloseableHttpClient(DEFAULT_KEYSTOREPATH, DEFAULT_KEYSTOREPASSWORD, DEFAULT_TRUSTSTOREPATH, DEFAULT_TRUSTSTOREPASSWORD);
     }

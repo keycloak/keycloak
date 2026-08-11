@@ -55,7 +55,7 @@ public class SetUserAttributeStepProvider implements WorkflowStepProvider {
                 String key = entry.getKey();
 
                 if (!key.startsWith(CONFIG_AFTER) && !key.startsWith(CONFIG_PRIORITY)) {
-                    log.debugv("Setting attribute {0} to user {1})", key, user.getId());
+                    log.debugv("Setting attribute {0} to user {1}", key, user.getId());
                     user.setAttribute(key, entry.getValue());
                 }
             }

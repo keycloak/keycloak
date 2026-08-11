@@ -465,6 +465,7 @@ public class DefaultAuthenticationFlows {
     }
 
     public static void clientAuthFlow(RealmModel realm) {
+
         AuthenticationFlowModel clients = new AuthenticationFlowModel();
         clients.setAlias(CLIENT_AUTHENTICATION_FLOW);
         clients.setDescription("Base authentication for clients");
@@ -473,6 +474,18 @@ public class DefaultAuthenticationFlows {
         clients.setBuiltIn(true);
         clients = realm.addAuthenticationFlow(clients);
         realm.setClientAuthenticationFlow(clients);
+
+        // Attestation-Based Client Authentication is a stronger authentication method
+        //
+        if (Profile.isFeatureEnabled(Feature.CLIENT_AUTH_ABCA)) {
+            AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
+            execution.setParentFlow(clients.getId());
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE);
+            execution.setAuthenticator("attestation-based");
+            execution.setPriority(5);
+            execution.setAuthenticatorFlow(false);
+            realm.addAuthenticatorExecution(execution);
+        }
 
         AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
         execution.setParentFlow(clients.getId());

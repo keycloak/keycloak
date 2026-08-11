@@ -30,15 +30,17 @@ import org.keycloak.config.HttpAccessLogOptions;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.connections.httpclient.HttpClientBuilder;
 import org.keycloak.cookie.CookieType;
+import org.keycloak.it.jaxrs.filter.TestFilterTestProvider;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.DryRun;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.junit5.extension.StopServer;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
+import org.keycloak.it.junit5.extension.TestProvider;
 import org.keycloak.it.utils.RawDistRootPath;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
-import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.test.junit.main.Launch;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHeaders;
@@ -62,9 +64,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DistributionTest(keepAlive = true)
+@DistributionTest(stopServer = Mode.MANUAL)
 @RawDistOnly(reason = "Too verbose for docker and enough to check raw dist")
 @Tag(DistributionTest.SLOW)
+@TestProvider(TestFilterTestProvider.class)
 public class LoggingDistTest {
 
     @Test
@@ -108,24 +111,22 @@ public class LoggingDistTest {
     }
 
     @Test
-    void testJsonFormatApplied(KeycloakDistribution dist) throws IOException {
-        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
-        FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath());
-        CLIResult cliResult = dist.run("start-dev", "--log-console-output=json");
+    void testJsonFormatApplied(KeycloakRunner runner) throws IOException {
+        runner.getDistribution(RawKeycloakDistribution.class).resetH2Dir();
+        CLIResult cliResult = runner.run("start-dev", "--log-console-output=json");
         cliResult.assertJsonLogDefaultsApplied();
         cliResult.assertStartedDevMode();
-        assertFalse(cliResult.getOutput().contains("UPDATE SUMMARY"));
+        assertFalse(cliResult.getOutput().contains("\"loggerName\":\"liquibase.servicelocator\",\"level\":\"FINE\""));
     }
 
     @Test
-    void testLogLevelSettingsAppliedWhenJsonEnabled(KeycloakDistribution dist) throws IOException {
-        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
-        FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath());
-        CLIResult cliResult = dist.run("start-dev", "--log-level=off,org.keycloak:debug,liquibase:debug", "--log-console-output=json");
+    void testLogLevelSettingsAppliedWhenJsonEnabled(KeycloakRunner runner) throws IOException {
+        runner.getDistribution(RawKeycloakDistribution.class).resetH2Dir();
+        CLIResult cliResult = runner.run("start-dev", "--log-level=off,org.keycloak:debug,liquibase:debug", "--log-console-output=json");
         assertFalse(cliResult.getOutput().contains("\"loggerName\":\"io.quarkus\",\"level\":\"INFO\")"));
         assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.services.resources.KeycloakApplication\",\"level\":\"DEBUG\""));
         assertTrue(cliResult.getOutput().contains("\"loggerName\":\"liquibase.servicelocator\",\"level\":\"FINE\""));
-        assertTrue(cliResult.getOutput().contains("UPDATE SUMMARY"));
+        cliResult.assertStartedDevMode();
     }
 
     @Test
@@ -150,16 +151,16 @@ public class LoggingDistTest {
     }
 
     @Test
-    void failUnknownHandlersInConfFile(KeycloakDistribution dist) {
-        dist.copyOrReplaceFileFromClasspath("/logging/keycloak.conf", Paths.get("conf", "keycloak.conf"));
-        CLIResult cliResult = dist.run("start-dev");
+    void failUnknownHandlersInConfFile(KeycloakRunner runner) {
+        runner.getDistribution(RawKeycloakDistribution.class).copyOrReplaceFileFromClasspath("/logging/keycloak.conf", Paths.get("conf", "keycloak.conf"));
+        CLIResult cliResult = runner.run("start-dev");
         cliResult.assertError("Invalid value for option 'kc.log' in keycloak.conf: foo. Expected values are: console, file, syslog");
     }
 
     @Test
-    void failEmptyLogErrorFromConfFileError(KeycloakDistribution dist) {
-        dist.copyOrReplaceFileFromClasspath("/logging/emptylog.conf", Paths.get("conf", "emptylog.conf"));
-        CLIResult cliResult = dist.run(CONFIG_FILE_LONG_NAME+"=../conf/emptylog.conf", "start-dev");
+    void failEmptyLogErrorFromConfFileError(KeycloakRunner runner) {
+        runner.getDistribution(RawKeycloakDistribution.class).copyOrReplaceFileFromClasspath("/logging/emptylog.conf", Paths.get("conf", "emptylog.conf"));
+        CLIResult cliResult = runner.run(CONFIG_FILE_LONG_NAME+"=../conf/emptylog.conf", "start-dev");
         cliResult.assertError("Invalid value for option 'kc.log' in emptylog.conf: . Expected values are: console, file, syslog");
     }
 
@@ -178,21 +179,21 @@ public class LoggingDistTest {
     @Test
     @Launch({"start-dev", "--log=syslog"})
     void syslogHandler(CLIResult cliResult) {
-        cliResult.assertNoMessage("org.keycloak");
-        cliResult.assertNoMessage("Listening on:");
+        cliResult.assertNoStartupMessage("org.keycloak");
+        cliResult.assertNoStartupMessage("Listening on:");
         cliResult.assertError("Error writing to TCP stream");
     }
 
     @Test
     @Launch({"start-dev", "--log-console-level=wrong"})
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     void wrongLevelForHandlers(CLIResult cliResult) {
         cliResult.assertError("Invalid value for option '--log-console-level': wrong. Expected values are (case insensitive): off, fatal, error, warn, info, debug, trace, all");
     }
 
     @Test
     @Launch({"start-dev", "--log-level-org.keycloak=wrong"})
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     void wrongLevelForCategory(CLIResult cliResult) {
         cliResult.assertError("Invalid log level: wrong. Possible values are: warn, trace, debug, error, fatal, info.");
     }
@@ -299,8 +300,7 @@ public class LoggingDistTest {
 
         when().get("http://127.0.0.1:8080/realms/master/.well-known/openid-configuration").then()
                 .statusCode(200);
-        Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted(
-                () -> assertThat(cliResult.getOutput(), containsString("{kc.realmName=master} DEBUG [org.keycloak.")));
+        cliResult.assertMessage("{kc.realmName=master} DEBUG [org.keycloak.");
         cliResult.assertStartedDevMode();
     }
 
@@ -327,29 +327,27 @@ public class LoggingDistTest {
     // HTTP Access log
     @Test
     @Launch({"start-dev", "--http-access-log-enabled=true", "--http-access-log-pattern='%A %{METHOD} %{REQUEST_URL} %{i,User-Agent}'", "--http-access-log-exclude=/realms/master/clients/.*"})
-    void httpAccessLogNotNamedPattern(CLIResult cliResult, KeycloakDistribution dist, RawDistRootPath path) {
+    void httpAccessLogNotNamedPattern(CLIResult cliResult, KeycloakRunner runner, RawDistRootPath path) {
         when().get("http://127.0.0.1:8080/realms/master/.well-known/openid-configuration").then()
                 .statusCode(200);
-        Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted(
-                () -> cliResult.assertMessage("[org.keycloak.http.access-log]"));
-        Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted(
-                () -> cliResult.assertMessage("127.0.0.1 GET /realms/master/.well-known/openid-configuration"));
+        cliResult.assertMessage("[org.keycloak.http.access-log]");
+        cliResult.assertMessage("127.0.0.1 GET /realms/master/.well-known/openid-configuration");
 
         when().get("http://127.0.0.1:8080/realms/master/clients/account/redirect").then()
                 .statusCode(200);
-        cliResult.assertNoMessage("127.0.0.1 GET /realms/master/clients/account/redirect");
+        cliResult.assertNoMessageGiven("TestFilter Request GET /realms/master/clients/account/redirect is done", "127.0.0.1 GET /realms/master/clients/account/redirect");
 
         // file
-        CLIResult fileCliResult = dist.run("start-dev", "--http-access-log-enabled=true", "--http-access-log-file-enabled=true", "--http-access-log-pattern='%A %{METHOD} %{REQUEST_URL} %{i,User-Agent}'", "--http-access-log-exclude=/realms/master/clients/.*");
+        CLIResult fileCliResult = runner.run("start-dev", "--http-access-log-enabled=true", "--http-access-log-file-enabled=true", "--http-access-log-pattern='%A %{METHOD} %{REQUEST_URL} %{i,User-Agent}'", "--http-access-log-exclude=/realms/master/clients/.*");
         fileCliResult.assertStartedDevMode();
         when().get("http://127.0.0.1:8080/realms/master/.well-known/openid-configuration").then()
                 .statusCode(200);
-        fileCliResult.assertNoMessage("[org.keycloak.http.access-log]");
-        fileCliResult.assertNoMessage("127.0.0.1 GET /realms/master/.well-known/openid-configuration");
 
         when().get("http://127.0.0.1:8080/realms/master/clients/account/redirect").then()
                 .statusCode(200);
-        fileCliResult.assertNoMessage("127.0.0.1 GET /realms/master/clients/account/redirect");
+        fileCliResult.assertNoMessageGiven("TestFilter Request GET /realms/master/clients/account/redirect is done", "[org.keycloak.http.access-log]");
+        fileCliResult.assertNoMessageGiven("TestFilter Request GET /realms/master/clients/account/redirect is done", "127.0.0.1 GET /realms/master/.well-known/openid-configuration");
+        fileCliResult.assertNoMessageGiven("TestFilter Request GET /realms/master/clients/account/redirect is done", "127.0.0.1 GET /realms/master/clients/account/redirect");
 
         Awaitility.await().atMost(10, TimeUnit.SECONDS).ignoreExceptions().untilAsserted(() -> {
             String data = readHttpAccessLogFile(path, "keycloak-http-access.log");
@@ -364,12 +362,12 @@ public class LoggingDistTest {
     void httpAccessLogFile(CLIResult cliResult, RawDistRootPath path) {
         when().get("http://127.0.0.1:8080/realms/master/.well-known/openid-configuration").then()
                 .statusCode(200);
-        cliResult.assertNoMessage("[org.keycloak.http.access-log]");
-        cliResult.assertNoMessage("127.0.0.1 GET /realms/master/.well-known/openid-configuration");
-
         when().get("http://127.0.0.1:8080/realms/master/clients/account/redirect").then()
                 .statusCode(200);
-        cliResult.assertNoMessage("http://127.0.0.1:8080/realms/master/clients/account/redirect");
+        
+        cliResult.assertNoMessageGiven("TestFilter Request GET /realms/master/clients/account/redirect is done", "[org.keycloak.http.access-log]");
+        cliResult.assertNoMessageGiven("TestFilter Request GET /realms/master/clients/account/redirect is done", "127.0.0.1 GET /realms/master/.well-known/openid-configuration");
+        cliResult.assertNoMessageGiven("TestFilter Request GET /realms/master/clients/account/redirect is done", "http://127.0.0.1:8080/realms/master/clients/account/redirect");
 
         Awaitility.await().atMost(10, TimeUnit.SECONDS).ignoreExceptions().untilAsserted(() -> {
             String data = readHttpAccessLogFile(path, "my-custom-http-access.txt");
@@ -386,7 +384,8 @@ public class LoggingDistTest {
         cliResult.assertStartedDevMode();
         cliResult.assertMessage("opentelemetry");
         cliResult.assertMessage("service.name=\"keycloak\"");
-        cliResult.assertMessage("Failed to export LogsRequestMarshaler.");
+        cliResult.assertMessage("Failed to export");
+        cliResult.assertMessage("error message: Connection refused");
     }
 
     @Test
@@ -443,10 +442,10 @@ public class LoggingDistTest {
 
         // Verify that sensitive cookie values are masked in the access log
         cliResult.assertMessage("[org.keycloak.http.access-log]");
-        cliResult.assertMessage("Authorization: Bearer ...");
-        cliResult.assertMessage("Authorization: DPoP ...");
+        cliResult.assertMessage("Authorization: Bearer <hidden>");
+        cliResult.assertMessage("Authorization: DPoP <hidden>");
         cliResult.assertMessage("Cookie: SOMETHING=something-not-sensitive");
         cliResult.assertMessage("Content-Language: cs");
-        HttpAccessLogOptions.DEFAULT_HIDDEN_COOKIES.forEach(cookie -> cliResult.assertMessage("Cookie: %s=...".formatted(cookie)));
+        HttpAccessLogOptions.DEFAULT_HIDDEN_COOKIES.forEach(cookie -> cliResult.assertMessage("Cookie: %s=<hidden>".formatted(cookie)));
     }
 }

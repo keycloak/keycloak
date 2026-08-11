@@ -18,24 +18,34 @@
 
 package org.keycloak.tests.oid4vc;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
+import org.keycloak.protocol.oid4vc.model.DisplayObject;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.Assert;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,6 +53,8 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.VCFormat.JWT_VC;
 import static org.keycloak.VCFormat.SD_JWT_VC;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
+import static org.keycloak.models.ClientScopeModel.CONSENT_SCREEN_TEXT;
+import static org.keycloak.models.ClientScopeModel.DISPLAY_ON_CONSENT_SCREEN;
 import static org.keycloak.models.ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VCT;
@@ -58,6 +70,7 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_T
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONTEXTS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_DISPLAY;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_EXPIRY_IN_SECONDS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_EXPIRY_IN_SECONDS_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT;
@@ -66,9 +79,12 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_INCLUDE_IN_MET
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SD_JWT_NUMBER_OF_DECOYS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SD_JWT_NUMBER_OF_DECOYS_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SUPPORTED_TYPES;
+import static org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory.NATURAL_PERSON_SCOPE_CONSENT_TEXT;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -85,7 +101,9 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
         clientScope.setName("test-client-scope");
         clientScope.setDescription("test-client-scope-description");
         clientScope.setProtocol(OID4VC_PROTOCOL);
-        clientScope.setAttributes(Map.of("test-attribute", "test-value"));
+        clientScope.setAttributes(Map.of(
+                "test-attribute", "test-value",
+                VC_CONFIGURATION_ID, "   "));
 
         String clientScopeId = null;
         ClientScopesResource clientScopes = testRealm.admin().clientScopes();
@@ -121,6 +139,101 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
         } finally {
             assertNotNull(clientScopeId);
             clientScopes.get(clientScopeId).remove();
+        }
+    }
+
+    @Test
+    public void testCredentialConfigurationIdDoesNotFallbackToScopeName() {
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealmByName(VCTestRealmConfig.TEST_REALM_NAME);
+            ClientScopeModel clientScope = realm.addClientScope("issue-51185-no-fallback");
+            clientScope.setProtocol(OID4VC_PROTOCOL);
+            try {
+                assertNull(new CredentialScopeModel(clientScope).getCredentialConfigurationId());
+            } finally {
+                realm.removeClientScope(clientScope.getId());
+            }
+        });
+    }
+
+    @Test
+    public void testCredentialConfigurationIdMustBeUnique() {
+        ClientScopesResource clientScopes = testRealm.admin().clientScopes();
+        String firstScopeId = createCredentialScope(clientScopes, "issue-51185-first", "issue-51185-shared-id");
+        String secondScopeId = null;
+
+        try {
+            CredentialScopeRepresentation explicitDuplicate = new CredentialScopeRepresentation("issue-51185-explicit-duplicate");
+            explicitDuplicate.setCredentialConfigurationId("issue-51185-shared-id");
+            try (Response response = clientScopes.create(explicitDuplicate)) {
+                assertEquals(Response.Status.CONFLICT.getStatusCode(), response.getStatus());
+                assertTrue(response.readEntity(String.class).contains("issue-51185-shared-id"));
+            }
+
+            CredentialScopeRepresentation implicitDuplicate = new CredentialScopeRepresentation("issue-51185-shared-id");
+            implicitDuplicate.setCredentialConfigurationId(null);
+            try (Response response = clientScopes.create(implicitDuplicate)) {
+                assertEquals(Response.Status.CONFLICT.getStatusCode(), response.getStatus());
+            }
+
+            secondScopeId = createCredentialScope(clientScopes, "issue-51185-second", "issue-51185-second-id");
+            ClientScopeResource secondScope = clientScopes.get(secondScopeId);
+            CredentialScopeRepresentation duplicateUpdate = new CredentialScopeRepresentation(secondScope.toRepresentation());
+            duplicateUpdate.setCredentialConfigurationId("issue-51185-shared-id");
+            duplicateUpdate.setProtocol(null);
+
+            WebApplicationException exception = assertThrows(WebApplicationException.class,
+                    () -> secondScope.update(duplicateUpdate));
+            assertEquals(Response.Status.CONFLICT.getStatusCode(), exception.getResponse().getStatus());
+
+            CredentialScopeRepresentation update = new CredentialScopeRepresentation(secondScope.toRepresentation());
+            update.setId(null);
+            update.setDescription("self update without representation ID");
+            secondScope.update(update);
+            assertEquals("issue-51185-second-id",
+                    secondScope.toRepresentation().getAttributes().get(VC_CONFIGURATION_ID));
+        } finally {
+            if (secondScopeId != null) {
+                clientScopes.get(secondScopeId).remove();
+            }
+            clientScopes.get(firstScopeId).remove();
+        }
+    }
+
+    @Test
+    public void testUpdatingProtocolToOID4VCAppliesOID4VCDefaults() {
+        ClientScopesResource clientScopes = testRealm.admin().clientScopes();
+        ClientScopeRepresentation scope = new ClientScopeRepresentation();
+        scope.setName("issue-51185-protocol-update");
+        scope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+
+        String scopeId = null;
+        try (Response response = clientScopes.create(scope)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            scopeId = ApiUtil.getCreatedId(response);
+        }
+
+        try {
+            ClientScopeResource scopeResource = clientScopes.get(scopeId);
+            ClientScopeRepresentation update = scopeResource.toRepresentation();
+            update.setProtocol(OID4VC_PROTOCOL);
+            scopeResource.update(update);
+
+            ClientScopeRepresentation updatedScope = scopeResource.toRepresentation();
+            assertEquals(OID4VC_PROTOCOL, updatedScope.getProtocol());
+            assertEquals(updatedScope.getName(), updatedScope.getAttributes().get(VC_CONFIGURATION_ID));
+        } finally {
+            clientScopes.get(scopeId).remove();
+        }
+    }
+
+    private String createCredentialScope(ClientScopesResource clientScopes, String name,
+                                         String credentialConfigurationId) {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation(name);
+        scope.setCredentialConfigurationId(credentialConfigurationId);
+        try (Response response = clientScopes.create(scope)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            return ApiUtil.getCreatedId(response);
         }
     }
 
@@ -177,7 +290,7 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
     }
 
     @Test
-    public void testCreateRealmWithDefaultClientScopes() {
+    public void testCreateRealmWithDefaultClientScopes() throws IOException {
         RealmsResource realms = keycloak.realms();
         String realmName = "aux-oid4vci-realm";
         try {
@@ -211,6 +324,9 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
                 assertEquals("oid4vc_natural_person", attrs.remove(VC_SUPPORTED_TYPES));
                 assertEquals("oid4vc_natural_person", attrs.remove(VC_CONTEXTS));
                 assertEquals("oid4vc_natural_person", attrs.remove(VCT));
+                assertEquals("true", attrs.remove(DISPLAY_ON_CONSENT_SCREEN));
+                assertEquals(NATURAL_PERSON_SCOPE_CONSENT_TEXT, attrs.remove(CONSENT_SCREEN_TEXT));
+                assertDisplay(attrs.remove(VC_DISPLAY));
 
                 switch (attrs.remove(VC_FORMAT)) {
                     case JWT_VC: {
@@ -232,5 +348,124 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
         } finally {
             realms.realm(realmName).remove();
         }
+    }
+
+    @Test
+    public void testRealmImportAppliesCredentialScopeDefaults() {
+        RealmsResource realms = keycloak.realms();
+        String realmName = "issue-51185-import-defaults";
+        String scopeName = "issue-51185-imported-scope";
+
+        RealmRepresentation realmRep = new RealmRepresentation();
+        realmRep.setRealm(realmName);
+        realmRep.setEnabled(true);
+        realmRep.setVerifiableCredentialsEnabled(true);
+
+        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
+        clientScope.setName(scopeName);
+        clientScope.setProtocol(OID4VC_PROTOCOL);
+        realmRep.setClientScopes(List.of(clientScope));
+
+        try {
+            realms.create(realmRep);
+
+            ClientScopeRepresentation importedScope = realms.realm(realmName).clientScopes().findAll().stream()
+                    .filter(scope -> scopeName.equals(scope.getName()))
+                    .findFirst()
+                    .orElseThrow();
+            assertEquals(scopeName, importedScope.getAttributes().get(VC_CONFIGURATION_ID));
+        } finally {
+            realms.realm(realmName).remove();
+        }
+    }
+
+    @Test
+    public void testRealmImportRejectsDuplicateCredentialConfigurationIds() {
+        RealmsResource realms = keycloak.realms();
+        String realmName = "issue-51185-import-duplicate";
+        String credentialConfigurationId = "issue-51185-imported-shared-id";
+
+        RealmRepresentation realmRep = new RealmRepresentation();
+        realmRep.setRealm(realmName);
+        realmRep.setEnabled(true);
+        realmRep.setVerifiableCredentialsEnabled(true);
+
+        CredentialScopeRepresentation firstScope = new CredentialScopeRepresentation("issue-51185-imported-first");
+        firstScope.setCredentialConfigurationId(credentialConfigurationId);
+        CredentialScopeRepresentation secondScope = new CredentialScopeRepresentation("issue-51185-imported-second");
+        secondScope.setCredentialConfigurationId(credentialConfigurationId);
+        realmRep.setClientScopes(List.of(firstScope, secondScope));
+
+        try {
+            WebApplicationException exception = assertThrows(WebApplicationException.class, () -> realms.create(realmRep));
+            assertEquals(Response.Status.CONFLICT.getStatusCode(), exception.getResponse().getStatus());
+        } finally {
+            if (realms.findAll().stream().anyMatch(realm -> realmName.equals(realm.getRealm()))) {
+                realms.realm(realmName).remove();
+            }
+        }
+    }
+
+    /**
+     * Test that creating a client scope with invalid refresh interval is rejected
+     */
+    @Test
+    public void testRefreshIntervalCannotExceedLifetime() {
+        // Given: a credential scope with refresh interval > lifetime
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("test-invalid-refresh");
+        scope.setExpiryInSeconds(86400); // 1 day
+        scope.setRefreshIntervalInSeconds(604800); // 7 days - INVALID!
+
+        ClientScopesResource clientScopes = testRealm.admin().clientScopes();
+
+        // When/Then: creating the scope should fail
+        try (Response response = clientScopes.create(scope)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus(),
+                    "Should reject client scope when refresh interval exceeds lifetime");
+
+            // Verify error message mentions the problem
+            String body = response.readEntity(String.class);
+            assertTrue(body.contains("refresh interval") && body.contains("exceed"),
+                    "Error message should explain the validation failure");
+        }
+    }
+
+    /**
+     * Test that updating a client scope to have invalid refresh interval is rejected
+     */
+    @Test
+    public void testUpdateToInvalidRefreshIntervalRejected() throws IOException {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("test-update-invalid");
+        scope.setExpiryInSeconds(31536000); // 365 days
+        scope.setRefreshIntervalInSeconds(604800); // 7 days - valid
+
+        ClientScopesResource clientScopes = testRealm.admin().clientScopes();
+        Response response = clientScopes.create(scope);
+        String scopeId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        try {
+            // When: updating to invalid values
+            CredentialScopeRepresentation retrieved = new CredentialScopeRepresentation(
+                    clientScopes.get(scopeId).toRepresentation()
+            );
+            retrieved.setExpiryInSeconds(86400); // 1 day
+            retrieved.setRefreshIntervalInSeconds(604800); // 7 days - now invalid!
+
+            // Then: update should fail with BadRequestException
+            assertThrows(jakarta.ws.rs.BadRequestException.class, () -> clientScopes.get(scopeId).update(retrieved));
+        } finally {
+            clientScopes.get(scopeId).remove();
+        }
+    }
+
+    private void assertDisplay(String displayStr) throws IOException {
+        DisplayObject expectedDisplay = new DisplayObject();
+        expectedDisplay.setName("Natural person verifiable credential");
+        expectedDisplay.setLocale(Locale.ENGLISH.toLanguageTag());
+
+        List<DisplayObject> display = JsonSerialization.readValue(displayStr, new TypeReference<List<DisplayObject>>() {
+        });
+        assertEquals(display, List.of(expectedDisplay));
     }
 }

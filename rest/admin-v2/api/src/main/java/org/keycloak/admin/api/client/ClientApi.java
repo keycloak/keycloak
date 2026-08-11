@@ -1,8 +1,8 @@
 package org.keycloak.admin.api.client;
 
 import java.io.InputStream;
+import java.util.Objects;
 
-import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -13,6 +13,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.api.PatchTypeNames;
+import org.keycloak.admin.api.TypedResponse;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -42,7 +43,18 @@ public interface ClientApi {
         @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = BaseClientRepresentation.class))),
         @APIResponse(responseCode = "201", description = "Created", content = @Content(schema = @Schema(implementation = BaseClientRepresentation.class)))
     })
-    Response createOrUpdateClient(@Valid BaseClientRepresentation client);
+    Response createOrUpdateClient(BaseClientRepresentation client);
+
+    /**
+     * Convenience alternative to {@link #createOrUpdateClient(BaseClientRepresentation)} that
+     * preserves the client subtype supplied by the caller.
+     */
+    default <T extends BaseClientRepresentation> TypedResponse<T> createOrUpdate(T client) {
+        Objects.requireNonNull(client, "client cannot be null");
+        @SuppressWarnings("unchecked")
+        Class<T> entityType = (Class<T>) client.getClass();
+        return new TypedResponse<>(createOrUpdateClient(client), entityType);
+    }
 
     @PATCH
     @Consumes(PatchTypeNames.JSON_MERGE)

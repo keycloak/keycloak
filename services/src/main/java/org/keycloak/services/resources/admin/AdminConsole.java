@@ -59,6 +59,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.util.ViteManifest;
 import org.keycloak.theme.FreeMarkerException;
+import org.keycloak.theme.ThemeResourcesParser;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
@@ -262,7 +263,7 @@ public class AdminConsole {
         Locale locale = session.getContext().resolveLocale(user);
 
         return Cors.builder()
-                .allowedOrigins(authResult.token())
+                .checkAllowedOrigins(authResult.token())
                 .allowedMethods("GET")
                 .auth()
                 .add(Response.ok(new WhoAmI(user.getId(), realm.getName(), displayName, createRealm, realmAccess, locale, Boolean.parseBoolean(user.getFirstAttribute(IS_TEMP_ADMIN_ATTR_NAME)))));
@@ -278,6 +279,11 @@ public class AdminConsole {
         final RealmModel realm = session.realms().getRealmByName(currentRealm);
         if (realm != null) {
             getRealmAdminAccess(realm, realm.getMasterAdminClient(), user, realmAdminAccess);
+            RealmModel masterRealm = session.realms().getRealmByName(Config.getAdminRealm());
+            RoleModel adminRole = masterRealm.getRole(AdminRoles.ADMIN);
+            if (adminRole != null && user.hasRole(adminRole)) {
+                realmAdminAccess.get(currentRealm).add(AdminRoles.ADMIN);
+            }
         } else {
             throw new NotFoundException("Realm not found");
         }
@@ -352,6 +358,7 @@ public class AdminConsole {
             map.put("loginRealm", realm.getName());
             map.put("clientId", Constants.ADMIN_CONSOLE_CLIENT_ID);
             map.put("properties", theme.getProperties());
+            map.put("themeResources", ThemeResourcesParser.parse(theme.getProperties()));
             map.put("darkMode", "true".equals(theme.getProperties().getProperty("darkMode"))
                     && realm.getAttribute("darkMode", true));
 

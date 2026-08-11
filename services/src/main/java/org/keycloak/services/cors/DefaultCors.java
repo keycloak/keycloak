@@ -55,7 +55,6 @@ public class DefaultCors implements Cors {
 
     private boolean preflight;
     private boolean auth;
-    private boolean failOnInvalidOrigin;
 
     DefaultCors(KeycloakSession session, String allowedHeaders) {
         this.session = session;
@@ -83,56 +82,50 @@ public class DefaultCors implements Cors {
     }
 
     @Override
-    public Cors failOnInvalidOrigin() {
-        failOnInvalidOrigin = true;
-        return this;
-    }
-
-    @Override
     public Cors allowAllOrigins() {
         allowedOrigins = Collections.singleton(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD);
         return this;
     }
 
     @Override
-    public Cors allowedOrigins(KeycloakSession session, ClientModel client) {
+    public Cors checkAllowedOrigins(KeycloakSession session, ClientModel client) {
         if (client != null) {
             allowedOrigins = WebOriginsUtils.resolveValidWebOrigins(session, client);
         }
+        checkOrigin();
         return this;
     }
 
     @Override
-    public Cors allowedOrigins(AccessToken token) {
+    public Cors checkAllowedOrigins(AccessToken token) {
         if (token != null) {
             allowedOrigins = token.getAllowedOrigins();
+            if (allowedOrigins == null || allowedOrigins.isEmpty()) {
+                ClientModel client = resolveClient(token);
+                if (client != null) {
+                    return checkAllowedOrigins(session, client);
+                }
+            }
         }
+        checkOrigin();
         return this;
     }
 
-    @Override
-    public Cors allowedOrigins(String... allowedOrigins) {
-        if (allowedOrigins != null && allowedOrigins.length > 0) {
-            this.allowedOrigins = new HashSet<>(Arrays.asList(allowedOrigins));
+    private ClientModel resolveClient(AccessToken token) {
+        String clientId = token.getIssuedFor();
+        if (clientId == null) {
+            return null;
         }
-        return this;
+        var realm = session.getContext().getRealm();
+        return realm == null ? null : realm.getClientByClientId(clientId);
     }
 
     @Override
-    public Cors allowedOrigins(List<String> allowedOrigins) {
+    public Cors checkAllowedOrigins(List<String> allowedOrigins) {
         if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
             this.allowedOrigins = new HashSet<>(allowedOrigins);
         }
-        return this;
-    }
-
-    @Override
-    public Cors addAllowedOrigins(List<String> allowedOrigins) {
-        if (this.allowedOrigins == null) {
-            this.allowedOrigins = new HashSet<>(allowedOrigins);
-        } else {
-            this.allowedOrigins.addAll(allowedOrigins);
-        }
+        checkOrigin();
         return this;
     }
 
@@ -169,16 +162,8 @@ public class DefaultCors implements Cors {
             return;
         }
 
-        if (!preflight && (allowedOrigins == null || (!allowedOrigins.contains(origin) && !allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD)))) {
-            String requestOrigin = UriUtils.getOrigin(session.getContext().getUri().getRequestUri());
-            if (!origin.equals(requestOrigin) && logger.isDebugEnabled()) {
-                logger.debugv("Invalid CORS request: origin {0} not in allowed origins {1}", origin, allowedOrigins);
-            }
-
-            if (failOnInvalidOrigin) {
-                throw new ForbiddenException("Invalid origin");
-            }
-
+        if (!preflight && !isOriginAllowed(origin)) {
+            logInvalidOrigin(origin);
             return;
         }
 
@@ -208,6 +193,43 @@ public class DefaultCors implements Cors {
 
         if (preflight) {
             response.setHeader(ACCESS_CONTROL_MAX_AGE, String.valueOf(DEFAULT_MAX_AGE));
+        }
+    }
+
+    private void checkOrigin() {
+        if (preflight) {
+            return;
+        }
+
+        String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
+        if (origin == null || isOriginAllowed(origin)) {
+            return;
+        }
+
+        String requestOrigin = UriUtils.getOrigin(session.getContext().getUri().getRequestUri());
+        if (origin.equals(requestOrigin)) {
+            return;
+        }
+
+        logInvalidOrigin(origin, requestOrigin);
+        throw new ForbiddenException("Invalid origin");
+    }
+
+    private boolean isOriginAllowed(String origin) {
+        return allowedOrigins != null
+                && (allowedOrigins.contains(origin) || allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD));
+    }
+
+    private void logInvalidOrigin(String origin) {
+        if (logger.isDebugEnabled()) {
+            String requestOrigin = UriUtils.getOrigin(session.getContext().getUri().getRequestUri());
+            logInvalidOrigin(origin, requestOrigin);
+        }
+    }
+
+    private void logInvalidOrigin(String origin, String requestOrigin) {
+        if (logger.isDebugEnabled() && !origin.equals(requestOrigin)) {
+            logger.debugv("Invalid CORS request: origin {0} not in allowed origins {1}", origin, allowedOrigins);
         }
     }
 

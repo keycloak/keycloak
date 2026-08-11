@@ -70,8 +70,14 @@ const OID4VCI_FIELDS = {
   CREDENTIAL_IDENTIFIER: "attributes.vc🍺credential_identifier",
   ISSUER_DID: "attributes.vc🍺issuer_did",
   EXPIRY_IN_SECONDS: "attributes.vc🍺expiry_in_seconds",
+  REFRESH_INTERVAL_IN_SECONDS: "attributes.vc🍺refresh_interval_in_seconds",
   BINDING_METHODS: "attributes.vc🍺cryptographic_binding_methods_supported",
   BINDING_SUPPORTED_PROOF_TYPES: "attributes.vc🍺binding_required_proof_types",
+  KEY_ATTESTATIONS_REQUIRED: "attributes.vc.key_attestations_required",
+  KEY_ATTESTATION_KEY_STORAGE:
+    "attributes.vc🍺key_attestations_required🍺key_storage",
+  KEY_ATTESTATION_USER_AUTHENTICATION:
+    "attributes.vc🍺key_attestations_required🍺user_authentication",
   FORMAT: "#kc-vc-format",
   TOKEN_JWS_TYPE: "attributes.vc🍺credential_build_config🍺token_jws_type",
   SIGNING_KEY_ID: "#kc-signing-key-id",
@@ -89,7 +95,12 @@ const TEST_VALUES = {
   CREDENTIAL_CONFIG: "test-cred-config-123",
   CREDENTIAL_ID: "test-cred-identifier",
   ISSUER_DID: "did:key:test123",
-  EXPIRY_SECONDS: "86400",
+  // Raw seconds entered into the input (unit stays at "seconds" when filling directly)
+  EXPIRY_SECONDS: "86400", // 1 day in seconds
+  REFRESH_INTERVAL_SECONDS: "43200", // 12 hours in seconds
+  // Expected display values after reload: TimeSelector picks the largest fitting unit
+  EXPIRY_SECONDS_DISPLAY: "1", // 86400 s → displayed as 1 day
+  REFRESH_INTERVAL_SECONDS_DISPLAY: "12", // 43200 s → displayed as 12 hours
   SIGNING_ALG: "ES256",
   HASH_ALGORITHM: "sha-384",
   TOKEN_JWS_TYPE: "dc+sd-jwt",
@@ -98,9 +109,43 @@ const TEST_VALUES = {
     '[{"name": "Test Credential", "locale": "en-US", "logo": {"uri": "https://example.com/logo.png", "alt_text": "Logo"}, "background_color": "#12107c", "text_color": "#FFFFFF"}]',
   SUPPORTED_CREDENTIAL_TYPES: "VerifiableCredential,UniversityDegreeCredential",
   VERIFIABLE_CREDENTIAL_TYPE: "TestCredentialType",
+  KEY_ATTESTATION_KEY_STORAGE: "iso_18045_high,iso_18045_moderate",
+  KEY_ATTESTATION_USER_AUTHENTICATION: "iso_18045_moderate",
 } as const;
 const TOKEN_JWS_TYPE_WARNING_PREFIX =
   "The configured Token JWS Type does not match the recommended value for the selected credential format.";
+
+// Helper function to fill TimeSelector fields (enters value in seconds - the base unit)
+async function fillTimeSelectorValue(
+  page: Page,
+  testId: string,
+  value: string,
+) {
+  const input = page.getByTestId(testId);
+  await input.waitFor({ state: "visible" });
+  await input.evaluate((el: HTMLElement) => {
+    const split = el.closest(".pf-v5-l-split");
+    const toggle = split?.querySelector<HTMLButtonElement>(
+      'button[aria-label="Select a time unit"]',
+    );
+    toggle?.click();
+  });
+  await page.getByRole("option", { name: "Seconds" }).click();
+  await input.fill(value);
+}
+
+// Helper function to verify TimeSelector value
+async function expectTimeSelectorValue(
+  page: Page,
+  testId: string,
+  expectedValue: string,
+) {
+  // The TimeSelector's data-testid is placed directly on the <input type="number"> element
+  const input = page.getByTestId(testId);
+  await input.waitFor({ state: "visible" });
+
+  await expect(input).toHaveValue(expectedValue);
+}
 
 test.describe("OID4VCI Client Scope Functionality", () => {
   test("should display OID4VCI fields when protocol is selected", async ({
@@ -138,6 +183,9 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await expect(
       page.getByTestId(OID4VCI_FIELDS.EXPIRY_IN_SECONDS),
     ).toBeVisible();
+    await expect(
+      page.getByTestId(OID4VCI_FIELDS.REFRESH_INTERVAL_IN_SECONDS),
+    ).toBeVisible();
     await expect(page.locator(OID4VCI_FIELDS.FORMAT)).toBeVisible();
     await expect(page.getByTestId(OID4VCI_FIELDS.TOKEN_JWS_TYPE)).toBeVisible();
     await expect(page.locator(OID4VCI_FIELDS.SIGNING_ALGORITHM)).toBeVisible();
@@ -157,6 +205,8 @@ test.describe("OID4VCI Client Scope Functionality", () => {
       "JWT VC (jwt_vc_json)",
     );
 
+    await page.getByTestId("name").fill(testClientScopeName);
+
     await page
       .getByTestId(OID4VCI_FIELDS.CREDENTIAL_CONFIGURATION_ID)
       .fill(TEST_VALUES.CREDENTIAL_CONFIG);
@@ -166,9 +216,16 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await page
       .getByTestId(OID4VCI_FIELDS.ISSUER_DID)
       .fill(TEST_VALUES.ISSUER_DID);
-    await page
-      .getByTestId(OID4VCI_FIELDS.EXPIRY_IN_SECONDS)
-      .fill(TEST_VALUES.EXPIRY_SECONDS);
+    await fillTimeSelectorValue(
+      page,
+      OID4VCI_FIELDS.EXPIRY_IN_SECONDS,
+      TEST_VALUES.EXPIRY_SECONDS,
+    );
+    await fillTimeSelectorValue(
+      page,
+      OID4VCI_FIELDS.REFRESH_INTERVAL_IN_SECONDS,
+      TEST_VALUES.REFRESH_INTERVAL_SECONDS,
+    );
 
     await page
       .getByTestId(OID4VCI_FIELDS.TOKEN_JWS_TYPE)
@@ -190,8 +247,6 @@ test.describe("OID4VCI Client Scope Functionality", () => {
       .getByTestId(OID4VCI_FIELDS.SUPPORTED_CREDENTIAL_TYPES)
       .fill(TEST_VALUES.SUPPORTED_CREDENTIAL_TYPES);
 
-    await page.getByTestId("name").fill(testClientScopeName);
-
     await clickSaveButton(page);
     await expect(page.getByText("Client scope created")).toBeVisible();
 
@@ -206,9 +261,16 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await expect(page.getByTestId(OID4VCI_FIELDS.ISSUER_DID)).toHaveValue(
       TEST_VALUES.ISSUER_DID,
     );
-    await expect(
-      page.getByTestId(OID4VCI_FIELDS.EXPIRY_IN_SECONDS),
-    ).toHaveValue(TEST_VALUES.EXPIRY_SECONDS);
+    await expectTimeSelectorValue(
+      page,
+      OID4VCI_FIELDS.EXPIRY_IN_SECONDS,
+      TEST_VALUES.EXPIRY_SECONDS_DISPLAY,
+    );
+    await expectTimeSelectorValue(
+      page,
+      OID4VCI_FIELDS.REFRESH_INTERVAL_IN_SECONDS,
+      TEST_VALUES.REFRESH_INTERVAL_SECONDS_DISPLAY,
+    );
     await expect(page.locator("#kc-vc-format")).toContainText(
       "JWT VC (jwt_vc_json)",
     );
@@ -715,6 +777,17 @@ test.describe("OID4VCI Client Scope Functionality", () => {
       .getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES)
       .fill("jwt");
 
+    await switchToggle(
+      page,
+      page.getByTestId(OID4VCI_FIELDS.KEY_ATTESTATIONS_REQUIRED),
+    );
+    await page
+      .getByTestId(OID4VCI_FIELDS.KEY_ATTESTATION_KEY_STORAGE)
+      .fill(TEST_VALUES.KEY_ATTESTATION_KEY_STORAGE);
+    await page
+      .getByTestId(OID4VCI_FIELDS.KEY_ATTESTATION_USER_AUTHENTICATION)
+      .fill(TEST_VALUES.KEY_ATTESTATION_USER_AUTHENTICATION);
+
     await clickSaveButton(page);
     await expect(page.getByText("Client scope created")).toBeVisible();
 
@@ -729,6 +802,15 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await expect(
       page.getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES),
     ).toHaveValue("jwt");
+    await expect(
+      page.getByTestId(OID4VCI_FIELDS.KEY_ATTESTATIONS_REQUIRED),
+    ).toBeChecked();
+    await expect(
+      page.getByTestId(OID4VCI_FIELDS.KEY_ATTESTATION_KEY_STORAGE),
+    ).toHaveValue(TEST_VALUES.KEY_ATTESTATION_KEY_STORAGE);
+    await expect(
+      page.getByTestId(OID4VCI_FIELDS.KEY_ATTESTATION_USER_AUTHENTICATION),
+    ).toHaveValue(TEST_VALUES.KEY_ATTESTATION_USER_AUTHENTICATION);
   });
 
   test("should default to sha-256 when hash algorithm is not set", async ({

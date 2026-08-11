@@ -10,15 +10,26 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import type { ComponentProps } from "./components";
 
-function stringToMultiline(value?: string): string[] {
-  return typeof value === "string" && value.length > 0 ? value.split("##") : [];
+const DEFAULT_MULTILINE_SEPARATOR = "##";
+
+function stringToMultiline(
+  value?: string,
+  separator: string = DEFAULT_MULTILINE_SEPARATOR,
+): string[] {
+  return typeof value === "string" && value.length > 0
+    ? value.split(separator)
+    : [];
 }
 
-function toStringValue(formValue: string[]): string {
-  return formValue.join("##");
+function toStringValue(
+  formValue: string[],
+  separator: string = DEFAULT_MULTILINE_SEPARATOR,
+): string {
+  return formValue.join(separator);
 }
 
-type MultiValuedListComponentProps = ComponentProps & {
+export type MultiValuedListComponentProps = ComponentProps & {
+  stringifySeparator?: string;
   variant?: `${SelectVariant}`;
 };
 
@@ -30,6 +41,7 @@ export const MultiValuedListComponent = ({
   options,
   isDisabled = false,
   stringify,
+  stringifySeparator,
   required,
   convertToName,
   onSearch,
@@ -92,14 +104,14 @@ export const MultiValuedListComponent = ({
               onToggle={setOpen}
               selections={
                 stringify && variant === SelectVariant.typeaheadMulti
-                  ? stringToMultiline(field.value)
+                  ? stringToMultiline(field.value, stringifySeparator)
                   : field.value
               }
               onSelect={(v) => {
                 const option = v.toString();
                 if (variant === SelectVariant.typeaheadMulti) {
                   const values = stringify
-                    ? stringToMultiline(field.value)
+                    ? stringToMultiline(field.value, stringifySeparator)
                     : field.value;
                   let newValue;
                   if (values.includes(option)) {
@@ -110,8 +122,8 @@ export const MultiValuedListComponent = ({
                     newValue = values;
                   }
                   field.onChange(
-                    stringify && variant === SelectVariant.typeaheadMulti
-                      ? toStringValue(newValue)
+                    stringify
+                      ? toStringValue(newValue, stringifySeparator)
                       : newValue,
                   );
                 } else {

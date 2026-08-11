@@ -2,6 +2,7 @@ package org.keycloak.cache;
 
 import java.time.Duration;
 import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -11,17 +12,16 @@ import java.util.function.Function;
  * @param maxSize the maximum size of the cache, or -1 if an unbounded cache is desired.
  * @param expiration the {@link Duration} to wait before entries are expired. A {@code null} value indicates no expiration.
  * @param loader an optional {@link Function} which is used to retrieve cache values on cache miss.
+ * @param expirationMode the expiration mode
  * @param <K> the type of the cache Keys used for lookup
  * @param <V> the type of the cache Values to be stored
  */
-public record LocalCacheConfiguration<K, V>(String name, int maxSize, Duration expiration, Function<K, V> loader) {
+public record LocalCacheConfiguration<K, V>(String name, int maxSize, BiFunction<K, V, Duration> expiration,
+                                            Function<K, V> loader, ExpirationMode expirationMode) {
 
     public LocalCacheConfiguration {
         Objects.requireNonNull(name, "A cache name must be configured");
-    }
-
-    public boolean hasExpiration() {
-        return expiration != null;
+        Objects.requireNonNull(expirationMode, "A cache expiration mode must be configured");
     }
 
     public boolean hasLoader() {
@@ -42,8 +42,9 @@ public record LocalCacheConfiguration<K, V>(String name, int maxSize, Duration e
 
         private String name;
         private int maxSize = -1;
-        private Duration expiration;
+        private BiFunction<K, V, Duration> expiration;
         private Function<K, V> loader;
+        private ExpirationMode expirationMode = ExpirationMode.DISABLED;
 
         public Builder<K, V> name(String name) {
             this.name = name;
@@ -55,8 +56,34 @@ public record LocalCacheConfiguration<K, V>(String name, int maxSize, Duration e
             return this;
         }
 
+        /**
+         * @deprecated use {@link #expirationAfterAccess(Duration)} instead
+         */
+        @Deprecated(since = "26.7", forRemoval = true)
         public Builder<K, V> expiration(Duration duration) {
-            this.expiration = duration;
+            Objects.requireNonNull(duration, "A duration must be configured");
+            return expirationAfterAccess((k, v) -> duration);
+        }
+
+        public Builder<K, V> expirationAfterAccess(Duration duration) {
+            Objects.requireNonNull(duration, "A duration must be configured");
+            return expirationAfterAccess((k, v) -> duration);
+        }
+
+        public Builder<K, V> expirationAfterAccess(BiFunction<K, V, Duration> variableDuration) {
+            this.expiration = Objects.requireNonNull(variableDuration, "Variable duration must not be null");
+            this.expirationMode = ExpirationMode.ACCESS;
+            return this;
+        }
+
+        public Builder<K, V> expirationAfterCreate(Duration duration) {
+            Objects.requireNonNull(duration, "A duration must be configured");
+            return expirationAfterAccess((k, v) -> duration);
+        }
+
+        public Builder<K, V> expirationAfterCreate(BiFunction<K, V, Duration> variableDuration) {
+            this.expiration = Objects.requireNonNull(variableDuration, "Variable duration must not be null");
+            this.expirationMode = ExpirationMode.CREATE;
             return this;
         }
 
@@ -66,7 +93,13 @@ public record LocalCacheConfiguration<K, V>(String name, int maxSize, Duration e
         }
 
         public LocalCacheConfiguration<K, V> build() {
-            return new LocalCacheConfiguration<>(name, maxSize, expiration, loader);
+            return new LocalCacheConfiguration<>(name, maxSize, expiration, loader, expirationMode);
         }
+    }
+
+    public enum ExpirationMode {
+        DISABLED,
+        CREATE,
+        ACCESS
     }
 }

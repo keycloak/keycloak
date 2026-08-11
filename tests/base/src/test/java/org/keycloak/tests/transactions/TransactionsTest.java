@@ -42,8 +42,8 @@ public class TransactionsTest {
                     Assertions.assertTrue(session.getTransactionManager().isActive());
                     session.getTransactionManager().commit();
                     Assertions.assertFalse(session.getTransactionManager().isActive());
-
-                    session.getTransactionManager().begin();
+                });
+        runOnServer.run(session -> {
                     Assertions.assertTrue(session.getTransactionManager().isActive());
                     session.getTransactionManager().rollback();
                     Assertions.assertFalse(session.getTransactionManager().isActive());

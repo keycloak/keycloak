@@ -44,9 +44,11 @@ import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 
 import org.junit.jupiter.api.Assertions;
@@ -136,6 +138,18 @@ public class SMTPConnectionTest {
         response = realm.testSMTPConnection(settings("localhost", "3025", "auto@keycloak.org", "true", null, null,
                 "admin@localhost", SECRET_VALUE));
         assertStatus(response, 500);
+
+        // from address changed — guard must reject reuse even though host/port/user match
+        mailServer.credentials("admin@localhost", password);
+        response = realm.testSMTPConnection(smtpMap("127.0.0.1", "3025", "attacker@evil.example", "true", null, null,
+                "admin@localhost", SECRET_VALUE, null, null, null));
+        assertStatus(response, 500);
+
+        // all fields match including the newly-checked ones — reuse must succeed
+        mailServer.credentials("admin@localhost", password);
+        response = realm.testSMTPConnection(smtpMap("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null,
+                "admin@localhost", SECRET_VALUE, "", "", null));
+        assertStatus(response, 204);
     }
 
     @Test
@@ -146,7 +160,7 @@ public class SMTPConnectionTest {
         final var realmRep = realm.toRepresentation();
         realmRep.setSmtpServer(smtpMapForTokenAuth("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null,
                 "admin@localhost", keycloakUrls.getToken(managedRealm.getName()), "test-smtp-client-I", "secret", "basic", null, null));
-        managedRealm.updateWithCleanup(r -> RealmConfigBuilder.update(realmRep));
+        managedRealm.updateWithCleanup(r -> RealmBuilder.update(realmRep));
 
         //verify token sent to smtp
         mailServer.credentials("admin@localhost", token -> {
@@ -173,6 +187,10 @@ public class SMTPConnectionTest {
         final var thirdResponse = realm.testSMTPConnection(settings("localhost", "3025", "auto@keycloak.org", "true", null, null,
                 "admin@localhost", keycloakUrls.getToken(managedRealm.getName()), "test-smtp-client-I", SECRET_VALUE, "basic"));
         assertStatus(thirdResponse, 500);
+
+        final var fourthResponse = realm.testSMTPConnection(smtpMapForTokenAuth("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null,
+                "admin@localhost", "http://attacker.evil.example/steal", "test-smtp-client-I", SECRET_VALUE, "basic", null, null));
+        assertStatus(fourthResponse, 500);
     }
 
     @Test
@@ -370,31 +388,31 @@ public class SMTPConnectionTest {
     public static class SMTPRealmWithClientAndUser implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.eventsEnabled(true); //testing XOAUTH2 token caching behaviour
 
-            realm.addClient("myclient")
+            realm.clients(ClientBuilder.create("myclient")
                     .secret("mysecret")
-                    .directAccessGrantsEnabled(true);
+                    .directAccessGrantsEnabled(true));
 
             //add client for token gathering (XOAUTH2)
             //reuse the same client does not work
-            realm.addClient("test-smtp-client-I")
+            realm.clients(ClientBuilder.create("test-smtp-client-I")
                     .secret("secret")
-                    .serviceAccountsEnabled(true);
-            realm.addClient("test-smtp-client-II")
+                    .serviceAccountsEnabled(true));
+            realm.clients(ClientBuilder.create("test-smtp-client-II")
                     .secret("secret")
-                    .serviceAccountsEnabled(true);
-            realm.addClient("test-smtp-client-III")
+                    .serviceAccountsEnabled(true));
+            realm.clients(ClientBuilder.create("test-smtp-client-III")
                     .secret("secret")
-                    .serviceAccountsEnabled(true);
+                    .serviceAccountsEnabled(true));
 
-            realm.addUser("myadmin")
+            realm.users(UserBuilder.create("myadmin")
                     .name("My", "Admin")
                     .email("admin@localhost")
                     .emailVerified(true)
                     .password("myadmin")
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
 
             return realm;
         }

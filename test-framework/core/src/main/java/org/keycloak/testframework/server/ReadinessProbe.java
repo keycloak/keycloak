@@ -16,28 +16,27 @@ import javax.net.ssl.X509TrustManager;
  */
 public final class ReadinessProbe {
 
-    private static final long STARTUP_TIMEOUT_MILLIS = Duration.ofMinutes(5).toMillis();
     private static final int CONNECTION_TIMEOUT_MILLIS = Math.toIntExact(Duration.ofSeconds(5).toMillis());
     private static final long POLL_INTERVAL_MILLIS = Duration.ofMillis(500).toMillis();
 
     private ReadinessProbe() {
     }
 
-    public static void waitUntilReady(KeycloakServer server) {
-        waitUntilReady(index -> server.getBaseUrl(), 1);
+    public static void waitUntilReady(KeycloakServer server, long timeout) {
+        waitUntilReady(index -> server.getBaseUrl(), 1, timeout);
     }
 
-    public static void waitUntilReady(IntFunction<String> baseUrlFunction, int clusterSize) {
-        var deadline = System.currentTimeMillis() + STARTUP_TIMEOUT_MILLIS;
+    public static void waitUntilReady(IntFunction<String> baseUrlFunction, int clusterSize, long timeout) {
         var sslContext = createTrustAllSslContext();
         for (int i = 0; i < clusterSize; i++) {
             // can't use /health/ready has it is not enabled in most tests
             var url = baseUrlFunction.apply(i) + "/realms/master";
-            waitUntilReady(url, sslContext, deadline);
+            waitUntilReady(url, sslContext, timeout);
         }
     }
 
-    private static void waitUntilReady(String url, SSLContext sslContext, long deadline) {
+    private static void waitUntilReady(String url, SSLContext sslContext, long timeout) {
+        var deadline = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(timeout);
         while (System.currentTimeMillis() < deadline) {
             try {
                 HttpURLConnection connection = (HttpURLConnection) URI.create(url).toURL().openConnection();
@@ -68,7 +67,7 @@ public final class ReadinessProbe {
                 throw new RuntimeException("Interrupted while waiting for server readiness", e);
             }
         }
-        throw new IllegalStateException("Server did not become ready within " + TimeUnit.MILLISECONDS.toSeconds(STARTUP_TIMEOUT_MILLIS) + " seconds: " + url);
+        throw new IllegalStateException("Server did not become ready within " + timeout + " seconds: " + url);
     }
 
     private static SSLContext createTrustAllSslContext() {

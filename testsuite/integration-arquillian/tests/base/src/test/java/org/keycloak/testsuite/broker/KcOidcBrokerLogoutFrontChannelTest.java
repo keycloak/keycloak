@@ -21,9 +21,8 @@ import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class KcOidcBrokerLogoutFrontChannelTest extends AbstractKcOidcBrokerLogoutTest {
     @Rule public AssertEvents events = new AssertEvents(this);
@@ -34,11 +33,11 @@ public class KcOidcBrokerLogoutFrontChannelTest extends AbstractKcOidcBrokerLogo
     }
 
     private static class KcOidcBrokerConfigurationIdpLogoutFrontChannel
-        extends KcOidcBrokerConfiguration {
+            extends KcOidcBrokerConfiguration {
 
         @Override
         protected void applyDefaultConfiguration(
-            Map<String, String> config, IdentityProviderSyncMode syncMode) {
+                Map<String, String> config, IdentityProviderSyncMode syncMode) {
             super.applyDefaultConfiguration(config, syncMode);
             config.put("backchannelSupported", "false");
         }
@@ -52,9 +51,7 @@ public class KcOidcBrokerLogoutFrontChannelTest extends AbstractKcOidcBrokerLogo
 
         // Exchange code from "broker-app" client of "consumer" realm for the tokens
         String code = oauth.parseLoginResponse().getCode();
-        AccessTokenResponse response =
-            oauth
-                .realm(bc.consumerRealmName())
+        AccessTokenResponse response = oauth.realm(bc.consumerRealmName())
                 .client("broker-app", "broker-app-secret")
                 .redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app")
                 .doAccessTokenRequest(code);
@@ -65,19 +62,20 @@ public class KcOidcBrokerLogoutFrontChannelTest extends AbstractKcOidcBrokerLogo
         int expiresInMs = (int) (idToken.getExp() - idToken.getIat());
 
         // simulate token expiration
-        setTimeOffset(expiresInMs * 2);
+        timeOffSet.set(expiresInMs * 2);
 
         logoutFromRealm(
-            getConsumerRoot(),
-            bc.consumerRealmName(),
-            "something-else",
-            idTokenString,
-            "broker-app",
-            getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app");
+                getConsumerRoot(),
+                bc.consumerRealmName(),
+                "something-else",
+                idTokenString,
+                "broker-app",
+                getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app");
 
-        oauth.clientId("account");
+        oauth.client("account");
         oauth.redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME + "/account");
-        loginPage.open(REALM_PROV_NAME);
+        oauth.realm(REALM_PROV_NAME);
+        oauth.openLoginForm();
 
         waitForPage(driver, "sign in to provider", true);
     }
@@ -119,6 +117,6 @@ public class KcOidcBrokerLogoutFrontChannelTest extends AbstractKcOidcBrokerLogo
         // the external IdP online session should be also maintained, re-authenticate
         driver.navigate().to(getLoginUrl(getConsumerRoot(), bc.consumerRealmName(), "broker-app"));
         logInAsUserInIDPWithReAuthenticate();
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 }

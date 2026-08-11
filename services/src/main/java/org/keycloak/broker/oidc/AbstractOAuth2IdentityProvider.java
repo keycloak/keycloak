@@ -125,6 +125,55 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     public static final String FEDERATED_REFRESH_TOKEN = "FEDERATED_REFRESH_TOKEN";
     public static final String FEDERATED_TOKEN_EXPIRATION = "FEDERATED_TOKEN_EXPIRATION";
+
+    protected String getFederatedRefreshTokenKey() {
+        return FEDERATED_REFRESH_TOKEN + ":" + getConfig().getAlias();
+    }
+
+    protected String getFederatedTokenExpirationKey() {
+        return FEDERATED_TOKEN_EXPIRATION + ":" + getConfig().getAlias();
+    }
+
+    protected String getFederatedIdTokenKey() {
+        return OIDCIdentityProvider.FEDERATED_ID_TOKEN + ":" + getConfig().getAlias();
+    }
+
+    protected String getFederatedRefreshToken(UserSessionModel userSession) {
+        return getFederatedTokenNote(userSession, getFederatedRefreshTokenKey(), FEDERATED_REFRESH_TOKEN);
+    }
+
+    protected String getFederatedTokenExpiration(UserSessionModel userSession) {
+        return getFederatedTokenNote(userSession, getFederatedTokenExpirationKey(), FEDERATED_TOKEN_EXPIRATION);
+    }
+
+    protected String getFederatedIdToken(UserSessionModel userSession) {
+        return getFederatedTokenNote(userSession, getFederatedIdTokenKey(), OIDCIdentityProvider.FEDERATED_ID_TOKEN);
+    }
+
+    protected void setFederatedRefreshToken(UserSessionModel userSession, String token) {
+        userSession.setNote(getFederatedRefreshTokenKey(), token);
+    }
+
+    protected void setFederatedRefreshToken(AuthenticationSessionModel authSession, String token) {
+        authSession.setUserSessionNote(getFederatedRefreshTokenKey(), token);
+    }
+
+    protected void setFederatedTokenExpiration(UserSessionModel userSession, String value) {
+        userSession.setNote(getFederatedTokenExpirationKey(), value);
+    }
+
+    protected void setFederatedTokenExpiration(AuthenticationSessionModel authSession, String value) {
+        authSession.setUserSessionNote(getFederatedTokenExpirationKey(), value);
+    }
+
+    protected void setFederatedIdToken(UserSessionModel userSession, String token) {
+        userSession.setNote(getFederatedIdTokenKey(), token);
+    }
+
+    protected void setFederatedIdToken(AuthenticationSessionModel authSession, String token) {
+        authSession.setUserSessionNote(getFederatedIdTokenKey(), token);
+    }
+
     public static final String ACCESS_DENIED = "access_denied";
     protected static ObjectMapper mapper = new ObjectMapper();
 
@@ -312,10 +361,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         Response response = null;
         if (userSession != null && getConfig().isStoreTokenInSession()) {
             // use the session if present and configured to be used, only in V2
-            String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
-            brokerId = brokerId == null ? userSession.getNote(UserAuthenticationIdentityProvider.EXTERNAL_IDENTITY_PROVIDER) : brokerId;
-            String federatedAccessToken = userSession.getNote(FEDERATED_ACCESS_TOKEN);
-            if (getConfig().getAlias().equals(brokerId) && federatedAccessToken != null) {
+            String federatedAccessToken = getFederatedAccessToken(userSession);
+            if (federatedAccessToken != null) {
                 response = exchangeSessionToken(uriInfo, null, null, userSession, user);
                 if (Response.Status.Family.familyOf(response.getStatus()) == Response.Status.Family.SUCCESSFUL) {
                     return response;
@@ -413,17 +460,16 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
      */
     protected Response hasExternalExchangeToken(EventBuilder event, UserSessionModel tokenUserSession, MultivaluedMap<String, String> params) {
         if (getConfig().getAlias().equals(tokenUserSession.getNote(OIDCIdentityProvider.EXCHANGE_PROVIDER))) {
-
             String requestedType = params.getFirst(OAuth2Constants.REQUESTED_TOKEN_TYPE);
             if ((requestedType == null || requestedType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE))) {
-                String accessToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
+                String accessToken = getFederatedAccessToken(tokenUserSession);
                 if (accessToken != null) {
                     AccessTokenResponse tokenResponse = new AccessTokenResponse();
                     tokenResponse.setToken(accessToken);
                     return buildTokenResponse(session.getContext().getUri(), event, null, tokenUserSession, tokenResponse, OAuth2Constants.ACCESS_TOKEN_TYPE);
                 }
             } else if (OAuth2Constants.ID_TOKEN_TYPE.equals(requestedType)) {
-                String idToken = tokenUserSession.getNote(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
+                String idToken = getFederatedIdToken(tokenUserSession);
                 if (idToken != null) {
                     AccessTokenResponse tokenResponse = new AccessTokenResponse();
                     tokenResponse.setToken(null);
@@ -472,7 +518,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     protected Response exchangeSessionToken(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
-        String accessToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
+        String accessToken = getFederatedAccessToken(tokenUserSession);
 
         if (accessToken == null) {
             if (event != null) {
@@ -620,7 +666,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     @Override
     public void authenticationFinished(AuthenticationSessionModel authSession, BrokeredIdentityContext context) {
         String token = (String) context.getContextData().get(FEDERATED_ACCESS_TOKEN);
-        if (token != null) authSession.setUserSessionNote(FEDERATED_ACCESS_TOKEN, token);
+        if (token != null) {
+            setFederatedAccessToken(authSession, token);
+        }
     }
 
     public SimpleHttpRequest authenticateTokenRequest(final SimpleHttpRequest tokenRequest) {
@@ -732,7 +780,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             
             if (state == null) {
                 logErroneousRedirectUrlError("Redirection URL does not contain a state parameter", providerConfig);
-                return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_MISSING_STATE_ERROR);
+                return errorIdentityProviderLogin(Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_MISSING_STATE_ERROR);
             }
 
             try {
@@ -755,7 +803,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 if (authorizationCode == null) {
                     logErroneousRedirectUrlError("Redirection URL neither contains a code nor error parameter",
                             providerConfig);
-                    return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_MISSING_CODE_OR_ERROR_ERROR);
+                    return errorIdentityProviderLogin(Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_MISSING_CODE_OR_ERROR_ERROR);
                 }
 
                 SimpleHttpRequest simpleHttp = generateTokenRequest(authorizationCode);
@@ -768,7 +816,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     if (!success) {
                         logger.errorf("Unexpected response from token endpoint %s. status=%s, response=%s",
                                 simpleHttp.getUrl(), status, response);
-                        return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+                        return errorIdentityProviderLogin(Response.Status.BAD_GATEWAY, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
                     }
                 }
 
@@ -788,13 +836,13 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 return e.getResponse();
             } catch (IdentityBrokerException e) {
                 if (e.getMessageCode() != null) {
-                    return errorIdentityProviderLogin(e.getMessageCode());
+                    return errorIdentityProviderLogin(Response.Status.BAD_GATEWAY, e.getMessageCode());
                 }
                 logger.error("Failed to make identity provider oauth callback", e);
-                return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+                return errorIdentityProviderLogin(Response.Status.BAD_GATEWAY, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
             } catch (Exception e) {
                 logger.error("Failed to make identity provider oauth callback", e);
-                return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+                return errorIdentityProviderLogin(Response.Status.INTERNAL_SERVER_ERROR, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
             }
         }
 
@@ -805,10 +853,10 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             logger.errorf("%s. providerId=%s, redirectionUrl=%s", mainMessage, providerId, redirectionUrl);
         }
 
-        private Response errorIdentityProviderLogin(String message) {
+        private Response errorIdentityProviderLogin(Response.Status status, String message) {
             event.event(EventType.IDENTITY_PROVIDER_LOGIN);
             event.error(Errors.IDENTITY_PROVIDER_LOGIN_FAILURE);
-            return ErrorPage.error(session, null, Response.Status.BAD_GATEWAY, message);
+            return ErrorPage.error(session, null, status, message);
         }
 
         public SimpleHttpRequest generateTokenRequest(String authorizationCode) {
@@ -928,18 +976,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     final public BrokeredIdentityContext exchangeExternal(TokenExchangeProvider tokenExchangeProvider, TokenExchangeContext tokenExchangeContext) {
         if (!supportsExternalExchange()) return null;
 
-        BrokeredIdentityContext context;
-        int teVersion = tokenExchangeProvider.getVersion();
-        switch (teVersion) {
-            case 1:
-                context = exchangeExternalTokenV1Impl(tokenExchangeContext.getEvent(), tokenExchangeContext.getFormParams());
-                break;
-            case 2:
-                context = exchangeExternalTokenV2Impl(tokenExchangeContext);
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported token exchange version " + teVersion);
-        }
+        BrokeredIdentityContext context = exchangeExternalImpl(tokenExchangeContext.getEvent(), tokenExchangeContext.getFormParams());
 
         if (context != null) {
             context.setIdp(this);
@@ -948,27 +985,15 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     /**
-     * Usage with token-exchange V1
+     * Usage with external-internal token-exchange
      *
      * @param event event builder
      * @param params parameters of the token-exchange request
      * @return brokered identity context with the details about user from the IDP
      */
-    protected BrokeredIdentityContext exchangeExternalTokenV1Impl(EventBuilder event, MultivaluedMap<String, String> params) {
+    protected BrokeredIdentityContext exchangeExternalImpl(EventBuilder event, MultivaluedMap<String, String> params) {
         return exchangeExternalUserInfoValidationOnly(event, params);
 
-    }
-
-    /**
-     * Usage with external-internal token-exchange v2.
-     *
-     * @param tokenExchangeContext data about token-exchange request
-     * @return brokered identity context with the details about user from the IDP
-     */
-    protected BrokeredIdentityContext exchangeExternalTokenV2Impl(TokenExchangeContext tokenExchangeContext) {
-        // Needs to be properly implemented for every provider to make sure it verifies external-token in appropriate way to validate user and also if the external-token
-        // was issued to the proper audience
-        throw new UnsupportedOperationException("Not yet supported to verify the external token of the identity provider " + getConfig().getAlias());
     }
 
     /**
@@ -1099,10 +1124,12 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     public void exchangeExternalComplete(UserSessionModel userSession, BrokeredIdentityContext context, MultivaluedMap<String, String> params) {
         if (getConfig().isStoreTokenInSession()) {
             if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ACCESS_TOKEN)) {
-                userSession.setNote(FEDERATED_ACCESS_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));
+                String subjectToken = params.getFirst(OAuth2Constants.SUBJECT_TOKEN);
+                setFederatedAccessToken(userSession, subjectToken);
             }
             if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ID_TOKEN)) {
-                userSession.setNote(OIDCIdentityProvider.FEDERATED_ID_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));
+                String subjectToken = params.getFirst(OAuth2Constants.SUBJECT_TOKEN);
+                setFederatedIdToken(userSession, subjectToken);
             }
             userSession.setNote(OIDCIdentityProvider.EXCHANGE_PROVIDER, getConfig().getAlias());
         }

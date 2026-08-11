@@ -1,5 +1,5 @@
 
-[_client-initiated-account-linking]
+[[_client-initiated-account-linking]]
 === Client initiated account linking
 
 Some applications want to integrate with social providers like Facebook, but do not want to provide an option to login via

@@ -27,6 +27,7 @@ import java.util.Set;
 
 import jakarta.ws.rs.ForbiddenException;
 
+import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.common.ClientModelIdentity;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
@@ -42,6 +43,7 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
@@ -383,6 +385,9 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
 
     @Override
     public boolean canManage(ClientModel client) {
+        if (isInternal(client)) {
+            return false;
+        }
         if (canManageClientsDefault()) return true;
         if (!root.isAdminSameRealm()) {
             return false;
@@ -411,6 +416,9 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
 
     @Override
     public boolean canConfigure(ClientModel client) {
+        if (isInternal(client)) {
+            return false;
+        }
         if (canManage(client)) return true;
         if (!root.isAdminSameRealm()) {
             return false;
@@ -708,4 +716,15 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         return false;
     }
 
+    protected boolean isInternal(ClientModel client) {
+        if (client == null) {
+            return false;
+        }
+
+        if (realm.getName().equals(Config.getAdminRealm())) {
+            return client.getClientId().endsWith(AdminRoles.APP_SUFFIX);
+        }
+
+        return Constants.REALM_MANAGEMENT_CLIENT_ID.equals(client.getClientId());
+    }
 }

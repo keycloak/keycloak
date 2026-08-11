@@ -31,7 +31,7 @@ public class AuthorizationEndpointRequest {
     String invalidRequestMessage;
 
     String clientId;
-    String redirectUriParam;
+    String redirectUri;
     String responseType;
     String responseMode;
     String state;
@@ -66,15 +66,15 @@ public class AuthorizationEndpointRequest {
         return clientId;
     }
 
-    public String getRedirectUriParam() {
-        return redirectUriParam;
+    public String getRedirectUri() {
+        return redirectUri;
     }
 
     public static AuthorizationEndpointRequest fromClientData(ClientData cData) {
         AuthorizationEndpointRequest request = new AuthorizationEndpointRequest();
         request.responseType = cData.getResponseType();
         request.responseMode = cData.getResponseMode();
-        request.redirectUriParam = cData.getRedirectUri();
+        request.redirectUri = cData.getRedirectUri();
         return request;
     }
 

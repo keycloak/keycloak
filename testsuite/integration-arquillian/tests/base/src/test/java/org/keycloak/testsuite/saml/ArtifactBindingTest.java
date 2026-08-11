@@ -102,7 +102,7 @@ public class ArtifactBindingTest extends AbstractSamlTest {
                 .build()
                 .login().user(bburkeUser).build()
                 .handleArtifact(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST)
-                    .setBeforeStepChecks(() -> setTimeOffset(1000)) // Move in time before resolving the artifact
+                    .setBeforeStepChecks(() -> timeOffSet.set(1000)) // Move in time before resolving the artifact
                 .build()
                 .doNotFollowRedirects()
                 .executeAndTransform(this::getArtifactResponse);

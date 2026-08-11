@@ -20,6 +20,8 @@ package org.keycloak.models.jpa.entities;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 
 /**
@@ -27,6 +29,26 @@ import jakarta.persistence.Table;
  *
  * @author Alexander Schwartz
  */
+@NamedQueries({
+        @NamedQuery(
+                name = "findExpiredRevokedTokenIds",
+                query = "select t.id from RevokedTokenEntity t where t.expire <= :currentTime"
+        ),
+        @NamedQuery(
+                name = "deleteExpiredRevokedTokenByIds",
+                query = "delete from RevokedTokenEntity where id in :ids and expire <= :currentTime"
+        ),
+        @NamedQuery(
+                name = "findRevokeTokenExpireTime",
+                query = "select t.expire from RevokedTokenEntity t where t.id = :id"
+        ),
+        @NamedQuery(
+                name = "insertRevokeTokenIfAbsent",
+                query = "insert into RevokedTokenEntity (id, expire) values (:id, :expire)" +
+                        " on conflict (id) do update set expire = :expire" +
+                        " where expire <= :currentTime"
+        ),
+})
 @Table(name="REVOKED_TOKEN")
 @Entity
 public class RevokedTokenEntity {
@@ -62,9 +84,7 @@ public class RevokedTokenEntity {
         if (o == null) return false;
         if (!(o instanceof RevokedTokenEntity that)) return false;
 
-        if (!id.equals(that.getId())) return false;
-
-        return true;
+        return id.equals(that.getId());
     }
 
     @Override

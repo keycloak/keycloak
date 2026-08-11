@@ -23,11 +23,10 @@ import java.util.Map.Entry;
 import org.keycloak.models.Constants;
 import org.keycloak.testsuite.auth.page.AccountFields;
 import org.keycloak.testsuite.auth.page.PasswordFields;
-import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.UIUtils;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
@@ -126,7 +125,7 @@ public class RegisterPage extends LanguageComboboxAwarePage
         }
 
         if (!isPasswordPresent() && password != null) {
-            Assert.fail("Password expected to be filled, but password field not present on the registration page");
+            Assertions.fail("Password expected to be filled, but password field not present on the registration page");
         }
 
         if (isPasswordPresent()) {
@@ -183,7 +182,7 @@ public class RegisterPage extends LanguageComboboxAwarePage
 
         try {
             usernameInput.clear();
-            Assert.fail("Form must be without username field");
+            Assertions.fail("Form must be without username field");
         } catch (NoSuchElementException e) {
             // OK
         }
@@ -290,9 +289,9 @@ public class RegisterPage extends LanguageComboboxAwarePage
         }
     }
 
-
-    public boolean isCurrent() {
-        return isCurrent("Register");
+    @Override
+    public String getExpectedPageId() {
+        return "login-register";
     }
 
     public AccountFields.AccountErrors getInputAccountErrors(){
@@ -306,11 +305,5 @@ public class RegisterPage extends LanguageComboboxAwarePage
     public void openWithLoginHint(String loginHint) {
         oauth.registrationForm().loginHint(loginHint).open();
         assertCurrent();
-    }
-
-    public void assertCurrent(String orgName) {
-        String name = getClass().getSimpleName();
-        Assert.assertTrue("Expected " + name + " but was " + DroneUtils.getCurrentDriver().getTitle() + " (" + DroneUtils.getCurrentDriver().getCurrentUrl() + ")",
-                isCurrent("Create an account to join the " + orgName + " organization"));
     }
 }

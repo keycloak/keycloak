@@ -64,6 +64,7 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
+import org.keycloak.protocol.oidc.utils.ContentTypeValidationUtil;
 import org.keycloak.protocol.oidc.utils.LogoutUtil;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.IDToken;
@@ -311,6 +312,7 @@ public class LogoutEndpoint {
     @NoCache
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response logout() {
+        ContentTypeValidationUtil.requireValidContentType(headers, MediaType.APPLICATION_FORM_URLENCODED_TYPE);
         MultivaluedMap<String, String> form = request.getDecodedFormParameters();
         if (form.containsKey(OAuth2Constants.REFRESH_TOKEN)) {
             return logoutToken();
@@ -496,7 +498,7 @@ public class LogoutEndpoint {
         }
 
         try {
-            session.clientPolicy().triggerOnEvent(new LogoutRequestContext(form));
+            session.clientPolicy().triggerOnEvent(new LogoutRequestContext(client, form));
             refreshToken = form.getFirst(OAuth2Constants.REFRESH_TOKEN);
         } catch (ClientPolicyException cpe) {
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
@@ -713,7 +715,7 @@ public class LogoutEndpoint {
 
     private ClientModel authorizeClient() {
         ClientModel client = AuthorizeClientUtil.authorizeClient(session, event, cors).getClient();
-        cors.allowedOrigins(session, client);
+        cors.checkAllowedOrigins(session, client);
 
         if (client.isBearerOnly()) {
             throw new CorsErrorResponseException(cors, Errors.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);

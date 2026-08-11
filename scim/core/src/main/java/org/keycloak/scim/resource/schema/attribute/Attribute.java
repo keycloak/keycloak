@@ -14,6 +14,7 @@ import org.keycloak.scim.resource.schema.ModelSchema;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 
 /**
@@ -28,6 +29,44 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
     public static final String RETURNED_DEFAULT = "default";
     public static final String RETURNED_REQUEST = "request";
     public static final String RETURNED_NEVER = "never";
+
+    public static String getSchema(String name) {
+        requireNonNull(name, "name is required");
+        int schemaSeparator = name.lastIndexOf(':');
+
+        if (schemaSeparator == -1) {
+            return null;
+        }
+
+        return name.substring(0, schemaSeparator);
+    }
+
+    public static String getResourceType(String name) {
+        requireNonNull(name, "name is required");
+        String schema = getSchema(name);
+
+        if  (schema == null) {
+            return null;
+        }
+
+        int resourceTypeSeparator = schema.lastIndexOf(':');
+
+        if (resourceTypeSeparator == -1) {
+            return null;
+        }
+
+        return schema.substring(resourceTypeSeparator + 1);
+    }
+
+    public static String getSimpleName(String name) {
+        String schema = getSchema(name);
+
+        if (schema == null) {
+            return name;
+        }
+
+        return name.substring(schema.length() + 1);
+    }
 
     /**
      * Creates a simple attribute with the given {@code name}.
@@ -67,6 +106,7 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
     private boolean required;
     private boolean caseExact;
     private String uniqueness;
+    private boolean storedLowerCase;
 
     private Attribute(String name, AttributeMapper<M, R> mapper, String parentName, String alias) {
         this.name = name;
@@ -178,12 +218,41 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
         return caseExact;
     }
 
+    public boolean isStoredLowerCase() {
+        return storedLowerCase;
+    }
+
+    public void setStoredLowerCase(boolean storedLowerCase) {
+        this.storedLowerCase = storedLowerCase;
+    }
+
     public void setUniqueness(String uniqueness) {
         this.uniqueness = uniqueness;
     }
 
     public String getUniqueness() {
         return uniqueness;
+    }
+
+    public String getSchema() {
+        if (!isExtension()) {
+            return null;
+        }
+        return getSchema(getName());
+    }
+
+    public String getResourceType() {
+        if (!isExtension()) {
+            return null;
+        }
+        return getResourceType(getName());
+    }
+
+    public String getSimpleName() {
+        if (!isExtension()) {
+            return null;
+        }
+        return getSimpleName(getName());
     }
 
     @Override
@@ -264,12 +333,16 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
                 }).anyMatch(this::equals);
     }
 
+    public boolean isExtension() {
+        return getName().contains(":");
+    }
+
     public static class Builder<M extends Model, R extends ResourceTypeRepresentation> {
 
         private final Class<?> complexType;
         private final String name;
         private TriConsumer<M, String, ?> modelSetter;
-        private BiConsumer<R, ?> representationSetter;
+        private TriConsumer<Attribute<M, R>, R, ?> representationSetter;
         List<Attribute<M, R>> attributes = new ArrayList<>();
         // by default, resolve model attribute name as the same as the scim attribute name
         private Function<Attribute<M, R>, String> modelAttributeResolver = Attribute::getName;
@@ -281,17 +354,24 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
         private TriConsumer<M, String, Set<?>> modelAdder;
         private boolean required;
         private boolean caseExact = true;
+        private boolean storedLowerCase;
         private String uniqueness = "none";
 
         private Builder(String name, Class<?> complexType) {
-            Objects.requireNonNull(name, "name cannot be null");
+            requireNonNull(name, "name cannot be null");
             this.complexType = complexType;
             this.name = name;
         }
 
-        public <C extends BiConsumer<R, ?>> Builder<M, R> withModelSetter(TriConsumer<M, String, ?> modelSetter, C representationSetter) {
+        public <V, C extends BiConsumer<R, V>> Builder<M, R> withModelSetter(TriConsumer<M, String, ?> modelSetter, C repSetter) {
             this.modelSetter = modelSetter;
-            this.representationSetter = representationSetter;
+            this.representationSetter = (TriConsumer<Attribute<M, R>, R, Object>) (attribute, r, o) -> repSetter.accept(r, (V) o);
+            return this;
+        }
+
+        public <V, C extends TriConsumer<Attribute<M, R>, R, V>> Builder<M, R> withSetters(TriConsumer<M, String, ?> modelSetter, C repSetter) {
+            this.modelSetter = modelSetter;
+            this.representationSetter = repSetter;
             return this;
         }
 
@@ -315,7 +395,7 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
             String subName = this.name + "." + name;
             Attribute<M, R> attribute = assembleAttribute(subName, this.name, alias,
                     new AttributeMapper<>(modelSetter, new ComplexAttributeSetter<>(this.name, name, complexType)),
-                    modelAttributeResolver, "string", null, returned, false, false, true, null, null);
+                    modelAttributeResolver, "string", null, returned, false, false, true, false, null, null);
             attributes.add(attribute);
             return this;
         }
@@ -353,7 +433,7 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
         public List<Attribute<M, R>> build() {
             Attribute<M, R> attribute = assembleAttribute(name, null, null,
                     new AttributeMapper<>(modelSetter, representationSetter, modelRemover, modelAdder),
-                    modelAttributeResolver, type, mutability, returned, multivalued, required, caseExact, uniqueness, complexType);
+                    modelAttributeResolver, type, mutability, returned, multivalued, required, caseExact, storedLowerCase, uniqueness, complexType);
             if (attributes.isEmpty()) {
                 // do not add the root attribute if there are subattributes
                 attributes.add(attribute);
@@ -368,6 +448,7 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
                                                    boolean multivalued,
                                                    boolean required,
                                                    boolean caseExact,
+                                                   boolean storedLowerCase,
                                                    String uniqueness,
                                                    Class<?> complexType) {
             Attribute<M, R> attribute = new Attribute<>(name, mapper, parentName, alias);
@@ -381,6 +462,7 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
             attribute.setComplexType(complexType);
             attribute.setRequired(required);
             attribute.setCaseExact(caseExact);
+            attribute.setStoredLowerCase(storedLowerCase);
             attribute.setUniqueness(uniqueness == null ? "none" : uniqueness);
             return attribute;
         }
@@ -407,6 +489,11 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
 
         public Builder<M, R> notCaseExact() {
             this.caseExact = false;
+            return this;
+        }
+
+        public Builder<M, R> storedLowerCase() {
+            this.storedLowerCase = true;
             return this;
         }
 

@@ -33,6 +33,9 @@ import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenExchangeRequestContext;
 
+import static org.keycloak.OAuth2Constants.ACTOR_TOKEN;
+import static org.keycloak.OAuth2Constants.SUBJECT_TOKEN;
+
 /**
  * OAuth 2.0 Authorization Code Grant
  * https://datatracker.ietf.org/doc/html/rfc8693#section-2.1
@@ -100,5 +103,10 @@ public class TokenExchangeGrantType extends OAuth2GrantTypeBase {
     @Override
     public Set<String> getSupportedMultivaluedRequestParameters() {
         return SUPPORTED_DUPLICATED_PARAMETERS;
+    }
+
+    @Override
+    public Set<String> getTokenParameterNames() {
+        return Set.of(SUBJECT_TOKEN, ACTOR_TOKEN);
     }
 }

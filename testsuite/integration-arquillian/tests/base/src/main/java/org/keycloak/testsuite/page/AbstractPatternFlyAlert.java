@@ -35,9 +35,9 @@ import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.UIUtils.isElementVisible;
 import static org.keycloak.testsuite.util.WaitUtils.PAGELOAD_TIMEOUT_MILLIS;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -82,11 +82,11 @@ public abstract class AbstractPatternFlyAlert {
     }
 
     public void assertDisplayed() {
-        assertTrue("Alert should displayed", isDisplayed());
+        assertTrue(isDisplayed(), "Alert should displayed");
     }
 
     public void assertNotDisplayed() {
-        assertFalse("Alert shouldn't be displayed", isDisplayed());
+        assertFalse(isDisplayed(), "Alert shouldn't be displayed");
     }
 
     public void assertSuccess() {
@@ -95,7 +95,7 @@ public abstract class AbstractPatternFlyAlert {
 
     public void assertSuccess(String expectedText) {
         assertDisplayed();
-        assertTrue("Alert type should be success", isSuccess());
+        assertTrue(isSuccess(), "Alert type should be success");
         if (expectedText != null) assertEquals(expectedText, getText());
     }
 

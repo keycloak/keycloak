@@ -21,13 +21,14 @@ public class GuideBuilder {
     private final Path targetDir;
     private final Log log;
 
-    public GuideBuilder(Path srcDir, Path targetDir, Log log, Properties properties) throws IOException {
+    public GuideBuilder(Path srcDir, Path targetDir, Log log, Properties properties,
+            Path docFile, Path cliExamplesFile, Path jsExamplesFile) throws IOException {
         this.srcDir = srcDir;
         this.targetDir = targetDir;
         this.log = log;
 
         Map<String, Object> globalAttributes = new HashMap<>();
-        globalAttributes.put("ctx", new Context(srcDir));
+        globalAttributes.put("ctx", new Context(srcDir, docFile, cliExamplesFile, jsExamplesFile));
         globalAttributes.put("version", Version.VERSION);
         globalAttributes.put("properties", properties);
 

@@ -34,7 +34,7 @@ import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
@@ -146,7 +146,7 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
         } catch (ForbiddenException ignore) {
         }
 
-        UserRepresentation masterUserRealmAdmin = UserConfigBuilder.create()
+        UserRepresentation masterUserRealmAdmin = UserBuilder.create()
                 .username("mymasteradmin")
                 .password("password")
                 .firstName("f")

@@ -27,6 +27,10 @@ public class ManagedUser extends ManagedTestResource {
         return createdRepresentation.getUsername();
     }
 
+    public String getEmail() {
+        return createdRepresentation.getEmail();
+    }
+
     public String getPassword() {
         return getPassword(createdRepresentation);
     }
@@ -44,7 +48,7 @@ public class ManagedUser extends ManagedTestResource {
         UserRepresentation rep = admin().toRepresentation();
         cleanup().resetToOriginalRepresentation(rep);
 
-        UserConfigBuilder configBuilder = UserConfigBuilder.update(rep);
+        UserBuilder configBuilder = UserBuilder.update(rep);
         for (ManagedUser.UserUpdate update : updates) {
             configBuilder = update.update(configBuilder);
         }
@@ -69,7 +73,7 @@ public class ManagedUser extends ManagedTestResource {
 
     public interface UserUpdate {
 
-        UserConfigBuilder update(UserConfigBuilder user);
+        UserBuilder update(UserBuilder user);
 
     }
 }

@@ -39,25 +39,24 @@ import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.RealmRepUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
@@ -71,19 +70,15 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
     public void configureTestRealm(RealmRepresentation testRealm) {
         super.configureTestRealm(testRealm);
         UserRepresentation user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
-        UserBuilder.edit(user)
-                   .totpSecret("totpSecret")
-                   .otpEnabled();
+        UserBuilder.update(user)
+                   .totpSecret("totpSecret");
     }
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
-
-    @Page
-    protected AppPage appPage;
+    public MailServer mail = new MailServer();
 
     @Page
     protected LoginPage loginPage;
@@ -105,18 +100,18 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        Assert.assertTrue(loginTotpPage.isCurrent());
+        loginTotpPage.assertCurrent();
 
         loginTotpPage.login("123456");
         loginTotpPage.assertCurrent();
-        Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
+        Assertions.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
 
         //loginPage.assertCurrent();  // Invalid authenticator code.
         //Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-        events.expectLogin().error("invalid_user_credentials").session((String) null)
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.expectLoginError(events.poll()).error("invalid_user_credentials").sessionId(null)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .withoutDetails(Details.CONSENT);
     }
 
     @Test
@@ -124,18 +119,18 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        Assert.assertTrue(loginTotpPage.isCurrent());
+        loginTotpPage.assertCurrent();
 
         loginTotpPage.login(null);
         loginTotpPage.assertCurrent();
-        Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
+        Assertions.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
 
         //loginPage.assertCurrent();  // Invalid authenticator code.
         //Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-        events.expectLogin().error("invalid_user_credentials").session((String) null)
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.expectLoginError(events.poll()).error("invalid_user_credentials").sessionId(null)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .withoutDetails(Details.CONSENT);
     }
 
     @Test
@@ -143,15 +138,15 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        Assert.assertTrue(loginTotpPage.isCurrent());
+        loginTotpPage.assertCurrent();
 
         setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
         loginTotpPage.login(totp.generateTOTP("totpSecret"));
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     // KEYCLOAK-3835
@@ -160,7 +155,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        Assert.assertTrue(loginTotpPage.isCurrent());
+        loginTotpPage.assertCurrent();
 
         // Refresh TOTP page
         driver.navigate().refresh();
@@ -169,9 +164,9 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
 
         loginTotpPage.login(totp.generateTOTP("totpSecret"));
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
@@ -179,13 +174,12 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", "invalid");
 
-        Assert.assertTrue(loginPage.isCurrent());
+        loginPage.assertCurrent();
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
 
-        events.expectLogin().error("invalid_user_credentials").session((String) null)
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.expectLoginError(events.poll()).error("invalid_user_credentials").sessionId(null)
+                .withoutDetails(Details.CONSENT);
     }
 
 
@@ -198,11 +192,11 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        Assert.assertTrue(loginTotpPage.isCurrent());
+        loginTotpPage.assertCurrent();
 
         // Assert attempted-username available
         loginPage.assertAttemptedUsernameAvailability(true);
-        Assert.assertEquals("test-user@localhost", loginPage.getAttemptedUsername());
+        Assertions.assertEquals("test-user@localhost", loginPage.getAttemptedUsername());
 
         // Reset login and assert back on the login screen
         loginTotpPage.clickResetLogin();
@@ -214,7 +208,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
     @Test
     public void loginWithTotp_getToken_checkCompatibilityCLI() throws IOException {
         Client httpClient = AdminClientUtil.createResteasyClient();
-        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setOtpPolicyCodeReusable(true).update()) {
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(managedRealm.admin()).setOtpPolicyCodeReusable(true).update()) {
             WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
                     .path("/realms")
                     .path(TEST)
@@ -230,13 +224,13 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
             Response response = exchangeUrl.request()
                     .post(Entity.form(form.param("otp", totp.generateTOTP("totpSecret"))));
 
-            Assert.assertEquals(200, response.getStatus());
+            Assertions.assertEquals(200, response.getStatus());
             response.close();
 
             response = exchangeUrl.request()
                     .post(Entity.form(form.param("totp", totp.generateTOTP("totpSecret"))));
 
-            Assert.assertEquals(200, response.getStatus());
+            Assertions.assertEquals(200, response.getStatus());
             response.close();
 
         } finally {
@@ -246,14 +240,14 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void testBase32EncodedSecret() throws IOException {
-        UserRepresentation userRep = testRealm().users().search("test-user@localhost").get(0);
-        UserResource user = testRealm().users().get(userRep.getId());
+        UserRepresentation userRep = managedRealm.admin().users().search("test-user@localhost").get(0);
+        UserResource user = managedRealm.admin().users().get(userRep.getId());
         List<CredentialRepresentation> credentials = user.credentials();
         CredentialRepresentation otpCredential = credentials.stream()
                 .filter(c -> OTPCredentialModel.TYPE.equals(c.getType()))
                 .findAny().orElse(null);
 
-        Assert.assertNotNull(otpCredential);
+        Assertions.assertNotNull(otpCredential);
 
         OTPCredentialData credentialData = JsonSerialization.readValue(otpCredential.getCredentialData(), OTPCredentialData.class);
         OTPCredentialData newCredentialData = new OTPCredentialData(credentialData.getSubType(), credentialData.getDigits(), credentialData.getCounter(), credentialData.getPeriod(), credentialData.getAlgorithm(),
@@ -272,17 +266,17 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
 
         newUser.getCredentials().add(credential);
 
-        testRealm().users().create(newUser).close();
+        managedRealm.admin().users().create(newUser).close();
 
         oauth.openLoginForm();
         loginPage.login(newUser.getUsername(), getPassword("test-otp-user@localhost"));
 
-        Assert.assertTrue(loginTotpPage.isCurrent());
+        loginTotpPage.assertCurrent();
 
         setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
         loginTotpPage.login(totp.generateTOTP(Base32.decode(rawSecret)));
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 }

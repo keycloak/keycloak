@@ -20,10 +20,12 @@ package org.keycloak.services.util;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.AbstractMap;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -39,8 +41,10 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.SignatureProviderFactory;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -53,6 +57,7 @@ import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
@@ -92,6 +97,7 @@ public class DPoPUtil {
 
     public static final int DEFAULT_PROOF_LIFETIME = 10;
     public static final int DEFAULT_ALLOWED_CLOCK_SKEW = 15; // sec;
+    public static final String DPOP_JKT_TYPE = "DPoP";
     public static final String DPOP_TOKEN_TYPE = "DPoP";
     public static final String DPOP_SCHEME = "DPoP";
     public final static String DPOP_SESSION_ATTRIBUTE = "dpop";
@@ -104,7 +110,7 @@ public class DPoPUtil {
     }
 
     private static URI normalize(URI uri) {
-        return UriBuilder.fromUri(uri).replaceQuery("").build();
+        return UriBuilder.fromUri(uri).replaceQuery("").fragment(null).build();
     }
 
     /**
@@ -183,15 +189,18 @@ public class DPoPUtil {
             throw new VerificationException("Invalid or missing type in DPoP header: " + header.getType());
         }
 
-        String algorithm = header.getAlgorithm().name();
+        if (header.getAlgorithm() == null) {
+            throw new VerificationException("No alg in DPoP header");
+        }
 
+        String algorithm = header.getAlgorithm().name();
         if (!getDPoPSupportedAlgorithms(session).contains(algorithm)) {
             throw new VerificationException("Unsupported DPoP algorithm: " + header.getAlgorithm());
         }
 
         JWK jwk = header.getKey();
-        KeyWrapper key;
 
+        KeyWrapper key;
         if (jwk == null) {
             throw new VerificationException("No JWK in DPoP header");
         } else {
@@ -202,14 +211,21 @@ public class DPoPUtil {
             if (key.getPublicKey() == null) {
                 throw new VerificationException("No public key in DPoP header");
             }
-            if (key.getPrivateKey() != null) {
-                throw new VerificationException("Private key is present in DPoP header");
+            // JWKSUtils.getKeyWrapper() does actually never return the private key
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            if (sessionFactory.getProviderFactory(SignatureProvider.class, algorithm) instanceof SignatureProviderFactory providerFactory) {
+                Set<String> jwkOther = jwk.getOtherClaims().keySet();
+                if (key.getPrivateKey() != null || !Collections.disjoint(jwkOther, providerFactory.getJwkPrivateKeyClaims())) {
+                    throw new VerificationException("Private key material must not be present in DPoP JWK");
+                }
+            } else {
+                throw new VerificationException("No signature provider factory for: " + algorithm);
             }
         }
 
         key.setAlgorithm(header.getAlgorithm().name());
 
-        SignatureVerifierContext signatureVerifier = session.getProvider(SignatureProvider.class, algorithm).verifier(key);
+        SignatureVerifierContext signatureVerifier = CryptoUtils.getSignatureProvider(session, algorithm).verifier(key);
         verifier.verifierContext(signatureVerifier);
         verifier.withChecks(
                 DPoPClaimsCheck.INSTANCE,
@@ -242,13 +258,13 @@ public class DPoPUtil {
                         boolean isSchemeDPoP = false;
                         if (StringUtil.isNotBlank(validator.authHeader)) {
                             String[] split = WHITESPACES.split(validator.authHeader);
-                            isSchemeDPoP = TokenUtil.TOKEN_TYPE_DPOP.equals(split[0]);
+                            isSchemeDPoP = TokenUtil.TOKEN_TYPE_DPOP.equalsIgnoreCase(split[0]);
                         }
 
-                        if (!isSchemeDPoP && DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {
+                        if (!isSchemeDPoP && DPoPUtil.DPOP_TOKEN_TYPE.equalsIgnoreCase(token.getType())) {
                             throw new VerificationException("The access token type is DPoP but Authorization Header is not DPoP");
                         }
-                        if (isSchemeDPoP && !DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {
+                        if (isSchemeDPoP && !DPoPUtil.DPOP_TOKEN_TYPE.equalsIgnoreCase(token.getType())) {
                             throw new VerificationException("The access token type is not DPoP but Authorization Header is DPoP");
                         }
                         ClientModel clientModel = realm.getClientByClientId(token.getIssuedFor());
@@ -304,10 +320,6 @@ public class DPoPUtil {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, errorMessage, Response.Status.BAD_REQUEST);
         }
 
-    }
-
-    public static boolean isDPoPToken(AccessToken refreshToken) {
-        return refreshToken.getConfirmation() != null && refreshToken.getConfirmation().getKeyThumbprint() != null;
     }
 
     private static class DPoPClaimsCheck implements TokenVerifier.Predicate<DPoP> {
@@ -610,13 +622,13 @@ public class DPoPUtil {
             if (bindOnlyRefreshToken) {
                 return super.transformAccessToken(token, mappingModel, session, userSession, clientSessionCtx);
             }
-            AccessToken.Confirmation confirmation = (AccessToken.Confirmation) token.getOtherClaims()
-                    .get(OAuth2Constants.CNF);
-            if (confirmation == null) {
-                confirmation = new AccessToken.Confirmation();
-                token.setConfirmation(confirmation);
+            AccessToken.Confirmation cnf = (AccessToken.Confirmation) token.getOtherClaims().get(OAuth2Constants.CNF);
+            if (cnf == null) {
+                cnf = new AccessToken.Confirmation();
+                token.setConfirmation(cnf);
             }
-            confirmation.setKeyThumbprint(dPoP.getThumbprint());
+            cnf.setKeyThumbprint(dPoP.getThumbprint());
+            cnf.setJktType(DPOP_JKT_TYPE);
             // make sure that the token-type is set to DPoP. This will be resolved if the AccessTokenResponse is built.
             token.type(DPOP_TOKEN_TYPE);
             return super.transformAccessToken(token, mappingModel, session, userSession, clientSessionCtx);

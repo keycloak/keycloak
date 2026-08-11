@@ -34,13 +34,13 @@ import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.util.JsonSerialization;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_CODE;
 import static org.keycloak.OAuth2Constants.CLIENT_CREDENTIALS;
@@ -193,12 +193,12 @@ public class OIDCClientRegistrationResponseTypesAndGrantsTest extends AbstractCl
         OIDCClientRepresentation clientRep = createRep(null, List.of(AUTHORIZATION_CODE, REFRESH_TOKEN, TOKEN_EXCHANGE_GRANT_TYPE));
         clientRep.setTokenEndpointAuthMethod("none");
 
-        ClientRegistrationException clientRegistrationException = Assert.assertThrows(ClientRegistrationException.class, () -> reg.oidc().create(clientRep));
+        ClientRegistrationException clientRegistrationException = Assertions.assertThrows(ClientRegistrationException.class, () -> reg.oidc().create(clientRep));
         MatcherAssert.assertThat(clientRegistrationException.getCause(), Matchers.instanceOf(HttpErrorException.class));
         HttpErrorException httpErrorException = (HttpErrorException) clientRegistrationException.getCause();
-        Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), httpErrorException.getStatusLine().getStatusCode());
+        Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), httpErrorException.getStatusLine().getStatusCode());
         OAuth2ErrorRepresentation error = JsonSerialization.readValue(httpErrorException.getErrorResponse(), OAuth2ErrorRepresentation.class);
-        Assert.assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, error.getError());
+        Assertions.assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, error.getError());
 
         clientRep.setTokenEndpointAuthMethod(null);
         OIDCClientRepresentation response = reg.oidc().create(clientRep);
@@ -262,14 +262,14 @@ public class OIDCClientRegistrationResponseTypesAndGrantsTest extends AbstractCl
                                              boolean expectedTokenExchange) {
         ClientRepresentation kcClient = getClient(response.getClientId());
         OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
-        Assert.assertEquals("Expected standard flow: " + expectedStandardFlow + " did not match.", expectedStandardFlow, kcClient.isStandardFlowEnabled());
-        Assert.assertEquals("Expected implicit flow: " + expectedImplicitFlow + " did not match.", expectedImplicitFlow, kcClient.isImplicitFlowEnabled());
-        Assert.assertEquals("Expected direct grant flow: " + expectedDirectGrantFlow + " did not match.", expectedDirectGrantFlow, kcClient.isDirectAccessGrantsEnabled());
-        Assert.assertEquals("Expected service accounts flow: " + expectedServiceAccountsFlow + " did not match.", expectedServiceAccountsFlow, kcClient.isServiceAccountsEnabled());
-        Assert.assertEquals("Expected refresh: " + expectedRefreshToken + " did not match.", expectedRefreshToken, config.isUseRefreshToken());
-        Assert.assertFalse("Don't expect refresh token for client credentials grant enabled", config.isUseRefreshTokenForClientCredentialsGrant());
+        Assertions.assertEquals(expectedStandardFlow, kcClient.isStandardFlowEnabled(), "Expected standard flow: " + expectedStandardFlow + " did not match.");
+        Assertions.assertEquals(expectedImplicitFlow, kcClient.isImplicitFlowEnabled(), "Expected implicit flow: " + expectedImplicitFlow + " did not match.");
+        Assertions.assertEquals(expectedDirectGrantFlow, kcClient.isDirectAccessGrantsEnabled(), "Expected direct grant flow: " + expectedDirectGrantFlow + " did not match.");
+        Assertions.assertEquals(expectedServiceAccountsFlow, kcClient.isServiceAccountsEnabled(), "Expected service accounts flow: " + expectedServiceAccountsFlow + " did not match.");
+        Assertions.assertEquals(expectedRefreshToken, config.isUseRefreshToken(), "Expected refresh: " + expectedRefreshToken + " did not match.");
+        Assertions.assertFalse(config.isUseRefreshTokenForClientCredentialsGrant(), "Don't expect refresh token for client credentials grant enabled");
         boolean deviceEnabled = kcClient.getAttributes() != null && Boolean.parseBoolean(kcClient.getAttributes().get(OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED));
-        Assert.assertEquals("Expected device: " + expectedDeviceGrant + " did not match.", expectedDeviceGrant, deviceEnabled);
-        Assert.assertEquals("Expected Token Exchange: " + expectedTokenExchange + " did not match.", expectedTokenExchange, config.isStandardTokenExchangeEnabled());
+        Assertions.assertEquals(expectedDeviceGrant, deviceEnabled, "Expected device: " + expectedDeviceGrant + " did not match.");
+        Assertions.assertEquals(expectedTokenExchange, config.isStandardTokenExchangeEnabled(), "Expected Token Exchange: " + expectedTokenExchange + " did not match.");
     }
 }

@@ -37,6 +37,15 @@ public interface ScimResourceTypeProvider<R extends ResourceTypeRepresentation> 
     }
 
     /**
+     * Returns a human-readable description of the resource type managed by this provider.
+     *
+     * @return the description of the resource type
+     */
+    default String getDescription() {
+        return getName();
+    }
+
+    /**
      * Returns the schema name of the resource type managed by this provider.
      *
      * @return the schema URI of the resource type

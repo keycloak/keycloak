@@ -229,11 +229,12 @@ Database - additional datasources:
 --db-enabled-<datasource> <true|false>
                      If the named datasource <datasource> should be enabled at runtime. Default:
                        true.
+--db-health-exclude-<datasource> <true|false>
+                     If you have enabled health endpoints, but want the given datasource excluded
+                       from the health check. Default: false.
 --db-kind-<datasource> <vendor>
-                     Used for named <datasource>. The database vendor. In production mode the
-                       default value of 'dev-file' is deprecated, you should explicitly specify the
-                       db instead. Possible values are: dev-file, dev-mem, mariadb, mssql, mysql,
-                       oracle, postgres, tidb.
+                     Used for named <datasource>. The database vendor. Possible values are:
+                       dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres, tidb.
 --db-log-slow-queries-threshold-<datasource> <milliseconds>
                      Used for named <datasource>. Log SQL statements slower than the configured
                        threshold with logger org.hibernate.SQL_SLOW and log-level info. Default:
@@ -434,9 +435,10 @@ HTTP(S):
                        loadbalancer reconfiguration and draining of TLS/HTTP keepalive connections.
                        Default: 1s.
 --shutdown-timeout <timeout>
-                     The shutdown period waiting for currently running HTTP requests to finish. May
-                       be an ISO 8601 duration value, an integer number of seconds, or an integer
-                       followed by one of [ms, h, m, s, d]. Default: 1s.
+                     The shutdown period waiting for currently running HTTP requests to finish and
+                       distributed caches to settle. May be an ISO 8601 duration value, an integer
+                       number of seconds, or an integer followed by one of [ms, h, m, s, d].
+                       Default: 10s.
 
 HTTP Access log:
 
@@ -564,6 +566,22 @@ Management:
                        something is exposed on the management interface - see the guide for
                        details. Default: TLSv1.3,TLSv1.2. Available only when
                        http-management-scheme is inherited.
+--https-management-trust-store-file <file>
+                     The trust store which holds the certificate information of the certificates to
+                       trust for the management server. If not given, the value is inherited from
+                       HTTP options. Relevant only when something is exposed on the management
+                       interface - see the guide for details. Available only when
+                       http-management-scheme is inherited.
+--https-management-trust-store-password <password>
+                     The password of the trust store file for the management server. If not given,
+                       the value is inherited from HTTP options. Relevant only when something is
+                       exposed on the management interface - see the guide for details. Available
+                       only when http-management-scheme is inherited.
+--https-management-trust-store-type <type>
+                     The type of the trust store file for the management server. If not given, the
+                       value is inherited from HTTP options. Relevant only when something is
+                       exposed on the management interface - see the guide for details. Available
+                       only when http-management-scheme is inherited.
 --legacy-observability-interface <true|false>
                      DEPRECATED. If metrics/health endpoints should be exposed on the main HTTP
                        server (not recommended). If set to true, the management interface is

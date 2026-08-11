@@ -29,12 +29,14 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -59,9 +61,10 @@ import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.constants.OID4VCIConstants;
-import org.keycloak.crypto.Algorithm;
 import org.keycloak.deployment.DeployedConfigurationsManager;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.AccountRoles;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -85,9 +88,9 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
-import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.AccessToken.Access;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -120,6 +123,8 @@ public final class KeycloakModelUtils {
 
     public static final int DEFAULT_RSA_KEY_SIZE = 4096;
     public static final int DEFAULT_CERTIFICATE_VALIDITY_YEARS = 3;
+
+    private static final ThreadLocal<Integer> timeouts = new ThreadLocal<Integer>();
 
     private KeycloakModelUtils() {
     }
@@ -251,11 +256,19 @@ public final class KeycloakModelUtils {
     }
 
     public static String generateSecret(ClientModel client) {
-        int secretLength = getSecretLengthByAuthenticationType(client.getClientAuthenticatorType(), client.getAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG));
+        int secretLength = getRequiredClientSecretLength();
         String secret = SecretGenerator.getInstance().randomString(secretLength);
         client.setSecret(secret);
         client.setAttribute(ClientSecretConstants.CLIENT_SECRET_CREATION_TIME, String.valueOf(Time.currentTime()));
         return secret;
+    }
+
+    /**
+     * Returns the required length for a client secret in alphanumeric characters.
+     * Always generated at HS512-level entropy to cover all HMAC signature use cases.
+     */
+    public static int getRequiredClientSecretLength() {
+        return SecretGenerator.equivalentEntropySize(SecretGenerator.SECRET_LENGTH_512_BITS, SecretGenerator.ALPHANUM.length);
     }
 
     public static String getDefaultClientAuthenticatorType() {
@@ -333,6 +346,57 @@ public final class KeycloakModelUtils {
         }
 
         return session.users().getUserByUsername(realm, username);
+    }
+
+    /**
+     * Enlists a task that will run in a new, independent transaction when the current
+     * transaction rolls back. The task is a no-op if the current transaction commits normally.
+     *
+     * <p>Use this for cleanup operations that must persist even when an error response
+     * causes the main transaction to roll back (e.g., session invalidation on token reuse).
+     * The task receives a {@link SessionLookup} backed by a fresh session
+     * with realm/client context cloned from the current one.</p>
+     *
+     * @see #enlistAfterCompletion(KeycloakSession, Consumer)
+     */
+    public static void enlistAfterRollback(KeycloakSession currentSession, Consumer<SessionLookup> task) {
+        enlistAfterCompletion(currentSession, task, false);
+    }
+
+    /**
+     * Enlists a task that will run in a new, independent transaction after the current
+     * transaction completes, regardless of whether it commits or rolls back.
+     *
+     * <p>Use this for operations that must persist in both success and error paths
+     * (e.g., creating UMA permission tickets).</p>
+     *
+     * @see #enlistAfterRollback(KeycloakSession, Consumer)
+     */
+    public static void enlistAfterCompletion(KeycloakSession currentSession, Consumer<SessionLookup> task) {
+        enlistAfterCompletion(currentSession, task, true);
+    }
+
+    private static void enlistAfterCompletion(KeycloakSession currentSession, Consumer<SessionLookup> task, boolean runOnCommit) {
+        KeycloakSessionFactory factory = currentSession.getKeycloakSessionFactory();
+        KeycloakContext context = currentSession.getContext();
+
+        currentSession.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+            @Override
+            protected void commitImpl() {
+                if (runOnCommit) {
+                    execute();
+                }
+            }
+
+            @Override
+            protected void rollbackImpl() {
+                execute();
+            }
+
+            private void execute() {
+                runJobInTransaction(factory, context, sub -> task.accept(new SessionLookup(sub)));
+            }
+        });
     }
 
     /**
@@ -501,12 +565,22 @@ public final class KeycloakModelUtils {
                 try {
                     // If timeout is set to 0, reset to default transaction timeout
                     lookup.getTransactionManager().setTransactionTimeout(timeoutInSeconds);
+
+                    if (timeoutInSeconds == 0) {
+                        timeouts.remove();
+                    } else {
+                        timeouts.set(timeoutInSeconds);
+                    }
                 } catch (SystemException e) {
                     // Shouldn't happen for Wildfly transaction manager
                     throw new RuntimeException(e);
                 }
             }
         }
+    }
+
+    public static Optional<Integer> getTransactionLimit() {
+        return Optional.ofNullable(timeouts.get());
     }
 
     public static Function<KeycloakSessionFactory, ComponentModel> componentModelGetter(String realmId, String componentId) {
@@ -1106,6 +1180,38 @@ public final class KeycloakModelUtils {
         return clientId + CLIENT_ROLE_SEPARATOR + roleName;
     }
 
+    public static RoleModel getRoleByName(RealmModel realm, String clientId, String name) {
+        if (clientId == null) {
+            return realm.getRole(name);
+        } else {
+            ClientModel client = realm.getClientByClientId(clientId);
+
+            if (client == null) {
+                return null;
+            }
+
+            return client.getRole(name);
+        }
+    }
+
+    public static void removeTransientAdminRoles(RealmModel realm, String clientId, UserModel user, Access access) {
+        if (access == null || access.getRoles() == null) {
+            return;
+        }
+
+        Set<String> roles = access.getRoles();
+        Iterator<String> roleIterator = roles.iterator();
+
+        while (roleIterator.hasNext()) {
+            String role = roleIterator.next();
+            RoleModel adminRole = getRoleByName(realm, clientId, role);
+
+            if (AdminRoles.containsAdminRole(adminRole) && !user.hasRole(adminRole)) {
+                roleIterator.remove();
+            }
+        }
+    }
+
     /**
      * Check to see if a flow is currently in use
      *
@@ -1218,8 +1324,8 @@ public final class KeycloakModelUtils {
         ClientScopeModel clientScope = realm.getClientScopeById(clientScopeId);
 
         if (clientScope == null) {
-            // as fallback we try to resolve dynamic scopes
-            clientScope = client.getDynamicClientScope(clientScopeId);
+            // as fallback we try to resolve parameterized scopes
+            clientScope = client.getParameterizedClientScope(clientScopeId);
         }
 
         if (clientScope != null) {
@@ -1293,22 +1399,12 @@ public final class KeycloakModelUtils {
     }
 
     /**
-     * @param clientAuthenticatorType
-     * @return secret size based on authentication type
+     * @param clientAuthenticatorType ignored, kept for backwards compatibility
+     * @param signingAlg ignored, kept for backwards compatibility
+     * @return secret size in alphanumeric characters with HS512-level entropy
      */
     public static int getSecretLengthByAuthenticationType(String clientAuthenticatorType, String signingAlg) {
-        if (clientAuthenticatorType != null)
-            switch (clientAuthenticatorType) {
-                case AUTH_TYPE_CLIENT_SECRET_JWT: {
-                    if (Algorithm.HS384.equals(signingAlg))
-                        return SecretGenerator.equivalentEntropySize(SecretGenerator.SECRET_LENGTH_384_BITS, SecretGenerator.ALPHANUM.length);
-                    else if (Algorithm.HS512.equals(signingAlg))
-                        return SecretGenerator.equivalentEntropySize(SecretGenerator.SECRET_LENGTH_512_BITS, SecretGenerator.ALPHANUM.length);
-                    else
-                        return SecretGenerator.equivalentEntropySize(SecretGenerator.SECRET_LENGTH_256_BITS, SecretGenerator.ALPHANUM.length);
-                }
-            }
-        return SecretGenerator.SECRET_LENGTH_256_BITS;
+        return getRequiredClientSecretLength();
     }
 
     /**

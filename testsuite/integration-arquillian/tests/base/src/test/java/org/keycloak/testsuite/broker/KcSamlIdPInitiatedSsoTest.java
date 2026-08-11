@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -41,7 +42,6 @@ import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.PageUtils;
@@ -54,6 +54,7 @@ import org.keycloak.testsuite.utils.io.IOUtil;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedCondition;
@@ -71,9 +72,9 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -169,7 +170,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
 
         waitForPage("update account information", false);
 
-        Assert.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.assertCurrent();
         assertThat("We must be on consumer realm right now",
                 driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_CONS_NAME + "/"));
 
@@ -179,12 +180,12 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         UsersResource consumerUsers = adminClient.realm(REALM_CONS_NAME).users();
 
         int userCount = consumerUsers.count();
-        Assert.assertTrue("There must be at least one user", userCount > 0);
+        Assertions.assertTrue(userCount > 0, "There must be at least one user");
 
         List<UserRepresentation> users = consumerUsers.search("", 0, userCount);
 
         boolean isUserFound = users.stream().anyMatch(user -> user.getUsername().equals(CONSUMER_CHOSEN_USERNAME) && user.getEmail().equals("test@localhost"));
-        Assert.assertTrue("There must be user " + CONSUMER_CHOSEN_USERNAME + " in realm " + REALM_CONS_NAME, isUserFound);
+        Assertions.assertTrue(isUserFound, "There must be user " + CONSUMER_CHOSEN_USERNAME + " in realm " + REALM_CONS_NAME);
 
         assertThat(driver.findElement(By.tagName("a")).getAttribute("id"), containsString("account"));
     }
@@ -203,7 +204,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
 
         waitForPage("update account information", false);
 
-        Assert.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.assertCurrent();
         assertThat("We must be on consumer realm right now",
                 driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_CONS_NAME + "/"));
 
@@ -217,6 +218,69 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         driver.navigate().to(getSamlIdpInitiatedUrl(REALM_PROV_NAME, "samlbroker"));
         errorPage.assertCurrent();
         assertThat(errorPage.getError(), is("Page not found"));
+    }
+
+    /**
+     * Tests that a SAML IdP configured as link-only rejects IdP-initiated login attempts.
+     *
+     * The normal broker login path checks linkOnly and rejects login, but the IdP-initiated path
+     * (POST /broker/{alias}/endpoint/clients/{client_id}) bypasses that check. This test verifies
+     * that a signed SAML response posted to the IdP-initiated endpoint is rejected when the broker
+     * is configured as link-only.
+     */
+    @Test
+    public void testLinkOnlyBrokerIdpInitiated() throws Exception {
+        // first, do a successful IdP-initiated login to create a consumer user with a federated identity link.
+        driver.navigate().to(getSamlIdpInitiatedUrl(REALM_PROV_NAME, "samlbroker"));
+
+        waitForPage("sign in to", true);
+
+        assertThat("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_PROV_NAME + "/"));
+
+        log.debug("Logging in");
+        accountLoginPage.login(PROVIDER_REALM_USER_NAME, PROVIDER_REALM_USER_PASSWORD);
+
+        waitForPage("update account information", false);
+
+        updateAccountInformationPage.assertCurrent();
+        assertThat("We must be on consumer realm right now",
+                driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_CONS_NAME + "/"));
+
+        log.debug("Updating info on updateAccount page");
+        updateAccountInformationPage.updateAccountInformation(CONSUMER_CHOSEN_USERNAME, "test@localhost", "Firstname", "Lastname");
+
+        // now set the broker to link-only - the provider should only be usable for account linking, not login.
+        IdentityProviderResource idp = adminClient.realm(REALM_CONS_NAME).identityProviders().get("saml-leaf");
+        IdentityProviderRepresentation rep = idp.toRepresentation();
+        rep.setLinkOnly(true);
+        idp.update(rep);
+        getCleanup(REALM_CONS_NAME).addCleanup(() -> {
+            IdentityProviderRepresentation cleanup = adminClient.realm(REALM_CONS_NAME).identityProviders().get("saml-leaf").toRepresentation();
+            cleanup.setLinkOnly(false);
+            adminClient.realm(REALM_CONS_NAME).identityProviders().get("saml-leaf").update(cleanup);
+        });
+
+        // logout the consumer user so that the next login attempt goes through the full broker flow.
+        UsersResource users = adminClient.realm(REALM_CONS_NAME).users();
+        String userId = users.search(CONSUMER_CHOSEN_USERNAME).get(0).getId();
+        users.get(userId).logout();
+
+        // verify that the normal broker login path rejects link-only providers (via kc_idp_hint).
+        String normalLoginUrl = urlRealmConsumer + "/protocol/openid-connect/auth"
+                + "?client_id=account"
+                + "&response_type=code"
+                + "&redirect_uri=" + URLEncoder.encode(urlRealmConsumer + "/account", StandardCharsets.UTF_8)
+                + "&kc_idp_hint=saml-leaf";
+        driver.navigate().to(normalLoginUrl);
+        errorPage.assertCurrent();
+        assertThat(errorPage.getError(), is("Could not send authentication request to identity provider."));
+
+        // verify that the IdP-initiated path also rejects link-only providers - the provider SSO session
+        // is still active, so the provider sends a signed SAML response to the consumer's broker endpoint.
+        driver.navigate().to(getSamlIdpInitiatedUrl(REALM_PROV_NAME, "samlbroker"));
+        errorPage.assertCurrent();
+        assertThat(errorPage.getError(), is("Could not send authentication request to identity provider."));
     }
 
     private String getSamlIdpInitiatedUrl(String realmName, String samlIdpInitiatedSsoUrlName) {
@@ -578,7 +642,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
 
         waitForPage("update account information", false);
 
-        Assert.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.assertCurrent();
         assertThat("We must be on consumer realm right now",
                 driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_CONS_NAME + "/"));
 

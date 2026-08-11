@@ -22,6 +22,7 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.InfinispanContainer;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.WithExternalInfinispan;
 
 import io.quarkus.test.junit.main.Launch;
@@ -30,7 +31,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.when;
 
-@DistributionTest(keepAlive = true)
+@DistributionTest(stopServer = Mode.MANUAL)
 @WithExternalInfinispan
 @Tag(DistributionTest.STORAGE)
 public class ExternalInfinispanTest {

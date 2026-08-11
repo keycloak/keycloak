@@ -42,6 +42,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.InvitationManager;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -77,6 +78,11 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
     @Override
     public Response preHandleToken(InviteOrgActionToken token, ActionTokenContext<InviteOrgActionToken> tokenContext) {
         KeycloakSession session = tokenContext.getSession();
+
+        if (!Organizations.isEnabled(session)) {
+            return disabledOrganizationResponse(tokenContext, token);
+        }
+
         OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
         OrganizationModel organization = orgProvider.getById(token.getOrgId());
 
@@ -113,11 +119,18 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
     public Response handleToken(InviteOrgActionToken token, ActionTokenContext<InviteOrgActionToken> tokenContext) {
         UserModel user = tokenContext.getAuthenticationSession().getAuthenticatedUser();
         KeycloakSession session = tokenContext.getSession();
+
+        if (!Organizations.isEnabled(session)) {
+            return disabledOrganizationResponse(tokenContext, token);
+        }
+
         OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
         AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
         EventBuilder event = tokenContext.getEvent();
 
-        event.event(EventType.INVITE_ORG).detail(Details.USERNAME, user.getUsername());
+        event.event(EventType.INVITE_ORG)
+                .detail(Details.USERNAME, user.getUsername())
+                .detail(Details.ORG_ID, token.getOrgId());
 
         OrganizationModel organization = orgProvider.getById(token.getOrgId());
 

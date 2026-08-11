@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -51,6 +52,14 @@ public class OID4VCCredentialOfferPage extends AbstractLoginPage {
 
     public void cancel() {
         cancelAIAButton.click();
+    }
+
+    public boolean isCancelDisplayed() {
+        try {
+            return cancelAIAButton.isDisplayed();
+        } catch (NoSuchElementException nsee) {
+            return false;
+        }
     }
 
     @Override

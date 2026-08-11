@@ -21,6 +21,7 @@ package org.keycloak.authentication.authenticators.client;
 import java.util.List;
 
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseObjectProvider;
@@ -106,14 +107,20 @@ public abstract class AbstractBaseJWTValidator {
     protected boolean validateTokenReuse(long lifespanInSecs) {
         final JsonWebToken token = clientAssertionState.getToken();
         final String tokenId = token.getId();
+        final String namespacePrefix = getJtiCacheKeyPrefix();
+        final String cacheKey = namespacePrefix + ":" + tokenId;
         SingleUseObjectProvider singleUseCache = session.singleUseObjects();
-        if (singleUseCache.putIfAbsent(tokenId, lifespanInSecs)) {
-            logger.tracef("Added token '%s' to single-use cache. Lifespan: %d seconds, issuedFor: %s", tokenId, lifespanInSecs, token.getIssuedFor());
+        if (singleUseCache.putIfAbsent(cacheKey, lifespanInSecs)) {
+            logger.tracef("Added token '%s' to single-use cache with key '%s'. Lifespan: %d seconds, issuedFor: %s", tokenId, cacheKey, lifespanInSecs, token.getIssuedFor());
         } else {
             logger.warnf("Token '%s' already used when for issuedFor '%s'.", tokenId, token.getIssuedFor());
             return failure("Token reuse detected");
         }
         return true;
+    }
+
+    protected String getJtiCacheKeyPrefix() {
+        return getClass().getSimpleName().toLowerCase();
     }
 
     public boolean validateTokenAudience(List<String> expectedAudiences, boolean multipleAudienceAllowed) {
@@ -129,6 +136,14 @@ public abstract class AbstractBaseJWTValidator {
         return true;
     }
 
+    /**
+     * By default, symmetric algorithms are not allowed
+     * @return false by default
+     */
+    protected boolean isSymmetricAlgorithmAllowed() {
+        return false;
+    }
+
     public boolean validateSignatureAlgorithm(String expectedSignatureAlg) {
         JWSInput jws = clientAssertionState.getJws();
 
@@ -136,8 +151,21 @@ public abstract class AbstractBaseJWTValidator {
             return failure("Invalid signature algorithm");
         }
 
+        String algorithmName = jws.getHeader().getAlgorithm().name();
+
+        if ("none".equalsIgnoreCase(algorithmName)) {
+            return failure("Invalid signature algorithm");
+        }
+
+        if (!isSymmetricAlgorithmAllowed()) {
+            ClientSignatureVerifierProvider signatureProvider = session.getProvider(ClientSignatureVerifierProvider.class, algorithmName);
+            if (signatureProvider == null || !signatureProvider.isAsymmetricAlgorithm()) {
+                return failure("Invalid signature algorithm");
+            }
+        }
+
         if (expectedSignatureAlg != null) {
-            if (!expectedSignatureAlg.equals(jws.getHeader().getAlgorithm().name())) {
+            if (!expectedSignatureAlg.equals(algorithmName)) {
                 return failure("Invalid signature algorithm");
             }
         }

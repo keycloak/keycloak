@@ -1,5 +1,6 @@
 <#import "field.ftl" as field>
 <#import "footer.ftl" as loginFooter>
+<#import "theme-resources.ftl" as themeResourceTags>
 <#macro username>
   <#assign label>
     <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
@@ -37,14 +38,22 @@
             <meta name="${meta?split('==')[0]}" content="${meta?split('==')[1]}"/>
         </#list>
     </#if>
-    <title>${msg("loginTitle",(realm.displayName!''))}</title>
-    <link rel="icon" href="${url.resourcesPath}/img/favicon.ico" />
-    <#if properties.stylesCommon?has_content>
+    <title>${title!}</title>
+    <#if themeResources?? && themeResources.favicons?has_content>
+        <@themeResourceTags.renderFavicons themeResources.favicons url.resourcesPath />
+    <#else>
+        <link rel="icon" href="${url.resourcesPath}/img/favicon.ico" />
+    </#if>
+    <#if themeResources?? && themeResources.stylesCommon?has_content>
+        <@themeResourceTags.renderStyles themeResources.stylesCommon url.resourcesCommonPath />
+    <#elseif properties.stylesCommon?has_content>
         <#list properties.stylesCommon?split(' ') as style>
             <link href="${url.resourcesCommonPath}/${style}" rel="stylesheet" />
         </#list>
     </#if>
-    <#if properties.styles?has_content>
+    <#if themeResources?? && themeResources.styles?has_content>
+        <@themeResourceTags.renderStyles themeResources.styles url.resourcesPath />
+    <#elseif properties.styles?has_content>
         <#list properties.styles?split(' ') as style>
             <link href="${url.resourcesPath}/${style}" rel="stylesheet" />
         </#list>
@@ -58,7 +67,8 @@
     </script>
     <#if darkMode>
       <script type="module" async blocking="render">
-          const DARK_MODE_CLASS = "${properties.kcDarkModeClass}";
+          <#outputformat "JavaScript">
+          const DARK_MODE_CLASS = ${properties.kcDarkModeClass?c};
           const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
           updateDarkMode(mediaQuery.matches);
@@ -73,9 +83,12 @@
               classList.remove(DARK_MODE_CLASS);
             }
           }
+          </#outputformat>
       </script>
     </#if>
-    <#if properties.scripts?has_content>
+    <#if themeResources?? && themeResources.scripts?has_content>
+        <@themeResourceTags.renderScripts themeResources.scripts url.resourcesPath "text/javascript" />
+    <#elseif properties.scripts?has_content>
         <#list properties.scripts?split(' ') as script>
             <script src="${url.resourcesPath}/${script}" type="text/javascript"></script>
         </#list>
@@ -88,7 +101,7 @@
     <script type="module" src="${url.resourcesPath}/js/passwordVisibility.js"></script>
     <script type="module">
         <#outputformat "JavaScript">
-        import { startSessionPolling } from "${url.resourcesPath}/js/authChecker.js";
+        import { startSessionPolling } from ${(url.resourcesPath + "/js/authChecker.js")?c};
 
         startSessionPolling(
             ${url.ssoLoginInOtherTabsUrl?c}
@@ -121,7 +134,7 @@
     <#if authenticationSession??>
         <script type="module">
              <#outputformat "JavaScript">
-            import { checkAuthSession } from "${url.resourcesPath}/js/authChecker.js";
+            import { checkAuthSession } from ${(url.resourcesPath + "/js/authChecker.js")?c};
 
             checkAuthSession(
                 ${authenticationSession.authSessionIdHash?c}
@@ -238,6 +251,16 @@
               <a id="try-another-way" href="javascript:document.forms['kc-select-try-another-way-form'].requestSubmit()"
                   class="${properties.kcButtonSecondaryClass} ${properties.kcButtonBlockClass} ${properties.kcMarginTopClass}">
                     ${msg("doTryAnotherWay")}
+              </a>
+          </form>
+        </#if>
+
+        <#if switchOrganizationEnabled?? && switchOrganizationEnabled>
+          <form id="kc-switch-organization-form" action="${url.loginAction}" method="post" novalidate="novalidate">
+              <input type="hidden" name="switchOrganization" value="true"/>
+              <a id="switch-organization" href="javascript:document.forms['kc-switch-organization-form'].requestSubmit()"
+                  class="${properties.kcButtonSecondaryClass} ${properties.kcButtonBlockClass} ${properties.kcMarginTopClass}">
+                    ${msg("doSwitchOrganization")}
               </a>
           </form>
         </#if>

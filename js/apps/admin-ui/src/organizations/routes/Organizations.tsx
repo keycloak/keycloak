@@ -13,7 +13,7 @@ export const OrganizationsRoute: AppRouteObject = {
   path: "/:realm/organizations",
   element: <OrganizationsSection />,
   handle: {
-    access: "query-groups",
+    access: "query-organizations",
     breadcrumb: (t) => t("organizationsList"),
   },
 };

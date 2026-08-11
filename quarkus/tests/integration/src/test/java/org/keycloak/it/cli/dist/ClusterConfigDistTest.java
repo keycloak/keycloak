@@ -25,31 +25,36 @@ import java.util.function.Consumer;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.junit5.extension.Storage;
-import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
+import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.shaded.com.google.common.io.Files;
 
-@DistributionTest(reInstall = DistributionTest.ReInstall.BEFORE_TEST)
+@DistributionTest(localCache = false, stopServer = Mode.BEFORE_BOOTSTRAP, defaultOptions = {"--db=dev-file", "--http-enabled=true", "--hostname-strict=false"})
 @RawDistOnly(reason = "Not possible to mount files using docker.")
-@Storage(defaultLocalCache = false)
 @Tag(DistributionTest.SMOKE)
 @Tag(DistributionTest.SLOW)
+@TestMethodOrder(OrderAnnotation.class)
 public class ClusterConfigDistTest {
 
     private static final String WARN_DEFAULT_CACHE_MUTATIONS = "Modifying the default cache configuration in the config file";
 
+    @Order(1) // run the dev specific tests together to prevent later reaugmentations
     @Test
     @Launch({ "start-dev", "--cache=ispn" })
     void changeClusterSetting(CLIResult result) {
@@ -58,7 +63,7 @@ public class ClusterConfigDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--cache=ispn", "--cache-embedded-network-bind-address=127.0.0.2","--cache-embedded-network-bind-port=7802"})
+    @Launch({ "start", "--cache-embedded-network-bind-address=127.0.0.2","--cache-embedded-network-bind-port=7802"})
     void changeBindAddressAndPort(CLIResult result) {
         result.assertClusteredCache();
         result.assertMessage("physical addresses are `[127.0.0.2:7802]`");
@@ -66,7 +71,7 @@ public class ClusterConfigDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--cache=ispn", "--cache-embedded-network-bind-address=127.0.0.1","--cache-embedded-network-bind-port=7801", "--cache-embedded-network-external-address=127.0.0.2", "--cache-embedded-network-external-port=7802"})
+    @Launch({ "start", "--cache-embedded-network-bind-address=127.0.0.1","--cache-embedded-network-bind-port=7801", "--cache-embedded-network-external-address=127.0.0.2", "--cache-embedded-network-external-port=7802"})
     void changeBindAndExternalAddress(CLIResult result) {
         result.assertClusteredCache();
         result.assertMessage("physical addresses are `[127.0.0.2:7802]`");
@@ -74,7 +79,7 @@ public class ClusterConfigDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--cache=ispn", "--cache-embedded-network-bind-address=127.0.0.1", "-Djgroups.bind.address=127.0.0.2", "-Djgroups.bind_addr=127.0.0.3"})
+    @Launch({ "start", "--cache-embedded-network-bind-address=127.0.0.1", "-Djgroups.bind.address=127.0.0.2", "-Djgroups.bind_addr=127.0.0.3"})
     void testJGroupsBindAddressPropertyAlsoExists(CLIResult result) {
         result.assertClusteredCache();
         result.assertMessage("Conflicting system property 'jgroups.bind.address' and CLI arg 'cache-embedded-network-bind-address' set, utilising CLI value '127.0.0.1'");
@@ -84,7 +89,7 @@ public class ClusterConfigDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--cache=ispn", "-Djgroups.bind.address=127.0.0.2", "-Djgroups.bind.port=7801"})
+    @Launch({ "start", "-Djgroups.bind.address=127.0.0.2", "-Djgroups.bind.port=7801"})
     void testJGroupsBindAddressProperty(CLIResult result) {
         result.assertClusteredCache();
         result.assertMessage("physical addresses are `[127.0.0.2:7801]`");
@@ -92,7 +97,7 @@ public class ClusterConfigDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--cache=ispn", "--cache-embedded-network-bind-address=match-address:127.0.0.*"})
+    @Launch({ "start", "--cache-embedded-network-bind-address=match-address:127.0.0.*"})
     void testBindSiteMatches(CLIResult result) {
         result.assertClusteredCache();
         result.assertMessage("physical addresses are `[127.0.0.");
@@ -100,52 +105,52 @@ public class ClusterConfigDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--cache=ispn", "--cache-embedded-network-bind-address=SITE_LOCAL"})
+    @Launch({ "start", "--cache-embedded-network-bind-address=SITE_LOCAL"})
     void testBindSiteLocal(CLIResult result) {
         result.assertClusteredCache();
         result.assertMessage("ISPN000078: Starting JGroups channel `ISPN` with stack `jdbc-ping`");
     }
 
     @Test
-    @Launch({ "start-dev", "--cache=ispn", "--cache-stack=jdbc-ping-udp"})
+    @Launch({ "start", "--cache-stack=jdbc-ping-udp"})
     void testJdbcPingTCP(CLIResult result) {
         result.assertClusteredCache();
         result.assertMessage("ISPN000078: Starting JGroups channel `ISPN` with stack `jdbc-ping-udp`");
     }
 
     @Test
-    @Launch({ "start-dev", "--cache=ispn", "--cache-stack=azure" })
+    @Launch({ "start", "--cache-stack=azure" })
     void warnDeprecatedCloudStack(CLIResult result) {
         result.assertMessage("Stack 'azure' is deprecated. We recommend to use 'jdbc-ping' instead");
     }
 
     @Test
-    @Launch({ "start-dev", "--cache-config-file=invalid" })
+    @Launch({ "start", "--cache-config-file=invalid" })
     void failInvalidClusterConfig(CLIResult result) {
         result.assertError("Cache config file 'invalid' does not exist in the conf directory");
     }
 
     @Test
-    @Launch({ "start-dev", "--cache=ispn", "--cache-stack=kubernetes" })
+    @Launch({ "start", "--cache-stack=kubernetes" })
     void failMisConfiguredClusterStack(CLIResult result) {
         result.assertMessage("ERROR: dns_query can not be null or empty");
     }
 
     @Test
-    @Launch({ "start-dev", "--cache=ispn", "--cache-stack=invalid" })
+    @Launch({ "start", "--cache-stack=invalid" })
     void failInvalidClusterStack(CLIResult result) {
         result.assertMessage("No such JGroups stack 'invalid'");
     }
 
     @Test
-    @Launch({ "start-dev", "--cache-config-file=cache-ispn.xml" })
+    @Launch({ "start", "--cache-config-file=cache-ispn.xml" })
     void testExplicitCacheConfigFile(CLIResult result) {
-        result.assertStartedDevMode();
+        result.assertStarted();
         result.assertClusteredCache();
     }
 
     @Test
-    @Launch({ "start", "--cache=ispn", "--log-level=info,org.keycloak.connections.infinispan:debug", "--http-enabled=true", "--hostname-strict=false"})
+    @Launch({ "start", "--log-level=info,org.keycloak.connections.infinispan:debug"})
     void testPrintCacheConfigurationsDebug(CLIResult result) {
         result.assertStarted();
         result.assertMessage("Infinispan configuration");
@@ -153,7 +158,7 @@ public class ClusterConfigDistTest {
 
     @Test
     @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({ "start", "--db=dev-file", "--log-level=info,org.infinispan.remoting.transport.jgroups.JGroupsTransport:debug","--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "start", "--log-level=info,org.infinispan.remoting.transport.jgroups.JGroupsTransport:debug"})
     void testStartDefaultsToClustering(CLIResult result) {
         result.assertStarted();
         result.assertClusteredCache();
@@ -162,13 +167,14 @@ public class ClusterConfigDistTest {
 
     @Test
     @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different shell behaviour on Windows.")
-    @Launch({ "start", "--db=dev-file", "--log-level=\"info,org.infinispan.remoting.transport.jgroups.JGroupsTransport:debug\"","--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "start", "--log-level=\"info,org.infinispan.remoting.transport.jgroups.JGroupsTransport:debug\"" })
     void testWinStartDefaultsToClustering(CLIResult result) {
         result.assertStarted();
         result.assertClusteredCache();
         result.assertMessage("JGroups protocol stack: TCP");
     }
 
+    @Order(2)
     @Test
     @Launch({ "start-dev" })
     void testStartDevDefaultsToLocalCaches(CLIResult result) {
@@ -179,6 +185,7 @@ public class ClusterConfigDistTest {
         result.assertNoMessage("Starting JGroups certificate reload manager");
     }
 
+    @Order(3)
     @Test
     @BeforeStartDistribution(ConfigureCacheUsingAsyncEncryption.class)
     @Launch({ "start-dev", "--cache-config-file=cache-ispn-asym-enc.xml" })
@@ -188,52 +195,52 @@ public class ClusterConfigDistTest {
 
     @Test
     @BeforeStartDistribution(ConfigureCacheUsingAsyncEncryption.class)
-    @Launch({"start", "--cache-config-file=cache-ispn-asym-enc.xml", "--http-enabled=true", "--hostname-strict=false", "--cache-embedded-mtls-enabled=false"})
+    @Launch({"start", "--cache-config-file=cache-ispn-asym-enc.xml", "--cache-embedded-mtls-enabled=false"})
     void testCustomCacheStackInConfigFileNotDev(CLIResult result) {
         result.assertMessage("ISPN000078: Starting JGroups channel `ISPN` with stack `encrypt-udp`");
     }
 
     @Test
     @BeforeStartDistribution(ConfigureCustomCache.class)
-    @Launch({ "start-dev", "--cache-config-file=cache-ispn-custom-cache.xml" })
+    @Launch({ "start", "--cache-config-file=cache-ispn-custom-cache.xml" })
     void testCustomCacheConfigurationWarning(CLIResult result) {
         result.assertMessage(WARN_DEFAULT_CACHE_MUTATIONS);
     }
 
     @Test
-    void testAbsoluteCacheFile(KeycloakDistribution dist, @TempDir Path tempDir) throws Exception {
+    void testAbsoluteCacheFile(KeycloakRunner runner, @TempDir Path tempDir) throws Exception {
         File customCacheFile = tempDir.resolve("my-custom-cache.xml").toFile();
         File missingCacheFile = tempDir.resolve("my-missing-cache.xml").toFile();
         try (InputStream is = ClusterConfigDistTest.class.getResourceAsStream("/cache-ispn-custom-cache.xml")) {
             Files.write(is.readAllBytes(), customCacheFile);
         }
 
-        LaunchResult result = dist.run("start-dev", "--cache-config-file=" + customCacheFile.getAbsolutePath());
+        LaunchResult result = runner.run("start", "--cache-config-file=" + customCacheFile.getAbsolutePath());
         Assertions.assertEquals(0, result.exitCode());
         MatcherAssert.assertThat(result.getOutput(), Matchers.containsString(WARN_DEFAULT_CACHE_MUTATIONS));
 
         String absolutePath = missingCacheFile.getAbsolutePath();
-        result = dist.run("start-dev", "--cache-config-file=" + absolutePath);
+        result = runner.run("start", "--cache-config-file=" + absolutePath);
         Assertions.assertEquals(2, result.exitCode());
         MatcherAssert.assertThat(result.getErrorOutput(), Matchers.matchesRegex("Cache config file '" + absolutePath + "' does not exist"));
     }
 
     @Test
     @BeforeStartDistribution(ConfigureCustomCache.class)
-    @Launch({ "start-dev", "--cache-config-file=cache-ispn-custom-cache.xml", "--cache-config-mutate=true" })
+    @Launch({ "start", "--cache-config-file=cache-ispn-custom-cache.xml", "--cache-config-mutate=true" })
     void testCustomCacheConfigurationNoWarning(CLIResult result) {
         result.assertNoMessage(WARN_DEFAULT_CACHE_MUTATIONS);
     }
 
     @Test
     @BeforeStartDistribution(ConfigureCustomCache.class)
-    @Launch({ "start-dev", "--cache-config-file=cache-ispn-custom-user-cache.xml"})
+    @Launch({ "start", "--cache-config-file=cache-ispn-custom-user-cache.xml"})
     void testCustomUserCacheConfigurationNoWarning(CLIResult result) {
         result.assertNoMessage(WARN_DEFAULT_CACHE_MUTATIONS);
     }
 
     @Test
-    @Launch({ "start", "--cache=local", "--http-enabled=true", "--hostname-strict=false"})
+    @Launch({ "start", "--cache=local"})
     void testNotClustered(CLIResult result) {
         result.assertStarted();
         result.assertLocalCache();
@@ -244,29 +251,47 @@ public class ClusterConfigDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--cache-embedded-users-max-count=-1" })
+    @Launch({ "start", "--cache-embedded-users-max-count=-1" })
     void testNegativeMaxCountIgnoredForBoundedCache(CLIResult result) {
         result.assertMessage("Ignoring unbounded max-count for cache 'users'");
     }
 
     @Test
-    @Launch({ "start-dev", "--cache-embedded-sessions-max-count=-1", "--features-disabled=persistent-user-sessions" })
+    @Launch({ "start", "--cache-embedded-sessions-max-count=-1", "--features-disabled=persistent-user-sessions" })
     void testNegativeMaxCountAllowedForVolatileCache(CLIResult result) {
         result.assertNoMessage("Ignoring unbounded max-count for cache 'sessions'");
     }
 
-    public static class ConfigureCacheUsingAsyncEncryption implements Consumer<KeycloakDistribution> {
+    @Test
+    @Launch({ "start", "--log-level=org.infinispan.remoting.transport.jgroups.JGroupsTransport:DEBUG" })
+    void testFD_SOCK2EnabledByDefault(CLIResult result) {
+        result.assertMessage(":FD_SOCK2");
+    }
+
+    @Test
+    @Launch({ "start", "--spi-cache-embedded--default--fd-sock-enabled=true", "--log-level=org.infinispan.remoting.transport.jgroups.JGroupsTransport:DEBUG" })
+    void testFD_SOCK2Enabled(CLIResult result) {
+        result.assertMessage(":FD_SOCK2");
+    }
+
+    @Test
+    @Launch({ "start", "--spi-cache-embedded--default--fd-sock-enabled=false", "--log-level=org.infinispan.remoting.transport.jgroups.JGroupsTransport:DEBUG" })
+    void testFD_SOCK2Disabled(CLIResult result) {
+        result.assertNoMessage(":FD_SOCK2");
+    }
+
+    public static class ConfigureCacheUsingAsyncEncryption implements Consumer<RawKeycloakDistribution> {
 
         @Override
-        public void accept(KeycloakDistribution distribution) {
+        public void accept(RawKeycloakDistribution distribution) {
             distribution.copyOrReplaceFileFromClasspath("/cache-ispn-asym-enc.xml", Path.of("conf", "cache-ispn-asym-enc.xml"));
         }
     }
 
-    public static class ConfigureCustomCache implements Consumer<KeycloakDistribution> {
+    public static class ConfigureCustomCache implements Consumer<RawKeycloakDistribution> {
 
         @Override
-        public void accept(KeycloakDistribution distribution) {
+        public void accept(RawKeycloakDistribution distribution) {
             distribution.copyOrReplaceFileFromClasspath("/cache-ispn-custom-cache.xml", Path.of("conf", "cache-ispn-custom-cache.xml"));
         }
     }

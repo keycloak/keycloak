@@ -27,7 +27,9 @@ let KeycloakEnvContext: any;
 export const useEnvironment = <
   T extends BaseEnvironment = BaseEnvironment,
 >() => {
-  const context = useContext<KeycloakContext<T>>(KeycloakEnvContext);
+  const context = useContext<KeycloakContext<T> | undefined>(
+    KeycloakEnvContext,
+  );
   if (!context)
     throw Error(
       "no environment provider in the hierarchy make sure to add the provider",

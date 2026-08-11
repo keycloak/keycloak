@@ -66,12 +66,12 @@ public class OAuthGrantBean {
 
         private final String consentScreenText;
         private final String guiOrder;
-        private final String dynamicScopeParameter;
+        private final String parameterizedScopeParameter;
 
         public ClientScopeEntry(String consentScreenText, String guiOrder, AuthorizationDetails authorizationDetails) {
             this.consentScreenText = consentScreenText;
             this.guiOrder = guiOrder;
-            this.dynamicScopeParameter = authorizationDetails.getDynamicScopeParam();
+            this.parameterizedScopeParameter = authorizationDetails.getParameterizedScopeParam();
         }
 
         public String getConsentScreenText() {
@@ -83,8 +83,8 @@ public class OAuthGrantBean {
             return guiOrder;
         }
 
-        public String getDynamicScopeParameter() {
-            return dynamicScopeParameter;
+        public String getParameterizedScopeParameter() {
+            return parameterizedScopeParameter;
         }
     }
 }

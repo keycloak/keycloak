@@ -39,7 +39,6 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
-import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
@@ -70,6 +69,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
 
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
+import static org.keycloak.utils.StringUtil.isBlank;
 
 /**
  * @resource Groups
@@ -131,7 +131,7 @@ public class GroupResource {
 
         String groupName = rep.getName();
 
-        if (ObjectUtil.isBlank(groupName)) {
+        if (isBlank(groupName)) {
             throw ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
         }
 
@@ -187,6 +187,7 @@ public class GroupResource {
             @Parameter(description = "The maximum number of results that are to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
             @Parameter(description = "Boolean which defines whether brief groups representations are returned or not (default: false)") @QueryParam("briefRepresentation") @DefaultValue("false") Boolean briefRepresentation,
             @Parameter(description = "Boolean which defines whether to return the count of subgroups for each subgroup of this group (default: true)") @QueryParam("subGroupsCount") @DefaultValue("true") Boolean subGroupsCount) {
+        this.auth.groups().requireList();
         this.auth.groups().requireView(group);
 
         Stream<GroupModel> stream = group.getSubGroupsStream(search, exact, -1, -1);
@@ -230,7 +231,7 @@ public class GroupResource {
         this.auth.groups().requireManage(group);
 
         String groupName = rep.getName();
-        if (ObjectUtil.isBlank(groupName)) {
+        if (isBlank(groupName)) {
             throw ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
         }
 
@@ -242,6 +243,7 @@ public class GroupResource {
                 if (child == null) {
                     throw new NotFoundException("Could not find child by id");
                 }
+                auth.groups().requireManage(child);
                 if (!Objects.equals(child.getParentId(), group.getId())) {
                     realm.moveGroup(child, group);
                 }
@@ -334,12 +336,10 @@ public class GroupResource {
 
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
-        boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
+        boolean briefRep = Boolean.TRUE.equals(briefRepresentation);
 
         return session.users().getGroupMembersStream(realm, group, firstResult, maxResults)
-                .map(user -> briefRepresentationB
-                        ? ModelToRepresentation.toBriefRepresentation(user)
-                        : ModelToRepresentation.toRepresentation(session, realm, user));
+                .map(user -> ModelToRepresentation.toRepresentation(session, user, briefRep));
     }
 
     /**

@@ -576,8 +576,9 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     }
 
     @Test
-    public void testConfigErrorLog() {
+    public void testConfigErrorLogUnoptimized() {
         var kc = getTestKeycloakDeployment(true);
+        kc.getSpec().setStartOptimized(false);
         kc.getSpec().setFeatureSpec(new FeatureSpecBuilder().addToEnabledFeatures("feature doesn't exist").build());
 
         deployKeycloak(k8sclient, kc, false);
@@ -589,7 +590,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
             CRAssert.assertKeycloakStatusCondition(current, KeycloakStatusCondition.READY, false);
             CRAssert.assertKeycloakStatusCondition(current, KeycloakStatusCondition.HAS_ERRORS, true, null).has(new Condition<>(
                     c -> c.getMessage().contains(String.format("Waiting for %s/%s-0 due to CrashLoopBackOff", k8sclient.getNamespace(), kc.getMetadata().getName()))
-                     && c.getMessage().contains("The following build time options have values"), "message"
+                     && c.getMessage().contains("'feature doesn't exist' is an unrecognized feature"), "message"
                     ));
         });
     }

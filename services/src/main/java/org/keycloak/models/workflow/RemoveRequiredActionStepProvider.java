@@ -29,7 +29,7 @@ public class RemoveRequiredActionStepProvider implements WorkflowStepProvider {
         if (user != null) {
             try {
                 UserModel.RequiredAction action = UserModel.RequiredAction.valueOf(stepModel.getConfig().getFirst(REQUIRED_ACTION_KEY));
-                log.debugv("Removing required action {0} from user {1})", action, user.getId());
+                log.debugv("Removing required action {0} from user {1}", action, user.getId());
                 user.removeRequiredAction(action);
             } catch (IllegalArgumentException e) {
                 log.warnv("Invalid required action {0} configured in RemoveRequiredActionStepProvider", stepModel.getConfig().getFirst(REQUIRED_ACTION_KEY));

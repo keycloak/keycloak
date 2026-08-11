@@ -55,6 +55,7 @@ export const GroupRoleMapping = ({
       id={id}
       type="groups"
       save={assignRoles}
+      groupsResource={groups}
     />
   );
 };

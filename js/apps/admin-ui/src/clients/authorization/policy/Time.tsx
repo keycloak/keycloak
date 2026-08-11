@@ -98,7 +98,7 @@ type NumberControlProps = {
 
 const NumberControl = ({ name, min, max }: NumberControlProps) => {
   const { control } = useFormContext();
-  const setValue = (newValue: number) => Math.min(newValue, max);
+  const setValue = (newValue: number) => Math.max(min, Math.min(newValue, max));
 
   return (
     <Controller
@@ -111,8 +111,8 @@ const NumberControl = ({ name, min, max }: NumberControlProps) => {
           value={field.value}
           min={min}
           max={max}
-          onPlus={() => field.onChange(Number(field.value) + 1)}
-          onMinus={() => field.onChange(Number(field.value) - 1)}
+          onPlus={() => field.onChange(setValue(Number(field.value) + 1))}
+          onMinus={() => field.onChange(setValue(Number(field.value) - 1))}
           onChange={(event) => {
             const newValue = Number(event.currentTarget.value);
             field.onChange(setValue(!isNaN(newValue) ? newValue : 0));

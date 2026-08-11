@@ -28,7 +28,7 @@ import io.quarkus.test.junit.main.Launch;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-@DistributionTest(removeBuildOptionsAfterBuild = true)
+@DistributionTest
 @WithDatabase(alias = "mariadb")
 public class MariaDBDistTest extends MariaDBTest {
 

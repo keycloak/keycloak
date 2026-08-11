@@ -43,6 +43,7 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPAttributeSelector;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.representations.userprofile.config.UPGroup;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.userprofile.config.DeclarativeUserProfileModel;
@@ -105,11 +106,25 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
     protected Attributes createAttributes(UserProfileContext context, Map<String, ?> attributes,
             UserModel user, UserProfileMetadata metadata) {
+        UnmanagedAttributePolicy unmanagedAttributePolicy = getUnmanagedAttributePolicy();
 
         if (isServiceAccountUser(user)) {
-            return new ServiceAccountAttributes(context, attributes, user, metadata, session);
+            return new ServiceAccountAttributes(context, attributes, user, metadata, session, unmanagedAttributePolicy);
         }
-        return new DefaultAttributes(context, attributes, user, metadata, session);
+
+        return new DefaultAttributes(context, attributes, user, metadata, session, unmanagedAttributePolicy);
+    }
+
+    private UnmanagedAttributePolicy getUnmanagedAttributePolicy() {
+        UPConfig cfg = getComponentModel()
+                .map(this::getConfigFromComponentModel)
+                .orElse(null);
+
+        if (cfg == null) {
+            cfg = parsedDefaultRawConfig;
+        }
+
+        return cfg.getUnmanagedAttributePolicy();
     }
 
     @Override
@@ -175,22 +190,22 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
      */
     protected UserProfileMetadata configureUserProfile(UserProfileMetadata metadata, KeycloakSession session) {
         UserProfileContext context = metadata.getContext();
-        UserProfileMetadata decoratedMetadata = metadata.clone();
         ComponentModel component = getComponentModel().orElse(null);
 
         if (component == null) {
-            return decoratedMetadata;
+            return metadata.clone();
         }
 
         Map<UserProfileContext, UserProfileMetadata> metadataMap = component.getNote(PARSED_CONFIG_COMPONENT_KEY);
 
-        // not cached, create a note with cache
         if (metadataMap == null) {
             metadataMap = new ConcurrentHashMap<>();
             component.setNote(PARSED_CONFIG_COMPONENT_KEY, metadataMap);
         }
 
-        return metadataMap.computeIfAbsent(context, createUserDefinedProfileDecorator(session, decoratedMetadata, component)).clone();
+        return metadataMap.computeIfAbsent(context, c ->
+            createUserDefinedProfileDecorator(session, metadata.clone(), component).apply(c)
+        ).clone();
     }
 
     @Override

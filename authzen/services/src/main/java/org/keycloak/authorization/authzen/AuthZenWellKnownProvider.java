@@ -39,12 +39,17 @@ public class AuthZenWellKnownProvider implements WellKnownProvider {
 
         return Map.of(
               "policy_decision_point", realmUri,
-              "access_evaluation_endpoint", accessEvaluationEndpoint(realmUri)
+              "access_evaluation_endpoint", accessEvaluationEndpoint(realmUri),
+              "access_evaluations_endpoint", accessEvaluationsEndpoint(realmUri)
         );
     }
 
     public static String accessEvaluationEndpoint(String realmUri) {
         return String.format("%s/%s/%s", realmUri, AuthZenRealmResourceProviderFactory.PROVIDER_ID, AuthZen.EVALUATION_PATH);
+    }
+
+    public static String accessEvaluationsEndpoint(String realmUri) {
+        return String.format("%s/%s/%s", realmUri, AuthZenRealmResourceProviderFactory.PROVIDER_ID, AuthZen.EVALUATIONS_PATH);
     }
 
     @Override

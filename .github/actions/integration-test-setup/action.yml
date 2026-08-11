@@ -29,13 +29,18 @@ runs:
       name: Maven cache
       uses: ./.github/actions/maven-cache
 
+    - id: restore-quarkus-snapshot
+      name: Restore Quarkus snapshot cache
+      if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
+      uses: ./.github/actions/quarkus-snapshot-cache
+
     - id: pnpm-store-cache
       name: PNPM store cache
       uses: ./.github/actions/pnpm-store-cache
 
     - id: download-keycloak
       name: Download Keycloak Maven artifacts
-      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
       with:
         name: m2-keycloak.tzts
 

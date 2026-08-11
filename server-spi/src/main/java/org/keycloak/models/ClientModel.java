@@ -251,13 +251,28 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
     /**
      * <p>Returns a {@link ClientScopeModel} associated with this client.
      *
-     * <p>This method is used as a fallback in order to let clients to resolve a {@code scope} dynamically which is not listed as default or optional scope when calling {@link #getClientScopes(boolean, boolean)}.
+     * <p>This method is used as a fallback in order to let clients to resolve a {@code scope} dynamically which is not listed as default or optional scope when calling {@link #getClientScopes(boolean)}.
+     *
+     * @param scope the scope name
+     * @return the client scope
+     * @deprecated Use {@link #getParameterizedClientScope(String)} instead as the feature was renamed
+     */
+    @Deprecated(forRemoval = true)
+    default ClientScopeModel getDynamicClientScope(String scope) {
+        return null;
+    }
+
+    /**
+     * <p>Returns a {@link ClientScopeModel} associated with this client.
+     *
+     * <p>This method is used as a fallback in order to let clients to resolve a {@code scope} which is not listed
+     * as default or optional scope when calling {@link #getClientScopes(boolean)}.
      *
      * @param scope the scope name
      * @return the client scope
      */
-    default ClientScopeModel getDynamicClientScope(String scope) {
-        return null;
+    default ClientScopeModel getParameterizedClientScope(String scope) {
+        return getDynamicClientScope(scope);
     }
 
     /**
@@ -297,5 +312,20 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
             consentScreenText = getClientId();
         }
         return consentScreenText;
+    }
+
+    /**
+     * Get timestamp of client creation. May be null for clients created before this feature introduction.
+     */
+    default Long getCreatedTimestamp() {
+        return null;
+    }
+
+    /**
+     * Get timestamp of last client modification. May be null for clients that have not been modified
+     * since this feature was introduced.
+     */
+    default Long getLastModifiedTimestamp() {
+        return null;
     }
 }

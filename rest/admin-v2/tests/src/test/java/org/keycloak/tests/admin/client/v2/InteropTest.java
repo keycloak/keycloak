@@ -21,44 +21,43 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
+import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.testframework.annotations.InjectAdminClient;
-import org.keycloak.testframework.annotations.InjectHttpClient;
+import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.admin.mapper.ClientRepresentationComparator;
 
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.protocol.oidc.OIDCConfigAttributes.BACKCHANNEL_LOGOUT_SESSION_REQUIRED;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_ALLOW_ECP_FLOW;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER;
 import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_ASSERTION_SIGNATURE;
 import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_AUTHNSTATEMENT;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_CANONICALIZATION_METHOD_ATTRIBUTE;
 import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE;
 import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE;
 import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_FORCE_POST_BINDING;
 import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_NAME_ID_FORMAT_ATTRIBUTE;
 import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_SERVER_SIGNATURE;
 import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_SIGNATURE_ALGORITHM;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_SIGNING_CERTIFICATE_ATTRIBUTE;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -69,19 +68,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @KeycloakIntegrationTest(config = InteropTest.ServerConfig.class)
 public class InteropTest extends AbstractClientApiV2Test {
 
+    @InjectRealm
+    ManagedRealm testRealm;
 
-    @InjectHttpClient
-    CloseableHttpClient httpClient;
-
-    @InjectAdminClient
-    Keycloak adminClient;
+    @Override
+    public String getRealmName() {
+        return testRealm.getName();
+    }
 
     /**
      * Test: Create a client using v1 API, then assert/read using v2 API.
      */
     @Test
-    public void createWithV1AssertWithV2() throws Exception {
-        RealmResource realm = adminClient.realm("master");
+    public void createWithV1AssertWithV2() {
+        RealmResource realm = adminClient.realm(getRealmName());
 
         ClientRepresentation v1Client = new ClientRepresentation();
         v1Client.setClientId("v1-created-client");
@@ -103,17 +103,11 @@ public class InteropTest extends AbstractClientApiV2Test {
         String clientUuid = ApiUtil.getCreatedId(response);
         response.close();
 
-        ClientRepresentation createdV1Client = realm.clients().get(clientUuid).toRepresentation();
+        try {
+            ClientRepresentation createdV1Client = realm.clients().get(clientUuid).toRepresentation();
 
-        HttpGet getRequest = new HttpGet(getClientsApiUrl() + "/v1-created-client");
-        setAuthHeader(getRequest, adminClient);
-
-        try (var httpResponse = httpClient.execute(getRequest)) {
-            assertThat(httpResponse.getStatusLine().getStatusCode(), is(200));
-            OIDCClientRepresentation v2Client = mapper.createParser(httpResponse.getEntity().getContent())
-                    .readValueAs(OIDCClientRepresentation.class);
-
-            ClientRepresentationComparator.ComparisonResult result = 
+            BaseClientRepresentation v2Client = getClientsApi().client("v1-created-client").getClient();
+            ClientRepresentationComparator.ComparisonResult result =
                 ClientRepresentationComparator.compare(createdV1Client, v2Client);
 
             assertTrue(result.allMatch(), "V1 and V2 representations should match:\n" + result);
@@ -126,8 +120,8 @@ public class InteropTest extends AbstractClientApiV2Test {
      * Test: Create a client using v2 API, then assert/read using v1 API.
      */
     @Test
-    public void createWithV2AssertWithV1() throws Exception {
-        RealmResource realm = adminClient.realm("master");
+    public void createWithV2AssertWithV1() {
+        RealmResource realm = adminClient.realm(getRealmName());
 
         OIDCClientRepresentation v2Client = new OIDCClientRepresentation();
         v2Client.setClientId("v2-created-client");
@@ -146,28 +140,17 @@ public class InteropTest extends AbstractClientApiV2Test {
         auth.setSecret("v2-secret-456");
         v2Client.setAuth(auth);
 
-        HttpPost createRequest = new HttpPost(getClientsApiUrl());
-        setAuthHeader(createRequest, adminClient);
-        createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        createRequest.setEntity(new StringEntity(mapper.writeValueAsString(v2Client)));
-
-        try (var httpResponse = httpClient.execute(createRequest)) {
-            assertThat(httpResponse.getStatusLine().getStatusCode(), is(201));
+        try (var response = getClientsApi().createClient(v2Client)) {
+            assertThat(response.getStatus(), is(201));
         }
 
         ClientRepresentation v1Client = realm.clients().findByClientId("v2-created-client").get(0);
         String clientUuid = v1Client.getId();
-        ClientRepresentation fullV1Client = realm.clients().get(clientUuid).toRepresentation();
 
-        HttpGet getRequest = new HttpGet(getClientsApiUrl() + "/v2-created-client");
-        setAuthHeader(getRequest, adminClient);
-
-        try (var httpResponse = httpClient.execute(getRequest)) {
-            assertThat(httpResponse.getStatusLine().getStatusCode(), is(200));
-            OIDCClientRepresentation fetchedV2Client = mapper.createParser(httpResponse.getEntity().getContent())
-                    .readValueAs(OIDCClientRepresentation.class);
-
-            ClientRepresentationComparator.ComparisonResult result = 
+        try {
+            ClientRepresentation fullV1Client = realm.clients().get(clientUuid).toRepresentation();
+            BaseClientRepresentation fetchedV2Client = getClientsApi().client("v2-created-client").getClient();
+            ClientRepresentationComparator.ComparisonResult result =
                 ClientRepresentationComparator.compare(fullV1Client, fetchedV2Client);
 
             assertTrue(result.allMatch(), "V1 and V2 representations should match:\n" + result);
@@ -177,12 +160,30 @@ public class InteropTest extends AbstractClientApiV2Test {
 
     }
 
+    @Test
+    public void createMinimalOidcWithV2AppliesProtocolDefaults() {
+        RealmResource realm = adminClient.realm(getRealmName());
+        OIDCClientRepresentation client = new OIDCClientRepresentation("v2-minimal-oidc-client");
+
+        try (var response = getClientsApi().createClient(client)) {
+            assertThat(response.getStatus(), is(201));
+        }
+
+        ClientRepresentation created = realm.clients().findByClientId(client.getClientId()).get(0);
+        try {
+            created = realm.clients().get(created.getId()).toRepresentation();
+            assertThat(created.getAttributes().get(BACKCHANNEL_LOGOUT_SESSION_REQUIRED), is("true"));
+        } finally {
+            realm.clients().get(created.getId()).remove();
+        }
+    }
+
     /**
      * Test: Create a client using v1 API, update it using v2 API, then assert using v1 API.
      */
     @Test
-    public void updateWithV2AssertWithV1() throws Exception {
-        RealmResource realm = adminClient.realm("master");
+    public void updateWithV2AssertWithV1() {
+        RealmResource realm = adminClient.realm(getRealmName());
 
         ClientRepresentation v1Client = new ClientRepresentation();
         v1Client.setClientId("update-test-client");
@@ -191,7 +192,7 @@ public class InteropTest extends AbstractClientApiV2Test {
         v1Client.setEnabled(true);
         v1Client.setPublicClient(false);
         v1Client.setProtocol("openid-connect");
-        v1Client.setRedirectUris(Arrays.asList("http://localhost:5000/*"));
+        v1Client.setRedirectUris(List.of("http://localhost:5000/*"));
         v1Client.setStandardFlowEnabled(true);
 
         Response response = realm.clients().create(v1Client);
@@ -216,26 +217,15 @@ public class InteropTest extends AbstractClientApiV2Test {
         auth.setSecret("updated-secret");
         v2Update.setAuth(auth);
 
-        HttpPut updateRequest = new HttpPut(getClientsApiUrl() + "/update-test-client");
-        setAuthHeader(updateRequest, adminClient);
-        updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(v2Update)));
-
-        try (var httpResponse = httpClient.execute(updateRequest)) {
-            assertThat(httpResponse.getStatusLine().getStatusCode(), is(200));
+        try (var httpResponse = getClientsApi().client("update-test-client").createOrUpdateClient(v2Update)) {
+            assertThat(httpResponse.getStatus(), is(200));
         }
 
-        ClientRepresentation updatedV1Client = realm.clients().get(clientUuid).toRepresentation();
+        try {
+            ClientRepresentation updatedV1Client = realm.clients().get(clientUuid).toRepresentation();
+            OIDCClientRepresentation fetchedV2Client = (OIDCClientRepresentation) getClientsApi().client("update-test-client").getClient();
 
-        HttpGet getRequest = new HttpGet(getClientsApiUrl() + "/update-test-client");
-        setAuthHeader(getRequest, adminClient);
-
-        try (var httpResponse = httpClient.execute(getRequest)) {
-            assertThat(httpResponse.getStatusLine().getStatusCode(), is(200));
-            OIDCClientRepresentation fetchedV2Client = mapper.createParser(httpResponse.getEntity().getContent())
-                    .readValueAs(OIDCClientRepresentation.class);
-
-            ClientRepresentationComparator.ComparisonResult result = 
+            ClientRepresentationComparator.ComparisonResult result =
                 ClientRepresentationComparator.compare(updatedV1Client, fetchedV2Client);
 
             assertTrue(result.allMatch(), "V1 and V2 representations should match after update:\n" + result);
@@ -252,8 +242,8 @@ public class InteropTest extends AbstractClientApiV2Test {
      * Test: Create a SAML client using v1 API, then assert/read using v2 API.
      */
     @Test
-    public void createSamlWithV1AssertWithV2() throws Exception {
-        RealmResource realm = adminClient.realm("master");
+    public void createSamlWithV1AssertWithV2() {
+        RealmResource realm = adminClient.realm(getRealmName());
 
         ClientRepresentation v1Client = new ClientRepresentation();
         v1Client.setClientId("v1-saml-client");
@@ -279,15 +269,9 @@ public class InteropTest extends AbstractClientApiV2Test {
         String clientUuid = ApiUtil.getCreatedId(response);
         response.close();
 
-        ClientRepresentation createdV1Client = realm.clients().get(clientUuid).toRepresentation();
-
-        HttpGet getRequest = new HttpGet(getClientsApiUrl() + "/v1-saml-client");
-        setAuthHeader(getRequest, adminClient);
-
-        try (var httpResponse = httpClient.execute(getRequest)) {
-            assertThat(httpResponse.getStatusLine().getStatusCode(), is(200));
-            SAMLClientRepresentation v2Client = mapper.createParser(httpResponse.getEntity().getContent())
-                    .readValueAs(SAMLClientRepresentation.class);
+        try {
+            ClientRepresentation createdV1Client = realm.clients().get(clientUuid).toRepresentation();
+            SAMLClientRepresentation v2Client = (SAMLClientRepresentation) getClientsApi().client("v1-saml-client").getClient();
 
             ClientRepresentationComparator.ComparisonResult result =
                 ClientRepresentationComparator.compare(createdV1Client, v2Client);
@@ -302,8 +286,8 @@ public class InteropTest extends AbstractClientApiV2Test {
      * Test: Create a SAML client using v2 API, then assert/read using v1 API.
      */
     @Test
-    public void createSamlWithV2AssertWithV1() throws Exception {
-        RealmResource realm = adminClient.realm("master");
+    public void createSamlWithV2AssertWithV1() {
+        RealmResource realm = adminClient.realm(getRealmName());
 
         SAMLClientRepresentation v2Client = new SAMLClientRepresentation();
         v2Client.setClientId("v2-saml-client");
@@ -313,35 +297,27 @@ public class InteropTest extends AbstractClientApiV2Test {
         v2Client.setAppUrl("http://localhost:9000/saml");
         v2Client.setRedirectUris(Set.of("http://localhost:9000/saml/*"));
         v2Client.setFrontChannelLogout(true);
-        v2Client.setNameIdFormat("email");
+        v2Client.setNameIdFormat(SAMLClientRepresentation.NameIdFormat.EMAIL);
         v2Client.setForceNameIdFormat(true);
         v2Client.setIncludeAuthnStatement(true);
         v2Client.setSignDocuments(true);
         v2Client.setSignAssertions(true);
         v2Client.setClientSignatureRequired(false);
         v2Client.setForcePostBinding(true);
-        v2Client.setSignatureAlgorithm("RSA_SHA256");
+        v2Client.setSignatureAlgorithm(SAMLClientRepresentation.SignatureAlgorithm.RSA_SHA256);
 
-        HttpPost createRequest = new HttpPost(getClientsApiUrl());
-        setAuthHeader(createRequest, adminClient);
-        createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        createRequest.setEntity(new StringEntity(mapper.writeValueAsString(v2Client)));
-
-        try (var httpResponse = httpClient.execute(createRequest)) {
-            assertThat(httpResponse.getStatusLine().getStatusCode(), is(201));
+        try (var response = getClientsApi().createClient(v2Client)) {
+            assertThat(response.getStatus(), is(201));
         }
 
         ClientRepresentation v1Client = realm.clients().findByClientId("v2-saml-client").get(0);
         String clientUuid = v1Client.getId();
-        ClientRepresentation fullV1Client = realm.clients().get(clientUuid).toRepresentation();
 
-        HttpGet getRequest = new HttpGet(getClientsApiUrl() + "/v2-saml-client");
-        setAuthHeader(getRequest, adminClient);
 
-        try (var httpResponse = httpClient.execute(getRequest)) {
-            assertThat(httpResponse.getStatusLine().getStatusCode(), is(200));
-            SAMLClientRepresentation fetchedV2Client = mapper.createParser(httpResponse.getEntity().getContent())
-                    .readValueAs(SAMLClientRepresentation.class);
+        try {
+            ClientRepresentation fullV1Client = realm.clients().get(clientUuid).toRepresentation();
+
+            SAMLClientRepresentation fetchedV2Client = (SAMLClientRepresentation) getClientsApi().client("v2-saml-client").getClient();
 
             ClientRepresentationComparator.ComparisonResult result =
                 ClientRepresentationComparator.compare(fullV1Client, fetchedV2Client);
@@ -352,12 +328,43 @@ public class InteropTest extends AbstractClientApiV2Test {
         }
     }
 
+    @Test
+    public void createMinimalSamlWithV2AppliesProtocolDefaults() {
+        RealmResource realm = adminClient.realm(getRealmName());
+        SAMLClientRepresentation client = new SAMLClientRepresentation();
+        client.setClientId("v2-minimal-saml-client");
+
+        try (var response = getClientsApi().createClient(client)) {
+            assertThat(response.getStatus(), is(201));
+        }
+
+        ClientRepresentation created = realm.clients().findByClientId(client.getClientId()).get(0);
+        try {
+            created = realm.clients().get(created.getId()).toRepresentation();
+            assertThat(created.isStandardFlowEnabled(), is(true));
+            assertThat(created.isFrontchannelLogout(), is(true));
+            assertThat(created.getAttributes().get(SAML_NAME_ID_FORMAT_ATTRIBUTE), is("username"));
+            assertThat(created.getAttributes().get(SAML_AUTHNSTATEMENT), is("true"));
+            assertThat(created.getAttributes().get(SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE), is("false"));
+            assertThat(created.getAttributes().get(SAML_SERVER_SIGNATURE), is("true"));
+            assertThat(created.getAttributes().get(SAML_CLIENT_SIGNATURE_ATTRIBUTE), is("true"));
+            assertThat(created.getAttributes().get(SAML_FORCE_POST_BINDING), is("true"));
+            assertThat(created.getAttributes().get(SAML_SIGNATURE_ALGORITHM), is("RSA_SHA256"));
+            assertThat(created.getAttributes().get(SAML_CANONICALIZATION_METHOD_ATTRIBUTE), is("http://www.w3.org/2001/10/xml-exc-c14n#"));
+            assertThat(created.getAttributes().get(SAML_ALLOW_ECP_FLOW), is("false"));
+            assertThat(created.getAttributes().get(SAML_SIGNING_CERTIFICATE_ATTRIBUTE), notNullValue());
+            assertThat(created.getAttributes().get(SAML_ARTIFACT_BINDING_IDENTIFIER), notNullValue());
+        } finally {
+            realm.clients().get(created.getId()).remove();
+        }
+    }
+
     /**
      * Test: Create a SAML client using v1 API, update it using v2 API, then assert using v1 API.
      */
     @Test
-    public void updateSamlWithV2AssertWithV1() throws Exception {
-        RealmResource realm = adminClient.realm("master");
+    public void updateSamlWithV2AssertWithV1() {
+        RealmResource realm = adminClient.realm(getRealmName());
 
         ClientRepresentation v1Client = new ClientRepresentation();
         v1Client.setClientId("update-saml-client");
@@ -386,26 +393,14 @@ public class InteropTest extends AbstractClientApiV2Test {
         v2Update.setSignDocuments(true);
         v2Update.setSignAssertions(true);
         v2Update.setForcePostBinding(true);
-        v2Update.setSignatureAlgorithm("RSA_SHA512");
+        v2Update.setSignatureAlgorithm(SAMLClientRepresentation.SignatureAlgorithm.RSA_SHA512);
 
-        HttpPut updateRequest = new HttpPut(getClientsApiUrl() + "/update-saml-client");
-        setAuthHeader(updateRequest, adminClient);
-        updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(v2Update)));
-
-        try (var httpResponse = httpClient.execute(updateRequest)) {
-            assertThat(httpResponse.getStatusLine().getStatusCode(), is(200));
+        try (var httpResponse = getClientsApi().client("update-saml-client").createOrUpdateClient(v2Update)) {
+            assertThat(httpResponse.getStatus(), is(200));
         }
-
-        ClientRepresentation updatedV1Client = realm.clients().get(clientUuid).toRepresentation();
-
-        HttpGet getRequest = new HttpGet(getClientsApiUrl() + "/update-saml-client");
-        setAuthHeader(getRequest, adminClient);
-
-        try (var httpResponse = httpClient.execute(getRequest)) {
-            assertThat(httpResponse.getStatusLine().getStatusCode(), is(200));
-            SAMLClientRepresentation fetchedV2Client = mapper.createParser(httpResponse.getEntity().getContent())
-                    .readValueAs(SAMLClientRepresentation.class);
+        try {
+            ClientRepresentation updatedV1Client = realm.clients().get(clientUuid).toRepresentation();
+            SAMLClientRepresentation fetchedV2Client = (SAMLClientRepresentation) getClientsApi().client("update-saml-client").getClient();
 
             ClientRepresentationComparator.ComparisonResult result =
                 ClientRepresentationComparator.compare(updatedV1Client, fetchedV2Client);
@@ -425,8 +420,8 @@ public class InteropTest extends AbstractClientApiV2Test {
      * Test: Create a client with roles using v2 API, then assert roles using v1 API.
      */
     @Test
-    public void createWithV2RolesAssertWithV1() throws Exception {
-        RealmResource realm = adminClient.realm("master");
+    public void createWithV2RolesAssertWithV1() {
+        RealmResource realm = adminClient.realm(getRealmName());
 
         OIDCClientRepresentation v2Client = new OIDCClientRepresentation();
         v2Client.setClientId("v2-client-with-roles");
@@ -437,13 +432,8 @@ public class InteropTest extends AbstractClientApiV2Test {
         v2Client.setRedirectUris(Set.of("http://localhost:3000/*"));
         v2Client.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.STANDARD));
 
-        HttpPost createRequest = new HttpPost(getClientsApiUrl());
-        setAuthHeader(createRequest, adminClient);
-        createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        createRequest.setEntity(new StringEntity(mapper.writeValueAsString(v2Client)));
-
-        try (var httpResponse = httpClient.execute(createRequest)) {
-            assertThat(httpResponse.getStatusLine().getStatusCode(), is(201));
+        try (var response = getClientsApi().createClient(v2Client)) {
+            assertThat(response.getStatus(), is(201));
         }
 
         ClientRepresentation v1Client = realm.clients().findByClientId("v2-client-with-roles").get(0);
@@ -456,17 +446,8 @@ public class InteropTest extends AbstractClientApiV2Test {
                 .collect(Collectors.toSet());
 
             assertThat(roleNames, containsInAnyOrder("viewer", "editor", "admin"));
-
-            HttpGet getRequest = new HttpGet(getClientsApiUrl() + "/v2-client-with-roles");
-            setAuthHeader(getRequest, adminClient);
-
-            try (var httpResponse = httpClient.execute(getRequest)) {
-                assertThat(httpResponse.getStatusLine().getStatusCode(), is(200));
-                OIDCClientRepresentation fetchedV2Client = mapper.createParser(httpResponse.getEntity().getContent())
-                        .readValueAs(OIDCClientRepresentation.class);
-
-                assertThat(fetchedV2Client.getRoles(), containsInAnyOrder("viewer", "editor", "admin"));
-            }
+            OIDCClientRepresentation fetchedV2Client = (OIDCClientRepresentation) getClientsApi().client("v2-client-with-roles").getClient();
+            assertThat(fetchedV2Client.getRoles(), containsInAnyOrder("viewer", "editor", "admin"));
         } finally {
             realm.clients().get(clientUuid).remove();
         }
@@ -476,8 +457,8 @@ public class InteropTest extends AbstractClientApiV2Test {
      * Test: Create a client using v1 API, add roles via v1 API, then assert roles using v2 API.
      */
     @Test
-    public void createWithV1RolesAssertWithV2() throws Exception {
-        RealmResource realm = adminClient.realm("master");
+    public void createWithV1RolesAssertWithV2() {
+        RealmResource realm = adminClient.realm(getRealmName());
 
         ClientRepresentation v1Client = new ClientRepresentation();
         v1Client.setClientId("v1-client-with-roles");
@@ -492,31 +473,25 @@ public class InteropTest extends AbstractClientApiV2Test {
         String clientUuid = ApiUtil.getCreatedId(response);
         response.close();
 
+
+        RoleRepresentation role1 = new RoleRepresentation();
+        role1.setName("read-access");
+        role1.setDescription("Read access role");
+        realm.clients().get(clientUuid).roles().create(role1);
+
+        RoleRepresentation role2 = new RoleRepresentation();
+        role2.setName("write-access");
+        role2.setDescription("Write access role");
+        realm.clients().get(clientUuid).roles().create(role2);
+
+        RoleRepresentation role3 = new RoleRepresentation();
+        role3.setName("delete-access");
+        realm.clients().get(clientUuid).roles().create(role3);
+
+
         try {
-            RoleRepresentation role1 = new RoleRepresentation();
-            role1.setName("read-access");
-            role1.setDescription("Read access role");
-            realm.clients().get(clientUuid).roles().create(role1);
-
-            RoleRepresentation role2 = new RoleRepresentation();
-            role2.setName("write-access");
-            role2.setDescription("Write access role");
-            realm.clients().get(clientUuid).roles().create(role2);
-
-            RoleRepresentation role3 = new RoleRepresentation();
-            role3.setName("delete-access");
-            realm.clients().get(clientUuid).roles().create(role3);
-
-            HttpGet getRequest = new HttpGet(getClientsApiUrl() + "/v1-client-with-roles");
-            setAuthHeader(getRequest, adminClient);
-
-            try (var httpResponse = httpClient.execute(getRequest)) {
-                assertThat(httpResponse.getStatusLine().getStatusCode(), is(200));
-                OIDCClientRepresentation fetchedV2Client = mapper.createParser(httpResponse.getEntity().getContent())
-                        .readValueAs(OIDCClientRepresentation.class);
-
-                assertThat(fetchedV2Client.getRoles(), containsInAnyOrder("read-access", "write-access", "delete-access"));
-            }
+            OIDCClientRepresentation fetchedV2Client = (OIDCClientRepresentation) getClientsApi().client("v1-client-with-roles").getClient();
+            assertThat(fetchedV2Client.getRoles(), containsInAnyOrder("read-access", "write-access", "delete-access"));
         } finally {
             realm.clients().get(clientUuid).remove();
         }

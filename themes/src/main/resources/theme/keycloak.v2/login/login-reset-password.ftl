@@ -12,8 +12,8 @@
             <@field.input name="username" label=label value=auth.attemptedUsername!'' autofocus=true />
 
             <@buttons.actionGroup>
-              <@buttons.button id="kc-form-buttons" label="doSubmit" class=["kcButtonPrimaryClass", "kcButtonBlockClass"]/>
-              <@buttons.buttonLink href=url.loginUrl label="backToLogin" class=["kcButtonSecondaryClass", "kcButtonBlockClass"]/>
+              <@buttons.button id="kc-form-buttons" label="doSubmit"/>
+              <@buttons.buttonLink href=url.loginUrl label="backToLogin"/>
             </@buttons.actionGroup>
 
         </form>

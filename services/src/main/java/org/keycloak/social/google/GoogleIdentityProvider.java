@@ -19,11 +19,9 @@ package org.keycloak.social.google;
 import java.util.List;
 
 import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.OAuth2Constants;
-import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.provider.AuthenticationRequest;
@@ -32,16 +30,10 @@ import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.services.ErrorResponseException;
 
-import com.fasterxml.jackson.databind.JsonNode;
 
 
 /**
@@ -105,30 +97,8 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
 
 
     @Override
-    protected BrokeredIdentityContext exchangeExternalTokenV1Impl(EventBuilder event, MultivaluedMap<String, String> params) {
+    protected BrokeredIdentityContext exchangeExternalImpl(EventBuilder event, MultivaluedMap<String, String> params) {
         return exchangeExternalUserInfoValidationOnly(event, params);
-    }
-
-    @Override
-    protected BrokeredIdentityContext exchangeExternalTokenV2Impl(TokenExchangeContext tokenExchangeContext) {
-        try {
-            JsonNode tokenInfo = SimpleHttp.create(session).doGet(TOKEN_INFO_URL)
-                    .header("Authorization", "Bearer " + tokenExchangeContext.getParams().getSubjectToken())
-                    .asJson();
-            if (tokenInfo == null || !tokenInfo.has(JsonWebToken.AUD) || !tokenInfo.get(JsonWebToken.AUD).asText().equals(getConfig().getClientId())) {
-                logger.tracef("Invalid response or unmatching audience from the token-info endpoint from Google. Expected audience '%s' . Token info response: %s", getConfig().getClientId(), tokenInfo);
-                EventBuilder event = tokenExchangeContext.getEvent();
-                event.detail(Details.REASON, "Google token validation failed");
-                event.error(Errors.INVALID_TOKEN);
-                throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Google token validation failed", Response.Status.BAD_REQUEST);
-            }
-        } catch (ErrorResponseException ere) {
-            throw ere;
-        } catch (Exception e) {
-            throw new IdentityBrokerException("Could not verify token info from google.", e);
-        }
-
-        return exchangeExternalUserInfoValidationOnly(tokenExchangeContext.getEvent(), tokenExchangeContext.getFormParams());
     }
 
     @Override

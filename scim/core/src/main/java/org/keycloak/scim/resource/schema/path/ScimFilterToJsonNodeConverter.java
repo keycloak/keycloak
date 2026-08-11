@@ -1,6 +1,7 @@
 package org.keycloak.scim.resource.schema.path;
 
 import org.keycloak.models.ModelValidationException;
+import org.keycloak.scim.filter.FilterUtils;
 import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.filter.ScimFilterParserBaseVisitor;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
@@ -120,26 +121,7 @@ class ScimFilterToJsonNodeConverter extends ScimFilterParserBaseVisitor<JsonNode
     }
 
     private String extractValue(ScimFilterParser.CompValueContext ctx) {
-        if (ctx.STRING() != null) {
-            String raw = ctx.STRING().getText();
-            return unescapeJsonString(raw.substring(1, raw.length() - 1));
-        }
-        if (ctx.TRUE() != null) return "true";
-        if (ctx.FALSE() != null) return "false";
-        if (ctx.NULL() != null) return null;
-        if (ctx.NUMBER() != null) return ctx.NUMBER().getText();
-        return null;
-    }
-
-    private String unescapeJsonString(String s) {
-        return s.replace("\\\"", "\"")
-                .replace("\\\\", "\\")
-                .replace("\\/", "/")
-                .replace("\\b", "\b")
-                .replace("\\f", "\f")
-                .replace("\\n", "\n")
-                .replace("\\r", "\r")
-                .replace("\\t", "\t");
+        return FilterUtils.extractCompValue(ctx);
     }
 
     private void flattenIntoArray(ArrayNode array, JsonNode node) {

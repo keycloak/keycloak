@@ -38,6 +38,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -55,6 +56,7 @@ import static java.util.Optional.ofNullable;
 import static org.keycloak.common.util.CollectionUtil.collectionEquals;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
+import static org.keycloak.utils.StringUtil.isBlank;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -90,6 +92,9 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     @Override
     public void setName(String name) {
+        if (isBlank(name)) {
+            throw new ModelException("Group name cannot be null or empty");
+        }
         group.setName(name);
         fireGroupUpdatedEvent();
     }

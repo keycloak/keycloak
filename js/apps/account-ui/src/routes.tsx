@@ -9,8 +9,10 @@ const Applications = lazy(() => import("./applications/Applications"));
 const Groups = lazy(() => import("./groups/Groups"));
 const PersonalInfo = lazy(() => import("./personal-info/PersonalInfo"));
 const Resources = lazy(() => import("./resources/Resources"));
+const VerifiableCredentials = lazy(
+  () => import("./verifiable-credentials/VerifiableCredentials"),
+);
 const ContentComponent = lazy(() => import("./content/ContentComponent"));
-const Oid4Vci = lazy(() => import("./oid4vci/Oid4Vci"));
 
 export const DeviceActivityRoute: RouteObject = {
   path: "account-security/device-activity",
@@ -25,6 +27,11 @@ export const LinkedAccountsRoute: RouteObject = {
 export const SigningInRoute: RouteObject = {
   path: "account-security/signing-in",
   element: <SigningIn />,
+};
+
+export const VerifiableCredentialsRoute: RouteObject = {
+  path: "verifiable-credentials",
+  element: <VerifiableCredentials />,
 };
 
 export const ApplicationsRoute: RouteObject = {
@@ -62,20 +69,15 @@ export const OrganizationsRoute: RouteObject = {
   element: <Organizations />,
 };
 
-export const Oid4VciRoute: RouteObject = {
-  path: "oid4vci",
-  element: <Oid4Vci />,
-};
-
 export const routes: RouteObject[] = [
   PersonalInfoRoute,
   DeviceActivityRoute,
   LinkedAccountsRoute,
   SigningInRoute,
+  VerifiableCredentialsRoute,
   ApplicationsRoute,
   GroupsRoute,
   OrganizationsRoute,
   ResourcesRoute,
   ContentRoute,
-  Oid4VciRoute,
 ];

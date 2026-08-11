@@ -167,8 +167,8 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
   useFetch(
     () => adminClient.realms.getConfigEvents({ realm }),
     (events) => {
-      setUserEventsEnabled(events?.eventsEnabled!);
-      setEvents(localeSort(events?.enabledEventTypes || [], (e) => e));
+      setUserEventsEnabled(events.eventsEnabled!);
+      setEvents(localeSort(events.enabledEventTypes || [], (e) => e));
     },
     [],
   );

@@ -1,3 +1,4 @@
+
 [[ssrf]]
 === Mitigating Server-Side Request Forgery (SSRF)
 
@@ -5,7 +6,9 @@
 
 If these fields are not strictly validated, a malicious administrator, a compromised account or a Dynamic Client Registration could point them toward internal network resources or loopback interfaces (e.g., `http://localhost:8080/any`), allowing the attacker to probe or attack the internal infrastructure from the {project_name} server itself.
 
-To mitigate this threat, {project_name} provides a solution using <<_client_policies, Client Policies>> with some executors like *Secure Client Uris* to provide baseline protection for transport security and wildcards, but especially with  the **Secure Client URIs Pattern** executor.
+To mitigate this threat, {project_name} provides a solution using <<_client_policies, Client Policies>> with some executors like *Secure Client Uris* to provide baseline protection for transport security and wildcards, but especially with the **Secure Client URIs Pattern** executor.
+
+See also <<dns-rebinding>> for an attack vector that can bypass URI-based validation.
 
 ==== Secure Client URIs Pattern Executor
 
@@ -59,3 +62,14 @@ If your clients use JWKS URI from third-party providers, only add the specific d
 ====
 This executor uses Java Regular Expressions. Ensure you correctly escape special characters (for example, use `\.` to indicate a literal dot). An incorrect pattern could prevent legitimate updates to clients. It is recommended to test regexes in a non-production environment.
 ====
+
+[[dns-rebinding]]
+==== DNS Rebinding
+
+An attacker can use DNS rebinding to resolve a public hostname to an internal IP address, bypassing URI-based allowlists that validate only the hostname at request time.
+
+This allows an attacker to make {project_name} connect to internal services, including endpoints on the same host, enabling SSRF or internal network scanning depending on authentication and network controls.
+
+To mitigate DNS rebinding attacks, configure the DNS resolver used by {project_name} to reject resolutions of public domain names to non-public/internal IP address ranges.
+
+NOTE: This is an infrastructure-level mitigation applied in the DNS resolver, not a setting within {project_name} itself.

@@ -30,15 +30,14 @@ import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
-import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 
 /**
@@ -87,7 +86,7 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
 
             // Remove the mapper for "username-cn" and create new mapper for fullName
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ldapModel, "username-cn");
-            Assert.assertNotNull(mapperModel);
+            Assertions.assertNotNull(mapperModel);
             appRealm.removeComponent(mapperModel);
 
             mapperModel = KeycloakModelUtils.createComponentModel("fullNameWritable", ldapModel.getId(), FullNameLDAPStorageMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
@@ -122,7 +121,7 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             UserModel john = session.users().getUserByUsername(appRealm, "johnkeycloak");
-            Assert.assertNotNull(john.getFederationLink());
+            Assertions.assertNotNull(john.getFederationLink());
             assertDnStartsWith(session, ctx, john, "cn=johnkeycloak");
 
             session.users().removeUser(appRealm, john);
@@ -138,7 +137,7 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
         registerPage.assertCurrent();
 
         registerPage.register("Johny", "Anthony", "johnyanth@check.cz", "johnkeycloak", "Password1", "Password1");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
@@ -208,7 +207,7 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
         registerPage.assertCurrent();
 
         registerPage.register("Jož,o", "Baříč", "johnyanth@check.cz", "johnkeycloak", "Password1", "Password1");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
@@ -244,13 +243,13 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
         registerPage.assertCurrent();
 
         registerPage.register("John", "Existing", "johnyanth@check.cz", "existingkc", "Password1", "Password1");
-        Assert.assertEquals("Username already exists.", registerPage.getInputAccountErrors().getUsernameError());
+        Assertions.assertEquals("Username already exists.", registerPage.getInputAccountErrors().getUsernameError());
 
         registerPage.register("John", "Existing", "johnyanth@check.cz", "existingkc2", "Password1", "Password1");
 
         String code = oauth.parseLoginResponse().getCode();
         String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
-        appPage.logout(idTokenHint);
+        oauth.doLogout(idTokenHint);
 
         oauth.openLoginForm();
         loginPage.clickRegister();
@@ -282,13 +281,13 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
 
 
     private static void assertUser(KeycloakSession session, LDAPTestContext ctx, UserModel user, String expectedUsername, String expectedFirstName, String expectedLastName, boolean expectedEnabled, String expectedDn) {
-        Assert.assertNotNull(user);
-        Assert.assertNotNull(user.getFederationLink());
-        Assert.assertEquals(user.getFederationLink(), ctx.getLdapModel().getId());
-        Assert.assertEquals(expectedUsername, user.getUsername());
-        Assert.assertEquals(expectedFirstName, user.getFirstName());
-        Assert.assertEquals(expectedLastName, user.getLastName());
-        Assert.assertEquals(expectedEnabled, user.isEnabled());
+        Assertions.assertNotNull(user);
+        Assertions.assertNotNull(user.getFederationLink());
+        Assertions.assertEquals(user.getFederationLink(), ctx.getLdapModel().getId());
+        Assertions.assertEquals(expectedUsername, user.getUsername());
+        Assertions.assertEquals(expectedFirstName, user.getFirstName());
+        Assertions.assertEquals(expectedLastName, user.getLastName());
+        Assertions.assertEquals(expectedEnabled, user.isEnabled());
         assertDnStartsWith(session, ctx, user, expectedDn);
     }
 
@@ -296,7 +295,7 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
     private static void assertDnStartsWith(KeycloakSession session, LDAPTestContext ctx, UserModel user, String expectedRDn) {
         String usersDn = ctx.getLdapProvider().getLdapIdentityStore().getConfig().getUsersDn();
         String userDN = user.getFirstAttribute(LDAPConstants.LDAP_ENTRY_DN);
-        Assert.assertTrue(userDN.equalsIgnoreCase(expectedRDn + "," + usersDn));
+        Assertions.assertTrue(userDN.equalsIgnoreCase(expectedRDn + "," + usersDn));
     }
 
 }

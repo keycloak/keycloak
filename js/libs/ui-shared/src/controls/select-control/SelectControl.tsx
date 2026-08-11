@@ -7,6 +7,7 @@ import {
 } from "react-hook-form";
 import { SingleSelectControl } from "./SingleSelectControl";
 import { TypeaheadSelectControl } from "./TypeaheadSelectControl";
+import { ReactNode } from "react";
 
 type Variant = `${SelectVariant}`;
 
@@ -43,7 +44,7 @@ export type SelectControlProps<
     label?: string;
     options: OptionType;
     selectedOptions?: OptionType;
-    labelIcon?: string;
+    labelIcon?: string | ReactNode;
     controller: Omit<ControllerProps, "name" | "render">;
     onFilter?: (value: string) => void;
     variant?: Variant;

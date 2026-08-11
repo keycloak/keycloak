@@ -12,16 +12,16 @@ import org.keycloak.testsuite.util.TempFileResource;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.cli.KcAdmExec.execute;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -45,7 +45,7 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
             KcAdmExec exe = execute("create realms --config '" + configFile.getName() + "' -s realm=demorealm -s enabled=true");
 
             assertExitCodeAndStreamSizes(exe, 0, 0, 1);
-            Assert.assertTrue(exe.stderrLines().get(exe.stderrLines().size() - 1).startsWith("Created "));
+            Assertions.assertTrue(exe.stderrLines().get(exe.stderrLines().size() - 1).startsWith("Created "));
 
             // create user
             exe = execute("create users --config '" + configFile.getName() + "' -r demorealm -s username=testuser -s firstName=testuser -s lastName=testuser -s email=testuser@keycloak.org -s enabled=true -i");
@@ -90,7 +90,7 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
             ObjectNode role = loadJson(exe.stdout(), ObjectNode.class);
-            Assert.assertEquals("testrole", role.get("name").asText());
+            Assertions.assertEquals("testrole", role.get("name").asText());
             String roleId = role.get("id").asText();
 
             // get realm roles again
@@ -111,7 +111,7 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
             exe = execute("create clients/" + idOfClient + "/roles --config '" + configFile.getName() + "' -s name=clientrole  -s 'description=Test client role'");
 
             assertExitCodeAndStreamSizes(exe, 0, 0, 1);
-            Assert.assertTrue(exe.stderrLines().get(exe.stderrLines().size() - 1).startsWith("Created "));
+            Assertions.assertTrue(exe.stderrLines().get(exe.stderrLines().size() - 1).startsWith("Created "));
 
             // make sure client role has been created
             exe = execute("get-roles --config '" + configFile.getName() + "' --cclientid testclient");
@@ -119,7 +119,7 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
             assertExitCodeAndStdErrSize(exe, 0, 0);
             roles = loadJson(exe.stdout(), LIST_OF_JSON);
             assertThat("expected one role", roles.size(), equalTo(1));
-            Assert.assertEquals("clientrole", roles.get(0).get("name").asText());
+            Assertions.assertEquals("clientrole", roles.get(0).get("name").asText());
 
             // add created role to user - we are realm admin so we can add role to ourself
             exe = execute("add-roles --config '" + configFile.getName() + "' --uusername testuser --cclientid testclient --rolename clientrole");
@@ -132,25 +132,25 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
             ObjectNode node = loadJson(exe.stdout(), ObjectNode.class);
-            Assert.assertNotNull(node.get("realmMappings"));
+            Assertions.assertNotNull(node.get("realmMappings"));
 
             List<String> realmMappings = StreamSupport.stream(node.get("realmMappings").spliterator(), false)
                     .map(o -> o.get("name").asText()).sorted().collect(Collectors.toList());
-            Assert.assertEquals(Arrays.asList("default-roles-demorealm"), realmMappings);
+            Assertions.assertEquals(Arrays.asList("default-roles-demorealm"), realmMappings);
 
             ObjectNode clientRoles = (ObjectNode) node.get("clientMappings");
             //List<String> fields = asSortedList(clientRoles.fieldNames());
             List<String> fields = StreamSupport.stream(clientRoles.spliterator(), false)
                     .map(o -> o.get("client").asText()).sorted().collect(Collectors.toList());
-            Assert.assertEquals(Arrays.asList("realm-management", "testclient"), fields);
+            Assertions.assertEquals(Arrays.asList("realm-management", "testclient"), fields);
 
             realmMappings = StreamSupport.stream(clientRoles.get("realm-management").get("mappings").spliterator(), false)
                     .map(o -> o.get("name").asText()).sorted().collect(Collectors.toList());
-            Assert.assertEquals(Arrays.asList("realm-admin"), realmMappings);
+            Assertions.assertEquals(Arrays.asList("realm-admin"), realmMappings);
 
             realmMappings = StreamSupport.stream(clientRoles.get("testclient").get("mappings").spliterator(), false)
                     .map(o -> o.get("name").asText()).sorted().collect(Collectors.toList());
-            Assert.assertEquals(Arrays.asList("clientrole"), realmMappings);
+            Assertions.assertEquals(Arrays.asList("clientrole"), realmMappings);
 
 
 
@@ -165,11 +165,11 @@ public class KcAdmSessionTest extends AbstractAdmCliTest {
             assertExitCodeAndStdErrSize(exe, 0, 0);
 
             node = loadJson(exe.stdout(), ObjectNode.class);
-            Assert.assertNotNull(node.get("realmMappings"));
+            Assertions.assertNotNull(node.get("realmMappings"));
 
             realmMappings = StreamSupport.stream(node.get("realmMappings").spliterator(), false)
                     .map(o -> o.get("name").asText()).sorted().collect(Collectors.toList());
-            Assert.assertEquals(Arrays.asList("default-roles-demorealm", "testrole"), realmMappings);
+            Assertions.assertEquals(Arrays.asList("default-roles-demorealm", "testrole"), realmMappings);
 
             // create a group
             exe = execute("create groups --config '" + configFile.getName() + "' -s name=TestUsers -i");

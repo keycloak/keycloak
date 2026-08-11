@@ -44,6 +44,7 @@ type KeyValueInputProps = PropsWithChildren & {
   valueLabel?: string;
   KeyComponent?: FunctionComponent<Field>;
   ValueComponent?: FunctionComponent<ValueField>;
+  filterKeys?: string[];
 };
 
 export const KeyValueInput = ({
@@ -54,6 +55,7 @@ export const KeyValueInput = ({
   valueLabel = "value",
   KeyComponent,
   ValueComponent,
+  filterKeys,
 }: KeyValueInputProps) => {
   const { t } = useTranslation();
   const {
@@ -89,6 +91,7 @@ export const KeyValueInput = ({
           <span className="pf-v5-c-form__label-text">{t(valueLabel)}</span>
         </GridItem>
         {fields.map((attribute, index) => {
+          if (filterKeys?.includes(values[index]?.key)) return null;
           const error = getError()?.[index];
           const keyError = !!error?.key;
           const valueErrorPresent = !!error?.value || !!error?.message;

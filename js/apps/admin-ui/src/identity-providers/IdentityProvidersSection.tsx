@@ -78,7 +78,7 @@ const OrganizationLink = (identityProvider: IdentityProviderRepresentation) => {
   const { t } = useTranslation();
   const { realm } = useRealm();
 
-  if (!identityProvider?.organizationId) {
+  if (!identityProvider.organizationId) {
     return "—";
   }
 

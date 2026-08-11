@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc.grants;
 
 import java.util.List;
+import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
 
@@ -27,9 +28,12 @@ import org.keycloak.authentication.authenticators.client.ClientAssertionState;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.JWTAuthorizationGrantProvider;
 import org.keycloak.cache.AlternativeLookupProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.FederatedIdentityModel;
@@ -40,6 +44,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -60,8 +65,33 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
 
         try {
 
-            JWTAuthorizationGrantValidator authorizationGrantContext = JWTAuthorizationGrantValidator.createValidator(
-                    context.getSession(), client, assertion, formParams.getFirst(OAuth2Constants.SCOPE));
+            if (assertion == null) {
+                throw new IllegalArgumentException("Missing parameter:" + OAuth2Constants.ASSERTION);
+            }
+
+            JWSInput jws;
+            JsonWebToken jwt;
+            try {
+                jws = new JWSInput(assertion);
+                jwt = jws.readJsonContent(JsonWebToken.class);
+            } catch (JWSInputException e) {
+                throw new RuntimeException("The provided assertion is not a valid JWT");
+            }
+
+            String jwtTokenType = jws.getHeader().getType();
+            
+            ClientAssertionState clientAssertionState = new ClientAssertionState(OAuth2Constants.JWT_AUTHORIZATION_GRANT, assertion, jws, jwt);
+            clientAssertionState.setClient(context.getClient());
+
+            JWTAuthorizationGrantValidator authorizationGrantContext;
+            if (Profile.isFeatureEnabled(Profile.Feature.IDENTITY_ASSERTION_JWT) && jwtTokenType != null 
+                    && jwtTokenType.equals(OAuth2Constants.IDENTITY_ASSERTION_JWT_HEADER_TYPE)) {
+                authorizationGrantContext = IDJWTAuthorizationGrantValidator.createValidator(
+                    context.getSession(), formParams.getFirst(OAuth2Constants.SCOPE), clientAssertionState);
+            } else {
+                authorizationGrantContext = DefaultJWTAuthorizationGrantValidator.createValidator(
+                    context.getSession(), formParams.getFirst(OAuth2Constants.SCOPE), clientAssertionState);
+            }
             event.detail(Details.IDENTITY_PROVIDER_ISSUER, authorizationGrantContext.getIssuer());
             event.detail(Details.IDENTITY_PROVIDER_USER_ID, authorizationGrantContext.getSubject());
 
@@ -95,9 +125,6 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
                 throw new RuntimeException("Identity Provider is not configured for JWT Authorization Grant");
             }
 
-            // assign the provider and perform validations associated to the jwt grant provider
-            authorizationGrantContext.validateTokenActive(jwtAuthorizationGrantProvider.getAllowedClockSkew(), jwtAuthorizationGrantProvider.getMaxAllowedExpiration(), jwtAuthorizationGrantProvider.isAssertionReuseAllowed());
-
             // assign the signature alg and validate
             authorizationGrantContext.validateSignatureAlgorithm(jwtAuthorizationGrantProvider.getAssertionSignatureAlg());
 
@@ -107,9 +134,11 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
                 throw new RuntimeException("Error validating JWT with identity provider");
             }
 
+            authorizationGrantContext.validateTokenActive(jwtAuthorizationGrantProvider.getAllowedClockSkew(), jwtAuthorizationGrantProvider.getMaxAllowedExpiration(), jwtAuthorizationGrantProvider.isAssertionReuseAllowed());
+
             //user must exist in keycloak
             FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(identityProviderModel.getAlias(), brokeredIdentityContext.getId(), brokeredIdentityContext.getUsername(), brokeredIdentityContext.getToken());
-            UserModel user = lookupUserByFederatedIdentity(federatedIdentityModel, authorizationGrantContext.getState());
+            UserModel user = lookupUserByFederatedIdentity(federatedIdentityModel, clientAssertionState);
             if (user == null) {
                 throw new RuntimeException("User not found");
             }
@@ -185,5 +214,10 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
     @Override
     public EventType getEventType() {
         return EventType.JWT_AUTHORIZATION_GRANT;
+    }
+
+    @Override
+    public Set<String> getTokenParameterNames() {
+        return Set.of(OAuth2Constants.ASSERTION);
     }
 }

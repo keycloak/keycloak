@@ -35,14 +35,15 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Assert;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Test for the 'aud' claim in tokens
@@ -84,9 +85,9 @@ public class AudienceTest extends AbstractOIDCScopeTest {
                 .firstName("John")
                 .lastName("Doe")
                 .password("password")
-                .role("account", "manage-account")
-                .role("account", "view-profile")
-                .role("service-client", "role1")
+                .clientRoles("account", "manage-account")
+                .clientRoles("account", "view-profile")
+                .clientRoles("service-client", "role1")
                 .build();
         testRealm.getUsers().add(user);
     }
@@ -100,7 +101,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
     @Before
     public void beforeTest() {
         // Check if already exists
-        ClientScopeResource clientScopeRes = AdminApiUtil.findClientScopeByName(testRealm(), "audience-scope");
+        ClientScopeResource clientScopeRes = AdminApiUtil.findClientScopeByName(managedRealm.admin(), "audience-scope");
         if (clientScopeRes != null) {
             return;
         }
@@ -109,11 +110,11 @@ public class AudienceTest extends AbstractOIDCScopeTest {
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName("audience-scope");
         clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Response resp = testRealm().clientScopes().create(clientScope);
+        Response resp = managedRealm.admin().clientScopes().create(clientScope);
         String clientScopeId = ApiUtil.getCreatedId(resp);
         resp.close();
 
-        ClientResource client = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource client = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         client.addOptionalClientScope(clientScopeId);
     }
 
@@ -123,7 +124,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
         // Add audience protocol mapper to the clientScope "audience-scope"
         ProtocolMapperRepresentation audienceMapper = ProtocolMapperUtil.createAudienceMapper("audience mapper", "service-client",
                 null, true, false, true);
-        ClientScopeResource clientScope = AdminApiUtil.findClientScopeByName(testRealm(), "audience-scope");
+        ClientScopeResource clientScope = AdminApiUtil.findClientScopeByName(managedRealm.admin(), "audience-scope");
         Response resp = clientScope.getProtocolMappers().createMapper(audienceMapper);
         String mapperId = ApiUtil.getCreatedId(resp);
         resp.close();
@@ -131,12 +132,11 @@ public class AudienceTest extends AbstractOIDCScopeTest {
         // Login and check audiences in the token (just accessToken contains it)
         oauth.scope("openid audience-scope");
         oauth.doLogin("john", "password");
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
+                .userId(userId).getEvent();
         Tokens tokens = sendTokenRequest(loginEvent, userId, "openid profile email audience-scope", "test-app");
 
-        assertAudiences(tokens.accessToken, "service-client");
+        assertAudiences(tokens.accessToken, "test-app", "service-client", "confidential-cli");
         assertAudiences(tokens.idToken, "test-app");
 
         // Revert
@@ -149,7 +149,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
         // Add audience protocol mapper to the clientScope "audience-scope"
         ProtocolMapperRepresentation audienceMapper = ProtocolMapperUtil.createAudienceMapper("audience mapper 1", null,
                 "http://host/service/ctx1", true, false, true);
-        ClientScopeResource clientScope = AdminApiUtil.findClientScopeByName(testRealm(), "audience-scope");
+        ClientScopeResource clientScope = AdminApiUtil.findClientScopeByName(managedRealm.admin(), "audience-scope");
         Response resp = clientScope.getProtocolMappers().createMapper(audienceMapper);
         String mapper1Id = ApiUtil.getCreatedId(resp);
         resp.close();
@@ -163,12 +163,11 @@ public class AudienceTest extends AbstractOIDCScopeTest {
         // Login and check audiences in the token
         oauth.scope("openid audience-scope");
         oauth.doLogin("john", "password");
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
+                .userId(userId).getEvent();
         Tokens tokens = sendTokenRequest(loginEvent, userId, "openid profile email audience-scope", "test-app");
 
-        assertAudiences(tokens.accessToken, "http://host/service/ctx1", "http://host/service/ctx2");
+        assertAudiences(tokens.accessToken, "test-app", "http://host/service/ctx1", "http://host/service/ctx2", "confidential-cli");
         assertAudiences(tokens.idToken, "test-app", "http://host/service/ctx2");
 
         // Revert
@@ -180,7 +179,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
     private void assertAudiences(JsonWebToken token, String... expectedAudience) {
         Collection<String> audiences = token.getAudience() == null ? Collections.emptyList() : Arrays.asList(token.getAudience());
         Collection<String> expectedAudiences = Arrays.asList(expectedAudience);
-        Assert.assertTrue("Not matched. expectedAudiences: " + expectedAudiences + ", audiences: " + audiences,
-                expectedAudiences.containsAll(audiences) && audiences.containsAll(expectedAudiences));
+        Assertions.assertTrue(expectedAudiences.containsAll(audiences) && audiences.containsAll(expectedAudiences),
+                "Not matched. expectedAudiences: " + expectedAudiences + ", audiences: " + audiences);
     }
 }

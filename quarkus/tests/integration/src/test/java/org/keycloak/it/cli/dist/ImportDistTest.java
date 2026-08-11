@@ -23,8 +23,10 @@ import java.io.IOException;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.junit5.extension.StopServer;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 import org.keycloak.representations.idm.RealmRepresentation;
 
@@ -46,12 +48,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ImportDistTest {
 
     @Test
-    void testImport(KeycloakDistribution dist) throws IOException {
-        CLIResult cliResult = dist.run("build");
+    void testImport(KeycloakRunner runner) throws IOException {
+        CLIResult cliResult = runner.run("build");
 
         File dir = new File("target");
 
-        cliResult = dist.run("export", "--realm=master", "--dir=" + dir.getAbsolutePath());
+        cliResult = runner.run("export", "--realm=master", "--dir=" + dir.getAbsolutePath());
         cliResult.assertMessage("Export of realm 'master' requested.");
         cliResult.assertMessage("Export finished successfully");
         cliResult.assertNoMessage("local_addr");
@@ -63,31 +65,31 @@ public class ImportDistTest {
         node.put("enabled", "${REALM_ENABLED}");
         mapper.writer().writeValue(file, node);
 
-        dist.setEnvVar("REALM_ENABLED", "true");
-        dist.setEnvVar("KC_HOSTNAME_STRICT", "false");
-        dist.setEnvVar("KC_CACHE", "ispn");
-        cliResult = dist.run("import", "--dir=" + dir.getAbsolutePath());
+        runner.setEnvVar("REALM_ENABLED", "true");
+        runner.setEnvVar("KC_HOSTNAME_STRICT", "false");
+        runner.setEnvVar("KC_CACHE", "ispn");
+        cliResult = runner.run("import", "--dir=" + dir.getAbsolutePath());
         cliResult.assertMessage("Realm 'master' imported");
         cliResult.assertMessage("Import finished successfully");
         cliResult.assertNoMessage("Changes detected in configuration");
         cliResult.assertNoMessage("Listening on: http");
         cliResult.assertNoMessage("local_addr");
 
-        cliResult = dist.run("import");
+        cliResult = runner.run("import");
         cliResult.assertError("Must specify either --dir or --file options.");
     }
 
+    @StopServer(Mode.MANUAL)
     @Test
-    void testImportNewRealm(KeycloakDistribution dist) throws IOException {
-        dist.setEnvVar("MY_SECRET", "admin123");
+    void testImportNewRealm(KeycloakRunner runner) throws IOException {
+        runner.setEnvVar("MY_SECRET", "admin123");
 
-        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
-        CLIResult result = rawDist.run("bootstrap-admin", "service", "--db=dev-file", "--client-id=admin", "--client-secret:env=MY_SECRET");
+        RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
+        CLIResult result = rawDist.kc("bootstrap-admin", "service", "--db=dev-file", "--client-id=admin", "--client-secret:env=MY_SECRET");
 
         assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
 
-        rawDist.setManualStop(true);
-        result = rawDist.run("start-dev", "--db-url-properties=;AUTO_SERVER=TRUE;DB_CLOSE_ON_EXIT=TRUE");
+        result = runner.run("start-dev", "--db-url-properties=;AUTO_SERVER=TRUE;DB_CLOSE_ON_EXIT=TRUE");
 
         File file = new File("target/realm.json");
 

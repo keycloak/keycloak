@@ -21,6 +21,8 @@ import { useTranslation } from "react-i18next";
 import {
   ClientScopeType,
   clientScopeTypesDropdown,
+  ParameterizedScopeLabel,
+  isParameterizedScope,
 } from "../../components/client-scope/ClientScopeTypes";
 import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
@@ -212,7 +214,7 @@ export const AddScopeDialog = ({
                 )}
               >
                 <DropdownList>
-                  {clientScopeTypesDropdown(t, action)}
+                  {clientScopeTypesDropdown(t, action, rows)}
                 </DropdownList>
               </Dropdown>,
               <Button
@@ -317,6 +319,12 @@ export const AddScopeDialog = ({
         columns={[
           {
             name: "name",
+            cellRenderer: (row) => (
+              <>
+                {row.name}{" "}
+                {isParameterizedScope(row) && <ParameterizedScopeLabel />}
+              </>
+            ),
           },
           {
             name: "protocol",

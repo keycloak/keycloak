@@ -19,7 +19,6 @@ package org.keycloak.models.sessions.infinispan.changes;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -46,18 +45,15 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
     protected final Map<K, SessionUpdatesList<V>> updates = new HashMap<>();
     protected final Map<K, SessionUpdatesList<V>> offlineUpdates = new HashMap<>();
     private final String cacheName;
-    private final ArrayBlockingQueue<PersistentUpdate> batchingQueue;
     private final CacheHolder<K, V> cacheHolder;
     private final CacheHolder<K, V> offlineCacheHolder;
 
     public PersistentSessionsChangelogBasedTransaction(KeycloakSession session,
                                                        String cacheName,
-                                                       ArrayBlockingQueue<PersistentUpdate> batchingQueue,
                                                        CacheHolder<K, V> cacheHolder,
                                                        CacheHolder<K, V> offlineCacheHolder) {
         kcSession = session;
         this.cacheName = cacheName;
-        this.batchingQueue = batchingQueue;
         this.cacheHolder = cacheHolder;
         this.offlineCacheHolder = offlineCacheHolder;
     }
@@ -109,6 +105,48 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
     }
 
     @Override
+    public boolean supportsLockingDatabaseEntities() {
+        return true;
+    }
+
+    @Override
+    public boolean lockDatabaseEntities() {
+        for (Map.Entry<K, SessionUpdatesList<V>> entry : Stream.concat(updates.entrySet().stream(), offlineUpdates.entrySet().stream()).toList()) {
+            SessionUpdatesList<V> sessionUpdates = entry.getValue();
+            if (sessionUpdates.getUpdateTasks().isEmpty()) {
+                continue;
+            }
+            SessionEntityWrapper<V> sessionWrapper = sessionUpdates.getEntityWrapper();
+            V entity = sessionWrapper.getEntity();
+            boolean isOffline = entity.isOffline();
+
+            // Don't save transient entities to infinispan. They are valid just for current transaction
+            if (sessionUpdates.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT) continue;
+
+            RealmModel realm = sessionUpdates.getRealm();
+
+            long lifespanMs = getLifespanMsLoader(isOffline).apply(realm, sessionUpdates.getClient(), entity);
+            long maxIdleTimeMs = getMaxIdleMsLoader(isOffline).apply(realm, sessionUpdates.getClient(), entity);
+
+            MergedUpdate<V> merged = MergedUpdate.computeUpdate(sessionUpdates.getUpdateTasks(), sessionWrapper, SessionTimeouts.calculateEffectiveSessionLifespan(maxIdleTimeMs, lifespanMs), SessionTimeouts.IMMORTAL_FLAG);
+
+            if (merged == null) {
+                continue;
+            }
+
+            if (!lockDatabaseEntity(realm, entry.getKey(), entity.isOffline(), merged.getOperation())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Lock the entity in the database.
+     */
+    protected abstract boolean lockDatabaseEntity(RealmModel realm, K key, boolean offline, SessionUpdateTask.CacheOperation operation);
+
+    @Override
     public void asyncCommit(AggregateCompletionStage<Void> stage, Consumer<DatabaseUpdate> databaseUpdates) {
         JpaChangesPerformer<K, V> persister = null;
         for (Map.Entry<K, SessionUpdatesList<V>> entry : Stream.concat(updates.entrySet().stream(), offlineUpdates.entrySet().stream()).toList()) {
@@ -138,18 +176,10 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                 }
 
                 if (persister == null) {
-                    persister =new JpaChangesPerformer<>(cacheName, batchingQueue);
-                    if (!persister.isNonBlocking()) {
-                        databaseUpdates.accept(persister::write);
-                    }
+                    persister = new JpaChangesPerformer<>(cacheName);
+                    databaseUpdates.accept(persister::write);
                 }
-                if (persister.isNonBlocking()) {
-                    // batching enabled, another thread will commit the changes.
-                    persister.asyncWrite(stage, entry, merged);
-                } else {
-                    // batching disabled, we queue, and we will execute the update later.
-                    persister.registerChange(entry, merged);
-                }
+                persister.registerChange(entry, merged);
             }
         }
     }

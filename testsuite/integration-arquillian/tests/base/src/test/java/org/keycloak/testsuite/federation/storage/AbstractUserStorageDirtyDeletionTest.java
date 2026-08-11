@@ -14,12 +14,12 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testframework.realm.GroupBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractConcurrencyTest;
 import org.keycloak.testsuite.federation.UserMapStorage;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.updaters.Creator;
-import org.keycloak.testsuite.util.GroupBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.hamcrest.Matchers;
 import org.junit.Before;
@@ -72,7 +72,7 @@ public abstract class AbstractUserStorageDirtyDeletionTest extends AbstractConcu
 
     private Creator<UserResource> addFederatedUser(int sequenceId) {
         try {
-            final Creator<UserResource> creator = Creator.create(testRealm(), UserBuilder.create().username("test-user-" + sequenceId).build());
+            final Creator<UserResource> creator = Creator.create(managedRealm.admin(), UserBuilder.create().username("test-user-" + sequenceId).build());
             return creator;
         } catch (Throwable ex) {
             throw new RuntimeException("Failed for test-user-" + sequenceId, ex);
@@ -88,7 +88,7 @@ public abstract class AbstractUserStorageDirtyDeletionTest extends AbstractConcu
 
     @Before
     public void before() {
-        getCleanup().addCleanup(Creator.create(testRealm(), getFederationProvider()));
+        getCleanup().addCleanup(Creator.create(managedRealm.admin(), getFederationProvider()));
 
         // create all users
         createdUsers = createUsers();
@@ -112,7 +112,7 @@ public abstract class AbstractUserStorageDirtyDeletionTest extends AbstractConcu
 
     @Test
     public void testMembersWhenCachedUsersRemovedFromBackend() {
-        try (Creator<GroupResource> group = Creator.create(testRealm(), GroupBuilder.create().name("g").build())) {
+        try (Creator<GroupResource> group = Creator.create(managedRealm.admin(), GroupBuilder.create().name("g").build())) {
             // Cache the users in the local server cache and add to a group
             createdUsers.stream().parallel().map(Creator::resource).forEach(r -> {
                 r.joinGroup(group.id());

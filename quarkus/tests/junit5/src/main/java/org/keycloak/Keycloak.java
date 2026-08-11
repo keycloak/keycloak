@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -178,6 +179,7 @@ public class Keycloak {
     private List<Dependency> dependencies;
     private boolean fipsEnabled;
     private Properties systemProperties;
+    private CountDownLatch closed;
 
     public Keycloak() {
         this(null, Version.VERSION, List.of(), false);
@@ -211,10 +213,9 @@ public class Keycloak {
             if (!initSys(args.toArray(String[]::new))) {
                 return this;
             }
-            System.setProperty(Environment.KC_TEST_REBUILD, "true");
             StartupAction startupAction = action.createInitialRuntimeApplication();
-            System.getProperties().remove(Environment.KC_TEST_REBUILD);
-
+            closed = new CountDownLatch(1);
+            startupAction.addRuntimeCloseTask(closed::countDown);
             application = startupAction.runMainClass(args.toArray(new String[0]));
 
             return this;
@@ -307,6 +308,11 @@ public class Keycloak {
             } catch (Exception cause) {
                 cause.printStackTrace();
             }
+            try {
+                closed.await(); // wait for an orderly completion of all cleanup in the other thread
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
 
         QuarkusConfigFactory.setConfig(null);
@@ -358,18 +364,20 @@ public class Keycloak {
         String buildDir = System.getProperty("project.build.directory");
         if (buildDir == null) {
             try {
-                return Files.createTempDirectory(name).toAbsolutePath();
+                Path tempDirectory = Files.createTempDirectory(name);
+                tempDirectory.toFile().deleteOnExit();
+                return tempDirectory.toAbsolutePath();
             } catch (IOException e) {
                 throw new RuntimeException("Could not create temporary directory", e);
             }
         } else {
-            Path homeDir = Path.of(buildDir, name);
+            Path tempDirectory = Path.of(buildDir, name);
             try {
-                FileUtils.deleteDirectory(homeDir.toFile());
+                FileUtils.deleteDirectory(tempDirectory.toFile());
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            return homeDir;
+            return tempDirectory;
         }
     }
 

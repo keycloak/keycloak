@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.keycloak.authorization.store.syncronization.ClientApplicationSynchronizer;
 import org.keycloak.authorization.store.syncronization.GroupSynchronizer;
+import org.keycloak.authorization.store.syncronization.OrganizationSynchronizer;
 import org.keycloak.authorization.store.syncronization.RealmSynchronizer;
 import org.keycloak.authorization.store.syncronization.RoleSynchronizer;
 import org.keycloak.authorization.store.syncronization.Synchronizer;
@@ -30,6 +31,7 @@ import org.keycloak.authorization.store.syncronization.UserSynchronizer;
 import org.keycloak.models.ClientModel.ClientRemovedEvent;
 import org.keycloak.models.GroupModel.GroupRemovedEvent;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.OrganizationModel.OrganizationRemovedEvent;
 import org.keycloak.models.RealmModel.RealmRemovedEvent;
 import org.keycloak.models.RoleContainerModel.RoleRemovedEvent;
 import org.keycloak.models.UserModel.UserRemovedEvent;
@@ -54,6 +56,7 @@ public interface AuthorizationStoreFactory extends ProviderFactory<StoreFactory>
         synchronizers.put(UserRemovedEvent.class, new UserSynchronizer());
         synchronizers.put(GroupRemovedEvent.class, new GroupSynchronizer());
         synchronizers.put(RoleRemovedEvent.class, new RoleSynchronizer());
+        synchronizers.put(OrganizationRemovedEvent.class, new OrganizationSynchronizer());
 
         factory.register(event -> {
             try {

@@ -171,7 +171,7 @@ public class KeycloakUriBuilder {
         if (scheme) this.scheme = match.get("scheme");
         String authority = match.get("authority");
         if (authority != null) {
-            this.authority = null;
+            this.authority = authority;
             String host = authority;
             int at = host.indexOf('@');
             if (at > -1) {
@@ -745,6 +745,14 @@ public class KeycloakUriBuilder {
         // don't set values if values is null
         if (values == null) return this;
         return queryParam(name, values);
+    }
+
+    public String getSsp() {
+        return ssp;
+    }
+
+    public String getAuthority() {
+        return authority;
     }
 
     public String getHost() {

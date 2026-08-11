@@ -87,24 +87,27 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
         List<Predicate> predicates = new ArrayList<>();
         KeycloakSession session = provider.getKeycloakSession();
 
-        if (resourceServer != null && !Boolean.parseBoolean(attributes.get(PermissionTicket.FilterOption.IS_ADMIN))) {
+        if (resourceServer != null) {
             predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServer.getId()));
-            ClientModel resourceServerClient = session.clients().getClientById(session.getContext().getRealm(), resourceServer.getClientId());
-            UserModel currentUser = session.getContext().getUser();
 
-            if (resourceServerClient.isServiceAccountsEnabled()) {
-                UserModel serviceAccount = session.users().getServiceAccount(resourceServerClient);
+            if (!Boolean.parseBoolean(attributes.get(PermissionTicket.FilterOption.IS_ADMIN))) {
+                ClientModel resourceServerClient = session.clients().getClientById(session.getContext().getRealm(), resourceServer.getClientId());
+                UserModel currentUser = session.getContext().getUser();
 
-                if (serviceAccount != null && serviceAccount.equals(currentUser)) {
-                    currentUser = null;
+                if (resourceServerClient.isServiceAccountsEnabled()) {
+                    UserModel serviceAccount = session.users().getServiceAccount(resourceServerClient);
+
+                    if (serviceAccount != null && serviceAccount.equals(currentUser)) {
+                        currentUser = null;
+                    }
                 }
-            }
 
-            if (currentUser != null) {
-                predicates.add(builder.or(
-                        builder.equal(root.get("owner"), currentUser.getId()),
-                        builder.equal(root.get("requester"), currentUser.getId())
-                ));
+                if (currentUser != null) {
+                    predicates.add(builder.or(
+                            builder.equal(root.get("owner"), currentUser.getId()),
+                            builder.equal(root.get("requester"), currentUser.getId())
+                    ));
+                }
             }
         }
 
@@ -190,7 +193,7 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
 
         PermissionTicketEntity entity = entityManager.find(PermissionTicketEntity.class, id);
 
-        if (entity == null || !resourceServer.getId().equals(entity.getResourceServer().getId())) {
+        if (entity == null || (resourceServer != null && !resourceServer.getId().equals(entity.getResourceServer().getId()))) {
             return null;
         }
 

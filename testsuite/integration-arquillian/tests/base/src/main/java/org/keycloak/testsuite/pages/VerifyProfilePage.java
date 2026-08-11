@@ -46,7 +46,6 @@ public class VerifyProfilePage extends AbstractPage {
     @FindBy(name = "department")
     private WebElement departmentInput;
 
-
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
 
@@ -162,8 +161,9 @@ public class VerifyProfilePage extends AbstractPage {
         return emailInput.getAttribute("value");
     }
 
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).equals("Update Account Information");
+    @Override
+    public String getExpectedPageId() {
+        return "login-login-update-profile";
     }
 
     public AccountFields.AccountErrors getInputAccountErrors(){

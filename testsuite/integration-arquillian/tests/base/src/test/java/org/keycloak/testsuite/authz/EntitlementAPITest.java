@@ -40,6 +40,7 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.ResourceResource;
 import org.keycloak.admin.client.resource.ScopePermissionsResource;
+import org.keycloak.authorization.authorization.AuthorizationTokenService;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
@@ -62,6 +63,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
+import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
@@ -73,15 +75,17 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
-import org.keycloak.testsuite.util.RolesBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
+import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.util.JsonSerialization;
 
 import org.apache.http.client.HttpClient;
@@ -100,12 +104,12 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -135,39 +139,39 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(RealmBuilder.create().name("authz-test")
-                .roles(RolesBuilder.create().realmRole(RoleBuilder.create().name("uma_authorization").build()))
-                .user(UserBuilder.create().username("marta").password("password").addRoles("uma_authorization"))
-                .user(UserBuilder.create().username("kolo").password("password"))
-                .user(UserBuilder.create().username("offlineuser").password("password").addRoles("offline_access"))
-                .client(ClientBuilder.create().clientId(RESOURCE_SERVER_TEST)
+                .realmRoles("uma_authorization")
+                .users(UserBuilder.create().username("marta").password("password").realmRoles("uma_authorization"))
+                .users(UserBuilder.create().username("kolo").password("password"))
+                .users(UserBuilder.create().username("offlineuser").password("password").realmRoles("offline_access"))
+                .clients(ClientBuilder.create().clientId(RESOURCE_SERVER_TEST)
                         .secret("secret")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/resource-server-test")
                         .defaultRoles("uma_protection")
-                        .directAccessGrants())
-                .client(ClientBuilder.create().clientId(PAIRWISE_RESOURCE_SERVER_TEST)
+                        .directAccessGrantsEnabled())
+                .clients(ClientBuilder.create().clientId(PAIRWISE_RESOURCE_SERVER_TEST)
                         .secret("secret")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/resource-server-test")
                         .defaultRoles("uma_protection")
-                        .pairwise(TestApplicationResourceUrls.pairwiseSectorIdentifierUri())
-                        .directAccessGrants())
-                .client(ClientBuilder.create().clientId(TEST_CLIENT)
+                        .protocolMappers(ProtocolMapperUtil.createPairwiseMapper(TestApplicationResourceUrls.pairwiseSectorIdentifierUri(), null))
+                        .directAccessGrantsEnabled())
+                .clients(ClientBuilder.create().clientId(TEST_CLIENT)
                         .secret("secret")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/test-client")
-                        .directAccessGrants())
-                .client(ClientBuilder.create().clientId(PAIRWISE_TEST_CLIENT)
+                        .directAccessGrantsEnabled())
+                .clients(ClientBuilder.create().clientId(PAIRWISE_TEST_CLIENT)
                         .secret("secret")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/test-client")
-                        .pairwise(TestApplicationResourceUrls.pairwiseSectorIdentifierUri())
-                        .directAccessGrants())
-                .client(ClientBuilder.create().clientId(PUBLIC_TEST_CLIENT)
+                        .protocolMappers(ProtocolMapperUtil.createPairwiseMapper(TestApplicationResourceUrls.pairwiseSectorIdentifierUri(), null))
+                        .directAccessGrantsEnabled())
+                .clients(ClientBuilder.create().clientId(PUBLIC_TEST_CLIENT)
                         .secret("secret")
                         .redirectUris("http://localhost:8180/auth/realms/master/app/auth/*", "https://localhost:8543/auth/realms/master/app/auth/*")
                         .publicClient())
-                .testEventListener()
+                .eventsListeners(TestEventsListenerProviderFactory.PROVIDER_ID)
                 .build());
 
         configureSectorIdentifierRedirectUris();
@@ -241,7 +245,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     @Test
     public void testInvalidRequestWithClaimsFromPublicClient() throws IOException {
         oauth.realm("authz-test");
-        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.client(PUBLIC_TEST_CLIENT);
 
         oauth.doLogin("marta", "password");
 
@@ -268,7 +272,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     @Test
     public void testRequestWithoutClaimsFromPublicClient() {
         oauth.realm("authz-test");
-        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.client(PUBLIC_TEST_CLIENT);
 
         oauth.doLogin("marta", "password");
 
@@ -686,12 +690,11 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         }
 
 
-        events.expect(EventType.PERMISSION_TOKEN_ERROR).realm(getRealm().toRepresentation().getId()).client(RESOURCE_SERVER_TEST)
-                .session((String) null)
+        EventAssertion.assertError(events.poll()).type(EventType.PERMISSION_TOKEN_ERROR).clientId(RESOURCE_SERVER_TEST)
+                .sessionId(null)
                 .error("invalid_request")
-                .detail("reason", "Resource with id [Sensortest] does not exist.")
-                .user(at.getSubject())
-                .assertEvent();
+                .details("reason", "Resource with id [Sensortest] does not exist.")
+                .userId(at.getSubject());
     }
 
     @Test
@@ -2006,7 +2009,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         authorization.permissions().resource().create(permission).close();
 
         oauth.realm("authz-test");
-        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.client(PUBLIC_TEST_CLIENT);
         oauth.doLogin("marta", "password");
 
         // Token request
@@ -2074,7 +2077,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         oauth.realm("authz-test");
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.client(PUBLIC_TEST_CLIENT);
         oauth.doLogin("offlineuser", "password");
 
         // Token request
@@ -2121,7 +2124,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     @Test
     public void testTokenExpirationRenewalWhenIssuingTokens() {
         oauth.realm("authz-test");
-        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.client(PUBLIC_TEST_CLIENT);
         oauth.doLogin("marta", "password");
         String code = oauth.parseLoginResponse().getCode();
         org.keycloak.testsuite.util.oauth.AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
@@ -2137,10 +2140,10 @@ public class EntitlementAPITest extends AbstractAuthzTest {
                 AccessToken accessTokenToken = toAccessToken(authorizationResponse.getToken());
                 assertEquals(refreshToken.getExp() - refreshToken.getIat(), 1800);
                 assertEquals(accessTokenToken.getExp() - accessTokenToken.getIat(), 300);
-                setTimeOffset(i);
+                timeOffSet.set(i);
             }
         } finally {
-            resetTimeOffset();
+            timeOffSet.set(0);
         }
     }
 
@@ -2285,10 +2288,10 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     @Test
     public void testPermissionsAcrossResourceServers() throws Exception {
-        ClientRepresentation rsA = ClientBuilder.create().clientId("rs-a").secret("secret").serviceAccount().authorizationServicesEnabled(true).build();
+        ClientRepresentation rsA = ClientBuilder.create().clientId("rs-a").secret("secret").serviceAccountsEnabled().authorizationServicesEnabled(true).build();
         getRealm().clients().create(rsA).close();
         String rsBId;
-        try (Response response = getRealm().clients().create(ClientBuilder.create().clientId("rs-b").secret("secret").serviceAccount().authorizationServicesEnabled(true).build())) {
+        try (Response response = getRealm().clients().create(ClientBuilder.create().clientId("rs-b").secret("secret").serviceAccountsEnabled().authorizationServicesEnabled(true).build())) {
             rsBId = ApiUtil.getCreatedId(response);
         }
         ClientResource rsB = getRealm().clients().get(rsBId);
@@ -2549,6 +2552,337 @@ public class EntitlementAPITest extends AbstractAuthzTest {
             assertTrue(successfulIterations.await(15, TimeUnit.SECONDS));
         } finally {
             stop.set(true);
+        }
+    }
+
+    @Test
+    public void testClaimTokenOverridesTimePolicyContext() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        ResourceRepresentation resource = new ResourceRepresentation("Time Protected Resource");
+        authorization.resources().create(resource).close();
+
+        TimePolicyRepresentation timePolicy = new TimePolicyRepresentation();
+        timePolicy.setName("Future Only Policy");
+        timePolicy.setNotBefore("2099-01-01 00:00:00");
+        timePolicy.setNotOnOrAfter("2099-12-31 23:59:59");
+        authorization.policies().time().create(timePolicy).close();
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+        permission.setName("Time Protected Permission");
+        permission.addResource("Time Protected Resource");
+        permission.addPolicy(timePolicy.getName());
+        authorization.permissions().resource().create(permission).close();
+
+        // without claim_token, the current server time is before 2099 so access should be denied
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.addPermission("Time Protected Resource");
+
+        try {
+            getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization("marta", "password").authorize(request);
+            fail("Access should be denied, current time is before the policy's notBefore");
+        } catch (AuthorizationDeniedException expected) {
+        }
+
+        // injecting a spoofed kc.time.date_time via claim_token must not bypass the time policy
+        request = new AuthorizationRequest();
+        request.addPermission("Time Protected Resource");
+
+        HashMap<Object, Object> claims = new HashMap<>();
+        claims.put("kc.time.date_time", Arrays.asList("2099-06-15 12:00:00"));
+        request.setClaimTokenFormat(AuthorizationTokenService.CLAIM_TOKEN_FORMAT_JWT);
+        request.setClaimToken(Base64Url.encode(JsonSerialization.writeValueAsBytes(claims)));
+
+        try {
+            getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization("marta", "password").authorize(request);
+            fail("Access should be denied, injected kc.time.date_time must be filtered");
+        } catch (AuthorizationDeniedException expected) {
+        }
+    }
+
+    @Test
+    public void testClaimTokenOverridesClientPolicyContext() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        ResourceRepresentation resource = new ResourceRepresentation("Client Protected Resource");
+        authorization.resources().create(resource).close();
+
+        // create a client policy that only allows test-client, not resource-server-test
+        ClientPolicyRepresentation clientPolicy = new ClientPolicyRepresentation();
+        clientPolicy.setName("Only Test Client Policy");
+        clientPolicy.addClient(TEST_CLIENT);
+        authorization.policies().client().create(clientPolicy).close();
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+        permission.setName("Client Protected Permission");
+        permission.addResource("Client Protected Resource");
+        permission.addPolicy(clientPolicy.getName());
+        authorization.permissions().resource().create(permission).close();
+
+        // without claim_token, resource-server-test is the requesting client so access should be denied
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.addPermission("Client Protected Resource");
+
+        try {
+            getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization("marta", "password").authorize(request);
+            fail("Access should be denied, resource-server-test is not in the allowed client list");
+        } catch (AuthorizationDeniedException expected) {
+        }
+
+        // injecting a spoofed kc.client.id via claim_token must not bypass the client policy
+        request = new AuthorizationRequest();
+        request.addPermission("Client Protected Resource");
+
+        HashMap<Object, Object> claims = new HashMap<>();
+        claims.put("kc.client.id", Arrays.asList(TEST_CLIENT));
+        request.setClaimTokenFormat(AuthorizationTokenService.CLAIM_TOKEN_FORMAT_JWT);
+        request.setClaimToken(Base64Url.encode(JsonSerialization.writeValueAsBytes(claims)));
+
+        try {
+            getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization("marta", "password").authorize(request);
+            fail("Access should be denied, injected kc.client.id must be filtered");
+        } catch (AuthorizationDeniedException expected) {
+        }
+    }
+
+    @Test
+    public void testPushedClaimsOverrideTimePolicyContext() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        ResourceRepresentation resource = new ResourceRepresentation("Ticket Time Protected Resource");
+        try (Response response = authorization.resources().create(resource)) {
+            resource = response.readEntity(ResourceRepresentation.class);
+        }
+
+        TimePolicyRepresentation timePolicy = new TimePolicyRepresentation();
+        timePolicy.setName("Future Only Ticket Policy");
+        timePolicy.setNotBefore("2099-01-01 00:00:00");
+        timePolicy.setNotOnOrAfter("2099-12-31 23:59:59");
+        authorization.policies().time().create(timePolicy).close();
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+        permission.setName("Ticket Time Protected Permission");
+        permission.addResource(resource.getName());
+        permission.addPolicy(timePolicy.getName());
+        authorization.permissions().resource().create(permission).close();
+
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+
+        // without pushed claims, access should be denied because current time is before 2099
+        PermissionRequest permissionRequest = new PermissionRequest(resource.getId());
+        PermissionResponse ticketResponse = authzClient.protection("marta", "password").permission().create(permissionRequest);
+
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.setTicket(ticketResponse.getTicket());
+
+        try {
+            authzClient.authorization("marta", "password").authorize(request);
+            fail("Access should be denied, current time is before the policy's notBefore");
+        } catch (AuthorizationDeniedException expected) {
+        }
+
+        // pushing a spoofed kc.time.date_time via the UMA permission ticket must not bypass the time policy
+        permissionRequest = new PermissionRequest(resource.getId());
+        permissionRequest.setClaim("kc.time.date_time", "2099-06-15 12:00:00");
+        ticketResponse = authzClient.protection("marta", "password").permission().create(permissionRequest);
+
+        request = new AuthorizationRequest();
+        request.setTicket(ticketResponse.getTicket());
+        request.setClaimToken(authzClient.obtainAccessToken("marta", "password").getToken());
+
+        try {
+            authzClient.authorization("marta", "password").authorize(request);
+            fail("Access should be denied, pushed kc.time.date_time must be filtered");
+        } catch (AuthorizationDeniedException expected) {
+        }
+    }
+
+    @Test
+    public void testTicketClaimsTakePrecedenceOverClaimTokenClaims() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        ResourceRepresentation resource = new ResourceRepresentation("Claim Collision Resource");
+        try (Response response = authorization.resources().create(resource)) {
+            resource = response.readEntity(ResourceRepresentation.class);
+        }
+
+        PolicyRepresentation policy = createAlwaysGrantPolicy(authorization);
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+        permission.setName("Claim Collision Permission");
+        permission.addResource(resource.getName());
+        permission.addPolicy(policy.getName());
+        authorization.permissions().resource().create(permission).close();
+
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+
+        // Case A: collision — ticket claim must win over claim_token claim
+        PermissionRequest permissionRequest = new PermissionRequest(resource.getId());
+        permissionRequest.setClaim("custom-claim", "ticket-value");
+        PermissionResponse ticketResponse = authzClient.protection("marta", "password").permission().create(permissionRequest);
+
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.setTicket(ticketResponse.getTicket());
+
+        HashMap<Object, Object> claimTokenClaims = new HashMap<>();
+        claimTokenClaims.put("custom-claim", Arrays.asList("claimtoken-value"));
+        request.setClaimTokenFormat(AuthorizationTokenService.CLAIM_TOKEN_FORMAT_JWT);
+        request.setClaimToken(Base64Url.encode(JsonSerialization.writeValueAsBytes(claimTokenClaims)));
+
+        AuthorizationResponse authzResponse = authzClient.authorization("marta", "password").authorize(request);
+        assertNotNull(authzResponse);
+
+        AccessToken rpt = toAccessToken(authzResponse.getToken());
+        Collection<Permission> permissions = rpt.getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        Permission grantedPermission = permissions.iterator().next();
+        Map<String, Set<String>> permissionClaims = grantedPermission.getClaims();
+        assertNotNull(permissionClaims);
+        assertThat(permissionClaims.get("custom-claim"), Matchers.containsInAnyOrder("ticket-value"));
+
+        // Case B: no collision — claim_token value flows through when ticket has no matching claim
+        permissionRequest = new PermissionRequest(resource.getId());
+        ticketResponse = authzClient.protection("marta", "password").permission().create(permissionRequest);
+
+        request = new AuthorizationRequest();
+        request.setTicket(ticketResponse.getTicket());
+
+        claimTokenClaims = new HashMap<>();
+        claimTokenClaims.put("custom-claim", Arrays.asList("claimtoken-value"));
+        request.setClaimTokenFormat(AuthorizationTokenService.CLAIM_TOKEN_FORMAT_JWT);
+        request.setClaimToken(Base64Url.encode(JsonSerialization.writeValueAsBytes(claimTokenClaims)));
+
+        authzResponse = authzClient.authorization("marta", "password").authorize(request);
+        assertNotNull(authzResponse);
+
+        rpt = toAccessToken(authzResponse.getToken());
+        permissions = rpt.getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        grantedPermission = permissions.iterator().next();
+        permissionClaims = grantedPermission.getClaims();
+        assertNotNull(permissionClaims);
+        assertThat(permissionClaims.get("custom-claim"), Matchers.containsInAnyOrder("claimtoken-value"));
+    }
+
+    @Test
+    public void testClaimTokenAddsNonCollidingClaimsToTicketClaims() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        ResourceRepresentation resource = new ResourceRepresentation("Multi Claim Resource");
+        try (Response response = authorization.resources().create(resource)) {
+            resource = response.readEntity(ResourceRepresentation.class);
+        }
+
+        PolicyRepresentation policy = createAlwaysGrantPolicy(authorization);
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+        permission.setName("Multi Claim Permission");
+        permission.addResource(resource.getName());
+        permission.addPolicy(policy.getName());
+        authorization.permissions().resource().create(permission).close();
+
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+
+        PermissionRequest permissionRequest = new PermissionRequest(resource.getId());
+        permissionRequest.setClaim("claim-a", "from-ticket");
+        PermissionResponse ticketResponse = authzClient.protection("marta", "password").permission().create(permissionRequest);
+
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.setTicket(ticketResponse.getTicket());
+
+        HashMap<Object, Object> claimTokenClaims = new HashMap<>();
+        claimTokenClaims.put("claim-b", Arrays.asList("from-claimtoken"));
+        request.setClaimTokenFormat(AuthorizationTokenService.CLAIM_TOKEN_FORMAT_JWT);
+        request.setClaimToken(Base64Url.encode(JsonSerialization.writeValueAsBytes(claimTokenClaims)));
+
+        AuthorizationResponse authzResponse = authzClient.authorization("marta", "password").authorize(request);
+        assertNotNull(authzResponse);
+
+        AccessToken rpt = toAccessToken(authzResponse.getToken());
+        Collection<Permission> permissions = rpt.getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        Permission grantedPermission = permissions.iterator().next();
+        Map<String, Set<String>> permissionClaims = grantedPermission.getClaims();
+        assertNotNull(permissionClaims);
+        assertThat(permissionClaims.get("claim-a"), Matchers.containsInAnyOrder("from-ticket"));
+        assertThat(permissionClaims.get("claim-b"), Matchers.containsInAnyOrder("from-claimtoken"));
+    }
+
+    @Test
+    public void testClaimTokenCannotOverrideTicketClaimToBypassPolicy() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        ResourceRepresentation resource = new ResourceRepresentation("Grant Claim Resource");
+        try (Response response = authorization.resources().create(resource)) {
+            resource = response.readEntity(ResourceRepresentation.class);
+        }
+
+        PolicyRepresentation policy = new PolicyRepresentation();
+        policy.setName("Grant Claim Policy");
+        policy.setType("claim-attribute");
+        policy.getConfig().put("claimName", "grant");
+        policy.getConfig().put("claimValue", "yes");
+        authorization.policies().create(policy).close();
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+        permission.setName("Grant Claim Permission");
+        permission.addResource(resource.getName());
+        permission.addPolicy(policy.getName());
+        authorization.permissions().resource().create(permission).close();
+
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+
+        // ticket with grant=no, no claim_token — policy denies
+        PermissionRequest permissionRequest = new PermissionRequest(resource.getId());
+        permissionRequest.setClaim("grant", "no");
+        PermissionResponse ticketResponse = authzClient.protection("marta", "password").permission().create(permissionRequest);
+
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.setTicket(ticketResponse.getTicket());
+
+        try {
+            authzClient.authorization("marta", "password").authorize(request);
+            fail("Access should be denied, grant claim is 'no'");
+        } catch (AuthorizationDeniedException expected) {
+        }
+
+        // ticket with grant=yes, no claim_token — policy grants
+        permissionRequest = new PermissionRequest(resource.getId());
+        permissionRequest.setClaim("grant", "yes");
+        ticketResponse = authzClient.protection("marta", "password").permission().create(permissionRequest);
+
+        request = new AuthorizationRequest();
+        request.setTicket(ticketResponse.getTicket());
+
+        AuthorizationResponse authzResponse = authzClient.authorization("marta", "password").authorize(request);
+        assertNotNull(authzResponse.getToken());
+
+        // ticket with grant=no, claim_token tries to override with grant=yes — policy must still deny
+        permissionRequest = new PermissionRequest(resource.getId());
+        permissionRequest.setClaim("grant", "no");
+        ticketResponse = authzClient.protection("marta", "password").permission().create(permissionRequest);
+
+        request = new AuthorizationRequest();
+        request.setTicket(ticketResponse.getTicket());
+
+        HashMap<Object, Object> claimTokenClaims = new HashMap<>();
+        claimTokenClaims.put("grant", Arrays.asList("yes"));
+        request.setClaimTokenFormat(AuthorizationTokenService.CLAIM_TOKEN_FORMAT_JWT);
+        request.setClaimToken(Base64Url.encode(JsonSerialization.writeValueAsBytes(claimTokenClaims)));
+
+        try {
+            authzClient.authorization("marta", "password").authorize(request);
+            fail("Access should be denied, claim_token must not override ticket's grant=no");
+        } catch (AuthorizationDeniedException expected) {
         }
     }
 

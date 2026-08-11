@@ -121,15 +121,46 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
 
     @Override
     protected void initRequest() {
-        parameter(OAuth2Constants.RESPONSE_TYPE, client.config().getResponseType());
-        parameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM, client.config().getResponseMode());
-        parameter(OAuth2Constants.CLIENT_ID, client.config().getClientId());
-        parameter(OAuth2Constants.REDIRECT_URI, client.config().getRedirectUri());
-        if (!params.containsKey(OAuth2Constants.SCOPE)) {
+        if (client.config().getResponseType() != null) {
+            parameter(OAuth2Constants.RESPONSE_TYPE, client.config().getResponseType());
+        }
+        if (client.config().getResponseMode() != null) {
+            parameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM, client.config().getResponseMode());
+        }
+        if (client.config().getClientId() != null) {
+            parameter(OAuth2Constants.CLIENT_ID, client.config().getClientId());
+        }
+        if (client.config().getRedirectUri() != null) {
+            parameter(OAuth2Constants.REDIRECT_URI, client.config().getRedirectUri());
+        }
+        if (!params.containsKey(OAuth2Constants.SCOPE) && client.config().getScope() != null) {
             parameter(OAuth2Constants.SCOPE, client.config().getScope());
         }
     }
 
+    /**
+     * Composite login method for the Authorization Code Flow
+     *
+     * <ol>
+     *  <li>It builds and opens the authorization request url</li>
+     *  <li>Fills the login form with user credentials (i.e. username, password)</li>
+     *  <li>Parses the authorization response</li>
+     * </ol>
+     *
+     * This method is intended to be used only for the purpose of the basic login flow when the server is expected to open a login form.
+     *
+     * For more complex scenarios like:
+     * <ul>
+     *     <li>SSO login (user being automatically authenticated without the need to provide a username/password</li>
+     *     <li>Automatic redirect to the client with the error as result of an invalid authorization request</li>
+     *     <li>The call not being redirected back to the client either due to an incorrect username/password or some other screen being displayed</li>
+     * </ul>
+     *
+     * calls to level API will be needed.
+     *
+     * In short, the caller should always know whether they expect a login-form to be shown or not.
+     * For details, there is <a href="https://github.com/keycloak/keycloak/discussions/48308">this discussion</a>.
+     */
     public AuthorizationEndpointResponse doLogin(String username, String password) {
         open();
         client.fillLoginForm(username, password);

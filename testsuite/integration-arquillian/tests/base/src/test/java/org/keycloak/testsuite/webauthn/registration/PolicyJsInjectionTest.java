@@ -33,6 +33,7 @@ import org.keycloak.utils.StringUtil;
 import org.hamcrest.Matchers;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -67,16 +68,14 @@ public class PolicyJsInjectionTest extends AbstractWebAuthnVirtualTest {
                 .setWebAuthnPolicyRpId(PROMPT_SCRIPT)
                 .update()) {
 
-            WebAuthnRealmData data = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+            WebAuthnRealmData data = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
             assertThat(data.getRpId(), is(PROMPT_SCRIPT));
 
             registerDefaultUser(false);
 
             webAuthnErrorPage.assertCurrent();
 
-            final String expectedMessage = getExpectedMessageByDriver(
-                    "SecurityError: The operation is insecure.",
-                    "The relying party ID is not a registrable domain suffix of, nor equal to the current domain.");
+            final String expectedMessage = "A security error occurred during the Passkey operation. Please ensure you are on the correct site and try again.";
 
             assertThat(webAuthnErrorPage.getError(), containsString(expectedMessage));
         }
@@ -137,7 +136,7 @@ public class PolicyJsInjectionTest extends AbstractWebAuthnVirtualTest {
 
         registerDefaultUser(originalLabel);
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         final CredentialRepresentation credential = userResource().credentials()
                 .stream()
@@ -152,7 +151,7 @@ public class PolicyJsInjectionTest extends AbstractWebAuthnVirtualTest {
             logout();
 
             oauth.openLoginForm();
-            loginPage.assertCurrent(TEST_REALM_NAME);
+            loginPage.assertCurrent();
             loginPage.login(USERNAME, getPassword(USERNAME));
 
             webAuthnLoginPage.assertCurrent();
@@ -182,7 +181,7 @@ public class PolicyJsInjectionTest extends AbstractWebAuthnVirtualTest {
 
         try (Closeable u = updater.update()) {
 
-            WebAuthnRealmData data = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+            WebAuthnRealmData data = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
             assertThat(realmGetter.apply(data), is(expectedValue));
 
             boolean shouldSuccess = StringUtil.isBlank(errorMessage);
@@ -190,7 +189,7 @@ public class PolicyJsInjectionTest extends AbstractWebAuthnVirtualTest {
             registerDefaultUser(shouldSuccess);
 
             if (shouldSuccess) {
-                appPage.assertCurrent();
+                Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             } else {
                 webAuthnErrorPage.assertCurrent();
                 assertThat(webAuthnErrorPage.getError(), containsString(errorMessage));

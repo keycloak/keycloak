@@ -19,6 +19,7 @@ import { FormFields } from "../ClientDetails";
 import { IdentityProviderSelect } from "../../components/identity-provider/IdentityProviderSelect";
 import { IdentityProviderType } from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import { useAccess } from "../../context/access/Access";
+import { useRealm } from "../../context/realm-context/RealmContext";
 
 type CapabilityConfigProps = {
   unWrap?: boolean;
@@ -50,7 +51,15 @@ export const CapabilityConfig = ({
   );
   const isFeatureEnabled = useIsFeatureEnabled();
   const { hasSomeAccess } = useAccess();
+  const { realmRepresentation } = useRealm();
   const showIdentityProviders = hasSomeAccess("view-identity-providers");
+  // Mirror the gate in ClientDetails: only expose the SSF capability
+  // toggle when both the server feature is enabled and the realm has
+  // opted in. Otherwise enabling the toggle would just render a tab
+  // that crashes on its first API call.
+  const showSsfReceiverToggle =
+    isFeatureEnabled(Feature.Ssf) &&
+    realmRepresentation.attributes?.["ssf.transmitterEnabled"] === "true";
   return (
     <FormAccess
       isHorizontal
@@ -103,6 +112,12 @@ export const CapabilityConfig = ({
                       setValue(
                         convertAttributeNameToForm<FormFields>(
                           "attributes.oauth2.jwt.authorization.grant.enabled",
+                        ),
+                        false,
+                      );
+                      setValue(
+                        convertAttributeNameToForm<FormFields>(
+                          "attributes.ssf.enabled",
                         ),
                         false,
                       );
@@ -498,6 +513,16 @@ export const CapabilityConfig = ({
                   )}
               </>
             )}
+          {!clientAuthentication && showSsfReceiverToggle && (
+            <DefaultSwitchControl
+              name={convertAttributeNameToForm<FormFields>(
+                "attributes.ssf.enabled",
+              )}
+              label={t("ssfReceiverEnabled")}
+              labelIcon={t("ssfReceiverEnabledHelp")}
+              stringify
+            />
+          )}
         </>
       )}
       {protocol === "saml" && (

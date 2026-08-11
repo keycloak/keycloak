@@ -227,9 +227,10 @@ public class RedirectUtilsTest {
         ).collect(Collectors.toSet());
 
         Assert.assertEquals("https://keycloak.org/index.html", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/index.html", set, false));
-        Assert.assertEquals("https://test.com/index.html", RedirectUtils.verifyRedirectUri(session, null, "https://test.com/index.html", set, false));
+        Assert.assertEquals("https://test/index.html", RedirectUtils.verifyRedirectUri(session, null, "https://test/index.html", set, false));
         Assert.assertEquals("https://something@keycloak.com/exact", RedirectUtils.verifyRedirectUri(session, null, "https://something@keycloak.com/exact", set, false));
 
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://test.com/index.html", set, false));
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://something@other.com/", set, false));
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org@other.com", set, false));
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org%2F@other.com", set, false));
@@ -237,6 +238,8 @@ public class RedirectUtilsTest {
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://test.com@other.com", set, false));
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://something@keycloak.org/path", set, false));
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://some%20thing@test.com/path", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://test@something@test.com/path", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://test@test.com:-2/path", set, false));
     }
 
     @Test
@@ -266,20 +269,74 @@ public class RedirectUtilsTest {
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test%5C..", set, false));
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test%5C..;/", set, false));
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/%2F%2E%2E%2Fdocumentation", set, false));
+
+        // Issue #48978 — encoded terminators that previously bypassed the regex.
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/..%3B/", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/..%3b/", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/..%09/", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/..%0A/", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/..%0D/", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/..%00/", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/..%3Bsomething/", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/%252E%252E/", set, false)); // double-encoded dots
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/%252E%252E/#encodeTest=a%3Cb", set, false));
+
         Assert.assertEquals("https://keycloak.org/test/.../", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/.../", set, false));
         Assert.assertEquals("https://keycloak.org/test/%2E../", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/%2E../", set, false));  // encoded
         Assert.assertEquals("https://keycloak.org/test/some%2Fthing/", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/some%2Fthing/", set, false));  // encoded
         Assert.assertEquals("https://keycloak.org/test/./", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/./", set, false));
-        Assert.assertEquals("https://keycloak.org/test/%252E%252E/", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/%252E%252E/", set, false)); // double-encoded
-        Assert.assertEquals("https://keycloak.org/test/%252E%252E/#encodeTest=a%3Cb", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/%252E%252E/#encodeTest=a%3Cb", set, false)); // double-encoded
-        Assert.assertEquals("https://keycloak.org/test/%25252E%25252E/", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/%25252E%25252E/", set, false)); // triple-encoded
+        Assert.assertEquals("https://keycloak.org/test/%25252E%25252E/", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/%25252E%25252E/", set, false)); // triple-encoded; out of scope for #48978
         Assert.assertEquals("https://keycloak.org/exact/%5C%2F/..", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/exact/%5C%2F/..", set, false));
-        Assert.assertEquals("https://keycloak.org/test/..%3Bsomething/", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/..%3Bsomething/", set, false));
+        // Negative test: %3B as legitimate path content (not following `..`) must still resolve.
+        Assert.assertEquals("https://keycloak.org/test/file%3Bname/", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test/file%3Bname/", set, false));
 
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak%2Eorg/test/", set, false));
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org%2Ftest%2F%40sample.com", set, false));
 
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test%2Fanother/../any/path/", set, false));
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test%2Fanother/%2E%2E/any/path/", set, false));
+    }
+
+    @Test
+    public void testWildcards() {
+        Set<String> set = Stream.of(
+                "https://test*",
+                "https://test.com:*",
+                "https://test.com/*",
+                "custom2:*",
+                "custom3://*"
+        ).collect(Collectors.toSet());
+
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://test.evil.com", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://testa.com", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "custom3:/test", set, false));
+        Assert.assertEquals("https://test", RedirectUtils.verifyRedirectUri(session, null, "https://test", set, false));
+        Assert.assertEquals("https://test/something", RedirectUtils.verifyRedirectUri(session, null, "https://test/something", set, false));
+        Assert.assertEquals("https://test.com", RedirectUtils.verifyRedirectUri(session, null, "https://test.com", set, false));
+        Assert.assertEquals("https://test.com:4443/", RedirectUtils.verifyRedirectUri(session, null, "https://test.com:4443/", set, false));
+        Assert.assertEquals("custom2:custom", RedirectUtils.verifyRedirectUri(session, null, "custom2:custom", set, false));
+        Assert.assertEquals("custom3://custom", RedirectUtils.verifyRedirectUri(session, null, "custom3://custom", set, false));
+        Assert.assertEquals("https://test.com/lala", RedirectUtils.verifyRedirectUri(session, null, "https://test.com/lala", set, false));
+    }
+
+    @Test
+    public void testVerifyRedirectUriWithPollutedParameters() {
+        Set<String> set = Stream.of(
+                "https://example.com/callback/*"
+        ).collect(Collectors.toSet());
+
+        Assert.assertNull("Should reject URL-encoded 'code' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?c%6Fde=attack", set, false));
+        Assert.assertNull("Should reject mixed-case forbidden parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?CODE=attack", set, false));
+        Assert.assertNull("Should reject redirect URI containing pre-loaded 'code' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?code=attacker_code", set, false));
+        Assert.assertNull("Should reject redirect URI containing pre-loaded 'state' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?state=attacker_state", set, false));
+        Assert.assertNull("Should reject redirect URI containing pre-loaded 'iss' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?iss=attacker_issuer", set, false));
+        Assert.assertNull("Should reject redirect URI if any forbidden OIDC parameter is mixed into the query string", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?legit_param=123&code=malicious", set, false));
+        Assert.assertNull("Should reject redirect URI containing 'session_state' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?session_state=attacker_session", set, false));
+        Assert.assertNull("Should reject redirect URI containing 'response' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?response=attacker_jwt", set, false));
+        Assert.assertNull("Should reject redirect URI containing 'kc_action' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?kc_action=evil_action", set, false));
+        Assert.assertNull("Should reject redirect URI containing 'kc_action_status' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?kc_action_status=evil_status", set, false));
+        Assert.assertNull("Should reject URL-encoded 'session_state' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?session%5Fstate=attack", set, false));
+        Assert.assertNull("Should reject mixed-case 'RESPONSE' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?RESPONSE=attack", set, false));
+        Assert.assertEquals("Should allow legitimate query parameters that do not conflict with OIDC protocol variables", "https://example.com/callback?legit_param=123", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?legit_param=123", set, false));
     }
 }

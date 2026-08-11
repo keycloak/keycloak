@@ -304,7 +304,7 @@ public class ComponentsTest {
     }
 
     @Test
-    public void testSecretConfig() throws Exception {
+    public void testSecretConfig() {
         ComponentRepresentation rep = createComponentRepresentation("mycomponent");
         rep.getConfig().addFirst("secret", "some secret value!!");
         rep.getConfig().addFirst("required", "some required value");
@@ -380,7 +380,7 @@ public class ComponentsTest {
     }
 
     @Test
-    public void testLongValueInComponentConfigAscii() throws Exception {
+    public void testLongValueInComponentConfigAscii() {
         ComponentRepresentation rep = createComponentRepresentation("mycomponent");
         String value = StringUtils.repeat("0123456789", 400);  // 4000 8-bit characters
 
@@ -394,7 +394,7 @@ public class ComponentsTest {
     }
 
     @Test
-    public void testLongValueInComponentConfigExtLatin() throws Exception {
+    public void testLongValueInComponentConfigExtLatin() {
         ComponentRepresentation rep = createComponentRepresentation("mycomponent");
         String value = StringUtils.repeat("ěščřžýíŮÍÁ", 400);  // 4000 Unicode extended-Latin characters
 
@@ -493,29 +493,6 @@ public class ComponentsTest {
         protected void scheduleDeleteComponent(String id) {
             s.submit(new DeleteComponent(id));
         }
-    }
-
-    private class CreateComponentWithFlatChildren extends CreateComponent {
-
-        public CreateComponentWithFlatChildren(ExecutorService s, int i, RealmResource realm) {
-            super(s, i, realm);
-        }
-
-        public CreateComponentWithFlatChildren(ExecutorService s, int i) {
-            super(s, i);
-        }
-
-        @Override
-        protected void createChildren(String id) {
-            for (int j = 0; j < NUMBER_OF_CHILDREN; j ++) {
-                ComponentRepresentation rep = createComponentRepresentation("test-" + i + ":" + j);
-                rep.setParentId(id);
-                rep.getConfig().putSingle("required", "required-value");
-
-                assertThat(createComponent(this.realm, rep), Matchers.notNullValue());
-            }
-        }
-
     }
 
     private class CreateAndDeleteComponentWithFlatChildren extends CreateAndDeleteComponent {

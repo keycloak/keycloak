@@ -46,7 +46,6 @@ import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientregistration.ClientRegistrationService;
 import org.keycloak.services.cors.Cors;
-import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resources.account.AccountLoader;
@@ -278,7 +277,6 @@ public class RealmsResource {
     public Object resolveRealmExtension(@PathParam("realm") String realmName, @PathParam("extension") String extension) {
         resolveRealmAndUpdateSession(realmName);
 
-        new AppAuthManager.BearerTokenAuthenticator(session).authenticate();
         RealmResourceProvider provider = session.getProvider(RealmResourceProvider.class, extension);
 
         if (provider != null) {

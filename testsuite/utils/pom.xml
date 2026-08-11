@@ -228,10 +228,20 @@
             <scope>compile</scope>
         </dependency>
 
-        <!-- Apache DS -->
+        <!-- Apache DS for embedded LDAP, Apache Kerby for KDC (AM27 removed apacheds-protocol-kerberos) -->
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-util-embedded-ldap</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kerby</groupId>
+            <artifactId>kerb-simplekdc</artifactId>
+            <version>${kerby.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kerby</groupId>
+            <artifactId>ldap-backend</artifactId>
+            <version>${kerby.version}</version>
         </dependency>
 
         <dependency>
@@ -267,7 +277,7 @@
             <artifactId>mssql-jdbc</artifactId>
             <version>${mssql-jdbc.version}</version>
         </dependency>
-
+        
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-micrometer</artifactId>
@@ -290,21 +300,6 @@
                             <additionalClasspathElements>
                                 <additionalClasspathElement>${keycloak.additionalClasspathElement}</additionalClasspathElement>
                             </additionalClasspathElements>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>mail-server</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <configuration>
-                            <mainClass>org.keycloak.testsuite.MailServer</mainClass>
-                            <classpathScope>test</classpathScope>
                         </configuration>
                     </plugin>
                 </plugins>

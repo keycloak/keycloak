@@ -25,9 +25,8 @@ import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.testsuite.util.AccountHelper;
 
@@ -40,7 +39,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @KeycloakIntegrationTest
@@ -53,9 +51,8 @@ public class UserUpdateTest extends AbstractUserTest {
     OAuthClient oauth;
 
     @Test
-    @DatabaseTest
     public void updateUserWithHashedCredentials() {
-        UserRepresentation userRep = UserConfigBuilder.create()
+        UserRepresentation userRep = UserBuilder.create()
                 .username("user_hashed_creds").name("Hashed", "User").email("user_hashed_creds@localhost").build();
 
         String userId = createUser(userRep);
@@ -79,7 +76,7 @@ public class UserUpdateTest extends AbstractUserTest {
         loginPage.fillLogin("user_hashed_creds", "admin");
         loginPage.submit();
 
-        assertTrue(driver.page().getPageSource().contains("Happy days"));
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         AccountHelper.logout(managedRealm.admin(), "user_hashed_creds");
     }
@@ -165,7 +162,6 @@ public class UserUpdateTest extends AbstractUserTest {
     }
 
     @Test
-    @DatabaseTest
     public void updateUserWithExistingEmail() {
         final String userId = createUser();
         assertNotNull(userId);
@@ -261,7 +257,6 @@ public class UserUpdateTest extends AbstractUserTest {
     }
 
     @Test
-    @DatabaseTest
     public void updateUserWithRawCredentials() {
         UserRepresentation user = new UserRepresentation();
         user.setUsername("user_rawpw");

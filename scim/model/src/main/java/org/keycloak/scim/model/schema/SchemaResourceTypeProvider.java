@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.Model;
 import org.keycloak.models.ModelException;
@@ -21,6 +20,8 @@ import org.keycloak.scim.resource.schema.ModelSchema;
 import org.keycloak.scim.resource.schema.Schema;
 import org.keycloak.scim.resource.schema.Schema.Attribute;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
+
+import static org.keycloak.scim.resource.Scim.hasDiscoveryEndpointPermission;
 
 /**
  * Provider for SCIM Schema resources. This provider exposes the supported SCIM schemas
@@ -50,8 +51,7 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                         || providerFactory instanceof ServiceProviderConfigResourceTypeProvider)
                 ).flatMap((Function<ProviderFactory, Stream<ModelSchema>>) factory -> {
                     ScimResourceTypeProvider provider = session.getProvider(ScimResourceTypeProvider.class, factory.getId());
-                    List<ModelSchema> modelSchemas = provider.getSchemas();
-                    return modelSchemas.stream();
+                    return provider.getSchemas().stream();
                 }).forEach(this::buildSchema);
     }
 
@@ -72,6 +72,11 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
             }
 
             String parentName = attribute.getParentName();
+
+            if (!modelSchema.isCore()) {
+                // extensions attributes should be set in a top-level attribute with the schema name as the name
+                parentName = attribute.getSchema();
+            }
 
             if (parentName != null && !parentName.equals(name)) {
                 // This is a sub-attribute — strip the parent prefix to get the relative path
@@ -140,44 +145,64 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                     subAttributes.add(subAttr);
                 } else {
                     // Extension schema simple sub-attribute (e.g., "enterpriseUser.employeeNumber" → "employeeNumber")
-                    topLevelAttributes.computeIfAbsent(relativeName, k -> {
-                        Attribute attr = new Attribute();
-                        attr.setName(k);
-                        attr.setType(attribute.getType());
-                        attr.setMultiValued(attribute.isMultivalued());
-                        attr.setReturned(attribute.getReturned());
-                        attr.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
-                        attr.setRequired(attribute.isRequired());
-                        attr.setCaseExact(attribute.isCaseExact());
-                        attr.setUniqueness(attribute.getUniqueness());
-                        return attr;
-                    });
+                    topLevelAttributes.computeIfAbsent(relativeName, createExtensionAttribute(modelSchema, parentName, attribute));
                 }
             } else {
                 // Top-level attribute — only add if not already created as a parent
-                topLevelAttributes.computeIfAbsent(name, k -> {
-                    Attribute attr = new Attribute();
-                    attr.setName(k);
-                    attr.setType(attribute.getType());
-                    attr.setMultiValued(attribute.isMultivalued());
-                    attr.setReturned(attribute.getReturned());
-                    attr.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
-                    attr.setRequired(attribute.isRequired());
-                    attr.setCaseExact(attribute.isCaseExact());
-                    attr.setUniqueness(attribute.getUniqueness());
-                    return attr;
-                });
+                topLevelAttributes.computeIfAbsent(name, k -> createTopLevelAttribute(attribute, k));
             }
         }
 
         rep.setAttributes(List.copyOf(topLevelAttributes.values()));
-        schemas.put(modelSchema.getId(), rep);
+
+        List<Attribute> attributes = rep.getAttributes();
+
+        if (!modelSchema.isInternal() && !attributes.isEmpty()) {
+            schemas.put(modelSchema.getId(), rep);
+        }
+    }
+
+    private Function<String, Attribute> createExtensionAttribute(ModelSchema<?, ?> modelSchema, String schemaName, org.keycloak.scim.resource.schema.attribute.Attribute<?, ?> attribute) {
+        return k -> {
+            Attribute attr = createTopLevelAttribute(attribute, k);
+
+            if (modelSchema.isCore()) {
+                return attr;
+            }
+
+            schemas.computeIfAbsent(schemaName, n -> {
+                Schema schema = new Schema();
+
+                schema.setName(n);
+                schema.setId(n);
+                schema.setAttributes(new ArrayList<>());
+
+                return schema;
+            }).getAttributes().add(attr);
+
+            return attr;
+        };
+    }
+
+    private Attribute createTopLevelAttribute(org.keycloak.scim.resource.schema.attribute.Attribute<?, ?> attribute, String name) {
+        Attribute attr = new Attribute();
+
+        attr.setName(name);
+        attr.setType(attribute.getType());
+        attr.setMultiValued(attribute.isMultivalued());
+        attr.setReturned(attribute.getReturned());
+        attr.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
+        attr.setRequired(attribute.isRequired());
+        attr.setCaseExact(attribute.isCaseExact());
+        attr.setUniqueness(attribute.getUniqueness());
+
+        return attr;
     }
 
 
     @Override
     public Schema get(String id) {
-        if (!session.getContext().getPermissions().hasPermission(AdminPermissionsSchema.REALMS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW)) {
+        if (!hasDiscoveryEndpointPermission(session)) {
             throw new ForbiddenException();
         }
         return schemas.get(id);
@@ -185,13 +210,14 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
 
     @Override
     public Stream<Schema> getAll(SearchRequest searchRequest) {
-        if (!session.getContext().getPermissions().hasPermission(AdminPermissionsSchema.REALMS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW)) {
-            throw new ForbiddenException();
+        if (hasDiscoveryEndpointPermission(session)) {
+            // Per RFC 7644 Section 4, /Schemas is a discovery endpoint that SHALL return all schemas.
+            // Filtering, sorting, and pagination are not supported for discovery endpoints.
+            // The searchRequest parameter is ignored.
+            return schemas.values().stream();
         }
-        // Per RFC 7644 Section 4, /Schemas is a discovery endpoint that SHALL return all schemas.
-        // Filtering, sorting, and pagination are not supported for discovery endpoints.
-        // The searchRequest parameter is ignored.
-        return schemas.values().stream();
+
+        throw new ForbiddenException();
     }
 
     @Override

@@ -37,12 +37,8 @@ public class LogoutConfirmPage extends LanguageComboboxAwarePage {
     private WebElement backToApplicationLink;
 
     @Override
-    public boolean isCurrent() {
-        return isCurrent(driver);
-    }
-
-    public boolean isCurrent(WebDriver driver1) {
-        return "Logging out".equals(PageUtils.getPageTitle(driver1));
+    public String getExpectedPageId() {
+        return "login-logout-confirm";
     }
 
     public void confirmLogout() {

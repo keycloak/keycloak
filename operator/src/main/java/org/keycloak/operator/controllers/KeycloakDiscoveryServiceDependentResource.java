@@ -26,13 +26,12 @@ import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.ServiceSpecBuilder;
 import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
 @KubernetesDependent(
         informer = @Informer(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
 )
-public class KeycloakDiscoveryServiceDependentResource extends CRUDKubernetesDependentResource<Service, Keycloak> {
+public class KeycloakDiscoveryServiceDependentResource extends VersionTolerantCRUDKubernetesDependentResource<Service, Keycloak> {
 
     public KeycloakDiscoveryServiceDependentResource() {
         super(Service.class);

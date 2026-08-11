@@ -9,7 +9,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 
 public class Oid4vcNonceRequest extends AbstractHttpPostRequest<Oid4vcNonceRequest, Oid4vcNonceResponse> {
 
-    Oid4vcNonceRequest(AbstractOAuthClient<?> client) {
+    public Oid4vcNonceRequest(AbstractOAuthClient<?> client) {
         super(client);
     }
 

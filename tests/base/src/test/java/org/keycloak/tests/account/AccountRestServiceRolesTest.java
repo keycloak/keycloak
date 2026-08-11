@@ -12,8 +12,11 @@ import java.util.stream.Collectors;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.common.Profile;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.models.IssuedVerifiableCredentialModel;
+import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -21,8 +24,13 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
@@ -35,6 +43,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -47,7 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = AccountRestServiceRolesTest.AccountRolesServerConfig.class)
 public class AccountRestServiceRolesTest {
 
     private static final String PASSWORD = "password";
@@ -60,6 +69,9 @@ public class AccountRestServiceRolesTest {
 
     @InjectHttpClient
     CloseableHttpClient httpClient;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @Test
     public void applicationsEndpointAccess() throws IOException {
@@ -76,8 +88,57 @@ public class AccountRestServiceRolesTest {
     }
 
     @Test
+    public void verifiableCredentialsEndpointAccess() throws IOException {
+        assertEndpointStatus("manage-account-user", "verifiable-credentials", 200);
+        addAccountConsoleScopeMapping(AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS);
+        assertEndpointStatus("view-verifiable-credentials-user", "verifiable-credentials", 200);
+        assertEndpointStatus("manage-verifiable-credentials-user", "verifiable-credentials", 200);
+        assertEndpointStatus("no-access-user", "verifiable-credentials", 403);
+    }
+
+    @Test
+    public void issuedVerifiableCredentialsEndpointAccess() throws IOException {
+        assertEndpointStatus("manage-account-user", "issued-verifiable-credentials", 200);
+        addAccountConsoleScopeMapping(AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS);
+        assertEndpointStatus("view-verifiable-credentials-user", "issued-verifiable-credentials", 200);
+        assertEndpointStatus("manage-verifiable-credentials-user", "issued-verifiable-credentials", 200);
+        assertEndpointStatus("no-access-user", "issued-verifiable-credentials", 403);
+    }
+
+    @Test
+    public void revokeIssuedCredentialOwnershipEnforced() throws IOException {
+        String userA = "manage-account-user";
+        String userB = "other-manage-account-user";
+        String userIdB = realm.admin().users().searchByUsername(userB, true).get(0).getId();
+
+        String credentialIdB = createIssuedVerifiableCredential(userIdB);
+
+        // User A must not be able to revoke a credential issued to User B
+        assertDeleteEndpointStatus(userA, credentialIdB, 404);
+        assertEquals(1, countIssuedCredentials(userIdB), "Credential of User B must not be deleted by User A");
+
+        // User B can revoke its own credential
+        assertDeleteEndpointStatus(userB, credentialIdB, 204);
+        assertEquals(0, countIssuedCredentials(userIdB), "Credential of User B should be deleted by its owner");
+
+        // Revoking an already removed credential is reported as not found
+        assertDeleteEndpointStatus(userB, credentialIdB, 404);
+    }
+
+    @Test
+    public void revokeIssuedCredentialRoleEnforced() throws IOException {
+        String userId = realm.admin().users().searchByUsername("manage-account-user", true).get(0).getId();
+        String credentialId = createIssuedVerifiableCredential(userId);
+
+        assertDeleteEndpointStatus("no-access-user", credentialId, 403);
+        assertEquals(1, countIssuedCredentials(userId), "Credential must not be deleted without the required role");
+    }
+
+    @Test
     public void accountConsoleFeaturesForManageAccountUser() throws IOException {
         assertAccountConsoleFeatures("manage-account-user", true, true);
+        JsonNode features = getAccountConsoleFeatures("manage-account-user");
+        assertTrue(features.get("isOid4VciEnabled").asBoolean(), "isOid4VciEnabled should be true for manage-account-user");
     }
 
     @Test
@@ -89,12 +150,35 @@ public class AccountRestServiceRolesTest {
 
     @Test
     public void accountConsoleFeaturesForViewGroupsUser() throws IOException {
-        assertAccountConsoleFeatures("view-groups-user", false, true);
+        assertAccountConsoleFeatures("view-groups-user", false, false);
+    }
+
+    @Test
+    public void accountConsoleFeaturesForViewGroupsUserWithGroup() throws IOException {
+        assertAccountConsoleFeatures("view-groups-user-with-group", false, true);
     }
 
     @Test
     public void accountConsoleFeaturesForNoAccessUser() throws IOException {
         assertAccountConsoleFeatures("no-access-user", false, false);
+    }
+
+    @Test
+    public void accountConsoleFeaturesForViewVerifiableCredentialsUser() throws IOException {
+        // view-verifiable-credentials is not in the account-console default scope
+        addAccountConsoleScopeMapping(AccountRoles.VIEW_VERIFIABLE_CREDENTIALS);
+        JsonNode features = getAccountConsoleFeatures("view-verifiable-credentials-user");
+        assertEquals(true, features.get("isOid4VciEnabled").asBoolean(),
+                "isOid4VciEnabled should be true for view-verifiable-credentials-user");
+    }
+
+    @Test
+    public void accountConsoleFeaturesForManageVerifiableCredentialsUser() throws IOException {
+        // manage-verifiable-credentials is not in the account-console default scope
+        addAccountConsoleScopeMapping(AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS);
+        JsonNode features = getAccountConsoleFeatures("manage-verifiable-credentials-user");
+        assertEquals(true, features.get("isOid4VciEnabled").asBoolean(),
+                "isOid4VciEnabled should be true for manage-verifiable-credentials-user");
     }
 
     private void addAccountConsoleScopeMapping(String roleName) {
@@ -195,6 +279,36 @@ public class AccountRestServiceRolesTest {
         return existing + "; " + additional;
     }
 
+    private String createIssuedVerifiableCredential(String userId) {
+        return runOnServer.fetch(session -> {
+            UserVerifiableCredentialModel vcModel = new UserVerifiableCredentialModel(null, "test-scope");
+            vcModel.setRevision("rev-1");
+            UserVerifiableCredentialModel addedVc = session.users().addVerifiableCredential(userId, vcModel);
+
+            IssuedVerifiableCredentialModel issuedVc = new IssuedVerifiableCredentialModel(userId, addedVc.getId(), "wallet-client");
+            issuedVc.setRevision("rev-1");
+            return session.users().addIssuedVerifiableCredential(issuedVc).getId();
+        }, String.class);
+    }
+
+    private long countIssuedCredentials(String userId) {
+        return runOnServer.fetch(session -> session.users().getIssuedVerifiableCredentialsStreamByUser(userId).count(), Long.class);
+    }
+
+    private void assertDeleteEndpointStatus(String username, String credentialId, int expectedStatus) throws IOException {
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest(username, PASSWORD);
+        assertTrue(tokenResponse.isSuccess(), "Token request failed for " + username + ": " + tokenResponse.getErrorDescription());
+
+        HttpDelete request = new HttpDelete(realm.getBaseUrl() + "/account/issued-verifiable-credentials/" + credentialId);
+        request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + tokenResponse.getAccessToken());
+        request.addHeader(HttpHeaders.ACCEPT, "application/json");
+
+        try (CloseableHttpResponse response = httpClient.execute(request)) {
+            assertEquals(expectedStatus, response.getStatusLine().getStatusCode(),
+                    "Unexpected status for DELETE issued-verifiable-credentials with user " + username);
+        }
+    }
+
     private void assertEndpointStatus(String username, String endpoint, int expectedStatus) throws IOException {
         AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest(username, PASSWORD);
         assertTrue(tokenResponse.isSuccess(), "Token request failed for " + username + ": " + tokenResponse.getErrorDescription());
@@ -211,32 +325,60 @@ public class AccountRestServiceRolesTest {
 
     public static class AccountRolesRealmConfig implements RealmConfig {
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            realm.addUser("manage-account-user")
-                    .name("Manage", "Account")
-                    .email("manage-account@localhost")
-                    .password(PASSWORD)
-                    .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
+        public RealmBuilder configure(RealmBuilder realm) {
+            return realm
+                .attribute("verifiableCredentialsEnabled", "true")
+                .groups("test-group")
+                .users(
+                    UserBuilder.create("manage-account-user")
+                        .name("Manage", "Account")
+                        .email("manage-account@localhost")
+                        .password(PASSWORD)
+                        .groups("test-group")
+                        .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE),
+                    UserBuilder.create("view-applications-user")
+                        .name("View", "Applications")
+                        .email("view-applications@localhost")
+                        .password(PASSWORD)
+                        .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.VIEW_APPLICATIONS, AccountRoles.VIEW_PROFILE),
+                    UserBuilder.create("view-groups-user")
+                        .name("View", "Groups")
+                        .email("view-groups@localhost")
+                        .password(PASSWORD)
+                        .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.VIEW_GROUPS, AccountRoles.VIEW_PROFILE),
+                    UserBuilder.create("view-groups-user-with-group")
+                        .name("View", "GroupsMember")
+                        .email("view-groups-member@localhost")
+                        .password(PASSWORD)
+                        .groups("test-group")
+                        .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.VIEW_GROUPS, AccountRoles.VIEW_PROFILE),
+                    UserBuilder.create("no-access-user")
+                        .name("No", "Access")
+                        .email("no-access@localhost")
+                        .password(PASSWORD)
+                        .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.VIEW_PROFILE),
+                    UserBuilder.create("view-verifiable-credentials-user")
+                        .name("View", "VerifiableCredentials")
+                        .email("view-verifiable-credentials@localhost")
+                        .password(PASSWORD)
+                        .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.VIEW_VERIFIABLE_CREDENTIALS, AccountRoles.VIEW_PROFILE),
+                    UserBuilder.create("manage-verifiable-credentials-user")
+                        .name("Manage", "VerifiableCredentials")
+                        .email("manage-verifiable-credentials@localhost")
+                        .password(PASSWORD)
+                        .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS, AccountRoles.VIEW_PROFILE),
+                    UserBuilder.create("other-manage-account-user")
+                        .name("Other", "ManageAccount")
+                        .email("other-manage-account@localhost")
+                        .password(PASSWORD)
+                        .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE));
+        }
+    }
 
-            realm.addUser("view-applications-user")
-                    .name("View", "Applications")
-                    .email("view-applications@localhost")
-                    .password(PASSWORD)
-                    .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.VIEW_APPLICATIONS, AccountRoles.VIEW_PROFILE);
-
-            realm.addUser("view-groups-user")
-                    .name("View", "Groups")
-                    .email("view-groups@localhost")
-                    .password(PASSWORD)
-                    .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.VIEW_GROUPS, AccountRoles.VIEW_PROFILE);
-
-            realm.addUser("no-access-user")
-                    .name("No", "Access")
-                    .email("no-access@localhost")
-                    .password(PASSWORD)
-                    .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.VIEW_PROFILE);
-
-            return realm;
+    public static class AccountRolesServerConfig implements KeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.features(Profile.Feature.OID4VC_VCI);
         }
     }
 }

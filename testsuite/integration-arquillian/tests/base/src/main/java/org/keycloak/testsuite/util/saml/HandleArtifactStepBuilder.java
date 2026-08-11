@@ -41,8 +41,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.w3c.dom.Document;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * This builder allows the SamlClient to handle a redirect or a POSTed form which contains an artifact (SAMLart)
@@ -234,7 +234,7 @@ public class HandleArtifactStepBuilder extends SamlDocumentStepBuilder<ArtifactR
         String form = EntityUtils.toString(currentResponse.getEntity());
 
         Matcher m = artifactPattern.matcher(form);
-        assertTrue("Can't find artifact in " + form, m.find());
+        assertTrue(m.find(), "Can't find artifact in " + form);
         return m.group(1);
     }
 

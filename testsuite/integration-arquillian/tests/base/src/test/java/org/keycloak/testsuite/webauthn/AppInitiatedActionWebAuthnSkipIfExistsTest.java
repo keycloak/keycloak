@@ -49,7 +49,7 @@ public class AppInitiatedActionWebAuthnSkipIfExistsTest extends AppInitiatedActi
     @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
     public void processSetupTwice() throws IOException {
         testWebAuthnLogoutOtherSessions(false);
-        final long credentialsCount = AdminApiUtil.findUserByUsernameId(testRealm(), DEFAULT_USERNAME)
+        final long credentialsCount = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), DEFAULT_USERNAME)
                 .credentials()
                 .stream()
                 .filter(c -> c.getType().equals(getCredentialType()))
@@ -60,7 +60,7 @@ public class AppInitiatedActionWebAuthnSkipIfExistsTest extends AppInitiatedActi
         doAIA();
         assertKcActionStatus(SUCCESS);
 
-        assertThat(AdminApiUtil.findUserByUsernameId(testRealm(), DEFAULT_USERNAME)
+        assertThat(AdminApiUtil.findUserByUsernameId(managedRealm.admin(), DEFAULT_USERNAME)
                 .credentials()
                 .stream()
                 .filter(c -> c.getType().equals(getCredentialType()))

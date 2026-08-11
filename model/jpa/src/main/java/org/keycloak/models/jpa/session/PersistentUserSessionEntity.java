@@ -29,6 +29,7 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
+import org.keycloak.connections.jpa.AsynchronousCommitAllowed;
 import org.keycloak.storage.jpa.KeyUtils;
 
 import org.hibernate.annotations.DynamicUpdate;
@@ -51,6 +52,7 @@ import org.hibernate.annotations.DynamicUpdate;
         @NamedQuery(name="findUserSessionsOrderedById", query="select sess from PersistentUserSessionEntity sess, RealmEntity realm where realm.id = sess.realmId AND sess.offline = :offline" +
                 " AND sess.userSessionId > :lastSessionId" +
                 " order by sess.userSessionId"),
+        // The query "findUserSession" is deprecated (since 26.7) and may be removed in the future.
         @NamedQuery(name="findUserSession", query="select sess from PersistentUserSessionEntity sess where sess.offline = :offline" +
                 " AND sess.userSessionId = :userSessionId AND sess.realmId = :realmId AND sess.lastSessionRefresh >= :lastSessionRefresh"),
         @NamedQuery(name="findUserSessionsByUserId", query="select sess from PersistentUserSessionEntity sess where sess.offline = :offline" +
@@ -110,13 +112,22 @@ import org.hibernate.annotations.DynamicUpdate;
                         " FROM PersistentUserSessionEntity sess INNER JOIN PersistentClientSessionEntity clientSess " +
                         " ON sess.userSessionId = clientSess.userSessionId AND clientSess.clientStorageProvider = :clientStorageProvider AND sess.offline = clientSess.offline AND clientSess.externalClientId = :externalClientId WHERE sess.offline = :offline " +
                         " AND sess.realmId = :realmId AND sess.lastSessionRefresh >= :lastSessionRefresh ORDER BY sess.userSessionId"),
-
+        @NamedQuery(name="findUserAndClientSessionsByUserId", query="SELECT sess.userSessionId, cs.clientId, cs.clientStorageProvider, cs.externalClientId FROM PersistentUserSessionEntity sess" +
+                " LEFT JOIN PersistentClientSessionEntity cs ON cs.userSessionId = sess.userSessionId AND cs.offline = sess.offline" +
+                " WHERE sess.offline = :offline AND sess.realmId = :realmId AND sess.userId = :userId"),
 })
 @Table(name="OFFLINE_USER_SESSION")
 @Entity
 @DynamicUpdate
 @IdClass(PersistentUserSessionEntity.Key.class)
-public class PersistentUserSessionEntity {
+public class PersistentUserSessionEntity implements AsynchronousCommitAllowed {
+
+    @Override
+    public boolean isAsyncCommitAllowed(EntityOperationType operationType) {
+        // If a session is removed via a user logout,
+        // this needs to be durable to prevent a security relevant timing attack
+        return operationType != EntityOperationType.DELETE;
+    }
 
     @Id
     @Column(name="USER_SESSION_ID", length = 36)
@@ -222,6 +233,10 @@ public class PersistentUserSessionEntity {
 
     public void setRememberMe(boolean rememberMe) {
         this.rememberMe = rememberMe;
+    }
+
+    public int getVersion() {
+        return version;
     }
 
     public static class Key implements Serializable {

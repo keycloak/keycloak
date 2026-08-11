@@ -32,7 +32,7 @@ public class ProfileTest {
     private static final Profile.Feature DEFAULT_FEATURE = Profile.Feature.CLIENT_POLICIES;
     private static final Profile.Feature DISABLED_BY_DEFAULT_FEATURE = Profile.Feature.DOCKER;
     private static final Profile.Feature PREVIEW_FEATURE = Profile.Feature.TOKEN_EXCHANGE;
-    private static final Profile.Feature EXPERIMENTAL_FEATURE = Profile.Feature.DYNAMIC_SCOPES;
+    private static final Profile.Feature EXPERIMENTAL_FEATURE = Profile.Feature.PARAMETERIZED_SCOPES;
     private static Profile.Feature DEPRECATED_FEATURE = Profile.Feature.LOGIN_V1;
 
     @TempDir

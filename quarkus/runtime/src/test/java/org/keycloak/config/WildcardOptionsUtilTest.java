@@ -4,7 +4,6 @@ import org.junit.Test;
 
 import static org.keycloak.config.WildcardOptionsUtil.getWildcardNamedKey;
 import static org.keycloak.config.WildcardOptionsUtil.getWildcardPrefix;
-import static org.keycloak.config.WildcardOptionsUtil.getWildcardValue;
 import static org.keycloak.config.WildcardOptionsUtil.isWildcardOption;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -45,19 +44,4 @@ public class WildcardOptionsUtilTest {
         assertNull(getWildcardNamedKey("", "null"));
     }
 
-    @Test
-    public void getWildcardValueTest() {
-        assertThat(getWildcardValue(TracingOptions.TRACING_HEADER, "tracing-header-Authorization"), is("Authorization"));
-        assertThat(getWildcardValue(DatabaseOptions.DB_ENABLED_DATASOURCE, "db-enabled-my-store"), is("my-store"));
-        assertThat(getWildcardValue(DatabaseOptions.DB_ENABLED_DATASOURCE, "kc.db-enabled-my-store"), is("my-store"));
-        assertNull(getWildcardValue(TracingOptions.TRACING_HEADER, "something-wrong"));
-        var datasourceKindOption = DatabaseOptions.Datasources.getDatasourceOption(DatabaseOptions.DB).orElseThrow();
-        assertThat(getWildcardValue(datasourceKindOption, "db-kind-user"), is("user"));
-        assertThat(getWildcardValue(datasourceKindOption, "db-kind-"), is(""));
-        assertNull(getWildcardValue(null, "db-kind-"));
-        assertNull(getWildcardValue(null, null));
-        assertNull(getWildcardValue(TracingOptions.TRACING_HEADER, null));
-        assertNull(getWildcardValue(TracingOptions.TRACING_HEADER, ""));
-        assertNull(getWildcardValue(TracingOptions.TRACING_HEADER, "null"));
-    }
 }

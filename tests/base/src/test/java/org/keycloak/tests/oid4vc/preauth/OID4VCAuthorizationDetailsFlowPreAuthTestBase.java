@@ -696,6 +696,9 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
 
     @Test
     public void testCompleteFlowWithExpiredCredentialOffer() throws Exception {
+        // Bigger accessToken lifespan to avoid same timeout like credential-offer (to enforce that accessToken is still valid in the credential-request, when credential-offer would be invalid)
+        testRealm.updateWithCleanup(r -> r.accessTokenLifespan(600));
+
         AccessTokenResponse tokenResponse = preAuthzCodeSuccessful();
         // Make sure that offer is expired
         timeOffSet.set(DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S + 10);
@@ -703,11 +706,12 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
     }
 
     @Test
-    public void testCompleteFlowWithConsumedCredentialOffer() throws Exception {
+    public void testCredentialReissuanceSucceedsAfterOfferConsumed() throws Exception {
         AccessTokenResponse tokenResponse = preAuthzCodeSuccessful();
         assertSuccessfulCredentialRequest(tokenResponse);
-        // Second credential request should fail as offer is already expired
-        assertFailedCredentialRequest(tokenResponse);
+        // After fix for #50340: Second request succeeds because authorization
+        // is now based on having a valid user verifiable credential, not the offer
+        assertSuccessfulCredentialRequest(tokenResponse);
     }
 
     private AccessTokenResponse preAuthzCodeSuccessful() throws Exception {

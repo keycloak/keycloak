@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.keycloak.client.admin.cli.KcAdmMain;
 import org.keycloak.client.admin.cli.v2.KcAdmV2CommandDescriptor.OptionDescriptor;
 import org.keycloak.client.cli.util.OutputUtil;
 
@@ -23,6 +24,7 @@ import org.eclipse.microprofile.openapi.models.Operation;
 import org.eclipse.microprofile.openapi.models.PathItem;
 import org.eclipse.microprofile.openapi.models.media.MediaType;
 import org.eclipse.microprofile.openapi.models.media.Schema;
+import org.eclipse.microprofile.openapi.models.parameters.Parameter;
 import org.eclipse.microprofile.openapi.models.parameters.RequestBody;
 
 import static org.keycloak.client.cli.util.HttpUtil.APPLICATION_JSON;
@@ -37,13 +39,19 @@ public class KcAdmV2DescriptorBuilder {
     static final String ID_PATH_PARAM = "{id}";
 
 
+    static final String CMD_NAME_GET = "get";
+    static final String CMD_NAME_CREATE = "create";
+    static final String CMD_NAME_APPLY = "apply";
+
     private static final Map<PathItem.HttpMethod, String> HTTP_METHOD_TO_COMMAND = Map.of(
-            PathItem.HttpMethod.GET, "get",
-            PathItem.HttpMethod.POST, "create",
+            PathItem.HttpMethod.GET, CMD_NAME_GET,
+            PathItem.HttpMethod.POST, CMD_NAME_CREATE,
             PathItem.HttpMethod.PATCH, "patch",
             PathItem.HttpMethod.DELETE, "delete",
-            PathItem.HttpMethod.PUT, "update"
+            PathItem.HttpMethod.PUT, CMD_NAME_APPLY
     );
+
+    private static final String SP = " ";
 
     public static KcAdmV2CommandDescriptor convert(OpenAPI openApi) {
         String version = openApi.getInfo() != null ? openApi.getInfo().getVersion() : "unknown";
@@ -95,6 +103,7 @@ public class KcAdmV2DescriptorBuilder {
                 cmd.setDescription(description);
                 cmd.setRequiresId(hasId);
                 cmd.setHasResponseBody(hasResponseBody(operation));
+                cmd.setOperationId(operation.getOperationId());
                 populateOptionsAndVariants(cmd, operation, openApi);
 
                 resourceCommands.computeIfAbsent(resourceName, k -> new ArrayList<>()).add(cmd);
@@ -168,23 +177,28 @@ public class KcAdmV2DescriptorBuilder {
     }
 
     private static void populateOptionsAndVariants(
-            KcAdmV2CommandDescriptor.CommandDescriptor cmd, Operation operation, OpenAPI openApi) {
+            KcAdmV2CommandDescriptor.CommandDescriptor cmd, Operation operation,
+            OpenAPI openApi) {
         Schema schema = extractRequestBodySchema(operation, openApi);
 
         if (schema == null && operation.getRequestBody() != null) {
             schema = extractResponseSchema(operation, openApi);
         }
 
+        List<OptionDescriptor> queryParams = extractQueryParameters(operation, openApi);
+
         if (schema == null) {
-            cmd.setOptions(List.of());
+            cmd.setOptions(queryParams);
             return;
         }
 
         if (schema.getDiscriminator() != null && schema.getDiscriminator().getMapping() != null) {
-            cmd.setOptions(List.of());
+            cmd.setOptions(queryParams);
             cmd.setVariants(buildVariants(schema, openApi));
         } else {
-            cmd.setOptions(toOptionDescriptors(collectProperties(schema, openApi), openApi));
+            List<OptionDescriptor> options = toOptionDescriptors(collectProperties(schema, openApi), openApi);
+            options.addAll(queryParams);
+            cmd.setOptions(options);
         }
     }
 
@@ -226,6 +240,10 @@ public class KcAdmV2DescriptorBuilder {
 
             Schema resolved = propSchema.getRef() != null ? resolveSchema(propSchema, openApi) : propSchema;
 
+            if (Boolean.TRUE.equals(resolved.getReadOnly())) {
+                continue;
+            }
+
             if (isObjectType(resolved)) {
                 flattenNestedObject(fieldName, resolved, openApi, options);
             } else {
@@ -259,13 +277,40 @@ public class KcAdmV2DescriptorBuilder {
         return opt;
     }
 
+    private static List<OptionDescriptor> extractQueryParameters(Operation operation, OpenAPI openApi) {
+        List<OptionDescriptor> options = new ArrayList<>();
+        if (operation.getParameters() == null) {
+            return options;
+        }
+        for (Parameter param : operation.getParameters()) {
+            if (param.getIn() != Parameter.In.QUERY || param.getSchema() == null) {
+                continue;
+            }
+            Schema paramSchema = param.getSchema();
+            if (paramSchema.getRef() != null) {
+                paramSchema = resolveSchema(paramSchema, openApi);
+            }
+            OptionDescriptor opt = new OptionDescriptor();
+            opt.setName(param.getName());
+            opt.setFieldName(param.getName());
+            opt.setDescription(param.getDescription());
+            opt.setQueryParam(true);
+            opt.setExplode(param.getExplode() == null || param.getExplode());
+            opt.setArray(isArrayType(paramSchema));
+            opt.setType(resolveType(paramSchema));
+            opt.setEnumValues(extractEnumValues(param.getSchema(), openApi));
+            options.add(opt);
+        }
+        return options;
+    }
+
     private static List<String> extractEnumValues(Schema schema, OpenAPI openApi) {
         Schema target = schema;
         if (isArrayType(schema) && schema.getItems() != null) {
             target = schema.getItems();
-            if (target.getRef() != null) {
-                target = resolveSchema(target, openApi);
-            }
+        }
+        if (target.getRef() != null) {
+            target = resolveSchema(target, openApi);
         }
         if (target != null && target.getEnumeration() != null && !target.getEnumeration().isEmpty()) {
             return target.getEnumeration().stream().map(Object::toString).toList();
@@ -394,7 +439,7 @@ public class KcAdmV2DescriptorBuilder {
     };
 
     /**
-     * Build-time entry point: reads OpenAPI from classpath, writes descriptor to output directory.
+     * Build-time entry point: reads OpenAPI from classpath, writes descriptor and CLI examples to output directory.
      */
     public static void main(String[] args) throws IOException {
         if (args.length != 1) {
@@ -407,5 +452,36 @@ public class KcAdmV2DescriptorBuilder {
 
         KcAdmV2CommandDescriptor descriptor = convert(openApi);
         writeDescriptor(descriptor, Path.of(args[0], "kcadm-v2-commands.json"));
+        writeCliExamples(descriptor, Path.of(args[0]).getParent().resolve("admin-v2-cli-examples.json"));
+    }
+
+    /**
+     * Generates {@code admin-v2-cli-examples.json} from the descriptor.
+     * Used by the docs build pipeline to render CLI usage examples.
+     */
+    private static void writeCliExamples(KcAdmV2CommandDescriptor descriptor, Path outputFile) throws IOException {
+        Map<String, Map<String, String>> examples = new LinkedHashMap<>();
+        for (KcAdmV2CommandDescriptor.ResourceDescriptor resource : descriptor.getResources()) {
+            for (KcAdmV2CommandDescriptor.CommandDescriptor cmd : resource.getCommands()) {
+                String operationId = cmd.getOperationId();
+                if (operationId != null) {
+                    examples.put(operationId, Map.of("example", buildCliExample(resource.getName(), cmd)));
+                }
+            }
+        }
+        Files.createDirectories(outputFile.getParent());
+        OutputUtil.MAPPER.writeValue(outputFile.toFile(), examples);
+    }
+
+    private static String buildCliExample(String resourceName, KcAdmV2CommandDescriptor.CommandDescriptor cmd) {
+        StringBuilder sb = new StringBuilder(KcAdmMain.CMD + SP + KcAdmMain.V2_FLAG + SP);
+        sb.append(resourceName).append(SP).append(cmd.getName());
+        if (cmd.isRequiresId()) {
+            sb.append(SP).append(resourceName.toUpperCase()).append("_ID");
+        }
+        if (cmd.hasRequestBody()) {
+            sb.append(SP).append(KcAdmV2CommandBuilder.OPT_FILE).append(SP).append(resourceName).append(".json");
+        }
+        return sb.toString();
     }
 }

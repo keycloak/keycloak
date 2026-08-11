@@ -28,6 +28,9 @@ import org.keycloak.representations.idm.RoleRepresentation;
  */
 public final class OID4VCIConstants {
 
+    // Hide ctor
+    private OID4VCIConstants() {}
+
     public static final String OID4VC_PROTOCOL = "oid4vc";
 
     public static final String C_NONCE_LIFETIME_IN_SECONDS = "vc.c-nonce-lifetime-seconds";
@@ -38,22 +41,26 @@ public final class OID4VCIConstants {
 
     // --- Keybinding/Credential Builder ---
     public static final String SOURCE_ENDPOINT = "source_endpoint";
-    public static final String BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE = "batch_credential_issuance.batch_size";
-    public static final String TRUSTED_KEYS_REALM_ATTR = "oid4vc.attestation.trusted_keys";
-    public static final String TRUSTED_KEY_IDS_REALM_ATTR = "oid4vc.attestation.trusted_key_ids";
+
+    // Comma-separated aliases of trust-material identity providers that expose trusted keys for key attestation proof validation
+    public static final String OID4VCI_ATTESTER_TRUST_IDPS_ATTR = "oid4vci.attester_trust_idps";
 
     public static final RoleRepresentation CREDENTIAL_OFFER_CREATE =
             new RoleRepresentation("credential-offer-create", "Allow credential offer creation", false);
 
     // Required-action provider ID
     public static final String VERIFIABLE_CREDENTIAL_OFFER_PROVIDER_ID = "verifiable_credential_offer";
-    public static final String CREDENTIAL_CONFIGURATION_ID = "credential_configuration_id";
-    public static final String CLIENT_ID = "client_id";
-    public static final String PRE_AUTHORIZED = "pre_authorized";
 
     // authenticationSession note with the stored handle for the credential-offer
     public static final String CREDENTIAL_OFFER_NONCE = "credential_offer_nonce";
 
-    private OID4VCIConstants() {
-    }
+    // authenticationSession note with the info whether the credential-offer action was initiated by admin (true) or initiated by user through AIA (false or missing)
+    public static final String IS_ADMIN_INITIATED = "is_admin_initiated";
+
+    // Attribute used in the credential-offer email, which is sent by the admin to the user
+    public static final String EMAIL_TEMPLATE_ATTR_CREDENTIAL_SCOPE_DISPLAY_NAME = "credentialScopeDisplayName";
+
+    // Batch issuance
+    public static final String BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE = "oid4vci.batch_credential_issuance.batch_size";
+    public static final int BATCH_CREDENTIAL_ISSUANCE_DEFAULT_MAX_BATCH_SIZE = 2;
 }

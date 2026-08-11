@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import jakarta.annotation.Nonnull;
 
+import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorMetadata;
 import org.keycloak.authentication.authenticators.browser.WebAuthnMetadataService;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.Time;
@@ -103,13 +104,14 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
         WebAuthnCredentialModel origCredential = getCredentialFromModel(model);
         WebAuthnCredentialData data = origCredential.getWebAuthnCredentialData();
 
-        String authenticatorProvider = metadataService.getAuthenticatorProvider(data.getAaguid());
-        if (authenticatorProvider == null)
+        WebAuthnAuthenticatorMetadata metadata = metadataService.getAuthenticatorMetadata(data.getAaguid());
+        if (metadata == null) {
             return origCredential;
+        }
 
         WebAuthnCredentialPresentationData presentationData = new WebAuthnCredentialPresentationData(
                 data.getAaguid(), data.getCredentialId(), data.getCounter(), data.getAttestationStatement(), data.getCredentialPublicKey(),
-                data.getAttestationStatementFormat(), data.getTransports(), authenticatorProvider);
+                data.getAttestationStatementFormat(), data.getTransports(), metadata.name(), metadata.iconLight(), metadata.iconDark());
         return WebAuthnCredentialModel.create(origCredential.getId(), origCredential.getType(), origCredential.getCreatedDate(), origCredential.getUserLabel(),
                 presentationData, origCredential.getWebAuthnSecretData());
     }
@@ -225,6 +227,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
 
                     // parse
                     authenticationData = webAuthnAuthenticationManager.parse(context.getAuthenticationRequest());
+
                     // validate
                     AuthenticationParameters authenticationParameters = new AuthenticationParameters(
                             context.getAuthenticationParameters().getServerProperty(),
@@ -242,9 +245,15 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
                     // update authenticator counter
                     // counters are an optional feature of the spec - if an authenticator does not support them, it
                     // will always send zero. MacOS/iOS does this for keys stored in the secure enclave (TouchID/FaceID)
-                    long count = auth.getCount();
-                    if (count > 0) {
-                        webAuthnCredModel.updateCounter(count + 1);
+                    final long storedCounter = auth.getCount();
+                    final long clientCounter = authenticationData.getAuthenticatorData().getSignCount();
+                    if (storedCounter > 0 || clientCounter > 0) {
+                        if (clientCounter <= storedCounter) {
+                            logger.debugf("Invalid client counter, authenticator may have been cloned");
+                            return false;
+                        }
+
+                        webAuthnCredModel.updateCounter(clientCounter);
                         user.credentialManager().updateStoredCredential(webAuthnCredModel);
                     }
 
@@ -345,6 +354,8 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
             if (!properties.isEmpty()) {
                 credentialMetadata.setInfoProperties(properties);
             }
+            credentialMetadata.setIconLight(credentialData.getIconLight());
+            credentialMetadata.setIconDark(credentialData.getIconDark());
         } catch (
                 IOException e) {
             logger.warn("unable to deserialize model information, skipping messages", e);
@@ -352,6 +363,10 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
 
         credentialMetadata.setCredentialModel(credentialModel);
         return credentialMetadata;
+    }
+
+    public WebAuthnMetadataService getMetadataService() {
+        return metadataService;
     }
 
 }

@@ -3,6 +3,7 @@ package org.keycloak.config;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import org.keycloak.common.crypto.FipsMode;
 
@@ -51,6 +52,12 @@ public class HttpOptions {
             .description("Configures the server to require/request client authentication.")
             .defaultValue(ClientAuth.none)
             .buildTime(true)
+            .build();
+
+    public static final Option<Boolean> HTTPS_SNI_ENABLED = new OptionBuilder<>("https-sni-enabled", Boolean.class)
+            .category(OptionCategory.HTTP)
+            .synthetic()
+            .defaultValue(Optional.empty())
             .build();
 
     public static final Option<String> HTTPS_CIPHER_SUITES = new OptionBuilder<>("https-cipher-suites", String.class)
@@ -152,8 +159,8 @@ public class HttpOptions {
 
     public static final Option<String> SHUTDOWN_TIMEOUT = new OptionBuilder<>("shutdown-timeout", String.class)
             .category(OptionCategory.HTTP)
-            .description("The shutdown period waiting for currently running HTTP requests to finish. " + DURATION_DESCRIPTION)
-            .defaultValue("1s")
+            .description("The shutdown period waiting for currently running HTTP requests to finish and distributed caches to settle. " + DURATION_DESCRIPTION)
+            .defaultValue("10s")
             .build();
 
     public static final Option<String> SHUTDOWN_DELAY = new OptionBuilder<>("shutdown-delay", String.class)

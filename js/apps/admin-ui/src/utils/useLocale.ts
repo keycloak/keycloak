@@ -6,13 +6,13 @@ export default function useLocale() {
   const { realmRepresentation: realm } = useRealm();
 
   const defaultSupportedLocales = useMemo(() => {
-    return realm?.supportedLocales?.length
+    return realm.supportedLocales?.length
       ? realm.supportedLocales
       : [DEFAULT_LOCALE];
   }, [realm]);
 
   const defaultLocales = useMemo(() => {
-    return realm?.defaultLocale?.length ? [realm.defaultLocale] : [];
+    return realm.defaultLocale?.length ? [realm.defaultLocale] : [];
   }, [realm]);
 
   const combinedLocales = useMemo(() => {

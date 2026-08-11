@@ -13,12 +13,14 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
+import io.javaoperatorsdk.operator.processing.event.source.SecondaryToPrimaryMapper;
 
 @KubernetesDependent(
         informer = @Informer(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
@@ -58,6 +60,12 @@ public class KeycloakAdminSecretDependentResource extends KubernetesDependentRes
     public static boolean hasCustomAdminSecret(Keycloak keycloak) {
         return Optional.ofNullable(keycloak.getSpec().getBootstrapAdminSpec()).map(BootstrapAdminSpec::getUser)
                 .map(BootstrapAdminSpec.User::getSecret).filter(s -> !s.equals(KeycloakAdminSecretDependentResource.getName(keycloak))).isPresent();
+    }
+    
+    @Override
+    protected Optional<SecondaryToPrimaryMapper<Secret>> getSecondaryToPrimaryMapper(
+            EventSourceContext<Keycloak> context) {
+        return VersionTolerantCRUDKubernetesDependentResource.primaryMapper(context);
     }
 
 }

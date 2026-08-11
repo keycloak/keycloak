@@ -19,18 +19,24 @@ package org.keycloak.tests.admin;
 
 import java.net.URL;
 
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
+import org.keycloak.common.Profile;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.protocol.oidc.client.authentication.JWTClientSecretCredentialsProvider;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Test;
@@ -75,6 +81,31 @@ class ClientVaultTest {
     }
 
     @Test
+    void testRotatedSecretEndpointDoesNotResolveVault() {
+        String vaultExpression = "${vault.rotated_secret}";
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), "myclient-with-rotated-vault-secret");
+        String rotatedSecret = clientResource.getClientRotatedSecret().getValue();
+        assertEquals(vaultExpression, rotatedSecret);
+    }
+
+    @Test
+    void testAuthenticationWithVaultBackedRotatedSecret() {
+        // "rotatedsecret" is the resolved value from the vault file default_rotated__secret
+        AccessTokenResponse response = oauthClient
+                .client("myclient-with-rotated-vault-secret", "rotatedsecret")
+                .doPasswordGrantRequest("test-user@localhost", "password");
+
+        assertEquals(200, response.getStatusCode());
+        assertNotNull(response.getAccessToken());
+
+        AccessTokenResponse failResponse = oauthClient
+                .client("myclient-with-rotated-vault-secret", "wrong-secret")
+                .doPasswordGrantRequest("test-user@localhost", "password");
+
+        assertEquals(401, failResponse.getStatusCode());
+    }
+
+    @Test
     void testClientVaultWithJwtClientSecretAuthenticator() {
         String clientId = "myclient-jwt-client-secret-authenticator";
         JWTClientSecretCredentialsProvider jwtProvider = new JWTClientSecretCredentialsProvider();
@@ -98,34 +129,43 @@ class ClientVaultTest {
             if (url == null) {
                 throw new RuntimeException("Unable to find the vault folder in the classpath for the default_client__secret file!");
             }
-            return config.option("vault", "file").option("vault-dir", url.getPath());
+            return config.option("vault", "file").option("vault-dir", url.getPath())
+                    .features(Profile.Feature.CLIENT_SECRET_ROTATION);
         }
     }
 
     public static class ClientTestRealmConfig implements RealmConfig {
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            realm.addClient("myclient")
+        public RealmBuilder configure(RealmBuilder realm) {
+            realm.clients(ClientBuilder.create("myclient")
                     .publicClient(false)
                     .directAccessGrantsEnabled(true)
-                    .secret("${vault.client_secret}");
+                    .secret("${vault.client_secret}"));
 
-            realm.addClient("myclient-with-invalid-vault-reference")
+            realm.clients(ClientBuilder.create("myclient-with-invalid-vault-reference")
                     .publicClient(false)
                     .directAccessGrantsEnabled(true)
-                    .secret("${vault.non_existing_client_secret}");
+                    .secret("${vault.non_existing_client_secret}"));
 
-            realm.addClient("myclient-jwt-client-secret-authenticator")
+            realm.clients(ClientBuilder.create("myclient-with-rotated-vault-secret")
+                    .publicClient(false)
+                    .directAccessGrantsEnabled(true)
+                    .secret("some-primary-secret")
+                    .attribute(ClientSecretConstants.CLIENT_ROTATED_SECRET, "${vault.rotated_secret}")
+                    .attribute(ClientSecretConstants.CLIENT_ROTATED_SECRET_CREATION_TIME, String.valueOf(System.currentTimeMillis() / 1000))
+                    .attribute(ClientSecretConstants.CLIENT_ROTATED_SECRET_EXPIRATION_TIME, String.valueOf(System.currentTimeMillis() / 1000 + 86400)));
+
+            realm.clients(ClientBuilder.create("myclient-jwt-client-secret-authenticator")
                     .publicClient(false)
                     .directAccessGrantsEnabled(true)
                     .authenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID)
-                    .secret("${vault.client_secret}");
+                    .secret("${vault.client_secret}"));
 
-            realm.addUser("test-user@localhost")
+            realm.users(UserBuilder.create("test-user@localhost")
                     .email("test-user@localhost")
                     .password("password")
                     .name("first", "last")
-                    .enabled(true);
+                    .enabled(true));
             return realm;
         }
     }

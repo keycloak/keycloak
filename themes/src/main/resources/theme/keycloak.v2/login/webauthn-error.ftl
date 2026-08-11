@@ -21,12 +21,12 @@
             <input type="hidden" id="isSetRetry" name="isSetRetry"/>
 
             <@buttons.actionGroup horizontal=true>
-                <@buttons.button id="kc-try-again" name="try-again" label="doTryAgain" class=["kcButtonPrimaryClass","kcButtonBlockClass"] onclick="refreshPage()" />
+                <@buttons.button id="kc-try-again" name="try-again" label="doTryAgain" onclick="refreshPage()" />
 
                 <#if isAppInitiatedAction??>
                     <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-webauthn-settings-form"
                           method="post">
-                        <@buttons.button id="cancelWebAuthnAIA" name="cancel-aia" label="doCancel" class=["kcButtonSecondaryClass","kcButtonBlockClass"]/>
+                        <@buttons.button id="cancelWebAuthnAIA" name="cancel-aia" label="doCancel" type="secondary"/>
                     </form>
                 </#if>
             </@buttons.actionGroup>

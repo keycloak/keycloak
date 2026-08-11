@@ -32,6 +32,7 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCProviderConfig;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
 
@@ -110,7 +111,7 @@ public abstract class AuthzEndpointRequestParser {
         this.config = loginProtocol.getConfig();
         this.additionalReqParamsMaxNumber = config.getAdditionalReqParamsMaxNumber();
         this.additionalReqParamsMaxSize = config.getAdditionalReqParamsMaxSize();
-        this.additionalReqParamsFailFast = config.isAdditionalReqParamsFailFast();
+        this.additionalReqParamsFailFast = config.isAdditionalReqParamsFailFast(false);
         this.additionalReqParamsMaxOverallSize = config.getAdditionalReqParamsMaxOverallSize();
     }
 
@@ -130,7 +131,7 @@ public abstract class AuthzEndpointRequestParser {
         }
 
         request.responseMode = replaceIfNotNull(request.responseMode, getAndValidateParameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM));
-        request.redirectUriParam = replaceIfNotNull(request.redirectUriParam, getAndValidateParameter(OIDCLoginProtocol.REDIRECT_URI_PARAM));
+        request.redirectUri = replaceIfNotNull(request.redirectUri, getAndValidateParameter(OIDCLoginProtocol.REDIRECT_URI_PARAM));
         request.state = replaceIfNotNull(request.state, getAndValidateParameter(OIDCLoginProtocol.STATE_PARAM));
         request.scope = replaceIfNotNull(request.scope, getAndValidateParameter(OIDCLoginProtocol.SCOPE_PARAM));
         request.resource = replaceIfNotNull(request.resource, getAndValidateParameter(OIDCLoginProtocol.RESOURCE_PARAM));
@@ -177,6 +178,8 @@ public abstract class AuthzEndpointRequestParser {
             continue;
           }
 
+          final String sanitizedValue = StringUtil.removeControlCharacters(value);
+
           // Compare with ">=", as the currently processed parameter will be added at the END of this method.
           if (additionalReqParams.size() >= additionalReqParamsMaxNumber) {
 
@@ -190,33 +193,33 @@ public abstract class AuthzEndpointRequestParser {
 
           }
 
-          if (value.length() + currentAdditionalReqParamMaxOverallSize > additionalReqParamsMaxOverallSize) {
+          if (sanitizedValue.length() + currentAdditionalReqParamMaxOverallSize > additionalReqParamsMaxOverallSize) {
 
             if (additionalReqParamsFailFast) {
-              logger.debugv("The OIDC additional parameter '{0}''s size ({1}) exceeds the maximum allowed size of all parameters ({2}).", paramName, value.length(), additionalReqParamsMaxOverallSize);
-              throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "The OIDC additional parameter '" + paramName + "'s size (" + value.length() + ") exceeds the maximum allowed size of all parameters (" + additionalReqParamsMaxOverallSize + ").", Response.Status.BAD_REQUEST);
+              logger.debugv("The OIDC additional parameter '{0}''s size ({1}) exceeds the maximum allowed size of all parameters ({2}).", paramName, sanitizedValue.length(), additionalReqParamsMaxOverallSize);
+              throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "The OIDC additional parameter '" + paramName + "'s size (" + sanitizedValue.length() + ") exceeds the maximum allowed size of all parameters (" + additionalReqParamsMaxOverallSize + ").", Response.Status.BAD_REQUEST);
             } else {
-              logger.debugv("The OIDC additional parameter '{0}''s size exceeds ({1}) the maximum allowed size of all parameters ({2}).", paramName, value.length(), additionalReqParamsMaxOverallSize);
+              logger.debugv("The OIDC additional parameter '{0}''s size exceeds ({1}) the maximum allowed size of all parameters ({2}).", paramName, sanitizedValue.length(), additionalReqParamsMaxOverallSize);
               break;
             }
 
           }
 
-          if (value.length() > additionalReqParamsMaxSize) {
+          if (sanitizedValue.length() > additionalReqParamsMaxSize) {
 
             if (additionalReqParamsFailFast) {
-              logger.debugv("The OIDC additional parameter '{0}''s size is longer ({1}) than allowed ({2}).", paramName, value.length(), additionalReqParamsMaxSize);
-              throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "The OIDC additional parameter '" + paramName + "'s size is longer (" + value.length() + ") than allowed (" + additionalReqParamsMaxSize + ").", Response.Status.BAD_REQUEST);
+              logger.debugv("The OIDC additional parameter '{0}''s size is longer ({1}) than allowed ({2}).", paramName, sanitizedValue.length(), additionalReqParamsMaxSize);
+              throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "The OIDC additional parameter '" + paramName + "'s size is longer (" + sanitizedValue.length() + ") than allowed (" + additionalReqParamsMaxSize + ").", Response.Status.BAD_REQUEST);
             } else {
-              logger.debugv("The OIDC additional parameter '{0}''s size is longer ({1}) than allowed ({2}).", paramName, value.length(), additionalReqParamsMaxSize);
+              logger.debugv("The OIDC additional parameter '{0}''s size is longer ({1}) than allowed ({2}).", paramName, sanitizedValue.length(), additionalReqParamsMaxSize);
               break;
             }
 
           }
 
           logger.debugv("Adding OIDC additional parameter ''{0}'' as additional parameter.", paramName);
-          currentAdditionalReqParamMaxOverallSize += value.length();
-          additionalReqParams.put(paramName, value);
+          currentAdditionalReqParamMaxOverallSize += sanitizedValue.length();
+          additionalReqParams.put(paramName, sanitizedValue);
         }
     }
 
@@ -228,7 +231,8 @@ public abstract class AuthzEndpointRequestParser {
         String paramValue = getParameter(paramName);
 
         if (paramValue != null) {
-            int maxLength = config.getMaxLengthForTheParameter(paramName);
+            paramValue = StringUtil.removeControlCharacters(paramValue);
+            int maxLength = config.getMaxLengthForTheParameter(paramName, false);
             if (paramValue.length() > maxLength) {
                 logger.warnf("The size of OIDC parameter '%s' size is longer (%d) than allowed (%d). %s", paramName, paramValue.length(), maxLength, additionalReqParamsFailFast ? "Request not allowed." : "Ignoring the parameter.");
                 if (additionalReqParamsFailFast) {

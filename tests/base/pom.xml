@@ -142,6 +142,17 @@
             <artifactId>awaitility</artifactId>
             <scope>test</scope>
         </dependency>
+        <!--
+            OutboxStoreTests references OutboxEntryEntity / OutboxStore /
+            OutboxCleanupTask directly inside runOnServer lambdas, so the
+            test JVM needs model/jpa on the compile classpath. Test-scope
+            keeps this out of any production artifact.
+        -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-jpa</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <profiles>
@@ -188,6 +199,67 @@
                                 </configuration>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>jackson3</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testframework</groupId>
+                    <artifactId>keycloak-test-framework-core</artifactId>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>org.keycloak</groupId>
+                            <artifactId>keycloak-admin-client-tests</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+                <dependency>
+                    <groupId>org.keycloak.tests</groupId>
+                    <artifactId>keycloak-tests-utils</artifactId>
+                    <version>${project.version}</version>
+                    <scope>test</scope>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>org.keycloak</groupId>
+                            <artifactId>keycloak-admin-client-tests</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+                <dependency>
+                    <groupId>org.keycloak.tests</groupId>
+                    <artifactId>keycloak-tests-utils-shared</artifactId>
+                    <version>${project.version}</version>
+                    <scope>test</scope>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>org.keycloak</groupId>
+                            <artifactId>keycloak-admin-client-tests</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-admin-client-jackson3</artifactId>
+                    <version>${project.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <includes>
+                                <include>**/AdminClientTest.java</include>
+                                <include>**/RealmCreateTest.java</include>
+                                <include>**/UserCreateTest.java</include>
+                                <include>**/ClientTest.java</include>
+                                <include>**/GroupTest.java</include>
+                            </includes>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>

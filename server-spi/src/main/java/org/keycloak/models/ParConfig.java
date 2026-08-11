@@ -19,6 +19,8 @@ package org.keycloak.models;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import org.keycloak.utils.StringUtil;
+
 public class ParConfig extends AbstractConfig {
 
     // realm attribute names
@@ -62,7 +64,7 @@ public class ParConfig extends AbstractConfig {
     }
 
     public void setRequestUriLifespan(String requestUriLifespan) {
-        if (requestUriLifespan == null) {
+        if (StringUtil.isBlank(requestUriLifespan)) {
             setRequestUriLifespan((Integer) null);
         } else {
             setRequestUriLifespan(Integer.parseInt(requestUriLifespan));

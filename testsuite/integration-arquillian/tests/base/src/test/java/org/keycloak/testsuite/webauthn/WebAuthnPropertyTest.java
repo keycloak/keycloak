@@ -26,11 +26,13 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
 import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT;
@@ -58,7 +60,7 @@ public class WebAuthnPropertyTest extends AbstractWebAuthnVirtualTest {
                 .setWebAuthnPolicyUserVerificationRequirement(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
                 .update()) {
 
-            WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
             assertThat(realmData, notNullValue());
             assertThat(realmData.getRpEntityName(), is("localhost"));
             assertThat(realmData.getRequireResidentKey(), is(YES.getValue()));
@@ -76,10 +78,9 @@ public class WebAuthnPropertyTest extends AbstractWebAuthnVirtualTest {
             authenticateDefaultUser();
 
             // confirm that authentication is successfully completed
-            events.expectLogin()
-                    .user(user.getId())
-                    .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true")
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .userId(user.getId())
+                    .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
         }
     }
 
@@ -96,13 +97,13 @@ public class WebAuthnPropertyTest extends AbstractWebAuthnVirtualTest {
                 .setWebAuthnPolicyCreateTimeout(TIMEOUT)
                 .update()) {
 
-            WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
             assertThat(realmData.getCreateTimeout(), is(TIMEOUT));
 
             authenticateDefaultUser(false);
             WaitUtils.pause((TIMEOUT + 2) * 1000);
             webAuthnErrorPage.assertCurrent();
-            assertThat(webAuthnErrorPage.getError(), containsString("Failed to authenticate by the Passkey."));
+            assertThat(webAuthnErrorPage.getError(), containsString("The Passkey operation was not allowed or timed out."));
         }
     }
 
@@ -116,7 +117,7 @@ public class WebAuthnPropertyTest extends AbstractWebAuthnVirtualTest {
                 .setWebAuthnPolicyUserVerificationRequirement(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
                 .update()) {
 
-            WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
             assertThat(realmData, notNullValue());
             assertThat(realmData.getRpEntityName(), is("localhost"));
             assertThat(realmData.getRequireResidentKey(), is(YES.getValue()));
@@ -165,6 +166,6 @@ public class WebAuthnPropertyTest extends AbstractWebAuthnVirtualTest {
         webAuthnRegisterPage.clickRegister();
         webAuthnRegisterPage.registerWebAuthnCredential("something");
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 }

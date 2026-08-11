@@ -22,10 +22,10 @@ import java.nio.file.Paths;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.DryRun;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.utils.KeycloakDistribution;
-import org.keycloak.it.utils.RawKeycloakDistribution;
+import org.keycloak.it.junit5.extension.StopServer;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 
 import io.quarkus.test.junit.main.Launch;
 import org.junit.jupiter.api.MethodOrderer;
@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag(DistributionTest.WIN)
 public class StartDevCommandDistTest {
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "start-dev" })
     void testDevModeWarning(CLIResult cliResult) {
@@ -53,7 +53,7 @@ public class StartDevCommandDistTest {
         assertFalse(out.contains("0.0.0.0") || out.contains("all addresses"));
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "start-dev", "--db=dev-mem" })
     void testBuildPropertyAvailable(CLIResult cliResult) {
@@ -70,7 +70,7 @@ public class StartDevCommandDistTest {
         cliResult.assertNoMessage("Build time property cannot");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "build", "--debug", "--db=dev-file" })
     void testBuildMustNotRunTwoJVMs(CLIResult cliResult) {
@@ -78,7 +78,7 @@ public class StartDevCommandDistTest {
         cliResult.assertBuild();
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "start-dev", "--verbose" })
     void testVerboseAfterCommand(CLIResult cliResult) {
@@ -86,8 +86,8 @@ public class StartDevCommandDistTest {
     }
 
     @Test
-    void testConfigKeystoreAbsolutePath(KeycloakDistribution dist) {
-        CLIResult cliResult = dist.run("start-dev", "--config-keystore=" + Paths.get("src/test/resources/keystore").toAbsolutePath().normalize(),
+    void testConfigKeystoreAbsolutePath(KeycloakRunner runner) {
+        CLIResult cliResult = runner.run("start-dev", "--config-keystore=" + Paths.get("src/test/resources/keystore").toAbsolutePath().normalize(),
                 "--config-keystore-password=secret");
 
         // keytool -importpass -alias kc.log-level -keystore keystore -storepass secret -storetype PKCS12 -v (with "org.keycloak.timer:debug" as the stored password)
@@ -99,17 +99,16 @@ public class StartDevCommandDistTest {
         cliResult.assertStartedDevMode();
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
-    void testStartDevThenImportRebuild(KeycloakDistribution dist) throws Exception {
-        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
-        CLIResult result = rawDist.run("start-dev");
+    void testStartDevThenImportRebuild(KeycloakRunner runner) throws Exception {
+        CLIResult result = runner.run("start-dev");
         assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
 
         File target = new File("./target");
 
         // feature change should trigger a build
-        result = rawDist.run("--profile=dev", "export", "--features=docker", "--dir=" + target.getAbsolutePath());
+        result = runner.run("--profile=dev", "export", "--features=docker", "--dir=" + target.getAbsolutePath());
         result.assertMessage("Updating the configuration and installing your custom providers, if any. Please wait.");
     }
 

@@ -26,6 +26,7 @@ import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnDataWrapper;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
+import org.keycloak.utils.StringUtil;
 
 import com.webauthn4j.data.attestation.authenticator.COSEKey;
 import com.webauthn4j.data.attestation.statement.COSEAlgorithmIdentifier;
@@ -75,10 +76,16 @@ public class PubKeySignRegisterTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void publicKeySignaturesNonExisting() {
-        assertPublicKeyAlgorithms(true, COSEAlgorithmIdentifier.ES256, Collections.singletonList("RSSSS2048"));
+        assertPublicKeyAlgorithms(false, COSEAlgorithmIdentifier.ES256, Collections.singletonList("RSSSS2048"),
+                "Failed to register your Passkey.");
     }
 
     private void assertPublicKeyAlgorithms(boolean shouldSuccess, COSEAlgorithmIdentifier selectedAlgorithm, List<String> algorithms) {
+        assertPublicKeyAlgorithms(shouldSuccess, selectedAlgorithm, algorithms, null);
+    }
+
+    private void assertPublicKeyAlgorithms(boolean shouldSuccess, COSEAlgorithmIdentifier selectedAlgorithm, List<String> algorithms,
+                                           String expectedError) {
         assertThat(algorithms, notNullValue());
 
         try (Closeable u = getWebAuthnRealmUpdater()
@@ -86,17 +93,20 @@ public class PubKeySignRegisterTest extends AbstractWebAuthnVirtualTest {
                 .update()) {
 
             if (!algorithms.isEmpty()) {
-                WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+                WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
                 assertThat(realmData.getSignatureAlgorithms(), is(algorithms));
             }
 
             registerDefaultUser(shouldSuccess);
 
-            assertThat(webAuthnErrorPage.isCurrent(), is(!shouldSuccess));
+            if (!oauth.parseLoginResponse().isSuccess()) {
+                webAuthnErrorPage.assertCurrent();
+            }
+
             if (!shouldSuccess) {
-                final String expectedMessage = getExpectedMessageByDriver(
-                        "NotSupportedError: Operation is not supported",
-                        "The operation either timed out or was not allowed");
+                final String expectedMessage = StringUtil.isNotBlank(expectedError)
+                        ? expectedError
+                        : "The Passkey operation was not allowed or timed out.";
                 assertThat(webAuthnErrorPage.getError(), containsString(expectedMessage));
                 return;
             }

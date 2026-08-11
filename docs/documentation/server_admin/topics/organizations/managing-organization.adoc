@@ -59,16 +59,6 @@ Once you create an organization, you can manage the additional settings that are
 * <<_managing_groups_,Manage groups>>
 * <<_managing_identity_provider_,Manage identity providers>>
 
-== Understanding organization domains
-
-When managing an organization, the domain associated with an organization plays an important role in how
-organization members authenticate to a realm and how their profiles are validated.
-
-One of the key roles of a domain is to help to identify the organizations where a user is a member. By looking at their email address, {project_name} will match a corresponding organization using the same domain and eventually change the authentication flow based on the organization requirements.
-
-The domain also allows organizations to enforce that users are not allowed to use a domain in their emails
-other than those associated with an organization. This restriction is especially useful when users, and their identities, are federated from identity providers associated with an organization and you want to force a specific email domain for their email addresses.
-
 == Disabling an organization
 
 To disable an organization, toggle *Enabled* to *Off*.

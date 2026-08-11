@@ -33,6 +33,9 @@ For details on how to package and deploy a custom provider, refer to the <<_prov
 
 NOTE: While it is possible to install other JAX-RS components via the providers extension mechanism, such as filters and interceptors, these are not officially supported.
 
+NOTE: To align with Keycloak's built-in transaction per request lifecycle, you should use only blocking, synchronous endpoints. Examples of asynchronous endpoints include
+the usage of `AsyncResponse`, or returning `CompletableFuture` or `CompletionStage`.  
+
 [[_extensions_spi]]
 === Add your own custom SPI
 

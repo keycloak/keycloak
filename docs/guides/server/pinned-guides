@@ -7,6 +7,10 @@ containers
 enabletls
 hostname
 reverseproxy
+haproxy-passthrough
+haproxy-reencrypt
+traefik-passthrough
+traefik-reencrypt
 db
 caching
 outgoinghttp

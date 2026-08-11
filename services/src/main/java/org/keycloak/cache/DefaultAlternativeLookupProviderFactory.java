@@ -28,7 +28,7 @@ public class DefaultAlternativeLookupProviderFactory implements AlternativeLooku
 
         cacheConfig = LocalCacheConfiguration.<String, CachedValue>builder()
               .name("lookup")
-              .expiration(Duration.ofMinutes(expireAfter))
+              .expirationAfterAccess(Duration.ofMinutes(expireAfter))
               .maxSize(maximumSize)
               .build();
     }

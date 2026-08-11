@@ -132,7 +132,9 @@ public class KeycloakServerConfigBuilder {
      * @return
      */
     public KeycloakServerConfigBuilder featuresDisabled(Profile.Feature... features) {
-        this.featuresDisabled.addAll(toFeatureStrings(features));
+        this.featuresDisabled.addAll(Arrays.stream(features)
+                .map(Profile.Feature::getUnversionedKey)
+                .collect(Collectors.toSet()));
         return this;
     }
 

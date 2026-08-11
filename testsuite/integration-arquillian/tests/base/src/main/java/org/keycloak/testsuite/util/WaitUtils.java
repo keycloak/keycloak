@@ -26,7 +26,6 @@ import java.util.logging.Logger;
 
 import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.pages.AbstractPage;
 
 import org.jboss.arquillian.graphene.wait.ElementBuilder;
 import org.openqa.selenium.By;
@@ -41,8 +40,8 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
 
 import static org.jboss.arquillian.graphene.Graphene.waitGui;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.openqa.selenium.support.ui.ExpectedConditions.javaScriptThrowsNoExceptions;
 import static org.openqa.selenium.support.ui.ExpectedConditions.not;
 import static org.openqa.selenium.support.ui.ExpectedConditions.urlToBe;
@@ -53,6 +52,7 @@ import static org.openqa.selenium.support.ui.ExpectedConditions.urlToBe;
  * @author tkyjovsk
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
+@Deprecated(forRemoval = true)
 public final class WaitUtils {
 
     protected final static org.jboss.logging.Logger log = org.jboss.logging.Logger.getLogger(WaitUtils.class);
@@ -92,12 +92,6 @@ public final class WaitUtils {
         new WebDriverWait(getCurrentDriver(), Duration.ofSeconds(1)).until(
                 ExpectedConditions.attributeContains(element, "class", value)
         );
-    }
-
-    public static void waitUntilPageIsCurrent(AbstractPage page) {
-        WebDriver driver = getCurrentDriver();
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofMillis(PAGELOAD_TIMEOUT_MILLIS));
-        wait.until((WebDriver driver1) -> page.isCurrent());
     }
 
     public static void pause(long millis) {

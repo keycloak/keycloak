@@ -84,6 +84,7 @@ type RoleMappingProps = {
   type: ResourcesKey;
   isManager?: boolean;
   save: (rows: Row[]) => Promise<void>;
+  groupsResource?: any;
 };
 
 export const RoleMapping = ({
@@ -92,6 +93,7 @@ export const RoleMapping = ({
   type,
   isManager = true,
   save,
+  groupsResource,
 }: RoleMappingProps) => {
   const { adminClient } = useAdminClient();
 
@@ -128,7 +130,7 @@ export const RoleMapping = ({
       }));
     }
 
-    const roles = await getMapping(adminClient, type, id);
+    const roles = await getMapping(adminClient, type, id, groupsResource);
     const realmRolesMapping =
       roles.realmMappings?.map((role) => ({ role })) || [];
     const clientMapping = Object.values(roles.clientMappings || {})
@@ -180,6 +182,7 @@ export const RoleMapping = ({
           name={name}
           onAssign={assignRoles}
           onClose={() => setShowAssign(false)}
+          groupsResource={groupsResource}
         />
       )}
       <DeleteConfirm />

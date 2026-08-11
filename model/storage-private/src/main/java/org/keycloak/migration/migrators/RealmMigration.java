@@ -29,7 +29,7 @@ import org.jboss.logging.Logger;
 
 public abstract class RealmMigration implements Migration {
 
-    private static final Logger LOG = Logger.getLogger(RealmMigration.class);
+    protected static final Logger LOG = Logger.getLogger(RealmMigration.class);
 
     @Override
     public void migrate(KeycloakSession session) {

@@ -73,8 +73,8 @@ public class NestedPropertyMappingInterceptor implements ConfigSourceInterceptor
         return Optional.ofNullable(recursions.get()).filter(s -> !s.isEmpty()).map(s -> s.iterator().next());
     }
 
-    public static ConfigValue getValueFromPropertyMappers(ConfigSourceInterceptorContext context, String name) {
-        Function<String, ConfigValue> resolver = (n) -> PropertyMappers.getValue(context, n);
+    public static ConfigValue getValueFromPropertyMappers(ConfigSourceInterceptorContext context, String name, boolean augmenting) {
+        Function<String, ConfigValue> resolver = (n) -> PropertyMappers.getValue(context, n, augmenting);
         return resolve(resolver, resolver, name, true);
     }
 

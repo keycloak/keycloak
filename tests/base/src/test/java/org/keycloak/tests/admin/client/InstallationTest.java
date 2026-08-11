@@ -51,8 +51,8 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.events.AdminEvents;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakServerConfig;
@@ -418,7 +418,7 @@ public class InstallationTest {
     public static class OidcClientConfig implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return client.clientId(OIDC_NAME)
                     .name(OIDC_NAME)
                     .protocol("openid-connect");
@@ -428,7 +428,7 @@ public class InstallationTest {
     public static class OidcBearerOnlyClientConfig implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return client.clientId(OIDC_NAME_BEARER_ONLY_NAME)
                     .name(OIDC_NAME_BEARER_ONLY_NAME)
                     .protocol("openid-connect")
@@ -440,7 +440,7 @@ public class InstallationTest {
     public static class OidcBearerOnlyWithAuthzClientConfig implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return client.clientId(OIDC_NAME_BEARER_ONLY_WITH_AUTHZ_NAME)
                     .name(OIDC_NAME_BEARER_ONLY_WITH_AUTHZ_NAME)
                     .protocol("openid-connect")
@@ -454,7 +454,7 @@ public class InstallationTest {
     public static class SamlClientConfig implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return client.clientId(SAML_NAME)
                     .name(SAML_NAME)
                     .protocol("saml");

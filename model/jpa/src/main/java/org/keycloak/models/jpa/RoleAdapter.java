@@ -29,6 +29,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -41,6 +42,7 @@ import org.keycloak.utils.StreamsUtil;
 import static java.util.Optional.ofNullable;
 
 import static org.keycloak.common.util.CollectionUtil.collectionEquals;
+import static org.keycloak.utils.StringUtil.isBlank;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -90,6 +92,9 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public void setName(String name) {
+        if (isBlank(name)) {
+            throw new ModelException("Role name cannot be null or empty");
+        }
         role.setName(name);
     }
 

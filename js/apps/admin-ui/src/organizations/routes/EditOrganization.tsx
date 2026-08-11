@@ -23,7 +23,7 @@ export const EditOrganizationRoute: AppRouteObject = {
   path: "/:realm/organizations/:id/:tab/*",
   element: <DetailOrganization />,
   handle: {
-    access: "manage-users",
+    access: "view-organizations",
     breadcrumb: (t) => t("organizationDetails"),
   },
 };

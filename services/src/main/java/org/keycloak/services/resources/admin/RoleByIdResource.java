@@ -164,6 +164,7 @@ public class RoleByIdResource extends RoleResource {
     @Operation(summary = "Update the role")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public void updateRole(final @Parameter(description = "id of role") @PathParam("role-id") String id, final RoleRepresentation rep) {
@@ -196,6 +197,7 @@ public class RoleByIdResource extends RoleResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public void addComposites(final @PathParam("role-id") String id, List<RoleRepresentation> roles) {
+        // any role by ID
         RoleModel role = getRoleModel(id);
         auth.roles().requireManage(role);
         addComposites(auth, adminEvent, session.getContext().getUri(), roles, role);
@@ -307,7 +309,7 @@ public class RoleByIdResource extends RoleResource {
                                  @Parameter(description = "A set of roles to be removed") List<RoleRepresentation> roles) {
         RoleModel role = getRoleModel(id);
         auth.roles().requireManage(role);
-        deleteComposites(adminEvent, session.getContext().getUri(), roles, role);
+        deleteComposites(auth, adminEvent, session.getContext().getUri(), roles, role);
     }
 
     /**

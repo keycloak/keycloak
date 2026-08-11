@@ -41,7 +41,7 @@ import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
@@ -56,6 +56,7 @@ import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 import org.keycloak.tests.workflow.step.DeleteUserStepTest.DeleteUserWorkflowServerConf;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -120,7 +121,7 @@ public class DeleteUserStepTest extends AbstractWorkflowTest {
         oauth.openLoginForm();
         loginPage.fillLogin(USER_NAME, USER_PASSWORD);
         loginPage.submit();
-        assertTrue(driver.page().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         runScheduledSteps(Duration.ZERO);
 
@@ -193,7 +194,7 @@ public class DeleteUserStepTest extends AbstractWorkflowTest {
             String componentId = addDummyFederationProvider();
             userId = addFederatedUser(componentId, USER_NAME, USER_PASSWORD);
         } else {
-            try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create()
+            try (Response response = managedRealm.admin().users().create(UserBuilder.create()
                     .username(USER_NAME).password(USER_PASSWORD).firstName("Federated").lastName("User").email(USER_NAME + "@example.com").build())) {
                 userId = ApiUtil.getCreatedId(response);
             }
@@ -202,7 +203,7 @@ public class DeleteUserStepTest extends AbstractWorkflowTest {
         oauth.openLoginForm();
         loginPage.fillLogin(USER_NAME, USER_PASSWORD);
         loginPage.submit();
-        assertTrue(driver.driver().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // check that we have two scheduled steps for the user
         runOnServer.run((RunOnServer) session -> {

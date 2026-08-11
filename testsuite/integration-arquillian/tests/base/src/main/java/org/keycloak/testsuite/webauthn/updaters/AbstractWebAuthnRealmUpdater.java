@@ -43,7 +43,13 @@ public abstract class AbstractWebAuthnRealmUpdater<T extends AbstractWebAuthnRea
 
     public abstract T setWebAuthnPolicyAuthenticatorAttachment(String webAuthnPolicyAuthenticatorAttachment);
 
+    /**
+     * @deprecated Use {@link #setWebAuthnPolicyResidentKey(String)} instead.
+     */
+    @Deprecated
     public abstract T setWebAuthnPolicyRequireResidentKey(String webAuthnPolicyRequireResidentKey);
+
+    public abstract T setWebAuthnPolicyResidentKey(String webAuthnPolicyResidentKey);
 
     public abstract T setWebAuthnPolicyRpId(String webAuthnPolicyRpId);
 

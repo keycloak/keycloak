@@ -31,7 +31,7 @@ public class UserSupplier implements Supplier<ManagedUser, InjectUser> {
         ManagedRealm realm = instanceContext.getDependency(ManagedRealm.class, instanceContext.getAnnotation().realmRef());
 
         UserConfig config = SupplierHelpers.getInstanceWithInjectedFields(instanceContext.getAnnotation().config(), instanceContext);
-        UserRepresentation userRepresentation = config.configure(UserConfigBuilder.create()).build();
+        UserRepresentation userRepresentation = config.configure(UserBuilder.create()).build();
 
         if (userRepresentation.getUsername() == null) {
             String username = SupplierHelpers.createName(instanceContext);

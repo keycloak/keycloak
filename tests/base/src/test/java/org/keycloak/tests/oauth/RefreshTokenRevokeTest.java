@@ -28,6 +28,7 @@ import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.BrowserTabUtils;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.tests.common.TestRealmUserConfig;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
@@ -238,6 +239,7 @@ public class RefreshTokenRevokeTest {
     }
 
     @Test
+    @DatabaseTest
     public void refreshTokenReuseTokenWithRefreshTokensRevokedAfterSingleReuse() {
         realm.updateWithCleanup(r ->
                 r.revokeRefreshToken(true)

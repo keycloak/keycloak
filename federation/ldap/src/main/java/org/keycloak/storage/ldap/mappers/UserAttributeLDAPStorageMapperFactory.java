@@ -17,6 +17,7 @@
 
 package org.keycloak.storage.ldap.mappers;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.keycloak.component.ComponentModel;
@@ -73,7 +74,21 @@ public class UserAttributeLDAPStorageMapperFactory extends AbstractLDAPStorageMa
                     .helpText("If on, then during reading of the LDAP attribute value will always used instead of the value from Keycloak DB")
                     .type(ProviderConfigProperty.BOOLEAN_TYPE).defaultValue("false").add();
         }
-        config.property().name(UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP).label("Is Mandatory In LDAP")
+        config.property().name(UserAttributeLDAPStorageMapper.IS_BINARY_ATTRIBUTE).label("Is Binary Attribute")
+                .helpText("Should be true for binary LDAP attributes")
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("false").add()
+                .property().name(UserAttributeLDAPStorageMapper.BINARY_ATTRIBUTE_DECODER).label("Decode Binary Attribute As")
+                .helpText("Controls how binary attribute values are decoded. "
+                        + "'auto' decodes as UUID when the LDAP attribute matches the UUID LDAP attribute (e.g. objectGUID), base64 otherwise. "
+                        + "'base64' always returns a base64-encoded string. "
+                        + "'uuid' always decodes the value as a UUID/GUID. "
+                        + "If 'uuid' or 'auto' is selected but the binary value is not 16 bytes (the size of a UUID), "
+                        + "it falls back to base64 encoding.")
+                .type(ProviderConfigProperty.LIST_TYPE)
+                .options(Arrays.asList(UserAttributeLDAPStorageMapper.BINARY_DECODER_AUTO, UserAttributeLDAPStorageMapper.BINARY_DECODER_BASE64, UserAttributeLDAPStorageMapper.BINARY_DECODER_UUID))
+                .add()
+                .property().name(UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP).label("Is Mandatory In LDAP")
                 .helpText("If true, attribute is mandatory in LDAP. When an attribute is mandatory the options attribute default value and force a default value apply to this mapper.")
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("false").add()
@@ -84,11 +99,7 @@ public class UserAttributeLDAPStorageMapperFactory extends AbstractLDAPStorageMa
                 .property().name(UserAttributeLDAPStorageMapper.FORCE_DEFAULT_VALUE).label("Force a Default Value")
                 .helpText("If true a empty default value is forced for mandatory attributes even when a default value is not specified. If false the mandatory attribute needs to be manually set during the transaction when the default value option is not configured.")
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
-                .defaultValue("true").add()
-                .property().name(UserAttributeLDAPStorageMapper.IS_BINARY_ATTRIBUTE).label("Is Binary Attribute")
-                .helpText("Should be true for binary LDAP attributes")
-                .type(ProviderConfigProperty.BOOLEAN_TYPE)
-                .defaultValue("false").add();
+                .defaultValue("true").add();
         return config.build();
     }
 

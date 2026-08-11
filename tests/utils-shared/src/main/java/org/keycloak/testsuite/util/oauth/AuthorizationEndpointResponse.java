@@ -48,6 +48,14 @@ public class AuthorizationEndpointResponse {
         }
     }
 
+    public boolean isSuccess() {
+        return isRedirected() && getCode() != null;
+    }
+
+    public boolean isError() {
+        return isRedirected() && getError() != null;
+    }
+
     public boolean isRedirected() {
         return isRedirected;
     }

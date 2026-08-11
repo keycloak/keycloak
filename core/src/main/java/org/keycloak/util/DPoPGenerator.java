@@ -55,19 +55,25 @@ public class DPoPGenerator {
     }
 
 
-    private static JWK createRsaJwk(Key publicKey) {
-        return JWKBuilder.create()
-                .rsa(publicKey, KeyUse.SIG);
+    public static JWK createRsaJwk(Key publicKey) {
+        return JWKBuilder.create().rsa(publicKey, KeyUse.SIG);
     }
 
+    public static JWK createEcJwk(Key publicKey) {
+        return JWKBuilder.create().ec(publicKey);
+    }
 
-    public String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, JWSHeader jwsHeader, PrivateKey privateKey, String accessToken) {
+    public static String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, JWSHeader jwsHeader, KeyWrapper keyWrapper, String accessToken) {
         DPoP dpop = generateDPoP(jti, htm, htu, iat, accessToken);
-        KeyWrapper keyWrapper = getKeyWrapper(jwsHeader, privateKey);
         return sign(jwsHeader, dpop, keyWrapper);
     }
 
-    private DPoP generateDPoP(String jti, String htm, String htu, Long iat, String accessToken) {
+    public String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, JWSHeader jwsHeader, PrivateKey privateKey, String accessToken) {
+        KeyWrapper keyWrapper = getKeyWrapper(jwsHeader, privateKey);
+        return generateSignedDPoPProof(jti, htm, htu, iat, jwsHeader, keyWrapper, accessToken);
+    }
+
+    private static DPoP generateDPoP(String jti, String htm, String htu, Long iat, String accessToken) {
         DPoP dpop = new DPoP();
         dpop.id(jti);
         dpop.setHttpMethod(htm);
@@ -89,9 +95,8 @@ public class DPoPGenerator {
         return keyWrapper;
     }
 
-    private String sign(JWSHeader jwsHeader, DPoP dpop, KeyWrapper keyWrapper) {
+    private static String sign(JWSHeader jwsHeader, DPoP dpop, KeyWrapper keyWrapper) {
         SignatureSignerContext sigCtx = KeyWrapperUtil.createSignatureSignerContext(keyWrapper);
-
         return new JWSBuilder()
                 .header(jwsHeader)
                 .jsonContent(dpop)

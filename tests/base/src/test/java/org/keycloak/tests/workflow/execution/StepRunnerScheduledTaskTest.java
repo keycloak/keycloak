@@ -40,7 +40,7 @@ import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsScheduledTaskServerConfig;
 
@@ -83,7 +83,7 @@ public class StepRunnerScheduledTaskTest extends AbstractWorkflowTest {
                                 .build()
                 ).build()).close();
 
-        realm.users().create(UserConfigBuilder.create()
+        realm.users().create(UserBuilder.create()
                 .username("alice")
                 .email("alice@keycloak.org")
                 .name("alice", "wonderland")

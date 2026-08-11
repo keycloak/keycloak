@@ -39,7 +39,7 @@ public class OAuth2CodeParser {
     private static final Logger logger = Logger.getLogger(OAuth2CodeParser.class);
 
     private static final Pattern DOT = Pattern.compile("\\.");
-    private static final String CACHE_KEY_PREFIX = "code:";
+    public static final String CACHE_KEY_PREFIX = "code:";
 
     /**
      * Will persist the code to the cache and return the object with the codeData and code correctly set

@@ -11,7 +11,7 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.OID4VCCredentialOfferPage;
-import org.keycloak.tests.common.TestRealmUserConfig;
+import org.keycloak.tests.oid4vc.OID4VCActionTest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -39,7 +39,7 @@ public class OID4VCActionPreAuthTest extends OID4VCIssuerTestBase {
     @InjectPage
     OID4VCCredentialOfferPage credentialOfferPage;
 
-    @InjectUser(config = TestRealmUserConfig.class)
+    @InjectUser(config = OID4VCActionTest.OID4VCTestUserConfig.class)
     ManagedUser user;
 
     OID4VCTestContext ctx;

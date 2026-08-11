@@ -295,11 +295,12 @@ public class OIDCAttributeMapperHelper {
      * (String type), existing Map, or creates empty Map if null.
      *
      * @param token the token
-     * @param claimName the name of the organization claim
+     * @param effectiveModel the effective model of the protocol mapper to retrieve the name of the organization claim
      * @return a mutable Map that can be manipulated; changes will be reflected in the token
      */
-    public static Map<String, Object> getOrInitializeOrganizationClaimAsMap(IDToken token, String claimName) {
-        Object existingClaim = token.getOtherClaims().get(claimName);
+    public static Map<String, Object> getOrInitializeOrganizationClaimAsMap(IDToken token, ProtocolMapperModel effectiveModel) {
+        List<String> claimPath = splitClaimPath(effectiveModel.getConfig().get(TOKEN_CLAIM_NAME));
+        Object existingClaim = getNestedClaimValue(token.getOtherClaims(), claimPath);
         Map<String, Object> result;
 
         if (existingClaim instanceof ObjectNode) {
@@ -317,8 +318,23 @@ public class OIDCAttributeMapperHelper {
             result = new HashMap<>();
         }
 
-        token.setOtherClaims(claimName, result);
+        OIDCAttributeMapperHelper.mapClaim(token, effectiveModel, result);
         return result;
+    }
+
+    private static Object getNestedClaimValue(Map<String, Object> claims, List<String> path) {
+        if (path.isEmpty()) return null;
+        Map<String, Object> current = claims;
+        for (int i = 0; i < path.size() - 1; i++) {
+            Object next = current.get(path.get(i));
+            if (!(next instanceof Map)) {
+                return null;
+            }
+            @SuppressWarnings("unchecked")
+            Map<String, Object> nested = (Map<String, Object>) next;
+            current = nested;
+        }
+        return current.get(path.get(path.size() - 1));
     }
 
     public static void mapClaim(IDToken token, ProtocolMapperModel mappingModel, Object attributeValue) {

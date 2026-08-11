@@ -45,12 +45,20 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
     }
 
     @Override
-    protected Map<String, Attribute<UserModel, User>> doGetAttributes() {
+    protected boolean hasSchema(String attributeName) {
+        String schema = Attribute.getSchema(attributeName);
+
+        return schema == null || getId().equals(schema);
+    }
+
+    @Override
+    protected Map<String, Attribute<UserModel, User>> getAttributeMappers() {
         List<Attribute<UserModel, User>> attributes = new ArrayList<>();
 
         attributes.addAll(Attribute.<UserModel, User>simple("userName")
                 .required()
                 .notCaseExact()
+                .storedLowerCase()
                 .serverUnique()
                 .modelAttributeResolver(this::createModelAttributeResolver)
                 .withModelSetter(UserModel::setSingleAttribute)
@@ -58,6 +66,7 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
         attributes.addAll(Attribute.<UserModel, User>complex("emails", Email.class)
                 .modelAttributeResolver(this::createModelAttributeResolver)
                 .notCaseExact()
+                .storedLowerCase()
                 .globalUnique()
                 .multivalued()
                 .withModelSetter((TriConsumer<UserModel, String, Set<Email>>) (model, name, values) -> {
@@ -131,7 +140,12 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                 .bool()
                 .withModelSetter(
                         (model, name, value) -> model.setEnabled(Boolean.parseBoolean(Optional.ofNullable(value).orElse("").toString()))
-                        , (user, value) -> user.setActive(Boolean.parseBoolean(value.toString()))
+                        , (user, value) -> {
+                            if (value == null) {
+                                return;
+                            }
+                            user.setActive(Boolean.parseBoolean(value.toString()));
+                        }
                 )
                 .build());
         attributes.addAll(Attribute.<UserModel, User>simple("meta.created")
@@ -162,7 +176,7 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                     for (GroupMembership membership : values) {
                         GroupModel group = session.groups().getGroupById(realm, membership.getValue());
 
-                        if (group == null) {
+                        if (group == null || !canViewGroup(group)) {
                             throw new ModelValidationException("Group with id " + membership.getValue() + " not found");
                         }
 
@@ -195,7 +209,7 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                     for (GroupMembership membership : values) {
                         GroupModel group = session.groups().getGroupById(realm, membership.getValue());
 
-                        if (group == null) {
+                        if (group == null || !canViewGroup(group)) {
                             throw new ModelValidationException("Group with id " + membership.getValue() + " not found");
                         }
 
@@ -211,7 +225,7 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                     for (GroupMembership membership : values) {
                         GroupModel group = session.groups().getGroupById(realm, membership.getValue());
 
-                        if (group == null) {
+                        if (group == null || !canViewGroup(group)) {
                             throw new ModelValidationException("Group with id " + membership.getValue() + " not found");
                         }
 
@@ -245,6 +259,9 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
     private static void checkGroupMembershipPermission(Permissions permissions, GroupModel group) {
         if (GroupModel.Type.ORGANIZATION.equals(group.getType()) && group.getOrganization() != null) {
             throw new ModelValidationException("Cannot access organization related group via non Organization API.");
+        }
+        if (permissions.isAdminGroup(group)) {
+            throw new ForbiddenException();
         }
         if (!permissions.hasPermission(group, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.MANAGE_MEMBERSHIP)) {
             throw new ForbiddenException();

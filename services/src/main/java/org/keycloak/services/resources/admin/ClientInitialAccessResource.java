@@ -26,13 +26,11 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.http.HttpResponse;
 import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -83,7 +81,7 @@ public class ClientInitialAccessResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_INITIAL_ACCESS)
     @Operation( summary = "Create a new initial access token.")
     @APIResponse(responseCode = "201", description = "Created", content = @Content(schema = @Schema(implementation = ClientInitialAccessCreatePresentation.class)))
-    public Object create(ClientInitialAccessCreatePresentation config) {
+    public Response create(ClientInitialAccessCreatePresentation config) {
         auth.clients().requireManage();
 
         int expiration = config.getExpiration() != null ? config.getExpiration() : 0;
@@ -106,12 +104,10 @@ public class ClientInitialAccessResource {
         String token = ClientRegistrationTokenUtils.createInitialAccessToken(session, realm, clientInitialAccessModel, config.getWebOrigins());
         rep.setToken(token);
 
-        HttpResponse response = session.getContext().getHttpResponse();
-
-        response.setStatus(Response.Status.CREATED.getStatusCode());
-        response.addHeader(HttpHeaders.LOCATION, session.getContext().getUri().getAbsolutePathBuilder().path(clientInitialAccessModel.getId()).build().toString());
-
-        return rep;
+        return Response.status(Response.Status.CREATED)
+                .entity(rep)
+                .location(session.getContext().getUri().getAbsolutePathBuilder().path(clientInitialAccessModel.getId()).build())
+                .build();
     }
     
     @GET

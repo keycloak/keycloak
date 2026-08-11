@@ -48,7 +48,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.crypto.CryptoHelper;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
@@ -136,7 +136,7 @@ public class KeyRotationTest {
 
         ClientRegistration reg = oauth.clientRegistration();
         reg.auth(Auth.token(initialAccessToken));
-        ClientRepresentation clientRep = reg.create(ClientConfigBuilder.create().clientId("test").build());
+        ClientRepresentation clientRep = reg.create(ClientBuilder.create().clientId("test").build());
 
         // Userinfo with keys #1
         assertUserInfo(response.getAccessToken(), 200);

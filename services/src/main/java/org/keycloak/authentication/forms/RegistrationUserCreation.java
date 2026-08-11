@@ -32,8 +32,6 @@ import org.keycloak.authentication.FormContext;
 import org.keycloak.authentication.ValidationContext;
 import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
 import org.keycloak.authentication.requiredactions.TermsAndConditions;
-import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
@@ -61,6 +59,8 @@ import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
+
+import static org.keycloak.services.managers.AuthenticationManager.NEW_USER_REGISTERED;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -153,6 +153,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
 
         UserProfile profile = getOrCreateUserProfile(context, formData);
         UserModel user = profile.create();
+        context.getAuthenticationSession().setAuthNote(NEW_USER_REGISTERED, "true");
 
         addOrganizationMember(context, user);
 
@@ -291,7 +292,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
     }
 
     private boolean validateOrganizationInvitation(ValidationContext context, MultivaluedMap<String, String> formData, String email) {
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (Organizations.isEnabled(context.getSession())) {
             Consumer<List<FormMessage>> error = messages -> {
                 context.error(Errors.INVALID_TOKEN);
                 context.validationError(formData, messages);
@@ -352,7 +353,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
     }
 
     private void addOrganizationMember(FormContext context, UserModel user) {
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (Organizations.isEnabled(context.getSession())) {
             InviteOrgActionToken token = (InviteOrgActionToken) context.getSession().getAttribute(InviteOrgActionToken.class.getName());
 
             if (token != null) {
@@ -360,12 +361,19 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
                 OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
                 OrganizationModel orgModel = provider.getById(token.getOrgId());
                 provider.addManagedMember(orgModel, user);
-                context.getEvent().detail(Details.ORG_ID, orgModel.getId());
                 context.getAuthenticationSession().setRedirectUri(token.getRedirectUri());
 
                 // Delete the invitation since it has been used
                 InvitationManager invitationManager = provider.getInvitationManager();
                 invitationManager.remove(token.getId());
+
+                context.getEvent()
+                    .clone()
+                    .event(EventType.INVITE_ORG)
+                    .user(user)
+                    .detail(Details.USERNAME, user.getUsername())
+                    .detail(Details.ORG_ID, orgModel.getId())
+                    .success();
             }
         }
     }

@@ -20,7 +20,6 @@ import java.io.Closeable;
 import java.io.IOException;
 
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
 
@@ -28,6 +27,7 @@ import com.webauthn4j.data.AuthenticatorAttachment;
 import com.webauthn4j.data.UserVerificationRequirement;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
 import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_BLE;
@@ -68,7 +68,7 @@ public class AuthAttachmentRegisterTest extends AbstractWebAuthnVirtualTest {
             // It shouldn't be possible to register the authenticator
             getVirtualAuthManager().useAuthenticator(DEFAULT_BLE.getOptions());
 
-            WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
             assertThat(realmData.getAuthenticatorAttachment(), is(AuthenticatorAttachment.PLATFORM.getValue()));
             assertThat(realmData.getUserVerificationRequirement(), is(UserVerificationRequirement.DISCOURAGED.getValue()));
 
@@ -84,8 +84,8 @@ public class AuthAttachmentRegisterTest extends AbstractWebAuthnVirtualTest {
             webAuthnRegisterPage.assertCurrent();
 
             // it timeouts after create timeout
-            WaitUtils.waitUntilPageIsCurrent(webAuthnErrorPage);
-            assertThat(webAuthnErrorPage.getError(), containsString("The operation either timed out or was not allowed."));
+            webAuthnErrorPage.assertCurrent();
+            assertThat(webAuthnErrorPage.getError(), containsString("The Passkey operation was not allowed or timed out."));
         }
     }
 
@@ -100,14 +100,11 @@ public class AuthAttachmentRegisterTest extends AbstractWebAuthnVirtualTest {
                 .setWebAuthnPolicyAuthenticatorAttachment(attachment.getValue())
                 .update()) {
 
-            WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
             assertThat(realmData.getAuthenticatorAttachment(), is(attachment.getValue()));
 
             registerDefaultUser(shouldSuccess);
-
-            displayErrorMessageIfPresent();
-
-            assertThat(webAuthnErrorPage.isCurrent(), is(!shouldSuccess));
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         } catch (IOException e) {
             throw new RuntimeException(e.getCause());
         }

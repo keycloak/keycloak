@@ -57,6 +57,12 @@ public class BasicTimerProvider implements TimerProvider {
 
     @Override
     public void schedule(final Runnable runnable, final long initialDelayMillis, final long intervalMillis, String taskName) {
+        // timer is not created in non-server mode (export, import) as scheduled tasks are not needed
+        if (timer == null) {
+            logger.debugf("Ignoring scheduled task '%s' in non-server mode", taskName);
+            return;
+        }
+
         TimerTask task = new BasicTimerTask(runnable);
 
         TimerTaskContextImpl taskContext = new TimerTaskContextImpl(runnable, task, Time.currentTimeMillis(), intervalMillis);
@@ -74,6 +80,12 @@ public class BasicTimerProvider implements TimerProvider {
     public void scheduleTask(ScheduledTask scheduledTask, long intervalMillis, String taskName) {
         ScheduledTaskRunner scheduledTaskRunner = new ScheduledTaskRunner(session.getKeycloakSessionFactory(), scheduledTask, transactionTimeout);
         this.schedule(scheduledTaskRunner, intervalMillis, taskName);
+    }
+
+    @Override
+    public void scheduleTask(ScheduledTask scheduledTask, long initialDelayMillis, long intervalMillis, String taskName) {
+        ScheduledTaskRunner scheduledTaskRunner = new ScheduledTaskRunner(session.getKeycloakSessionFactory(), scheduledTask, transactionTimeout);
+        this.schedule(scheduledTaskRunner, initialDelayMillis, intervalMillis, taskName);
     }
 
     @Override

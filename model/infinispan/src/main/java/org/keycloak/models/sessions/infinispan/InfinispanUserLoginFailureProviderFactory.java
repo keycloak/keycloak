@@ -20,6 +20,7 @@ import java.util.Set;
 
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
@@ -128,7 +129,7 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return InfinispanUtils.isEmbeddedInfinispan();
+        return !Profile.isFeatureEnabled(Profile.Feature.STATELESS) && InfinispanUtils.isEmbeddedInfinispan();
     }
 
     @Override

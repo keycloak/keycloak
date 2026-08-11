@@ -7,7 +7,7 @@ export function useIsAdminPermissionsClient(selectedClientId: string) {
     useState<boolean>(false);
 
   useEffect(() => {
-    if (realmRepresentation?.adminPermissionsClient) {
+    if (realmRepresentation.adminPermissionsClient) {
       setIsAdminPermissionsClient(
         selectedClientId === realmRepresentation.adminPermissionsClient.id,
       );

@@ -50,6 +50,7 @@ import useToggle from "../utils/useToggle";
 import { AdvancedTab } from "./AdvancedTab";
 import { ClientSessions } from "./ClientSessions";
 import { ClientSettings } from "./ClientSettings";
+import { SsfTab } from "./ssf/SsfTab";
 import { AuthorizationEvaluate } from "./authorization/AuthorizationEvaluate";
 import { AuthorizationExport } from "./authorization/AuthorizationExport";
 import { AuthorizationPermissions } from "./authorization/Permissions";
@@ -67,6 +68,7 @@ import {
 import { ClientParams, ClientTab, toClient } from "./routes/Client";
 import { toClientRole } from "./routes/ClientRole";
 import { ClientScopesTab, toClientScopesTab } from "./routes/ClientScopeTab";
+import { SsfClientTab, toSsfClientTab } from "./routes/ClientSsfTab";
 import { toClients } from "./routes/Clients";
 import { toCreateRole } from "./routes/NewRole";
 import { ClientScopes } from "./scopes/ClientScopes";
@@ -194,7 +196,7 @@ export default function ClientDetails() {
 
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
   const { hasAccess } = useAccess();
   const isFeatureEnabled = useIsFeatureEnabled();
 
@@ -225,6 +227,31 @@ export default function ClientDetails() {
     defaultValue: "client-secret",
   });
 
+  const ssfEnabled = useWatch({
+    control: form.control,
+    name: convertAttributeNameToForm<FormFields>("attributes.ssf.enabled"),
+  });
+
+  const ssfAllowEmitEvents = useWatch({
+    control: form.control,
+    name: convertAttributeNameToForm<FormFields>(
+      "attributes.ssf.allowEmitEvents",
+    ),
+  });
+  const showSsfEmitEventsTab = ssfAllowEmitEvents?.toString() === "true";
+
+  // Gate every SSF surface on three conditions: server feature flag,
+  // realm-level transmitter toggle, and per-client opt-in. Missing any
+  // one means SSF endpoints aren't available — surfacing the tab would
+  // crash on the first API call (the original bug from the review).
+  const isSsfFeatureEnabled = isFeatureEnabled(Feature.Ssf);
+  const isSsfRealmEnabled =
+    realmRepresentation.attributes?.["ssf.transmitterEnabled"] === "true";
+  const showSsfTab =
+    isSsfFeatureEnabled &&
+    isSsfRealmEnabled &&
+    ssfEnabled?.toString() === "true";
+
   const [client, setClient] = useState<ClientRepresentation>();
 
   const loader = async () => {
@@ -249,6 +276,7 @@ export default function ClientDetails() {
   const sessionsTab = useRoutableTab(tab("sessions"));
   const permissionsTab = useRoutableTab(tab("permissions"));
   const advancedTab = useRoutableTab(tab("advanced"));
+  const ssfTab = useRoutableTab(tab("ssf"));
   const eventsTab = useRoutableTab(tab("events"));
 
   const [activeEventsTab, setActiveEventsTab] = useState("userEvents");
@@ -264,6 +292,18 @@ export default function ClientDetails() {
   const clientScopesEvaluateTab = useRoutableTab(
     clientScopesTabRoute("evaluate"),
   );
+
+  const ssfTabRoute = (tab: SsfClientTab) =>
+    toSsfClientTab({
+      realm,
+      clientId,
+      tab,
+    });
+  const ssfReceiverTab = useRoutableTab(ssfTabRoute("receiver"));
+  const ssfStreamTab = useRoutableTab(ssfTabRoute("stream"));
+  const ssfSubjectsTab = useRoutableTab(ssfTabRoute("subjects"));
+  const ssfEventSearchTab = useRoutableTab(ssfTabRoute("event-search"));
+  const ssfEmitEventsTab = useRoutableTab(ssfTabRoute("emit-events"));
 
   const authorizationTabRoute = (tab: AuthorizationTab) =>
     toAuthorizationTab({
@@ -688,6 +728,85 @@ export default function ClientDetails() {
             >
               <AdvancedTab save={save} client={client} />
             </Tab>
+            {client.protocol === "openid-connect" &&
+              !client.publicClient &&
+              showSsfTab && (
+                <Tab
+                  id="ssf"
+                  data-testid="ssfTab"
+                  title={<TabTitleText>{t("ssf")}</TabTitleText>}
+                  {...ssfTab}
+                >
+                  <RoutableTabs
+                    defaultLocation={ssfTabRoute("receiver")}
+                    mountOnEnter
+                    unmountOnExit
+                  >
+                    <Tab
+                      id="ssfReceiverTab"
+                      data-testid="ssfReceiverTab"
+                      title={<TabTitleText>{t("ssfTabReceiver")}</TabTitleText>}
+                      {...ssfReceiverTab}
+                    >
+                      <SsfTab
+                        save={save}
+                        client={client}
+                        activeTab="receiver"
+                      />
+                    </Tab>
+                    <Tab
+                      id="ssfStreamTab"
+                      data-testid="ssfStreamTab"
+                      title={<TabTitleText>{t("ssfTabStream")}</TabTitleText>}
+                      {...ssfStreamTab}
+                    >
+                      <SsfTab save={save} client={client} activeTab="stream" />
+                    </Tab>
+                    <Tab
+                      id="ssfSubjectsTab"
+                      data-testid="ssfSubjectsTab"
+                      title={<TabTitleText>{t("ssfTabSubjects")}</TabTitleText>}
+                      {...ssfSubjectsTab}
+                    >
+                      <SsfTab
+                        save={save}
+                        client={client}
+                        activeTab="subjects"
+                      />
+                    </Tab>
+                    <Tab
+                      id="ssfEventSearchTab"
+                      data-testid="ssfEventSearchTab"
+                      title={
+                        <TabTitleText>{t("ssfTabEventSearch")}</TabTitleText>
+                      }
+                      {...ssfEventSearchTab}
+                    >
+                      <SsfTab
+                        save={save}
+                        client={client}
+                        activeTab="event-search"
+                      />
+                    </Tab>
+                    {showSsfEmitEventsTab && (
+                      <Tab
+                        id="ssfEmitEventsTab"
+                        data-testid="ssfEmitEventsTab"
+                        title={
+                          <TabTitleText>{t("ssfTabEmitEvents")}</TabTitleText>
+                        }
+                        {...ssfEmitEventsTab}
+                      >
+                        <SsfTab
+                          save={save}
+                          client={client}
+                          activeTab="emit-events"
+                        />
+                      </Tab>
+                    )}
+                  </RoutableTabs>
+                </Tab>
+              )}
             {hasAccess("view-events") && (
               <Tab
                 data-testid="events-tab"

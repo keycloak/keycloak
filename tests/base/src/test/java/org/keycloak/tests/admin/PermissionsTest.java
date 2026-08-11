@@ -44,17 +44,18 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.services.resources.admin.AdminAuth.Resource;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.CredentialBuilder;
+import org.keycloak.testframework.realm.FederatedIdentityBuilder;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.RoleConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.testsuite.util.CredentialBuilder;
-import org.keycloak.testsuite.util.FederatedIdentityBuilder;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 import org.hamcrest.Matchers;
 import org.jgroups.util.UUID;
@@ -104,7 +105,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
 
     @Test
     public void attackDetection() {
-        UserRepresentation newUser = UserConfigBuilder.create()
+        UserRepresentation newUser = UserBuilder.create()
                 .username("attacked")
                 .enabled(true)
                 .build();
@@ -139,7 +140,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
 
         invoke(realm -> realm.convertClientDescription("blahblah"), Resource.CLIENT, true);
         invoke((realm, response) ->
-                        response.set(realm.clients().create(ClientConfigBuilder.create().clientId("foo").build())),
+                        response.set(realm.clients().create(ClientBuilder.create().clientId("foo").build())),
                 Resource.CLIENT, true);
 
         ClientRepresentation foo = managedRealm1.admin().clients().findByClientId("foo").get(0);
@@ -297,7 +298,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
 
     @Test
     public void roles() {
-        RoleRepresentation newRole = RoleConfigBuilder.create().name("sample-role").build();
+        RoleRepresentation newRole = RoleBuilder.create().name("sample-role").build();
         managedRealm1.admin().roles().create(newRole);
         managedRealm1.cleanup().add(r -> r.roles().deleteRole("sample-role"));
 
@@ -326,11 +327,12 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.roles().get("sample-role").getRoleComposites(), Resource.REALM, false);
         invoke(realm -> realm.roles().get("sample-role").getRealmRoleComposites(), Resource.REALM, false);
         invoke(realm -> realm.roles().get("sample-role").getClientRoleComposites(KeycloakModelUtils.generateId()), Resource.REALM, false);
+        invoke(realm -> realm.roles().list(), clients.get(AdminRoles.MANAGE_IDENTITY_PROVIDERS), true);
     }
 
     @Test
     public void rolesById() {
-        RoleRepresentation newRole = RoleConfigBuilder.create().name("role-by-id").build();
+        RoleRepresentation newRole = RoleBuilder.create().name("role-by-id").build();
         managedRealm1.admin().roles().create(newRole);
         RoleRepresentation role = managedRealm1.admin().roles().get("role-by-id").toRepresentation();
         managedRealm1.cleanup().add(r -> r.roles().deleteRole("role-by-id"));
@@ -402,7 +404,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
     @Test
     public void users() {
         invoke((realm, response) ->
-                        response.set(realm.users().create(UserConfigBuilder.create().username("testuser").build())),
+                        response.set(realm.users().create(UserBuilder.create().username("testuser").build())),
                 Resource.USER, true);
         UserRepresentation user = managedRealm1.admin().users().search("testuser").get(0);
         invoke(realm -> {
@@ -425,8 +427,17 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.users().get(user.getId()).removeFederatedIdentity("nosuch"), Resource.USER, true);
         invoke(realm -> realm.users().get(user.getId()).getConsents(), Resource.USER, false);
         invoke(realm -> realm.users().get(user.getId()).revokeConsent("testclient"), Resource.USER, true);
+
+        invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().getCredentials(), Resource.USER, false);
+        invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().getIssuedCredentials(), Resource.USER, false);
+        UserVerifiableCredentialRepresentation verifCred = new UserVerifiableCredentialRepresentation();
+        verifCred.setCredentialScopeName("nosuch");
+        invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().createCredential(verifCred), Resource.USER, true);
+        invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().updateCredential("nosuch"), Resource.USER, true);
+        invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().revokeCredential("nosuch"), Resource.USER, true);
+
         invoke(realm -> realm.users().get(user.getId()).logout(), Resource.USER, true);
-        invoke(realm -> realm.users().get(user.getId()).resetPassword(CredentialBuilder.create().password("password").build()),
+        invoke(realm -> realm.users().get(user.getId()).resetPassword(CredentialBuilder.password("password").build()),
                 Resource.USER, true);
         invoke(realm -> {
             CredentialRepresentation totpCredential = realm.users().get(user.getId()).credentials().stream()
@@ -501,8 +512,8 @@ public class PermissionsTest extends AbstractPermissionsTest {
                                         .providerId("oidc")
                                         .displayName("nosuch-foo")
                                         .alias("foo")
-                                        .setAttribute("clientId", "foo")
-                                        .setAttribute("clientSecret", "foo")
+                                        .attribute("clientId", "foo")
+                                        .attribute("clientSecret", "foo")
                                         .build()
                         )
                 ), Resource.IDENTITY_PROVIDER, true);

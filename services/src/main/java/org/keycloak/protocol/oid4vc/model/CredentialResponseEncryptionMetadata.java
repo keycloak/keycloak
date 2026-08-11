@@ -24,7 +24,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Represents the credential_response_encryption metadata for an OID4VCI Credential Issuer.
- * @see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-16.html#name-credential-issuer-metadata-p
+ * @see <a href="https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-issuer-metadata-p"></a>
  *
  * @author <a href="mailto:Bertrand.Ogen@adorsys.com">Bertrand Ogen</a>
  */

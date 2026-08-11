@@ -9,10 +9,12 @@ import java.util.Optional;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicy;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 
 import static org.keycloak.models.ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VCT;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_HASH_ALGORITHM;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_HASH_ALGORITHM_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS;
@@ -31,6 +33,7 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_ISSUER_DID;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED_KEY_STORAGE;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED_USER_AUTH;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_REFRESH_INTERVAL_IN_SECONDS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SD_JWT_NUMBER_OF_DECOYS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SD_JWT_NUMBER_OF_DECOYS_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SIGNING_ALG;
@@ -121,6 +124,18 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
                         .orElse(null));
     }
 
+    public Integer getRefreshIntervalInSeconds() {
+        return Optional.ofNullable(getAttribute(VC_REFRESH_INTERVAL_IN_SECONDS))
+                .map(Integer::parseInt)
+                .orElse(null);
+    }
+
+    public CredentialScopeRepresentation setRefreshIntervalInSeconds(Integer refreshIntervalInSeconds) {
+        return setAttribute(VC_REFRESH_INTERVAL_IN_SECONDS, Optional.ofNullable(refreshIntervalInSeconds)
+                .map(String::valueOf)
+                .orElse(null));
+    }
+
     public Integer getSdJwtNumberOfDecoys() {
         return Optional.ofNullable(getAttribute(VC_SD_JWT_NUMBER_OF_DECOYS))
                 .map(Integer::parseInt)
@@ -203,6 +218,18 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
         return setAttribute(VC_SIGNING_ALG, signingAlg);
     }
 
+    /**
+     *
+     * Whether cryptographic holder binding is required for this credential configuration.
+     */
+    public boolean isBindingRequired() {
+        return Boolean.parseBoolean(getAttribute(VC_BINDING_REQUIRED));
+    }
+
+    public CredentialScopeRepresentation setBindingRequired(boolean required) {
+        return setAttribute(VC_BINDING_REQUIRED, String.valueOf(required));
+    }
+
     public List<String> getCryptographicBindingMethods() {
         return Optional.ofNullable(getAttribute(VC_CRYPTOGRAPHIC_BINDING_METHODS))
                 .map(s -> s.split(","))
@@ -277,6 +304,15 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
     public CredentialScopeRepresentation setRequiredKeyAttestationUserAuthentication(List<String> userAuthentication) {
         return setAttribute(VC_KEY_ATTESTATION_REQUIRED_USER_AUTH, Optional.ofNullable(userAuthentication)
                 .map(list -> String.join(",")).orElse(null));
+    }
+
+    public <T> T getCredentialPolicyValue(CredentialClientPolicy<T> policy) {
+        T currentValue = policy.getCurrentValue(this);
+        return currentValue;
+    }
+
+    public <T> CredentialScopeRepresentation setCredentialPolicyValue(CredentialClientPolicy<T> policy, T value) {
+        return setAttribute(policy.getAttrName(), String.valueOf(value));
     }
 
     public String getAttribute(String key) {

@@ -22,10 +22,10 @@ import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testframework.realm.RoleConfigBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.AfterEach;
@@ -75,26 +75,34 @@ abstract class AbstractAdminRBACTest {
     }
 
     protected void grantRealmManagementRole(RealmResource realm, String userName, String adminRole) {
-        List<UserRepresentation> users = realm.users().search(userName, true);
-        assertEquals(1, users.size());
-        UserResource userApi = realm.users().get(users.get(0).getId());
-        ClientRepresentation mgmtClient = realm.clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
-        ClientResource mgmtClientApi = realm.clients().get(mgmtClient.getId());
-        RoleRepresentation role = mgmtClientApi.roles().get(adminRole).toRepresentation();
+        UserResource userApi;
+        ClientRepresentation mgmtClient;
+        RoleRepresentation role;
+        try {
+            List<UserRepresentation> users = realm.users().search(userName, true);
+            assertEquals(1, users.size());
+            userApi = realm.users().get(users.get(0).getId());
+            mgmtClient = realm.clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+            ClientResource mgmtClientApi = realm.clients().get(mgmtClient.getId());
+            role = mgmtClientApi.roles().get(adminRole).toRepresentation();
+        } catch (Exception e) {
+            throw new IllegalStateException("Unexpected exception", e);
+        }
         userApi.roles().clientLevel(mgmtClient.getId()).add(List.of(role));
     }
 
     protected RealmResource createRealm(Keycloak adminClient, String name) {
-        adminClient.realms().create(RealmConfigBuilder.create().name(name).build());
+        adminClient.realms().create(RealmBuilder.create().name(name).build());
         return adminClient.realm(name);
     }
 
     protected UserRepresentation createUser(RealmResource realm, String username) {
-        UserRepresentation user = UserConfigBuilder.create()
+        UserRepresentation user = UserBuilder.create()
                 .username(username)
                 .email(username.concat("@keycloak.org"))
                 .firstName("First")
                 .lastName("Last")
+                .password("password")
                 .enabled(true).build();
 
         try (Response response = realm.users().create(user)) {
@@ -116,7 +124,7 @@ abstract class AbstractAdminRBACTest {
         try {
             role = realm.roles().get(roleName).toRepresentation();
         } catch (NotFoundException nfe) {
-            realm.roles().create(RoleConfigBuilder.create().name(roleName).build());
+            realm.roles().create(RoleBuilder.create().name(roleName).build());
             role = realm.roles().get(roleName).toRepresentation();
         }
 
@@ -127,16 +135,21 @@ abstract class AbstractAdminRBACTest {
     }
 
     protected void runAs(String realm, String username, Consumer<Keycloak> consumer) {
-        Keycloak userClient = createAdminClient(realm, username);
+        runAs(realm, "admin-cli",  username, consumer);
+    }
+
+    protected void runAs(String realm, String clientId, String username, Consumer<Keycloak> consumer) {
+        Keycloak userClient = createAdminClient(realm, clientId, username);
         consumer.accept(userClient);
     }
 
-    private Keycloak createAdminClient(String realmName, String username) {
+    private Keycloak createAdminClient(String realmName, String clientId, String username) {
         return adminClientFactory.create()
                 .realm(realmName)
-                .clientId("admin-cli")
+                .clientId(clientId)
                 .username(username)
                 .password("password")
+                .autoClose()
                 .build();
     }
 
@@ -151,7 +164,7 @@ abstract class AbstractAdminRBACTest {
     private static class MasterUserConfig implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder user) {
+        public UserBuilder configure(UserBuilder user) {
             return user.username("mymasteradmin")
                     .password("password")
                     .email("mymasteradmin@keycloak.org")

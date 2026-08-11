@@ -7,6 +7,7 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -100,9 +101,9 @@ public interface InterfaceIdentityProviderStoreTokenTest {
         AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         Assertions.assertTrue(internalTokens.isSuccess());
 
-        realm.updateUser("testuser", user -> {
-            user.setEnabled(false);
-        });
+        UserRepresentation userRep = AdminApiUtil.findUserByUsername(realm.admin(), "testuser");
+        userRep.setEnabled(false);
+        realm.admin().users().get(userRep.getId()).update(userRep);
 
         AbstractHttpResponse externalTokens = doFetchExternalIdpToken(internalTokens.getAccessToken());
         Assertions.assertEquals(400, externalTokens.getStatusCode());

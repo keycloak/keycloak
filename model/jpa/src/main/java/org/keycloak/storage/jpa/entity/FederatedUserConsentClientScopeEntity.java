@@ -18,6 +18,7 @@
 package org.keycloak.storage.jpa.entity;
 
 import java.io.Serializable;
+import java.util.Optional;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -29,6 +30,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
+
+import org.keycloak.models.jpa.entities.UserConsentClientScopeEntity;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -56,6 +59,10 @@ public class FederatedUserConsentClientScopeEntity {
     @Column(name="SCOPE_ID")
     protected String scopeId;
 
+    @Id
+    @Column(name="PARAMETER")
+    protected String parameter;
+
     public FederatedUserConsentEntity getUserConsent() {
         return userConsent;
     }
@@ -72,6 +79,18 @@ public class FederatedUserConsentClientScopeEntity {
         this.scopeId = scopeId;
     }
 
+    public Optional<String> getParameter() {
+        return Optional.ofNullable(UserConsentClientScopeEntity.NOT_AVAILABLE_PARAM.equals(parameter)
+                ? null
+                : parameter);
+    }
+
+    public void setParameter(String parameter) {
+        this.parameter = parameter == null
+                ? UserConsentClientScopeEntity.NOT_AVAILABLE_PARAM
+                : parameter;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -79,14 +98,14 @@ public class FederatedUserConsentClientScopeEntity {
         if (!(o instanceof  FederatedUserConsentClientScopeEntity)) return false;
 
         FederatedUserConsentClientScopeEntity that = ( FederatedUserConsentClientScopeEntity)o;
-        FederatedUserConsentClientScopeEntity.Key myKey = new  FederatedUserConsentClientScopeEntity.Key(this.userConsent, this.scopeId);
-        FederatedUserConsentClientScopeEntity.Key hisKey = new  FederatedUserConsentClientScopeEntity.Key(that.userConsent, that.scopeId);
+        FederatedUserConsentClientScopeEntity.Key myKey = new  FederatedUserConsentClientScopeEntity.Key(this.userConsent, this.scopeId, this.parameter);
+        FederatedUserConsentClientScopeEntity.Key hisKey = new  FederatedUserConsentClientScopeEntity.Key(that.userConsent, that.scopeId, that.parameter);
         return myKey.equals(hisKey);
     }
 
     @Override
     public int hashCode() {
-        FederatedUserConsentClientScopeEntity.Key myKey = new FederatedUserConsentClientScopeEntity.Key(this.userConsent, this.scopeId);
+        FederatedUserConsentClientScopeEntity.Key myKey = new FederatedUserConsentClientScopeEntity.Key(this.userConsent, this.scopeId, this.parameter);
         return myKey.hashCode();
     }
 
@@ -96,12 +115,15 @@ public class FederatedUserConsentClientScopeEntity {
 
         protected String scopeId;
 
+        protected String parameter;
+
         public Key() {
         }
 
-        public Key(FederatedUserConsentEntity userConsent, String scopeId) {
+        public Key(FederatedUserConsentEntity userConsent, String scopeId, String parameter) {
             this.userConsent = userConsent;
             this.scopeId = scopeId;
+            this.parameter = parameter;
         }
 
         public FederatedUserConsentEntity getUserConsent() {
@@ -110,6 +132,10 @@ public class FederatedUserConsentClientScopeEntity {
 
         public String getScopeId() {
             return scopeId;
+        }
+
+        public String getParameter() {
+            return parameter;
         }
 
         @Override
@@ -121,6 +147,7 @@ public class FederatedUserConsentClientScopeEntity {
 
             if (userConsent != null ? !userConsent.getId().equals(key.userConsent != null ? key.userConsent.getId() : null) : key.userConsent != null) return false;
             if (scopeId != null ? !scopeId.equals(key.scopeId) : key.scopeId != null) return false;
+            if (parameter != null ? !parameter.equals(key.parameter) : key.parameter != null) return false;
 
             return true;
         }
@@ -129,6 +156,7 @@ public class FederatedUserConsentClientScopeEntity {
         public int hashCode() {
             int result = userConsent != null ? userConsent.getId().hashCode() : 0;
             result = 31 * result + (scopeId != null ? scopeId.hashCode() : 0);
+            result = 31 * result + (parameter != null ? parameter.hashCode() : 0);
             return result;
         }
     }

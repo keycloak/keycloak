@@ -1,22 +1,45 @@
 package org.keycloak.tests.oid4vc;
 
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import jakarta.ws.rs.HttpMethod;
 
 import org.keycloak.OID4VCConstants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ClientAttestationPoPJwt;
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.Time;
+import org.keycloak.crypto.AsymmetricSignatureSignerContext;
+import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.jose.jwe.JWE;
+import org.keycloak.jose.jwe.JWEConstants;
+import org.keycloak.jose.jwe.JWEHeader;
+import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
+import org.keycloak.jose.jwk.JWKParser;
+import org.keycloak.jose.jwk.RSAPublicJWK;
+import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
@@ -30,38 +53,57 @@ import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.tests.oid4vc.abca.OIDCClientAttester;
+import org.keycloak.tests.oid4vc.abca.OIDCMockClientAttester;
 import org.keycloak.testsuite.util.oauth.AccessTokenRequest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.LoginUrlBuilder;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
+import org.keycloak.testsuite.util.oauth.RefreshRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcNonceRequest;
+import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vpDirectPostResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vpRequestObjectResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.PreAuthorizedCodeGrantRequest;
+import org.keycloak.util.DPoPGenerator;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
-import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import static org.keycloak.OAuth2Constants.DPOP_JWT_HEADER_TYPE;
+import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_POP_JWT_TYPE;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
+import static org.keycloak.tests.oid4vc.OID4VCAuthorizationDetailsUtil.getAuthorizationDetailsFromAccessToken;
 import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.TEST_PASSWORD;
 import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.VCTestRealmConfig.TEST_REALM_NAME;
+import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.createRsaKeyPair;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.AUTHORIZATION_SERVER_METADATA_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.AttachmentKey;
+import static org.keycloak.tests.oid4vc.OID4VCTestContext.CLIENT_ATTESTER_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_OFFER_RESPONSE_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_OFFER_URI_RESPONSE_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_RESPONSE_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.ISSUER_METADATA_ATTACHMENT_KEY;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -106,13 +148,16 @@ public class OID4VCBasicWallet {
         // Create CredentialOfferURI
         //
         CredentialOfferUriResponse credOfferUriRes;
+        CredentialOfferUriRequest uriRequest = null;
         try {
             String credConfigId = ctx.getCredentialConfigurationId();
-            var uriRequest = credentialOfferUriRequest(ctx, credConfigId);
+            uriRequest = credentialOfferUriRequest(ctx, credConfigId);
             consumer.accept(uriRequest.bearerToken(issToken));
             credOfferUriRes = uriRequest.send();
         } finally {
-            logout(ctx.getIssuer());
+            if (uriRequest == null || !uriRequest.isPreAuthorized()) {
+                logout(ctx.getIssuer());
+            }
         }
 
         return credOfferUriRes.getCredentialOfferURI();
@@ -162,16 +207,54 @@ public class OID4VCBasicWallet {
         return authServerMetadata;
     }
 
-    public Proofs generateAttestationProof(OID4VCTestContext ctx, Consumer<KeyWrapper> attestationKeyConsumer) {
-        KeyWrapper attestationKey = getECKeyPair(ctx, "attestationKey");
-        KeyWrapper proofKey = getECKeyPair(ctx, "proofKey");
+    public OIDCClientAttester getClientAttester(OID4VCTestContext ctx) {
+        OIDCClientAttester attester = ctx.getAttachment(CLIENT_ATTESTER_ATTACHMENT_KEY);
+        if (attester == null) {
+            var kw = createRsaKeyPair("openid-abca-attester-key");
+            attester = new OIDCMockClientAttester(kw);
+            ctx.putAttachment(CLIENT_ATTESTER_ATTACHMENT_KEY, attester);
+        }
+        return attester;
+    }
 
+    public String buildClientAttestationJWT(OID4VCTestContext ctx, KeyWrapper walletKey) {
+        KeyWrapper pubKeyWrapper = walletKey.cloneKey();
+        pubKeyWrapper.setPrivateKey(null);
+        String clientId = ctx.getClient().getClientId();
+        OIDCClientAttester attester = getClientAttester(ctx);
+        String attestationJwt = attester.attestWalletKey(clientId, pubKeyWrapper);
+        return attestationJwt;
+    }
+
+    public String buildClientAttestationPoPJWT(OID4VCTestContext ctx, KeyWrapper walletKey) {
+        var issuer = getIssuerMetadata(ctx).getCredentialIssuer();
+
+        // Build Client Attestation PoP JWT
+        //
+        String clientId = ctx.getClient().getClientId();
+        ClientAttestationPoPJwt body = new ClientAttestationPoPJwt()
+                .audience(issuer)
+                .issuer(clientId)
+                .issuedNowWithTTL(300) // 5min
+                .randomId();
+
+        String attestationPoPJwt = new JWSBuilder()
+                .type(OAUTH_CLIENT_ATTESTATION_POP_JWT_TYPE)
+                .kid(walletKey.getKid())
+                .jsonContent(body)
+                .sign(new AsymmetricSignatureSignerContext(walletKey));
+        return attestationPoPJwt;
+    }
+
+    public Proofs generateAttestationProof(OID4VCTestContext ctx, KeyWrapper attestationKey) {
+        KeyWrapper proofKey = getECKeyPair(ctx, "proofKey");
         JWK proofJwk = JWKBuilder.create().ec(proofKey.getPublicKey());
         proofJwk.setKeyId(proofKey.getKid());
         proofJwk.setAlgorithm(proofKey.getAlgorithm());
 
         String nonce = oauth.oid4vc().doNonceRequest().getNonce();
-        Proofs proofs = Proofs.create(ProofType.ATTESTATION, OID4VCProofTestUtils.generateAttestationProof(
+
+        return Proofs.create(ProofType.ATTESTATION, OID4VCProofTestUtils.generateAttestationProof(
                 attestationKey,
                 nonce,
                 List.of(proofJwk),
@@ -179,27 +262,169 @@ public class OID4VCBasicWallet {
                 List.of(OID4VCConstants.KeyAttestationResistanceLevels.HIGH),
                 null
         ));
-        attestationKeyConsumer.accept(attestationKey);
-        return proofs;
     }
 
     public Proofs generateJwtProof(OID4VCTestContext ctx) {
+        String nonce = nonceRequest().send().getNonce();
+        KeyWrapper vcKey = getECKeyPair(ctx, null);
+        return generateJwtProofs(ctx, nonce, vcKey);
+    }
+
+    public Proofs generateJwtProofs(OID4VCTestContext ctx, String nonce, KeyWrapper... keys) {
         String aud = getIssuerMetadata(ctx).getCredentialIssuer();
-        String nonce = oauth.oid4vc().doNonceRequest().getNonce();
-        KeyWrapper kw = getECKeyPair(ctx, null);
-        return Proofs.create(ProofType.JWT, OID4VCProofTestUtils.generateJwtProof(aud, kw, nonce));
+        if (keys == null || keys.length == 0) {
+            throw new IllegalArgumentException("keys cannot be null or empty");
+        }
+        if (Arrays.stream(keys).anyMatch(Objects::isNull)) {
+            throw new IllegalArgumentException("keys cannot contain null elements");
+        }
+        String[] proofValues = Arrays.stream(keys)
+                .map(k -> OID4VCProofTestUtils.generateJwtProof(aud, nonce, k))
+                .toArray(String[]::new);
+        return Proofs.create(ProofType.JWT, proofValues);
+    }
+
+    /**
+     * Builds an OID4VP presentation of an issued SD-JWT VC: it discloses every claim and adds a key
+     * binding JWT signed by {@code holderKey} and bound to the verifier ({@code audience}, {@code nonce}).
+     */
+    public String present(String sdJwtVc, KeyWrapper holderKey, String audience, String nonce) {
+        ObjectNode keyBindingClaims = JsonSerialization.mapper.createObjectNode();
+        keyBindingClaims.put("aud", audience);
+        keyBindingClaims.put("nonce", nonce);
+        keyBindingClaims.put("iat", Time.currentTimeSeconds());
+        return SdJwtVP.of(sdJwtVc)
+                .present(null, true, keyBindingClaims, new ECDSASignatureSignerContext(holderKey));
+    }
+
+    public String requestUri(String walletUrl) {
+        Matcher matcher = Pattern.compile("request_uri=([^&]+)").matcher(walletUrl);
+        if (!matcher.find()) {
+            throw new IllegalStateException("Wallet link is missing request_uri: " + walletUrl);
+        }
+        return URLDecoder.decode(matcher.group(1), StandardCharsets.UTF_8);
+    }
+
+    public Oid4vpRequestObjectResponse fetchRequestObject(String requestUri) {
+        return oauth.oid4vc().doOid4vpRequestObjectRequest(requestUri);
+    }
+
+    public String present(OID4VCTestContext ctx, JsonNode request) {
+        return present(ctx, request, request.path("nonce").asText());
+    }
+
+    public String present(OID4VCTestContext ctx, JsonNode request, String nonce) {
+        String sdJwtVc = (String) ctx.getCredentialResponse().getCredentials().get(0).getCredential();
+        return present(sdJwtVc, getECKeyPair(ctx), request.path("client_id").asText(), nonce);
+    }
+
+    public Oid4vpDirectPostResponse directPost(JsonNode request, String vpToken) {
+        return oauth.oid4vc().oid4vpDirectPostRequest(request.path("response_uri").asText())
+                .vpToken(vpToken)
+                .state(request.path("state").asText())
+                .send();
+    }
+
+    public Oid4vpDirectPostResponse directPostJwt(JsonNode request, String encryptedResponse) {
+        return oauth.oid4vc().oid4vpDirectPostRequest(request.path("response_uri").asText())
+                .response(encryptedResponse)
+                .send();
+    }
+
+    public static JsonNode encryptionJwk(JsonNode request) {
+        return request.path("client_metadata").path("jwks").path("keys").path(0);
+    }
+
+    public String encryptedResponse(JsonNode request, String vpToken) {
+        JsonNode jwk = encryptionJwk(request);
+        return encryptResponse(request, vpToken, request.path("state").asText(), jwk, jwk.path("kid").asText());
+    }
+
+    // Encrypts as a HAIP wallet would (apv bound to the request nonce).
+    public String encryptResponse(JsonNode request, String vpToken, String state, JsonNode jwkNode, String kid) {
+        return encryptResponse(request, vpToken, state, jwkNode, kid, JWEConstants.A128GCM);
+    }
+
+    public String encryptResponse(JsonNode request, String vpToken, String state, JsonNode jwkNode, String kid,
+            String enc) {
+        try {
+            JWK jwk = JsonSerialization.mapper.convertValue(jwkNode, JWK.class);
+            PublicKey publicKey = JWKParser.create(jwk).toPublicKey();
+
+            ObjectNode payload = JsonSerialization.mapper.createObjectNode();
+            payload.put(OID4VCConstants.VP_TOKEN, vpToken);
+            payload.put("state", state);
+
+            JWEHeader header = JWEHeader.builder()
+                    .algorithm(JWEConstants.ECDH_ES)
+                    .encryptionAlgorithm(enc)
+                    .keyId(kid)
+                    .agreementPartyVInfo(Base64Url.encode(request.path("nonce").asText().getBytes(StandardCharsets.UTF_8)))
+                    .build();
+
+            JWE jwe = new JWE().header(header)
+                    .content(JsonSerialization.writeValueAsBytes(payload));
+            jwe.getKeyStorage().setEncryptionKey(publicKey);
+            return jwe.encodeJwe();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to encrypt the wallet response", e);
+        }
+    }
+
+    public KeyWrapper getECKeyPair(OID4VCTestContext ctx) {
+        return getECKeyPair(ctx, null);
     }
 
     public KeyWrapper getECKeyPair(OID4VCTestContext ctx, String keyId) {
-        String cacheKey = keyId != null ? keyId : ctx.getHolder() + "_key";
+        String cacheKey = keyId != null ? keyId : ctx.getHolder() + "_ec_key";
         AttachmentKey<KeyWrapper> attachmentKey = new AttachmentKey<>(cacheKey, KeyWrapper.class);
         KeyWrapper kw = ctx.getAttachment(attachmentKey);
         if (kw == null) {
-            kw = OID4VCProofTestUtils.createEcKeyPair();
-            if (keyId != null) kw.setKid(keyId);
+            kw = OID4VCProofTestUtils.createEcKeyPair(keyId);
             ctx.putAttachment(attachmentKey, kw);
         }
         return kw;
+    }
+
+    public JWK getECJwk(KeyWrapper ecKey) {
+        JWK jwkEc = JWKBuilder.create().ec(ecKey.getPublicKey());
+        jwkEc.getOtherClaims().put(ECPublicJWK.CRV, ((ECPublicJWK) jwkEc).getCrv());
+        jwkEc.getOtherClaims().put(ECPublicJWK.X, ((ECPublicJWK) jwkEc).getX());
+        jwkEc.getOtherClaims().put(ECPublicJWK.Y, ((ECPublicJWK) jwkEc).getY());
+        return jwkEc;
+    }
+
+    public KeyWrapper getRSAKeyPair(OID4VCTestContext ctx) {
+        return getRSAKeyPair(ctx, null);
+    }
+
+    public KeyWrapper getRSAKeyPair(OID4VCTestContext ctx, String keyId) {
+        String cacheKey = keyId != null ? keyId : ctx.getHolder() + "_rsa_key";
+        AttachmentKey<KeyWrapper> attachmentKey = new AttachmentKey<>(cacheKey, KeyWrapper.class);
+        KeyWrapper kw = ctx.getAttachment(attachmentKey);
+        if (kw == null) {
+            kw = OID4VCProofTestUtils.createRsaKeyPair(keyId);
+            ctx.putAttachment(attachmentKey, kw);
+        }
+        return kw;
+    }
+
+    public JWK getRSAJwk(KeyWrapper rsaKey) {
+        JWK jwkRsa = DPoPGenerator.createRsaJwk(rsaKey.getPublicKey());
+        jwkRsa.getOtherClaims().put(RSAPublicJWK.MODULUS, ((RSAPublicJWK) jwkRsa).getModulus());
+        jwkRsa.getOtherClaims().put(RSAPublicJWK.PUBLIC_EXPONENT, ((RSAPublicJWK) jwkRsa).getPublicExponent());
+        return jwkRsa;
+    }
+
+    public String generateSignedDPoPProof(String htu, KeyWrapper ecKey, String accessToken) {
+        JWK jwkEc = getECJwk(ecKey);
+        JWSHeader jwsEcHeader = new JWSHeader(Algorithm.ES256, DPOP_JWT_HEADER_TYPE, jwkEc.getKeyId(), jwkEc);
+        return DPoPGenerator.generateSignedDPoPProof(
+                UUID.randomUUID().toString(),
+                HttpMethod.POST,
+                htu,
+                Time.currentTimeSeconds(),
+                jwsEcHeader, ecKey, accessToken);
     }
 
     public AuthorizationEndpointRequest authorizationRequest() {
@@ -214,6 +439,21 @@ public class OID4VCBasicWallet {
 
     public AccessTokenRequest accessTokenRequest(OID4VCTestContext ctx, String authCode) {
         AccessTokenRequest request = new AccessTokenRequest(oauth, authCode) {
+            public AccessTokenResponse send() {
+                AccessTokenResponse response = super.send();
+                ctx.putAttachment(ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY, response);
+                return response;
+            }
+        };
+        return request;
+    }
+
+    public RefreshRequest refreshRequest(OID4VCTestContext ctx) {
+        String refreshToken = ctx.getAccessTokenResponse().getRefreshToken();
+        if (refreshToken == null) {
+            fail("Refresh token not available");
+        }
+        RefreshRequest request = new RefreshRequest(refreshToken, oauth) {
             public AccessTokenResponse send() {
                 AccessTokenResponse response = super.send();
                 ctx.putAttachment(ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY, response);
@@ -256,7 +496,7 @@ public class OID4VCBasicWallet {
         return request;
     }
 
-    public Oid4vcCredentialRequest credentialRequest(OID4VCTestContext ctx, String accessToken) {
+    public Oid4vcCredentialRequest credentialRequest(OID4VCTestContext ctx, String tokenType, String accessToken) {
         Oid4vcCredentialRequest request = new Oid4vcCredentialRequest(oauth, new CredentialRequest()) {
             public Oid4vcCredentialResponse send() {
                 Oid4vcCredentialResponse response = super.send();
@@ -264,15 +504,23 @@ public class OID4VCBasicWallet {
                 return response;
             }
         };
-        request.bearerToken(accessToken);
+        request.authToken(tokenType, accessToken);
         return request;
     }
 
+    public Oid4vcCredentialRequest credentialRequest(OID4VCTestContext ctx, String accessToken) {
+        return credentialRequest(ctx, TokenUtil.TOKEN_TYPE_BEARER, accessToken);
+    }
+
     public Oid4vcCredentialResponse fetchCredentialByOffer(OID4VCTestContext ctx, CredentialsOffer offer) {
+
         AccessTokenResponse tokenResponse;
         if (offer.hasPreAuthorizedGrant()) {
+
             tokenResponse = accessTokenRequestPreAuth(ctx, offer.getPreAuthorizedCode()).send();
+
         } else {
+
             String scope = ctx.getScope();
             String issuerState = offer.getIssuerState();
             String credConfigId = offer.getCredentialConfigurationIds().get(0);
@@ -280,32 +528,59 @@ public class OID4VCBasicWallet {
                 SupportedCredentialConfiguration credConfig = getIssuerMetadata(ctx).getCredentialsSupported().get(credConfigId);
                 scope = credConfig.getScope();
             }
-            String authCode = authorizationRequest()
+
+            AuthorizationEndpointResponse authResponse = authorizationRequest()
                     .scope(scope)
                     .issuerState(issuerState)
-                    .send(ctx.getHolder(), TEST_PASSWORD)
-                    .getCode();
+                    .send(ctx.getHolder(), TEST_PASSWORD);
+
+            String errorDescription = authResponse.getErrorDescription();
+            assertNull(errorDescription, "Authorization error: " + errorDescription);
+            String authCode = authResponse.getCode();
+            assertNotNull(authCode, "No Authorization Code");
+
             tokenResponse = accessTokenRequest(ctx, authCode).send();
         }
+
+        String errorDescription = tokenResponse.getErrorDescription();
+        assertNull(errorDescription, "Access Token error: " + errorDescription);
         String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
+        assertNotNull(credentialIdentifier, "No Credential Identifier");
+
         Oid4vcCredentialResponse credResponse = credentialRequest(ctx, tokenResponse.getAccessToken())
                 .credentialIdentifier(credentialIdentifier)
                 .proofs(generateJwtProof(ctx))
                 .send();
+
+        errorDescription = credResponse.getErrorDescription();
+        assertNull(errorDescription, "Credential request error: " + errorDescription);
+
         return credResponse;
     }
 
     public Oid4vcCredentialResponse fetchCredentialByScope(OID4VCTestContext ctx, String scope) {
-        String authCode = authorizationRequest()
+
+        AuthorizationEndpointResponse authResponse = authorizationRequest()
                 .scope(scope)
-                .send(ctx.getHolder(), TEST_PASSWORD)
-                .getCode();
+                .send(ctx.getHolder(), TEST_PASSWORD);
+        String errorDescription = authResponse.getErrorDescription();
+        assertNull(errorDescription, "Authorization error: " + errorDescription);
+        String authCode = authResponse.getCode();
+        assertNotNull(authCode, "No Authorization Code");
+
         AccessTokenResponse tokenResponse = accessTokenRequest(ctx, authCode).send();
+        errorDescription = tokenResponse.getErrorDescription();
+        assertNull(errorDescription, "Access Token error: " + errorDescription);
         String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
+        assertNotNull(credentialIdentifier, "No Credential Identifier");
+
         Oid4vcCredentialResponse credResponse = credentialRequest(ctx, tokenResponse.getAccessToken())
                 .credentialIdentifier(credentialIdentifier)
                 .proofs(generateJwtProof(ctx))
                 .send();
+        errorDescription = credResponse.getErrorDescription();
+        assertNull(errorDescription, "Credential request error: " + errorDescription);
+
         return credResponse;
     }
 
@@ -333,6 +608,11 @@ public class OID4VCBasicWallet {
         UserResource userResource = realm.users().get(userRep.getId());
         userResource.logout();
     }
+
+    public Oid4vcNonceRequest nonceRequest() {
+        return new Oid4vcNonceRequest(oauth);
+    }
+
 
     // State Validation ------------------------------------------------------------------------------------------------
 
@@ -399,22 +679,7 @@ public class OID4VCBasicWallet {
 
         // Extract authorization_details from AccessToken (JWT)
         //
-
-        JsonWebToken jwt;
-        try {
-            jwt = new JWSInput(tokenResponse.getAccessToken()).readJsonContent(JsonWebToken.class);
-        } catch (JWSInputException ex) {
-            throw new IllegalStateException(ex);
-        }
-
-        Object authDetailsClaim = jwt.getOtherClaims().get(AUTHORIZATION_DETAILS);
-        String authDetailsJson = Optional.ofNullable(authDetailsClaim)
-                .map(JsonSerialization::valueAsString)
-                .orElse(null);
-        List<OID4VCAuthorizationDetail> jwtAuthDetails = Optional.ofNullable(authDetailsJson)
-                .map(it -> JsonSerialization.valueFromString(it, OID4VCAuthorizationDetail[].class))
-                .map(Arrays::asList)
-                .orElse(null);
+        List<OID4VCAuthorizationDetail> jwtAuthDetails = getAuthorizationDetailsFromAccessToken(tokenResponse.getAccessToken());
         assertTrue(jwtAuthDetails != null && !jwtAuthDetails.isEmpty(), "No authorization_details in AccessTokenJWT");
 
         assertEquals(1, tokenAuthDetails.size(), "Expected one authorization_details entry");
@@ -424,7 +689,7 @@ public class OID4VCBasicWallet {
         var jwtAuthDetail = jwtAuthDetails.get(0);
 
         assertEquals(ctx.getCredentialConfigurationId(), tokenAuthDetail.getCredentialConfigurationId());
-        assertEquals(tokenAuthDetail, jwtAuthDetail);
+        assertEquals(ctx.getCredentialConfigurationId(), jwtAuthDetail.getCredentialConfigurationId());
 
         return accessToken;
     }
@@ -452,7 +717,7 @@ public class OID4VCBasicWallet {
      */
     public class AuthorizationEndpointRequest {
 
-        protected final LoginUrlBuilder loginForm;
+        private final LoginUrlBuilder loginForm;
 
         public AuthorizationEndpointRequest() {
             this.loginForm = oauth.loginForm();
@@ -468,6 +733,11 @@ public class OID4VCBasicWallet {
             return this;
         }
 
+        public AuthorizationEndpointRequest dpopJkt(String dpopJkt) {
+            loginForm.dpopJkt(dpopJkt);
+            return this;
+        }
+
         public AuthorizationEndpointRequest issuerState(String issuerState) {
             loginForm.issuerState(issuerState);
             return this;
@@ -478,6 +748,11 @@ public class OID4VCBasicWallet {
             return this;
         }
 
+        public AuthorizationEndpointRequest requestUri(String requestUri) {
+            loginForm.requestUri(requestUri);
+            return this;
+        }
+
         public AuthorizationEndpointRequest scope(String... scopes) {
             if (scopes != null && scopes.length > 0) {
                 loginForm.scope(scopes);
@@ -485,16 +760,48 @@ public class OID4VCBasicWallet {
             return this;
         }
 
-        public void openLoginForm() {
+        public AuthorizationEndpointRequest state(String state) {
+            loginForm.state(state);
+            return this;
+        }
+
+        public boolean openLoginForm() {
             loginForm.open();
+            String currUrl = oauth.getDriver().getCurrentUrl();
+            return currUrl != null && !currUrl.contains("error=") && !currUrl.contains("error_description=");
+        }
+
+        public AuthorizationEndpointRequest fillLoginForm(String username, String password) {
+            oauth.fillLoginForm(username, password);
+            return this;
+        }
+
+        public AuthorizationEndpointResponse parseLoginResponse() {
+            return oauth.parseLoginResponse();
         }
 
         public AuthorizationEndpointResponse send(String username, String password) {
-            // [TODO #47649] OAuthClient cannot handle invalid authorization requests
-            // https://github.com/keycloak/keycloak/issues/47649
             openLoginForm();
-            oauth.fillLoginForm(username, password);
-            return oauth.parseLoginResponse();
+            fillLoginForm(username, password);
+            return parseLoginResponse();
         }
+
+        public AuthorizationEndpointResponse send() {
+            openLoginForm();
+            return parseLoginResponse();
+        }
+    }
+
+    public void assertAccessTokenAudience(String accessToken, String... expectedAudience) {
+        assertNotNull(accessToken);
+        assertNotNull(expectedAudience);
+
+        AccessToken token = oauth.verifyToken(accessToken);
+        assertNotNull(token);
+
+        String[] audience = token.getAudience();
+        assertNotNull(audience);
+        assertEquals(expectedAudience.length, audience.length);
+        assertArrayEquals(expectedAudience, audience, "Access token audience should be limited to credential endpoint");
     }
 }

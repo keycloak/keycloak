@@ -63,11 +63,13 @@ test.describe.serial("Realm settings general tab tests", () => {
 
   test("realm enable/disable switch", async ({ page }) => {
     // Enable realm
-    await switchOn(page, `#${realmName}-switch`);
+    const realmSwitch = page.locator(`#${realmName}-switch`);
+    await expect(realmSwitch).not.toBeChecked();
+    await switchOn(page, realmSwitch);
     await assertNotificationMessage(page, "Realm successfully updated");
 
     // Disable realm
-    await switchOff(page, `#${realmName}-switch`);
+    await switchOff(page, realmSwitch);
     await confirmModal(page);
     await assertNotificationMessage(page, "Realm successfully updated");
   });

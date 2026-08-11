@@ -44,9 +44,6 @@ export default function ScopeDetails() {
           id,
           scopeId,
         });
-        if (!scope) {
-          throw new Error(t("notFound"));
-        }
         return scope;
       }
     },

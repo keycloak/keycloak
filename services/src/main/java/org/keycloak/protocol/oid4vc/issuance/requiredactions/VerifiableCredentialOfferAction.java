@@ -2,7 +2,6 @@ package org.keycloak.protocol.oid4vc.issuance.requiredactions;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 
 import jakarta.ws.rs.core.Response;
 
@@ -11,7 +10,6 @@ import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -29,22 +27,18 @@ import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
-import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
+import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
+import org.keycloak.representations.idm.oid4vc.VerifiableCredentialOfferActionConfig;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.util.JsonSerialization;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.zxing.WriterException;
 import org.jboss.logging.Logger;
 
-import static org.keycloak.constants.OID4VCIConstants.CLIENT_ID;
-import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_CONFIGURATION_ID;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_NONCE;
-import static org.keycloak.constants.OID4VCIConstants.PRE_AUTHORIZED;
+import static org.keycloak.constants.OID4VCIConstants.IS_ADMIN_INITIATED;
 import static org.keycloak.constants.OID4VCIConstants.VERIFIABLE_CREDENTIAL_OFFER_PROVIDER_ID;
 import static org.keycloak.events.Details.REASON;
-import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY;
-import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.getCredentialOfferLifespan;
 import static org.keycloak.protocol.oid4vc.model.AuthorizationCodeGrant.AUTH_CODE_GRANT_TYPE;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.MISSING_CREDENTIAL_CONFIG;
@@ -105,7 +99,7 @@ public class VerifiableCredentialOfferAction implements RequiredActionProvider, 
             return;
         }
 
-        CredentialOfferActionConfig actionConfig = getActionConfig(credentialOfferConfig);
+        VerifiableCredentialOfferActionConfig actionConfig = getActionConfig(credentialOfferConfig);
         if (actionConfig == null) {
             event.detail(REASON, "Parameter of AIA in incorrect format. KC action parameter value was: " + credentialOfferConfig)
                     .error(INVALID_CREDENTIAL_OFFER_REQUEST.getValue());
@@ -120,7 +114,7 @@ public class VerifiableCredentialOfferAction implements RequiredActionProvider, 
         }
         String credentialConfigId = actionConfig.getCredentialConfigurationId();
 
-        CredentialScopeModel credScope = CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId(
+        CredentialScopeModel credScope = CredentialScopeUtils.findCredentialScopeModelByConfigurationId(
                 realm, () -> session.clientScopes().getClientScopesStream(realm), credentialConfigId);
         if (credScope == null) {
             event.detail(Details.CREDENTIAL_TYPE, credentialConfigId);
@@ -147,9 +141,12 @@ public class VerifiableCredentialOfferAction implements RequiredActionProvider, 
 
         LoginFormsProvider form = context.form();
         try {
-            String displayName = CredentialScopeModelUtils.getCredentialDisplayName(context.getSession(), context.getUser(), credScope);
+            String displayName = CredentialScopeUtils.getCredentialDisplayName(context.getSession(), context.getUser(), credScope);
             form.setAttribute("credentialOffer", new CredentialOfferBean(context.getSession(), nonce));
             form.setAttribute("credentialDisplayName", displayName);
+            if ("true".equals(context.getAuthenticationSession().getAuthNote(IS_ADMIN_INITIATED))) {
+                form.setAttribute("skipCancelButton", true);
+            }
         } catch (WriterException | IOException ex) {
             String message = "Error when generating credential-offer QR code: " + ex.getMessage();
             event.detail(REASON, message)
@@ -164,13 +161,11 @@ public class VerifiableCredentialOfferAction implements RequiredActionProvider, 
 
 
     private CredentialOfferState createCredentialsOffer(KeycloakSession session, RealmModel realm, UserModel user, EventBuilder event,
-                                                        CredentialOfferActionConfig actionConfig) throws CredentialOfferException {
+                                                        VerifiableCredentialOfferActionConfig actionConfig) throws CredentialOfferException {
         boolean preAuthorized = actionConfig.getPreAuthorized() != null && actionConfig.getPreAuthorized();
         String grantType = preAuthorized ? PRE_AUTH_GRANT_TYPE : AUTH_CODE_GRANT_TYPE;
-        int credentialOfferLifespan = Optional.ofNullable(realm.getAttribute(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY))
-                .map(Integer::valueOf)
-                .orElse(DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S);
-        int expiresAt = timeProvider.currentTimeSeconds() + credentialOfferLifespan;
+        int credentialOfferLifespan = getCredentialOfferLifespan(realm);
+        long expiresAt = timeProvider.currentTimeSeconds() + credentialOfferLifespan;
 
         String credentialConfigurationId = actionConfig.getCredentialConfigurationId();
         event = event.clone().detail(Details.CREDENTIAL_TYPE, credentialConfigurationId);
@@ -228,67 +223,9 @@ public class VerifiableCredentialOfferAction implements RequiredActionProvider, 
         RequiredActionProvider.super.initiatedActionCanceled(session, authSession);
     }
 
-
-    public static class CredentialOfferActionConfig {
-
-        @JsonProperty(CREDENTIAL_CONFIGURATION_ID)
-        private String credentialConfigurationId;
-
-        @JsonProperty(CLIENT_ID)
-        private String clientId;
-
-        @JsonProperty(PRE_AUTHORIZED)
-        private Boolean preAuthorized;
-
-        public String getCredentialConfigurationId() {
-            return credentialConfigurationId;
-        }
-
-        public void setCredentialConfigurationId(String credentialConfigurationId) {
-            this.credentialConfigurationId = credentialConfigurationId;
-        }
-
-        public String getClientId() {
-            return clientId;
-        }
-
-        public void setClientId(String clientId) {
-            this.clientId = clientId;
-        }
-
-        public Boolean getPreAuthorized() {
-            return preAuthorized;
-        }
-
-        public void setPreAuthorized(Boolean preAuthorized) {
-            this.preAuthorized = preAuthorized;
-        }
-
-        @Override
-        public String toString() {
-            return "CredentialOfferUserConfig{" +
-                    "credentialConfigurationId='" + credentialConfigurationId + '\'' +
-                    ", clientId='" + clientId + '\'' +
-                    ", preAuthorized='" + preAuthorized + '\'' +
-                    '}';
-        }
-
-        // Encode to the string, which can be used as parameter of AIA
-        public String asEncodedParameter() throws IOException {
-            byte[] bytes = JsonSerialization.writeValueAsBytes(this);
-            return Base64Url.encode(bytes);
-        }
-
-        // Encode to the string, which can be used as parameter of AIA
-        public static VerifiableCredentialOfferAction.CredentialOfferActionConfig decodeConfig(String configStr) throws IOException {
-            byte[] bytes = Base64Url.decode(configStr);
-            return JsonSerialization.readValue(bytes, VerifiableCredentialOfferAction.CredentialOfferActionConfig.class);
-        }
-    }
-
-    private CredentialOfferActionConfig getActionConfig(String credentialOfferUserConfig) {
+    private VerifiableCredentialOfferActionConfig getActionConfig(String credentialOfferUserConfig) {
         try {
-            return CredentialOfferActionConfig.decodeConfig(credentialOfferUserConfig);
+            return VerifiableCredentialOfferActionConfig.decodeConfig(credentialOfferUserConfig);
         } catch (IOException ioe) {
             logger.warnf("Parameter of %s AIA in incorrect format. Parameter value was: %s", VERIFIABLE_CREDENTIAL_OFFER_PROVIDER_ID, credentialOfferUserConfig);
             return null;

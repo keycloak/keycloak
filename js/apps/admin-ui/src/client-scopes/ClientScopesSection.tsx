@@ -25,6 +25,8 @@ import {
   ClientScope,
   ClientScopeDefaultOptionalType,
   changeScope,
+  ParameterizedScopeLabel,
+  isParameterizedScope,
   removeScope,
 } from "../components/client-scope/ClientScopeTypes";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
@@ -75,15 +77,18 @@ const TypeSelector = (scope: TypeSelectorProps) => {
   );
 };
 
-const ClientScopeDetailLink = ({
-  id,
-  name,
-}: ClientScopeDefaultOptionalType) => {
+const ClientScopeDetailLink = (scope: ClientScopeDefaultOptionalType) => {
   const { realm } = useRealm();
   return (
-    <Link key={id} to={toClientScope({ realm, id: id!, tab: "settings" })}>
-      {name}
-    </Link>
+    <>
+      <Link
+        key={scope.id}
+        to={toClientScope({ realm, id: scope.id!, tab: "settings" })}
+      >
+        {scope.name}
+      </Link>{" "}
+      {isParameterizedScope(scope) && <ParameterizedScopeLabel />}
+    </>
   );
 };
 

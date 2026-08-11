@@ -18,7 +18,6 @@ import io.fabric8.openshift.api.model.monitoring.v1.ServiceMonitorBuilder;
 import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
@@ -32,7 +31,7 @@ import static org.keycloak.operator.crds.v2beta1.CRDUtils.configuredOptions;
       informer = @Informer(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
 )
 @CSVMetadata.Optional
-public class KeycloakServiceMonitorDependentResource extends CRUDKubernetesDependentResource<ServiceMonitor, Keycloak> {
+public class KeycloakServiceMonitorDependentResource extends VersionTolerantCRUDKubernetesDependentResource<ServiceMonitor, Keycloak> {
 
     public static final String OPEN_METRICS_PROTOCOL = "OpenMetricsText1.0.0";
     public static final String WARN_METRICS_NOT_ENABLED = "A ServiceMonitor will not be created because `metrics-enabled` is not true.";

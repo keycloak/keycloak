@@ -21,20 +21,40 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.TestProvider;
 import org.keycloak.it.resource.realm.TestRealmResourceTestProvider;
-import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
+import io.restassured.RestAssured;
+import io.restassured.config.RedirectConfig;
+import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.RequestOptions;
+import io.vertx.core.net.HostAndPort;
+import io.vertx.core.net.SocketAddress;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -42,24 +62,35 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-@DistributionTest(keepAlive = true, enableTls = true)
+@DistributionTest(stopServer = Mode.MANUAL, enableTls = true)
 @RawDistOnly(reason = "Containers are immutable")
 public class HttpDistTest {
+
+    @BeforeEach
+    public void setRestAssuredHttps() {
+        RestAssured.useRelaxedHTTPSValidation();
+        RestAssured.config = RestAssured.config.redirect(RedirectConfig.redirectConfig().followRedirects(false));
+    }
+    
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
-    public void maxQueuedRequestsTest(KeycloakDistribution dist) {
-        dist.run("start-dev", "--http-max-queued-requests=1", "--http-pool-max-threads=1");
+    public void maxQueuedRequestsTest(KeycloakRunner runner) {
+        runner.run("start-dev", "--http-max-queued-requests=1", "--http-pool-max-threads=1");
 
-        // run requests async
-        List<CompletableFuture<Integer>> statusCodesFuture = new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
-            statusCodesFuture.add(CompletableFuture.supplyAsync(() ->
-                    when().get("/realms/master/test-resources/slow").getStatusCode()));
+        ExecutorService executor = Executors.newFixedThreadPool(5);
+        try {
+            List<CompletableFuture<Integer>> statusCodesFuture = new ArrayList<>();
+            for (int i = 0; i < 5; i++) {
+                statusCodesFuture.add(CompletableFuture.supplyAsync(() ->
+                        when().get("/realms/master/test-resources/slow").getStatusCode(), executor));
+            }
+            List<Integer> statusCodes = statusCodesFuture.stream().map(CompletableFuture::join).toList();
+
+            assertThat("Some of the requests should be properly rejected", statusCodes, hasItem(503));
+            assertThat("None of the requests should throw an unhandled exception", statusCodes, not(hasItem(500)));
+        } finally {
+            executor.shutdown();
         }
-        List<Integer> statusCodes = statusCodesFuture.stream().map(CompletableFuture::join).toList();
-
-        assertThat("Some of the requests should be properly rejected", statusCodes, hasItem(503));
-        assertThat("None of the requests should throw an unhandled exception", statusCodes, not(hasItem(500)));
     }
 
     @Test
@@ -69,6 +100,111 @@ public class HttpDistTest {
         when().get("/realms/xxx/../master").then().statusCode(400);
         given().urlEncodingEnabled(false)
                 .when().get("/realms/master;xxx").then().statusCode(400);
+    }
+    
+    @Test
+    @Launch({"start-dev", "--hostname=https://example.com"})
+    public void misdirectedRequestDetection() throws Exception {        
+        Vertx vertx = Vertx.vertx();
+        try {
+            HttpClient client = vertx.createHttpClient(new HttpClientOptions()
+                    .setSsl(true)
+                    .setTrustAll(true)
+                    .setVerifyHost(false)
+                    .setProtocolVersion(HttpVersion.HTTP_2)
+                    .setUseAlpn(true));
+            try {
+                assertThat("Matching indicated to authority is allowed",
+                        misdirectedRequest(client, "servicehost.com", "servicehost.com", 8443), Matchers.is(200));
+
+                // null sniHostname → defaults to "localhost" (non-FQDN → Java skips SNI → indicatedServerName is null)
+                assertThat("No indicated name is allowed",
+                        misdirectedRequest(client, null, "example.com", 443), Matchers.is(200));
+
+                // connection originated from another backend, but we're reusing it for a request to the keycloak server
+                assertThat("Matching a known host is allowed",
+                        misdirectedRequest(client, "other-example.com", "example.com", 443), Matchers.is(200));
+
+                // connection originated from keycloak, but the browser is mistakenly reusing for another service
+                assertThat("Expected HTTP 421 Misdirected Request for SNI/authority mismatch",
+                        misdirectedRequest(client, "example.com", "misdirected.com", 443), Matchers.is(421));
+            } finally {
+                client.close().toCompletionStage().toCompletableFuture().get(5, TimeUnit.SECONDS);
+            }
+        } finally {
+            vertx.close().toCompletionStage().toCompletableFuture().get(5, TimeUnit.SECONDS);
+        }
+    }
+
+    private static int misdirectedRequest(HttpClient client, String sniHostname, String authorityHost, int authorityPort) throws Exception {
+        RequestOptions options = new RequestOptions()
+                .setServer(SocketAddress.inetSocketAddress(8443, "localhost"))
+                .setPort(8443)
+                .setSsl(true)
+                .setURI("/realms/master")
+                .setMethod(HttpMethod.GET);
+
+        if (sniHostname != null) {
+            options.setHost(sniHostname);
+        }
+
+        return client.request(options)
+                .compose(req -> {
+                    req.authority(HostAndPort.create(authorityHost, authorityPort));
+                    return req.send();
+                })
+                .map(HttpClientResponse::statusCode)
+                .toCompletionStage()
+                .toCompletableFuture()
+                .get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    @Launch({"start-dev"})
+    public void largeHeadersTest() throws Exception {
+        String largeValue = "a".repeat(32 * 1024);
+
+        Vertx vertx = Vertx.vertx();
+        try {
+            HttpClient http2Client = vertx.createHttpClient(new HttpClientOptions()
+                    .setSsl(true)
+                    .setTrustAll(true)
+                    .setVerifyHost(false)
+                    .setProtocolVersion(HttpVersion.HTTP_2)
+                    .setUseAlpn(true));
+            HttpClient http1Client = vertx.createHttpClient(new HttpClientOptions()
+                    .setSsl(true)
+                    .setTrustAll(true)
+                    .setVerifyHost(false));
+            try {
+                assertThat("Large headers under the limit are accepted over HTTP/2",
+                        largeHeaderRequest(http2Client, largeValue), Matchers.is(200));
+                assertThat("Large headers under the limit are accepted over HTTP/1.1",
+                        largeHeaderRequest(http1Client, largeValue), Matchers.is(200));
+            } finally {
+                http2Client.close().toCompletionStage().toCompletableFuture().get(5, TimeUnit.SECONDS);
+                http1Client.close().toCompletionStage().toCompletableFuture().get(5, TimeUnit.SECONDS);
+            }
+        } finally {
+            vertx.close().toCompletionStage().toCompletableFuture().get(5, TimeUnit.SECONDS);
+        }
+    }
+
+    private static int largeHeaderRequest(HttpClient client, String headerValue) throws Exception {
+        RequestOptions options = new RequestOptions()
+                .setServer(SocketAddress.inetSocketAddress(8443, "localhost"))
+                .setPort(8443)
+                .setSsl(true)
+                .setURI("/realms/master")
+                .setMethod(HttpMethod.GET)
+                .putHeader("X-Large-Header", headerValue);
+
+        return client.request(options)
+                .compose(HttpClientRequest::send)
+                .map(HttpClientResponse::statusCode)
+                .toCompletionStage()
+                .toCompletableFuture()
+                .get(10, TimeUnit.SECONDS);
     }
 
     @Test
@@ -87,26 +223,46 @@ public class HttpDistTest {
     }
 
     @Test
-    public void httpStoreTypeValidation(KeycloakDistribution dist) {
-        CLIResult result = dist.run("start", "--https-key-store-file=not-there.ks", "--hostname-strict=false");
+    public void httpStoreTypeValidation(KeycloakRunner runner) {
+        CLIResult result = runner.run("start", "--https-key-store-file=not-there.ks", "--hostname-strict=false");
         result.assertExitCode(-1);
         result.assertMessage("ERROR: Unable to determine 'https-key-store-type' automatically. Adjust the file extension or specify the property");
 
-        result = dist.run("start", "--https-trust-store-file=not-there.ks", "--hostname-strict=false");
+        result = runner.run("start", "--https-trust-store-file=not-there.ks", "--hostname-strict=false");
         result.assertExitCode(-1);
         result.assertMessage("ERROR: Unable to determine 'https-trust-store-type' automatically. Adjust the file extension or specify the property");
 
-        result = dist.run("start", "--https-key-store-file=not-there.ks", "--hostname-strict=false", "--https-key-store-type=jdk");
+        result = runner.run("start", "--https-key-store-file=not-there.ks", "--hostname-strict=false", "--https-key-store-type=jdk");
         result.assertExitCode(-1);
         result.assertMessage("ERROR: Failed to load 'https-*' material: NoSuchFileException not-there.ks");
 
-        dist.copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.p12"));
-        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
+        RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
+        rawDist.copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.p12"));
         Path truststorePath = rawDist.getDistPath().resolve("conf").resolve("server.p12").toAbsolutePath();
 
-        result = dist.run("start", "--https-trust-store-file=" + truststorePath, "--hostname-strict=false");
+        result = runner.run("start", "--https-trust-store-file=" + truststorePath, "--hostname-strict=false");
         result.assertExitCode(-1);
         result.assertMessage("ERROR: No trust store password provided");
+    }
+    
+    @StopServer(Mode.MANUAL)
+    @Test
+    @Launch({"start", "--db=dev-file", "--hostname-strict=false", "--http-enabled=true"})
+    void testStartNonLocalHttps(CLIResult cliResult) {
+        cliResult.assertStarted();
+        
+        // should not be directed to create an admin user - we can't be sure if a local proxy is being used
+        when().get("https://localhost:8443/").then().statusCode(200).body(containsString("You will need local access"));
+    }
+    
+    @StopServer(Mode.MANUAL)
+    @Test
+    @Launch({"start", "--db=dev-file", "--proxy-headers=forwarded", "--hostname-strict=false", "--http-enabled=true"})
+    void testStartLocalHttps(CLIResult cliResult) {
+        cliResult.assertStarted();
+        
+        // should be directed to create an admin user, as the request is not setting the proxy header
+        when().get("https://localhost:8443/").then().statusCode(200).body(Matchers.not(containsString("You will need local access")));
     }
 
     @Test
@@ -117,9 +273,9 @@ public class HttpDistTest {
     }
 
     @Test
-    public void testShutdownParametersNegativeValue(KeycloakDistribution dist) {
+    public void testShutdownParametersNegativeValue(KeycloakRunner runner) {
         // Test that negative values are rejected
-        CLIResult result = dist.run("start-dev", "--shutdown-delay=-1s");
+        CLIResult result = runner.run("start-dev", "--shutdown-delay=-1s");
         result.assertError("Invalid duration '-1s'. Duration must be zero or positive");
     }
 }

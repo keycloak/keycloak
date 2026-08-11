@@ -47,10 +47,9 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.enums.AccountRestApiVersion;
-import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.http.HttpRequest;
@@ -63,6 +62,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.ConsentRepresentation;
 import org.keycloak.representations.account.ConsentScopeRepresentation;
@@ -77,6 +77,7 @@ import org.keycloak.services.resources.account.resources.ResourcesService;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.theme.Theme;
+import org.keycloak.theme.beans.AdvancedMessageFormatterMethod;
 import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.Attributes;
 import org.keycloak.userprofile.EventAuditingAttributeChangeListener;
@@ -86,6 +87,7 @@ import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.userprofile.ValidationException.Error;
 
+import freemarker.template.TemplateModelException;
 import org.jboss.resteasy.reactive.NoCache;
 
 /**
@@ -222,6 +224,9 @@ public class AccountRestService {
     @Path("/resources")
     public ResourcesService resources() {
         checkAccountApiEnabled();
+        if (!realm.isUserManagedAccessAllowed()) {
+            throw ErrorResponse.error("User-managed access not enabled", Response.Status.FORBIDDEN);
+        }
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
         return new ResourcesService(session, user, auth, request);
     }
@@ -236,11 +241,23 @@ public class AccountRestService {
     @Path("/organizations")
     public OrganizationsResource organizations() {
         checkAccountApiEnabled();
-        if (!Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (!Organizations.isEnabled(session)) {
             throw new NotFoundException();
         }
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
         return new OrganizationsResource(session, auth, user);
+    }
+
+    @Path("/verifiable-credentials")
+    public AccountVerifiableCredentialResource verifiableCredentials() {
+        checkAccountApiEnabled();
+        return new AccountVerifiableCredentialResource(session, auth, user);
+    }
+
+    @Path("/issued-verifiable-credentials")
+    public AccountIssuedVerifiableCredentialResource issuedVerifiableCredentials() {
+        checkAccountApiEnabled();
+        return new AccountIssuedVerifiableCredentialResource(session, auth, user);
     }
 
     private ClientRepresentation modelToRepresentation(ClientModel model, List<String> inUseClients, List<String> offlineClients, Map<String, UserConsentModel> consents) {
@@ -256,7 +273,7 @@ public class AccountRestService {
         representation.setEffectiveUrl(ResolveRelative.resolveRelativeUri(session, model.getRootUrl(), model.getBaseUrl()));
         UserConsentModel consentModel = consents.get(model.getClientId());
         if(consentModel != null) {
-            representation.setConsent(modelToRepresentation(consentModel));
+            representation.setConsent(modelToRepresentation(consentModel, true));
             representation.setLogoUri(model.getAttribute(ClientModel.LOGO_URI));
             representation.setPolicyUri(model.getAttribute(ClientModel.POLICY_URI));
             representation.setTosUri(model.getAttribute(ClientModel.TOS_URI));
@@ -264,18 +281,59 @@ public class AccountRestService {
         return representation;
     }
 
-    private ConsentRepresentation modelToRepresentation(UserConsentModel model) {
-        List<ConsentScopeRepresentation> grantedScopes = model.getGrantedClientScopes().stream()
-                .map(m -> new ConsentScopeRepresentation(m.getId(), m.getConsentScreenText()!= null ? m.getConsentScreenText() : m.getName(), StringPropertyReplacer.replaceProperties(m.getConsentScreenText(), getProperties()::getProperty)))
-                .collect(Collectors.toList());
+    private ConsentScopeRepresentation createContentScopeRepresentation(ClientScopeModel clientScopeModel, String parameter, boolean briefRepresentation) {
+        return briefRepresentation
+                ? new ConsentScopeRepresentation(clientScopeModel.getId(),
+                        getClientScopeName(clientScopeModel),
+                        getClientScopeDisplayText(clientScopeModel, parameter))
+                : new ConsentScopeRepresentation(clientScopeModel.getId(),
+                        getClientScopeName(clientScopeModel),
+                        clientScopeModel.getDescription(),
+                        clientScopeModel.getProtocol(),
+                        getClientScopeDisplayText(clientScopeModel, parameter));
+    }
+
+    private ConsentRepresentation modelToRepresentation(UserConsentModel model, boolean briefRepresentation) {
+        List<ConsentScopeRepresentation> grantedScopes = new ArrayList<>();
+        model.getGrantedClientScopes().stream().forEach(m -> {
+            if (ClientScopeModel.isParameterizedScope(m)) {
+                model.getParameters(m).forEach(p -> grantedScopes.add(createContentScopeRepresentation(m, p, briefRepresentation)));
+            } else {
+                grantedScopes.add(createContentScopeRepresentation(m, null, briefRepresentation));
+            }
+        });
         return new ConsentRepresentation(grantedScopes, model.getCreatedDate(), model.getLastUpdatedDate());
+    }
+
+    private String getClientScopeName(final ClientScopeModel clientScopeModel) {
+        if (clientScopeModel.getConsentScreenText() == null) {
+            return clientScopeModel.getName();
+        }
+        return clientScopeModel.getConsentScreenText();
+    }
+
+    private String getClientScopeDisplayText(final ClientScopeModel clientScopeModel, final String parameter) {
+        if (clientScopeModel.getConsentScreenText() == null) {
+            return null;
+        }
+        AdvancedMessageFormatterMethod method = new AdvancedMessageFormatterMethod(locale, getProperties());
+        List<String> inputs = new ArrayList<>();
+        inputs.add(clientScopeModel.getConsentScreenText());
+        if (parameter != null) {
+            inputs.add(parameter);
+        }
+        try {
+            return (String) method.exec(inputs);
+        } catch (TemplateModelException e) {
+            return clientScopeModel.getConsentScreenText();
+        }
     }
 
     private Properties getProperties() {
         try {
             return session.theme().getTheme(Theme.Type.ACCOUNT).getMessages(locale);
         } catch (IOException e) {
-            return null;
+            return new Properties();
         }
     }
 
@@ -288,7 +346,8 @@ public class AccountRestService {
     @Path("/applications/{clientId}/consent")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getConsent(final @PathParam("clientId") String clientId) {
+    public Response getConsent(final @PathParam("clientId") String clientId,
+            @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         checkAccountApiEnabled();
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT);
 
@@ -302,7 +361,7 @@ public class AccountRestService {
             return Response.noContent().build();
         }
 
-        return Response.ok(modelToRepresentation(consent)).build();
+        return Response.ok(modelToRepresentation(consent, briefRepresentation)).build();
     }
 
     /**
@@ -321,7 +380,8 @@ public class AccountRestService {
         ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
             String msg = String.format("No client with clientId: %s found.", clientId);
-            event.error(msg);
+            event.detail(Details.REASON, msg);
+            event.error(Errors.CLIENT_NOT_FOUND);
             throw ErrorResponse.error(msg, Response.Status.NOT_FOUND);
         }
 
@@ -380,7 +440,8 @@ public class AccountRestService {
         ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
             String msg = String.format("No client with clientId: %s found.", clientId);
-            event.error(msg);
+            event.detail(Details.REASON, msg);
+            event.error(Errors.CLIENT_NOT_FOUND);
             throw ErrorResponse.error(msg, Response.Status.NOT_FOUND);
         }
 
@@ -397,7 +458,7 @@ public class AccountRestService {
             String scopeString = grantedConsent.getGrantedClientScopes().stream().map(cs->cs.getName()).collect(Collectors.joining(" "));
             event.detail(Details.SCOPE, scopeString).success();
             grantedConsent = UserConsentManager.getConsentByClient(session, realm, user, client.getId());
-            return Response.ok(modelToRepresentation(grantedConsent)).build();
+            return Response.ok(modelToRepresentation(grantedConsent, true)).build();
         } catch (IllegalArgumentException e) {
             throw ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
         }
@@ -425,11 +486,17 @@ public class AccountRestService {
             ClientScopeModel scopeModel = availableGrants.get(scopeRepresentation.getId());
             if (scopeModel == null) {
                 String msg = String.format("Scope id %s does not exist for client %s.", scopeRepresentation, consent.getClient().getName());
-                event.error(msg);
+                event.detail(Details.REASON, msg);
+                event.error(Errors.INVALID_SCOPE);
                 throw new IllegalArgumentException(msg);
-            } else {
-                consent.addGrantedClientScope(scopeModel);
             }
+            if (ClientScopeModel.isParameterizedScope(scopeModel)) {
+                String msg = String.format("Cannot create Scope id %s for client %s because is parameterized.", scopeRepresentation, consent.getClient().getName());
+                event.detail(Details.REASON, msg);
+                event.error(Errors.INVALID_SCOPE);
+                throw new IllegalArgumentException(msg);
+            }
+            consent.addGrantedClientScope(scopeModel, null);
         }
         return consent;
     }
@@ -496,7 +563,7 @@ public class AccountRestService {
 
     // TODO Logs
 
-    private static void checkAccountApiEnabled() {
+    public static void checkAccountApiEnabled() {
         if (!Profile.isFeatureEnabled(Profile.Feature.ACCOUNT_API)) {
             throw new NotFoundException();
         }

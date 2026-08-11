@@ -41,7 +41,7 @@ export const AdvancedSettings = ({
 
   const { control, watch, register } = useFormContext();
 
-  const acrUriMapRealm = realm?.attributes?.["acr.uri.map"]
+  const acrUriMapRealm = realm.attributes?.["acr.uri.map"]
     ? Object.values(JSON.parse(realm.attributes["acr.uri.map"]))
     : [];
 
@@ -151,7 +151,7 @@ export const AdvancedSettings = ({
             name={convertAttributeNameToForm(
               "attributes.access.token.lifespan",
             )}
-            defaultValue={realm?.accessTokenLifespan}
+            defaultValue={realm.accessTokenLifespan}
             units={["minute", "day", "hour"]}
           />
           <TokenLifespan
@@ -159,7 +159,7 @@ export const AdvancedSettings = ({
             name={convertAttributeNameToForm(
               "attributes.client.session.idle.timeout",
             )}
-            defaultValue={realm?.clientSessionIdleTimeout}
+            defaultValue={realm.clientSessionIdleTimeout}
             units={["minute", "day", "hour"]}
           />
           <TokenLifespan
@@ -167,7 +167,7 @@ export const AdvancedSettings = ({
             name={convertAttributeNameToForm(
               "attributes.client.session.max.lifespan",
             )}
-            defaultValue={realm?.clientSessionMaxLifespan}
+            defaultValue={realm.clientSessionMaxLifespan}
             units={["minute", "day", "hour"]}
           />
           <TokenLifespan
@@ -175,21 +175,17 @@ export const AdvancedSettings = ({
             name={convertAttributeNameToForm(
               "attributes.client.offline.session.idle.timeout",
             )}
-            defaultValue={realm?.offlineSessionIdleTimeout}
+            defaultValue={realm.offlineSessionIdleTimeout}
             units={["minute", "day", "hour"]}
           />
 
-          {realm?.offlineSessionMaxLifespanEnabled && (
+          {realm.offlineSessionMaxLifespanEnabled && (
             <TokenLifespan
               id="clientOfflineSessionMax"
               name={convertAttributeNameToForm(
                 "attributes.client.offline.session.max.lifespan",
               )}
-              defaultValue={
-                realm?.offlineSessionMaxLifespanEnabled
-                  ? realm.offlineSessionMaxLifespan
-                  : undefined
-              }
+              defaultValue={realm.offlineSessionMaxLifespan}
               units={["minute", "day", "hour"]}
             />
           )}

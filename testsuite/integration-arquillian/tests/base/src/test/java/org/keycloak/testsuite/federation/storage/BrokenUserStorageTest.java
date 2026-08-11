@@ -27,15 +27,14 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * KEYCLOAK-3903 and KEYCLOAK-3620
@@ -51,9 +50,6 @@ public class BrokenUserStorageTest extends AbstractTestRealmKeycloakTest {
     @Page
     protected LoginPage loginPage;
 
-    @Page
-    protected AppPage appPage;
-
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
     }
@@ -62,8 +58,7 @@ public class BrokenUserStorageTest extends AbstractTestRealmKeycloakTest {
     private void loginSuccessAndLogout(String username, String password) {
         oauth.openLoginForm();
         loginPage.login(username, password);
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         oauth.openLogoutForm();
     }
 
@@ -101,12 +96,12 @@ public class BrokenUserStorageTest extends AbstractTestRealmKeycloakTest {
                 found = rep;
             }
         }
-        Assert.assertNotNull(found);
+        Assertions.assertNotNull(found);
 
         master.components().component(found.getId()).remove();
 
         List<ComponentRepresentation> components2 = master.components().query(masterId, UserStorageProvider.class.getName());
-        Assert.assertEquals(components.size() - 1, components2.size());
+        Assertions.assertEquals(components.size() - 1, components2.size());
 
     }
 

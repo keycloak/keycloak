@@ -10,6 +10,7 @@ import org.keycloak.broker.provider.ClientAssertionIdentityProvider;
 import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.JWTAuthorizationGrantProvider;
+import org.keycloak.broker.provider.TrustMaterialIdentityProvider;
 import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.models.IdentityProviderCapability;
@@ -80,6 +81,7 @@ public class IdentityProviderTypeUtil {
         return switch (type) {
             case USER_AUTHENTICATION -> UserAuthenticationIdentityProvider.class;
             case CLIENT_ASSERTION -> ClientAssertionIdentityProvider.class;
+            case TRUST_MATERIAL -> TrustMaterialIdentityProvider.class;
             case EXCHANGE_EXTERNAL_TOKEN -> ExchangeExternalToken.class;
             case JWT_AUTHORIZATION_GRANT -> JWTAuthorizationGrantProvider.class;
             case ANY -> IdentityProvider.class;

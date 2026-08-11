@@ -37,6 +37,7 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.json.RawJsonValue;
 import org.keycloak.models.utils.MapperTypeSerializer;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.condition.ClientIdUriSchemeCondition;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutor;
@@ -52,6 +53,7 @@ import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeCondition;
 import org.keycloak.services.clientpolicy.condition.ClientAttributesCondition;
+import org.keycloak.services.clientpolicy.condition.ClientProtocolCondition;
 import org.keycloak.services.clientpolicy.condition.ClientRolesCondition;
 import org.keycloak.services.clientpolicy.condition.ClientScopesCondition;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextCondition;
@@ -84,7 +86,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public final class ClientPoliciesUtil {
 
@@ -152,7 +154,7 @@ public final class ClientPoliciesUtil {
             }
             ClientPolicyExecutorRepresentation executor = new ClientPolicyExecutorRepresentation();
             executor.setExecutorProviderId(providerId);
-            executor.setConfiguration(JsonSerialization.mapper.readValue(JsonSerialization.mapper.writeValueAsBytes(config), JsonNode.class));
+            executor.setConfiguration(RawJsonValue.of(JsonSerialization.mapper.readValue(JsonSerialization.mapper.writeValueAsBytes(config), JsonNode.class)));
             profileRep.getExecutors().add(executor);
             return this;
         }
@@ -378,7 +380,7 @@ public final class ClientPoliciesUtil {
             }
             ClientPolicyConditionRepresentation condition = new ClientPolicyConditionRepresentation();
             condition.setConditionProviderId(providerId);
-            condition.setConfiguration(JsonSerialization.mapper.readValue(JsonSerialization.mapper.writeValueAsBytes(config), JsonNode.class));
+            condition.setConfiguration(RawJsonValue.of(JsonSerialization.mapper.readValue(JsonSerialization.mapper.writeValueAsBytes(config), JsonNode.class)));
             policyRep.getConditions().add(condition);
             return this;
         }
@@ -428,6 +430,12 @@ public final class ClientPoliciesUtil {
     public static ClientAccessTypeCondition.Configuration createClientAccessTypeConditionConfig(List<String> types) {
         ClientAccessTypeCondition.Configuration config = new ClientAccessTypeCondition.Configuration();
         config.setType(types);
+        return config;
+    }
+
+    public static ClientProtocolCondition.Configuration createClientProtocolConditionConfig(String protocol) {
+        ClientProtocolCondition.Configuration config = new ClientProtocolCondition.Configuration();
+        config.setProtocol(protocol);
         return config;
     }
 

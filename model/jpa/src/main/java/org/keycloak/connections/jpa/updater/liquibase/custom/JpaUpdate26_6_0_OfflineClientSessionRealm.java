@@ -86,9 +86,9 @@ public class JpaUpdate26_6_0_OfflineClientSessionRealm extends CustomKeycloakTas
     private void generateUpdateQueryForMSSQL(String clientSessionTable, String userSessionTable) {
         statements.add(new RawParameterizedSqlStatement("""
                 UPDATE cs
-                SET cs.realm_id = us.realm_id
+                SET cs.REALM_ID = us.REALM_ID
                 FROM %s cs
-                INNER JOIN %s us ON cs.user_session_id = us.user_session_id AND cs.offline_flag = us.offline_flag AND cs.realm_id IS NULL"""
+                INNER JOIN %s us ON cs.USER_SESSION_ID = us.USER_SESSION_ID AND cs.OFFLINE_FLAG = us.OFFLINE_FLAG AND cs.REALM_ID IS NULL"""
                 .formatted(clientSessionTable, userSessionTable)));
     }
 

@@ -40,12 +40,13 @@ import org.keycloak.testframework.oauth.OAuthIdentityProviderConfig;
 import org.keycloak.testframework.oauth.OAuthIdentityProviderConfigBuilder;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthIdentityProvider;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -53,8 +54,6 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
-
-import static org.keycloak.tests.oauth.AbstractJWTAuthorizationGrantTest.IDP_ISSUER;
 
 /**
  *
@@ -134,10 +133,10 @@ public class BaseAbstractJWTAuthorizationGrantTest {
     public static class JWTAuthorizationGrantRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            realm.addClient("test-public").publicClient(true);
-            realm.addClient("authorization-grant-disabled-client").publicClient(false).secret("test-secret");
-            realm.addClient("authorization-grant-not-allowed-idp-client").publicClient(false).attribute(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_ENABLED, "true").secret("test-secret");
+        public RealmBuilder configure(RealmBuilder realm) {
+            realm.clients(ClientBuilder.create("test-public").publicClient(true));
+            realm.clients(ClientBuilder.create("authorization-grant-disabled-client").publicClient(false).secret("test-secret"));
+            realm.clients(ClientBuilder.create("authorization-grant-not-allowed-idp-client").publicClient(false).attribute(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_ENABLED, "true").secret("test-secret"));
             return realm;
         }
     }
@@ -145,7 +144,7 @@ public class BaseAbstractJWTAuthorizationGrantTest {
     public static class FederatedUserConfiguration implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder user) {
+        public UserBuilder configure(UserBuilder user) {
             return user
                     .username("basic-user")
                     .password("password")

@@ -11,6 +11,7 @@ import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -55,8 +56,37 @@ public class AuthorizationDetailsProcessorManager {
         return allAuthzDetails;
     }
 
-    public List<AuthorizationDetailsJSONRepresentation> validateAuthorizationDetail(String authorizationDetailsParam) {
-        return processAuthorizationDetailsInternal(authorizationDetailsParam, AuthorizationDetailsProcessor::validateAuthorizationDetail);
+    public void validateAuthorizationDetail(String authorizationDetailsParam) {
+        processAuthorizationDetailsInternal(authorizationDetailsParam, AuthorizationDetailsProcessor::validateAuthorizationDetail);
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public void afterAuthorizationDetailsProcessed(UserSessionModel userSession,
+                                                   ClientSessionContext clientSessionCtx,
+                                                   List<AuthorizationDetailsJSONRepresentation> authorizationDetailsResponse) throws InvalidAuthorizationDetailsException {
+        Map<String, AuthorizationDetailsProcessor<?>> processors = getAuthorizationDetailsProcessorMap();
+        for (AuthorizationDetailsJSONRepresentation authzDetailResponse : authorizationDetailsResponse) {
+            AuthorizationDetailsProcessor processor = findProcessorForAuthorizationDetails(processors, authzDetailResponse);
+            processor.afterAuthorizationDetailsProcessed(userSession, clientSessionCtx, authzDetailResponse.asSubtype(processor.getSupportedResponseJavaType()));
+        }
+    }
+
+    /**
+     * Sanitize authorization details before they are sent as part of the Token Response
+     * https://github.com/keycloak/keycloak/issues/50079
+     */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public void sanitizeBeforeSendingTokenResponse(AccessTokenResponse tokenResponse) {
+        if (tokenResponse.getAuthorizationDetails() != null) {
+            List<AuthorizationDetailsJSONRepresentation> outAuthzDetails = new ArrayList<>();
+            Map<String, AuthorizationDetailsProcessor<?>> processors = getAuthorizationDetailsProcessorMap();
+            for (AuthorizationDetailsJSONRepresentation authzDetail : tokenResponse.getAuthorizationDetails()) {
+                AuthorizationDetailsProcessor processor = findProcessorForAuthorizationDetails(processors, authzDetail);
+                AuthorizationDetailsJSONRepresentation subAuthzDetail = authzDetail.asSubtype(processor.getSupportedResponseJavaType());
+                outAuthzDetails.add(processor.sanitizeBeforeSendingTokenResponse(subAuthzDetail));
+            }
+            tokenResponse.setAuthorizationDetails(outAuthzDetails);
+        }
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
@@ -79,16 +109,7 @@ public class AuthorizationDetailsProcessorManager {
 
         List<AuthorizationDetailsJSONRepresentation> authzResponses = new ArrayList<>();
         for (AuthorizationDetailsJSONRepresentation authzDetail : authzDetails) {
-            if (authzDetail.getType() == null) {
-                throw new InvalidAuthorizationDetailsException("Authorization_Details parameter provided without type: " + authorizationDetailsParam);
-            }
-            AuthorizationDetailsProcessor<?> processor = processors.get(authzDetail.getType());
-            if (processor == null) {
-                String errorDetails = String.format("Unsupported type '%s' of authorization_details parameter supplied in the request. Supported values: %s",
-                        authzDetail.getType(), processors.keySet());
-                logger.warn(errorDetails);
-                throw new InvalidAuthorizationDetailsException(errorDetails);
-            }
+            AuthorizationDetailsProcessor<?> processor = findProcessorForAuthorizationDetails(processors, authzDetail);
             AuthorizationDetailsJSONRepresentation response = function.apply(processor, authzDetail);
             if (response != null) {
                 authzResponses.add(response);
@@ -98,6 +119,20 @@ public class AuthorizationDetailsProcessorManager {
         }
 
         return authzResponses;
+    }
+
+    private AuthorizationDetailsProcessor<?> findProcessorForAuthorizationDetails(Map<String, AuthorizationDetailsProcessor<?>> processors, AuthorizationDetailsJSONRepresentation authzDetail) {
+        if (authzDetail.getType() == null) {
+            throw new InvalidAuthorizationDetailsException("Authorization_Details parameter provided without type: " + authzDetail);
+        }
+        AuthorizationDetailsProcessor<?> processor = processors.get(authzDetail.getType());
+        if (processor == null) {
+            String errorDetails = String.format("Unsupported type '%s' of authorization_details parameter supplied in the request. Supported values: %s",
+                    authzDetail.getType(), processors.keySet());
+            logger.warn(errorDetails);
+            throw new InvalidAuthorizationDetailsException(errorDetails);
+        }
+        return processor;
     }
 
     private List<AuthorizationDetailsJSONRepresentation> parseAuthorizationDetails(String authorizationDetailsParam) {

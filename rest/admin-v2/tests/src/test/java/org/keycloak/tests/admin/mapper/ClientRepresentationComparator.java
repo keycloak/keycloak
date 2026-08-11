@@ -137,7 +137,8 @@ public class ClientRepresentationComparator {
         Map<String, String> attrs = v1.getAttributes();
         if (attrs == null) return;
 
-        compare("attr[saml_name_id_format]→nameIdFormat", attrs.get(SAML_NAME_ID_FORMAT_ATTRIBUTE), saml.getNameIdFormat());
+        compare("attr[saml_name_id_format]→nameIdFormat", attrs.get(SAML_NAME_ID_FORMAT_ATTRIBUTE),
+                saml.getNameIdFormat() != null ? saml.getNameIdFormat().toJson() : null);
         compareSamlBoolean(SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE, "forceNameIdFormat", saml.getForceNameIdFormat());
         compareSamlBoolean(SAML_AUTHNSTATEMENT, "includeAuthnStatement", saml.getIncludeAuthnStatement());
         compareSamlBoolean(SAML_SERVER_SIGNATURE, "signDocuments", saml.getSignDocuments());
@@ -145,7 +146,7 @@ public class ClientRepresentationComparator {
         compareSamlBoolean(SAML_CLIENT_SIGNATURE_ATTRIBUTE, "clientSignatureRequired", saml.getClientSignatureRequired());
         compareSamlBoolean(SAML_FORCE_POST_BINDING, "forcePostBinding", saml.getForcePostBinding());
         compareSamlBoolean(SAML_ALLOW_ECP_FLOW, "allowEcpFlow", saml.getAllowEcpFlow());
-        compare("attr[saml.signature.algorithm]→signatureAlgorithm", attrs.get(SAML_SIGNATURE_ALGORITHM), saml.getSignatureAlgorithm());
+        compare("attr[saml.signature.algorithm]→signatureAlgorithm", attrs.get(SAML_SIGNATURE_ALGORITHM), saml.getSignatureAlgorithm() != null ? saml.getSignatureAlgorithm().name() : null);
         compare("attr[saml_signature_canonicalization_method]→signatureCanonicalizationMethod", attrs.get(SAML_CANONICALIZATION_METHOD_ATTRIBUTE), saml.getSignatureCanonicalizationMethod());
         compare("attr[saml.signing.certificate]→signingCertificate", attrs.get(SAML_SIGNING_CERTIFICATE_ATTRIBUTE), saml.getSigningCertificate());
     }

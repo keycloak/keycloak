@@ -20,7 +20,7 @@ import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.providers.runonserver.FetchOnServer;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
@@ -60,7 +60,7 @@ public class RestartStepTest extends AbstractWorkflowTest {
                 ).build()).close();
 
         // create a new user - should bind the user to the workflow and setup the only step in the workflow
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").email("testuser@example.com").build()).close();
+        managedRealm.admin().users().create(UserBuilder.create().username("testuser").email("testuser@example.com").build()).close();
 
         Long scheduledAt = runOnServer.fetch((FetchOnServer) session -> {
             RealmModel realm = session.getContext().getRealm();
@@ -132,8 +132,8 @@ public class RestartStepTest extends AbstractWorkflowTest {
                                 .build()
                 ).build())) {
             assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
-            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(),
-                    is("No scheduled step found if restarting at position 1"));
+            ErrorRepresentation error1 = response.readEntity(ErrorRepresentation.class);
+            assertThat(error1.getErrorMessage(), is("No scheduled step found if restarting at position 1."));
         }
         try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
                 .onEvent(UserCreatedWorkflowEventFactory.ID)
@@ -149,8 +149,8 @@ public class RestartStepTest extends AbstractWorkflowTest {
                                 .build()
                 ).build())) {
             assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
-            assertThat(response.readEntity(ErrorRepresentation.class).getErrorMessage(),
-                    is("No scheduled step found if restarting at position 2"));
+            ErrorRepresentation error2 = response.readEntity(ErrorRepresentation.class);
+            assertThat(error2.getErrorMessage(), is("No scheduled step found if restarting at position 2."));
         }
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
                 .onEvent(UserCreatedWorkflowEventFactory.ID)
@@ -171,7 +171,7 @@ public class RestartStepTest extends AbstractWorkflowTest {
                 ).build()).close();
 
         // create a new user - should bind the user to the workflow and setup the only step in the workflow
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").email("testuser@example.com").build()).close();
+        managedRealm.admin().users().create(UserBuilder.create().username("testuser").email("testuser@example.com").build()).close();
 
         Long scheduleAt = runOnServer.fetch((FetchOnServer) session -> {
             RealmModel realm = session.getContext().getRealm();
@@ -271,7 +271,7 @@ public class RestartStepTest extends AbstractWorkflowTest {
                 ).build()).close();
 
         // create a new user - should bind the user to the workflow and setup the only step in the workflow
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").email("testuser@example.com").build()).close();
+        managedRealm.admin().users().create(UserBuilder.create().username("testuser").email("testuser@example.com").build()).close();
 
         Long scheduleAt = runOnServer.fetch((FetchOnServer) session -> {
             RealmModel realm = session.getContext().getRealm();

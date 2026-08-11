@@ -13,6 +13,7 @@ import {
   Text,
   TextContent,
 } from "@patternfly/react-core";
+import { SyncAltIcon } from "@patternfly/react-icons";
 import { saveAs } from "file-saver";
 import { useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
@@ -191,6 +192,14 @@ export const Keys = ({
                 isDisabled={useJwksUrl === "true"}
               >
                 {t("import")}
+              </Button>
+              <Button
+                data-testid="reload"
+                variant="secondary"
+                onClick={refresh}
+                isDisabled={useJwksUrl === "true"}
+              >
+                <SyncAltIcon /> {t("refresh")}
               </Button>
             </ActionGroup>
           </FormAccess>

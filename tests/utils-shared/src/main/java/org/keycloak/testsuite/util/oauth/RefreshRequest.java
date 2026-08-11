@@ -11,7 +11,7 @@ public class RefreshRequest extends AbstractHttpPostRequest<RefreshRequest, Acce
 
     private final String refreshToken;
 
-    RefreshRequest(String refreshToken, AbstractOAuthClient<?> client) {
+    public RefreshRequest(String refreshToken, AbstractOAuthClient<?> client) {
         super(client);
         this.refreshToken = refreshToken;
     }

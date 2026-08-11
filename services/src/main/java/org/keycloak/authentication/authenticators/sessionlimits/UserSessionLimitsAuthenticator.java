@@ -130,9 +130,9 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
     private List<UserSessionModel> getUserSessionsForClientIfEnabled(List<UserSessionModel> userSessionsForRealm, ClientModel currentClient, int userClientLimit) {
         // Only count this users sessions for this client only in case a limit is configured, otherwise skip this costly operation.
         if (userClientLimit <= 0) {
+            logger.debugf("total user sessions for this keycloak client will not be counted. Will be logged as 0 (zero)");
             return Collections.emptyList();
         }
-        logger.debugf("total user sessions for this keycloak client will not be counted. Will be logged as 0 (zero)");
         List<UserSessionModel> userSessionsForClient = userSessionsForRealm.stream().filter(session -> session.getAuthenticatedClientSessionByClient(currentClient.getId()) != null).collect(Collectors.toList());
         return userSessionsForClient;
     }

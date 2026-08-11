@@ -132,4 +132,19 @@ public class ManagementOptions {
             .category(OptionCategory.MANAGEMENT)
             .description("The type of the key store file for the management server. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
             .build();
+
+    public static final Option<File> HTTPS_MANAGEMENT_TRUST_STORE_FILE = new OptionBuilder<>("https-management-trust-store-file", File.class)
+            .category(OptionCategory.MANAGEMENT)
+            .description("The trust store which holds the certificate information of the certificates to trust for the management server. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
+            .build();
+
+    public static final Option<String> HTTPS_MANAGEMENT_TRUST_STORE_PASSWORD = new OptionBuilder<>("https-management-trust-store-password", String.class)
+            .category(OptionCategory.MANAGEMENT)
+            .description("The password of the trust store file for the management server. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
+            .build();
+
+    public static final Option<String> HTTPS_MANAGEMENT_TRUST_STORE_TYPE = new OptionBuilder<>("https-management-trust-store-type", String.class)
+            .category(OptionCategory.MANAGEMENT)
+            .description("The type of the trust store file for the management server. If not given, the value is inherited from HTTP options. " + RELEVANT_MSG)
+            .build();
 }

@@ -11,7 +11,10 @@ import java.util.Optional;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.config.HttpOptions;
+import org.keycloak.config.ManagementOptions;
+import org.keycloak.config.Option;
 import org.keycloak.config.OptionsUtil;
+import org.keycloak.config.ProxyOptions;
 import org.keycloak.config.SecurityOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
@@ -19,6 +22,7 @@ import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.DurationConverter;
@@ -28,6 +32,7 @@ import io.smallrye.config.ConfigSourceInterceptorContext;
 
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.isSet;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromFeature;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
@@ -39,6 +44,7 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
     private static final String QUARKUS_HTTPS_TRUST_STORE_FILE = "quarkus.http.ssl.certificate.trust-store-file";
     public static final String QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE = "quarkus.http.ssl.certificate.trust-store-file-type";
     private static final String QUARKUS_HTTPS_KEY_STORE_FILE_TYPE = "quarkus.http.ssl.certificate.key-store-file-type";
+    public static final String QUARKUS_HTTPS_SNI = "quarkus.http.ssl.sni";
 
     // Transform runtime exceptions obtained from Quarkus to ours with a relevant message
     private static void setCustomExceptionTransformer() {
@@ -46,18 +52,78 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
             if (exception instanceof IOException ioe) {
                 return new PropertyException("Failed to load 'https-*' material: " + ioe.getClass().getSimpleName() + " " + ioe.getMessage(), ioe);
             } else if (exception instanceof IllegalArgumentException iae) {
-                if (iae.getMessage().contains(QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE)) {
-                    return new PropertyException("Unable to determine 'https-trust-store-type' automatically. " +
-                            "Adjust the file extension or specify the property.", iae);
-                } else if (iae.getMessage().contains(QUARKUS_HTTPS_KEY_STORE_FILE_TYPE)) {
-                    return new PropertyException("Unable to determine 'https-key-store-type' automatically. " +
-                            "Adjust the file extension or specify the property.", iae);
+                String message = iae.getMessage();
+                if (message != null && message.contains(QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE)) {
+                    return unableToDetermineStoreTypeException(iae,
+                            resolveStoreTypeOption(message, QUARKUS_HTTPS_TRUST_STORE_FILE,
+                                    ManagementPropertyMappers.QUARKUS_MANAGEMENT_HTTPS_TRUST_STORE_FILE,
+                                    HttpOptions.HTTPS_TRUST_STORE_TYPE, ManagementOptions.HTTPS_MANAGEMENT_TRUST_STORE_TYPE,
+                                    ManagementOptions.HTTPS_MANAGEMENT_TRUST_STORE_FILE));
+                } else if (message != null && message.contains(QUARKUS_HTTPS_KEY_STORE_FILE_TYPE)) {
+                    return unableToDetermineStoreTypeException(iae,
+                            resolveStoreTypeOption(message, QUARKUS_HTTPS_KEY_STORE_FILE,
+                                    ManagementPropertyMappers.QUARKUS_MANAGEMENT_HTTPS_KEY_STORE_FILE,
+                                    HttpOptions.HTTPS_KEY_STORE_TYPE, ManagementOptions.HTTPS_MANAGEMENT_KEY_STORE_TYPE,
+                                    ManagementOptions.HTTPS_MANAGEMENT_KEY_STORE_FILE));
                 } else {
                     return new PropertyException(iae.getMessage(), iae);
                 }
             }
             return exception;
         });
+    }
+
+    private static PropertyException unableToDetermineStoreTypeException(IllegalArgumentException cause, String optionKey) {
+        return new PropertyException("Unable to determine '%s' automatically. Adjust the file extension or specify the property."
+                .formatted(optionKey), cause);
+    }
+
+    static String resolveStoreTypeOption(String quarkusMessage, String httpStoreFileProperty, String managementStoreFileProperty,
+            Option<?> httpStoreTypeOption, Option<?> managementStoreTypeOption, Option<?> managementStoreFileOption) {
+        Optional<Path> path = extractPathFromTlsUtilsMessage(quarkusMessage);
+        if (path.isEmpty()) {
+            return httpStoreTypeOption.getKey();
+        }
+        boolean matchesManagement = pathsMatchConfiguredFile(path.get(), managementStoreFileProperty);
+        boolean matchesHttp = pathsMatchConfiguredFile(path.get(), httpStoreFileProperty);
+        if (matchesManagement && !matchesHttp) {
+            return managementStoreTypeOption.getKey();
+        }
+        if (matchesManagement && matchesHttp && isSet(managementStoreFileOption)) {
+            return managementStoreTypeOption.getKey();
+        }
+        return httpStoreTypeOption.getKey();
+    }
+
+    private static Optional<Path> extractPathFromTlsUtilsMessage(String message) {
+        String prefix = "from the file name: ";
+        int start = message.indexOf(prefix);
+        if (start < 0) {
+            return Optional.empty();
+        }
+        start += prefix.length();
+        int end = message.indexOf(". Configure", start);
+        if (end < 0) {
+            return Optional.empty();
+        }
+        return Optional.of(Paths.get(message.substring(start, end)));
+    }
+
+    private static boolean pathsMatchConfiguredFile(Path path, String property) {
+        return getOptionalValue(property)
+                .map(value -> pathsEqual(Paths.get(value), path))
+                .orElse(false);
+    }
+
+    private static boolean pathsEqual(Path configured, Path actual) {
+        Path normalizedConfigured = configured.normalize();
+        Path normalizedActual = actual.normalize();
+        if (normalizedConfigured.equals(normalizedActual)) {
+            return true;
+        }
+        return normalizedConfigured.isAbsolute() != normalizedActual.isAbsolute()
+                && normalizedConfigured.getFileName() != null
+                && normalizedConfigured.getFileName().equals(normalizedActual.getFileName());
     }
 
     // taken from VertxConfigBuilder
@@ -71,7 +137,7 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
             return value;
         }
         // account for modes that always need to be all interfaces
-        if (Boolean.parseBoolean(System.getenv("KC_RUN_IN_CONTAINER")) || LaunchMode.current().isRemoteDev()
+        if (Environment.isRunInContainer() || LaunchMode.current().isRemoteDev()
                 || isWSL()) {
             return "0.0.0.0";
         }
@@ -195,6 +261,21 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
                         .to("quarkus.shutdown.delay")
                         .paramLabel("delay")
                         .validator(HttpPropertyMappers::validateShutdownDuration)
+                        .build(),
+                fromOption(HttpOptions.SHUTDOWN_TIMEOUT)
+                        .mapFrom(HttpOptions.SHUTDOWN_TIMEOUT)
+                        .to("kc.spi-connections-infinispan--default--shutdown-timeout")
+                        .paramLabel("timeout")
+                        .validator(HttpPropertyMappers::validateShutdownDuration)
+                        .build(),
+                fromOption(HttpOptions.HTTPS_SNI_ENABLED)
+                        .to(QUARKUS_HTTPS_SNI)
+                        .transformer((value, context) -> {
+                            if (value == null && isHttpsEnabled() && Configuration.getConfigValue(ProxyOptions.PROXY_HEADERS).getValue() == null) {
+                                return "true";
+                            }
+                            return value;
+                        })
                         .build()
         );
 

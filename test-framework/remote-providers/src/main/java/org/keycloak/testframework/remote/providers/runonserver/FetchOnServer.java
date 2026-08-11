@@ -17,6 +17,7 @@
 
 package org.keycloak.testframework.remote.providers.runonserver;
 
+import java.io.IOException;
 import java.io.Serializable;
 
 import org.keycloak.models.KeycloakSession;
@@ -26,6 +27,6 @@ import org.keycloak.models.KeycloakSession;
  */
 public interface FetchOnServer extends Serializable {
 
-    Object run(KeycloakSession session);
+    Object run(KeycloakSession session) throws IOException;
 
 }

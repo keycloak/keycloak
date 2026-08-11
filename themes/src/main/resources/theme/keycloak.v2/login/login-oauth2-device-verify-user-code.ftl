@@ -10,7 +10,7 @@
             <@field.input name="device_user_code" label=msg("verifyOAuth2DeviceUserCode") autofocus=true />
 
             <@buttons.actionGroup>
-                <@buttons.button id="kc-login" label="doSubmit" class=["kcButtonPrimaryClass", "kcButtonBlockClass"] />
+                <@buttons.button id="kc-login" label="doSubmit" />
             </@buttons.actionGroup>
         </form>
     </#if>

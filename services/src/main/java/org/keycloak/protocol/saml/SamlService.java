@@ -424,9 +424,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 ScheduledTaskRunner task = new ScheduledTaskRunner(session.getKeycloakSessionFactory(), artifactResolutionRunnable);
                 executor.execute(task);
 
-                logger.tracef("ArtifactResolutionRunnable scheduled, current transaction will be rolled back");
-                // Current transaction must be ignored due to asyncResponse.
-                session.getTransactionManager().rollback();
+                logger.tracef("ArtifactResolutionRunnable scheduled");
             } catch (URISyntaxException | ProcessingException | ParsingException | ConfigurationException e) {
                 event.event(EventType.LOGIN);
                 event.detail(Details.REASON, e.getMessage());
@@ -545,8 +543,7 @@ public class SamlService extends AuthorizationEndpointBase {
                     String acrValue;
                     if (requestAbstractType.getRequestedAuthnContext() != null
                             && !requestAbstractType.getRequestedAuthnContext().getAuthnContextClassRef().isEmpty()) {
-                        acrValue = SamlProtocolUtils.getSelectedLoA(requestAbstractType.getRequestedAuthnContext(),
-                                acrLoaMap, AcrUtils.getMinimumAcrValue(client));
+                        acrValue = SamlProtocolUtils.getSelectedLoA(client, requestAbstractType.getRequestedAuthnContext(), acrLoaMap);
                         if (acrValue == null) {
                             logger.debug("No AuthnContextClassRef is valid for the requested context.");
                             event.detail(Details.REASON, "Invalid RequestedAuthnContext");
@@ -555,6 +552,11 @@ public class SamlService extends AuthorizationEndpointBase {
                         }
                     } else {
                         acrValue = AcrUtils.getMinimumAcrValue(client);
+                        if (acrValue != null && acrLoaMap.get(acrValue) == null) {
+                            logger.warnf("Invalid value '%s' for option '%s' in client '%s' in realm '%s', no minimum value used",
+                                acrValue, Constants.MINIMUM_ACR_VALUE, client.getClientId(), client.getRealm().getName());
+                            acrValue = null;
+                        }
                     }
 
                     if (acrValue != null) {

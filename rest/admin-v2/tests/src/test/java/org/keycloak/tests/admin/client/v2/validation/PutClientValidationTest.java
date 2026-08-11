@@ -1,5 +1,8 @@
 package org.keycloak.tests.admin.client.v2.validation;
 
+import java.util.Map;
+import java.util.UUID;
+
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
@@ -107,9 +110,10 @@ public class PutClientValidationTest extends AbstractClientValidationTest {
     public void createClientViaPutFailsUuidValidation(String protocol) throws Exception {
         boolean isOidc = protocol.equals(OIDCClientRepresentation.PROTOCOL);
         String existingUuid = isOidc ? testOidcClient.getId() : testSamlClient.getId();
+        String arbitraryUnusedUuid = UUID.randomUUID().toString();
 
         // Try to create client with a used UUID (should fail)
-        var differentClientId = "test-client-for-create-via-put-%s".formatted(protocol);
+        var differentClientId = "test-client-for-create-via-put-%s-%s".formatted(protocol, UUID.randomUUID());
         HttpPut updateRequest = new HttpPut(getClientApiUrl(differentClientId));
         setAuthHeader(updateRequest);
         updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
@@ -126,9 +130,9 @@ public class PutClientValidationTest extends AbstractClientValidationTest {
         try (var response = client.execute(updateRequest)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
 
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("uuid: UUID is server-managed and must not be user-specified"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(Map.class);
+            
+            assertThat((String)body.get("error"), is("uuid already exists, but with a different clientId"));
         }
 
         // Try to create client with a different UUID (should pass)
@@ -140,23 +144,23 @@ public class PutClientValidationTest extends AbstractClientValidationTest {
                 {
                     "protocol": "%s",
                     "clientId": "%s",
-                    "uuid": "550e8400-e29b-41d4-a716-446655440000",
+                    "uuid": "%s",
                     "enabled": true
                 }
-                """.formatted(protocol, differentClientId)));
+                """.formatted(protocol, differentClientId, arbitraryUnusedUuid)));
 
         try (var response = client.execute(updateRequest)) {
             assertThat(response.getStatusLine().getStatusCode(), is(201));
             var rep = mapper.createParser(response.getEntity().getContent()).readValueAs(BaseClientRepresentation.class);
             assertThat(rep.getUuid(), not(is(existingUuid)));
-            assertThat(rep.getUuid(), not(is("550e8400-e29b-41d4-a716-446655440000")));
+            assertThat(rep.getUuid(), not(is(arbitraryUnusedUuid)));
         }
     }
 
     @ParameterizedTest
     @ValueSource(strings = {OIDCClientRepresentation.PROTOCOL, SAMLClientRepresentation.PROTOCOL})
     public void updateClientWithUuidFailsValidation(String protocol) throws Exception {
-        var clientId = "test-client-for-update-%s".formatted(protocol);
+        var clientId = "test-client-for-update-%s-%s".formatted(protocol, UUID.randomUUID());
 
         // First create a client without UUID
         HttpPost createRequest = new HttpPost(getClientsApiUrl());
@@ -197,7 +201,7 @@ public class PutClientValidationTest extends AbstractClientValidationTest {
 
             var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
             assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("uuid: UUID is server-managed and must not be user-specified"));
+            assertThat(body.violations(), hasItem("uuid: uuid is server-managed and must not be user-specified"));
         }
 
         // Update the client with the same UUID (should succeed)

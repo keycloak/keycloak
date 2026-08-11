@@ -20,7 +20,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
@@ -314,7 +314,7 @@ public class AdhocWorkflowTest extends AbstractWorkflowTest {
     }
 
     private UserRepresentation getUserRepresentation() {
-        return UserConfigBuilder.create().username("alice")
+        return UserBuilder.create().username("alice")
                 .email("alice@wonderland.org")
                 .firstName("Alice")
                 .lastName("Wonderland")

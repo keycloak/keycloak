@@ -2,6 +2,7 @@ package org.keycloak.services;
 
 import org.keycloak.Token;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -19,6 +20,7 @@ import org.keycloak.services.resources.admin.fgap.UserPermissionEvaluator;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.REALMS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
+
 
 public class DefaultPermissions implements Permissions {
 
@@ -61,6 +63,8 @@ public class DefaultPermissions implements Permissions {
                 return model != null && groups.canManageMembership((GroupModel) model);
             } else if (AdminPermissionsSchema.QUERY.equals(scope)) {
                 return groups.canList();
+            } else if (AdminPermissionsSchema.VIEW_MEMBERS.equals(scope)) {
+                return groups.canViewMembers((GroupModel) model);
             }
         }
 
@@ -101,6 +105,22 @@ public class DefaultPermissions implements Permissions {
         }
 
         return false;
+    }
+
+    @Override
+    public boolean isAdminGroup(GroupModel group) {
+        return AdminRoles.groupHasAdminRoles(group);
+    }
+
+    @Override
+    public boolean isAdminUser(UserModel user) {
+        // Direct role mappings (with composite resolution)
+        if (user.getRoleMappingsStream()
+                .anyMatch(AdminRoles::isAdminRoleOrComposite)) {
+            return true;
+        }
+        // Group-inherited roles
+        return user.getGroupsStream().anyMatch(AdminRoles::groupHasAdminRoles);
     }
 
     private AdminPermissionEvaluator getEvaluator(AccessToken accessToken) {

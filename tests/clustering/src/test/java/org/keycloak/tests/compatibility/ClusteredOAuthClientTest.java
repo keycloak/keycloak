@@ -1,14 +1,17 @@
 package org.keycloak.tests.compatibility;
 
 import org.keycloak.testframework.annotations.InjectLoadBalancer;
+import org.keycloak.testframework.annotations.InjectTestDatabase;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.clustering.LoadBalancer;
+import org.keycloak.testframework.database.TestDatabase;
+import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -35,6 +38,10 @@ public class ClusteredOAuthClientTest {
 
     @InjectWebDriver
     ManagedWebDriver driver;
+
+    // we cannot reuse the database between tests with mix-cluster; Keycloak won't start.
+    @InjectTestDatabase(lifecycle = LifeCycle.CLASS)
+    TestDatabase database;
 
     @AfterEach
     public void cleanup() {
@@ -84,7 +91,7 @@ public class ClusteredOAuthClientTest {
 
     public static class OAuthUserConfig implements UserConfig {
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder user) {
+        public UserBuilder configure(UserBuilder user) {
             return user.username("myuser").name("First", "Last")
                   .email("test@local")
                   .password("password");

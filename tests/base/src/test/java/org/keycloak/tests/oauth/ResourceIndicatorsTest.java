@@ -8,10 +8,11 @@ import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.oauth.DefaultOAuthClientConfiguration;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -136,20 +137,20 @@ public class ResourceIndicatorsTest {
     private static final class ResourceIndicatorsRealm implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            realm.addClient("theservice").attribute("resource_url", "https://theservice");
+        public RealmBuilder configure(RealmBuilder realm) {
+            realm.clients(ClientBuilder.create("theservice").attribute("resource_url", "https://theservice"));
             realm.clientRoles("theservice", "myrole");
 
-            realm.addClient("otherservice").attribute("resource_url", "https://otherservice");
+            realm.clients(ClientBuilder.create("otherservice").attribute("resource_url", "https://otherservice"));
             realm.clientRoles("otherservice", "myrole");
 
-            realm.addClient("serviceWithoutResource");
+            realm.clients(ClientBuilder.create("serviceWithoutResource"));
             realm.clientRoles("serviceWithoutResource", "myrole");
 
-            realm.addUser("user").firstName("user").lastName("user").password("pass").email("the@email.localhost")
+            realm.users(UserBuilder.create("user").firstName("user").lastName("user").password("pass").email("the@email.localhost")
                     .clientRoles("theservice", "myrole")
                     .clientRoles("otherservice", "myrole")
-                    .clientRoles("serviceWithoutResource", "myrole");
+                    .clientRoles("serviceWithoutResource", "myrole"));
 
             return realm;
         }
@@ -158,7 +159,7 @@ public class ResourceIndicatorsTest {
     private static final class OAuthClientConfig extends DefaultOAuthClientConfiguration {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return super.configure(client).fullScopeEnabled(true);
         }
     }

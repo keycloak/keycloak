@@ -26,7 +26,7 @@ import org.keycloak.storage.user.SynchronizationResult;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Common LDAP asserts
@@ -55,11 +55,11 @@ public class LDAPTestAsserts {
 
     public static void assertLoaded(UserModel user, String username, String expectedFirstName, String expectedLastName,
             String expectedEmail, String expectedPostalCode, MultivaluedHashMap<String, String> otherAttrs) {
-        Assert.assertNotNull(user);
-        Assert.assertEquals(expectedFirstName, user.getFirstName());
-        Assert.assertEquals(expectedLastName, user.getLastName());
-        Assert.assertEquals(expectedEmail, user.getEmail());
-        Assert.assertEquals(expectedPostalCode, user.getFirstAttribute("postal_code"));
+        Assertions.assertNotNull(user);
+        Assertions.assertEquals(expectedFirstName, user.getFirstName());
+        Assertions.assertEquals(expectedLastName, user.getLastName());
+        Assertions.assertEquals(expectedEmail, user.getEmail());
+        Assertions.assertEquals(expectedPostalCode, user.getFirstAttribute("postal_code"));
         for (String name : otherAttrs.keySet()) {
             MatcherAssert.assertThat(otherAttrs.getList(name), Matchers.containsInAnyOrder(user.getAttributeStream(name).toArray(String[]::new)));
         }
@@ -67,17 +67,17 @@ public class LDAPTestAsserts {
 
 
     public static void assertSyncEquals(SynchronizationResult syncResult, int expectedAdded, int expectedUpdated, int expectedRemoved, int expectedFailed) {
-        Assert.assertEquals(expectedAdded, syncResult.getAdded());
-        Assert.assertEquals(expectedUpdated, syncResult.getUpdated());
-        Assert.assertEquals(expectedRemoved, syncResult.getRemoved());
-        Assert.assertEquals(expectedFailed, syncResult.getFailed());
+        Assertions.assertEquals(expectedAdded, syncResult.getAdded());
+        Assertions.assertEquals(expectedUpdated, syncResult.getUpdated());
+        Assertions.assertEquals(expectedRemoved, syncResult.getRemoved());
+        Assertions.assertEquals(expectedFailed, syncResult.getFailed());
     }
 
 
     public static void assertSyncEquals(SynchronizationResultRepresentation syncResult, int expectedAdded, int expectedUpdated, int expectedRemoved, int expectedFailed) {
-        Assert.assertEquals(expectedAdded, syncResult.getAdded());
-        Assert.assertEquals(expectedUpdated, syncResult.getUpdated());
-        Assert.assertEquals(expectedRemoved, syncResult.getRemoved());
-        Assert.assertEquals(expectedFailed, syncResult.getFailed());
+        Assertions.assertEquals(expectedAdded, syncResult.getAdded());
+        Assertions.assertEquals(expectedUpdated, syncResult.getUpdated());
+        Assertions.assertEquals(expectedRemoved, syncResult.getRemoved());
+        Assertions.assertEquals(expectedFailed, syncResult.getFailed());
     }
 }

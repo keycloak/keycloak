@@ -33,7 +33,10 @@ on: user-group-membership-removed(/Sales)
 steps:
   - uses: revoke-role
     with:
-      role: "manager,sales-rep,sales-intern"
+      role:
+        - sales-rep
+        - manager
+        - sales-intern
 ```
 
 == Tracking user activity and taking actions on inactivity

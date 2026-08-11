@@ -277,9 +277,4 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
     public String getCredentialType(KeycloakSession session, AuthenticationSessionModel authenticationSession) {
         return OTPCredentialModel.TYPE;
     }
-
-    @Override
-    public boolean isOneTimeAction() {
-        return true;
-    }
 }
