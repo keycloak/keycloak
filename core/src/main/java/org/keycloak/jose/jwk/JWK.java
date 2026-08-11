@@ -183,14 +183,7 @@ public class JWK {
     @JsonIgnore
     public <T> T getOtherClaim(String claimName, Class<T> claimType) {
         Object o = getOtherClaims().get(claimName);
-        if (o == null) {
-            return null;
-        }
-        try {
-            return claimType.cast(o);
-        } catch (ClassCastException e) {
-            return null;
-        }
+        return claimType.isInstance(o) ? claimType.cast(o) : null;
     }
 
 }
