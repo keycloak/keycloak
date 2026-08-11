@@ -1,0 +1,36 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== Authorization services claim handling changes
+
+Two changes affect how claims are handled in the authorization services token endpoint:
+
+* Claims with the `kc.` prefix are now reserved for server-controlled evaluation context attributes (such as `kc.time.date_time`, `kc.client.id`, and `kc.realm.name`). User-supplied claims with this prefix, whether pushed via `claim_token` or via the UMA permission ticket, are filtered out before policy evaluation. If your authorization policies rely on custom claims that start with `kc.`, rename them to use a different prefix.
+
+* When both a UMA permission ticket and a `claim_token` contain claims with the same key, ticket claims now take precedence. Previously, `claim_token` claims would silently override ticket claims on collision. This change ensures that claims set by the resource server when creating the permission ticket cannot be overridden by the requesting party.
+
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+It also lists significant changes to internal APIs.
+
+=== <TODO>
+
+// ------------------------ Deprecated features ------------------------ //
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+=== <TODO>
+
+// ------------------------ Removed features ------------------------ //
+== Removed features
+
+The following features have been removed from this release.
+
+=== <TODO>
+
