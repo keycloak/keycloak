@@ -524,6 +524,7 @@ class AdminClient {
     enabled: boolean,
     providerType: string,
     realm: string = this.#client.realmName,
+    priority: number = 0,
   ) {
     await this.#login();
     await this.#client.components.create({
@@ -532,7 +533,7 @@ class AdminClient {
       config: {
         enabled: [`${enabled}`],
         active: [`${active}`],
-        priority: ["0"],
+        priority: [`${priority}`],
       },
       providerId: providerType,
       providerType: "org.keycloak.keys.KeyProvider",
@@ -676,6 +677,69 @@ class AdminClient {
   async deleteWorkflow(realm: string, id: string): Promise<void> {
     await this.#login();
     await this.#client.workflows.delById({ realm, id });
+  }
+
+  async getRealmKeys(realm: string = this.#client.realmName) {
+    await this.#login();
+    const keysMetadata = await this.#client.realms.getKeys({ realm });
+    return keysMetadata.keys || [];
+  }
+
+  async makeKeyProviderPassive(
+    name: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    const components = await this.#client.components.find({
+      realm,
+      type: "org.keycloak.keys.KeyProvider",
+      name,
+    });
+    if (components.length > 0) {
+      await this.#client.components.update(
+        { realm, id: components[0].id! },
+        {
+          ...components[0],
+          config: { ...components[0].config, active: ["false"] },
+        },
+      );
+    }
+  }
+
+  async disableKeyProvider(
+    name: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    const components = await this.#client.components.find({
+      realm,
+      type: "org.keycloak.keys.KeyProvider",
+      name,
+    });
+    if (components.length > 0) {
+      await this.#client.components.update(
+        { realm, id: components[0].id! },
+        {
+          ...components[0],
+          config: { ...components[0].config, enabled: ["false"] },
+        },
+      );
+    }
+  }
+
+  async deleteKeyProvider(
+    name: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    const components = await this.#client.components.find({
+      realm,
+      type: "org.keycloak.keys.KeyProvider",
+      name,
+    });
+    if (components.length > 0) {
+      await this.#client.components.del({ realm, id: components[0].id! });
+    }
   }
 }
 

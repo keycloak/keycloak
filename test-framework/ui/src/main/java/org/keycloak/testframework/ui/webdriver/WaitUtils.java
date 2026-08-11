@@ -31,7 +31,8 @@ public class WaitUtils {
     }
 
     public WaitUtils waitForOAuthCallback() {
-        waitForOAuthCallback(webdriver1 -> webdriver1.getCurrentUrl().contains(OAuth2Constants.CODE + "=") || webdriver1.getCurrentUrl().contains(OAuth2Constants.ERROR + "="));
+        // "response=" is for JARM (JWT Secured Authorization Response Mode, e.g. query.jwt)
+        waitForOAuthCallback(webdriver1 -> webdriver1.getCurrentUrl().contains(OAuth2Constants.CODE + "=") || webdriver1.getCurrentUrl().contains(OAuth2Constants.ERROR + "=") || webdriver1.getCurrentUrl().contains(OAuth2Constants.RESPONSE + "="));
         return this;
     }
 

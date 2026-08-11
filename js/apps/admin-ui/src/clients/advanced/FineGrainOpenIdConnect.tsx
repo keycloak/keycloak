@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { HelpItem, SelectControl } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
+import { SigningKeySelect } from "../../components/signing-key/SigningKeySelect";
+import { useRealmKeys } from "../../components/signing-key/useRealmKeys";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertAttributeNameToForm, sortProviders } from "../../util";
 import { FormFields } from "../ClientDetails";
@@ -28,6 +30,10 @@ export const FineGrainOpenIdConnect = ({
   const contentEncryptionProviders = providers?.contentencryption.providers;
   const cekManagementProviders = providers?.cekmanagement.providers;
   const signatureProviders = providers?.signature.providers;
+
+  // The four selectors below share the same realm keys; fetch once here and pass them down
+  // so opening this tab issues a single realm-keys request instead of one per selector.
+  const { realmKeys, canViewRealmKeys } = useRealmKeys();
 
   const convert = (list: { [index: string]: ProviderRepresentation }) =>
     sortProviders(list).map((i) => ({ key: i, value: i }));
@@ -59,6 +65,16 @@ export const FineGrainOpenIdConnect = ({
           defaultValue: "",
         }}
         options={prependEmpty(clientSignatureProviders!)}
+      />
+      <SigningKeySelect
+        name={convertAttributeNameToForm<FormFields>(
+          "attributes.access.token.signed.response.kid",
+        )}
+        protocol="openid-connect"
+        realmKeys={realmKeys}
+        canViewRealmKeys={canViewRealmKeys}
+        label={t("signingKeyAccessTokenLabel")}
+        labelIcon={t("signingKeyAccessTokenHelp")}
       />
       <FormGroup
         label={t("useRfc9068AccessTokenType")}
@@ -99,6 +115,16 @@ export const FineGrainOpenIdConnect = ({
           defaultValue: "",
         }}
         options={prependEmpty(clientSignatureProviders!)}
+      />
+      <SigningKeySelect
+        name={convertAttributeNameToForm<FormFields>(
+          "attributes.id.token.signed.response.kid",
+        )}
+        protocol="openid-connect"
+        realmKeys={realmKeys}
+        canViewRealmKeys={canViewRealmKeys}
+        label={t("signingKeyIdTokenLabel")}
+        labelIcon={t("signingKeyIdTokenHelp")}
       />
       <SelectControl
         name={convertAttributeNameToForm<FormFields>(
@@ -161,6 +187,16 @@ export const FineGrainOpenIdConnect = ({
           defaultValue: "",
         }}
         options={prependEmpty(signatureProviders!)}
+      />
+      <SigningKeySelect
+        name={convertAttributeNameToForm<FormFields>(
+          "attributes.user.info.response.signature.kid",
+        )}
+        protocol="openid-connect"
+        realmKeys={realmKeys}
+        canViewRealmKeys={canViewRealmKeys}
+        label={t("signingKeyUserInfoLabel")}
+        labelIcon={t("signingKeyUserInfoHelp")}
       />
       <SelectControl
         name={convertAttributeNameToForm<FormFields>(
@@ -265,6 +301,16 @@ export const FineGrainOpenIdConnect = ({
           defaultValue: "",
         }}
         options={prependEmpty(signatureProviders!)}
+      />
+      <SigningKeySelect
+        name={convertAttributeNameToForm<FormFields>(
+          "attributes.authorization.signed.response.kid",
+        )}
+        protocol="openid-connect"
+        realmKeys={realmKeys}
+        canViewRealmKeys={canViewRealmKeys}
+        label={t("signingKeyAuthorizationLabel")}
+        labelIcon={t("signingKeyAuthorizationHelp")}
       />
       <SelectControl
         name={convertAttributeNameToForm<FormFields>(
