@@ -11,6 +11,8 @@ import org.keycloak.tests.model.UserSessionProviderTest;
 import org.keycloak.tests.oauth.RefreshTokenTimeoutsTest;
 import org.keycloak.tests.session.LastSessionRefreshUnitTest;
 import org.keycloak.tests.session.SessionTimeoutValidationTest;
+import org.keycloak.tests.sessionlimits.KcOidcUserSessionLimitsBrokerTest;
+import org.keycloak.tests.sessionlimits.KcSamlUserSessionLimitsBrokerTest;
 import org.keycloak.tests.sessionlimits.UserSessionLimitsTest;
 
 import org.junit.platform.suite.api.AfterSuite;
@@ -26,6 +28,8 @@ import org.junit.platform.suite.api.Suite;
         UserSessionProviderTest.class,
         UserSessionProviderOfflineTest.class,
         UserSessionLimitsTest.class,
+        KcOidcUserSessionLimitsBrokerTest.class,
+        KcSamlUserSessionLimitsBrokerTest.class,
         SessionTimeoutValidationTest.class,
         LastSessionRefreshUnitTest.class,
 })
