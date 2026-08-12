@@ -43,7 +43,6 @@ import org.keycloak.protocol.saml.mappers.RoleListMapper;
 import org.keycloak.protocol.saml.mappers.UserPropertyAttributeStatementMapper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
-import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
@@ -193,12 +192,6 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
 
         if (rep.getClientSignature() == null) {
             client.setRequiresClientSignature(true);
-        }
-
-        if (client.requiresClientSignature() && client.getClientSigningCertificate() == null
-                && (!client.isUseMetadataDescriptorUrl() || client.getMetadataDescriptorUrl() != null)) {
-            CertificateRepresentation info = KeycloakModelUtils.generateKeyPairCertificate(newClient.getClientId());
-            client.setClientSigningCertificate(info.getCertificate());
         }
 
         if (clientRep.isFrontchannelLogout() == null) {

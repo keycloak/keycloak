@@ -74,7 +74,7 @@ public class KeystoreUtils {
         Certificate[] chain = {certificate};
         keyStore.setKeyEntry(subject, privKey, keyPassword.trim().toCharArray(), chain);
 
-        File file = folder.newFile(fileName);
+        File file = File.createTempFile("keystore-", "." + keystoreType.getPrimaryExtension(), folder.getRoot());
         keyStore.store(new FileOutputStream(file), keystorePassword.trim().toCharArray());
 
         CertificateRepresentation certRep = new CertificateRepresentation();

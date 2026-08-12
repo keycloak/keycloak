@@ -439,11 +439,17 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         KeystoreUtils.KeystoreInfo ksInfo = KeystoreUtils.generateKeystore(
                 folder, KeystoreFormat.valueOf(format), keyAlias, storePassword, keyPassword,
                 keyPair.getPrivate(), x509Cert);
+        String savedRealm = oauth.getRealm();
+        String savedClient = oauth.getClientId();
         try {
             testUploadKeystore(format, ksInfo.getKeystoreFile().getAbsolutePath(), keyAlias, storePassword);
         } finally {
+            oauth.realm(savedRealm);
+            oauth.client(savedClient);
             ksInfo.getKeystoreFile().delete();
         }
+
+        timeOffSet.set(20);
 
         client = getClient(testRealm.getRealm(), client.getId()).toRepresentation();
 

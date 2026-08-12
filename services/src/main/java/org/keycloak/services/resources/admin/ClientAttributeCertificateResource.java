@@ -86,7 +86,7 @@ public class ClientAttributeCertificateResource {
     }
 
     /**
-     * Upload certificate and eventually private key
+     * Upload certificate
      *
      * @return
      * @throws IOException
@@ -96,7 +96,7 @@ public class ClientAttributeCertificateResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ATTRIBUTE_CERTIFICATE)
-    @Operation( summary = "Upload certificate and eventually private key")
+    @Operation( summary = "Upload certificate")
     public CertificateRepresentation uploadJks() throws IOException {
         auth.clients().requireConfigure(client);
         try {

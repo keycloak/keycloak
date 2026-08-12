@@ -74,13 +74,18 @@ export const SamlKeysDialog = ({
   const { addAlert, addError } = useAlerts();
 
   const submit = async (form: SamlKeysDialogForm) => {
+    let uploadError: unknown;
     await submitForm(adminClient, form, id, attr, (error) => {
       if (error) {
         addError("importError", error);
+        uploadError = error;
       } else {
         addAlert(t("importSuccess"), AlertVariant.success);
       }
     });
+    if (uploadError) {
+      throw uploadError;
+    }
   };
 
   return (

@@ -355,29 +355,19 @@ public class InstallationTest {
         Response response = samlClient.admin().getInstallationProviderAsResponse("mod-auth-mellon");
         byte[] result = response.readEntity(byte[].class);
 
-        String clientPrivateKey = null;
+
         String clientCert = null;
         try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(result))) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
-                if (entry.getName().endsWith("client-private-key.pem")) {
-                    clientPrivateKey = new String(zis.readAllBytes(), StandardCharsets.US_ASCII);
-                } else if (entry.getName().endsWith("client-cert.pem")) {
+                if (entry.getName().endsWith("client-cert.pem")) {
                     clientCert = new String(zis.readAllBytes(), StandardCharsets.US_ASCII);
                 }
             }
         }
 
-        Assertions.assertNotNull(clientPrivateKey);
         Assertions.assertNotNull(clientCert);
-        assertRfc7468PrivateKey(clientPrivateKey);
         assertRfc7468Cert(clientCert);
-    }
-
-    private void assertRfc7468PrivateKey(String result) {
-        Assertions.assertTrue(result.startsWith("-----BEGIN PRIVATE KEY-----"));
-        Assertions.assertTrue(result.endsWith("-----END PRIVATE KEY-----"));
-        result.lines().forEach(line -> Assertions.assertTrue(line.length() <= 64));
     }
 
     private void assertRfc7468Cert(String result) {
