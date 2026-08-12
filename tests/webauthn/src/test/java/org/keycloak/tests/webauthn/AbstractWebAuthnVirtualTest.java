@@ -34,6 +34,7 @@ import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -221,7 +222,16 @@ public abstract class AbstractWebAuthnVirtualTest implements UseVirtualAuthentic
         registerUser(USERNAME, PASSWORD, EMAIL, authenticatorLabel, shouldSuccess);
     }
 
+    protected void deleteUserIfPresent(String username) {
+        UserRepresentation existing = AdminApiUtil.findUserByUsername(managedRealm.admin(), username);
+        if (existing != null) {
+            managedRealm.admin().users().delete(existing.getId());
+        }
+    }
+
     protected void registerUser(String username, String password, String email, String authenticatorLabel, boolean shouldSuccess) {
+        deleteUserIfPresent(username);
+
         oAuthClient.openRegistrationForm();
 
         registerPage.assertCurrent();

@@ -7,11 +7,12 @@ import org.keycloak.testframework.database.TestDatabase;
 class DisabledForDatabasesCondition extends AbstractDisabledForSupplierCondition {
 
     @Override
-    Class<?> valueType() {
+    protected Class<?> valueType() {
         return TestDatabase.class;
     }
 
-    Class<? extends Annotation> annotation() {
+    @Override
+    protected Class<? extends Annotation> annotation() {
         return DisabledForDatabases.class;
     }
 
