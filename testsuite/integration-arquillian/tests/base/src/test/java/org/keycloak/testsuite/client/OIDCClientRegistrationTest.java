@@ -31,6 +31,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.keycloak.OAuth2Constants;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
@@ -224,21 +226,35 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
      */
     @Test
     public void updateClientWithScopeField() throws ClientRegistrationException {
-        // Create the client with an explicit client_id (non-UUID) to properly test the
-        // ID-type confusion fix: getClientByClientId vs getClientById.
-        OIDCClientRepresentation client = createRep();
-        client.setClientId("test-client-with-explicit-id");
-        OIDCClientRepresentation response = reg.oidc().create(client);
-        reg.auth(Auth.token(response));
+        // Create the client via admin API with an explicit client_id (non-UUID) to properly test
+        // the ID-type confusion fix: getClientByClientId vs getClientById. The OIDC registration
+        // POST endpoint rejects explicit client_id, so we use the admin API instead.
+        ClientRepresentation adminClientRep = new ClientRepresentation();
+        adminClientRep.setClientId("test-client-with-explicit-id");
+        adminClientRep.setEnabled(true);
+        adminClientRep.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
-        // Set the scope field — this previously caused an NPE because getClientById was used
-        // instead of getClientByClientId, resulting in null and a subsequent NPE.
-        // Use "phone address" which are configured optional client scopes (not "openid profile email"
-        // which are either default scopes or not configured).
-        response.setScope("phone address");
-        response.setRedirectUris(Collections.singletonList("http://updated-redirect"));
+        Response createResponse = adminClient.realm(REALM_NAME).clients()
+                .create(adminClientRep);
+        ClientRepresentation created = createResponse.readEntity(ClientRepresentation.class);
+        createResponse.close();
 
-        OIDCClientRepresentation updated = reg.oidc().update(response);
+        // Generate a registration access token for the newly created client.
+        ClientRepresentation clientWithToken = adminClient.realm(REALM_NAME).clients()
+                .get(created.getId()).regenerateRegistrationAccessToken();
+
+        // Authenticate the OIDC client registration with the registration access token.
+        reg.auth(Auth.token(clientWithToken));
+
+        // Build the update payload — set the scope field which previously caused an NPE
+        // because getClientById was used instead of getClientByClientId.
+        // Use "phone address" which are configured optional client scopes.
+        OIDCClientRepresentation updatePayload = new OIDCClientRepresentation();
+        updatePayload.setClientId("test-client-with-explicit-id");
+        updatePayload.setScope("phone address");
+        updatePayload.setRedirectUris(Collections.singletonList("http://updated-redirect"));
+
+        OIDCClientRepresentation updated = reg.oidc().update(updatePayload);
 
         assertNotNull(updated);
         assertNotNull(updated.getClientId());
@@ -254,6 +270,10 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
                 .orElseThrow(() -> new AssertionError("Client not found: test-client-with-explicit-id"));
         assertNotNull(rep);
         assertTrue(CollectionUtil.collectionEquals(Arrays.asList("phone", "address"), rep.getOptionalClientScopes()));
+        // Also assert that the realm's default OIDC scopes remain as default scopes,
+        // confirming the preservation logic works correctly.
+        Set<String> expectedDefaults = new HashSet<>(Arrays.asList("web-origins", "acr", "profile", "roles", "basic", "email"));
+        assertTrue(CollectionUtil.collectionEquals(expectedDefaults, rep.getDefaultClientScopes()));
     }
 
     /**

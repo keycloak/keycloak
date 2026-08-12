@@ -193,7 +193,6 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         ClientResource.updateClientServiceAccount(session, client, rep.isServiceAccountsEnabled());
         RepresentationToModel.updateClient(rep, client, session);
         RepresentationToModel.updateClientProtocolMappers(rep, client);
-
         RepresentationToModel.updateClientScopes(rep, client);
 
         if (rep.getDefaultRoles() != null) {
