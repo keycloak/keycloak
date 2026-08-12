@@ -426,19 +426,16 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
 
     @Test
     public void testShareResourceRejectsAmbiguousUsernameEmail() throws Exception {
-        RealmRepresentation realm = managedRealm.admin().toRepresentation();
-        realm.setLoginWithEmailAllowed(false);
-        managedRealm.admin().update(realm);
-
-        UserRepresentation alice = findUser("alice");
+        managedRealm.updateWithCleanup(realm -> realm.loginWithEmailAllowed(false));
+        managedRealm.updateUserWithCleanup("alice", user -> user.email("alice@test.com"));
+        managedRealm.addUser(UserBuilder.create()
+                .username("alice@test.com")
+                .password("password")
+                .firstName("Attacker")
+                .lastName("X")
+                .email("attacker@test.com"));
 
         // Create an attacker user whose username matches the email of a legitimate user.
-        UserRepresentation attacker = createUser("alice@test.com", "password", "Attacker", "X", "attacker@test.com");
-        managedRealm.admin().users().create(attacker);
-
-        alice.setEmail("alice@test.com");
-        managedRealm.admin().users().get(alice.getId()).update(alice);
-
         // The resource owner shares with "alice@test.com" intending alice (by email) but there is a clash as "alice@test.com" 
         // is also the attacker's username -> reject the request due to unambiguity
         List<Permission> permissions = new ArrayList<>();
@@ -908,14 +905,20 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
                 : realmBaseUrl;
     }
 
-    private String getProtectionPermissionUrl() {
-        return managedRealm.getBaseUrl() + "/authz/protection/permission";
+    private String getProtectionToken() {
+        return oauth.client("my-resource-server", "secret")
+                .doPasswordGrantRequest("test-authz-user@localhost", "password")
+                .getAccessToken();
+    }
+
+    private String getProtectionPermissionTicketUrl() {
+        return managedRealm.getBaseUrl() + "/authz/protection/permission/ticket";
     }
 
     private void createPermissionTicket(PermissionTicketRepresentation ticket) {
         try {
-            int status = simpleHttp.doPost(getProtectionPermissionUrl())
-                    .auth(getToken())
+            int status = simpleHttp.doPost(getProtectionPermissionTicketUrl())
+                    .auth(getProtectionToken())
                     .json(ticket)
                     .asStatus();
             assertTrue(status == Response.Status.CREATED.getStatusCode() || status == Response.Status.NO_CONTENT.getStatusCode());

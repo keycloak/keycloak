@@ -25,6 +25,7 @@ import org.keycloak.representations.account.DeviceRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
@@ -37,6 +38,7 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
@@ -61,7 +63,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
     @InjectWebDriver
     ManagedWebDriver driver;
 
-    @InjectOAuthClient
+    @InjectOAuthClient(lifecycle = LifeCycle.METHOD)
     OAuthClient oauth;
 
     @InjectWebDriver(ref = "secondDriver")
@@ -69,6 +71,11 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
 
     @InjectWebDriver(ref = "thirdDriver")
     protected ManagedWebDriver thirdBrowser;
+
+    @BeforeEach
+    public void registerSessionCleanup() {
+        managedRealm.cleanup().add(r -> r.logoutAll());
+    }
 
     @Test
     public void testProfilePreviewPermissions() throws IOException {
