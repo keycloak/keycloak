@@ -107,10 +107,14 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
                     authSession.getClient().getClientId(), authSession.getTabId(), AuthenticationProcessor.getClientData(session, authSession));
             String confirmUri = builder.build(realm.getName()).toString();
 
+            String idpUsername = token.getIdentityProviderUsername() != null ? token.getIdentityProviderUsername() : "";
+            String idpAlias = token.getIdentityProviderAlias() != null ? token.getIdentityProviderAlias() : "";
             LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
             return forms.setAuthenticationSession(authSession)
-                    .setAttribute("messageHeader", forms.getMessage(Messages.CONFIRM_ACCOUNT_LINKING, token.getIdentityProviderUsername(), token.getIdentityProviderAlias()))
-                    .setSuccess(Messages.CONFIRM_ACCOUNT_LINKING_BODY, token.getIdentityProviderUsername(), token.getIdentityProviderAlias())
+                    .setAttribute("messageHeader", Messages.CONFIRM_ACCOUNT_LINKING)
+                    .setAttribute("messageHeaderUsername", idpUsername)
+                    .setAttribute("messageHeaderAlias", idpAlias)
+                    .setSuccess(Messages.CONFIRM_ACCOUNT_LINKING_BODY, idpUsername, idpAlias)
                     .setAttribute(Constants.TEMPLATE_ATTR_ACTION_URI, confirmUri)
                     .createInfoPage();
         }
@@ -130,10 +134,12 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
             setUserVerifiedSingleObject(token, realm, session, user);
 
+            String idpUsername = token.getIdentityProviderUsername() != null ? token.getIdentityProviderUsername() : "";
+            String idpAlias = token.getIdentityProviderAlias() != null ? token.getIdentityProviderAlias() : "";
             return session.getProvider(LoginFormsProvider.class)
                     .setAuthenticationSession(authSession)
                     .setAttribute("messageHeader", Messages.IDENTITY_PROVIDER_LINK_SUCCESS_HEADER)
-                    .setSuccess(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, token.getIdentityProviderAlias(), token.getIdentityProviderUsername())
+                    .setSuccess(Messages.IDENTITY_PROVIDER_LINK_SUCCESS, idpAlias, idpUsername)
                     .setAttribute(Constants.SKIP_LINK, true)
                     .createInfoPage();
         }
@@ -172,10 +178,12 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
 
     private Response sendLinkConfirmedAlready(KeycloakSession session, EventBuilder event, UserModel user, IdpVerifyAccountLinkActionToken token) {
         event.user(user).error(Errors.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY);
+        String idpUsername = token.getIdentityProviderUsername() != null ? token.getIdentityProviderUsername() : "";
+        String idpAlias = token.getIdentityProviderAlias() != null ? token.getIdentityProviderAlias() : "";
         return session.getProvider(LoginFormsProvider.class)
                 .setAuthenticationSession(session.getContext().getAuthenticationSession())
                 .setAttribute("messageHeader", Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY_HEADER)
-                .setInfo(Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY, token.getIdentityProviderAlias(), token.getIdentityProviderUsername())
+                .setInfo(Messages.IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY, idpAlias, idpUsername)
                 .createInfoPage();
     }
 }

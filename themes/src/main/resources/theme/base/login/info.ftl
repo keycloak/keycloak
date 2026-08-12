@@ -1,8 +1,10 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout displayMessage=false; section>
     <#if section = "header">
-        <#if messageHeader??>
-            ${kcSanitize(msg("${messageHeader}"))?no_esc}
+        <#if messageHeader?? && messageHeaderUsername??>
+            ${kcSanitize(msg(messageHeader))?replace("{1}", ((messageHeaderAlias!)?replace("{", "&#123;")?esc)?markup_string)?replace("{0}", ((messageHeaderUsername!)?esc)?markup_string)?no_esc}
+        <#elseif messageHeader??>
+            ${kcSanitize(msg(messageHeader))?no_esc}
         <#else>
             ${message.summary}
         </#if>

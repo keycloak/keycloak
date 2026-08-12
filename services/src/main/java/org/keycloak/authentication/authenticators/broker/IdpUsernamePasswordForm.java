@@ -107,7 +107,12 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
         SerializedBrokeredIdentityContext serializedCtx0 = SerializedBrokeredIdentityContext.readFromAuthenticationSession(context.getAuthenticationSession(), AbstractIdpAuthenticator.NESTED_FIRST_BROKER_CONTEXT);
         if (serializedCtx0 != null) {
             BrokeredIdentityContext ctx0 = serializedCtx0.deserialize(context.getSession(), context.getAuthenticationSession());
-            form.setError(Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE, ctx0.getIdpConfig().getAlias(), ctx0.getUsername());
+            String alias = ctx0.getIdpConfig().getAlias() != null ? ctx0.getIdpConfig().getAlias() : "";
+            String username = ctx0.getUsername() != null ? ctx0.getUsername() : "";
+            form.setError(Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE, alias, username);
+            form.setAttribute("nestedIdpHeader", Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE);
+            form.setAttribute("nestedIdpAlias", alias);
+            form.setAttribute("nestedIdpUsername", username);
             context.getAuthenticationSession().setAuthNote(AbstractIdpAuthenticator.NESTED_FIRST_BROKER_CONTEXT, null);
         }
 
