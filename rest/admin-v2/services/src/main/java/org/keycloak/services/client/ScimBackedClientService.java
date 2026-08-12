@@ -120,7 +120,7 @@ public class ScimBackedClientService implements ClientService {
             return true;
         }
         Set<String> queryFields = QueryFieldExtractor.extractFields(filterContext);
-        return BaseClientModelSchema.JPA_FIELDS.containsAll(queryFields);
+        return BaseClientModelSchema.QUERYABLE_FIELDS.containsAll(queryFields);
     }
 
     private static <R extends BaseClientRepresentation> R populateFromSchema(
