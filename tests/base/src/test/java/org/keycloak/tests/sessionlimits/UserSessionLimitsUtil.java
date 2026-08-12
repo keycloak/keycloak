@@ -20,14 +20,6 @@ public class UserSessionLimitsUtil {
 
     protected static final String ERROR_TO_DISPLAY = "This account has too many sessions";
 
-    protected static final String PROVIDER_REALM = "provider";
-    protected static final String CONSUMER_REALM = "consumer";
-    protected static final String USER_LOGIN = "testuser";
-    protected static final String USER_PASSWORD = "password";
-    protected static final String USER_EMAIL = "user@localhost.com";
-    protected static final String CONSUMER_CLIENT_ID = "broker-app";
-    protected static final String CONSUMER_CLIENT_SECRET = "broker-app-secret";
-
     private UserSessionLimitsUtil() {}
 
     static void deleteAllCookies(ManagedWebDriver driver, ManagedRealm realm) {

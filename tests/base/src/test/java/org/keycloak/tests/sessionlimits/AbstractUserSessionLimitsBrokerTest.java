@@ -17,18 +17,21 @@ import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.CONSUMER_CLIENT_ID;
-import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.CONSUMER_CLIENT_SECRET;
-import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.CONSUMER_REALM;
 import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.ERROR_TO_DISPLAY;
-import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.USER_LOGIN;
-import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.USER_PASSWORD;
 import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.assertSessionCount;
 import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.configurePostBrokerFlow;
 import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.deleteAllCookies;
 
 @KeycloakIntegrationTest
 public abstract class AbstractUserSessionLimitsBrokerTest {
+
+    protected static final String PROVIDER_REALM = "provider";
+    protected static final String CONSUMER_REALM = "consumer";
+    protected static final String USER_LOGIN = "testuser";
+    protected static final String USER_PASSWORD = "password";
+    protected static final String USER_EMAIL = "user@localhost.com";
+    protected static final String CONSUMER_CLIENT_ID = "broker-app";
+    protected static final String CONSUMER_CLIENT_SECRET = "broker-app-secret";
 
     @InjectRunOnServer(realmRef = "consumer")
     RunOnServerClient runOnServer;
