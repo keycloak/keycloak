@@ -194,20 +194,6 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         RepresentationToModel.updateClient(rep, client, session);
         RepresentationToModel.updateClientProtocolMappers(rep, client);
 
-        // Preserve existing default client scopes when the request only sets optionalClientScopes.
-        // updateClientScopes will remove scopes not present in the representation, so we must
-        // merge the existing defaults into rep.getDefaultClientScopes before calling it. This
-        // ensures scopes that were previously defaults but are absent from the request remain
-        // defaults rather than being demoted (addClientScope after the fact cannot toggle the
-        // default flag for a scope already assigned to the client).
-        if (rep.getDefaultClientScopes() == null && rep.getOptionalClientScopes() != null) {
-            Set<String> existingDefaults = client.getClientScopes(true).keySet();
-            if (!existingDefaults.isEmpty()) {
-                List<String> merged = new ArrayList<>(existingDefaults);
-                rep.setDefaultClientScopes(merged);
-            }
-        }
-
         RepresentationToModel.updateClientScopes(rep, client);
 
         if (rep.getDefaultRoles() != null) {

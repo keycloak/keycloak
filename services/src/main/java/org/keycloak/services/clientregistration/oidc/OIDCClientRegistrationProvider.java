@@ -17,6 +17,7 @@
 package org.keycloak.services.clientregistration.oidc;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -138,6 +139,22 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
 
             OIDCClientRegistrationContext oidcContext = new OIDCClientRegistrationContext(session, client, this, clientOIDC);
             client = update(clientId, oidcContext);
+
+            // Preserve existing default client scopes when the OIDC request only sets optionalClientScopes.
+            // updateClientScopes (called inside update()) removes scopes not present in the representation,
+            // so we must merge existing defaults into the representation before reconciliation. This prevents
+            // default scopes from being silently demoted when an OIDC update supplies optionalClientScopes
+            // but omits defaultClientScopes.
+            if (clientOIDC.getScope() != null) {
+                if (client.getDefaultClientScopes() == null) {
+                    ClientModel oldClient = session.getContext().getRealm().getClientByClientId(clientOIDC.getClientId());
+                    if (oldClient == null) {
+                        throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client not found: " + clientOIDC.getClientId(), Response.Status.NOT_FOUND);
+                    }
+                    List<String> existingDefaults = new ArrayList<>(oldClient.getClientScopes(true).keySet());
+                    client.setDefaultClientScopes(existingDefaults);
+                }
+            }
 
             ClientModel clientModel = session.getContext().getRealm().getClientByClientId(client.getClientId());
             updatePairwiseSubMappers(clientModel, SubjectType.parse(clientOIDC.getSubjectType()), clientOIDC.getSectorIdentifierUri());
