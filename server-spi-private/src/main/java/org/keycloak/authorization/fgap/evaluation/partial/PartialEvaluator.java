@@ -52,13 +52,11 @@ public final class PartialEvaluator {
     private static final String NO_ID = "none";
     private static final String ID_FIELD = "id";
     private static final String PARTIAL_EVALUATION_CONTEXT_CACHE = "kc.authz.fgap.partial.evaluation.cache";
-    // Leave room for parameters added by the surrounding query before PostgreSQL's 65,535 parameter limit.
-    private static final int DENIED_RESOURCES_LITERAL_THRESHOLD = 32_000;
 
     public List<Predicate> getPredicates(KeycloakSession session, ResourceType resourceType, PartialEvaluationStorageProvider storage, RealmModel realm, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
         if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
             // feature not enabled, if a storage evaluator is provided try to resolve any filter from there
-            return storage == null ? List.of() : storage.getFilters(new PartialEvaluationContext(storage, builder, queryBuilder, path));
+            return storage == null ? List.of() : storage.getFilters(new PartialEvaluationContext(session, storage, builder, queryBuilder, path));
         }
 
         // check before getUser() to avoid infinite recursion when called from a runWithoutAuthorization block
@@ -149,7 +147,7 @@ public final class PartialEvaluator {
         return cache.get(adminUser.getId()).get(resourceType.getType());
     }
 
-    List<Predicate> buildPredicates(PartialEvaluationContext context) {
+    public List<Predicate> buildPredicates(PartialEvaluationContext context) {
         List<Predicate> storageFilters = getStorageFilters(context);
         CriteriaBuilder builder = context.getCriteriaBuilder();
         Path<?> path = context.getPath();
@@ -171,16 +169,7 @@ public final class PartialEvaluator {
 
         if (!deniedIds.isEmpty()) {
             // add filters to remove denied resources from the result set
-            Predicate deniedResources;
-            if (deniedIds.size() >= DENIED_RESOURCES_LITERAL_THRESHOLD) {
-                CriteriaBuilder.In<String> deniedResourceLiterals = builder.in(path.get(ID_FIELD));
-                deniedIds.forEach(id -> deniedResourceLiterals.value(builder.literal(id)));
-                deniedResources = deniedResourceLiterals;
-            } else {
-                deniedResources = path.get(ID_FIELD).in(deniedIds);
-            }
-
-            predicates.add(builder.not(deniedResources));
+            predicates.add(builder.not(context.inPredicate(path.get(ID_FIELD), deniedIds)));
         }
 
         List<Predicate> storageNegateFilters = getStorageNegateFilters(context);
@@ -203,11 +192,11 @@ public final class PartialEvaluator {
 
         if (storageFilters.isEmpty()) {
             // no filter from the evaluator, filter based on the resources that were granted
-            predicates.add(builder.and(path.get(ID_FIELD).in(allowedResourceIds)));
+            predicates.add(builder.and(context.inPredicate(path.get(ID_FIELD), allowedResourceIds)));
         } else {
             // there are filters from the evaluator, the resources granted will be a returned using a or condition
             List<Predicate> orPredicates = new ArrayList<>(storageFilters);
-            orPredicates.add(path.get(ID_FIELD).in(allowedResourceIds));
+            orPredicates.add(context.inPredicate(path.get(ID_FIELD), allowedResourceIds));
             predicates.add(builder.or(orPredicates.toArray(new Predicate[0])));
         }
 
@@ -215,7 +204,7 @@ public final class PartialEvaluator {
     }
 
     private PartialEvaluationContext createEvaluationContext(KeycloakSession session, ResourceType resourceType, Set<String> allowedResources, Set<String> deniedResources, PartialEvaluationStorageProvider storage, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path, UserModel adminUser) {
-        PartialEvaluationContext context = new PartialEvaluationContext(resourceType, allowedResources, deniedResources, storage, builder, queryBuilder, path);
+        PartialEvaluationContext context = new PartialEvaluationContext(session, resourceType, allowedResources, deniedResources, storage, builder, queryBuilder, path);
         String groupType = resourceType.getGroupType();
 
         if (groupType != null) {
