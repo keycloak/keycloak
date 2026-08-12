@@ -3,6 +3,7 @@ package org.keycloak.scim.model.user;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Supplier;
@@ -27,7 +28,6 @@ import org.keycloak.models.Permissions;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
-import org.keycloak.models.jpa.UserAdapter;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.scim.filter.ScimFilterParser;
@@ -145,11 +145,11 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
 
             List<Predicate> predicates = getUserPredicates(filterContext, cb, query, root);
 
-            // apply distinct and order by username to ensure consistency with no-filter case
             query.where(predicates).distinct(true).orderBy(cb.asc(root.get("username")));
 
             return closing(paginateQuery(em.createQuery(query), firstResult, maxResults).getResultStream()
-                    .map(entity -> new UserAdapter(session, realm, em, entity)));
+                    .map(entity -> session.users().getUserById(realm, entity.getId()))
+                    .filter(Objects::nonNull));
         } else {
             return session.users().searchForUserStream(realm, Map.of(UserModel.INCLUDE_SERVICE_ACCOUNT, "false"), firstResult, maxResults);
         }
