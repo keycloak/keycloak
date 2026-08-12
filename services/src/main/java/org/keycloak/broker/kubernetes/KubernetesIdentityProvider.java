@@ -48,7 +48,16 @@ public class KubernetesIdentityProvider implements ClientAssertionIdentityProvid
 
             String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(validator.getContext().getRealm().getId(), config.getInternalId());
             PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
-            KeyWrapper publicKey = keyStorage.getPublicKey(modelKey, kid, alg, new KubernetesJwksEndpointLoader(session, config.getIssuer()));
+
+            KeyWrapper publicKey;
+            try {
+                publicKey = keyStorage.getPublicKey(modelKey, kid, alg, new KubernetesJwksEndpointLoader(session, config.getIssuer()));
+            } catch (Exception e) {
+                // Indicative of a infrastructure/configuration and can't be
+                // triggered by a client - worth WARN visibility.
+                LOGGER.warn("Failed to load public keys for Kubernetes IdP", e);
+                return false;
+            }
 
             SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, alg);
             if (signatureProvider == null) {
