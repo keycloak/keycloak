@@ -31,8 +31,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.keycloak.OAuth2Constants;
-import jakarta.ws.rs.core.Response;
-
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
@@ -67,6 +65,7 @@ import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import static org.keycloak.testsuite.admin.AdminApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.util.oauth.OAuthClient.AUTH_SERVER_ROOT;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -234,14 +233,14 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         adminClientRep.setEnabled(true);
         adminClientRep.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
-        Response createResponse = adminClient.realm(REALM_NAME).clients()
-                .create(adminClientRep);
-        ClientRepresentation created = createResponse.readEntity(ClientRepresentation.class);
-        createResponse.close();
+        adminClient.realm(REALM_NAME).clients().create(adminClientRep).close();
+
+        // Look up the created client via admin API by client_id.
+        ClientResource createdClient = findClientByClientId(adminClient.realm(REALM_NAME), "test-client-with-explicit-id");
+        assertNotNull(createdClient, "Client not found: test-client-with-explicit-id");
 
         // Generate a registration access token for the newly created client.
-        ClientRepresentation clientWithToken = adminClient.realm(REALM_NAME).clients()
-                .get(created.getId()).regenerateRegistrationAccessToken();
+        ClientRepresentation clientWithToken = createdClient.regenerateRegistrationAccessToken();
 
         // Authenticate the OIDC client registration with the registration access token.
         reg.auth(Auth.token(clientWithToken));
