@@ -20,8 +20,12 @@ package org.keycloak.protocol.oid4vc.issuance.keybinding;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.broker.provider.TrustMaterialIdentityProvider;
 import org.keycloak.broker.provider.X509TrustMaterial;
+import org.keycloak.common.VerificationException;
 import org.keycloak.jose.jwk.JWK;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
+import org.keycloak.protocol.oid4vc.model.ErrorType;
 
 import org.jboss.logging.Logger;
 
@@ -56,6 +60,10 @@ public class StaticAttestationKeyResolver implements AttestationKeyResolver {
     @Override
     public JWK resolveX5c(List<String> x5c, Map<String, Object> header, Map<String, Object> payload) {
         String algorithm = header != null ? (String) header.get(JWK.ALGORITHM) : null;
-        return AttestationX509CertificateValidator.validate(x5c, algorithm, x509TrustMaterials);
+        try {
+            return TrustMaterialIdentityProvider.validateX509Chain(x509TrustMaterials, x5c, algorithm);
+        } catch (VerificationException e) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, e.getMessage(), e);
+        }
     }
 }

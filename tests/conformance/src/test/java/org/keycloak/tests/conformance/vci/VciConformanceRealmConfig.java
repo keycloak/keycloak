@@ -158,7 +158,7 @@ public class VciConformanceRealmConfig implements RealmConfig {
         trust.setConfig(Map.of(
                 DefaultTrustIdentityProviderConfig.USE_X509, "true",
                 DefaultTrustIdentityProviderConfig.TRUSTED_CERTIFICATES, VciAttesterKey.caCertificatePem(),
-                DefaultTrustIdentityProviderConfig.ATTESTATION_EXTENDED_KEY_USAGES, ATTESTER_ATTESTATION_EKU));
+                DefaultTrustIdentityProviderConfig.REQUIRED_EXTENDED_KEY_USAGES, ATTESTER_ATTESTATION_EKU));
         return trust;
     }
 

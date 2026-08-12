@@ -34,7 +34,7 @@ Trusted attester keys are configured per client because different wallets can re
 
 . Create or configure a trust-material identity provider, such as **Default Trust**, that exposes the trusted attester public keys or X.509 trust anchors.
 ** For `kid`-based attestations, configure a JWKS URL or validating public key.
-** For `x5c`-based attestations, enable **Use X.509 attestation trust**, provide a PEM bundle containing only self-signed device-vendor attestation CA roots, and configure **Allowed attestation extended key usages** with at least one Extended Key Usage (EKU) OID. This setting is required. The attestation end-entity certificate must contain an EKU extension with at least one OID that exactly matches a configured value; otherwise, validation fails.
+** For `x5c`-based attestations, enable **Use X.509 attestation trust**, provide a PEM bundle containing only self-signed device-vendor attestation CA roots, and configure **Required extended key usages** with the accepted Extended Key Usage (EKU) OIDs. When at least one OID is configured, the attestation end-entity certificate must contain an EKU extension with at least one OID that exactly matches a configured value; otherwise, validation fails. When the list is empty, no EKU restriction is applied and the trust anchors alone decide trust.
 . Go to *Clients* and select the wallet client that requests credentials.
 . Open the *Advanced* tab.
 . In the *OpenID Verifiable Credentials* section, enable **Enable OID4VCI**.
