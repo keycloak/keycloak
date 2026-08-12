@@ -246,8 +246,12 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
 
         // Verify via admin API that the client was updated correctly.
         // "phone" and "address" should be in the optional scopes.
-        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get("test-client-with-explicit-id");
-        ClientRepresentation rep = clientResource.toRepresentation();
+        // Note: clients().get() expects the internal UUID, so use findAll() and filter by client_id.
+        List<ClientRepresentation> allClients = adminClient.realm(REALM_NAME).clients().findAll();
+        ClientRepresentation rep = allClients.stream()
+                .filter(c -> "test-client-with-explicit-id".equals(c.getClientId()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Client not found: test-client-with-explicit-id"));
         assertNotNull(rep);
         assertTrue(CollectionUtil.collectionEquals(Arrays.asList("phone", "address"), rep.getOptionalClientScopes()));
     }

@@ -20,11 +20,9 @@ package org.keycloak.services.clientregistration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -196,24 +194,21 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         RepresentationToModel.updateClient(rep, client, session);
         RepresentationToModel.updateClientProtocolMappers(rep, client);
 
-        // Preserve existing default client scopes before updateClientScopes potentially removes them.
-        // This is needed because if the request only sets optionalClientScopes, updateClientScopes
-        // will remove all current default scopes. We need to re-add the old defaults afterward.
-        Map<String, ClientScopeModel> existingDefaultScopes = new HashMap<>();
+        // Preserve existing default client scopes when the request only sets optionalClientScopes.
+        // updateClientScopes will remove scopes not present in the representation, so we must
+        // merge the existing defaults into rep.getDefaultClientScopes before calling it. This
+        // ensures scopes that were previously defaults but are absent from the request remain
+        // defaults rather than being demoted (addClientScope after the fact cannot toggle the
+        // default flag for a scope already assigned to the client).
         if (rep.getDefaultClientScopes() == null && rep.getOptionalClientScopes() != null) {
-            existingDefaultScopes.putAll(client.getClientScopes(true));
+            Set<String> existingDefaults = client.getClientScopes(true).keySet();
+            if (!existingDefaults.isEmpty()) {
+                List<String> merged = new ArrayList<>(existingDefaults);
+                rep.setDefaultClientScopes(merged);
+            }
         }
 
         RepresentationToModel.updateClientScopes(rep, client);
-
-        // Restore the previously-existing default scopes that were not overridden by the request.
-        if (!existingDefaultScopes.isEmpty()) {
-            for (Map.Entry<String, ClientScopeModel> entry : existingDefaultScopes.entrySet()) {
-                if (rep.getDefaultClientScopes() == null || !rep.getDefaultClientScopes().contains(entry.getKey())) {
-                    client.addClientScope(entry.getValue(), true);
-                }
-            }
-        }
 
         if (rep.getDefaultRoles() != null) {
             updateDefaultRoles(client, rep.getDefaultRoles());
