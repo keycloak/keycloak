@@ -47,8 +47,9 @@ public class Base64Url {
         // Strip trailing Base64 padding ('=') by cutting at the first '='.
         // indexOf avoids the regex + array allocation of String.split and also
         // handles padding-only input (e.g. "=" or "==") without an
-        // ArrayIndexOutOfBoundsException — indexOf returns -1, so we keep the full string,
-        // which is empty after trimming when the input was all '=' characters.
+        // ArrayIndexOutOfBoundsException — indexOf returns 0 for padding-only
+        // input, so substring(0, 0) yields the empty string, which is correct
+        // because there is no content before the padding.
         int idx = base64.indexOf('=');
         String s = idx >= 0 ? base64.substring(0, idx) : base64;
         s = s.replace('+', '-'); // 62nd char of encoding
