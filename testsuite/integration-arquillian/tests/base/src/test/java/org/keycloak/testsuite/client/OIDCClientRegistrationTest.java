@@ -224,12 +224,18 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
      */
     @Test
     public void updateClientWithScopeField() throws ClientRegistrationException {
-        OIDCClientRepresentation response = create();
+        // Create the client with an explicit client_id (non-UUID) to properly test the
+        // ID-type confusion fix: getClientByClientId vs getClientById.
+        OIDCClientRepresentation client = createRep();
+        client.setClientId("test-client-with-explicit-id");
+        OIDCClientRepresentation response = reg.oidc().create(client);
         reg.auth(Auth.token(response));
 
         // Set the scope field — this previously caused an NPE because getClientById was used
         // instead of getClientByClientId, resulting in null and a subsequent NPE.
-        response.setScope("openid profile email");
+        // Use "phone address" which are configured optional client scopes (not "openid profile email"
+        // which are either default scopes or not configured).
+        response.setScope("phone address");
         response.setRedirectUris(Collections.singletonList("http://updated-redirect"));
 
         OIDCClientRepresentation updated = reg.oidc().update(response);
@@ -238,11 +244,12 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertNotNull(updated.getClientId());
         assertEquals("http://updated-redirect", updated.getRedirectUris().get(0));
 
-        // Verify via admin API that the client was updated correctly
-        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(response.getClientId());
+        // Verify via admin API that the client was updated correctly.
+        // "phone" and "address" should be in the optional scopes.
+        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get("test-client-with-explicit-id");
         ClientRepresentation rep = clientResource.toRepresentation();
         assertNotNull(rep);
-        assertTrue(CollectionUtil.collectionEquals(Arrays.asList("openid", "profile", "email"), rep.getOptionalClientScopes()));
+        assertTrue(CollectionUtil.collectionEquals(Arrays.asList("phone", "address"), rep.getOptionalClientScopes()));
     }
 
     /**
@@ -253,6 +260,9 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
      */
     @Test
     public void updateNonExistentClientWithScopeField() throws ClientRegistrationException {
+        // Clear auth to ensure the request is truly unauthenticated (before() installs a token).
+        reg.auth(null);
+
         OIDCClientRepresentation nonExistent = new OIDCClientRepresentation();
         nonExistent.setClientId("non-existent-client-" + UUID.randomUUID().toString());
         nonExistent.setScope("openid profile");
@@ -262,11 +272,13 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
             reg.oidc().update(nonExistent);
             fail("Expected ClientRegistrationException for non-existent client");
         } catch (ClientRegistrationException e) {
-            // Auth is enforced before scope-handling, so the error is about client not found
-            // (the update() method performs auth + lookup). The key fix is that no NPE is thrown.
-            assertTrue(e.getMessage().contains("Client not found")
-                    || e.getMessage().contains("unauthorized"),
-                    "Expected 'Client not found' or 'unauthorized' error, got: " + e.getMessage());
+            // Auth is enforced before scope-handling, so the error should be 401 (unauthorized)
+            // rather than an NPE. Assert the exact status code for the ordering guarantee.
+            assertTrue(e.getCause() instanceof HttpErrorException,
+                    "Expected HttpErrorException, got: " + e.getCause().getClass().getName());
+            int status = ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode();
+            assertEquals(401, status,
+                    "Expected 401 unauthorized (auth enforced before scope handling), got: " + status);
         }
     }
 
