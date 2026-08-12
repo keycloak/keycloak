@@ -48,6 +48,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static org.keycloak.models.utils.KeycloakModelUtils.removeTransientAdminRoles;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -148,6 +149,12 @@ public class KeycloakIdentity implements Identity {
 
             ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSessionModel, keycloakSession);
             this.accessToken = new TokenManager().createClientAccessToken(keycloakSession, realm, client, userSession.getUser(), userSession, clientSessionCtx, clientSessionCtx.isOfflineTokenRequested());
+            UserModel tokenUser = userSession.getUser();
+            removeTransientAdminRoles(realm, null, tokenUser, this.accessToken.getRealmAccess());
+            Map<String, Access> resourceAccess = this.accessToken.getResourceAccess();
+            if (resourceAccess != null) {
+                resourceAccess.forEach((cId, access) -> removeTransientAdminRoles(realm, cId, tokenUser, access));
+            }
         }
 
         ClientModel clientModel = getTargetClient();
