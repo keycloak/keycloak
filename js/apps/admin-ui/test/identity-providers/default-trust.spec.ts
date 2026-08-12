@@ -58,7 +58,7 @@ test.describe.serial("Default Trust identity provider test", () => {
     await expect(page.getByTestId("config.useJwksUrl")).toBeHidden();
     await expect(page.getByTestId("config.trustedCertificates")).toBeVisible();
     await expect(
-      page.getByTestId("config.attestationExtendedKeyUsages"),
+      page.getByTestId("config.requiredExtendedKeyUsages"),
     ).toBeVisible();
   });
 
@@ -79,9 +79,7 @@ test.describe.serial("Default Trust identity provider test", () => {
     await page
       .getByTestId("config.trustedCertificates")
       .fill("stale certificate");
-    await page
-      .getByTestId("config.attestationExtendedKeyUsages")
-      .fill("1.2.3.4");
+    await page.getByTestId("config.requiredExtendedKeyUsages").fill("1.2.3.4");
     await page.getByTestId("config.useX509").click({ force: true });
     await clickSaveButton(page);
 
