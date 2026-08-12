@@ -1,8 +1,8 @@
 import { type Page, expect } from "@playwright/test";
 import {
+  clickSwitch,
   ensureSwitchOff,
   selectItem,
-  switchOff,
   switchOn,
 } from "../utils/form.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
@@ -18,9 +18,10 @@ import {
 const EDITED_DISPLAY_NAME = "SAML edited for save";
 
 export async function editSAMLSettings(page: Page, samlProviderName: string) {
-  const providerEnabledSwitch = page.locator("#-switch");
+  const providerEnabledSwitch = page.getByTestId(`${samlProviderName}-switch`);
   await expect(providerEnabledSwitch).toBeChecked();
-  await switchOff(page, providerEnabledSwitch);
+  await clickSwitch(page, providerEnabledSwitch);
+  await expect(page.getByTestId("confirm")).toBeVisible();
   await confirmModal(page);
   await assertNotificationMessage(page, "Provider successfully updated");
   await goToIdentityProviders(page);
