@@ -698,7 +698,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         // Check existing email
         registerPage.register("firstName", "lastName", "existing@email.org", "nonExisting", "Password1", "Password1");
         registerPage.assertCurrent();
-        Assertions.assertEquals("Email already exists.", registerPage.getInputAccountErrors().getEmailError());
+        Assertions.assertEquals("This email is already associated with an existing account.", registerPage.getInputAccountErrors().getEmailError());
     }
 
 
@@ -997,7 +997,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         // Try to import the duplicated LDAP user into Keycloak
         oauth.openLoginForm();
         loginPage.login("mary-duplicatemail", "password");
-        Assertions.assertEquals("Email already exists.", loginPage.getError());
+        Assertions.assertEquals("This email is already associated with an existing account.", loginPage.getError());
 
         loginPage.login("mary1@email.org", "password");
         Assertions.assertEquals("Username already exists.", loginPage.getError());
