@@ -987,6 +987,11 @@ public class LDAPStorageProvider implements UserStorageProvider,
                         credential.setNote(KerberosConstants.AUTHENTICATED_SPNEGO_CONTEXT, spnegoAuthenticator);
                         return CredentialValidationOutput.fallback();
                     } else {
+                        String responseToken = spnegoAuthenticator.getResponseToken();
+                        if (responseToken != null) {
+                            state.put(KerberosConstants.RESPONSE_TOKEN, responseToken);
+                        }
+
                         String delegationCredential = spnegoAuthenticator.getSerializedDelegationCredential();
                         if (delegationCredential != null) {
                             state.put(KerberosConstants.GSS_DELEGATION_CREDENTIAL, delegationCredential);
