@@ -36,10 +36,15 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.protocol.oidc.AccessTokenIntrospectionProviderFactory;
+import org.keycloak.protocol.oidc.RefreshTokenIntrospectionProviderFactory;
 import org.keycloak.protocol.oidc.TokenIntrospectionProvider;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+import org.keycloak.util.TokenUtil;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenIntrospectContext;
@@ -87,17 +92,13 @@ public class TokenIntrospectionEndpoint {
 
         checkParameterDuplicated(formParams);
 
-        String tokenTypeHint = formParams.getFirst(PARAM_TOKEN_TYPE_HINT);
-
-        if (tokenTypeHint == null) {
-            tokenTypeHint = AccessTokenIntrospectionProviderFactory.ACCESS_TOKEN_TYPE;
-        }
-
         String token = formParams.getFirst(PARAM_TOKEN);
 
         if (token == null) {
             throw throwErrorResponseException(Errors.INVALID_REQUEST, "Token not provided.", Status.BAD_REQUEST);
         }
+
+        String tokenTypeHint = resolveTokenTypeHint(formParams.getFirst(PARAM_TOKEN_TYPE_HINT), token);
 
         TokenIntrospectionProvider provider = this.session.getProvider(TokenIntrospectionProvider.class, tokenTypeHint);
 
@@ -180,5 +181,33 @@ public class TokenIntrospectionEndpoint {
     private ErrorResponseException throwErrorResponseException(String error, String detail, Status status) {
         this.event.detail("detail", detail).error(error);
         return new ErrorResponseException(error, detail, status);
+    }
+
+    /**
+     * Resolves the introspection provider to use. Refresh and offline tokens are routed to the refresh-token
+     * provider based on the token type claim, even when no token_type_hint is provided or access_token is hinted.
+     */
+    private String resolveTokenTypeHint(String tokenTypeHint, String token) {
+        if (RefreshTokenIntrospectionProviderFactory.REFRESH_TOKEN_TYPE.equals(tokenTypeHint)) {
+            return tokenTypeHint;
+        }
+
+        if (tokenTypeHint == null || AccessTokenIntrospectionProviderFactory.ACCESS_TOKEN_TYPE.equals(tokenTypeHint)) {
+            try {
+                JsonWebToken tokenRepresentation = new JWSInput(token).readJsonContent(JsonWebToken.class);
+                String tokenType = tokenRepresentation.getType();
+                if (TokenUtil.TOKEN_TYPE_REFRESH.equals(tokenType) || TokenUtil.TOKEN_TYPE_OFFLINE.equals(tokenType)) {
+                    return RefreshTokenIntrospectionProviderFactory.REFRESH_TOKEN_TYPE;
+                }
+            } catch (JWSInputException e) {
+                // Fall through to default provider selection
+            }
+
+            if (tokenTypeHint == null) {
+                return AccessTokenIntrospectionProviderFactory.ACCESS_TOKEN_TYPE;
+            }
+        }
+
+        return tokenTypeHint;
     }
 }

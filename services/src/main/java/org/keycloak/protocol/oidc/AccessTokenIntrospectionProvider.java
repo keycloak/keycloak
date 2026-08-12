@@ -65,7 +65,7 @@ public class AccessTokenIntrospectionProvider<T extends AccessToken> implements 
     protected final TokenManager tokenManager;
     protected final RealmModel realm;
     private static final Logger logger = Logger.getLogger(AccessTokenIntrospectionProvider.class);
-    protected EventBuilder eventBuilder;
+    protected EventBuilder  eventBuilder;
 
     // Those are set after successfully verified
     protected T token;
