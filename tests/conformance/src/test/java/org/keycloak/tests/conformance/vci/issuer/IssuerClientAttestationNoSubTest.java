@@ -15,9 +15,8 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.conformance.vci;
+package org.keycloak.tests.conformance.vci.issuer;
 
-import java.util.Map;
 import java.util.stream.Stream;
 
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -27,23 +26,22 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.tests.conformance.runner.BrowserInteraction;
 import org.keycloak.tests.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.tests.conformance.runner.ConformanceResult;
+import org.keycloak.tests.conformance.vci.AbstractVciConformanceTest;
+import org.keycloak.tests.conformance.vci.VciConformanceRealmConfig;
 
 @KeycloakIntegrationTest(config = VciConformanceRealmConfig.ServerConfig.class)
-public class IssuerHappyFlowTest extends AbstractVciConformanceTest {
+public class IssuerClientAttestationNoSubTest extends AbstractVciConformanceTest {
 
     @InjectRealm(config = VciConformanceRealmConfig.class, lifecycle = LifeCycle.METHOD)
     ManagedRealm realm;
 
     @Override
     protected Stream<ConformanceModuleVariant> moduleVariants() {
-        // The plan variant pins every dimension but vci_credential_encryption, leaving the plain and encrypted variants
         return discoverModuleVariants(
-                "oid4vci-1_0-issuer-haip-test-plan",
-                Map.of(
-                        "credential_format", "sd_jwt_vc",
-                        "vci_authorization_code_flow_variant", "wallet_initiated"),
-                "oid4vci-1_0-issuer-happy-flow",
+                HAIP_PLAN,
+                WALLET_INITIATED,
+                "oid4vci-1_0-issuer-fail-client-attestation-no-sub",
                 ConformanceResult.PASSED,
-                BrowserInteraction.LOGIN);
+                BrowserInteraction.NONE);
     }
 }

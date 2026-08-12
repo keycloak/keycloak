@@ -15,9 +15,8 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.conformance.vp;
+package org.keycloak.tests.conformance.vci.fapi2;
 
-import java.util.Map;
 import java.util.stream.Stream;
 
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -27,33 +26,27 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.tests.conformance.runner.BrowserInteraction;
 import org.keycloak.tests.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.tests.conformance.runner.ConformanceResult;
-
-import org.junit.jupiter.api.Disabled;
+import org.keycloak.tests.conformance.vci.AbstractVciConformanceTest;
+import org.keycloak.tests.conformance.vci.VciConformanceRealmConfig;
 
 /**
- * The verifier serves the authorization request object when the wallet retrieves request_uri through
- * POST.
+ * One client pushes a request, then a different client presents the same request_uri at the authorization
+ * endpoint: Keycloak must reject it because the pushed request is bound to the client that created it.
  */
-// TODO serve request_uri through POST so this module passes. The request object endpoint only
-// answers GET, so the suite skips the module.
-@Disabled("request_uri retrieval through POST is not implemented, the request object endpoint answers GET only")
-@KeycloakIntegrationTest(config = VpConformanceRealmConfig.ServerConfig.class)
-public class VerifierRequestUriMethodPostTest extends AbstractVpConformanceTest {
+@KeycloakIntegrationTest(config = VciConformanceRealmConfig.ServerConfig.class)
+public class IssuerFapi2RequestUriForDifferentClientTest extends AbstractVciConformanceTest {
 
-    @InjectRealm(config = VpConformanceRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    @InjectRealm(config = VciConformanceRealmConfig.class, lifecycle = LifeCycle.METHOD)
     ManagedRealm realm;
 
     @Override
     protected Stream<ConformanceModuleVariant> moduleVariants() {
         return discoverModuleVariants(
-                "oid4vp-1final-verifier-test-plan",
-                Map.of(
-                        "vp_profile", "plain_vp",
-                        "credential_format", "sd_jwt_vc",
-                        "client_id_prefix", "x509_hash",
-                        "request_method", "request_uri_signed",
-                        "response_mode", "direct_post"),
-                "oid4vp-1final-verifier-request-uri-method-post",
-                ConformanceResult.REVIEW, BrowserInteraction.NONE);
+                HAIP_PLAN,
+                WALLET_INITIATED,
+                "fapi2-security-profile-final-par-attempt-to-use-request_uri-for-different-client",
+                ConformanceResult.REVIEW,
+                // the second client's client_id does not match the one bound to the pushed request_uri
+                BrowserInteraction.errorPage("Invalid Request"));
     }
 }

@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.conformance.vp;
+package org.keycloak.tests.conformance.vci.fapi2;
 
-import java.util.Map;
+import java.util.List;
 import java.util.stream.Stream;
 
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -27,33 +27,26 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.tests.conformance.runner.BrowserInteraction;
 import org.keycloak.tests.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.tests.conformance.runner.ConformanceResult;
-
-import org.junit.jupiter.api.Disabled;
+import org.keycloak.tests.conformance.vci.AbstractVciConformanceTest;
+import org.keycloak.tests.conformance.vci.VciConformanceRealmConfig;
 
 /**
- * The verifier serves the authorization request object when the wallet retrieves request_uri through
- * POST.
+ * Sends authorization requests with missing or plain PKCE: Keycloak rejects them at the authorization endpoint
+ * and redirects the error to the callback without ever presenting a login, where the module validates it.
  */
-// TODO serve request_uri through POST so this module passes. The request object endpoint only
-// answers GET, so the suite skips the module.
-@Disabled("request_uri retrieval through POST is not implemented, the request object endpoint answers GET only")
-@KeycloakIntegrationTest(config = VpConformanceRealmConfig.ServerConfig.class)
-public class VerifierRequestUriMethodPostTest extends AbstractVpConformanceTest {
+@KeycloakIntegrationTest(config = VciConformanceRealmConfig.ServerConfig.class)
+public class IssuerFapi2PkceRejectedTest extends AbstractVciConformanceTest {
 
-    @InjectRealm(config = VpConformanceRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    private static final List<String> MODULES = List.of(
+            "fapi2-security-profile-final-par-ensure-pkce-required",
+            "fapi2-security-profile-final-par-plain-pkce-rejected");
+
+    @InjectRealm(config = VciConformanceRealmConfig.class, lifecycle = LifeCycle.METHOD)
     ManagedRealm realm;
 
     @Override
     protected Stream<ConformanceModuleVariant> moduleVariants() {
-        return discoverModuleVariants(
-                "oid4vp-1final-verifier-test-plan",
-                Map.of(
-                        "vp_profile", "plain_vp",
-                        "credential_format", "sd_jwt_vc",
-                        "client_id_prefix", "x509_hash",
-                        "request_method", "request_uri_signed",
-                        "response_mode", "direct_post"),
-                "oid4vp-1final-verifier-request-uri-method-post",
-                ConformanceResult.REVIEW, BrowserInteraction.NONE);
+        return discoverModuleVariants(HAIP_PLAN, WALLET_INITIATED, MODULES,
+                ConformanceResult.PASSED, BrowserInteraction.ERROR_CALLBACK);
     }
 }

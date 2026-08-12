@@ -15,9 +15,8 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.conformance.vp;
+package org.keycloak.tests.conformance.vci.issuer;
 
-import java.util.Map;
 import java.util.stream.Stream;
 
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -27,33 +26,22 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.tests.conformance.runner.BrowserInteraction;
 import org.keycloak.tests.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.tests.conformance.runner.ConformanceResult;
+import org.keycloak.tests.conformance.vci.AbstractVciConformanceTest;
+import org.keycloak.tests.conformance.vci.VciConformanceRealmConfig;
 
-import org.junit.jupiter.api.Disabled;
+@KeycloakIntegrationTest(config = VciConformanceRealmConfig.ServerConfig.class)
+public class IssuerUnsignedMetadataTest extends AbstractVciConformanceTest {
 
-/**
- * The verifier serves the authorization request object when the wallet retrieves request_uri through
- * POST.
- */
-// TODO serve request_uri through POST so this module passes. The request object endpoint only
-// answers GET, so the suite skips the module.
-@Disabled("request_uri retrieval through POST is not implemented, the request object endpoint answers GET only")
-@KeycloakIntegrationTest(config = VpConformanceRealmConfig.ServerConfig.class)
-public class VerifierRequestUriMethodPostTest extends AbstractVpConformanceTest {
-
-    @InjectRealm(config = VpConformanceRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    @InjectRealm(config = VciConformanceRealmConfig.class, lifecycle = LifeCycle.METHOD)
     ManagedRealm realm;
 
     @Override
     protected Stream<ConformanceModuleVariant> moduleVariants() {
         return discoverModuleVariants(
-                "oid4vp-1final-verifier-test-plan",
-                Map.of(
-                        "vp_profile", "plain_vp",
-                        "credential_format", "sd_jwt_vc",
-                        "client_id_prefix", "x509_hash",
-                        "request_method", "request_uri_signed",
-                        "response_mode", "direct_post"),
-                "oid4vp-1final-verifier-request-uri-method-post",
-                ConformanceResult.REVIEW, BrowserInteraction.NONE);
+                HAIP_PLAN,
+                WALLET_INITIATED,
+                "oid4vci-1_0-issuer-metadata-test",
+                ConformanceResult.PASSED,
+                BrowserInteraction.NONE);
     }
 }

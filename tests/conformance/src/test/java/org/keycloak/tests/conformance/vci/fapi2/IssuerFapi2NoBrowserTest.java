@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.conformance.vp;
+package org.keycloak.tests.conformance.vci.fapi2;
 
-import java.util.Map;
+import java.util.List;
 import java.util.stream.Stream;
 
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -27,27 +27,24 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.tests.conformance.runner.BrowserInteraction;
 import org.keycloak.tests.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.tests.conformance.runner.ConformanceResult;
+import org.keycloak.tests.conformance.vci.AbstractVciConformanceTest;
+import org.keycloak.tests.conformance.vci.VciConformanceRealmConfig;
 
-/**
- * The verifier accepts a valid same device SD-JWT VC presentation.
- */
-@KeycloakIntegrationTest(config = VpConformanceRealmConfig.ServerConfig.class)
-public class VerifierSameDeviceHappyFlowTest extends AbstractVpConformanceTest {
+@KeycloakIntegrationTest(config = VciConformanceRealmConfig.ServerConfig.class)
+public class IssuerFapi2NoBrowserTest extends AbstractVciConformanceTest {
 
-    @InjectRealm(config = VpConformanceRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    private static final List<String> MODULES = List.of(
+            "fapi2-security-profile-final-discovery-end-point-verification",
+            "fapi2-security-profile-final-par-authorization-request-containing-request_uri-form-param",
+            "fapi2-security-profile-final-par-attempt-invalid-http-method",
+            "fapi2-security-profile-final-ensure-request-object-without-redirect-uri-fails");
+
+    @InjectRealm(config = VciConformanceRealmConfig.class, lifecycle = LifeCycle.METHOD)
     ManagedRealm realm;
 
     @Override
     protected Stream<ConformanceModuleVariant> moduleVariants() {
-        return discoverModuleVariants(
-                "oid4vp-1final-verifier-test-plan",
-                Map.of(
-                        "vp_profile", "plain_vp",
-                        "credential_format", "sd_jwt_vc",
-                        "client_id_prefix", "x509_hash",
-                        "request_method", "request_uri_signed",
-                        "response_mode", "direct_post"),
-                "oid4vp-1final-verifier-happy-flow",
-                ConformanceResult.REVIEW, BrowserInteraction.NONE);
+        return discoverModuleVariants(HAIP_PLAN, WALLET_INITIATED, MODULES,
+                ConformanceResult.PASSED, BrowserInteraction.NONE);
     }
 }
