@@ -272,6 +272,10 @@ public class Attribute<M extends Model, R> {
         mapper.setValue(model, value);
     }
 
+    public void setModelAttribute(M model, Object value) {
+        mapper.setModelAttribute(model, value);
+    }
+
     public void set(R resource, Object value) {
         mapper.setValue(resource, value);
     }

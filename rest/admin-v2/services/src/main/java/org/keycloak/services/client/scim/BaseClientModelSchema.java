@@ -24,6 +24,7 @@ import org.keycloak.scim.resource.schema.attribute.Attribute;
 public abstract class BaseClientModelSchema<R extends BaseClientRepresentation>
         implements ModelSchema<ClientModel, R> {
 
+    // TODO: should be metadata on the Attribute
     public static final Set<String> QUERYABLE_FIELDS = Set.of(
             "clientId", "enabled", "description", "displayName",
             "protocol", "appUrl", "createdTimestamp", "updatedTimestamp");
@@ -39,8 +40,8 @@ public abstract class BaseClientModelSchema<R extends BaseClientRepresentation>
         map.put("description",      stringAttr("description",      "description",           BaseClientRepresentation::setDescription,    ClientModel::setDescription));
         map.put("displayName",      stringAttr("displayName",      "name",                  BaseClientRepresentation::setDisplayName,    ClientModel::setName));
         map.put("appUrl",           stringAttr("appUrl",           "baseUrl",               BaseClientRepresentation::setAppUrl,         ClientModel::setBaseUrl));
-        map.put("redirectUris",     multivaluedStringAttr("redirectUris",    (rep, v) -> rep.setRedirectUris(v)));
-        map.put("roles",            multivaluedStringAttr("roles",           (rep, v) -> rep.setRoles(v)));
+        map.put("redirectUris",     multivaluedStringAttr("redirectUris",    (rep, v) -> rep.setRedirectUris(v), (BiConsumer<ClientModel, Set<String>>) (model, uris) -> model.setRedirectUris(uris != null ? new LinkedHashSet<>(uris) : null)));
+        map.put("roles",            multivaluedStringAttr("roles",           (rep, v) -> rep.setRoles(v), null));
         map.put("createdTimestamp", longAttr  ("createdTimestamp", "createdTimestamp",      BaseClientRepresentation::setCreatedTimestamp,  null));  // read-only
         map.put("updatedTimestamp", longAttr  ("updatedTimestamp", "lastModifiedTimestamp", BaseClientRepresentation::setUpdatedTimestamp, null));  // read-only
         addProtocolAttributes(map);
@@ -62,7 +63,7 @@ public abstract class BaseClientModelSchema<R extends BaseClientRepresentation>
         return Attribute.<ClientModel, R>simple(name)
                 .modelAttributeResolver(a -> entityField)
                 .withModelSetter(
-                        modelSetter != null ? (TriConsumer<ClientModel, String, String>) (model, n, v) -> modelSetter.accept(model, v) : null,
+                        modelSetter != null ? (TriConsumer<ClientModel, String, Object>) (model, n, v) -> modelSetter.accept(model, (String) v) : null,
                         (BiConsumer<R, String>) (rep, v) -> repSetter.accept(rep, v))
                 .build()
                 .get(0);
@@ -76,7 +77,7 @@ public abstract class BaseClientModelSchema<R extends BaseClientRepresentation>
                 .modelAttributeResolver(a -> entityField)
                 .bool()
                 .withModelSetter(
-                        modelSetter != null ? (TriConsumer<ClientModel, String, Boolean>) (model, n, v) -> modelSetter.accept(model, v) : null,
+                        modelSetter != null ? (TriConsumer<ClientModel, String, Object>) (model, n, v) -> modelSetter.accept(model, (Boolean) v) : null,
                         (BiConsumer<R, Boolean>) (rep, v) -> repSetter.accept(rep, v))
                 .build()
                 .get(0);
@@ -90,57 +91,61 @@ public abstract class BaseClientModelSchema<R extends BaseClientRepresentation>
                 .modelAttributeResolver(a -> entityField)
                 .timestamp()
                 .withModelSetter(
-                        modelSetter != null ? (TriConsumer<ClientModel, String, Long>) (model, n, v) -> modelSetter.accept(model, v) : null,
+                        modelSetter != null ? (TriConsumer<ClientModel, String, Object>) (model, n, v) -> modelSetter.accept(model, (Long) v) : null,
                         (BiConsumer<R, Long>) (rep, v) -> repSetter.accept(rep, v))
                 .build()
                 .get(0);
     }
 
-    /**
-     * Builds a multivalued string attribute whose value is retrieved from the model by
-     * {@link #getAttributeValue} (keyed on the schema name) and written to the representation
-     * via {@code repSetter}.
-     */
-    protected Attribute<ClientModel, R> multivaluedStringAttr(String name,
-            BiConsumer<R, Set<String>> repSetter) {
+    @SuppressWarnings("unchecked")
+    protected <V> Attribute<ClientModel, R> multivaluedStringAttr(String name,
+            BiConsumer<R, Set<String>> repSetter,
+            BiConsumer<ClientModel, Set<V>> modelSetter) {
         return Attribute.<ClientModel, R>simple(name)
                 .modelAttributeResolver(a -> name)
                 .multivalued()
                 .withModelSetter(
-                        null,
+                        modelSetter != null ? (TriConsumer<ClientModel, String, Object>) (model, n, v) -> modelSetter.accept(model, (Set<V>) v) : null,
                         repSetter)
                 .build()
                 .get(0);
     }
 
-    /**
-     * Builds a boolean attribute whose entity-field key equals the schema name (used for
-     * protocol-specific boolean attributes where the model getter is handled in
-     * {@link #getAttributeValue}).
-     */
+    @SuppressWarnings("unchecked")
     protected Attribute<ClientModel, R> protocolBoolAttr(String name,
-            BiConsumer<R, Boolean> repSetter) {
+            BiConsumer<R, Boolean> repSetter,
+            BiConsumer<ClientModel, Boolean> modelSetter) {
         return Attribute.<ClientModel, R>simple(name)
                 .modelAttributeResolver(a -> name)
                 .bool()
                 .withModelSetter(
-                        null,
+                        modelSetter != null ? (TriConsumer<ClientModel, String, Object>) (model, n, v) -> modelSetter.accept(model, (Boolean) v) : null,
                         repSetter)
                 .build()
                 .get(0);
     }
 
-    /**
-     * Builds a string attribute whose entity-field key equals the schema name (used for
-     * protocol-specific string attributes where the model getter is handled in
-     * {@link #getAttributeValue}).
-     */
-    protected Attribute<ClientModel, R> protocolStringAttr(String name,
-            BiConsumer<R, String> repSetter) {
+    @SuppressWarnings("unchecked")
+    protected <V> Attribute<ClientModel, R> protocolStringAttr(String name,
+            BiConsumer<R, String> repSetter,
+            BiConsumer<ClientModel, V> modelSetter) {
         return Attribute.<ClientModel, R>simple(name)
                 .modelAttributeResolver(a -> name)
                 .withModelSetter(
-                        null,
+                        modelSetter != null ? (TriConsumer<ClientModel, String, Object>) (model, n, v) -> modelSetter.accept(model, (V) v) : null,
+                        repSetter)
+                .build()
+                .get(0);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected <V> Attribute<ClientModel, R> customAttr(String name,
+            BiConsumer<R, V> repSetter,
+            BiConsumer<ClientModel, V> modelSetter) {
+        return Attribute.<ClientModel, R>simple(name)
+                .modelAttributeResolver(a -> name)
+                .withModelSetter(
+                        modelSetter != null ? (TriConsumer<ClientModel, String, Object>) (model, n, v) -> modelSetter.accept(model, (V) v) : null,
                         repSetter)
                 .build()
                 .get(0);
@@ -198,20 +203,77 @@ public abstract class BaseClientModelSchema<R extends BaseClientRepresentation>
     /** Factory method — subclasses return a fresh, empty representation instance. */
     public abstract R createRepresentation();
 
-    // ---- Methods not needed for query/projection use ----
+    // TODO: should be tracked by Attribute.isImmutable
+    public Set<String> getWritableFields() {
+        return getAttributes().keySet().stream()
+                .filter(name -> !Set.of("uuid", "createdTimestamp", "updatedTimestamp").contains(name))
+                .collect(Collectors.toUnmodifiableSet());
+    }
+
+    public R fromModel(ClientModel model) {
+        return fromModel(model, (List<String>) null);
+    }
+
+    public R fromModel(ClientModel model, boolean includeReadOnlyFields) {
+        return fromModel(model, includeReadOnlyFields ? null : getWritableFields());
+    }
+
+    public R fromModel(ClientModel model, Set<String> includeFields) {
+        List<String> attributes = includeFields != null && !includeFields.isEmpty() ? List.copyOf(includeFields) : null;
+        return fromModel(model, attributes);
+    }
+
+    public R fromModel(ClientModel model, List<String> attributes) {
+        R rep = createRepresentation();
+        populate(rep, model, attributes, null);
+        return rep;
+    }
 
     /**
-     * Populates {@code model} from {@code representation} by calling the model-setter side of each attribute.
-     * Read-only attributes (createdTimestamp, updatedTimestamp) are silently skipped.
+     * TODO: should be on the Attribute class
+     */
+    public Object getRepresentationValue(R rep, String name) {
+        return switch (name) {
+            case "protocol"         -> rep.getProtocol();
+            case "uuid"             -> rep.getUuid();
+            case "clientId"         -> rep.getClientId();
+            case "enabled"          -> rep.getEnabled();
+            case "description"      -> rep.getDescription();
+            case "displayName"      -> rep.getDisplayName();
+            case "appUrl"           -> rep.getAppUrl();
+            case "redirectUris"     -> rep.getRedirectUris();
+            case "roles"            -> rep.getRoles();
+            case "createdTimestamp" -> rep.getCreatedTimestamp();
+            case "updatedTimestamp" -> rep.getUpdatedTimestamp();
+            default                 -> null;
+        };
+    }
+
+    public void applyProjection(R rep, Set<String> includeFields) {
+        if (includeFields == null || includeFields.isEmpty()) return;
+        for (Attribute<ClientModel, R> attribute : getAttributes().values()) {
+            if (!includeFields.contains(attribute.getName())) {
+                attribute.set(rep, null);
+            }
+        }
+    }
+
+    /**
+     * Populates {@code model} from {@code representation} by iterating over all attributes,
+     * getting their representation value, and calling the attribute's model setter.
+     * Read-only attributes (createdTimestamp, updatedTimestamp, uuid, roles) have a null model setter and are skipped.
      */
     @Override
     public void populate(ClientModel model, R representation) {
-        throw new UnsupportedOperationException("populate(ClientModel, R) not yet implemented");
+        for (Attribute<ClientModel, R> attribute : getAttributes().values()) {
+            Object value = getRepresentationValue(representation, attribute.getName());
+            attribute.setModelAttribute(model, value);
+        }
     }
 
     @Override
     public void populate(R representation, ClientModel model) {
-        throw new UnsupportedOperationException("populate(R, ClientModel) is not supported — use populate(R, ClientModel, List, List) instead");
+        populate(representation, model, null, null);
     }
 
     @Override

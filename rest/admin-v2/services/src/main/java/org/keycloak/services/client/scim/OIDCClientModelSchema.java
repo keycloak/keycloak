@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 import org.keycloak.models.ClientModel;
@@ -26,21 +27,60 @@ public final class OIDCClientModelSchema extends BaseClientModelSchema<OIDCClien
 
     @Override
     protected void addProtocolAttributes(Map<String, Attribute<ClientModel, OIDCClientRepresentation>> map) {
-        map.put("loginFlows",         multivaluedStringAttr("loginFlows",         (rep, v) -> rep.setLoginFlows(toFlowSet(v))));
-        map.put("auth",               protocolStringAttr   ("auth",               (rep, v) -> { /* complex: handled in getAttributeValue */ }));
-        map.put("webOrigins",         multivaluedStringAttr("webOrigins",         (rep, v) -> rep.setWebOrigins(v)));
-        map.put("serviceAccountRoles",multivaluedStringAttr("serviceAccountRoles",(rep, v) -> rep.setServiceAccountRoles(v)));
+        map.put("loginFlows",          multivaluedStringAttr("loginFlows",          (rep, v) -> rep.setLoginFlows(toFlowSet(v)), (BiConsumer<ClientModel, Set<OIDCClientRepresentation.Flow>>) (model, flows) -> setModelFromFlows(flows, model)));
+        map.put("auth",                customAttr           ("auth",                OIDCClientRepresentation::setAuth,           (model, auth) -> setAuth(model, (OIDCClientRepresentation.Auth) auth)));
+        map.put("webOrigins",          multivaluedStringAttr("webOrigins",          (rep, v) -> rep.setWebOrigins(v),            (BiConsumer<ClientModel, Set<String>>) (model, origins) -> model.setWebOrigins(origins != null ? new LinkedHashSet<>(origins) : null)));
+        map.put("serviceAccountRoles", multivaluedStringAttr("serviceAccountRoles", (rep, v) -> rep.setServiceAccountRoles(v),  null));
     }
 
     @Override
     protected Object getAttributeValue(ClientModel model, String name) {
         return switch (name) {
             case "loginFlows"          -> getLoginFlowNames(model);
-            case "auth"                -> null; // complex object — not supported via simple string path; skipped
+            case "auth"                -> getAuth(model);
             case "webOrigins"          -> new LinkedHashSet<>(model.getWebOrigins());
             case "serviceAccountRoles" -> getServiceAccountRoles(model);
             default                    -> super.getAttributeValue(model, name);
         };
+    }
+
+    @Override
+    public Object getRepresentationValue(OIDCClientRepresentation rep, String name) {
+        return switch (name) {
+            case "loginFlows"          -> rep.getLoginFlows();
+            case "auth"                -> rep.getAuth();
+            case "webOrigins"          -> rep.getWebOrigins();
+            case "serviceAccountRoles" -> rep.getServiceAccountRoles();
+            default                    -> super.getRepresentationValue(rep, name);
+        };
+    }
+
+    private OIDCClientRepresentation.Auth getAuth(ClientModel model) {
+        if (!model.isPublicClient()) {
+            OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
+            auth.setMethod(model.getClientAuthenticatorType());
+            auth.setSecret(model.getSecret());
+            return auth;
+        }
+        return null;
+    }
+
+    private void setAuth(ClientModel model, OIDCClientRepresentation.Auth auth) {
+        if (auth != null) {
+            model.setPublicClient(false);
+            model.setClientAuthenticatorType(auth.getMethod());
+            model.setSecret(auth.getSecret());
+        } else {
+            model.setPublicClient(true);
+        }
+    }
+
+    private void setModelFromFlows(Set<OIDCClientRepresentation.Flow> flows, ClientModel model) {
+        if (flows != null) {
+            model.setStandardFlowEnabled(flows.contains(OIDCClientRepresentation.Flow.STANDARD));
+            model.setImplicitFlowEnabled(flows.contains(OIDCClientRepresentation.Flow.IMPLICIT));
+            model.setDirectAccessGrantsEnabled(flows.contains(OIDCClientRepresentation.Flow.DIRECT_GRANT));
+        }
     }
 
     private Set<String> getLoginFlowNames(ClientModel model) {

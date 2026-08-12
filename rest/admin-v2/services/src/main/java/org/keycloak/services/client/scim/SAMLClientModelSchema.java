@@ -48,18 +48,18 @@ public final class SAMLClientModelSchema extends BaseClientModelSchema<SAMLClien
 
     @Override
     protected void addProtocolAttributes(Map<String, Attribute<ClientModel, SAMLClientRepresentation>> map) {
-        map.put("nameIdFormat",                 protocolStringAttr("nameIdFormat",                 (rep, v) -> rep.setNameIdFormat(SAMLClientRepresentation.NameIdFormat.fromJson(v))));
-        map.put("forceNameIdFormat",            protocolBoolAttr  ("forceNameIdFormat",            SAMLClientRepresentation::setForceNameIdFormat));
-        map.put("includeAuthnStatement",        protocolBoolAttr  ("includeAuthnStatement",        SAMLClientRepresentation::setIncludeAuthnStatement));
-        map.put("signDocuments",                protocolBoolAttr  ("signDocuments",                SAMLClientRepresentation::setSignDocuments));
-        map.put("signAssertions",               protocolBoolAttr  ("signAssertions",               SAMLClientRepresentation::setSignAssertions));
-        map.put("clientSignatureRequired",      protocolBoolAttr  ("clientSignatureRequired",      SAMLClientRepresentation::setClientSignatureRequired));
-        map.put("signatureAlgorithm",           protocolStringAttr("signatureAlgorithm",           (rep, v) -> rep.setSignatureAlgorithm(SAMLClientRepresentation.SignatureAlgorithm.fromJson(v))));
-        map.put("signatureCanonicalizationMethod", protocolStringAttr("signatureCanonicalizationMethod", SAMLClientRepresentation::setSignatureCanonicalizationMethod));
-        map.put("signingCertificate",           protocolStringAttr("signingCertificate",           SAMLClientRepresentation::setSigningCertificate));
-        map.put("forcePostBinding",             protocolBoolAttr  ("forcePostBinding",             SAMLClientRepresentation::setForcePostBinding));
-        map.put("frontChannelLogout",           protocolBoolAttr  ("frontChannelLogout",           SAMLClientRepresentation::setFrontChannelLogout));
-        map.put("allowEcpFlow",                 protocolBoolAttr  ("allowEcpFlow",                 SAMLClientRepresentation::setAllowEcpFlow));
+        map.put("nameIdFormat",                 protocolStringAttr("nameIdFormat",                 (rep, v) -> rep.setNameIdFormat(SAMLClientRepresentation.NameIdFormat.fromJson(v)), (model, value) -> setAttribute(model, SAML_NAME_ID_FORMAT, value != null ? ((SAMLClientRepresentation.NameIdFormat) value).toJson() : null)));
+        map.put("forceNameIdFormat",            protocolBoolAttr  ("forceNameIdFormat",            SAMLClientRepresentation::setForceNameIdFormat, (model, value) -> setBooleanAttribute(model, SAML_FORCE_NAME_ID_FORMAT, value)));
+        map.put("includeAuthnStatement",        protocolBoolAttr  ("includeAuthnStatement",        SAMLClientRepresentation::setIncludeAuthnStatement, (model, value) -> setBooleanAttribute(model, SAML_AUTHN_STATEMENT, value)));
+        map.put("signDocuments",                protocolBoolAttr  ("signDocuments",                SAMLClientRepresentation::setSignDocuments, (model, value) -> setBooleanAttribute(model, SAML_SERVER_SIGNATURE, value)));
+        map.put("signAssertions",               protocolBoolAttr  ("signAssertions",               SAMLClientRepresentation::setSignAssertions, (model, value) -> setBooleanAttribute(model, SAML_ASSERTION_SIGNATURE, value)));
+        map.put("clientSignatureRequired",      protocolBoolAttr  ("clientSignatureRequired",      SAMLClientRepresentation::setClientSignatureRequired, (model, value) -> setBooleanAttribute(model, SAML_CLIENT_SIGNATURE, value)));
+        map.put("signatureAlgorithm",           protocolStringAttr("signatureAlgorithm",           (rep, v) -> rep.setSignatureAlgorithm(SAMLClientRepresentation.SignatureAlgorithm.fromJson(v)), (model, value) -> setAttribute(model, SAML_SIGNATURE_ALGORITHM, value != null ? ((SAMLClientRepresentation.SignatureAlgorithm) value).name() : null)));
+        map.put("signatureCanonicalizationMethod", protocolStringAttr("signatureCanonicalizationMethod", SAMLClientRepresentation::setSignatureCanonicalizationMethod, (model, value) -> setAttribute(model, SAML_SIGNATURE_CANONICALIZATION, (String) value)));
+        map.put("signingCertificate",           protocolStringAttr("signingCertificate",           SAMLClientRepresentation::setSigningCertificate, (model, value) -> setAttribute(model, SAML_SIGNING_CERTIFICATE, (String) value)));
+        map.put("forcePostBinding",             protocolBoolAttr  ("forcePostBinding",             SAMLClientRepresentation::setForcePostBinding, (model, value) -> setBooleanAttribute(model, SAML_FORCE_POST_BINDING, value)));
+        map.put("frontChannelLogout",           protocolBoolAttr  ("frontChannelLogout",           SAMLClientRepresentation::setFrontChannelLogout, (model, logout) -> model.setFrontchannelLogout(Boolean.TRUE.equals(logout))));
+        map.put("allowEcpFlow",                 protocolBoolAttr  ("allowEcpFlow",                 SAMLClientRepresentation::setAllowEcpFlow, (model, value) -> setBooleanAttribute(model, SAML_ALLOW_ECP_FLOW, value)));
     }
 
     @Override
@@ -81,9 +81,44 @@ public final class SAMLClientModelSchema extends BaseClientModelSchema<SAMLClien
         };
     }
 
+    @Override
+    public Object getRepresentationValue(SAMLClientRepresentation rep, String name) {
+        return switch (name) {
+            case "nameIdFormat"                     -> rep.getNameIdFormat();
+            case "forceNameIdFormat"                -> rep.getForceNameIdFormat();
+            case "includeAuthnStatement"            -> rep.getIncludeAuthnStatement();
+            case "signDocuments"                    -> rep.getSignDocuments();
+            case "signAssertions"                   -> rep.getSignAssertions();
+            case "clientSignatureRequired"          -> rep.getClientSignatureRequired();
+            case "signatureAlgorithm"               -> rep.getSignatureAlgorithm();
+            case "signatureCanonicalizationMethod"  -> rep.getSignatureCanonicalizationMethod();
+            case "signingCertificate"               -> rep.getSigningCertificate();
+            case "forcePostBinding"                 -> rep.getForcePostBinding();
+            case "frontChannelLogout"               -> rep.getFrontChannelLogout();
+            case "allowEcpFlow"                     -> rep.getAllowEcpFlow();
+            default                                 -> super.getRepresentationValue(rep, name);
+        };
+    }
+
     private Boolean getBooleanAttribute(ClientModel model, String key) {
         String value = model.getAttribute(key);
         return value != null ? Boolean.parseBoolean(value) : null;
+    }
+
+    private void setAttribute(ClientModel model, String key, String value) {
+        if (value != null) {
+            model.setAttribute(key, value);
+        } else {
+            model.removeAttribute(key);
+        }
+    }
+
+    private void setBooleanAttribute(ClientModel model, String key, Boolean value) {
+        if (value != null) {
+            model.setAttribute(key, value.toString());
+        } else {
+            model.removeAttribute(key);
+        }
     }
 
     @Override
