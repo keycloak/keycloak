@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import jakarta.ws.rs.core.Response.Status;
+
+import org.keycloak.scim.client.ScimClientException;
 import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.Scim;
 import org.keycloak.scim.resource.schema.Schema;
@@ -15,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest(config = ScimServerConfig.class)
@@ -249,6 +253,13 @@ public class SchemaTest extends AbstractScimTest {
                 .filter("manager"::equals)
                 .count();
         assertEquals(1, managerCount, "manager attribute should appear exactly once");
+    }
+
+    @Test
+    public void testFilterForbidden() {
+        ScimClientException e = assertThrows(ScimClientException.class,
+                () -> client.schemas().doPost("id eq \"test\"", null, null));
+        assertEquals(Status.FORBIDDEN.getStatusCode(), e.getError().getStatusInt());
     }
 
     // Helper method to find attribute by name
