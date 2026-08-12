@@ -80,7 +80,6 @@ public class CryptoKeyStore {
         File file = saveKeystore(folder, keystoreType, keyStore, keystorePassword);
 
         CertificateRepresentation certRep = new CertificateRepresentation();
-        certRep.setPrivateKey(PemUtils.encodeKey(privKey));
         certRep.setPublicKey(PemUtils.encodeKey(certificate.getPublicKey()));
         certRep.setCertificate(PemUtils.encodeCertificate(certificate));
         return new KeystoreInfo(certRep, file);

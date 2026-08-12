@@ -63,11 +63,6 @@ public class ModAuthMellonClientInstallation implements ClientInstallationProvid
             zip.write(spDescriptor.getBytes());
             zip.closeEntry();
             if (samlClient.requiresClientSignature()) {
-                if (samlClient.getClientSigningPrivateKey() != null) {
-                    zip.putNextEntry(new ZipEntry(clientDirName + "/client-private-key.pem"));
-                    zip.write(createClientSigningPrivateKeyRfc7468Representation(samlClient.getClientSigningPrivateKey()));
-                    zip.closeEntry();
-                }
                 if (samlClient.getClientSigningCertificate() != null) {
                     zip.putNextEntry(new ZipEntry(clientDirName + "/client-cert.pem"));
                     zip.write(createClientSigningCertificateRfc7468Representation(samlClient.getClientSigningCertificate()));
@@ -96,7 +91,7 @@ public class ModAuthMellonClientInstallation implements ClientInstallationProvid
 
     @Override
     public String getHelpText() {
-        return "This is a zip file.  It contains a SAML SP descriptor, SAML IDP descriptor,  private key pem, and certificate pem that you will use to configure mod_auth_mellon for Apache.  You'll use these files when crafting the main Apache configuration file.  See mod_auth_mellon website for more details.";
+        return "This is a zip file.  It contains a SAML SP descriptor, SAML IDP descriptor, and certificate pem that you will use to configure mod_auth_mellon for Apache.  You'll use these files when crafting the main Apache configuration file.  See mod_auth_mellon website for more details.";
     }
 
     @Override
@@ -137,11 +132,6 @@ public class ModAuthMellonClientInstallation implements ClientInstallationProvid
     @Override
     public String getId() {
         return "mod-auth-mellon";
-    }
-
-    private static byte[] createClientSigningPrivateKeyRfc7468Representation(String clientSigningPrivateKey) {
-        String resultAsString = PemUtils.addPrivateKeyBeginEnd(wrapAt64Chars(clientSigningPrivateKey));
-        return resultAsString.getBytes(StandardCharsets.US_ASCII);
     }
 
     private static byte[] createClientSigningCertificateRfc7468Representation(String clientSigningCertificate) {

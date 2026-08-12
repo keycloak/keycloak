@@ -24,7 +24,7 @@ import {
   clickClientSignature,
   clickEncryptionAssertions,
   clickOffEncryptionAssertions,
-  clickGenerate,
+  importCertificate,
   clickPostBinding,
   goToClientSettingsTab,
   goToKeysTab,
@@ -137,12 +137,9 @@ test.describe.serial("Clients SAML tests", () => {
     // enable encryption on keys tab
     await goToKeysTab(page);
     await clickEncryptionAssertions(page);
-    await clickGenerate(page);
-    await assertNotificationMessage(
-      page,
-      "New key pair and certificate generated successfully",
-    );
+    await importCertificate(page);
     await confirmModal(page);
+    await assertNotificationMessage(page, "New certificate imported");
     await assertCertificates(page);
 
     // assert encryption algorithms can be modified
@@ -179,6 +176,7 @@ test.describe.serial("Clients SAML tests", () => {
     // enable encryption again and check algorithms are empty/default
     await goToKeysTab(page);
     await clickEncryptionAssertions(page);
+    await importCertificate(page);
     await confirmModal(page);
     await goToClientSettingsTab(page);
     await assertEncryptionAlgorithm(page, "Choose...");

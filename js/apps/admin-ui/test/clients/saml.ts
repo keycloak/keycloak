@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect } from "@playwright/test";
+import { chooseFileByLocator } from "../utils/file-chooser.ts";
 import {
   assertSelectValue,
   selectItem,
@@ -84,13 +85,13 @@ export async function clickOffEncryptionAssertions(page: Page) {
   await switchOff(page, "#encryptAssertions");
 }
 
-export async function clickGenerate(page: Page) {
-  const responsePromise = page.waitForResponse(
-    (res) => res.url().includes("/generate") && res.status() === 200,
-    { timeout: 60000 },
+export async function importCertificate(page: Page) {
+  await selectItem(page, page.locator("#format"), "Certificate PEM");
+  await chooseFileByLocator(
+    page,
+    "../utils/files/cert.pem",
+    page.locator("#importFile-browse-button"),
   );
-  await page.getByTestId("generate").click();
-  await responsePromise;
 }
 
 export async function assertNameIdFormatDropdown(page: Page) {

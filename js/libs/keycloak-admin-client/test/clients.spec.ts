@@ -941,48 +941,58 @@ describe("Clients", () => {
   });
 
   describe("client attribute certificate", () => {
-    const keystoreConfig = {
-      format: "JKS",
-      keyAlias: "new",
-      keyPassword: "password",
-      realmAlias: "master",
-      realmCertificate: false,
-      storePassword: "password",
-    };
     const attr = "jwt.credential";
 
-    it("generate and download keys", async () => {
-      const result = await kcAdminClient.clients.generateAndDownloadKey(
-        { id: currentClient.id!, attr },
-        keystoreConfig,
-      );
-
-      expect(result).to.be.ok;
-    });
-
-    it("generate key and updated info", async () => {
-      const certificate = await kcAdminClient.clients.generateKey({
+    it("get key info", async () => {
+      const info = await kcAdminClient.clients.getKeyInfo({
         id: currentClient.id!,
         attr,
       });
+      expect(info).to.be.ok;
+    });
 
-      expect(certificate).to.be.ok;
-      expect(certificate.certificate).to.be.ok;
+    it("upload certificate PEM and verify via getKeyInfo", async () => {
+      const certPem =
+        "-----BEGIN CERTIFICATE-----\n" +
+        "MIICnTCCAYUCBgFPPQDGxTANBgkqhkiG9w0BAQsFADASMRAwDgYDVQQDDAdjbGll\n" +
+        "bnQxMB4XDTE1MDgxNzE4NTAwNVoXDTI1MDgxNzE4NTE0NVowEjEQMA4GA1UEAwwH\n" +
+        "Y2xpZW50MTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMMw3PaBffWx\n" +
+        "gS2PYSDDBp6As+cNvv9kt2C4f/RDAGmvSIHPFev9kuQiKs3Oaws3ZsV4JG3qHEuY\n" +
+        "gnh9W4vfe3DwNwtD1bjL5FYBhPBFTw0lAQECYxaBHnkjHwUKp957FqdSPPICm3Lj\n" +
+        "mTcEdlH+9dpp9xHCMbbiNiWDzWI1xSxC8Fs2d0hwz1sd+Q4QeTBPIBWcPM+ICZtN\n" +
+        "G5MN+ORfayu4X+Me5d0tXG2fQO//rAevk1i5IFjKZuOjTwyKB5SJIY4b8QTeg0g/\n" +
+        "50IU7Ht00Pxw6CK02dHS+FvXHasZlD3ckomqCDjStTBWdhJo5dST0CbOqalkkpLl\n" +
+        "CCbGA1yEQRsCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAUIMeJ+EAo8eNpCG/nXIm\n" +
+        "acjrKakbFnZYBGD/gqeTGaZynkX+jgBSructTHR83zSH+yELEhsAy+3BfK4EEihp\n" +
+        "+PEcRnK2fASVkHste8AQ7rlzC+HGGirlwrVhWCdizNUCGK80DE537IZ7nmZw6LFG\n" +
+        "9P5/Q2MvCsOCYjRUvMkukq6TdXBXR9tETwZ+0gpSfsOxjj0ZF7ftTRUSzx4rFfcb\n" +
+        "M9fRNdVizdOuKGc8HJPA5lLOxV6CyaYIvi3y5RlQI1OHeS34lE4w9CNPRFa/vdxX\n" +
+        "vN7ClyzA0HMFNWxBN7pC/Ht/FbhSvaAagJBHg+vCrcY5C26Oli7lAglf/zZrwUPs\n" +
+        "0w==\n" +
+        "-----END CERTIFICATE-----";
+
+      const formData = new FormData();
+      formData.append(
+        "file",
+        new Blob([certPem], { type: "application/x-pem-file" }),
+        "cert.pem",
+      );
+      formData.append("keystoreFormat", "Certificate PEM");
+      formData.append("keyAlias", "undefined");
+      formData.append("storePassword", "undefined");
+      formData.append("keyPassword", "undefined");
+
+      await kcAdminClient.clients.uploadCertificate(
+        { id: currentClient.id!, attr },
+        formData,
+      );
 
       const info = await kcAdminClient.clients.getKeyInfo({
         id: currentClient.id!,
         attr,
       });
-      expect(info).to.be.eql(certificate);
-    });
-
-    it("download key", async () => {
-      const result = await kcAdminClient.clients.downloadKey(
-        { id: currentClient.id!, attr },
-        keystoreConfig,
-      );
-
-      expect(result).to.be.ok;
+      expect(info).to.be.ok;
+      expect(info.certificate).to.be.ok;
     });
   });
 

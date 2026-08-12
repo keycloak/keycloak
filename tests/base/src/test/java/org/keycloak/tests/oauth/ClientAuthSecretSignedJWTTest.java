@@ -35,11 +35,13 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientSecretConstants;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.client.authentication.JWTClientSecretCredentialsProvider;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testframework.annotations.InjectEvents;
@@ -109,7 +111,7 @@ public class ClientAuthSecretSignedJWTTest {
     @Test
     public void testCodeToTokenRequestSuccessWhenClientHasGeneratedKeys() {
         // Test when client has public/private keys generated despite the fact that it uses client-secret for the client authentication (and not those keys)
-        oauth.clientResource().getCertficateResource("jwt.credential").generate();
+        setCertificateOnClient();
         realm.cleanup().add(this::removeCertificateInformation);
 
         testCodeToTokenRequestSuccess(Algorithm.HS256);
@@ -118,7 +120,7 @@ public class ClientAuthSecretSignedJWTTest {
     @Test
     public void testCodeToTokenRequestFailureWhenClientHasPrivateKeyJWT() {
         // Setup client for "private_key_jwt" authentication
-        oauth.clientResource().getCertficateResource("jwt.credential").generate();
+        setCertificateOnClient();
         ClientRepresentation clientRep = oauth.clientResource().toRepresentation();
         clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
         oauth.clientResource().update(clientRep);
@@ -433,6 +435,13 @@ public class ClientAuthSecretSignedJWTTest {
 
         clientRep.setRedirectUris(Collections.singletonList("http://127.0.0.1:8500/callback/oauth"));
         return clientRep;
+    }
+
+    private void setCertificateOnClient() {
+        CertificateRepresentation certRep = KeycloakModelUtils.generateKeyPairCertificate(oauth.getClientId());
+        ClientRepresentation clientRep = oauth.clientResource().toRepresentation();
+        clientRep.getAttributes().put(JWTClientAuthenticator.CERTIFICATE_ATTR, certRep.getCertificate());
+        oauth.clientResource().update(clientRep);
     }
 
     private void removeCertificateInformation(RealmResource realm) {

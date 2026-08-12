@@ -1,0 +1,24 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== Client private key endpoints removed
+
+The following Admin REST API endpoints have been removed.
+They were deprecated in Keycloak 26.x:
+
+* `POST /admin/realms/{realm}/clients/{id}/certificates/{attr}/generate`
+* `POST /admin/realms/{realm}/clients/{id}/certificates/{attr}/download`
+* `POST /admin/realms/{realm}/clients/{id}/certificates/{attr}/generate-and-download`
+
+Clients should generate their own key pairs and upload only the public key or
+certificate using the existing upload endpoints.
+
+The `privateKey` field has been removed from the `CertificateRepresentation`
+API response.
+
+A database migration automatically removes any previously stored client private
+key attributes (`saml.signing.private.key`, `saml.encryption.private.key`,
+`jwt.credential.private.key`) from the `CLIENT_ATTRIBUTES` table.

@@ -1,13 +1,7 @@
 import type CertificateRepresentation from "@keycloak/keycloak-admin-client/lib/defs/certificateRepresentation";
-import {
-  FormPanel,
-  HelpItem,
-  useAlerts,
-  useFetch,
-} from "@keycloak/keycloak-ui-shared";
+import { FormPanel, HelpItem, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
-  AlertVariant,
   Button,
   Card,
   CardBody,
@@ -18,7 +12,6 @@ import {
   Text,
   TextContent,
 } from "@patternfly/react-core";
-import { saveAs } from "file-saver";
 import { Fragment, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -26,10 +19,8 @@ import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form/FormAccess";
 import { convertAttributeNameToForm } from "../../util";
-import useToggle from "../../utils/useToggle";
 import { FormFields } from "../ClientDetails";
 import { Certificate } from "./Certificate";
-import { ExportSamlKeyDialog } from "./ExportSamlKeyDialog";
 import { SamlImportKeyDialog } from "./SamlImportKeyDialog";
 import { SamlKeysDialog } from "./SamlKeysDialog";
 
@@ -42,7 +33,6 @@ type KeyMapping = {
   name: string;
   title: string;
   key: string;
-  regenerateKey: string;
   relatedKeys: string[];
 };
 
@@ -54,14 +44,12 @@ const KEYS_MAPPING: { [key in KeyTypes]: KeyMapping } = {
     name: convertAttributeNameToForm("attributes.saml.client.signature"),
     title: "signingKeysConfig",
     key: "clientSignature",
-    regenerateKey: "reGenerateSigning",
     relatedKeys: [],
   },
   "saml.encryption": {
     name: convertAttributeNameToForm("attributes.saml.encrypt"),
     title: "encryptionKeysConfig",
     key: "encryptAssertions",
-    regenerateKey: "reGenerateEncryption",
     relatedKeys: [
       convertAttributeNameToForm("attributes.saml.encryption.algorithm"),
       convertAttributeNameToForm("attributes.saml.encryption.keyAlgorithm"),
@@ -78,17 +66,16 @@ type KeySectionProps = {
   keyInfo?: CertificateRepresentation;
   attr: KeyTypes;
   onChanged: (key: KeyTypes) => void;
-  onGenerate: (key: KeyTypes, regenerate: boolean) => void;
+  onDisable: (key: KeyTypes) => void;
   onImport: (key: KeyTypes) => void;
   save: () => void;
 };
 
 const KeySection = ({
-  clientId,
   keyInfo,
   attr,
   onChanged,
-  onGenerate,
+  onDisable,
   onImport,
   save,
 }: KeySectionProps) => {
@@ -97,8 +84,6 @@ const KeySection = ({
   const title = KEYS_MAPPING[attr].title;
   const key = KEYS_MAPPING[attr].key;
   const name = KEYS_MAPPING[attr].name;
-
-  const [showImportDialog, toggleImportDialog] = useToggle();
 
   const section = watch(name as keyof FormFields);
 
@@ -111,13 +96,6 @@ const KeySection = ({
 
   return (
     <>
-      {showImportDialog && (
-        <ExportSamlKeyDialog
-          keyType={attr}
-          clientId={clientId}
-          close={toggleImportDialog}
-        />
-      )}
       <FormPanel title={t(title)} className="kc-form-panel__panel">
         <TextContent className="pf-v5-u-pb-lg">
           <Text>{t(`${title}Explain`)}</Text>
@@ -151,7 +129,7 @@ const KeySection = ({
                       onChanged(attr);
                       field.onChange(v);
                     } else {
-                      onGenerate(attr, false);
+                      onDisable(attr);
                     }
                   }}
                   aria-label={t(key)}
@@ -172,17 +150,8 @@ const KeySection = ({
                   keyInfo={keyInfo}
                 />
                 <ActionGroup>
-                  <Button
-                    variant="secondary"
-                    onClick={() => onGenerate(attr, true)}
-                  >
-                    {t("regenerate")}
-                  </Button>
                   <Button variant="secondary" onClick={() => onImport(attr)}>
                     {t("importKey")}
-                  </Button>
-                  <Button variant="tertiary" onClick={toggleImportDialog}>
-                    {t("export")}
                   </Button>
                 </ActionGroup>
               </Form>
@@ -204,7 +173,6 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
   const [refresh, setRefresh] = useState(0);
 
   const { setValue } = useFormContext();
-  const { addAlert, addError } = useAlerts();
 
   useFetch(
     () =>
@@ -216,29 +184,6 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
     (info) => setKeyInfo(info),
     [refresh],
   );
-
-  const generate = async (attr: KeyTypes) => {
-    const index = KEYS.indexOf(attr);
-    try {
-      const info = [...(keyInfo || [])];
-      info[index] = await adminClient.clients.generateKey({
-        id: clientId,
-        attr,
-      });
-
-      setKeyInfo(info);
-      saveAs(
-        new Blob([info[index].privateKey!], {
-          type: "application/octet-stream",
-        }),
-        "private.key",
-      );
-
-      addAlert(t("generateSuccess"), AlertVariant.success);
-    } catch (error) {
-      addError("generateError", error);
-    }
-  };
 
   const key = selectedType ? KEYS_MAPPING[selectedType].key : "";
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
@@ -256,19 +201,6 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
         setValue(key, ""); // remove related attributes when disabled
       }
       save();
-    },
-  });
-
-  const regenerateKey = selectedType
-    ? KEYS_MAPPING[selectedType].regenerateKey
-    : "";
-  const [toggleReGenerateDialog, ReGenerateConfirm] = useConfirmDialog({
-    titleKey: regenerateKey,
-    messageKey: regenerateKey + "Explain",
-    continueButtonLabel: "yes",
-    cancelButtonLabel: "no",
-    onConfirm: async () => {
-      await generate(selectedType!);
     },
   });
 
@@ -294,7 +226,6 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
         />
       )}
       <DisableConfirm />
-      <ReGenerateConfirm />
       {KEYS.map((attr, index) => (
         <Fragment key={attr}>
           {openImport === attr && (
@@ -313,13 +244,9 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
               setIsChanged(type);
               setSelectedType(type);
             }}
-            onGenerate={(type, isNew) => {
+            onDisable={(type) => {
               setSelectedType(type);
-              if (!isNew) {
-                toggleDisableDialog();
-              } else {
-                toggleReGenerateDialog();
-              }
+              toggleDisableDialog();
             }}
             onImport={() => setImportOpen(attr)}
             save={save}

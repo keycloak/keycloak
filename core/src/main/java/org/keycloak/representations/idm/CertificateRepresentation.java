@@ -24,19 +24,10 @@ package org.keycloak.representations.idm;
  */
 public class CertificateRepresentation {
 
-    protected String privateKey;
     protected String publicKey;
     protected String certificate;
     protected String kid;
     protected String jwks;
-
-    public String getPrivateKey() {
-        return privateKey;
-    }
-
-    public void setPrivateKey(String privateKey) {
-        this.privateKey = privateKey;
-    }
 
     public String getPublicKey() {
         return publicKey;

@@ -20,7 +20,6 @@ package org.keycloak.services.util;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
-import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
@@ -60,8 +59,6 @@ public class CertificateInfoHelper {
     public static final String JSON_WEB_KEY_SET = "JSON Web Key Set";
 
     private static final Logger logger = Logger.getLogger(CertificateInfoHelper.class);
-
-    public static final String PRIVATE_KEY = "private.key";
     public static final String X509CERTIFICATE = "certificate";
     public static final String PUBLIC_KEY = "public.key";
 
@@ -71,7 +68,6 @@ public class CertificateInfoHelper {
     // CLIENT MODEL METHODS
 
     public static CertificateRepresentation getCertificateFromClient(ClientModel client, String attributePrefix) {
-        String privateKeyAttribute = attributePrefix + "." + PRIVATE_KEY;
         String certificateAttribute = attributePrefix + "." + X509CERTIFICATE;
         String publicKeyAttribute = attributePrefix + "." + PUBLIC_KEY;
         String kidAttribute = attributePrefix + "." + KID;
@@ -84,7 +80,6 @@ public class CertificateInfoHelper {
         CertificateRepresentation rep = new CertificateRepresentation();
         rep.setCertificate(client.getAttribute(certificateAttribute));
         rep.setPublicKey(client.getAttribute(publicKeyAttribute));
-        rep.setPrivateKey(client.getAttribute(privateKeyAttribute));
         rep.setKid(client.getAttribute(kidAttribute));
 
         return rep;
@@ -127,12 +122,10 @@ public class CertificateInfoHelper {
             throw new IllegalStateException("Both certificate and publicKey are not null!");
         }
 
-        String privateKeyAttribute = attributePrefix + "." + PRIVATE_KEY;
         String certificateAttribute = attributePrefix + "." + X509CERTIFICATE;
         String publicKeyAttribute = attributePrefix + "." + PUBLIC_KEY;
         String kidAttribute = attributePrefix + "." + KID;
 
-        setOrRemoveAttr(client, privateKeyAttribute, rep.getPrivateKey());
         setOrRemoveAttr(client, publicKeyAttribute, rep.getPublicKey());
         setOrRemoveAttr(client, certificateAttribute, rep.getCertificate());
         setOrRemoveAttr(client, kidAttribute, rep.getKid());
@@ -152,12 +145,10 @@ public class CertificateInfoHelper {
             throw new IllegalStateException("jwks can only be set for OIDC clients!");
         }
 
-        String privateKeyAttribute = attributePrefix + "." + PRIVATE_KEY;
         String certificateAttribute = attributePrefix + "." + X509CERTIFICATE;
         String publicKeyAttribute = attributePrefix + "." + PUBLIC_KEY;
         String kidAttribute = attributePrefix + "." + KID;
 
-        setOrRemoveAttr(client, privateKeyAttribute, null);
         setOrRemoveAttr(client, publicKeyAttribute, null);
         setOrRemoveAttr(client, certificateAttribute, null);
         setOrRemoveAttr(client, kidAttribute, null);
@@ -177,7 +168,6 @@ public class CertificateInfoHelper {
     // CLIENT REPRESENTATION METHODS
 
     public static void updateClientRepresentationCertificateInfo(ClientRepresentation client, CertificateRepresentation rep, String attributePrefix) {
-        String privateKeyAttribute = attributePrefix + "." + PRIVATE_KEY;
         String certificateAttribute = attributePrefix + "." + X509CERTIFICATE;
         String publicKeyAttribute = attributePrefix + "." + PUBLIC_KEY;
         String kidAttribute = attributePrefix + "." + KID;
@@ -190,7 +180,6 @@ public class CertificateInfoHelper {
             throw new IllegalStateException("Both certificate and publicKey are not null!");
         }
 
-        setOrRemoveAttr(client, privateKeyAttribute, rep.getPrivateKey());
         setOrRemoveAttr(client, publicKeyAttribute, rep.getPublicKey());
         setOrRemoveAttr(client, certificateAttribute, rep.getCertificate());
         setOrRemoveAttr(client, kidAttribute, rep.getKid());
@@ -240,21 +229,13 @@ public class CertificateInfoHelper {
         }
 
         String keyAlias = uploadForm.getFirst("keyAlias").asString();
-        FormPartValue keyPasswordPart = uploadForm.getFirst("keyPassword");
-        char[] keyPassword = keyPasswordPart != null ? keyPasswordPart.asString().toCharArray() : null;
 
         FormPartValue storePasswordPart = uploadForm.getFirst("storePassword");
         char[] storePassword = storePasswordPart != null ? storePasswordPart.asString().toCharArray() : null;
-        PrivateKey privateKey = null;
-        X509Certificate certificate = null;
+        X509Certificate certificate;
         try {
             KeyStore keyStore = CryptoIntegration.getProvider().getKeyStore(KeystoreUtil.KeystoreFormat.valueOf(keystoreFormat));
             keyStore.load(inputParts.asInputStream(), storePassword);
-            try {
-                privateKey = (PrivateKey) keyStore.getKey(keyAlias, keyPassword);
-            } catch (Exception e) {
-                // ignore
-            }
             certificate = (X509Certificate) keyStore.getCertificate(keyAlias);
         } catch (Exception e) {
             logger.error("Error loading keystore", e);
@@ -263,11 +244,6 @@ public class CertificateInfoHelper {
             } else {
                 throw new BadRequestException("error loading keystore");
             }
-        }
-
-        if (privateKey != null) {
-            String privateKeyPem = KeycloakModelUtils.getPemFromKey(privateKey);
-            info.setPrivateKey(privateKeyPem);
         }
 
         if (certificate != null) {
