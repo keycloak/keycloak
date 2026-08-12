@@ -105,6 +105,7 @@ public class Attribute<M extends Model, R> {
     private boolean required;
     private boolean caseExact;
     private String uniqueness;
+    private boolean storedLowerCase;
 
     private Attribute(String name, AttributeMapper<M, R> mapper, String parentName, String alias) {
         this.name = name;
@@ -214,6 +215,14 @@ public class Attribute<M extends Model, R> {
 
     public boolean isCaseExact() {
         return caseExact;
+    }
+
+    public boolean isStoredLowerCase() {
+        return storedLowerCase;
+    }
+
+    public void setStoredLowerCase(boolean storedLowerCase) {
+        this.storedLowerCase = storedLowerCase;
     }
 
     public void setUniqueness(String uniqueness) {
@@ -344,6 +353,7 @@ public class Attribute<M extends Model, R> {
         private TriConsumer<M, String, Set<?>> modelAdder;
         private boolean required;
         private boolean caseExact = true;
+        private boolean storedLowerCase;
         private String uniqueness = "none";
 
         private Builder(String name, Class<?> complexType) {
@@ -384,7 +394,7 @@ public class Attribute<M extends Model, R> {
             String subName = this.name + "." + name;
             Attribute<M, R> attribute = assembleAttribute(subName, this.name, alias,
                     new AttributeMapper<>(modelSetter, new ComplexAttributeSetter<>(this.name, name, complexType)),
-                    modelAttributeResolver, "string", null, returned, false, false, true, null, null);
+                    modelAttributeResolver, "string", null, returned, false, false, true, false, null, null);
             attributes.add(attribute);
             return this;
         }
@@ -422,7 +432,7 @@ public class Attribute<M extends Model, R> {
         public List<Attribute<M, R>> build() {
             Attribute<M, R> attribute = assembleAttribute(name, null, null,
                     new AttributeMapper<>(modelSetter, representationSetter, modelRemover, modelAdder),
-                    modelAttributeResolver, type, mutability, returned, multivalued, required, caseExact, uniqueness, complexType);
+                    modelAttributeResolver, type, mutability, returned, multivalued, required, caseExact, storedLowerCase, uniqueness, complexType);
             if (attributes.isEmpty()) {
                 // do not add the root attribute if there are subattributes
                 attributes.add(attribute);
@@ -437,6 +447,7 @@ public class Attribute<M extends Model, R> {
                                                    boolean multivalued,
                                                    boolean required,
                                                    boolean caseExact,
+                                                   boolean storedLowerCase,
                                                    String uniqueness,
                                                    Class<?> complexType) {
             Attribute<M, R> attribute = new Attribute<>(name, mapper, parentName, alias);
@@ -450,6 +461,7 @@ public class Attribute<M extends Model, R> {
             attribute.setComplexType(complexType);
             attribute.setRequired(required);
             attribute.setCaseExact(caseExact);
+            attribute.setStoredLowerCase(storedLowerCase);
             attribute.setUniqueness(uniqueness == null ? "none" : uniqueness);
             return attribute;
         }
@@ -476,6 +488,11 @@ public class Attribute<M extends Model, R> {
 
         public Builder<M, R> notCaseExact() {
             this.caseExact = false;
+            return this;
+        }
+
+        public Builder<M, R> storedLowerCase() {
+            this.storedLowerCase = true;
             return this;
         }
 

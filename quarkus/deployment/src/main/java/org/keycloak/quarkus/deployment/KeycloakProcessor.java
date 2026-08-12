@@ -20,11 +20,9 @@ package org.keycloak.quarkus.deployment;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -335,14 +333,6 @@ class KeycloakProcessor {
                 .route(relativePath)
                 .handler(recorder.getManagementHandler())
                 .build());
-    }
-
-    @Record(ExecutionTime.STATIC_INIT)
-    @BuildStep
-    @Consume(ConfigBuildItem.class)
-    @Consume(CryptoProviderInitBuildItem.class) // ensures the Providers are loaded prior to handle the keystore #49359
-    void configureTruststore(KeycloakRecorder recorder) {
-        recorder.configureTruststore(getFipsMode());
     }
 
     /**
@@ -907,8 +897,10 @@ class KeycloakProcessor {
     @Produce(CryptoProviderInitBuildItem.class)
     @BuildStep
     @Record(ExecutionTime.STATIC_INIT)
-    void setCryptoProvider(KeycloakRecorder recorder) {
-        recorder.setCryptoProvider(getFipsMode());
+    void initCrypto(KeycloakRecorder recorder) {
+        FipsMode fipsMode = getFipsMode();
+        recorder.setCryptoProvider(fipsMode);
+        recorder.configureTruststore(fipsMode);
     }
 
     private FipsMode getFipsMode() {
@@ -1039,15 +1031,9 @@ class KeycloakProcessor {
 
             configureScriptDescriptor(descriptor, fileName -> {
                 // descriptor is at META-INF/
-                Path basePath = Path.of(url.getPath()).getParent().getParent();
-
-                String path = basePath.resolve(fileName).toString();
-                if (!path.startsWith(url.getProtocol())) {
-                    path = url.getProtocol() + ":" + path;
-                }
                 try {
-                    return new URI(path).toURL().openStream();
-                } catch (IOException | URISyntaxException e) {
+                    return new URL(url, "../" + fileName).openStream();
+                } catch (IOException e) {
                     throw new RuntimeException("Failed to read script file from: " + fileName);
                 }
             });

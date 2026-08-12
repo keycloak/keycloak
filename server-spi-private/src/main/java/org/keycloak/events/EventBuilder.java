@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ImpersonationSessionNote;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -38,6 +39,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.tracing.TracingAttributes;
 import org.keycloak.tracing.TracingProvider;
+import org.keycloak.utils.StringUtil;
 
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.StatusCode;
@@ -136,7 +138,18 @@ public class EventBuilder {
     }
 
     public EventBuilder session(UserSessionModel session) {
-        event.setSessionId(session == null ? null : session.getId());
+        if (session == null) {
+            event.setSessionId(null);
+            return this;
+        }
+        event.setSessionId(session.getId());
+
+        String impersonatorId = session.getNote(ImpersonationSessionNote.IMPERSONATOR_ID.toString());
+        if (StringUtil.isNotBlank(impersonatorId)) {
+            detail(Details.IMPERSONATOR_ID, impersonatorId);
+            detail(Details.IMPERSONATOR, session.getNote(ImpersonationSessionNote.IMPERSONATOR_USERNAME.toString()));
+        }
+
         return this;
     }
 

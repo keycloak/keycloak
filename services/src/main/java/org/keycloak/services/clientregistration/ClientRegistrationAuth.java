@@ -41,6 +41,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
@@ -53,7 +54,10 @@ import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyE
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.util.TokenUtil;
+
+import static org.keycloak.models.utils.KeycloakModelUtils.removeTransientAdminRoles;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -339,7 +343,24 @@ public class ClientRegistrationAuth {
 
     private boolean hasRole(String... roles) {
         try {
-            AuthenticationManager.resolveLightweightAccessTokenRoles(session, jwt, session.getContext().getRealm());
+            boolean lightweight = AuthenticationManager.resolveLightweightAccessTokenRoles(session, jwt, session.getContext().getRealm());
+
+            if (!lightweight) {
+                // For lightweight access token, the roles are already considered just for those, which are present on UserModel
+                if (isBearerToken()) {
+                    String clientId = getMgmtClientId();
+                    AccessToken.Access mgmtClientAccess = jwt.getResourceAccess(clientId);
+                    if (mgmtClientAccess != null) {
+                        ClientModel client = realm.getClientByClientId(jwt.getIssuedFor());
+                        if (client == null) return false;
+                        UserSessionModel userSession = UserSessionUtil.findValidSessionForAccessToken(session,realm, jwt, client, (invalidUserSession -> {})).getUserSession();
+                        if (userSession == null) return false;
+
+                        removeTransientAdminRoles(realm, clientId, userSession.getUser(), mgmtClientAccess);
+                    }
+                }
+            }
+
             return hasRoleInToken(roles);
         } catch (Throwable t) {
             return false;
@@ -352,15 +373,19 @@ public class ClientRegistrationAuth {
             return false;
         }
 
-        String clientId = realm.getName().equals(Config.getAdminRealm())
-                ? realm.getMasterAdminClient().getClientId()
-                : Constants.REALM_MANAGEMENT_CLIENT_ID;
+        String clientId = getMgmtClientId();
 
         Set<String> roles = Optional.ofNullable(resourceAccess.get(clientId))
                 .map(AccessToken.Access::getRoles)
                 .orElse(Collections.emptySet());
 
         return Arrays.stream(role).anyMatch(roles::contains);
+    }
+
+    private String getMgmtClientId() {
+        return realm.getName().equals(Config.getAdminRealm())
+                ? realm.getMasterAdminClient().getClientId()
+                : Constants.REALM_MANAGEMENT_CLIENT_ID;
     }
 
     private boolean authenticatePublicClient(ClientModel client) {

@@ -38,6 +38,20 @@ Custom login themes that override `social-providers.ftl` or apply CSS targeting 
 
 Test your custom login theme to ensure the identity provider buttons display correctly.
 
+=== Token introspection `act` claim now uses user ID for `sub`
+
+The token introspection endpoint previously set the `act.sub` field to the impersonator's username. It now uses the impersonator's user ID to be consistent with the `act` claim in JWT access tokens and ID tokens. The `preferred_username` field has been added to the introspection `act` object for consumers that need the impersonator's username.
+
+If you have resource servers that parse `act.sub` from introspection responses and expect a username, update them to read `act.preferred_username` instead.
+
+=== Authorization services claim handling changes
+
+Two changes affect how claims are handled in the authorization services token endpoint:
+
+* Claims with the `kc.` prefix are now reserved for server-controlled evaluation context attributes (such as `kc.time.date_time`, `kc.client.id`, and `kc.realm.name`). User-supplied claims with this prefix, whether pushed via `claim_token` or via the UMA permission ticket, are filtered out before policy evaluation. If your authorization policies rely on custom claims that start with `kc.`, rename them to use a different prefix.
+
+* When both a UMA permission ticket and a `claim_token` contain claims with the same key, ticket claims now take precedence. Previously, `claim_token` claims would silently override ticket claims on collision. This change ensures that claims set by the resource server when creating the permission ticket cannot be overridden by the requesting party.
+
 === Email is no longer marked as verified by other flows
 
 Previously, some flows marked the email of a user as verified even though their purpose was not email verification.
@@ -63,6 +77,16 @@ link:{securing_apps_token_exchange_link}[Token Exchange].
 `org.keycloak.http.HttpResponse#getStatus()` and `org.keycloak.http.HttpResponse#setStatus(int)` are now deprecated.
 These methods are not useful for JAX-RS resource endpoints because the JAX-RS runtime usually determines the final HTTP status from the endpoint return value or exception.
 Use JAX-RS response handling for setting and observing status codes in resource endpoints.
+
+=== Organization invitation link no longer exposed in API responses
+
+The `inviteLink` field in `OrganizationInvitationRepresentation` is deprecated and is no longer returned in Admin REST API responses from the organization invitation endpoints.
+
+Previously, the invitation link containing the signed registration token was stored and returned in the representation. The invitation link is still sent via email to the intended recipient.
+
+The `getInviteLink()` and `setInviteLink()` methods on `OrganizationInvitationRepresentation` are deprecated and will be removed in a future major version. If your code reads `inviteLink` from invitation API responses, it will now receive `null`.
+
+The "Copy invite link" action has also been removed from the admin console invitations management UI.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features

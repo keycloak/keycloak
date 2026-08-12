@@ -1,0 +1,252 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Migrating from multi-cluster v1 to v2"
+summary="Migrate an existing multi-cluster v1 deployment to v2 (stateless mode)."
+tileVisible="false"
+preview="true"
+previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/50640" >
+
+This {section} describes how to migrate an existing <@links.ha id="multi-cluster-introduction" /> deployment to <@links.ha id="multi-cluster-v2-introduction" />.
+
+Multi-cluster v2 uses the `stateless` feature to store volatile data in the database instead of an external {jdgserver_name} cluster.
+This simplifies the deployment architecture by removing {jdgserver_name}, its cross-site replication, the fencing automation, and {jdgserver_name}-specific monitoring.
+
+== Overview of changes
+
+The migration involves the following changes:
+
+.Components removed
+[%autowidth]
+|===
+|Component |Reason
+
+|External {jdgserver_name} cluster
+|Authentication sessions, action tokens and login failure counters are stored in the database instead.
+
+|{jdgserver_name} cross-site replication
+|No inter-site cache replication is needed; the database handles all cross-site data.
+
+|{jdgserver_name} credentials and TLS secrets
+|No longer required without the external {jdgserver_name} cluster.
+
+|Fencing automation (for example, AWS Lambda)
+|Split-brain detection and fencing for {jdgserver_name} are no longer necessary.
+
+|{jdgserver_name}-specific monitoring and alerts
+|Prometheus alerts for {jdgserver_name} cache health and cross-site connectivity are no longer needed.
+|===
+
+.Components retained
+[%autowidth]
+|===
+|Component |Notes
+
+|Database
+|The existing synchronously replicated database is retained. Plan for approximately double the CPU usage and write IOPS compared to v1.
+
+|Load balancer
+|The external load balancer is retained.
+Remove any health checks that target {jdgserver_name} endpoints.
+The load balancer should probe the {project_name} `/lb-check` endpoint.
+|===
+
+.Configuration changes to {project_name}
+[%autowidth]
+|===
+|Change |Details
+
+|Enable the `stateless` feature
+|Replaces the `multi-site` feature.
+
+|Set a unique cluster name per site
+|Required for cross-cluster cache invalidation via the database outbox.
+
+|Increase the database connection pool size
+|Some data is now stored in database instead of Infinispan.
+
+|Remove external {jdgserver_name} connection options
+|Options such as `cache-remote-host`, `cache-remote-port`, `cache-remote-username`, and `cache-remote-password` are no longer used.
+|===
+
+== Prerequisites
+
+* A running multi-cluster v1 deployment as described in the <@links.ha id="multi-cluster-introduction" /> {section}.
+* Familiarity with the v2 architecture, its requirements, and limitations as described in the <@links.ha id="multi-cluster-v2-introduction" /> {section} and the <@links.ha id="multi-cluster-v2-concepts" /> {section}.
+* A database sized for the increased load.
+With v2, database CPU usage and write IOPS can roughly double.
+Review and adjust the database instance size, storage IOPS, and connection pool sizing accordingly.
+See the <@links.ha id="multi-cluster-concepts-database-connections" /> {section} for details.
+* Network latency between database nodes that meets the requirements.
++
+include::../partials/network-latency.adoc[]
+
+== Impact on volatile data
+
+Since user sessions are already stored in the database in multi-cluster v1, users remain logged in after migrating to v2.
+
+The following volatile data is lost during the migration:
+
+In-progress authentication sessions::
+Users who are mid-login need to restart their login flow.
+
+Login failure counters::
+Brute-force detection counters are reset.
+Any ongoing lockouts are cleared.
+
+OAuth authorization codes::
+OAuth authorization codes that were stored in {jdgserver_name} are lost.
+Users with in-progress OAuth flows need to restart the authorization.
+
+[IMPORTANT]
+====
+To minimize user impact, perform the migration during a maintenance window with low traffic.
+====
+
+== Migrating on {kubernetes}
+
+This procedure assumes the {project_name} Operator is installed in each {kubernetes} cluster.
+
+Perform the following steps in each {kubernetes} cluster, unless stated otherwise:
+
+. Scale down {project_name} in all sites.
++
+Scaling down ensures a clean transition.
+No requests should be served during the migration.
++
+[source,bash]
+----
+kubectl --namespace keycloak scale keycloak keycloak --replicas=0
+----
++
+Wait until all {project_name} Pods are terminated in all sites before proceeding.
+
+. Prepare the updated {project_name} CR.
++
+The following changes are required:
++
+--
+.. Replace the `multi-site` feature with `stateless`:
++
+[source,yaml]
+----
+  features:
+    enabled:
+      - stateless # <1>
+----
+<1> Replaces the `multi-site` feature from v1.
++
+IMPORTANT: If you are using an optimized custom image, the `stateless` feature is a build-time option and cannot be enabled through the CR alone.
+You must rebuild the image with `--features=stateless` included in the build command before applying this CR.
+See <@links.operator id="customizing-keycloak" /> for details.
+
+.. Add a unique cluster name for each site:
++
+[source,yaml]
+----
+  additionalOptions:
+    - name: spi-cache-embedded--default--cluster-name
+      value: CLUSTER1 # <1>
+----
+<1> Use a distinct name for each site (for example, `CLUSTER1` and `CLUSTER2`). No two sites may share the same name.
+
+.. Remove the external {jdgserver_name} connection options `cache-remote-host`, `cache-remote-port`, `cache-remote-username`, and `cache-remote-password` from `additionalOptions`.
+
+.. Increase the database connection pool size to handle the additional load:
++
+[source,yaml]
+----
+  db:
+    poolMinSize: 30  # <1>
+    poolInitialSize: 30
+    poolMaxSize: 30
+----
+<1> Adjust this value based on your workload.
+With the `stateless` feature, authentication sessions and action tokens are stored in the database, which increases database load.
+See the <@links.ha id="multi-cluster-concepts-database-connections" /> {section} for details.
+--
++
+See the <@links.ha id="multi-cluster-v2-deploy-keycloak-kubernetes" /> {section} for a complete example of the v2 {project_name} CR.
+
+. Deploy the updated {project_name} CR to all sites:
++
+[source,bash]
+----
+kubectl --namespace keycloak apply -f keycloak.yaml
+----
+
+. Verify the deployment.
++
+Follow the verification steps in the <@links.ha id="multi-cluster-v2-deploy-keycloak-kubernetes" /> {section}.
+Afterward, verify that the external load balancer routes traffic to all sites.
+
+. Remove the {jdgserver_name} deployment.
++
+Once the v2 deployment is verified, remove the v1 infrastructure.
++
+--
+.. Delete the {jdgserver_name} `Cache` CRs:
++
+[source,bash]
+----
+kubectl --namespace keycloak delete cache actiontokens authenticationssessions loginfailures work
+----
+
+.. Delete the `Infinispan` CR:
++
+[source,bash]
+----
+kubectl --namespace keycloak delete infinispan infinispan
+----
+
+.. Remove the {jdgserver_name} credentials and cross-site secrets:
++
+[source,bash]
+----
+kubectl --namespace keycloak delete secret remote-store-secret
+kubectl --namespace keycloak delete secret ispn-xsite-sa-token
+kubectl --namespace keycloak delete secret xsite-keystore-secret
+kubectl --namespace keycloak delete secret xsite-truststore-secret
+kubectl --namespace keycloak delete secret xsite-token-secret
+----
++
+Adjust the secret names to match your deployment.
+
+.. Optionally, uninstall the {jdgserver_name} Operator if it is no longer needed for other purposes.
+--
+
+. Remove the fencing automation.
++
+If using the AWS Lambda-based fencing as described in the <@links.ha id="multi-cluster-deploy-aws-accelerator-fencing-lambda" /> {section}:
++
+--
+.. Delete the AWS Lambda function.
+.. Remove the Prometheus `AlertmanagerConfig` and `PrometheusRule` CRs that triggered the Lambda.
+.. Remove the SNS topic and any related IAM roles.
+--
++
+Adjust these steps based on your fencing implementation.
+
+. Remove {jdgserver_name}-specific monitoring.
++
+Remove any Prometheus `ServiceMonitor` or `PodMonitor` resources that target the {jdgserver_name} deployment, as well as any Grafana dashboards for {jdgserver_name} cache metrics.
+
+== Changes to operational procedures
+
+After migrating to v2, several operational procedures from v1 are no longer applicable:
+
+{jdgserver_name} synchronization::
+The procedure described in the <@links.ha id="multi-cluster-operate-synchronize" /> {section} is no longer needed, as there is no external {jdgserver_name} to synchronize.
+
+Site offline/online for {jdgserver_name}::
+The {jdgserver_name}-specific steps in the <@links.ha id="multi-cluster-operate-site-offline" /> and <@links.ha id="multi-cluster-operate-site-online" /> {sections} are replaced by load balancer configuration changes.
+To take a site offline, remove it from the load balancer.
+To bring it back online, add it to the load balancer.
+
+{jdgserver_name} health checks::
+The {jdgserver_name} health checks described in the <@links.ha id="multi-cluster-health-checks" /> {section} are no longer applicable.
+
+For upgrade procedures, see the <@links.ha id="multi-cluster-v2-upgrades" /> {section}.
+
+</@tmpl.guide>
