@@ -1,5 +1,4 @@
 import type CertificateRepresentation from "@keycloak/keycloak-admin-client/lib/defs/certificateRepresentation";
-import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
 import { TextControl, useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
@@ -14,7 +13,6 @@ import {
   TextContent,
 } from "@patternfly/react-core";
 import { SyncAltIcon } from "@patternfly/react-icons";
-import { saveAs } from "file-saver";
 import { useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -25,7 +23,6 @@ import { convertAttributeNameToForm } from "../../util";
 import useToggle from "../../utils/useToggle";
 import { FormFields } from "../ClientDetails";
 import { KeyInfoArea } from "./Certificate";
-import { GenerateKeyDialog, getFileExtension } from "./GenerateKeyDialog";
 import { ImportFile, ImportKeyDialog } from "./ImportKeyDialog";
 
 type KeysProps = {
@@ -48,14 +45,11 @@ export const Keys = ({
   const { t } = useTranslation();
   const {
     control,
-    getValues,
     formState: { isDirty },
   } = useFormContext<FormFields>();
   const { addAlert, addError } = useAlerts();
 
   const [keyInfo, setKeyInfo] = useState<CertificateRepresentation>();
-  const [openGenerateKeys, toggleOpenGenerateKeys, setOpenGenerateKeys] =
-    useToggle();
   const [openImportKeys, toggleOpenImportKeys, setOpenImportKeys] = useToggle();
   const [key, setKey] = useState(0);
   const refresh = () => {
@@ -82,26 +76,6 @@ export const Keys = ({
     [key],
   );
 
-  const generate = async (config: KeyStoreConfig) => {
-    try {
-      const keyStore = await adminClient.clients.generateAndDownloadKey(
-        {
-          id: clientId,
-          attr,
-        },
-        config,
-      );
-      saveAs(
-        new Blob([keyStore], { type: "application/octet-stream" }),
-        `keystore.${getFileExtension(config.format ?? "")}`,
-      );
-      addAlert(t("generateSuccess"), AlertVariant.success);
-      refresh();
-    } catch (error) {
-      addError("generateError", error);
-    }
-  };
-
   const importKey = async (importFile: ImportFile) => {
     try {
       const formData = new FormData();
@@ -125,13 +99,6 @@ export const Keys = ({
 
   return (
     <PageSection variant="light" className="keycloak__form">
-      {openGenerateKeys && (
-        <GenerateKeyDialog
-          clientId={getValues("clientId")!}
-          toggleDialog={toggleOpenGenerateKeys}
-          save={generate}
-        />
-      )}
       {openImportKeys && (
         <ImportKeyDialog toggleDialog={toggleOpenImportKeys} save={importKey} />
       )}
@@ -177,13 +144,6 @@ export const Keys = ({
                 isDisabled={!isDirty}
               >
                 {t("save")}
-              </Button>
-              <Button
-                data-testid="generate"
-                variant="secondary"
-                onClick={() => setOpenGenerateKeys(true)}
-              >
-                {t("generateNewKeys")}
               </Button>
               <Button
                 data-testid="import"

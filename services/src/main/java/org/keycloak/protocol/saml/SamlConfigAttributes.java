@@ -24,7 +24,6 @@ import org.keycloak.services.util.CertificateInfoHelper;
  * @version $Revision: 1 $
  */
 public interface SamlConfigAttributes {
-    String SAML_SIGNING_PRIVATE_KEY = "saml.signing.private.key";
     String SAML_CANONICALIZATION_METHOD_ATTRIBUTE = "saml_signature_canonicalization_method";
     String SAML_SIGNATURE_ALGORITHM = "saml.signature.algorithm";
     String SAML_NAME_ID_FORMAT_ATTRIBUTE = "saml_name_id_format";
@@ -41,7 +40,6 @@ public interface SamlConfigAttributes {
     String SAML_CLIENT_SIGNATURE_ATTRIBUTE = "saml.client.signature";
     String SAML_SIGNING_CERTIFICATE_ATTRIBUTE = "saml.signing." + CertificateInfoHelper.X509CERTIFICATE;
     String SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE = "saml.encryption." + CertificateInfoHelper.X509CERTIFICATE;
-    String SAML_ENCRYPTION_PRIVATE_KEY_ATTRIBUTE = "saml.encryption." + CertificateInfoHelper.PRIVATE_KEY;
     String SAML_ENCRYPTION_ALGORITHM = "saml.encryption.algorithm";
     String SAML_ENCRYPTION_KEY_ALGORITHM = "saml.encryption.keyAlgorithm";
     String SAML_ENCRYPTION_DIGEST_METHOD = "saml.encryption.digestMethod";

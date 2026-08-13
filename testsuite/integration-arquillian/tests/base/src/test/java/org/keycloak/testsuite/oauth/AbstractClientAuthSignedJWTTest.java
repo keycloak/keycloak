@@ -18,11 +18,11 @@
 package org.keycloak.testsuite.oauth;
 
 import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -57,6 +57,7 @@ import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.KeystoreUtil;
@@ -82,7 +83,6 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.client.authentication.JWTClientCredentialsProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.KeyStoreConfig;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -151,10 +151,8 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
 
     @BeforeClass
     public static void generateClient1KeyPair() throws Exception {
-        generatedKeystoreClient1 = KeystoreUtils.generateKeystore(folder, KeystoreFormat.JKS, "clientkey", "storepass", "keypass");
-        PublicKey publicKey = PemUtils.decodePublicKey(generatedKeystoreClient1.getCertificateInfo().getPublicKey());
-        PrivateKey privateKey = PemUtils.decodePrivateKey(generatedKeystoreClient1.getCertificateInfo().getPrivateKey());
-        keyPairClient1 = new KeyPair(publicKey, privateKey);
+        keyPairClient1 = KeyUtils.generateRsaKeyPair(2048);
+        generatedKeystoreClient1 = KeystoreUtils.generateKeystore(folder, KeystoreFormat.JKS, "clientkey", "storepass", "keypass", keyPairClient1);
     }
 
     protected static String client1SAUserId;
@@ -421,61 +419,54 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         final String keyPassword = "pwd1";
         final String storePassword = "pwd2";
 
+        int effectiveKeySize = keySize == null ? 4096 : keySize;
+        int expectedValidity = validity == null ? 3 : validity;
 
-        // Generate new keystore (which is intended for sending to the user and store in a client app)
-        // with public/private keys; in KC, store the certificate itself
-
-        KeyStoreConfig keyStoreConfig = new KeyStoreConfig();
-        keyStoreConfig.setFormat(format);
-        keyStoreConfig.setKeyPassword(keyPassword);
-        keyStoreConfig.setStorePassword(storePassword);
-        keyStoreConfig.setKeyAlias(keyAlias);
-        if (keySize != null) {
-            keyStoreConfig.setKeySize(keySize);
-        }
-        if (validity != null) {
-            keyStoreConfig.setValidity(validity);
-        }
+        KeyPair keyPair = KeyUtils.generateRsaKeyPair(effectiveKeySize);
+        Calendar endDate = Calendar.getInstance();
+        endDate.add(Calendar.YEAR, expectedValidity);
 
         client = getClient(testRealm.getRealm(), client.getId()).toRepresentation();
         final String certOld = client.getAttributes().get(JWTClientAuthenticator.CERTIFICATE_ATTR);
-
-        int expectedValidity = validity == null ? 3 : validity;
 
         Calendar beforeCreateCalendar = Calendar.getInstance();
         beforeCreateCalendar.add(Calendar.YEAR, expectedValidity);
         long beforeCertCreateTime = beforeCreateCalendar.getTime().getTime();
 
-        // Generate the keystore and save the new certificate in client (in KC)
-        byte[] keyStoreBytes = getClientAttributeCertificateResource(testRealm.getRealm(), client.getId())
-                .generateAndGetKeystore(keyStoreConfig);
+        X509Certificate x509Cert = CertificateUtils.generateV1SelfSignedCertificate(
+                keyPair, keyAlias, BigInteger.valueOf(System.currentTimeMillis()), endDate.getTime());
 
-        ByteArrayInputStream keyStoreIs = new ByteArrayInputStream(keyStoreBytes);
-        KeyStore keyStore = getKeystore(keyStoreIs, storePassword, format);
-        keyStoreIs.close();
+        KeystoreUtils.KeystoreInfo ksInfo = KeystoreUtils.generateKeystore(
+                folder, KeystoreFormat.valueOf(format), keyAlias, storePassword, keyPassword,
+                keyPair.getPrivate(), x509Cert);
+        String savedRealm = oauth.getRealm();
+        String savedClient = oauth.getClientId();
+        try {
+            testUploadKeystore(format, ksInfo.getKeystoreFile().getAbsolutePath(), keyAlias, storePassword);
+        } finally {
+            oauth.realm(savedRealm);
+            oauth.client(savedClient);
+            ksInfo.getKeystoreFile().delete();
+        }
+
+        timeOffSet.set(20);
 
         client = getClient(testRealm.getRealm(), client.getId()).toRepresentation();
-        X509Certificate x509Cert = (X509Certificate) keyStore.getCertificate(keyAlias);
 
         assertCertificate(client, certOld,
                 KeycloakModelUtils.getPemFromCertificate(x509Cert));
         MatcherAssert.assertThat(x509Cert.getPublicKey(), Matchers.instanceOf(RSAKey.class));
-        Assertions.assertEquals(keySize == null ? 4096 : keySize, ((RSAKey) x509Cert.getPublicKey()).getModulus().bitLength());
+        Assertions.assertEquals(effectiveKeySize, ((RSAKey) x509Cert.getPublicKey()).getModulus().bitLength());
 
         Calendar afterCreateCalendar = Calendar.getInstance();
         afterCreateCalendar.add(Calendar.YEAR, expectedValidity);
         long afterCertCreateTime = afterCreateCalendar.getTime().getTime();
 
-        // Assert expected "not after" time on certificate. Need some tollerance as "not after" time on certificate is rounded to seconds
         MatcherAssert.assertThat(x509Cert.getNotAfter().getTime(), Matchers.allOf(
                 Matchers.greaterThan(beforeCertCreateTime - 1000), Matchers.lessThan(afterCertCreateTime + 1000)));
 
-
-        // Try to login with the new keys
-
+        // Try to login with the locally generated keys
         oauth.client(client.getClientId());
-        PrivateKey privateKey = (PrivateKey) keyStore.getKey(keyAlias, keyPassword.toCharArray());
-        KeyPair keyPair = new KeyPair(x509Cert.getPublicKey(), privateKey);
 
         AccessTokenResponse response = doGrantAccessTokenRequest(user.getUsername(),
                 user.getCredentials().get(0).getValue(),

@@ -5,7 +5,6 @@ import type ClientRepresentation from "../defs/clientRepresentation.js";
 import type ClientScopeRepresentation from "../defs/clientScopeRepresentation.js";
 import type CredentialRepresentation from "../defs/credentialRepresentation.js";
 import type GlobalRequestResult from "../defs/globalRequestResult.js";
-import type KeyStoreConfig from "../defs/keystoreConfig.js";
 import type { ManagementPermissionReference } from "../defs/managementPermissionReference.js";
 import type MappingsRepresentation from "../defs/mappingsRepresentation.js";
 import type PolicyEvaluationResponse from "../defs/policyEvaluationResponse.js";
@@ -994,41 +993,6 @@ export class Clients extends Resource<{ realm?: string }> {
     method: "GET",
     path: "/{id}/certificates/{attr}",
     urlParamKeys: ["id", "attr"],
-  });
-
-  public generateKey = this.makeRequest<
-    { id: string; attr: string },
-    CertificateRepresentation
-  >({
-    method: "POST",
-    path: "/{id}/certificates/{attr}/generate",
-    urlParamKeys: ["id", "attr"],
-  });
-
-  public downloadKey = this.makeUpdateRequest<
-    { id: string; attr: string },
-    KeyStoreConfig,
-    ArrayBuffer
-  >({
-    method: "POST",
-    path: "/{id}/certificates/{attr}/download",
-    urlParamKeys: ["id", "attr"],
-    headers: {
-      accept: "application/octet-stream",
-    },
-  });
-
-  public generateAndDownloadKey = this.makeUpdateRequest<
-    { id: string; attr: string },
-    KeyStoreConfig,
-    ArrayBuffer
-  >({
-    method: "POST",
-    path: "/{id}/certificates/{attr}/generate-and-download",
-    urlParamKeys: ["id", "attr"],
-    headers: {
-      accept: "application/octet-stream",
-    },
   });
 
   public uploadKey = this.makeUpdateRequest<

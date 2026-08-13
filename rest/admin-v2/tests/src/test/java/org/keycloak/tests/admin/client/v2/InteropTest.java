@@ -58,6 +58,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -352,7 +353,7 @@ public class InteropTest extends AbstractClientApiV2Test {
             assertThat(created.getAttributes().get(SAML_SIGNATURE_ALGORITHM), is("RSA_SHA256"));
             assertThat(created.getAttributes().get(SAML_CANONICALIZATION_METHOD_ATTRIBUTE), is("http://www.w3.org/2001/10/xml-exc-c14n#"));
             assertThat(created.getAttributes().get(SAML_ALLOW_ECP_FLOW), is("false"));
-            assertThat(created.getAttributes().get(SAML_SIGNING_CERTIFICATE_ATTRIBUTE), notNullValue());
+            assertThat(created.getAttributes().get(SAML_SIGNING_CERTIFICATE_ATTRIBUTE), nullValue());
             assertThat(created.getAttributes().get(SAML_ARTIFACT_BINDING_IDENTIFIER), notNullValue());
         } finally {
             realm.clients().get(created.getId()).remove();

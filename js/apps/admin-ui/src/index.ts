@@ -41,8 +41,6 @@ export { AccessTokenDialog } from "./clients/initial-access/AccessTokenDialog";
 export * as CreateInitialAccessToken from "./clients/initial-access/CreateInitialAccessToken";
 export * as InitialAccessTokenList from "./clients/initial-access/InitialAccessTokenList";
 export { Certificate } from "./clients/keys/Certificate";
-export { ExportSamlKeyDialog } from "./clients/keys/ExportSamlKeyDialog";
-export { GenerateKeyDialog } from "./clients/keys/GenerateKeyDialog";
 export { ImportKeyDialog } from "./clients/keys/ImportKeyDialog";
 export { Keys } from "./clients/keys/Keys";
 export { SamlImportKeyDialog } from "./clients/keys/SamlImportKeyDialog";

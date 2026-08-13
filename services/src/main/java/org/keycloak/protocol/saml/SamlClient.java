@@ -203,61 +203,24 @@ public class SamlClient extends ClientConfigResolver {
 
     }
 
-    public String getClientSigningPrivateKey() {
-        return client.getAttribute(SamlConfigAttributes.SAML_SIGNING_PRIVATE_KEY);
-    }
-
-    public void setClientSigningPrivateKey(String val) {
-        client.setAttribute(SamlConfigAttributes.SAML_SIGNING_PRIVATE_KEY, val);
-
-    }
-
     public String getClientEncryptingCertificate() {
         return client.getAttribute(SamlConfigAttributes.SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE);
-    }
-
-    public void setClientEncryptingCertificate(String val) {
-        client.setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_CERTIFICATE_ATTRIBUTE, val);
-    }
-
-    public String getClientEncryptingPrivateKey() {
-        return client.getAttribute(SamlConfigAttributes.SAML_ENCRYPTION_PRIVATE_KEY_ATTRIBUTE);
-    }
-
-    public void setClientEncryptingPrivateKey(String val) {
-        client.setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_PRIVATE_KEY_ATTRIBUTE, val);
     }
 
     public String getClientEncryptingAlgorithm() {
         return client.getAttribute(SamlConfigAttributes.SAML_ENCRYPTION_ALGORITHM);
     }
 
-    public void setClientEncryptingAlgorithm(String val) {
-        client.setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_ALGORITHM, val);
-    }
-
     public String getClientEncryptingKeyAlgorithm() {
         return client.getAttribute(SamlConfigAttributes.SAML_ENCRYPTION_KEY_ALGORITHM);
-    }
-
-    public void setClientEncryptingKeyAlgorithm(String val) {
-        client.setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_KEY_ALGORITHM, val);
     }
 
     public String getClientEncryptingDigestMethod() {
         return client.getAttribute(SamlConfigAttributes.SAML_ENCRYPTION_DIGEST_METHOD);
     }
 
-    public void setClientEncryptingDigestMethod(String val) {
-        client.setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_DIGEST_METHOD, val);
-    }
-
     public String getClientEncryptingMaskGenerationFunction() {
         return client.getAttribute(SamlConfigAttributes.SAML_ENCRYPTION_MASK_GENERATION_FUNTION);
-    }
-
-    public void setClientEncryptingMaskGenerationFunction(String val) {
-        client.setAttribute(SamlConfigAttributes.SAML_ENCRYPTION_MASK_GENERATION_FUNTION, val);
     }
 
     /**
@@ -271,23 +234,8 @@ public class SamlClient extends ClientConfigResolver {
                 DEFAULT_XML_KEY_INFO_KEY_NAME_TRANSFORMER);
     }
 
-    public void setXmlSigKeyInfoKeyNameTransformer(XmlKeyInfoKeyNameTransformer xmlSigKeyInfoKeyNameTransformer) {
-        client.setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE_KEYINFO_KEY_NAME_TRANSFORMER,
-                xmlSigKeyInfoKeyNameTransformer == null
-                        ? null
-                        : xmlSigKeyInfoKeyNameTransformer.name());
-    }
-
     public boolean includeOneTimeUseCondition() {
         return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_ONETIMEUSE_CONDITION));
-    }
-
-    public void setIncludeOneTimeUseCondition(boolean val) {
-        client.setAttribute(SamlConfigAttributes.SAML_ONETIMEUSE_CONDITION, Boolean.toString(val));
-    }
-
-    public void setAssertionLifespan(int assertionLifespan) {
-        client.setAttribute(SamlConfigAttributes.SAML_ASSERTION_LIFESPAN, Integer.toString(assertionLifespan));
     }
 
     public int getAssertionLifespan() {
@@ -311,23 +259,11 @@ public class SamlClient extends ClientConfigResolver {
         return client.getAttribute(SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER);
     }
 
-    public void setUseMetadataDescriptorUrl(Boolean useDescriptorUrl) {
-        if (useDescriptorUrl == null || !useDescriptorUrl) {
-            client.removeAttribute(SamlConfigAttributes.SAML_USE_METADATA_DESCRIPTOR_URL);
-        } else {
-            client.setAttribute(SamlConfigAttributes.SAML_USE_METADATA_DESCRIPTOR_URL, Boolean.toString(useDescriptorUrl));
-        }
-    }
-
     public boolean isUseMetadataDescriptorUrl() {
         return Boolean.parseBoolean(resolveAttribute(SamlConfigAttributes.SAML_USE_METADATA_DESCRIPTOR_URL));
     }
 
     public String getMetadataDescriptorUrl() {
         return client.getAttribute(SamlConfigAttributes.SAML_METADATA_DESCRIPTOR_URL);
-    }
-
-    public void setMetadataDescriptorUrl(String metadataUrl) {
-        client.setAttribute(SamlConfigAttributes.SAML_METADATA_DESCRIPTOR_URL, metadataUrl);
     }
 }

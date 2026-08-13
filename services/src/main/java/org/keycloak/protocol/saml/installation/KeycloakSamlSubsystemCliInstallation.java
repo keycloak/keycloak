@@ -56,8 +56,7 @@ public class KeycloakSamlSubsystemCliInstallation implements ClientInstallationP
         if (samlClient.requiresClientSignature()) {
             builder.append("/subsystem=keycloak-saml/secure-deployment=YOUR-WAR.war/SP=")
                     .append(quote(entityId))
-                    .append("/Key=KEY1:add(signing=true, \\\nPrivateKeyPem=")
-                    .append(quote(samlClient.getClientSigningPrivateKey() == null ? "PRIVATE KEY NOT SET UP OR KNOWN" : samlClient.getClientSigningPrivateKey()))
+                    .append("/Key=KEY1:add(signing=true, \\\nPrivateKeyPem=REPLACE_WITH_YOUR_PRIVATE_KEY")
                     .append(", \\\nCertificatePem=")
                     .append(quote(samlClient.getClientSigningCertificate() == null ? "YOU MUST CONFIGURE YOUR_CLIENT's SIGNING CERTIFICATE" : samlClient.getClientSigningCertificate()))
                     .append(")\n\n");
@@ -65,8 +64,7 @@ public class KeycloakSamlSubsystemCliInstallation implements ClientInstallationP
         if (samlClient.requiresEncryption()) {
             builder.append("/subsystem=keycloak-saml/secure-deployment=YOUR-WAR.war/SP=")
                     .append(quote(entityId))
-                    .append("/Key=KEY2:add(encryption=true,PrivateKeyPem=")
-                    .append(quote(samlClient.getClientEncryptingPrivateKey() == null ? "PRIVATE KEY NOT SET UP OR KNOWN" : samlClient.getClientEncryptingPrivateKey()))
+                    .append("/Key=KEY2:add(encryption=true,PrivateKeyPem=REPLACE_WITH_YOUR_PRIVATE_KEY")
                     .append(")\n\n");
         }
         

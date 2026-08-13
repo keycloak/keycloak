@@ -31,7 +31,6 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.KeyStoreConfig;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -167,12 +166,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.clients().get(foo.getId()).unregisterNode("nosuch"), Resource.CLIENT, true);
         invoke(realm -> realm.clients().get(foo.getId()).testNodesAvailable(), Resource.CLIENT, true);
 
-        invoke(realm -> realm.clients().get(foo.getId()).getCertficateResource("nosuch").generate(), Resource.CLIENT, true);
-        invoke(realm -> realm.clients().get(foo.getId()).getCertficateResource("nosuch").generateAndGetKeystore(new KeyStoreConfig()),
-                Resource.CLIENT, true);
         invoke(realm -> realm.clients().get(foo.getId()).getCertficateResource("nosuch").getKeyInfo(), Resource.CLIENT, false);
-        invoke(realm -> realm.clients().get(foo.getId()).getCertficateResource("nosuch").getKeystore(new KeyStoreConfig()),
-                Resource.CLIENT, false);
 
         invoke(realm -> realm.clients().get(foo.getId()).getCertficateResource("nosuch").uploadJks(null), Resource.CLIENT, true);
         invoke(realm -> realm.clients().get(foo.getId()).getCertficateResource("nosuch").uploadJksCertificate(null),

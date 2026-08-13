@@ -5,25 +5,11 @@ import {
   SelectControl,
   FileUploadControl,
 } from "@keycloak/keycloak-ui-shared";
-import {
-  Button,
-  ButtonVariant,
-  Form,
-  Modal,
-  ModalVariant,
-  Text,
-  TextContent,
-} from "@patternfly/react-core";
-import { FormProvider, useForm, useFormContext } from "react-hook-form";
+import { Form } from "@patternfly/react-core";
+import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { StoreSettings } from "./StoreSettings";
-
-type GenerateKeyDialogProps = {
-  clientId: string;
-  toggleDialog: () => void;
-  save: (keyStoreConfig: KeyStoreConfig) => void;
-};
 
 type KeyFormProps = {
   useFile?: boolean;
@@ -117,65 +103,5 @@ export const KeyForm = ({
         </>
       )}
     </Form>
-  );
-};
-
-export const GenerateKeyDialog = ({
-  clientId,
-  save,
-  toggleDialog,
-}: GenerateKeyDialogProps) => {
-  const { t } = useTranslation();
-  const form = useForm<KeyStoreConfig>({
-    defaultValues: { keyAlias: clientId },
-    mode: "onChange",
-  });
-
-  const {
-    handleSubmit,
-    formState: { isValid },
-  } = form;
-
-  return (
-    <Modal
-      variant={ModalVariant.medium}
-      title={t("generateKeys")}
-      isOpen
-      onClose={toggleDialog}
-      actions={[
-        <Button
-          id="modal-confirm"
-          key="confirm"
-          data-testid="confirm"
-          isDisabled={!isValid}
-          onClick={async () => {
-            await handleSubmit((config) => {
-              save(config);
-              toggleDialog();
-            })();
-          }}
-        >
-          {t("generate")}
-        </Button>,
-        <Button
-          id="modal-cancel"
-          key="cancel"
-          data-testid="cancel"
-          variant={ButtonVariant.link}
-          onClick={() => {
-            toggleDialog();
-          }}
-        >
-          {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <TextContent>
-        <Text>{t("generateKeysDescription")}</Text>
-      </TextContent>
-      <FormProvider {...form}>
-        <KeyForm />
-      </FormProvider>
-    </Modal>
   );
 };

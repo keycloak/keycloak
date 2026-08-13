@@ -17,14 +17,9 @@
 
 package org.keycloak.tests.admin.client;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
-import java.security.KeyStore;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
 
 import jakarta.ws.rs.core.MediaType;
 
@@ -37,8 +32,6 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.def.DefaultCryptoProvider;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.KeyStoreConfig;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -62,7 +55,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -134,14 +126,26 @@ public class CredentialsTest {
 
     @Test
     @DatabaseTest
-    public void testGetCertificateResource() {
+    public void testGetCertificateResource() throws Exception {
         ClientAttributeCertificateResource certRsc = accountClient.getCertficateResource("jwt.credential");
-        CertificateRepresentation cert = certRsc.generate();
-        CertificateRepresentation certFromGet = certRsc.getKeyInfo();
-        assertEquals(cert.getCertificate(), certFromGet.getCertificate());
-        assertEquals(cert.getPrivateKey(), certFromGet.getPrivateKey());
 
-        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.ACTION, AdminEventPaths.clientCertificateGenerateSecretPath(accountClient.toRepresentation().getId(), "jwt.credential"), cert, ResourceType.CLIENT);
+        KeystoreUtil.KeystoreFormat preferredKeystoreType = KeystoreUtil.KeystoreFormat.valueOf(adminClient.serverInfo().getInfo().getCryptoInfo().getSupportedKeystoreTypes().get(0));
+        KeystoreInfo generatedKeystore = cryptoHelper.keystore().generateKeystore(folder, preferredKeystoreType, "clientkey", "storepass", "keypass");
+
+        MultipartFormDataOutput form = new MultipartFormDataOutput();
+        form.addFormData("keystoreFormat", preferredKeystoreType.toString(), MediaType.TEXT_PLAIN_TYPE);
+        form.addFormData("keyAlias", "clientkey", MediaType.TEXT_PLAIN_TYPE);
+        form.addFormData("keyPassword", "keypass", MediaType.TEXT_PLAIN_TYPE);
+        form.addFormData("storePassword", "storepass", MediaType.TEXT_PLAIN_TYPE);
+        FileInputStream fs = new FileInputStream(generatedKeystore.getKeystoreFile());
+        form.addFormData("file", fs.readAllBytes(), MediaType.APPLICATION_OCTET_STREAM_TYPE);
+        fs.close();
+
+        CertificateRepresentation uploaded = certRsc.uploadJks(form);
+        assertNotNull(uploaded.getCertificate(), "uploaded cert not null");
+
+        CertificateRepresentation fromServer = certRsc.getKeyInfo();
+        assertEquals(uploaded.getCertificate(), fromServer.getCertificate(), "getKeyInfo returns uploaded certificate");
     }
 
     @Test
@@ -171,12 +175,10 @@ public class CredentialsTest {
         // Returned cert is not the new state but rather what was extracted from inputs
         assertNotNull(cert, "cert not null");
         assertEquals(generatedKeystore.getCertificateInfo().getCertificate(), cert.getCertificate(), "cert properly extracted");
-        assertEquals(generatedKeystore.getCertificateInfo().getPrivateKey(), cert.getPrivateKey(), "privateKey properly extracted");
 
         // Get the certificate - to make sure cert was properly updated
         cert = certRsc.getKeyInfo();
         assertEquals(generatedKeystore.getCertificateInfo().getCertificate(), cert.getCertificate(), "cert properly set");
-        assertEquals(generatedKeystore.getCertificateInfo().getPrivateKey(), cert.getPrivateKey(), "privateKey properly set");
 
         // Upload a different certificate via /upload-certificate, privateKey should be nullified
         MultipartFormDataOutput form = new MultipartFormDataOutput();
@@ -185,29 +187,25 @@ public class CredentialsTest {
         cert = certRsc.uploadJksCertificate(form);
         assertNotNull(cert, "cert not null");
         assertEquals(certificate2, cert.getCertificate(), "cert properly extracted");
-        assertNull(cert.getPrivateKey(), "privateKey not included");
 
-        // Get the certificate - to make sure cert was properly updated, and privateKey is null
+        // Get the certificate - to make sure cert was properly updated
         cert = certRsc.getKeyInfo();
         assertEquals(certificate2, cert.getCertificate(), "cert properly set");
-        assertNull(cert.getPrivateKey(), "privateKey nullified");
 
         // Re-upload the private key
         certRsc.uploadJks(keyCertForm);
 
-        // Upload certificate as PEM via /upload - nullifies the private key
+        // Upload certificate as PEM via /upload
         form = new MultipartFormDataOutput();
         form.addFormData("keystoreFormat", "Certificate PEM", MediaType.TEXT_PLAIN_TYPE);
         form.addFormData("file", certificate2.getBytes(StandardCharsets.US_ASCII), MediaType.APPLICATION_OCTET_STREAM_TYPE);
         cert = certRsc.uploadJks(form);
         assertNotNull(cert, "cert not null");
         assertEquals(certificate2, cert.getCertificate(), "cert properly extracted");
-        assertNull(cert.getPrivateKey(), "privateKey not included");
 
-        // Get the certificate again - to make sure cert is set, and privateKey is null
+        // Get the certificate again - to make sure cert is set
         cert = certRsc.getKeyInfo();
         assertEquals(certificate2, cert.getCertificate(), "cert properly set");
-        assertNull(cert.getPrivateKey(), "privateKey nullified");
 
         // Upload certificate with header - should be stored without header
         form = new MultipartFormDataOutput();
@@ -219,71 +217,9 @@ public class CredentialsTest {
         cert = certRsc.uploadJks(form);
         assertNotNull(cert, "cert not null");
         assertEquals(certificate2, cert.getCertificate(),"cert properly extracted");
-        assertNull(cert.getPrivateKey(), "privateKey not included");
 
-        // Get the certificate again - to make sure cert is set, and privateKey is null
+        // Get the certificate again - to make sure cert is set
         cert = certRsc.getKeyInfo();
         assertEquals(certificate2, cert.getCertificate(), "cert properly set");
-        assertNull(cert.getPrivateKey(), "privateKey nullified");
-    }
-
-    @Test
-    public void testDownloadKeystore() throws Exception {
-        ClientAttributeCertificateResource certRsc = accountClient.getCertficateResource("jwt.credential");
-
-        // generate a key pair first
-        CertificateRepresentation certrep = certRsc.generate();
-
-        KeystoreUtil.KeystoreFormat preferredKeystoreType = KeystoreUtil.KeystoreFormat.valueOf(adminClient.serverInfo().getInfo().getCryptoInfo().getSupportedKeystoreTypes().get(0));
-
-        // download the key and certificate
-        KeyStoreConfig config = new KeyStoreConfig();
-        config.setFormat(preferredKeystoreType.toString());
-        config.setKeyAlias("alias");
-        config.setKeyPassword("keyPass");
-        config.setStorePassword("storePass");
-        byte[] result = certRsc.getKeystore(config);
-
-        KeyStore keyStore = CryptoIntegration.getProvider().getKeyStore(preferredKeystoreType);
-        keyStore.load(new ByteArrayInputStream(result), "storePass".toCharArray());
-        Key key = keyStore.getKey("alias", "keyPass".toCharArray());
-        Certificate cert = keyStore.getCertificate("alias");
-
-        assertInstanceOf(X509Certificate.class, cert, "Certificat is X509");
-        String keyPem = KeycloakModelUtils.getPemFromKey(key);
-        String certPem = KeycloakModelUtils.getPemFromCertificate((X509Certificate) cert);
-
-        assertEquals(certrep.getPrivateKey(), keyPem, "key match");
-        assertEquals(certrep.getCertificate(), certPem, "cert match");
-    }
-
-    @Test
-    public void testGenerateAndDownloadKeystore() throws Exception {
-        ClientAttributeCertificateResource certRsc = accountClient.getCertficateResource("jwt.credential");
-
-        // generate a key pair first
-        CertificateRepresentation firstcert = certRsc.generate();
-
-        KeystoreUtil.KeystoreFormat preferredKeystoreType = KeystoreUtil.KeystoreFormat.valueOf(adminClient.serverInfo().getInfo().getCryptoInfo().getSupportedKeystoreTypes().get(0));
-
-        KeyStoreConfig config = new KeyStoreConfig();
-        config.setFormat(preferredKeystoreType.toString());
-        config.setKeyAlias("alias");
-        config.setKeyPassword("keyPass");
-        config.setStorePassword("storePass");
-        config.setKeySize(4096);
-        config.setValidity(3);
-        byte[] result = certRsc.generateAndGetKeystore(config);
-        KeyStore keyStore = CryptoIntegration.getProvider().getKeyStore(preferredKeystoreType);
-        keyStore.load(new ByteArrayInputStream(result), "storePass".toCharArray());
-        Key key = keyStore.getKey("alias", "keyPass".toCharArray());
-        Certificate cert = keyStore.getCertificate("alias");
-
-        assertInstanceOf(X509Certificate.class, cert, "Certificat is X509");
-        String keyPem = KeycloakModelUtils.getPemFromKey(key);
-        String certPem = KeycloakModelUtils.getPemFromCertificate((X509Certificate) cert);
-
-        assertNotEquals(firstcert.getPrivateKey(), keyPem, "new key generated");
-        assertNotEquals(firstcert.getCertificate(), certPem, "new cert generated");
     }
 }
