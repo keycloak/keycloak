@@ -1,17 +1,18 @@
 package org.keycloak.models.cache.infinispan;
 
+import java.util.List;
+import java.util.Set;
+
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.cache.infinispan.entities.CachedClientScope;
+
+import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
-import java.util.List;
-import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.cache.infinispan.entities.CachedClientScope;
 
 class ClientScopeAdapterTest {
 
