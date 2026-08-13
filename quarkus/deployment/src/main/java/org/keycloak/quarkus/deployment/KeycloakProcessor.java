@@ -547,13 +547,13 @@ class KeycloakProcessor {
     @Consume(CheckMultipleDatasourcesBuildStep.class)
     void produceDefaultPersistenceUnit(BuildProducer<PersistenceXmlDescriptorBuildItem> producer) {
         PersistenceXmlParser parser = PersistenceXmlParser.create();
-        PersistenceUnitDescriptor descriptor = parser.parse(Collections.singletonList(parser.getClassLoaderService().locateResource("default-persistence.xml")))
+        ParsedPersistenceXmlDescriptor descriptor = (ParsedPersistenceXmlDescriptor) parser.parse(Collections.singletonList(parser.getClassLoaderService().locateResource("default-persistence.xml")))
                 .values()
                 .stream()
                 .findAny()
                 .orElseThrow(() -> new NoSuchElementException("Cannot find the file 'default-persistence.xml'"));
 
-        producer.produce(new PersistenceXmlDescriptorBuildItem(descriptor));
+        producer.produce(new PersistenceXmlDescriptorBuildItem(new ConcurrentSafeParsedPersistenceXmlDescriptor(descriptor)));
     }
 
     static void configurePersistenceUnitProperties(String datasourceName, ParsedPersistenceXmlDescriptor descriptor) {
@@ -646,6 +646,7 @@ class KeycloakProcessor {
         }
 
         if (!additionalEntities.isEmpty()) {
+            descriptor.addClasses(additionalEntities);
             jpaModelPuContributions.produce(new JpaModelPersistenceUnitContributionBuildItem(
                     descriptor.getName(), descriptor.getPersistenceUnitRootUrl(),
                     additionalEntities, Collections.emptyList()));
