@@ -130,8 +130,11 @@ The credential offer must target the same client id that the wallet uses during 
 
 ===== Create a Credential Offer for Valera Wallet
 
-NOTE: Instead of REST credential-offer, it is recommended to use AIA for creating credential offer. That is easier and does not need feature `oid4vc-vci-rest-credential-offer` to be enabled.
+[NOTE]
+====
+Instead of REST credential-offer, it is recommended to use AIA for creating credential offer. That is easier and does not need feature `oid4vc-vci-rest-credential-offer` to be enabled.
 Follow <<_oid4vci_lissi_wallet_authz_code_flow,Lissi wallet Authorization code section>> or <<_oid4vci_lissi_wallet_preauthz_flow,Lissi wallet Pre-authorized code section>> for the details.
+====
 
 The examples in the flow sections below use the REST credential-offer endpoint. The bearer token must be issued to the Valera client for the user who creates the offer. When creating an offer for a different target user, that issuing user must have permission to create credential offers.
 
@@ -309,14 +312,14 @@ Lissi wallet is another demo wallet that can be used to test OpenID4VCI credenti
 [[_oid4vci_lissi_wallet_server_setup]]
 ===== Exposing Local {project_name} to the Wallet
 
-For local testing, {project_name} can run on the development machine as described in the previous OID4VCI setup sections. It is assumed that {project_name} running on HTTPS
- is accessible from the mobile application. Similar setup as described in the <<_oid4vci_valera_wallet_server_setup,Valera wallet server setup>> can be used.
+For local testing, {project_name} can run on the development machine as described in the previous OID4VCI setup sections. It is assumed that {project_name} is served over HTTPS
+and is accessible from the mobile application. Similar setup as described in the <<_oid4vci_valera_wallet_server_setup,Valera wallet server setup>> can be used.
 
 [[_oid4vci_lissi_wallet_client_setup]]
 ===== Configure the Lissi Wallet Client
 
 The assumption is that in your realm, you create OID4VCI client scope as `IdentityCredential` configured in the same way as described in the <<_oid4vci_valera_wallet_client_setup,Valera wallet client setup>>.
-It is recommended that in the `Mappers` tab of this client scope, there are pre-defined protocol mappers added to this client scope.
+It is recommended that in the **Mappers** tab of this client scope, there are pre-defined protocol mappers added (for basic claims like `username`, `email` etc).
 Also it is needed to have ES256 realm key properly set in your realm based on the requirements described in the <<_oid4vci_key_management,Key Management section>>. For troubleshooting,
 it is recommended to <<auditing-user-events,Enable user events>>.
 
@@ -353,13 +356,13 @@ The `IdentityCredential` client scope used in this test is configured as an OID4
 
 ===== User setup
 
-It is needed to create some user in the realm (For example user `john`) with some password. Make sure that in the admin console in the **Verifiable credentials** tab of particular user,
-you add the `IdentityCredential` credential to the user. More about user setup in the <<_oid4vci_user_setup,User setup section above>>.
+Create a user (for example, `john`) and set a password. In Admin Console → **Users** → … → **Verifiable credentials**, add
+the `IdentityCredential` credential to the user. More about user setup in the <<_oid4vci_user_setup,User setup section above>>.
 
 [[_oid4vci_lissi_wallet_authz_code_flow]]
 ===== Authorization Code Flow Test
 
-This flow requires {project_name} running only with the feature `oid4vc-vci`
+This flow requires {project_name} running with the feature `oid4vc-vci`
 
 . Open URL similar to `+https://<<kc_server>>/realms/<<kc_realm>>/account+` with browser on your laptop
 
@@ -392,7 +395,7 @@ image::images/oid4vci/lissi3-credential.png[Lissi wallet - credential, width=320
 [[_oid4vci_lissi_wallet_preauthz_flow]]
 ===== Pre-Authorized Code Flow Test
 
-This flow requires {project_name} running with the feature `oid4vc-vci` and `oid4vc-vci-preauth-code`
+This flow requires {project_name} running with the features `oid4vc-vci` and `oid4vc-vci-preauth-code`
 
 . Logout from account console on your laptop (from previous step) and make sure that login screen is displayed.
 It should display `client_id=account-console` in the browser URL (among many other parameters).
@@ -403,8 +406,11 @@ It should display `client_id=account-console` in the browser URL (among many oth
 &kc_action=verifiable_credential_offer:eyJjcmVkZW50aWFsQ29uZmlndXJhdGlvbklkIjoiSWRlbnRpdHlDcmVkZW50aWFsIiwiY2xpZW50SWQiOiI5YzQ4MWRjMy0yYWQwLTRmZTAtODgxZC1jMzJhZDAyZmUwZmMiLCJwcmVBdXRob3JpemVkIjp0cnVlfQ==
 ```
 +
-NOTE: The `kc_action` parameter above is parameterized AIA for displaying credential-offer. The parameter is base64-encoded value of the credential-offer config, which looks like this (in the plain code).
-Parameter may need to be added manually as {project_name} account console does not yet support pre-authorized credential offers out of the box:
+[NOTE]
+====
+The `kc_action` parameter above is parameterized AIA for displaying credential-offer. Parameter may need to be added manually as {project_name} account console does not yet support pre-authorized credential offers out of the box.
+The parameter is base64Url-encoded value of the credential-offer config, which looks like this (decoded from Base64Url and formatted for visibility):
+====
 +
 ```
 {
