@@ -1,0 +1,90 @@
+
+[[_general-idp-config]]
+
+=== General configuration
+
+The foundations of the identity broker configuration are identity providers (IDPs). {project_name} creates identity providers for each realm and enables them for every application by default. Users from a realm can use any of the registered identity providers when signing in to an application.
+
+.Procedure
+. Click *Identity Providers* in the menu.
++
+.Identity Providers
+image:images/identity-providers.png[Identity Providers]
++
+. Select an identity provider. {project_name} displays the configuration page for the identity provider you selected.
++
+.Add Facebook identity Provider
+image:images/add-identity-provider.png[Add Facebook Identity Provider]
++
+When you configure an identity provider, the identity provider appears on the {project_name} login page as an option. You can place custom icons on the login screen for each identity provider. See  https://www.keycloak.org/ui-customization/themes#custom-identity-providers-icons[custom icons] for more information.
++
+.IDP login page
+image:images/identity-provider-login-page.png[]
+
+Social::
+  Social providers enable social authentication in your realm. With {project_name}, users can log in to your application using a social network account. Supported providers include Twitter, Facebook, Google, LinkedIn, Instagram, Microsoft, PayPal, Openshift v4, GitHub, GitLab, Bitbucket, and Stack Overflow.
+
+Protocol-based::
+  Protocol-based providers rely on specific protocols to authenticate and authorize users. Using these providers, you can connect to any identity provider compliant with a specific protocol. {project_name} provides support for SAML v2.0 and OpenID Connect v1.0 protocols. You can configure and broker any identity provider based on these open standards.
+
+Although each type of identity provider has its configuration options, all share a common configuration. The following configuration options available:
+
+.Common Configuration
+[cols="1,1", options="header"]
+|===
+|Configuration|Description
+
+|Alias
+|The alias is a unique identifier for an identity provider and references an internal identity provider. {project_name} uses the alias to build redirect URIs for OpenID Connect protocols that require a redirect URI or callback URL to communicate with an identity provider. All identity providers must have an alias. Alias examples include `facebook`, `google`, and `idp.acme.com`.
+
+|Enabled
+|Toggles the provider ON or OFF.
+
+|Hide on Login Page
+|When *ON*, {project_name} does not display this provider as a login option on the login page. Clients can request this provider by using the 'kc_idp_hint' parameter in the URL to request a login.
+
+|Account Linking Only
+|When *ON*, {project_name} links existing accounts with this provider. This provider cannot log users in, and {project_name} does not display this provider as an option on the login page.
+
+|Store Tokens
+|When *ON*, {project_name} stores tokens from the identity provider.
+
+|Stored Tokens Readable
+|When *ON*, users can retrieve the stored identity provider token. This action also applies to the _broker_ client-level role _read token_.
+
+|Trust Email
+|When *ON*, {project_name} trusts email addresses from the identity provider. If the realm requires email validation, users that log in from this identity provider do not need to perform the email verification process.
+If the target identity provider supports email verification and advertises this information when returning the user profile information, the email of the federated user will be (un)marked as verified.
+For instance, an OpenID Connect Provider returning a `email_verified` claim in their ID Tokens.
+Note that this setting will set the email as verified when the user is federated for the first time and on subsequent logins
+through the broker if the sync mode is set to `FORCE`.
+
+|GUI Order
+|The sort order of the available identity providers on the login page.
+
+
+|Verify essential claim
+|When *ON*, ID tokens issued by the identity provider must have a specific claim, otherwise, the user can not authenticate through this broker
+
+|Essential claim
+|When *Verify essential claim* is *ON*, the name of the JWT token claim to filter (match is case sensitive)
+
+|Essential claim value
+|When *Verify essential claim* is *ON*, the value of the JWT token claim to match (supports regular expression format)
+
+|First Login Flow
+|The authentication flow {project_name} triggers when users use this identity provider to log into {project_name} for the first time.
+
+|Post Login Flow
+|The authentication flow {project_name} triggers when a user finishes logging in with the external identity provider.
+
+|Sync Mode
+|Strategy to update user information from the identity provider through mappers. When choosing *legacy*, {project_name} used the current behavior. *Import* does not update user data and *force* updates user data when possible. See <<_mappers, Identity Provider Mappers>> for more information.
+
+|Case-sensitive username
+|If enabled, the original username from the identity provider is kept as is when federating users. Otherwise, the username from the identity provider is lower-cased and might not match the original value if it is case-sensitive. This setting only affects the username associated with the federated identity as usernames in the server are always in lower-case.
+
+|Show in Account console
+|Defines how the identity provider will be available from the account console. If set to `Always`, it is always available.
+If set to `When linked`, it will be shown only when the user is linked to it. Otherwise, if set to `Never`, it will not be available even if the user is linked to it.
+|===

@@ -1,0 +1,17 @@
+<#import "/templates/guide.adoc" as template>
+<#import "/templates/options.adoc" as opts>
+
+<@template.guide
+title="All configuration"
+summary="Review build options and configuration for {project_name}.">
+
+<#list ctx.options.categories as category>
+<#assign categoryOptions=ctx.options.getValues(category)>
+<#if categoryOptions?has_content>
+[#category-${category.name()?lower_case}]
+== ${category.heading}
+
+<@opts.list options=categoryOptions categoryName=category.name()></@opts.list>
+</#if>
+</#list>
+</@template.guide>

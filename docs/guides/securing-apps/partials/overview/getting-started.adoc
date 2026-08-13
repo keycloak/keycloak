@@ -1,0 +1,52 @@
+== Getting Started
+
+The link:{quickstartRepo_link}[{quickstartRepo_name}] provides examples about how to secure applications and services
+using different programming languages and frameworks. By going through their documentation and codebase, you will
+understand the bare minimum changes required in your application and service in order to secure it with {project_name}.
+
+Also, see the following sections for recommendations for trusted and well-known client-side implementations for both OpenID
+Connect and SAML protocols.
+
+=== OpenID Connect
+
+ifeval::[{project_community}==true]
+==== Java
+* {quickstartRepo_link}/tree/main/jakarta/servlet-authz-client[Wildfly Elytron OIDC]
+* {quickstartRepo_link}/tree/main/spring/rest-authz-resource-server[Spring Boot]
+endif::[]
+
+==== JavaScript (client-side)
+* https://www.keycloak.org/securing-apps/javascript-adapter[Keycloak JS adapter]
+
+==== Node.js (server-side)
+* https://www.keycloak.org/securing-apps/nodejs-adapter[Keycloak Node.js adapter]
+
+ifeval::[{project_community}==true]
+==== C#
+* https://github.com/dylanplecki/KeycloakOwinAuthentication[OWIN]
+
+==== Python
+* https://pypi.org/project/oic/[oidc]
+
+==== Android
+* https://github.com/openid/AppAuth-Android[AppAuth]
+
+==== iOS
+* https://github.com/openid/AppAuth-iOS[AppAuth]
+
+==== Apache HTTP Server
+* https://github.com/OpenIDC/mod_auth_openidc[mod_auth_openidc]
+endif::[]
+
+=== SAML
+
+==== Java
+
+* <@links.securingapps id="saml-galleon-layers"/>
+
+ifeval::[{project_community}==true]
+==== Apache HTTP Server
+
+* <@links.securingapps id="mod-auth-mellon"/>
+endif::[]
+

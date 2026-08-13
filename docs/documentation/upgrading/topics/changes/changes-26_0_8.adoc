@@ -1,0 +1,7 @@
+= Deprecating using system variables in the realm configuration
+
+To favor a more secure server runtime and avoid to accidentally expose system variables, you are now forced to specify
+which system variables you want to expose by using the `spi-admin-allowed-system-variables` configuration option when
+starting the server.
+
+In future releases, this capability will be removed in favor of preventing any usage of system variables in the realm configuration.

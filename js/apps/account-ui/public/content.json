@@ -1,0 +1,40 @@
+[
+  { "label": "personalInfo", "path": "" },
+  {
+    "label": "accountSecurity",
+    "children": [
+      { "label": "signingIn", "path": "account-security/signing-in" },
+      { "label": "deviceActivity", "path": "account-security/device-activity" },
+      {
+        "label": "linkedAccounts",
+        "path": "account-security/linked-accounts",
+        "isVisible": "isLinkedAccountsEnabled"
+      }
+    ]
+  },
+  {
+    "label": "applications",
+    "path": "applications",
+    "isVisible": "isViewApplicationsEnabled"
+  },
+  {
+    "label": "verifiableCredentials",
+    "path": "verifiable-credentials",
+    "isVisible": "isOid4VciEnabled"
+  },
+  {
+    "label": "groups",
+    "path": "groups",
+    "isVisible": "isViewGroupsEnabled"
+  },
+  {
+    "label": "organizations",
+    "path": "organizations",
+    "isVisible": "isViewOrganizationsEnabled"
+  },
+  {
+    "label": "resources",
+    "path": "resources",
+    "isVisible": "isMyResourcesEnabled"
+  }
+]

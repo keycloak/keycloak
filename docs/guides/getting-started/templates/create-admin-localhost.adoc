@@ -1,0 +1,6 @@
+== Create an admin user
+
+{project_name} has no default admin user. You need to create an admin user before you can start Keycloak.
+
+. Open http://localhost:8080/[http://localhost:8080/].
+. Fill in the form with your preferred username and password.

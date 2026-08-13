@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2016 Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
+    <changeSet author="psilva@redhat.com" id="authz-2.0.0">
+        <validCheckSum>7:9cc98082921330d8d9266decdd4bd658</validCheckSum>
+        <createTable tableName="RESOURCE_SERVER">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CLIENT_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ALLOW_RS_REMOTE_MGMT" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="POLICY_ENFORCE_MODE" type="VARCHAR(15)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_FARS" tableName="RESOURCE_SERVER"/>
+        <addUniqueConstraint columnNames="CLIENT_ID" constraintName="UK_AU8TT6T700S9V50BU18WS5HA6" tableName="RESOURCE_SERVER"/>
+
+        <createTable tableName="RESOURCE_SERVER_RESOURCE">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="URI" type="VARCHAR(255)"/>
+            <column name="TYPE" type="VARCHAR(255)"/>
+            <column name="ICON_URI" type="VARCHAR(255)"/>
+            <column name="OWNER" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="RESOURCE_SERVER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_FARSR" tableName="RESOURCE_SERVER_RESOURCE"/>
+        <addForeignKeyConstraint baseColumnNames="RESOURCE_SERVER_ID" baseTableName="RESOURCE_SERVER_RESOURCE" constraintName="FK_FRSRHO213XCX4WNKOG82SSRFY" referencedColumnNames="ID" referencedTableName="RESOURCE_SERVER"/>
+        <addUniqueConstraint columnNames="NAME,OWNER,RESOURCE_SERVER_ID" constraintName="UK_FRSR6T700S9V50BU18WS5HA6" tableName="RESOURCE_SERVER_RESOURCE"/>
+
+        <createTable tableName="RESOURCE_SERVER_SCOPE">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ICON_URI" type="VARCHAR(255)"/>
+            <column name="RESOURCE_SERVER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_FARSRS" tableName="RESOURCE_SERVER_SCOPE"/>
+        <addForeignKeyConstraint baseColumnNames="RESOURCE_SERVER_ID" baseTableName="RESOURCE_SERVER_SCOPE" constraintName="FK_FRSRSO213XCX4WNKOG82SSRFY" referencedColumnNames="ID" referencedTableName="RESOURCE_SERVER"/>
+        <addUniqueConstraint columnNames="NAME,RESOURCE_SERVER_ID" constraintName="UK_FRSRST700S9V50BU18WS5HA6" tableName="RESOURCE_SERVER_SCOPE"/>
+
+        <createTable tableName="RESOURCE_SERVER_POLICY">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DESCRIPTION" type="VARCHAR(255)"/>
+            <column name="TYPE" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DECISION_STRATEGY" type="VARCHAR(20)"/>
+            <column name="LOGIC" type="VARCHAR(20)"/>
+            <column name="RESOURCE_SERVER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_FARSRP" tableName="RESOURCE_SERVER_POLICY"/>
+        <addForeignKeyConstraint baseColumnNames="RESOURCE_SERVER_ID" baseTableName="RESOURCE_SERVER_POLICY" constraintName="FK_FRSRPO213XCX4WNKOG82SSRFY" referencedColumnNames="ID" referencedTableName="RESOURCE_SERVER"/>
+        <addUniqueConstraint columnNames="NAME,RESOURCE_SERVER_ID" constraintName="UK_FRSRPT700S9V50BU18WS5HA6" tableName="RESOURCE_SERVER_POLICY"/>
+
+        <createTable tableName="POLICY_CONFIG">
+            <column name="POLICY_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="CLOB"/>
+        </createTable>
+
+        <addPrimaryKey columnNames="POLICY_ID, NAME" constraintName="CONSTRAINT_DPC" tableName="POLICY_CONFIG"/>
+        <addForeignKeyConstraint baseColumnNames="POLICY_ID" baseTableName="POLICY_CONFIG" constraintName="FKDC34197CF864C4E43" referencedColumnNames="ID" referencedTableName="RESOURCE_SERVER_POLICY"/>
+
+        <createTable tableName="RESOURCE_SCOPE">
+            <column name="RESOURCE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SCOPE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey columnNames="RESOURCE_ID,SCOPE_ID" constraintName="CONSTRAINT_FARSRSP" tableName="RESOURCE_SCOPE"/>
+        <addForeignKeyConstraint baseColumnNames="RESOURCE_ID" baseTableName="RESOURCE_SCOPE" constraintName="FK_FRSRPOS13XCX4WNKOG82SSRFY" referencedColumnNames="ID" referencedTableName="RESOURCE_SERVER_RESOURCE"/>
+        <addForeignKeyConstraint baseColumnNames="SCOPE_ID" baseTableName="RESOURCE_SCOPE" constraintName="FK_FRSRPS213XCX4WNKOG82SSRFY" referencedColumnNames="ID" referencedTableName="RESOURCE_SERVER_SCOPE"/>
+
+        <createTable tableName="RESOURCE_POLICY">
+            <column name="RESOURCE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="POLICY_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey columnNames="RESOURCE_ID,POLICY_ID" constraintName="CONSTRAINT_FARSRPP" tableName="RESOURCE_POLICY"/>
+        <addForeignKeyConstraint baseColumnNames="RESOURCE_ID" baseTableName="RESOURCE_POLICY" constraintName="FK_FRSRPOS53XCX4WNKOG82SSRFY" referencedColumnNames="ID" referencedTableName="RESOURCE_SERVER_RESOURCE"/>
+        <addForeignKeyConstraint baseColumnNames="POLICY_ID" baseTableName="RESOURCE_POLICY" constraintName="FK_FRSRPP213XCX4WNKOG82SSRFY" referencedColumnNames="ID" referencedTableName="RESOURCE_SERVER_POLICY"/>
+
+        <createTable tableName="SCOPE_POLICY">
+            <column name="SCOPE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="POLICY_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey columnNames="SCOPE_ID,POLICY_ID" constraintName="CONSTRAINT_FARSRSPS" tableName="SCOPE_POLICY"/>
+        <addForeignKeyConstraint baseColumnNames="SCOPE_ID" baseTableName="SCOPE_POLICY" constraintName="FK_FRSRPASS3XCX4WNKOG82SSRFY" referencedColumnNames="ID" referencedTableName="RESOURCE_SERVER_SCOPE"/>
+        <addForeignKeyConstraint baseColumnNames="POLICY_ID" baseTableName="SCOPE_POLICY" constraintName="FK_FRSRASP13XCX4WNKOG82SSRFY" referencedColumnNames="ID" referencedTableName="RESOURCE_SERVER_POLICY"/>
+
+        <createTable tableName="ASSOCIATED_POLICY">
+            <column name="POLICY_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ASSOCIATED_POLICY_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey columnNames="POLICY_ID,ASSOCIATED_POLICY_ID" constraintName="CONSTRAINT_FARSRPAP" tableName="ASSOCIATED_POLICY"/>
+        <addForeignKeyConstraint baseColumnNames="POLICY_ID" baseTableName="ASSOCIATED_POLICY" constraintName="FK_FRSRPAS14XCX4WNKOG82SSRFY" referencedColumnNames="ID" referencedTableName="RESOURCE_SERVER_POLICY"/>
+        <addForeignKeyConstraint baseColumnNames="ASSOCIATED_POLICY_ID" baseTableName="ASSOCIATED_POLICY" constraintName="FK_FRSR5S213XCX4WNKOG82SSRFY" referencedColumnNames="ID" referencedTableName="RESOURCE_SERVER_POLICY"/>
+    </changeSet>
+</databaseChangeLog>

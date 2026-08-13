@@ -1,0 +1,407 @@
+import { expect, test } from "@playwright/test";
+import { generatePath } from "react-router-dom";
+import { toRealmSettings } from "../../src/realm-settings/routes/RealmSettings.tsx";
+import { createTestBed } from "../support/testbed.ts";
+import adminClient from "../utils/AdminClient.js";
+import { SERVER_URL, ROOT_PATH } from "../utils/constants.ts";
+import { login } from "../utils/login.js";
+import { changeTimeUnit, selectItem } from "../utils/form.ts";
+
+test("OID4VCI section is hidden in Tokens tab when verifiable credentials are disabled", async ({
+  page,
+}) => {
+  await using testBed = await createTestBed();
+
+  await adminClient.updateRealm(testBed.realm, {
+    verifiableCredentialsEnabled: false,
+  });
+
+  try {
+    await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+    const tokensTab = page.getByTestId("rs-tokens-tab");
+    await tokensTab.click();
+
+    const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+    await expect(oid4vciJumpLink).toBeHidden();
+  } finally {
+    await adminClient.updateRealm(testBed.realm, {
+      verifiableCredentialsEnabled: true,
+    });
+  }
+});
+
+test("OID4VCI section visibility and jump link in Tokens tab", async ({
+  page,
+}) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  const tokensTab = page.getByTestId("rs-tokens-tab");
+  await tokensTab.click();
+
+  const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+  await expect(oid4vciJumpLink).toBeVisible();
+
+  await oid4vciJumpLink.click();
+  const oid4vciSection = page.getByRole("heading", {
+    name: "OID4VCI attributes",
+  });
+  await expect(oid4vciSection).toBeVisible();
+});
+
+test("should render fields and save values with correct attribute keys", async ({
+  page,
+}) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  const tokensTab = page.getByTestId("rs-tokens-tab");
+  await tokensTab.click();
+
+  const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+  await oid4vciJumpLink.click();
+
+  const nonceField = page.getByTestId(
+    "attributes.vc🍺c-nonce-lifetime-seconds",
+  );
+  const credentialOfferLifespanField = page.getByTestId(
+    "attributes.credentialOfferLifespanS",
+  );
+
+  await expect(nonceField).toBeVisible();
+  await expect(credentialOfferLifespanField).toBeVisible();
+
+  await nonceField.fill("60");
+  await credentialOfferLifespanField.fill("120");
+  await page.getByTestId("tokens-tab-save").click();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
+
+  const realmData = await adminClient.getRealm(testBed.realm);
+  expect(realmData).toBeDefined();
+  // TimeSelector converts values based on selected unit (60 minutes = 3600 seconds, 120 seconds = 120 seconds)
+  expect(realmData?.attributes?.["vc.c-nonce-lifetime-seconds"]).toBe("3600");
+  expect(realmData?.attributes?.["credentialOfferLifespanS"]).toBe("7200");
+});
+
+test("should persist values after page refresh", async ({ page }) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  const tokensTab = page.getByTestId("rs-tokens-tab");
+  await tokensTab.click();
+
+  const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+  await oid4vciJumpLink.click();
+
+  const nonceField = page.getByTestId(
+    "attributes.vc🍺c-nonce-lifetime-seconds",
+  );
+  const credentialOfferLifespanField = page.getByTestId(
+    "attributes.credentialOfferLifespanS",
+  );
+
+  await nonceField.fill("60");
+  await credentialOfferLifespanField.fill("120");
+  await page.getByTestId("tokens-tab-save").click();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
+
+  // Refresh the page
+  await page.reload();
+
+  // Navigate back to realm settings using the same pattern as login
+  const url = new URL(
+    generatePath(ROOT_PATH, { realm: testBed.realm }),
+    SERVER_URL,
+  );
+  url.hash = toRealmSettings({ realm: testBed.realm }).pathname!;
+  await page.goto(url.toString());
+
+  // The TimeSelector component converts values based on units, so we need to check the actual saved values
+  const realmData = await adminClient.getRealm(testBed.realm);
+  expect(realmData?.attributes?.["vc.c-nonce-lifetime-seconds"]).toBeDefined();
+  expect(realmData?.attributes?.["credentialOfferLifespanS"]).toBeDefined();
+
+  // The values should be numbers representing seconds
+  const nonceValue = parseInt(
+    realmData?.attributes?.["vc.c-nonce-lifetime-seconds"] || "0",
+  );
+  const credentialOfferLifespanValue = parseInt(
+    realmData?.attributes?.["credentialOfferLifespanS"] || "0",
+  );
+
+  expect(nonceValue).toBeGreaterThan(0);
+  expect(credentialOfferLifespanValue).toBeGreaterThan(0);
+});
+
+test("should validate form fields and save valid values", async ({ page }) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  const tokensTab = page.getByTestId("rs-tokens-tab");
+  await tokensTab.click();
+
+  const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+  await oid4vciJumpLink.click();
+
+  const nonceField = page.getByTestId(
+    "attributes.vc🍺c-nonce-lifetime-seconds",
+  );
+  const credentialOfferLifespanField = page.getByTestId(
+    "attributes.credentialOfferLifespanS",
+  );
+  const saveButton = page.getByTestId("tokens-tab-save");
+
+  // Test that fields are visible and can be filled
+  await expect(nonceField).toBeVisible();
+  await expect(credentialOfferLifespanField).toBeVisible();
+  await expect(saveButton).toBeVisible();
+
+  // Test with valid values - this should work
+  await nonceField.clear();
+  await credentialOfferLifespanField.clear();
+
+  // Fill with smaller, more reasonable values for testing
+  await nonceField.fill("60");
+  await credentialOfferLifespanField.fill("120");
+
+  // Save button should be enabled when form has values
+  await expect(saveButton).toBeEnabled();
+
+  await saveButton.click();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
+
+  // Verify the values were saved correctly
+  const realmData = await adminClient.getRealm(testBed.realm);
+  expect(realmData?.attributes?.["vc.c-nonce-lifetime-seconds"]).toBeDefined();
+  expect(realmData?.attributes?.["credentialOfferLifespanS"]).toBeDefined();
+
+  // The values should be numbers representing seconds
+  const nonceValue = parseInt(
+    realmData?.attributes?.["vc.c-nonce-lifetime-seconds"] || "0",
+  );
+  const credentialOfferLifespanValue = parseInt(
+    realmData?.attributes?.["credentialOfferLifespanS"] || "0",
+  );
+
+  expect(nonceValue).toBeGreaterThan(0);
+  expect(credentialOfferLifespanValue).toBeGreaterThan(0);
+});
+
+test("should show validation error for values below minimum threshold", async ({
+  page,
+}) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  const tokensTab = page.getByTestId("rs-tokens-tab");
+  await tokensTab.click();
+
+  const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+  await oid4vciJumpLink.click();
+
+  const nonceField = page.getByTestId(
+    "attributes.vc🍺c-nonce-lifetime-seconds",
+  );
+  const credentialOfferLifespanField = page.getByTestId(
+    "attributes.credentialOfferLifespanS",
+  );
+  const saveButton = page.getByTestId("tokens-tab-save");
+
+  // Fill with values below the minimum threshold (29 seconds)
+  await nonceField.fill("29");
+  await credentialOfferLifespanField.fill("29");
+  await changeTimeUnit(
+    page,
+    "Seconds",
+    "#credential-offer-lifespan-select-menu",
+  );
+
+  await saveButton.click();
+
+  // Check for validation error message
+  const validationErrorText =
+    "Please ensure the OID4VCI attribute fields are filled with values 30 seconds or greater.";
+  await expect(page.getByText(validationErrorText).first()).toBeVisible();
+});
+
+test("should save signed metadata, encryption, and batch issuance settings", async ({
+  page,
+}) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  const tokensTab = page.getByTestId("rs-tokens-tab");
+  await tokensTab.click();
+
+  const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+  await oid4vciJumpLink.click();
+
+  const signedMetadataSwitch = page.getByTestId(
+    "attributes.oid4vci.signed_metadata.enabled",
+  );
+  await expect(signedMetadataSwitch).toHaveCount(0);
+
+  const signedMetadataLifespan = page.getByTestId(
+    "attributes.oid4vci🍺signed_metadata🍺lifespan",
+  );
+  await expect(signedMetadataLifespan).toBeVisible();
+  await signedMetadataLifespan.fill("120");
+
+  const signedMetadataAlgField = page.locator(
+    '[id="attributes.oid4vci🍺signed_metadata🍺alg"]',
+  );
+  await expect(signedMetadataAlgField).toBeVisible();
+  await selectItem(page, signedMetadataAlgField, "ES256");
+
+  const requireRequestEncryptionSwitch = page.getByTestId(
+    "attributes.oid4vci.request.encryption.required",
+  );
+  await requireRequestEncryptionSwitch.click({ force: true });
+
+  const requireResponseEncryptionSwitch = page.getByTestId(
+    "attributes.oid4vci.response.encryption.required",
+  );
+  await requireResponseEncryptionSwitch.click({ force: true });
+
+  const batchIssuanceField = page.locator(
+    '[id="attributes.oid4vci🍺batch_credential_issuance🍺batch_size"]',
+  );
+  const batchIssuanceInput = batchIssuanceField.locator("input");
+  await batchIssuanceInput.fill("5");
+
+  await page.getByTestId("tokens-tab-save").click();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
+
+  const realmData = await adminClient.getRealm(testBed.realm);
+  expect(
+    realmData?.attributes?.["oid4vci.signed_metadata.enabled"],
+  ).toBeUndefined();
+  expect(realmData?.attributes?.["oid4vci.signed_metadata.lifespan"]).toBe(
+    "7200",
+  );
+  expect(realmData?.attributes?.["oid4vci.signed_metadata.alg"]).toBe("ES256");
+  expect(realmData?.attributes?.["oid4vci.request.encryption.required"]).toBe(
+    "true",
+  );
+  expect(realmData?.attributes?.["oid4vci.response.encryption.required"]).toBe(
+    "true",
+  );
+  expect(
+    realmData?.attributes?.["oid4vci.batch_credential_issuance.batch_size"],
+  ).toBe("5");
+});
+
+test("should save time-based correlation mitigation settings", async ({
+  page,
+}) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  const tokensTab = page.getByTestId("rs-tokens-tab");
+  await tokensTab.click();
+
+  const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+  await oid4vciJumpLink.click();
+
+  const strategyField = page.locator(
+    '[id="attributes.oid4vci🍺time🍺claims🍺strategy"]',
+  );
+  await selectItem(page, strategyField, "Randomize");
+
+  const randomizationWindowField = page.locator(
+    '[id="attributes.oid4vci🍺time🍺randomize🍺window🍺seconds"]',
+  );
+  const randomizationWindowInput = randomizationWindowField.locator("input");
+  await randomizationWindowInput.fill("3600");
+
+  await page.getByTestId("tokens-tab-save").click();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
+
+  await selectItem(page, strategyField, "Round");
+
+  const roundingUnitField = page.locator(
+    '[id="attributes.oid4vci🍺time🍺round🍺unit"]',
+  );
+  await selectItem(page, roundingUnitField, "Minutes");
+
+  await page.getByTestId("tokens-tab-save").click();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
+
+  const realmData = await adminClient.getRealm(testBed.realm);
+  expect(realmData?.attributes?.["oid4vci.time.claims.strategy"]).toBe("round");
+  expect(realmData?.attributes?.["oid4vci.time.randomize.window.seconds"]).toBe(
+    "3600",
+  );
+  expect(realmData?.attributes?.["oid4vci.time.round.unit"]).toBe("MINUTE");
+});
+
+test("should save Deflate Compression setting", async ({ page }) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  const tokensTab = page.getByTestId("rs-tokens-tab");
+  await tokensTab.click();
+
+  const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+  await oid4vciJumpLink.click();
+
+  const requestEncryptionSwitch = page.getByTestId(
+    "attributes.oid4vci.request.encryption.required",
+  );
+  await requestEncryptionSwitch.click({ force: true });
+
+  const deflateSwitch = page.getByTestId(
+    "attributes.oid4vci.request.zip.algorithms",
+  );
+  await deflateSwitch.click({ force: true });
+
+  await page.getByTestId("tokens-tab-save").click();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
+
+  let realmData = await adminClient.getRealm(testBed.realm);
+  expect(realmData?.attributes?.["oid4vci.request.zip.algorithms"]).toBe(
+    "true",
+  );
+
+  await deflateSwitch.click({ force: true });
+  await page.getByTestId("tokens-tab-save").click();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
+
+  realmData = await adminClient.getRealm(testBed.realm);
+  expect(realmData?.attributes?.["oid4vci.request.zip.algorithms"]).toBe(
+    "false",
+  );
+});

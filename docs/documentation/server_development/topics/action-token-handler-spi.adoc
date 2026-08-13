@@ -1,0 +1,173 @@
+[[_action_token_handler_spi]]
+== Action Token Handler SPI
+
+An action token is a special instance of Json Web Token (JWT) that permits its bearer to perform some actions, e.g. to
+reset a password or validate e-mail address. They are usually sent to users in form of a link that points to an endpoint
+processing action tokens for a particular realm.
+
+{project_name} offers four basic token types allowing the bearer to:
+
+ *  Reset credentials
+ *  Confirm e-mail address
+ *  Execute required action(s)
+ *  Confirm linking of an account with account in external identity provider
+
+In addition to that, it is possible to implement any functionality that initiates or modifies authentication session
+using action token handler SPI, details of which are described in the text below.
+
+[[_action_token_anatomy]]
+=== Anatomy of action token
+
+Action token is a standard Json Web Token signed with active realm key where the payload contains several fields:
+
+ *  `typ` - Identification of the action (e.g. `verify-email`)
+ *  `iat` and `exp` - Times of token validity
+ *  `sub` - ID of the user
+ *  `azp` - Client name
+ *  `iss` - Issuer - URL of the issuing realm
+ *  `aud` - Audience - list containing URL of the issuing realm
+ *  `asid` - ID of the authentication session (_optional_)
+ *  `nonce` - Random nonce to guarantee uniqueness of use if the operation can only be executed once (_optional_)
+
+In addition, an action token can contain any number of custom fields serializable into JSON.
+
+=== Action token processing
+
+When an action token is passed to a {project_name} endpoint
+`_KEYCLOAK_ROOT_{kc_realms_path}/master/login-actions/action-token` via `key` parameter, it is validated and a proper action
+token handler is executed. *The processing always takes place in a context of an authentication session*, either a fresh
+one or the action token service joins an existing authentication session (details are described below). The action token
+handler can perform actions prescribed by the token (often it alters the authentication session) and results into an HTTP
+response (e.g. it can continue in authentication or display an information/error page). These steps are detailed below.
+
+1. *Basic action token validation.* Signature and time validity is checked, and action token handler is determined based
+on `typ` field.
+
+2. [[determining-auth-sess]]*Determining authentication session.* If the action token URL was opened in browser with
+existing authentication session, and the token contains authentication session ID matching the authentication session
+from the browser, action token validation and handling will attach this ongoing authentication session. Otherwise,
+action token handler creates a fresh authentication session that replaces any other authentication session present at
+that time in the browser.
+
+3. *Token validations specific for token type.* Action token endpoint logic validates that the user (`sub` field) and
+client (`azp`) from the token exist, are valid and not disabled. Then it validates all custom validations defined in the
+action token handler. Furthermore, token handler can request this token be single-use. Already used tokens would then be
+rejected by action token endpoint logic.
+
+4. *Performing the action.* After all these validations, action token handler code is called that performs the actual
+action according to parameters in the token.
+
+5. *Invalidation of single-Use tokens.* If the token is set to single-use, once the authentication flow finishes, the
+action token is invalidated.
+
+=== Implement your own action token and its handler
+
+==== How to create an action token
+
+As action token is just a signed JWT with few mandatory fields (see <<_action_token_anatomy,Anatomy of action token>>
+above), it can be serialized and signed as such using Keycloak's `JWSBuilder` class. This way has been already
+implemented in `serialize(session, realm, uriInfo)` method of `org.keycloak.authentication.actiontoken.DefaultActionToken`
+and can be leveraged by implementers by using that class for tokens instead of plain `JsonWebToken`.
+
+The following example shows the implementation of a simple action token. Note that the class must have a private constructor without any arguments.
+This is necessary to deserialize the token class from JWT.
+
+[source,java]
+----
+import org.keycloak.authentication.actiontoken.DefaultActionToken;
+
+public class DemoActionToken extends DefaultActionToken {
+
+    public static final String TOKEN_TYPE = "my-demo-token";
+
+    public DemoActionToken(String userId, int absoluteExpirationInSecs, String compoundAuthenticationSessionId) {
+        super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, compoundAuthenticationSessionId);
+    }
+
+    private DemoActionToken() {
+        // Required to deserialize from JWT
+        super();
+    }
+}
+----
+
+If the action token you are implementing contains any custom fields that should be serializabled to JSON fields, you
+should consider implementing a descendant of `org.keycloak.representations.JsonWebToken` class that would implement
+`org.keycloak.models.ActionTokenKeyModel` interface. In that case, you can take advantage of the existing
+`org.keycloak.authentication.actiontoken.DefaultActionToken` class as it already satisfies both these conditions,
+and either use it directly or implement its child, the fields of which can be annotated with appropriate Jackson
+annotations, e.g. `com.fasterxml.jackson.annotation.JsonProperty` to serialize them to JSON.
+
+The following example extends the `DemoActionToken` from the previous example with the field `demo-id`:
+
+[source,java]
+----
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.keycloak.authentication.actiontoken.DefaultActionToken;
+
+public class DemoActionToken extends DefaultActionToken {
+
+    public static final String TOKEN_TYPE = "my-demo-token";
+
+    private static final String JSON_FIELD_DEMO_ID = "demo-id";
+
+    @JsonProperty(value = JSON_FIELD_DEMO_ID)
+    private String demoId;
+
+    public DemoActionToken(String userId, int absoluteExpirationInSecs, String compoundAuthenticationSessionId, String demoId) {
+        super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, compoundAuthenticationSessionId);
+        this.demoId =  demoId;
+    }
+
+    private DemoActionToken() {
+        // you must have this private constructor for deserializer
+    }
+
+    public String getDemoId() {
+        return demoId;
+    }
+}
+
+----
+
+
+==== Packaging classes and deployment
+
+To plug your own action token and its handler, you need to implement few interfaces on server side:
+
+ *  `org.keycloak.authentication.actiontoken.ActionTokenHandler` - actual handler of action token for a particular
+    action (i.e. for a given value of `typ` token field).   
++
+The central method in that interface is `handleToken(token, context)` which defines actual operation executed upon
+receiving the action token. Usually it is some alteration of authentication session notes but generally it can be
+arbitrary. This method is only called if all verifiers (including those defined in `getVerifiers(context)`) have
+succeeded, and it is guaranteed that the `token` would be of the class returned by `getTokenClass()` method.
++
+To be able to determine whether the action token was issued for the current authentication session as described in
+<<determining-auth-sess,Item 2 above>>, method for extracting authentication session ID has to be declared in
+`getAuthenticationSessionIdFromToken(token, context)` method. The implementation in `DefaultActionToken` returns the
+value of `asid` field from the token if it is defined. Note that you can override that method to return current
+authentication session ID regardless of the token - that way you can create tokens that would step into the ongoing
+authentication flow before any authentication flow would be started.
++
+If the authentication session from the token does not match the current one, the action token handler would be asked to
+start a fresh one by calling `startFreshAuthenticationSession(token, context)`. It can throw a `VerificationException`
+(or better its more descriptive variant `ExplainedTokenVerificationException`) to signal that would be forbidden.
++
+The token handler also determines via method `canUseTokenRepeatedly(token, context)` whether the token would be
+invalidated after it is used and authentication completes. Note that if you would have a flow utilizing multiple action
+token, only the last token would be invalidated. In that case, you should use
+`org.keycloak.models.SingleUseObjectProvider` in action token handler to invalidate the used tokens manually.
++
+Default implementation of most of the `ActionTokenHandler` methods is the
+`org.keycloak.authentication.actiontoken.AbstractActionTokenHandler` abstract class in `keycloak-services` module. The
+only method that needs to be implemented is `handleToken(token, context)` that performs the actual action.
+
+ *  `org.keycloak.authentication.actiontoken.ActionTokenHandlerFactory` - factory that instantiates action token
+    handler. Implementations have to override `getId()` to return value that must match precisely the value of `typ`
+    field in the action token.
++
+Note that you have to register the custom `ActionTokenHandlerFactory` implementation as explained in the
+<<_providers,Service Provider Interfaces>> section of this guide.
+
+

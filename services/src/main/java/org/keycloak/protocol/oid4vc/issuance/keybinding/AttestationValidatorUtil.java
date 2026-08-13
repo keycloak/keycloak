@@ -1,0 +1,367 @@
+package org.keycloak.protocol.oid4vc.issuance.keybinding;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.cert.X509Certificate;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
+import org.keycloak.crypto.CryptoUtils;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JWKParser;
+import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.KeycloakContext;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
+import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
+import org.keycloak.protocol.oid4vc.model.ErrorType;
+import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
+import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
+import org.keycloak.protocol.oid4vc.model.ProofType;
+import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
+import org.keycloak.protocol.oid4vc.model.SupportedProofTypeData;
+import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.services.clientpolicy.executor.FapiConstant.ALLOWED_ALGORITHMS;
+
+/**
+ * Utility for validating attestation JWTs as per OID4VCI spec.
+ *
+ * @author <a href="mailto:Rodrick.Awambeng@adorsys.com">Rodrick Awambeng</a>
+ */
+public class AttestationValidatorUtil {
+
+    private static final Logger LOGGER = Logger.getLogger(AttestationValidatorUtil.class);
+
+    public static final String ATTESTATION_JWT_TYP = "key-attestation+jwt";
+    @Deprecated
+    public static final String LEGACY_ATTESTATION_JWT_TYP = "keyattestation+jwt";
+    /**
+     * @param requireExpForJwtProof           OID4VCI D.1: {@code exp} MUST be present when the attestation is used with the
+     *                                        {@code jwt} proof type (embedded {@code key_attestation} header).
+     * @param proofTypeKeyForSigningAlgPolicy {@link org.keycloak.protocol.oid4vc.model.ProofType} value
+     *                                        ({@code jwt} or {@code attestation}) to resolve
+     *                                        {@code proof_signing_alg_values_supported} and
+     *                                        {@code key_attestations_required}; if {@code null}, falls back to
+     *                                        {@code ProofType.JWT} for attestation requirements and FAPI
+     *                                        {@code ALLOWED_ALGORITHMS} for signing algorithms.
+     */
+    public static KeyAttestationJwtBody validateAttestationJwt(
+            String attestationJwt,
+            KeycloakSession keycloakSession,
+            VCIssuanceContext vcIssuanceContext,
+            AttestationKeyResolver keyResolver,
+            boolean requireExpForJwtProof,
+            String proofTypeKeyForSigningAlgPolicy)
+            throws JWSInputException, VerificationException {
+
+        if (attestationJwt == null || attestationJwt.split("\\.").length != 3) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Invalid JWT format");
+        }
+
+        JWSInput jwsInput = new JWSInput(attestationJwt);
+
+        String payloadString = new String(jwsInput.getContent(), StandardCharsets.UTF_8);
+
+        // Validate that payload is JSON
+        try {
+            JsonSerialization.mapper.readTree(payloadString);
+        } catch (JsonProcessingException e) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Invalid JSON in attestation payload: " + payloadString, e);
+        }
+
+        KeyAttestationJwtBody attestationBody;
+        try {
+            attestationBody = JsonSerialization.readValue(
+                    jwsInput.getContent(),
+                    KeyAttestationJwtBody.class
+            );
+        } catch (IOException e) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Invalid attestation payload format", e);
+        }
+
+        JWSHeader header = jwsInput.getHeader();
+        validateJwsHeader(keycloakSession, header, vcIssuanceContext, proofTypeKeyForSigningAlgPolicy);
+
+        // Verify the signature
+        Map<String, Object> rawHeader = JsonSerialization.mapper.convertValue(
+                jwsInput.getHeader(), new TypeReference<>() {
+                });
+        Map<String, Object> rawPayload = JsonSerialization.mapper.convertValue(attestationBody, new TypeReference<>() {
+        });
+
+        SignatureVerifierContext verifier;
+        if (header.getX5c() != null && !header.getX5c().isEmpty()) {
+            JWK resolvedJwk = keyResolver.resolveX5c(header.getX5c(), rawHeader, rawPayload);
+            if (resolvedJwk == null) {
+                throw new VCIssuerException(ErrorType.INVALID_PROOF,
+                        "The x5c certificate chain is not trusted by a configured attester trust provider");
+            }
+            verifier = verifierFromResolvedJWK(resolvedJwk, header.getAlgorithm().name(), keycloakSession);
+        } else if (header.getKeyId() != null) {
+            JWK resolvedJwk = keyResolver.resolveKey(header.getKeyId(), rawHeader, rawPayload);
+            if (resolvedJwk == null) {
+                throw new VCIssuerException(ErrorType.INVALID_PROOF, "Key with kid '" + header.getKeyId() + "' not found in trusted key registry");
+            }
+            verifier = verifierFromResolvedJWK(resolvedJwk, header.getAlgorithm().name(), keycloakSession);
+        } else {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Neither x5c nor kid present in attestation JWT header");
+        }
+
+        if (!verifier.verify(jwsInput.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8),
+                jwsInput.getSignature())) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Could not verify signature of attestation JWT");
+        }
+
+        validateAttestationPayload(keycloakSession, vcIssuanceContext, attestationBody, requireExpForJwtProof, proofTypeKeyForSigningAlgPolicy);
+
+        if (attestationBody.getAttestedKeys() == null) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Missing required attested_keys claim in attestation");
+        }
+
+        return attestationBody;
+    }
+
+    private static void validateAttestationPayload(
+            KeycloakSession keycloakSession,
+            VCIssuanceContext vcIssuanceContext,
+            KeyAttestationJwtBody attestationBody,
+            boolean requireExpForJwtProof,
+            String proofTypeKey) throws VCIssuerException, VerificationException {
+
+        if (attestationBody.getIat() == null) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Missing 'iat' claim in attestation");
+        }
+
+        long now = Time.currentTime();
+        if (requireExpForJwtProof && attestationBody.getExp() == null) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF,
+                    "Missing 'exp' claim in key attestation (required when used with jwt proof type per OID4VCI D.1)");
+        }
+        if (attestationBody.getExp() != null && attestationBody.getExp() < now) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Key attestation has expired");
+        }
+
+        // Get resistance level requirements from configuration
+        KeyAttestationsRequired attestationRequirements = getAttestationRequirements(vcIssuanceContext, proofTypeKey);
+        validateResistanceLevel(attestationBody, attestationRequirements);
+
+        KeycloakContext keycloakContext = keycloakSession.getContext();
+        CNonceHandler cNonceHandler = keycloakSession.getProvider(CNonceHandler.class);
+        if (cNonceHandler == null) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "CNonce handler not configured");
+        }
+        if (!cNonceHandler.supportsCNonceTokenRetrieval()) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "CNonce handler does not support token retrieval");
+        }
+
+        String nonce = attestationBody.getNonce();
+        if (nonce == null) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Missing 'nonce' in attestation");
+        }
+
+        try {
+            vcIssuanceContext.addVerifiedCNonce(
+                    nonce,
+                    cNonceHandler.verifyCNonceAndGetToken(
+                            nonce,
+                            List.of(OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(keycloakContext)),
+                            Map.of(JwtCNonceHandler.SOURCE_ENDPOINT,
+                                    OID4VCIssuerWellKnownProvider.getNonceEndpoint(keycloakContext))));
+        } catch (VerificationException e) {
+            throw new VCIssuerException(ErrorType.INVALID_NONCE,
+                    "The key attestation uses an invalid nonce", e);
+        }
+
+        // Store attested keys in context for later use
+        if (attestationBody.getAttestedKeys() != null) {
+            vcIssuanceContext.setAttestedKeys(attestationBody.getAttestedKeys());
+        }
+    }
+
+    public static KeyAttestationsRequired getAttestationRequirements(VCIssuanceContext vcIssuanceContext, String proofTypeKey) {
+        if (vcIssuanceContext.getCredentialConfig() == null ||
+                vcIssuanceContext.getCredentialConfig().getProofTypesSupported() == null ||
+                vcIssuanceContext.getCredentialConfig().getProofTypesSupported().getSupportedProofTypes() == null) {
+            return null;
+        }
+
+        // Fall back to "jwt" when proofTypeKey is null (backward compatibility).
+        String effectiveKey = proofTypeKey != null ? proofTypeKey : ProofType.JWT;
+
+        SupportedProofTypeData proofTypeData = vcIssuanceContext.getCredentialConfig()
+                .getProofTypesSupported()
+                .getSupportedProofTypes()
+                .get(effectiveKey);
+
+        return proofTypeData != null ? proofTypeData.getKeyAttestationsRequired() : null;
+    }
+
+    /**
+     * validates the configured key_attestations_required attribute against the given attestationBody
+     *
+     * @param attestationBody         the body to be validated
+     * @param attestationRequirements the configuration object that is also displayed in the metadata endpoint
+     */
+    private static void validateResistanceLevel(KeyAttestationJwtBody attestationBody,
+                                                KeyAttestationsRequired attestationRequirements) {
+        // if the KeyAttestationRequired object is null it is not necessary to validate it because the issuer does
+        // not require it:
+        // From the spec:
+        // ----
+        // If the Credential Issuer does not require a key attestation, this parameter MUST NOT be present in the
+        // metadata.
+        // ---
+        // Meaning if the object is null we do not need to validate the resistance level
+        if (attestationRequirements != null) {
+            // Validate key_storage if present in attestation and required by config
+            validateResistanceLevel(attestationBody.getKeyStorage(),
+                    attestationRequirements.getKeyStorage(),
+                    "key_storage");
+            // Validate user_authentication if present in attestation and required by config
+            validateResistanceLevel(attestationBody.getUserAuthentication(),
+                    attestationRequirements.getUserAuthentication(),
+                    "user_authentication");
+        }
+    }
+
+    /**
+     * Validates the given key_attestations (key_storage or user_authentication) against the current configuration as
+     * provided by the metadata endpoint.
+     *
+     * @param providedLevels the attestation levels to be validated
+     * @param acceptedLevels the attestation levels as exposed by the metadata endpoint
+     * @param levelType      either "key_storage" or "user_authentication"
+     * @throws VCIssuerException if the required resistance level is not met
+     */
+    private static void validateResistanceLevel(List<String> providedLevels,
+                                                List<String> acceptedLevels,
+                                                String levelType)
+            throws VCIssuerException {
+
+        if (acceptedLevels == null || acceptedLevels.isEmpty()) {
+            // We accept all provided levels
+            return;
+        }
+
+        // If both key_storage and user_authentication parameters are absent, the key_attestations_required
+        // parameter may be empty, indicating a key attestation is needed without additional constraints.
+        // from: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-12.2.4
+        if (providedLevels == null || providedLevels.isEmpty()) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, levelType + " is required but was missing.");
+        }
+
+        // Check each provided level against the accepted levels
+        boolean foundMatch = providedLevels.stream().anyMatch(acceptedLevels::contains);
+        if (!foundMatch) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF,
+                    levelType + " none of the provided levels from '" + providedLevels + "' did match any of the " +
+                            "accepted levels: " + acceptedLevels);
+        }
+    }
+
+    /**
+     * Credential Issuer metadata {@code proof_signing_alg_values_supported} for the given proof type, if configured.
+     */
+    private static Optional<List<String>> resolveProofSigningAlgorithms(
+            VCIssuanceContext vcIssuanceContext, String proofTypeKey) {
+        return Optional.ofNullable(vcIssuanceContext)
+                .filter(context -> proofTypeKey != null)
+                .map(VCIssuanceContext::getCredentialConfig)
+                .map(SupportedCredentialConfiguration::getProofTypesSupported)
+                .map(ProofTypesSupported::getSupportedProofTypes)
+                .map(supportedProofTypes -> supportedProofTypes.get(proofTypeKey))
+                .map(SupportedProofTypeData::getSigningAlgorithmsSupported)
+                .filter(algs -> !algs.isEmpty());
+    }
+
+    private static void validateJwsHeader(KeycloakSession session, JWSHeader header, VCIssuanceContext vcIssuanceContext,
+                                          String proofTypeKeyForSigningAlgPolicy) {
+        String alg = Optional.ofNullable(header.getAlgorithm())
+                .map(Algorithm::name)
+                .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF, "Missing algorithm in JWS header"));
+
+        List<String> supportedAsymmetricAlgs = CryptoUtils.getSupportedAsymmetricSignatureAlgorithms(session);
+        if (!supportedAsymmetricAlgs.contains(alg)) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Unsupported algorithm for key attestation. Only asymmetric algorithms are allowed");
+        }
+
+        Optional<List<String>> metadataAlgs = resolveProofSigningAlgorithms(vcIssuanceContext, proofTypeKeyForSigningAlgPolicy);
+        if (metadataAlgs.isPresent() && !metadataAlgs.get().isEmpty()) {
+            if (!metadataAlgs.get().contains(alg)) {
+                throw new VCIssuerException(ErrorType.INVALID_PROOF,
+                        "Attestation alg must match proof_signing_alg_values_supported for proof type "
+                                + proofTypeKeyForSigningAlgPolicy + ": " + metadataAlgs.get());
+            }
+        } else if (!ALLOWED_ALGORITHMS.contains(alg)) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Unsupported algorithm: " + alg +
+                    ". Allowed algorithms: " + ALLOWED_ALGORITHMS);
+        }
+
+        String typ = Optional.ofNullable(header.getType())
+                .map(Object::toString)
+                .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF, "Missing typ in JWS header"));
+
+        if (!ATTESTATION_JWT_TYP.equals(typ)) {
+            if (LEGACY_ATTESTATION_JWT_TYP.equals(typ)) {
+                LOGGER.debugf("Accepting deprecated attestation JWT typ '%s' for backward compatibility", typ);
+            } else {
+                throw new VCIssuerException(ErrorType.INVALID_PROOF, "Invalid JWT typ: expected " + ATTESTATION_JWT_TYP);
+            }
+        }
+
+    }
+
+    /**
+     * Resolves an ordinary proof-of-possession key from x5c. Trust validation is intentionally not performed here:
+     * unlike a key attestation, an OID4VCI JWT proof uses x5c as a key conveyance mechanism.
+     */
+    static JWK resolveJwkFromProofX5c(List<String> x5cList, String alg) throws VCIssuerException {
+        try {
+            List<X509Certificate> certificateChain = X5cKeyUtils.decodeCertificateChain(x5cList);
+            certificateChain.get(0).checkValidity();
+            return X5cKeyUtils.toJwk(certificateChain.get(0), alg, certificateChain);
+        } catch (VCIssuerException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Failed to resolve key from proof x5c", e);
+        }
+    }
+
+    private static SignatureVerifierContext verifierFromResolvedJWK(
+            JWK jwk,
+            String alg,
+            KeycloakSession session
+    ) throws VerificationException {
+
+        SignatureProvider provider = session.getProvider(SignatureProvider.class, alg);
+        KeyWrapper wrapper = new KeyWrapper();
+        wrapper.setType(jwk.getKeyType());
+        wrapper.setAlgorithm(alg);
+        wrapper.setUse(KeyUse.SIG);
+
+        if (jwk.getOtherClaims().get("crv") != null) {
+            wrapper.setCurve((String) jwk.getOtherClaims().get("crv"));
+        }
+
+        wrapper.setPublicKey(JWKParser.create(jwk).toPublicKey());
+        return provider.verifier(wrapper);
+    }
+
+}

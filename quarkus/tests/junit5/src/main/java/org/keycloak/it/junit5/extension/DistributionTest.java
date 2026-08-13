@@ -1,0 +1,72 @@
+/*
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.keycloak.it.junit5.extension;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import org.junit.jupiter.api.extension.ExtendWith;
+
+/**
+ * A Test that runs against a Keycloak distribution, which can be from a Docker container or zip (raw).
+ * <p>
+ * Note with the raw distribution test methods are not completely isolated for performance reasons.
+ * Only a single distribution will be installed and it will only have its augmentation state reset before each test class.
+ * <p>
+ * Also the test logic assumes defaults, such as local cache mode (see {@link DistributionTest#localCache()} and 
+ * a 0 second shutdown delay.
+ */
+@Target(ElementType.TYPE)
+@ExtendWith({ CLITestExtension.class })
+@Retention(RetentionPolicy.RUNTIME)
+public @interface DistributionTest {
+
+    public static final String WIN = "win";
+    public static final String STORAGE = "storage";
+    public static final String SMOKE = "smoke";
+    public static final String SLOW = "slow";
+
+    boolean debug() default false;
+    /**
+     * Controls how the server stops.
+     */
+    StopServer.Mode stopServer() default StopServer.Mode.AFTER_START;
+    boolean enableTls() default false;
+
+    /**
+     * If any option must be set when starting the server.
+     */
+    String[] defaultOptions() default {};
+
+    /**
+     * Exposed ports when container is used
+     */
+    int[] containerExposedPorts() default {8080};
+
+    /**
+     * Default port for making HTTP requests with RestAssured
+     */
+    int requestPort() default 8080;
+    
+    /**
+     * If the cache should default to local even when the start command is used.
+     */
+    boolean localCache() default true;
+}

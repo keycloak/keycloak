@@ -1,0 +1,21 @@
+
+[id=proc-creating-a-realm_{context}]
+= Creating a realm
+
+[role="_abstract"]
+You create a realm to provide a management space where you can create users and give them permissions to use applications. At first login, you are typically in the _master_ realm, the top-level realm from which you create other realms.
+
+When deciding what realms you need, consider the kind of isolation you want to have for your users and applications.  For example, you might create a realm for the employees of your company and a separate realm for your customers.
+Your employees would log into the employee realm and only be able to visit internal company applications.  Customers would log into the customer
+realm and only be able to interact with customer-facing apps. 
+
+.Procedure
+
+. In the Admin Console, click *Create Realm* next to *Current realm*.
+. Enter a name for the realm.
+. Click *Create*.
++
+.Create realm
+image:images/create-realm.png[Create realm]
++
+The current realm is now set to the realm you just created. You can switch between realms by clicking the realm name in the menu.

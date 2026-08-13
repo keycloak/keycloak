@@ -1,0 +1,30 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Clustering metrics"
+summary="Use metrics to monitor communication between {project_name} nodes."
+tileVisible="false"
+>
+
+<#include "partials/prerequisites-metrics-troubleshooting.adoc" />
+
+== Metrics
+
+:jgrp_application: {project_name}
+:clustered_caches: true
+
+Deploying multiple {project_name} nodes allows the load to be distributed amongst them, but this requires communication between the nodes.
+This section describes metrics that are useful for monitoring the communication between {project_name} in order to identify possible faults.
+
+NOTE: This is relevant only for single-cluster deployments.
+When multiple clusters are used, as described in <@links.ha id="multi-cluster-introduction"/>, {project_name} nodes are not clustered together and therefore there is no communication between them directly.
+
+include::partials/jgrp_metrics.adoc[leveloffset=+1]
+
+
+== Next steps
+
+Return back to the <@links.observability id="metrics-for-troubleshooting"/> or proceed to <@links.observability id="metrics-for-troubleshooting-embedded-caches"/>.
+
+</@tmpl.guide>

@@ -1,0 +1,16 @@
+<#import "/templates/guide.adoc" as template>
+<#import "/templates/options.adoc" as opts>
+
+<@template.guide
+title="All provider configuration"
+summary="Review provider configuration options.">
+
+<#list ctx.options.getProviderOptions() as spi, providers>
+== ${spi}
+<#list providers as provider, options>
+=== ${provider}
+<@opts.list options=options buildIcon=false></@opts.list>
+</#list>
+</#list>
+
+</@template.guide>

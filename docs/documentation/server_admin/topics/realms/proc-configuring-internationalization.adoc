@@ -1,0 +1,47 @@
+= Enabling internationalization
+
+Every UI screen is internationalized in {project_name}.  The default language is English, but you can choose which locales you want to support and what the default locale
+will be.
+
+.Procedure
+
+. Click *Realm Settings* in the menu.
+
+. Click the *Localization* tab.
+
+. Enable *Internationalization*.
+
+. Select the languages you will support.
++
+.Localization tab
+image:images/localization.png[Localization tab]
++
+The next time a user logs in, that user can choose a language on the login page to use for the login screens, Account Console, and Admin Console.
+
+.Additional resources
+
+* The link:{developerguide_link}[{developerguide_name}] explains
+how you can offer additional languages. All internationalized texts which are provided by the theme can be overwritten by realm-specific texts on the *Localization* tab.
+
+[[_user_locale_selection]]
+== User locale selection
+
+A locale selector provider suggests the best locale on the information available. However, it is often unknown who the user is. For this reason, the previously authenticated user's locale is remembered in a persisted cookie.
+
+The logic for selecting the locale uses the first of the following that is available:
+
+* User selected - when the user has selected a locale using the drop-down locale selector
+* User profile - when there is an authenticated user and the user has a preferred locale set
+* Client selected - passed by the client using for example ui_locales parameter
+* Cookie - last locale selected on the browser
+* Accepted language - locale from *Accept-Language* header
+* Realm default
+* If none of the above, fall back to English
+
+When a user is authenticated an action is triggered to update the locale in the persisted cookie mentioned earlier. If the
+user has actively switched the locale through the locale selector on the login pages the users locale is also updated at
+this point.
+
+If you want to change the logic for selecting the locale, you have an option to create custom `LocaleSelectorProvider`. For details, please refer to the
+link:https://www.keycloak.org/ui-customization/themes[Working with themes: Locale selector].
+

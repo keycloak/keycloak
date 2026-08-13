@@ -1,0 +1,161 @@
+[[_service_protection_resources_api]]
+= Managing resources
+
+Resource servers can manage their resources remotely using a UMA-compliant endpoint.
+
+[source,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/resource_set
+----
+
+This endpoint provides operations outlined as follows (entire path omitted for clarity):
+
+* Create resource set description: POST /resource_set
+* Read resource set description: GET /resource_set/{_id}
+* Update resource set description: PUT /resource_set/{_id}
+* Delete resource set description: DELETE /resource_set/{_id}
+* List resource set descriptions: GET /resource_set
+
+For more information about the contract for each of these operations, see https://docs.kantarainitiative.org/uma/wg/oauth-uma-federated-authz-2.0-09.html#reg-api[UMA Resource Registration API].
+
+== Creating a resource
+
+To create a resource you must send an HTTP POST request as follows:
+
+[source,bash,subs="attributes+"]
+----
+curl -v -X POST \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/resource_set \
+  -H 'Authorization: Bearer '$pat \
+  -H 'Content-Type: application/json' \
+  -d '{
+     "name":"Tweedl Social Service",
+     "type":"http://www.example.com/rsrcs/socialstream/140-compatible",
+     "icon_uri":"http://www.example.com/icons/sharesocial.png",
+     "resource_scopes":[
+         "read-public",
+         "post-updates",
+         "read-private",
+         "http://www.example.com/scopes/all"
+      ]
+  }'
+----
+
+By default, the owner of a resource is the resource server. If you want to define a different owner, such as a
+specific user, you can send a request as follows:
+
+[source,bash,subs="attributes+"]
+----
+curl -v -X POST \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/resource_set \
+  -H 'Authorization: Bearer '$pat \
+  -H 'Content-Type: application/json' \
+  -d '{
+     "name":"Alice Resource",
+     "owner": "alice"
+  }'
+----
+
+Where the property `owner` can be set with the username or the identifier of the user.
+
+== Creating user-managed resources
+
+By default, resources created via Protection API can not be managed by resource owners through the <<_service_authorization_my_resources, Account Console>>.
+
+To create resources and allow resource owners to manage these resources, you must set `ownerManagedAccess` property as follows:
+
+[source,bash,subs="attributes+"]
+----
+curl -v -X POST \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/resource_set \
+  -H 'Authorization: Bearer '$pat \
+  -H 'Content-Type: application/json' \
+  -d '{
+     "name":"Alice Resource",
+     "owner": "alice",
+     "ownerManagedAccess": true
+  }'
+----
+
+== Updating resources
+
+To update an existing resource, send an HTTP PUT request as follows:
+
+[source,bash,subs="attributes+"]
+----
+curl -v -X PUT \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/resource_set/{resource_id} \
+  -H 'Authorization: Bearer '$pat \
+  -H 'Content-Type: application/json' \
+  -d '{
+     "_id": "Alice Resource",
+     "name":"Alice Resource",
+     "resource_scopes": [
+        "read"
+     ]
+  }'
+----
+
+== Deleting resources
+
+To delete an existing resource, send an HTTP DELETE request as follows:
+
+[source,bash,subs="attributes+"]
+----
+curl -v -X DELETE \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/resource_set/{resource_id} \
+  -H 'Authorization: Bearer '$pat
+----
+
+== Querying resources
+
+To query the resources by `id`, send an HTTP GET request as follows:
+
+[source,bash,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/resource_set/{resource_id}
+----
+
+To query resources given a `name`, send an HTTP GET request as follows:
+
+[source,bash,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/resource_set?name=Alice Resource
+----
+
+By default, the `name` filter will match any resource with the given pattern. To restrict the query to only return resources with an exact match, use:
+
+[source,bash,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/resource_set?name=Alice Resource&exactName=true
+----
+
+To query resources given an `uri`, send an HTTP GET request as follows:
+
+[source,bash,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/resource_set?uri=/api/alice
+----
+
+To query resources given an `owner`, send an HTTP GET request as follows:
+
+[source,bash,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/resource_set?owner=alice
+----
+
+To query resources given an `type`, send an HTTP GET request as follows:
+
+[source,bash,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/resource_set?type=albums
+----
+
+To query resources given an `scope`, send an HTTP GET request as follows:
+
+[source,bash,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/resource_set?scope=read
+----
+
+When querying the server for permissions use parameters `first` and `max` results to limit the result.

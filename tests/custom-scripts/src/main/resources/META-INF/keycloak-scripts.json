@@ -1,0 +1,13 @@
+{
+  "authenticators": [
+  ],
+  "mappers": [
+  ],
+  "policies": [
+    {
+      "name": "Default Policy",
+      "fileName": "scripts/default-policy.js",
+      "description": "A policy that grants access only for users within this realm"
+    }
+  ]
+}

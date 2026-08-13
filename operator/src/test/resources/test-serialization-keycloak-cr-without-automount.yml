@@ -1,0 +1,143 @@
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: test-serialization-kc
+spec:
+  instances: 3
+  image: my-image
+  automountServiceAccountToken: false
+  additionalOptions:
+    - name: key1
+      value: value1
+    - name: features
+      value: docker
+  db:
+    vendor: vendor
+    usernameSecret:
+      name: usernameSecret
+      key: usernameSecretKey
+    passwordSecret:
+      name: passwordSecret
+      key: passwordSecretKey
+    host: host
+    database: database
+    url: url
+    port: 123
+    schema: schema
+    poolInitialSize: 1
+    poolMinSize: 2
+    poolMaxSize: 3
+  ingress:
+    enabled: false
+    className: nginx
+    annotations:
+      myAnnotation: myValue
+      anotherAnnotation: anotherValue
+  readinessProbe:
+    periodSeconds: 50
+    failureThreshold: 3
+  livenessProbe:
+    periodSeconds: 60
+    failureThreshold: 1
+  startupProbe:
+    periodSeconds: 40
+    failureThreshold: 2
+  networkPolicy:
+    enabled: true
+    http:
+      - ipBlock:
+          cidr: 172.17.0.0/16
+          except:
+            - 172.17.1.0/24
+      - namespaceSelector:
+          matchLabels:
+            project: myproject
+      - podSelector:
+          matchLabels:
+            role: frontend
+    https:
+      - ipBlock:
+          cidr: 172.17.0.0/16
+          except:
+            - 172.17.1.0/24
+      - namespaceSelector:
+          matchLabels:
+            project: myproject
+      - podSelector:
+          matchLabels:
+            role: frontend
+    management:
+      - ipBlock:
+          cidr: 172.17.0.0/16
+          except:
+            - 172.17.1.0/24
+      - namespaceSelector:
+          matchLabels:
+            project: myproject
+      - podSelector:
+          matchLabels:
+            role: frontend
+  http:
+    httpEnabled: true
+    httpPort: 123
+    httpsPort: 456
+    tlsSecret: my-tls-secret
+  hostname:
+    hostname: my-hostname
+    admin: my-admin-hostname
+    adminUrl: https://www.my-admin-hostname.org:8448/something
+    strict: true
+    strictBackchannel: true
+    backchannelDynamic: true
+  cache:
+    configMapFile:
+      name: my-config-map
+      key: file.xml
+  features:
+    enabled:
+      - docker
+      - authorization
+    disabled:
+      - admin
+      - step-up-authentication
+  transaction:
+    xaEnabled: false
+  tracing:
+    enabled: true
+    endpoint: http://my-tracing:4317
+    serviceName: my-best-keycloak
+    protocol: http/protobuf
+    samplerType: parentbased_traceidratio
+    samplerRatio: 0.01
+    compression: gzip
+    resourceAttributes:
+      service.namespace: keycloak-namespace
+      service.name: custom-service-name
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "500M"
+    limits:
+      cpu: "2"
+      memory: "1500M"
+  proxy:
+    headers: forwarded
+  truststores:
+    x:
+      secret:
+        name: my-secret
+  httpManagement:
+    port: 9003
+  bootstrapAdmin:
+    user:
+      secret: something
+    service:
+      secret: else
+  update:
+    strategy: Auto
+    revision: 1
+  unsupported:
+    podTemplate:
+      metadata:
+        labels:
+          my-label: "foo"

@@ -1,0 +1,8 @@
+
+=== SSL/HTTPS requirement
+
+OAuth 2.0/OpenID Connect uses access tokens for security. Attackers can scan your network for access tokens and use them to perform malicious operations for which the token has permission. This attack is known as a man-in-the-middle attack. Use SSL/HTTPS for communication between the {project_name} auth server and the clients {project_name} secures to prevent man-in-the-middle attacks. 
+
+{project_name} has <<_ssl_modes,three modes for SSL/HTTPS>>. SSL is complex to set up, so {project_name} allows non-HTTPS communication over private IP addresses such as localhost, 192.168.x.x, and other private IP addresses. In production, ensure you enable SSL and SSL is compulsory for all operations.
+
+On the adapter/client-side, you can disable the SSL trust manager. The trust manager ensures the client's identity that {project_name} communicates with is valid and ensures the DNS domain name against the server's certificate. In production, ensure that each of your client adapters uses a truststore to prevent DNS man-in-the-middle attacks.

@@ -1,0 +1,18 @@
+[[_install_new_version]]
+
+== Downloading the {project_name} server
+
+Once you have prepared for the upgrade, you can download the server.
+
+.Procedure
+
+. Download and extract {archivedownloadurl}[{archivebasename}-{project_version}.zip]
+from the {project_name} website.
++
+After extracting this file, you should have a directory that is named `{archivebasename}-{project_version}`.
+. Move this directory to the desired location.
+. Copy `providers/` and `themes/` from the previous installation to the new installation.
+. Copy all files except `cache-ispn.xml` from `conf/` from the previous installation to the new installation.
+. If you modified `cache-ispn.xml` or created a custom cache configuration file:
+.. Re-apply your changes based on the `cache-ispn.xml` file shipped with the new installation, and place them in the new installation.
+.. Review the latest {project_name} configuration options for cache sizes and transport stacks if they can be used instead of your modifications as they provide better documentation, additional validations and functionality, and a simpler upgrade experience.

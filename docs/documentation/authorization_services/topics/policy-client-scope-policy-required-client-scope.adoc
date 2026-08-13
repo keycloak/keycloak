@@ -1,0 +1,11 @@
+[[_policy_client_scope_required]]
+= Defining a client scope as required
+
+When creating a client scope-based policy, you can specify a specific client scope as `Required`. When you do that, the policy will grant access only if the client requesting access has been granted *all* the *required* client scopes.
+
+.Example of required client scope
+image:images/policy/create-client-scope.png[alt="Example of required client scope"]
+
+To specify a client scope as required, select the `Required` checkbox for the client scope you want to configure as required.
+
+Required client scopes can be useful when your policy defines multiple client scopes but only a subset of them are mandatory.

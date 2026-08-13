@@ -1,0 +1,8 @@
+<#import "/templates/links.adoc" as links>
+
+This is part of the <@links.observability id="metrics-for-troubleshooting"/> {section}.
+
+== Prerequisites
+
+* Metrics need to be enabled for {project_name}. Follow the <@links.observability id="configuration-metrics"/> {section} for more details.
+* A monitoring system collecting the metrics.

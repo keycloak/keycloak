@@ -1,0 +1,25 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="{project_name} SAML Galleon feature pack for WildFly and EAP"
+priority=60
+summary="Using {project_name} SAML Galleon feature pack to secure applications in WildFly and EAP.">
+
+The SAML adapter is distributed as a Galleon feature pack for wildfly 29 or newer. More details about the subject
+in the https://docs.wildfly.org/32/WildFly_Elytron_Security.html#Keycloak_SAML_Integration[WildFly documentation].
+The same option is provided for https://docs.redhat.com/en/documentation/red_hat_jboss_enterprise_application_platform/8.0/html-single/using_single_sign-on_with_jboss_eap/index#securing-applications-with-saml_securing-applications-deployed-on-server-with-single-sign-on[JBoss EAP 8 GA].
+
+For an example about how to integrate Keycloak with JakartaEE applications running on latest Wildfly/EAP, take a look at the `servlet-saml-service-provider` Jakarta folder in the https://github.com/keycloak/keycloak-quickstarts[Keycloak Quickstart GitHub Repository].
+
+include::partials/saml/installation.adoc[]
+<#include "partials/saml/general-config.adoc" />
+include::partials/saml/idp-registration.adoc[]
+include::partials/saml/logout.adoc[]
+include::partials/saml/assertion-api.adoc[]
+include::partials/saml/error_handling.adoc[]
+include::partials/saml/debugging.adoc[]
+include::partials/saml/multi-tenancy.adoc[]
+include::partials/saml/saml-errors.adoc[]
+
+</@tmpl.guide>

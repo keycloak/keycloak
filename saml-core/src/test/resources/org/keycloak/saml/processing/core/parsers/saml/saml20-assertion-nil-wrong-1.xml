@@ -1,0 +1,11 @@
+<saml2:Assertion ID="_2fca2bd7a8a8d472d2d35a0d0d75f896" IssueInstant="2017-02-01T15:46:55.938Z" Version="2.0" xmlns:saml2="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <saml2:Issuer Format="urn:oasis:names:tc:SAML:2.0:nameid-format:entity">issuer</saml2:Issuer>
+    <saml2:AttributeStatement>
+        <saml2:Attribute Name="attr:type:string" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+            <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">CITIZEN</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="wrong:nil">
+            <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="false" xsi:type="xs:anyType"/>
+        </saml2:Attribute>
+    </saml2:AttributeStatement>
+</saml2:Assertion>

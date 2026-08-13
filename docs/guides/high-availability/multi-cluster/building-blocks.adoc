@@ -1,0 +1,66 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Building blocks multi-cluster deployments"
+summary="Learn about building blocks and suggested setups for multi-cluster deployments."
+tileVisible="false" >
+
+The following building blocks are needed to set up a multi-cluster deployment with synchronous replication.
+
+The building blocks link to a blueprint with an example configuration.
+They are listed in the order in which they need to be installed.
+
+include::../partials/blueprint-disclaimer.adoc[]
+
+== Prerequisites
+
+* Understanding the concepts laid out in the <@links.ha id="multi-cluster-concepts"/> {section}.
+
+== Two sites with low-latency connection
+
+{project_name} requires a low latency network connection for the synchronous replication of data by the database and the external {jdgserver_name}.
+
+include::../partials/network-latency.adoc[]
+
+*Suggested setup:* Two AWS Availability Zones within the same AWS Region.
+
+*Not considered:* Two regions on the same or different continents, as it would increase the latency and the likelihood of network failures.
+Synchronous replication of databases as services with Aurora Regional Deployments on AWS is only available within the same region.
+
+== Environment for {project_name} and {jdgserver_name}
+
+Ensures that the instances are deployed and restarted as needed.
+
+*Suggested setup:* Red Hat OpenShift Service on AWS (ROSA) deployed in each availability zone.
+
+*Not considered:* A ROSA cluster which spans multiple availability zones, as this could be a single point of failure if misconfigured.
+
+== Database
+
+A synchronously replicated database across two sites.
+
+*Blueprint:* <@links.ha id="multi-cluster-deploy-aurora"/>.
+
+== {jdgserver_name}
+
+A deployment of {jdgserver_name} that leverages the {jdgserver_name}'s Cross-DC functionality.
+
+*Blueprint:* <@links.ha id="multi-cluster-deploy-infinispan-kubernetes-crossdc" /> using the {jdgserver_name} Operator, and connect the two sites using {jdgserver_name}'s Gossip Router.
+
+*Not considered:* Direct interconnections between the {kubernetes} clusters on the network layer.
+It might be considered in the future.
+
+== {project_name}
+
+A clustered deployment of {project_name} in each site, connected to an external {jdgserver_name}.
+
+*Blueprint:* <@links.ha id="multi-cluster-deploy-keycloak-kubernetes" /> that includes connecting to the Aurora database and the {jdgserver_name} server.
+
+</@tmpl.guide>
+
+== Load balancer
+
+A load balancer which checks the `/lb-check` URL of the {project_name} deployment in each site, plus an automation to detect {jdgserver_name} connectivity problems between the two sites.
+
+*Blueprint:* <@links.ha id="multi-cluster-deploy-aws-accelerator-loadbalancer"/> together with  <@links.ha id="multi-cluster-deploy-aws-accelerator-fencing-lambda"/>.

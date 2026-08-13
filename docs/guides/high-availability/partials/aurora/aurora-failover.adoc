@@ -1,0 +1,15 @@
+Assuming a Regional multi-AZ Aurora deployment, the current writer instance should be in the same region as the active {project_name} cluster to avoid latencies and communication across availability zones.
+
+Switching the writer instance of Aurora will lead to a short downtime. The writer instance in the other site with a slightly longer latency might be acceptable for some deployments.
+Therefore, this situation might be deferred to a maintenance window or skipped depending on the circumstances of the deployment.
+
+To change the writer instance, run a failover.
+This change will make the database unavailable for a short time.
+{project_name} will need to re-establish database connections.
+
+To fail over the writer instance to the other AZ, issue the following command:
+
+[source,bash]
+----
+aws rds failover-db-cluster  --db-cluster-identifier ...
+----

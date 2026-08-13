@@ -1,0 +1,56 @@
+body {
+    font-family: monospace;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+table, th, td {
+    border: 1px solid navy;
+    margin: 2em 0;
+}
+
+th {
+    text-align: left;
+    background-color: #BCC6CC;
+
+}
+
+th, td {
+    padding: 2px;
+    text-align: left;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+li.archive ul {
+    padding-left: 40px;
+}
+
+li.archive p {
+    display: inline;
+    margin: 0;
+}
+
+li.archive p:after {
+    content: ":";
+}
+
+li.archive:before {
+    content: "a ";
+}
+li.file:before {
+    content: "f ";
+}
+li.directory:before {
+    content: "d ";
+}

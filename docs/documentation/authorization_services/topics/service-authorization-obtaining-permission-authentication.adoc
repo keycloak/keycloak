@@ -1,0 +1,37 @@
+[[_authentication_methods]]
+= Client authentication methods
+
+Clients need to authenticate to the token endpoint in order to obtain an RPT. When using the `urn:ietf:params:oauth:grant-type:uma-ticket`
+grant type, clients can use any of these authentication methods:
+
+* *Bearer Token*
++
+Clients should send an access token as a Bearer credential in an HTTP Authorization header to the token endpoint.
++
+.Example: an authorization request using an access token to authenticate to the token endpoint
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/protocol/openid-connect/token \
+  -H "Authorization: Bearer ${access_token}" \
+  --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket"
+----
++
+This method is especially useful when the client is acting on behalf of a user.
+In this case, the bearer token is an access token previously issued by {project_name} to some client acting on behalf
+of a user (or on behalf of itself). Permissions will be evaluated considering the access context represented by the access token.
+For instance, if the access token was issued to Client A acting on behalf of User A, permissions will be granted depending on
+the resources and scopes to which User A has access.
+
+* *Client Credentials*
++
+Clients can use any of the client authentication methods supported by {project_name}. For instance, client_id/client_secret or JWT.
++
+.Example: an authorization request using client id and client secret to authenticate to the token endpoint
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/protocol/openid-connect/token \
+  -H "Authorization: Basic cGhvdGg6L7Jl13RmfWgtkk==pOnNlY3JldA==" \
+  --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket"
+----

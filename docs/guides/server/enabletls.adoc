@@ -1,0 +1,73 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Configuring TLS"
+summary="Configure {project_name}'s https certificates for ingoing and outgoing requests.">
+
+Transport Layer Security (short: TLS) is crucial to exchange data over a secured channel.
+For production environments, you should never expose {project_name} endpoints through HTTP, as sensitive data is at the core of what {project_name} exchanges with other applications.
+In this {section}, you will learn how to configure {project_name} to use HTTPS/TLS.
+
+{project_name} can be configured to load the required certificate infrastructure using files in PEM format or from a Java Keystore.
+When both alternatives are configured, the PEM files takes precedence over the Java Keystores.
+
+== Providing certificates in PEM format
+When you use a pair of matching certificate and private key files in PEM format, you configure {project_name} to use them by running the following command:
+
+<@kc.start parameters="--https-certificate-file=/path/to/certfile.pem --https-certificate-key-file=/path/to/keyfile.pem"/>
+
+{project_name} creates a keystore out of these files in memory and uses this keystore afterwards.
+
+== Providing a Keystore
+When no keystore file is explicitly configured, but `http-enabled` is set to false, {project_name} looks for a `conf/server.keystore` file.
+
+As an alternative, you can use an existing keystore by running the following command:
+<@kc.start parameters="--https-key-store-file=/path/to/existing-keystore-file"/>
+
+Recognized file extensions for a keystore:
+
+* `.p12`, `.pkcs12`, and `.pfx` for a pkcs12 file
+* `.jks`, and `.keystore` for a jks file
+* `.key`, `.crt`, and `.pem` for a pem file
+
+If your keystore does not have an extension matching its file type, you will also need to set the `https-key-store-type` option.
+
+=== Setting the Keystore password
+You can set a secure password for your keystore using the `https-key-store-password` option:
+<@kc.start parameters="--https-key-store-password=<value>"/>
+
+If no password is set, the default password `password` is used.
+
+==== Securing credentials
+Avoid setting a password in plaintext by using the CLI or adding it to `conf/keycloak.conf` file.
+Instead use good practices such as using a vault / mounted secret. For more detail, see <@links.server id="vault"/> and <@links.server id="configuration-production" />.
+
+== Configuring TLS protocols
+By default, {project_name} does not enable deprecated TLS protocols.
+If your client supports only deprecated protocols, consider upgrading the client.
+However, as a temporary work-around, you can enable deprecated protocols by running the following command:
+
+<@kc.start parameters="--https-protocols=<protocol>[,<protocol>]"/>
+
+For example to only enable TLSv1.3, use a command such as the following: `kc.sh start --https-protocols=TLSv1.3`.
+
+== Switching the HTTPS port
+{project_name} listens for HTTPS traffic on port `8443`. To change this port, use the following command:
+<@kc.start parameters="--https-port=<port>"/>
+
+== Certificate and Key Reloading
+
+By default {project_name} will reload the certificates, keys, and keystores specified in `+https-*+` options every hour. For environments where your server keys may need frequent rotation, this allows that to happen without a server restart. You may override the default via the `https-certificates-reload-period` option. Interval on which to reload key store, trust store, and certificate files referenced by `+https-*+` options.
+The value may be a java.time.Duration value, an integer number of seconds, or an integer followed by one of the time units [`ms`, `h`, `m`, `s`, `d`]. Must be greater than 30 seconds. Use `-1` to disable.
+
+<@opts.printRelevantOptions includedOptions="https-* http-enabled" excludedOptions="https-trust-store-* https-client-auth https-management-* https-management-client-auth">
+
+=== Management server
+<@opts.includeOptions includedOptions="https-management-*" excludedOptions="https-management-client-auth"/>
+
+</@opts.printRelevantOptions>
+
+</@tmpl.guide>

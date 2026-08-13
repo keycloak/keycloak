@@ -1,0 +1,4 @@
+= Improvements in LDAP and Kerberos integration
+
+Keycloak now supports multiple LDAP providers in a realm, which support Kerberos integration with the same Kerberos realm. When an LDAP provider is not able to find the user which was authenticated through
+Kerberos/SPNEGO, Keycloak ties to fallback to the next LDAP provider. Keycloak has also better support for the case when single LDAP provider supports multiple Kerberos realms, which are in trust with each other.

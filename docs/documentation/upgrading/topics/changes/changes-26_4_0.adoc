@@ -1,0 +1,399 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== `acr_values` request parameter is not forwarded automatically to identity providers
+
+The `acr_values` request parameter is no longer automatically forwarded to OpenID Connect identity providers during authentication.
+This change enhances security by preventing unintended disclosure of authentication context information to external IDPs.
+
+If you are relying on the `acr_values` parameter to be propagated to an identity provider, you must now explicitly set `acr_values` request parameter
+to the `Forwarded query parameters` setting in the identity provider configuration.
+
+=== Configuration changes for additional datasources
+
+In previous releases, the only possible way to configure additional datasources was using raw Quarkus properties that are generally considered unsupported. At the same time, adding additional datasources was supported which led to unclear situation.
+
+To provide a supported and user-friendly way to configure additional datasources, we introduced new dedicated server options for that. Configuring additional datasources using the original approach via the Quarkus properties is considered **unsupported** starting with this release.
+
+Check the following examples on how to migrate your configuration:
+
+==== 1. Use new {project_name} options (preferred)
+The supported way to configure additional datasources is by using the new configuration options.
+
+You can migrate from this configuration in `conf/quarkus.properties`:
+
+[source,properties]
+----
+quarkus.datasource.user-store.db-kind=postgresql
+quarkus.datasource.user-store.username=my-username
+quarkus.datasource.user-store.jdbc.url=jdbc:postgresql://my-remote-postgres:5432/user-store
+quarkus.datasource.user-store.jdbc.transactions=xa
+----
+
+to this configuration in `conf/keycloak.conf`:
+
+[source,properties]
+----
+db-kind-user-store=postgres
+db-username-user-store=my-username
+db-url-full-user-store=jdbc:postgresql://my-remote-postgres:5432/user-store
+# transactions XA is enabled by default for datasources
+----
+
+For more information about the datasource options, check the link:https://www.keycloak.org/server/db#multiple-datasources[Configure multiple datasources] guide.
+
+==== 2. Remove quoting in `quarkus.properties` (unsupported)
+If you are not able to migrate to the {project_name} datasource options right now, remove the additional datasource name quoting to avoid a clash of the datasource options mapping to prevent any issue.
+
+It means that you should migrate your configuration in `conf/quarkus.properties`:
+[source,properties]
+----
+quarkus.datasource."user-store".db-kind=postgresql
+quarkus.datasource."user-store".username=my-username
+----
+
+to a version without the quotation:
+
+[source,properties]
+----
+quarkus.datasource.user-store.db-kind=postgresql
+quarkus.datasource.user-store.username=my-username
+----
+
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+
+=== Supported Databases Versions
+
+The supported version of each database is now shown in link:{databaseguide_link}[{databaseguide_name}].
+
+It is not a supported configuration if the underlying database specific Hibernate dialect allows the use of a version that differs from those shown.
+
+From 26.3 to 26.4 the support changed as follows:
+
+[cols="1,1,1"]
+|===
+|Database |Minimum support |Dialect minimum
+
+|MariaDB | 10.4 (LTS) -> 10.6 (LTS) | 10.4 (LTS) -> 10.6 (LTS)
+|PostgreSQL | Remained 13.x | 12.x -> 13.x
+|Amazon Aurora PostgreSQL | Remained 15.x | 12.x -> 13.x
+|Microsoft SQLServer | Remained 2019 | 2012 -> 2014
+|===
+
+=== Usage of the `exact` request parameter when searching users by attributes
+
+If you are querying users by attributes through the User API where you want to fetch users that match a specific attribute key (regardless the value),
+consider setting the `exact` request parameter to `false` when invoking the `+/admin/realms/{realm}/users+` using
+the `GET` method.
+
+For instance, searching for all users with the attribute `myattribute` set should be done as follows:
+
+[source]
+----
+GET /admin/realms/{realm}/users?exact=false&q=myattribute:
+----
+
+The {project_name} Admin Client is also updated with a new method to search users by attribute using the `exact` request parameter.
+
+=== Automatic database connection properties for the PostgreSQL driver
+
+When running PostgreSQL reader and writer instances, {project_name} needs to always connect to the writer instance to do its work.
+
+Starting with this release, and when using the original PostgreSQL driver, {project_name} sets the `targetServerType` property of the PostgreSQL JDBC driver to `primary` to ensure that it always connects to a writable primary instance and never connects to a secondary reader instance in failover or switchover scenarios.
+
+You can override this behavior by setting your own value for `targetServerType` in the DB URL or additional properties.
+
+=== Bouncy Castle libraries updated to 2.1.x
+
+If you are running {project_name} in FIPS 140-2 mode, note to update your Bouncy Castle libraries to the versions listed in the release documentation.
+
+With the upgrade to Bouncy Castle 2.1.x, EdDSA is now supported in FIPS 140-2 mode.
+
+=== Creating remote caches automatically on the first startup
+
+When using remote caches, {project_name} now automatically creates the necessary caches during startup if they do not already exist on the {jdgserver_name} server.
+
+For a multi-cluster setup, it is still recommended to create the caches using Cache CRs in advance to verify the correct initialization of the caches and to avoid start-up errors while the caches are present in only one of the sites.
+
+=== MySQL and MariaDB wait_timeout validation
+
+In order to prevent connections being closed unexpectedly by the database server, it is necessary to ensure that the {project_name}
+connection pool is correctly configured with respect to the server's `wait_timeout` setting.
+
+Starting with this release, {project_name} defines a default `db-pool-max-lifetime` of 7 hours and 50 minutes for MySQL
+and MariaDB databases as the default `wait_timeout` is 8 hours.
+
+If the server defines a `wait_timeout` which is greater than the default, or provided, `db-pool-max-lifetime` value, then
+a warning will be logged on {project_name} startup.
+
+=== Cache configuration removed from cache-ispn.xml
+
+The `conf/cache-ispn.xml` file no longer contains the default cache configurations.
+You can still overwrite the cache configurations used by {project_name} in this file, however {project_name} logs a warning if the `--cache-config-mutate=true` option is not set.
+You can still add custom caches without setting this option.
+
+When upgrading an existing deployment, remove all default cache configurations from your existing `conf/cache-ispn.xml`
+and use the `+--cache-...+` options to make changes for example to the cache sizes.
+
+=== RFC 8414 compliant lookup of metadata
+
+{project_name} now exposes an RFC 8414 compliant endpoint at the root URL level `/.well-known/` to allow clients to discover OAuth 2.0 Authorization Server Metadata and other well-known providers by the issuer URL.
+
+As an example, OAuth 2.0 Authorization Server Metadata information was exposed by this URL:
+
+[source]
+----
+https://keycloak.example.com/realms/{realm}/.well-known/oauth-authorization-server
+----
+
+It is now available also by this URL:
+
+[source]
+----
+https://keycloak.example.com/.well-known/oauth-authorization-server/realms/{realm}
+----
+
+To benefit from this, expose the path `/.well-known/` in your reverse proxy configuration.
+
+NOTE: If a `http-relative-path` is configured, configure a reverse proxy to map the `/.well-known/` path to the path with the prefix on the server.
+
+=== Operator default affinity configuration changed
+
+The default scheduling strategy has been updated so that a topology spread constraint
+is created for both zones and nodes in order to increase availability in the presence of failures. Previously, the default strategy
+preferred that all nodes were deployed to the same availability zone. For more details, see the link:{highavailabilityguide_link}[{highavailabilityguide_name}].
+
+=== JGroups system properties replaced with CLI options
+
+Previously, configuring JGroups network addresses and ports required that you use the `+jgroups.bind.*+` and `+jgroups.external_*+`
+system properties. This release introduces the following CLI options to allow these addresses and ports to be
+configured directly by {project_name}:
+
+* `cache-embedded-network-bind-address`
+* `cache-embedded-network-bind-port`
+* `cache-embedded-network-external-address`
+* `cache-embedded-network-external-port`.
+
+Configuring ports using the old
+properties has not changed, but using the CLI options is recommended because the previous method could be deprecated.
+
+=== Internal representation of client sessions changed
+
+The cache key of the authenticated client sessions has changed for embedded Infinispan, while the public APIs have not changed.
+Due to this, you should not run 26.4.x concurrently in a cluster with previous versions.
+
+=== External IDP tokens automatically refreshed
+
+When using the `+/realms/{realm-name}/broker/{provider_alias}/token+` endpoint for an OAuth 2.0 IDP that provides refresh tokens and JSON responses or for OIDC IDPs, the tokens will be automatically refreshed each time they are retrieved via the endpoint if the access token has expired and the IDP provided a refresh token.
+
+When using GitHub as an IDP, you can now enable JSON responses to leverage the token refresh for this endpoint.
+
+=== Persistent User Session Batching Disabled
+
+The batching of persistent user session updates has been turned off by default because it negatively impacts performance with some database vendors, which offsets the benefits with other database vendors.
+You can enable batching by using the CLI option `--spi-user-sessions--infinispan--use-batches=true`, but users are encouraged to load test their environment to verify performance improvements.
+
+=== Required field in User Session note mapper
+
+The name of the session note is now shown as a required field in the Admin Console.
+
+=== Required field in OIDC attribute mapper
+
+The name of the token claim is now shown as a required field in the Admin Console.
+
+=== Volatile user sessions affecting offline session memory requirements
+
+Starting with this release, {project_name} caches by default only 10,000 entries for offline user and client sessions in memory when volatile user sessions are enabled. This change greatly reduces memory usage.
+
+To change the size of the offline session caches, use the `cache-embedded-offline-sessions-max-count` and `cache-embedded-offline-client-sessions-max-count` options.
+
+=== Translation resource bundle file names
+
+The naming of resource bundles in classloader and folder based themes is now aligned with Java https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/ResourceBundle.html#getBundle(java.lang.String,java.util.Locale,java.lang.ClassLoader)[ResourceBunndle#getBundle] file names.
+For all included community languages, such as `de` or `pt-BR`, a file is still named `messages_de.properties` or `messages_pt_BR.properties`.
+If you added custom language code, check if your file names are still the same.
+
+The "Chinese (traditional)" and "Chinese (simplified)" languages are named for historical reasons `zh-TW` and `zh-CN` in the community themes of {project_name}.
+As a start to migrate to the new language codes, `zh-Hant` and `zh-Hans`, the classloader and folder based themes pick up for the old language codes `zh-TW` and `zh-CN` and also the `messages_zh_Hant.properties` and `messages_zh_Hant.properties` files.
+Entries in `messages_zh_Hant.properties` take precedence over entries in `messages_zh_TW.properties`, and entries in `messages_zh_Hans.properties` take precedence over entries in `messages_zh_CN.properties`.
+
+=== Update Email Feature is now supported
+
+`Update Email` is now a supported feature so it is now enabled during the server startup.
+The feature is enabled for a realm if the `Update Email` required action is enabled in the realm.
+The feature slightly changes behavior from previous versions when updating the profile during the authentication flow (such as when running the `UPDATE_PROFILE` required action).
+If a user has an email set when updating the profile during the authentication flow, the email attribute is not available.
+
+=== New database index on the `EVENT_ENTITY` table
+
+The `EVENT_ENTITY` table now has an index `IDX_EVENT_ENTITY_USER_ID_TYPE` on the columns `USER_ID`, `TYPE` and `EVENT_TIME`, which allows a faster search in the Admin Console for events of a specific user and event type.
+
+If the table contains more than 300,000 entries, {project_name} skips the index creation during the automatic schema migration. However, the SQL statement appears on the console during migration so you can apply it manually after {project_name} startup.
+For details on configuring a different limit, see link:{upgradingguide_link}#_migrate_db[Migrating the database].
+
+=== Encryption algorithms for SAML updated
+
+When a SAML client was enabled to *Encrypt Assertions*, the assertion included in the SAML response was encrypted following the link:https://www.w3.org/TR/xmlenc-core1/[XML Encryption Syntax and Processing] specification. The algorithms used for encryption were fixed and outdated. Starting with this release, default encryption options are up to date and better suited in terms of security. In addition, if a specific client needs a different algorithm, you can configure the encryption details. You define new attributes in the client to specify the exact algorithms used for encryption. In the Admin Console, when *Encrypt Assertions* is enabled in the *Keys* tab, these attributes appear in the client *Settings* tab, *Signature and Encryption* section.
+
+To maintain backwards compatibility, the {project_name} upgrade modifies the existing SAML clients to set the encryption attributes to work as before. As a result, existing clients receive the same encrypted assertion using the same previous algorithms. If the client supports the new default configuration, removing the attributes is recommended.
+
+For more information about client configuration, see link:{adminguide_link}#_client-saml-configuration[Creating a SAML client].
+
+=== Validate email action
+
+When validating an email address as a required action or an application initiated action, a user can resend the verification email by default only every 30 seconds, while in earlier versions no limitation existed for re-sending the email.
+
+Administrators can configure the interval per realm in the *Verify Email* required action in the *Authentication* section of the realm.
+
+=== Tracing extended for embedded Infinispan caches
+
+When tracing is enabled, calls to other nodes of a {project_name} cluster now create spans in the traces.
+
+To disable this kind of tracing, set the option `tracing-infinispan-enabled` to `false`.
+
+=== LDAP Connection default timeout
+
+If no value is specified either on the LDAP configuration as the connectionTimeout or by the `com.sun.jndi.ldap.connect.timeout` system property, the default timeout is 5 seconds. This timeout ensures that requests will see errors rather than indefinite waits in obtaining an LDAP connection from the pool or when making a connection to the LDAP server.
+
+=== Login theme optimized for OTP and recovery code entry
+
+The input fields in the login theme for OTP and recovery codes and have been optimized:
+
+* The input mode is now `numeric`, which will ease the input on mobile devices.
+* The auto-complete is set to `one-time-code` to avoid interference with password managers.
+
+=== Maximum length of the parameters in the OIDC authentication request
+
+When the OIDC authentication request (or OAuth2 authorization request) is sent, a new limit exists for the maximum length of every standard OIDC/OAuth2 parameter. The maximum length of each standard parameter is 4,000 characters,
+which is a very large number that may be lowered in a future release. For now, it remains large for backwards compatibility. The only exception is the `login_hint` parameter, which has maximum length of 255 characters. This value is aligned with the maximum length for the `username` and `email` attributes configured in the default user profile configuration.
+
+If you want to increase or lower those numbers, start the server with the option `req-params-default-max-size` for the default maximum length of the standard
+OIDC/OAuth2 parameters or you can use something such as `req-params-max-size` for one specific parameter. For more details, see the `login-protocol` provider configuration in the link:{allproviderconfigguide_link}[{allproviderconfigguide_name}].
+
+=== UTF-8 management in the email sender
+
+Starting with  this release, {project_name} adds a new option `allowutf8` for the realm SMTP configuration (*Allow UTF-8* field inside the *Email* tab in the *Realm settings* section of the Admin Console).
+For more information about email configuration, see link:{adminguide_link}#_email[Configuring email for a realm].
+
+Enabling the option encodes email addresses in UTF-8 when sending them, but it depends on the SMTP server to also support UTF-8 by the SMTPUTF8 extension.
+If *Allow UTF-8* is disabled, {project_name} will encode the domain part of the email address (second part after `@`) using punycode if non-ASCII characters are used, and will reject email addresses that use non-ASCII characters in the local part. The built-in User Profile email validator also checks that the local part of the address contains only ASCII characters when this option is disabled, avoiding the registration of emails that cannot be used by the SMTP configuration.
+
+If you have an SMTP server configured for your realm, perform the following migration after the upgrade:
+
+* If your SMTP server supports SMTPUTF8, enable the *Allow UTF-8* option.
+* If your SMTP server does not support SMTPUTF8:
+. Keep the *Allow UTF-8* option disabled.
+. Verify that no email addresses of users have non-ASCII characters in the local part of the email address. If you detect emails with non-ASCII characters in the local part, you can use the Verify Profile action to force the user to modify the email after the upgrade.
+
+=== Aligning the count of users with the actual number of users returned from searches
+
+When searching for users in the Admin Console or by the User API, the count of users returned from the
+`+/admin/realms/{realm}/users/count+` endpoint is now aligned with the actual number of users returned when executing
+searches by `+/admin/realms/{realm}/users+`.
+
+If you are relying on the users count endpoint, make sure to review your clients so that they expect the users count
+to be aligned with the actual number of users returned from searches.
+
+=== Welcome Page changes
+
+The Welcome Page creates regular Admin users instead of temporary ones.
+
+=== Fine-grained admin permissions: new `reset-password` scope for Users
+
+The fine-grained admin permissions (FGAP) feature now includes a new scope: `reset-password`. This scope allows for specific permissions to be granted to administrators to reset a user's password without granting them broader `manage` scope.
+
+By default, a user with the existing, broader `manage` scope for the `USERS` resource type will implicitly have permission to reset a user's password. The system checks for the explicit `reset-password` scope first. If that permission is not found, it falls back to checking if the administrator has the `manage` scope. This ensures that existing administrators with the `manage` scope continue to have the ability to reset passwords without any changes to their permissions.
+
+This implicit fallback mechanism ensures a smooth upgrade process for deployments already using fine-grained permissions. The fallback will be deprecated and removed in a future releases, so it is recommended to review and update administrator permissions to use the new `reset-password` scope where appropriate.
+
+For more information about fine-grained admin permissions, see link:{adminguide_finegrained_link}[{adminguide_finegrained_name}].
+
+=== Re-created indexes on the `CLIENT_ATTRIBUTES` and `GROUP_ATTRIBUTE` tables
+
+In some previous versions of {project_name}, the EnterpriseDB (EDB) was considered unsupported. This has now changed and
+EDB Advanced is supported starting with this release. If the EDB JDBC driver was used for connecting to EDB in previous versions,
+some invalid schema changes were applied to the database. To mitigate this, some indexes are automatically re-created during
+the schema migration to this version. **This affects you if you are using a Postgres database (including EDB), regardless if you
+used EDB with previous releases.**
+
+This affects indexes on the `CLIENT_ATTRIBUTES` and `GROUP_ATTRIBUTE` tables. If those tables contain more than 300000 entries,
+{project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement
+on the console during migration to be applied manually after {project_name}'s startup.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
+=== Errors when searching users from LDAP will not fail the request anymore and local users will be returned
+
+Until now, failures when searching for users from an LDAP user federation provider caused the whole request to fail and no users were returned.
+In this release, if an error occurs during the search, local users will still be returned and the error will be logged at the `ERROR` level,
+so that administrators can investigate the root cause of the problem and fix any issue with their LDAP configuration or connectivity
+with the LDAP server.
+
+This change improves the resilience of the system when there are temporary issues with the LDAP server, ensuring that local users can still be accessed even if the LDAP search fails.
+If a local user is linked to a failing LDAP provider, the user will be marked as disabled and read-only until the LDAP server is available again.
+
+=== The `serverinfo` endpoint only returns the system info for administrators in the administrator realm
+
+Starting with this version, the `serverinfo` endpoint, which is used by the admin console to obtain some general information of the {project_name} installation, will only return the system information for administrators in the administration (master) realm. This change was done for security reasons.
+
+If, for whatever reason, an administrator in a common realm needs to access the `systemInfo`, `cpuInfo` or `memoryInfo` fields of the `serverinfo` response, you need to create and assign a new *view-system* role to that admin user:
+
+. In the affected realm, select the management client *realm-management*, and, in the *Roles* tab, create a new role called *view-system*.
+. In *Users* select the administrator account, and, in the *Role mapping* tab, assign the just created *view-system* client role to the admin user.
+
+The previous workaround is marked as deprecated and it can be removed in a future version of {project_name}.
+
+=== Refactoring to `SimpleHttp`
+
+The `SimpleHttp` util in the `server-spi-private` module was refactored and moved to the `org.keycloak.http.simple` package.
+
+// ------------------------ Deprecated features ------------------------ //
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+=== `displayTest` field in `ConsentScopeRepresentation`
+
+The `displayTest` field in the `ConsentScopeRepresentation` class returned by the Account REST service has been deprecated due to a typo in its name.
+A new field `displayText` with the correct spelling has been added to replace it. The old field will be removed in {project_name} 27.0.
+The Typescript code `ConsentScopeRepresentation` for the Account Console already contains only the new field.
+
+=== Lifetime of offline session caches
+
+The options `+--spi-user-sessions--infinispan--offline-session-cache-entry-lifespan-override+` and `+--spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override+` are now deprecated for removal.
+
+As an alternative, use the `cache-embedded-offline-sessions-max-count` and `cache-embedded-offline-client-sessions-max-count` options to limit the memory usage if the default of 10,000 cache offline user and client sessions does not work in your scenario.
+
+=== Timestamp in the AuthenticatedClientSessionModel
+
+The timestamp of the last refresh token update of OpenID Connect clients is currently available via `AuthenticatedClientSessionModel#getTimestamp()` and `AuthenticatedClientSessionModel#setTimestamp()`.
+
+This is now deprecated for removal without a replacement.
+
+=== Passkeys Conditional UI Authenticator requires a feature
+
+The *Passkeys Conditional UI Authenticator* authenticator was deprecated in the version 26.3.0, but you can still use it if you enable
+`passkeys_conditional_ui_authenticator` during server startup. As a result, you can re-configure authentication flows for passkeys authentication as described in link:{adminguide_link}#passkeys_server_administration_guide[Passkeys]. Nonetheless, both this startup option and the *Passkeys Conditional UI Authenticator* are deprecated.
+
+=== Modifying default cache configurations in the cache config file
+
+All {project_name} default cache configurations have been removed from `conf/cache-ispn.xml`.
+Configuration of the default cache configurations in `conf/cache-ispn.xml`, or in a custom file by `--cache-config-file`, without specifying `--cache-config-mutate=true` is now deprecated and will log a warning.
+
+In a future major release, the start-up will fail if default cache configurations are stated in those files and the option is not specified.
+
+=== Simplified API for UserSessionProvider
+
+In order to retrieve a client session via `UserSessionProvider#getClientSession`, you no longer need to pass in the client session ID.
+The old methods have been deprecated and will be removed in a future release.
+You should also review the other methods that are deprecated for removal in this class.
+
+=== Simplified API for AuthenticatedClientSessionModel
+
+The `clientId` note in the authenticated client session is an internal note present only when using the embedded caches, and is now deprecated for removal. Instead, use the `getClient()` method.
+

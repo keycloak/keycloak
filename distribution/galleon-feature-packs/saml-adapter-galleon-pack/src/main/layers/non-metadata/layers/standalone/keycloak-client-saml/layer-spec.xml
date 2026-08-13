@@ -1,0 +1,43 @@
+<?xml version="1.0" ?>
+<layer-spec xmlns="urn:jboss:galleon:layer-spec:1.0" name="keycloak-client-saml">
+    <dependencies>
+        <layer name="keycloak-saml"/>
+    </dependencies>
+    <feature spec="subsystem.elytron.custom-realm">
+        <param name="custom-realm" value="KeycloakSAMLRealm"/>
+        <param name="class-name" value="org.keycloak.adapters.saml.elytron.KeycloakSecurityRealm"/>
+        <param name="module" value="org.keycloak.keycloak-saml-wildfly-elytron-adapter"/>
+    </feature>
+    <feature spec="subsystem.elytron.security-domain">
+        <param name="security-domain" value="KeycloakDomain"/>
+        <param name="default-realm" value="KeycloakSAMLRealm"/>
+        <param name="permission-mapper" value="default-permission-mapper"/>
+        <param name="security-event-listener" value="local-audit"/>
+        <param name="realms" value="[{realm=KeycloakSAMLRealm}]"/>
+    </feature>
+    <feature spec="subsystem.elytron.constant-realm-mapper">
+        <param name="constant-realm-mapper" value="keycloak-saml-realm-mapper"/>
+        <param name="realm-name" value="KeycloakSAMLRealm"/>
+    </feature>
+    <feature spec="subsystem.elytron.service-loader-http-server-mechanism-factory">
+        <param name="service-loader-http-server-mechanism-factory" value="keycloak-saml-http-server-mechanism-factory"/>
+        <param name="module" value="org.keycloak.keycloak-saml-wildfly-elytron-adapter"/>
+    </feature>
+    <feature spec="subsystem.elytron.aggregate-http-server-mechanism-factory">
+        <param name="aggregate-http-server-mechanism-factory" value="keycloak-http-server-mechanism-factory"/>
+        <param name="http-server-mechanism-factories" value="[keycloak-saml-http-server-mechanism-factory, global]"/>
+    </feature>
+    <feature spec="subsystem.elytron.http-authentication-factory">
+        <param name="http-authentication-factory" value="keycloak-http-authentication"/>
+        <param name="http-server-mechanism-factory" value="keycloak-http-server-mechanism-factory"/>
+        <param name="security-domain" value="KeycloakDomain"/>
+        <param name="mechanism-configurations" value="[{mechanism-name=KEYCLOAK-SAML,mechanism-realm-configurations=[{realm-name=KeycloakSAMLRealm,realm-mapper=keycloak-saml-realm-mapper}]}]"/>
+    </feature>
+    <feature spec="subsystem.undertow">
+        <feature spec="subsystem.undertow.application-security-domain">
+            <param name="application-security-domain" value="other" />
+            <unset param="security-domain"/>
+            <param name="http-authentication-factory" value="keycloak-http-authentication"/>
+        </feature>
+    </feature>
+</layer-spec>

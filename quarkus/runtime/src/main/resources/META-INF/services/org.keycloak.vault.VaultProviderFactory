@@ -1,0 +1,2 @@
+org.keycloak.quarkus.runtime.vault.FilesPlainTextVaultProviderFactory
+org.keycloak.quarkus.runtime.vault.FilesKeystoreVaultProviderFactory

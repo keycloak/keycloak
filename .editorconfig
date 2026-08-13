@@ -1,0 +1,13 @@
+root = true
+
+[{*.js,*.tsx,*.adoc}]
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.java]
+insert_final_newline = true
+# Don't use class imports with an asterisk ('*') in IntelliJ
+ij_java_use_single_class_imports = true
+ij_java_class_count_to_use_import_on_demand = 999
+ij_java_names_count_to_use_import_on_demand = 999
+ij_java_imports_layout = java.**,javax.**,|,jakarta.**,|,org.keycloak.**,|,*,|,$jakarta.**,$java.**,javax.**,|,$org.keycloak.**,|,$*

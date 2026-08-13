@@ -1,0 +1,34 @@
+
+[[_client_suggested_idp]]
+=== Client-suggested Identity Provider
+
+OIDC applications can bypass the {project_name} login page by hinting at the identity provider they want to use. You can enable this by setting the `kc_idp_hint` query parameter in the Authorization Code Flow authorization endpoint.
+
+With {project_name} OIDC client adapters, you can specify this query parameter when you access a secured resource in the application.
+
+For example:
+
+[source,bash,subs=+attributes]
+----
+GET /myapplication.com?kc_idp_hint=facebook HTTP/1.1
+Host: localhost:8080
+----
+
+In this case, your realm must have an identity provider with a `facebook` alias. If this provider does not exist,  the login form is displayed.
+
+If you are using the JavaScript adapter, you can also achieve the same behavior as follows:
+
+[source,javascript]
+----
+const keycloak = new Keycloak({
+	url: "http://keycloak-server",
+	realm: "my-realm",
+	clientId: "my-app"
+);
+
+await keycloak.createLoginUrl({
+	idpHint: 'facebook'
+});
+----
+
+With the `kc_idp_hint` query parameter, the client can override the default identity provider if you configure one for the `Identity Provider Redirector` authenticator. The client can  disable the automatic redirecting by setting the `kc_idp_hint` query parameter to an empty value.

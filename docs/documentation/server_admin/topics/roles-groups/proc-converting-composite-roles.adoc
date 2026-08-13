@@ -1,0 +1,25 @@
+[id="proc-converting-composite-roles_{context}"]
+
+[[_composite-roles]]
+
+= Converting a role to a composite role
+[role="_abstract"]
+Any realm or client level role can become a _composite role_. A _composite role_ is a role that has one or more additional roles associated with it. When a composite role is mapped to a user, the user gains the roles associated with the composite role.  This inheritance is recursive so users also inherit any composite of composites. However, we recommend that composite roles are not overused.
+
+.Procedure
+
+. Click *Realm Roles* in the menu.
+. Click the role that you want to convert.
+. From the *Action* list, select *Add associated roles*.
+
+.Composite role
+image:images/composite-role.png[Composite role]
+
+The role selection UI is displayed on the page and you can associate realm level and client level roles to the composite role you are creating.
+
+In this example, the *employee* realm-level role is associated with the *developer* composite role.  Any user with the *developer* role also inherits the *employee* role.
+
+[NOTE]
+====
+When creating tokens and SAML assertions, any composite also has its associated roles added to the claims and assertions of the authentication response sent back to the client.
+====  

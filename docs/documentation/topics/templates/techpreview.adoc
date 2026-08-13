@@ -1,0 +1,25 @@
+ifeval::[{tech_feature_disabled}!=false]
+[NOTE]
+====
+{tech_feature_name} is
+ifeval::[{project_product}==true]
+*Technology Preview*
+endif::[]
+ifeval::[{project_community}==true]
+*Preview*
+endif::[]
+and is not fully supported. This feature is disabled by default.
+
+To enable start the server with `--features=preview`
+ifdef::tech_feature_id[]
+or `--features={tech_feature_id}`
+endif::[]
+
+====
+endif::[]
+ifeval::[{tech_feature_disabled}==false]
+[NOTE]
+====
+{tech_feature_name} is *Technology Preview* and is not fully supported.
+====
+endif::[]

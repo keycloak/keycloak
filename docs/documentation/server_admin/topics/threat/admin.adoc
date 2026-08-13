@@ -1,0 +1,5 @@
+
+=== Admin endpoints and Admin Console
+
+{project_name} exposes the administrative REST API and the web console on the same port as non-administrative usage.
+Do not expose administrative endpoints externally if external access is not necessary.

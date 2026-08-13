@@ -1,0 +1,23 @@
+The simplest way to verify that a connection is possible between a ROSA cluster and an Aurora DB cluster is to deploy
+`psql` on the OpenShift cluster and attempt to connect to the writer endpoint.
+
+The following command creates a pod in the default namespace and establishes a `psql` connection with the Aurora cluster if possible.
+Upon exiting the pod shell, the pod is deleted.
+
+[source,bash]
+----
+USER=keycloak # <1>
+PASSWORD=secret99 # <2>
+DATABASE=keycloak # <3>
+HOST=$(aws rds describe-db-clusters \
+  --db-cluster-identifier keycloak-aurora \#<4>
+  --query 'DBClusters[*].Endpoint' \
+  --region eu-west-1 \
+  --output text
+)
+kubectl run -i --tty --rm debug --image=postgres:15 --restart=Never -- psql postgresql://${USER}:${PASSWORD}@${HOST}/${DATABASE}
+----
+<1> Aurora DB user, this can be the same as `--master-username` used when creating the DB.
+<2> Aurora DB user-password, this can be the same as `--master--user-password` used when creating the DB.
+<3> The name of the Aurora DB, such as `--database-name`.
+<4> The name of your Aurora DB cluster.

@@ -1,0 +1,37 @@
+
+[[_identity_broker_spiffe]]
+=== SPIFFE identity providers
+
+:tech_feature_name: SPIFFE
+:tech_feature_id: spiffe
+include::../../topics/templates/techpreview.adoc[]
+
+A SPIFFE identity provider supports authenticating clients with SPIFFE JWT SVIDs.
+
+Each client must have a unique subject identifier (SPIFFE ID) for each realm.
+
+SPIFFE JWT SVIDs can be re-used multiple times. As a security best practice, reduce the expiration time
+and make sure tokens can not be intercepted in communication between the client and Keycloak.
+
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the `Add provider` list, select `SPIFFE`.
++
+.Add SPIFFE provider
+image:images/spiffe-add-identity-provider.png[Add SPIFFE Provider]
++
+. Enter your initial configuration options.
++
+.SPIFFE settings
+|===
+|Configuration|Description
+
+|Alias
+|The alias for the identity provider is used to link a client to the provider
+
+|SPIFFE Trust Domain
+|The SPIFFE Trust domain (for example `spiffe://my-trust-domain`)
+
+|SPIFFE Bundle Endpoint
+|`https` URL for the SPIFFE Bundle Endpoint or the OpenID Connect JWKS endpoint where the SPIFFE servers public keys are exposed
+|===

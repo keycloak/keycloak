@@ -1,0 +1,9 @@
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: KeycloakRealmImport
+metadata:
+  name: example-count0-kc
+spec:
+  keycloakCRName: example-kc2
+  realm:
+    id: count0
+    realm: count0

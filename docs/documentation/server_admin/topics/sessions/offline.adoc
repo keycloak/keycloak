@@ -1,0 +1,27 @@
+
+[[_offline-access]]
+
+=== Offline access
+[role="_abstract"]
+
+During https://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess[offline access] logins, the client application requests an offline token instead of a refresh token. The client application saves this offline token and can use it for future logins if the user logs out. This action is useful if your application needs to perform offline actions on behalf of the user even when the user is not online. For example, a regular data backup.
+
+The client application is responsible for persisting the offline token in storage and then using it to retrieve new access tokens from the {project_name} server.
+
+The difference between a refresh token and an offline token is that an offline token never expires and is not subject to the `SSO Session Idle` timeout and `SSO Session Max` lifespan. The offline token is valid after a user logout. You must use the offline token for a refresh token action at least once per thirty days or for the value of the <<_offline-session-idle, Offline Session Idle>>.
+
+If you enable <<_offline-session-max-limited, Offline Session Max Limited>>, offline tokens expire after 60 days even if you use the offline token for a refresh token action. You can change this value, <<_offline-session-max, Offline Session Max>>, in the Admin Console.
+
+When using offline access, client idle and max timeouts can be overridden at the <<_client_advanced_settings_oidc,client level>>. The options *Client Offline Session Idle* and *Client Offline Session Max*, in the client *Advanced Settings* tab, allow you to have a shorter offline timeouts for a specific application. Note that client session values also control the refresh token expiration but they never affect the global offline user SSO session. The option *Client Offline Session Max* is only evaluated in the client if <<_offline-session-max-limited, Offline Session Max Limited>> is *Enabled* at the realm level.
+
+If you enable the <<_revoke-refresh-token, Revoke Refresh Token>> option, you can use each offline token once only. After refresh, you must store the new offline token from the refresh response instead of the previous one.
+
+Users can view and revoke offline tokens that {project_name} grants them in the <<_account-service, User Account Console>>. Administrators can revoke offline tokens for individual users in the Admin Console in the `Consents` tab. Administrators can view all offline tokens issued in the `Offline Access` tab of each client. Administrators can revoke offline tokens by setting a <<_revocation-policy, revocation policy>>.
+
+To issue an offline token, users must have the role mapping for the realm-level `offline_access` role. Clients must also have that role in their scope. Clients must add an `offline_access` client scope as an `Optional client scope` to the role, which is done by default.
+
+Clients can request an offline token by adding the parameter `scope=offline_access` when sending their authorization request to {project_name}. The {project_name} OIDC client adapter automatically adds this parameter when you use it to access your application's secured URL (such as, $$http://localhost:8080/customer-portal/secured?scope=offline_access$$). The Direct Access Grant and Service Accounts support offline tokens if you include `scope=offline_access` in the authentication request body.
+
+{project_name} will limit its internal cache for offline user and offline client sessions to 10000 entries by default, which will reduce the overall memory usage for offline sessions.
+Items which are evicted from memory will be loaded on-demand from the database when needed.
+See the server configuration guide to change this default.

@@ -1,0 +1,33 @@
+
+[[_identity_broker_overview]]
+
+=== Brokering overview
+
+When using {project_name} as an identity broker, {project_name} does not force users to provide their credentials to authenticate in a specific realm. {project_name} displays a list of identity providers from which they can authenticate.
+
+If you configure a default identity provider, {project_name} redirects users to the default provider.
+
+[NOTE]
+====
+Different protocols may require different authentication flows. All the identity providers supported by {project_name} use the following flow.
+====
+
+.Identity broker flow
+image:images/identity_broker_flow.png[Identity broker flow]
+
+. The unauthenticated user requests a protected resource in a client application.
+. The client application redirects the user to {project_name} to authenticate.
+. {project_name} displays the login page with a list of identity providers configured in a realm.
+. The user selects one of the identity providers by clicking its button or link.
+. {project_name} issues an authentication request to the target identity provider requesting authentication and redirects the user to the identity provider's login page. The administrator has already set the connection properties and other configuration options for the Admin Console's identity provider.
+. The user provides credentials or consents to authenticate with the identity provider.
+. Upon successful authentication by the identity provider, the user redirects back to {project_name} with an authentication response. Usually, the response contains a security token used by {project_name} to trust the identity provider's authentication and retrieve user information.
+. {project_name} checks if the response from the identity provider is valid.
+  If valid, {project_name} imports and creates a user if the user does not already exist. {project_name} may ask the identity provider for further user information if the token does not contain that information. This behavior is _identity federation_.
+  If the user already exists, {project_name} may ask the user to link the identity returned from the identity provider with the existing account. This behavior is _account linking_. With {project_name}, you can configure _Account linking_ and specify it in the <<_identity_broker_first_login,First Login Flow>>. At this step, {project_name} authenticates the user and issues its token to access the requested resource in the service provider.
+. When the user authenticates, {project_name} redirects the user to the service provider by sending the token previously issued during the local authentication.
+. The service provider receives the token from {project_name} and permits access to the protected resource.
+
+Variations of this flow are possible. For example, the client application can request a specific identity provider rather than displaying a list of them, or you can set {project_name} to force users to provide additional information before federating their identity.
+
+At the end of the authentication process, {project_name} issues its token to client applications. Client applications are separate from the external identity providers, so they cannot see the client application's protocol or how they validate the user's identity. The provider only needs to know about {project_name}.

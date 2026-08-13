@@ -1,0 +1,82 @@
+[[_update-email-workflow]]
+
+== Update Email Workflow (UpdateEmail)
+
+With this workflow, users will have to use an `UPDATE_EMAIL` action to change their own email address.
+
+This action provides a more secure and consistent flow to update user emails by requiring re-authentication and optionally requiring email verification before any update to their account.
+
+Applications are able to send their users to the email update form by leveraging UPDATE_EMAIL as an <<con-aia_{context},AIA (Application Initiated Action)>>.
+
+To enable Update Email capability for a realm, go to the `Authentication` menu in the administration console and click on `Required actions` tab.
+Switch the toggle for `UPDATE_EMAIL` required action to `enabled`.
+
+=== Forcing users to re-authenticate before updating email
+
+When the `UPDATE_EMAIL` required action is enabled, users may be required to re-authenticate before being able to update their email if their last authentication is older than the configured duration.
+This is a security measure to prevent account takeover in case the user credentials are not known by the attacker but the user session is hijacked.
+
+By default, the user will be asked to re-authenticate if the last authentication is older than 5 minutes (300 seconds). You
+can change this value by setting the `Maximum Age of Authentication` setting in the `UPDATE_EMAIL` required action configuration.
+By setting this value to `0`, the user will always be asked to re-authenticate before updating the email.
+
+=== Verifying Emails
+
+If the realm has email verification disabled, this action will allow to update the email without verification.
+
+If the realm has email verification enabled, the action will send an email with a link to the new email address without changing the account email.
+Only after following the link and confirming the email, the email will be updated.
+
+Under certain circumstances, you do not want to enable email verification at the realm level but only when users are updating their emails.
+For that, you can set the `Force Email Verification` setting on the `UPDATE_EMAIL` required action to force users to verify their emails
+even though email verification is eventually disabled at the realm level. By default, email verification is not enabled.
+
+In case the user is updating the email during the authentication flow (e.g.: when running the `UPDATE_PROFILE` required action),
+the user will be forced to verify the email if any of the `Verify Email` or the `Force Email Verification` settings are enabled.
+In case the `Verify Email` is enabled at the realm level, the `VERIFY_EMAIL` required action will be automatically added to the user account.
+Otherwise, if only the `Force Email Verification` is enabled the `UPDATE_EMAIL` required
+action will be added instead.
+
+If a user has `Email Verified` set, and both `Verify Email` and `Force Email Verification` are disabled, `Email Verified`
+resets after the user updates email.
+
+=== Updating the user email
+
+When the `UPDATE_EMAIL` required action is enabled, the user can update their emails by:
+
+* Self-registering to a realm if this capability is enabled to realm
+* Accessing the account console and clicking the `Update email` link when at the `Personal info` section
+* Updating the profile during the authentication flow (e.g.: when running the `UPDATE_PROFILE` required action) if the email is not yet set.
+If an existing user does have an email set when updating the profile during the authentication flow, the email attribute will not be available.
+* Administrators when updating the user account through the administration console
+
+=== Pending Email Verification
+
+When a user initiates an email update that requires verification, the new email address is stored in a pending state until the user clicks the verification link. If the user tries to log in again before clicking the verification link, they will see a message informing them that a verification email was sent to the new address, with options to resend the email or enter a different email address.
+
+Administrators can manage these pending verifications through the admin console. In the user details page, when a user has a pending email verification, a warning alert is displayed indicating the pending verification status. The alert shows which email address is awaiting confirmation and provides a link to cancel the verification process.
+
+Clicking this link opens a confirmation dialog that allows administrators to remove the pending verification or cancel the action.
+
+When confirmed, this action will:
+
+* Remove the pending email verification attribute
+* Invalidate the existing verification link  
+* Remove the `UPDATE_EMAIL` required action from the user
+
+=== Update Email and User Profile
+
+If the email attribute is set as required in the user profile configuration, the requirement is kept in the Update Email workflow,
+meaning a user won't be able to clear his/her email in update email page. The opposite is true, if the email attribute is set as optional
+in the user profile configuration.
+
+If the email attribute is set as read-only in the user profile configuration, the following behavior applies:
+
+* The `Update email` link will not be displayed in the account console
+* The `UPDATE_EMAIL` required action will be automatically skipped and removed from the user account
+* In the update profile page, if the user's email is initially empty, the email field will be hidden
+
+=== Message Customization
+
+All messages displayed in this workflow, including admin console messages, verification emails, and update email page messages, can be customized using the standard {project_name} message customization system.
+

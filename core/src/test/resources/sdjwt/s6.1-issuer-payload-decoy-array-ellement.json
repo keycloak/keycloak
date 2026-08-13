@@ -1,0 +1,19 @@
+{
+    "_sd": [
+        "cLaGEUHQDOcM0GyUsKtDLZFhKy59prqFdilqto_z-wI",
+        "dHEndXpEuP1u9UVDyZ_4SrShHU5UaAcr-plj7T6ht88",
+        "fF0-qMHsHyamOQ82bOGciYLSLtqhxHsxBDVfVRZfosM",
+        "sitC0MiJMDj2RPcuh4ZYERBrirwgf58iG3b1QV8G9TM"
+    ],
+    "_sd_alg": "sha-256",
+    "sub": "user_42",
+    "given_name": "John",
+    "family_name": "Doe",
+    "phone_number_verified": true,
+    "updated_at": 1570000000,
+    "nationalities": [
+      { "...": "mXYRA4kcMm9hHUX-dCc44jKpyrNiEtJo2IqLk5YzRik" },
+      { "...": "XkluhXNRk-Gmh8zBHo4Ad3drmukEbmm4CECMCefdG24" },
+      { "...": "7Cf6JkPudry3lcbwHgeZ8khAv1U1OSlerP0VkBJrWZ0" }
+    ]
+}

@@ -1,0 +1,22 @@
+// Module included in the following assemblies:
+//
+// server_admin/topics/users.adoc
+
+[id="proc_creating-otp_{context}"]
+= Creating an OTP
+
+[role="_abstract"]
+If OTP is conditional in your realm, the user must navigate to {project_name} Account Console to reconfigure a new OTP generator. If OTP is required, then the user must reconfigure a new OTP generator when logging in. 
+
+Alternatively, you can send an email to the user that requests the user reset the OTP generator. The following procedure also applies if the user already has an OTP credential. 
+
+.Prerequisite
+* You are logged in to the appropriate realm.
+
+.Procedure
+. Click *Users* in the main menu. The *Users* page is displayed.
+. Select a user.
+. Click the *Credentials* tab.
+. Click *Credential Reset*.
+. Set *Reset Actions* to *Configure OTP*. 
+. Click *Send Email*. The sent email contains a link that directs the user to the *OTP setup page*. 

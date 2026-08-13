@@ -1,0 +1,80 @@
+[[_oidc_token_role_mappings]]
+= Role mappings in the token
+
+When a user authenticates, there are some roles that are added to the access token. By default, the <<proc-creating-realm-roles_{context},Realm roles>> are added to the access
+token into the `realm_access` claim. The <<con-client-roles_{context},Client roles>> are added by default to the `resource_access` claim.
+
+The roles added to the token are an intersection of:
+
+* Roles, that are <<_oidc_token_role_mappings_user_roles,assigned to the user>>.
+
+* <<_role_scope_mappings,Role scope mappings>> of the roles that the client is permitted to access
+
+[[_oidc_token_role_mappings_user_roles]]
+== Roles assigned to the user
+
+Roles assigned to the user can be defined in the Role mappings as described in <<proc-assigning-role-mappings_{context},this section>>. Few details:
+
+* In case that a user is a member of some <<proc-managing-groups_{context},groups>>, then all the roles of these groups are also applied.
+
+* In case that a role is a <<_composite-roles,composite role>>, the child roles of the composite role are also applied. In the token, the list of the roles is expanded and would contain all the roles.
+
+* In case that the authenticated user is not a normal user, but a <<_service_accounts,Service account>>, which represents a client, then the service account roles are used. The service account roles are defined
+in the tab *Service account roles* of the particular client.
+
+== Role protocol mappers
+
+Similarly to other claims, the roles are added to the access token issued for the client by the dedicated <<_protocol-mappers,Protocol mappers>>. There is a <<_client_scopes_protocol,Built-in client scope *roles*>>
+defined in the realm. Since it is a <<proc_updating_client_scopes_{context},Realm default client scope>>, it is defined by default as a <<_client_scopes_linking,Default client scope>> for every realm client.
+You can see this client scope in the admin console by looking at the tab *Client scopes* and then looking for the *roles* client scope. This client scope contains these protocol mappers by default:
+
+* The protocol mapper *realm roles* - This protocol mapper is used to add the realm roles to the token claim. By default, the configuration looks like this:
+
+.Realm roles mapper
+image:images/mapper-oidc-realm-roles.png[]
+
+* The protocol mapper *client roles* - This protocol mapper is used to add the client roles to the token claim. By default, the configuration looks like this:
+
+.Client roles mapper
+image:images/mapper-oidc-client-roles.png[]
+
+* The protocol mapper *audience resolve* - This protocol mapper is used to fill the `aud` claim in the access token based on the applied client roles. The details about this mapper are in the <<_audience_resolve,Audience resolve section>>.
+
+As you can see in the configuration of realm roles and client roles mappers, it is possible to configure:
+
+* If roles are added just to the access token or also to other tokens, like for example the ID token. By default, roles are added to the access token and to the introspection endpoint.
+
+* What are the claims where the roles would be added. By default, the realm roles are added to the `realm_access` claim. So, for example, the claim in the JWT token containing 2 realm roles `role1` and `role2` will look similar to this:
++
+[source,json]
+----
+"realm_access": {
+  "roles": [ "role1", "role2" ]
+}
+----
++
+The client roles are added to the `resource_access` token claim by default. This claim will look like this in the token, which contains
+client roles `manage-account` and `manage-account-links` of client `account` and client role `target-client1-role` of the client `target-client1`:
++
+[source,json]
+----
+"resource_access": {
+  "target-client1": {
+    "roles": [ "target-client1-role" ]
+  },
+  "account": {
+    "roles": [ "manage-account", "manage-account-links" ]
+  }
+}
+----
+
+By adjusting the configuration option *Token claim name* of the role protocol mappers, it is possible to specify that these roles will be added to the token in the configured claim.
+
+If you want to update the role claims just for one specific client (For example, client `foo` expects the realm roles in the claim `my-realm-roles` instead of the claim `realm_access`), then it is
+possible to remove the default client scope *roles* from your client and instead configure the realm/client protocol mapper in the <<_client_scopes_dedicated,dedicated client scope>> of your client.
+
+== Example
+
+The <<_audience_resolve,Audience documentation>> contains a more detailed example, which covers some details about the role mappings and about the audience (Claim `aud`) added to the token. Also, it can be
+useful to try the <<_client_scopes_evaluate,Client scopes evaluation>> to see what are the effective scopes, protocol mappers and role scope mappings used when issuing the token for the particular client
+and how the JWT tokens would look like for the particular combination of user, client, and applied client scopes.

@@ -1,0 +1,22 @@
+name: Setup Java
+description: Sets up Java.
+
+inputs:
+  distribution:
+    description: Java distribution.
+    required: false
+    default: temurin
+  java-version:
+    description: The Java version that is going to be set up.
+    required: false
+    default: "25"
+
+runs:
+  using: composite
+  steps:
+    - id: setup-java
+      name: Setup Java
+      uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+      with:
+        distribution: ${{ inputs.distribution }}
+        java-version: ${{ inputs.java-version }}

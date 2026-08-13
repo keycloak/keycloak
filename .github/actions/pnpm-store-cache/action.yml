@@ -1,0 +1,23 @@
+name: Cache PNPM store
+description: Caches the PNPM store to speed up the build.
+
+runs:
+  using: composite
+  steps:
+    - id: weekly-cache-key
+      name: Key for weekly rotation of cache
+      shell: bash
+      run: echo "key=pnpm-store-`date -u "+%Y-%U"`" >> $GITHUB_OUTPUT
+
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      name: Cache PNPM store
+      with:
+        path: |
+          ~/.local/share/pnpm/store
+          ~/AppData/Local/pnpm/store
+          ~/Library/pnpm/store
+        key: ${{ runner.os }}-${{ steps.weekly-cache-key.outputs.key }}
+
+    - name: Set up Wireit GitHub Actions caching
+      uses: google/wireit@9d7c2e5346f8ef1b1ab6014c4e96c74e234f7ed5 # setup-github-actions-caching/v2
+      if: runner.os != 'Windows'

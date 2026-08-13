@@ -1,0 +1,10 @@
+
+== {project_name} API Documentation
+
+=== JavaDocs Documentation
+
+{apidocs_javadocs_link}[{apidocs_javadocs_name}]
+
+=== Admin REST API Documentation
+
+{apidocs_adminrest_link}[{apidocs_adminrest_name}]

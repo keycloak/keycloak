@@ -1,0 +1,16 @@
+= WildFly 16 Upgrade
+
+Keycloak server was upgraded to use WildFly 16 under the covers.
+
+== SmallRye Health and Metrics extensions
+
+Keycloak now comes enabled with the SmallRye Health and Metrics extensions which provides standard health and metrics
+endpoints. We will add some documentation as well as Keycloak specific metrics soon.
+
+= PS256 support
+
+Thanks to https://github.com/tnorimat[tnorimat] Keycloak now has support for signing and verifying tokens with PS256.
+
+= MP-JWT Client Scope
+
+New built-in client scope to make it easy to issue tokens following the Eclipse MicroProfile specification.

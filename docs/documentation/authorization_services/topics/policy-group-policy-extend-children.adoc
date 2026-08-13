@@ -1,0 +1,12 @@
+[[_policy_group_extend_access_children]]
+= Extending access to child groups
+
+By default, when you add a group to this policy, access restrictions will only apply to members of the selected group.
+
+Under some circumstances, it might be necessary to allow access not only to the group itself but to any child group in the hierarchy. For any group
+added you can mark a checkbox *Extend to Children* in order to extend access to child groups.
+
+.Extending access to child groups
+image:images/policy/create-group-extend-children.png[alt="Extending access to child groups"]
+
+In the example above, the policy is granting access for any user member of *IT* or any of its children.

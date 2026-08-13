@@ -1,0 +1,482 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.keycloak.testsuite.rest;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.CacheControl;
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.enums.HostnameVerificationPolicy;
+import org.keycloak.common.profile.PropertiesProfileConfigResolver;
+import org.keycloak.common.util.HtmlUtils;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.events.Event;
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.representations.idm.AdminEventRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.services.resource.RealmResourceProvider;
+import org.keycloak.testframework.remote.providers.runonserver.FetchOnServer;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
+import org.keycloak.testframework.remote.providers.runonserver.SerializationUtil;
+import org.keycloak.testsuite.components.amphibian.TestAmphibianProvider;
+import org.keycloak.testsuite.events.TestEventsListenerProvider;
+import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
+import org.keycloak.testsuite.util.FeatureDeployerUtil;
+import org.keycloak.timer.TimerProvider;
+import org.keycloak.truststore.FileTruststoreProvider;
+import org.keycloak.truststore.FileTruststoreProviderFactory;
+import org.keycloak.truststore.TruststoreProvider;
+import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.MediaType;
+
+import org.jboss.resteasy.reactive.NoCache;
+
+import static java.util.Objects.requireNonNull;
+
+
+/**
+ * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ */
+public class TestingResourceProvider implements RealmResourceProvider {
+
+    private final KeycloakSession session;
+    private final Map<String, TimerProvider.TimerTaskContext> suspendedTimerTasks;
+
+    private final HttpRequest request;
+
+    private final TestingResourceProviderFactory factory;
+
+    @Override
+    public Object getResource() {
+        return this;
+    }
+
+    public TestingResourceProvider(KeycloakSession session, TestingResourceProviderFactory factory, Map<String, TimerProvider.TimerTaskContext> suspendedTimerTasks) {
+        this.session = session;
+        this.factory = factory;
+        this.suspendedTimerTasks = suspendedTimerTasks;
+        this.request = session.getContext().getHttpRequest();
+    }
+
+    @POST
+    @Path("/set-testing-infinispan-time-service")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response setTestingInfinispanTimeService() {
+        InfinispanTestUtil.setTestingTimeService(session);
+        return Response.noContent().build();
+    }
+
+    @POST
+    @Path("/revert-testing-infinispan-time-service")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response revertTestingInfinispanTimeService() {
+        InfinispanTestUtil.revertTimeService(session);
+        return Response.noContent().build();
+    }
+
+    @POST
+    @Path("/poll-event-queue")
+    @Produces(MediaType.APPLICATION_JSON)
+    public EventRepresentation getEvent() {
+        Event event = TestEventsListenerProvider.poll();
+        if (event != null) {
+            return ModelToRepresentation.toRepresentation(event);
+        } else {
+            return null;
+        }
+    }
+
+    @POST
+    @Path("/poll-admin-event-queue")
+    @Produces(MediaType.APPLICATION_JSON)
+    public AdminEventRepresentation getAdminEvent() {
+        AdminEvent adminEvent = TestEventsListenerProvider.pollAdminEvent();
+        if (adminEvent != null) {
+            return ModelToRepresentation.toRepresentation(adminEvent);
+        } else {
+            return null;
+        }
+    }
+
+    @POST
+    @Path("/clear-event-queue")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearEventQueue() {
+        TestEventsListenerProvider.clear();
+        return Response.noContent().build();
+    }
+
+    @POST
+    @Path("/clear-admin-event-queue")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearAdminEventQueue() {
+        TestEventsListenerProvider.clearAdminEvents();
+        return Response.noContent().build();
+    }
+
+    @Override
+    public void close() {
+    }
+
+    @GET
+    @Path("/test-amphibian-component")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, Map<String, Object>> getTestAmphibianComponentDetails() {
+        RealmModel realm = session.getContext().getRealm();
+        return realm.getComponentsStream(realm.getId(), TestAmphibianProvider.class.getName())
+                .collect(Collectors.toMap(
+                        ComponentModel::getName,
+                        componentModel -> {
+                            TestAmphibianProvider t = session.getComponentProvider(TestAmphibianProvider.class, componentModel.getId());
+                            return t == null ? null : t.getDetails();
+                        }));
+    }
+
+    @PUT
+    @Path("/set-krb5-conf-file")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void setKrb5ConfFile(@QueryParam("krb5-conf-file") String krb5ConfFile) {
+        System.setProperty("java.security.krb5.conf", krb5ConfFile);
+    }
+
+    @POST
+    @Path("/run-on-server")
+    @Consumes(MediaType.TEXT_PLAIN_UTF_8)
+    @Produces(MediaType.TEXT_PLAIN_UTF_8)
+    public String runOnServer(String runOnServer) {
+        try {
+            Object r = SerializationUtil.decode(runOnServer, TestClassLoader.getInstance());
+
+            if (r instanceof FetchOnServer) {
+                Object result = ((FetchOnServer) r).run(session);
+                return result != null ? JsonSerialization.writeValueAsString(result) : null;
+            } else if (r instanceof RunOnServer) {
+                ((RunOnServer) r).run(session);
+                return null;
+            } else {
+                throw new IllegalArgumentException();
+            }
+        } catch (Throwable t) {
+            return SerializationUtil.encodeException(t);
+        }
+    }
+
+
+    @POST
+    @Path("/run-model-test-on-server")
+    @Consumes(MediaType.TEXT_PLAIN_UTF_8)
+    @Produces(MediaType.TEXT_PLAIN_UTF_8)
+    public String runModelTestOnServer(@QueryParam("testClassName") String testClassName,
+                                       @QueryParam("testMethodName") String testMethodName) {
+        try {
+            Class<?> testClass = TestClassLoader.getInstance().loadClass(testClassName);
+            Method testMethod = testClass.getDeclaredMethod(testMethodName, KeycloakSession.class);
+
+            Object test = testClass.getDeclaredConstructor().newInstance();
+            testMethod.invoke(test, session);
+
+            return "SUCCESS";
+        } catch (Throwable t) {
+            if (t instanceof InvocationTargetException) {
+                t = ((InvocationTargetException) t).getTargetException();
+            }
+
+            return SerializationUtil.encodeException(t);
+        }
+    }
+
+    private void setFeatureInProfileFile(File file, Profile.Feature featureProfile, String newState) {
+        doWithProperties(file, props -> props.setProperty(PropertiesProfileConfigResolver.getPropertyKey(featureProfile), newState));
+    }
+
+    private void unsetFeatureInProfileFile(File file, Profile.Feature featureProfile) {
+        doWithProperties(file, props -> props.remove(PropertiesProfileConfigResolver.getPropertyKey(featureProfile)));
+    }
+
+    private void doWithProperties(File file, Consumer<Properties> callback) {
+
+        Properties properties = new Properties();
+        if (file.isFile() && file.exists()) {
+            try (FileInputStream fis = new FileInputStream(file)) {
+                properties.load(fis);
+            } catch (IOException e) {
+                throw new RuntimeException("Unable to read profile.properties file");
+            }
+        }
+
+        callback.accept(properties);
+
+        if (file.isFile() && !file.getParentFile().exists()) {
+            file.getParentFile().mkdirs();
+        }
+
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            properties.store(fos, null);
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to write to profile.properties file");
+        }
+    }
+
+    @GET
+    @Path("/list-disabled-features")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Set<Profile.Feature> listDisabledFeatures() {
+        return Profile.getInstance().getDisabledFeatures();
+    }
+
+    @POST
+    @Path("/enable-feature/{feature}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Set<Profile.Feature> enableFeature(@PathParam("feature") String feature) {
+        return updateFeature(feature, true);
+    }
+
+    @POST
+    @Path("/disable-feature/{feature}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Set<Profile.Feature> disableFeature(@PathParam("feature") String feature) {
+        return updateFeature(feature, false);
+    }
+
+    @POST
+    @Path("/reset-feature/{feature}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void resetFeature(@PathParam("feature") String featureKey) {
+
+        featureKey = featureKey.contains(":") ? featureKey.split(":")[0] : featureKey;
+        Profile.Feature feature = Profile.getFeatureVersions(featureKey).iterator().next();
+
+        if (feature == null) {
+            System.err.printf("Feature '%s' doesn't exist!!\n", featureKey);
+            throw new BadRequestException();
+        }
+
+        FeatureDeployerUtil.initBeforeChangeFeature(feature);
+
+        String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
+        // If we are in jboss-based container, we need to write profile.properties file, otherwise the change in system property will disappear after restart
+        if (jbossServerConfigDir != null) {
+            File file = new File(jbossServerConfigDir, "profile.properties");
+            unsetFeatureInProfileFile(file, feature);
+        }
+    }
+
+    private Set<Profile.Feature> updateFeature(String featureKey, boolean shouldEnable) {
+        Collection<Profile.Feature> features = null;
+
+        if (featureKey.contains(":")) {
+            String unversionedKey = featureKey.split(":")[0];
+            int version = Integer.parseInt(featureKey.split(":")[1].replace("v", ""));
+
+            for (Feature versionedFeature : Profile.getFeatureVersions(unversionedKey)) {
+                if (versionedFeature.getVersion() == version) {
+                    features = Set.of(versionedFeature);
+                    break;
+                }
+            }
+        } else {
+            features = Profile.getFeatureVersions(featureKey);
+        }
+
+        if (features == null || features.isEmpty()) {
+            System.err.printf("Feature '%s' doesn't exist!!\n", featureKey);
+            throw new BadRequestException();
+        }
+
+        for (Feature feature : features) {
+            if (Profile.getInstance().getFeatures().get(feature) != shouldEnable) {
+                FeatureDeployerUtil.initBeforeChangeFeature(feature);
+
+                String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
+                // If we are in jboss-based container, we need to write profile.properties file, otherwise the change in system property will disappear after restart
+                if (jbossServerConfigDir != null) {
+                    setFeatureInProfileFile(new File(jbossServerConfigDir, "profile.properties"), feature, shouldEnable ? "enabled" : "disabled");
+                }
+
+                Profile current = Profile.getInstance();
+
+                Map<Feature, Boolean> updatedFeatures = new HashMap<>(current.getFeatures());
+                updatedFeatures.put(feature, shouldEnable);
+
+                Profile.init(current.getName(), updatedFeatures);
+
+                if (shouldEnable) {
+                    FeatureDeployerUtil.deployFactoriesAfterFeatureEnabled(feature);
+                } else {
+                    FeatureDeployerUtil.undeployFactoriesAfterFeatureDisabled(feature);
+                }
+            }
+        }
+
+        return Profile.getInstance().getDisabledFeatures();
+    }
+
+    /**
+     * This will send POST request to specified URL with specified form parameters. It's not easily possible to "trick" web driver to send POST
+     * request with custom parameters, which are not directly available in the form.
+     * <p>
+     * See URLUtils.sendPOSTWithWebDriver for more details
+     *
+     * @param postRequestUrl        Absolute URL. It can include query parameters etc. The POST request will be send to this URL
+     * @param encodedFormParameters Encoded parameters in the form of "param1=value1&param2=value2"
+     * @return
+     */
+    @GET
+    @Path("/simulate-post-request")
+    @Produces(MediaType.TEXT_HTML_UTF_8)
+    public Response simulatePostRequest(@QueryParam("postRequestUrl") String postRequestUrl,
+                                        @QueryParam("encodedFormParameters") String encodedFormParameters) {
+        Map<String, String> params = new HashMap<>();
+
+        // Parse parameters to use in the POST request
+        for (String param : encodedFormParameters.split("&")) {
+            String[] paramParts = param.split("=");
+            String value = paramParts.length == 2 ? paramParts[1] : "";
+            params.put(paramParts[0], value);
+        }
+
+        // Send the POST request "manually"
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("<HTML>");
+        builder.append("  <HEAD>");
+        builder.append("    <TITLE>OIDC Form_Post Response</TITLE>");
+        builder.append("  </HEAD>");
+        builder.append("  <BODY Onload=\"document.forms[0].submit()\">");
+
+        builder.append("    <FORM METHOD=\"POST\" ACTION=\"").append(postRequestUrl).append("\">");
+
+        for (Map.Entry<String, String> param : params.entrySet()) {
+            builder.append("  <INPUT TYPE=\"HIDDEN\" NAME=\"")
+                    .append(param.getKey())
+                    .append("\" VALUE=\"")
+                    .append(HtmlUtils.escapeAttribute(param.getValue()))
+                    .append("\" />");
+        }
+
+        builder.append("      <NOSCRIPT>");
+        builder.append("        <P>JavaScript is disabled. We strongly recommend to enable it. Click the button below to continue .</P>");
+        builder.append("        <INPUT name=\"continue\" TYPE=\"SUBMIT\" VALUE=\"CONTINUE\" />");
+        builder.append("      </NOSCRIPT>");
+        builder.append("    </FORM>");
+        builder.append("  </BODY>");
+        builder.append("</HTML>");
+
+        return Response.status(Response.Status.OK)
+                .type(jakarta.ws.rs.core.MediaType.TEXT_HTML_TYPE)
+                .entity(builder.toString()).build();
+
+    }
+
+    private RealmModel getRealmByName(String realmName) {
+        RealmProvider realmProvider = session.getProvider(RealmProvider.class);
+        RealmModel realm = realmProvider.getRealmByName(realmName);
+        if (realm == null) {
+            throw new NotFoundException("Realm not found");
+        }
+        return realm;
+    }
+
+    @GET
+    @Path("/disable-truststore-spi")
+    @NoCache
+    public void disableTruststoreSpi() {
+        FileTruststoreProviderFactory factory = (FileTruststoreProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(TruststoreProvider.class);
+        this.factory.truststoreProvider = factory.create(session);
+        factory.setProvider(null);
+    }
+
+    @GET
+    @Path("/modify-truststore-spi-hostname-policy")
+    @NoCache
+    public void modifyTruststoreSpiHostnamePolicy(@QueryParam("hostnamePolicy") final HostnameVerificationPolicy hostnamePolicy) {
+        FileTruststoreProviderFactory fact = (FileTruststoreProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(TruststoreProvider.class);
+        this.factory.truststoreProvider = fact.create(session);
+        FileTruststoreProvider origTrustProvider = (FileTruststoreProvider) this.factory.truststoreProvider;
+        TruststoreProvider newTrustProvider = new FileTruststoreProvider(
+                origTrustProvider.getTruststore(), hostnamePolicy,
+                Collections.unmodifiableMap(origTrustProvider.getRootCertificates()),
+                Collections.unmodifiableMap(origTrustProvider.getIntermediateCertificates()),
+                null, null, null);
+        fact.setProvider(newTrustProvider);
+    }
+
+    @GET
+    @Path("/reenable-truststore-spi")
+    @NoCache
+    public void reenableTruststoreSpi() {
+        if (this.factory.truststoreProvider == null) {
+            throw new IllegalStateException("Cannot reenable provider as it was not disabled");
+        }
+        FileTruststoreProviderFactory factory = (FileTruststoreProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(TruststoreProvider.class);
+        factory.setProvider(this.factory.truststoreProvider);
+    }
+
+    @GET
+    @Path("/no-cache-annotated-endpoint")
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public Response getNoCacheAnnotatedEndpointResponse(@QueryParam("programmatic_max_age_value") Integer programmaticMaxAgeValue) {
+        requireNonNull(programmaticMaxAgeValue);
+
+        CacheControl cacheControl = new CacheControl();
+        cacheControl.setMaxAge(programmaticMaxAgeValue);
+
+        return Response.noContent().cacheControl(cacheControl).build();
+    }
+
+    @GET
+    @Path("/blank")
+    @Produces(MediaType.TEXT_HTML_UTF_8)
+    public Response getBlankPage() {
+        return Response.ok("<html><body></body></html>").build();
+    }
+}

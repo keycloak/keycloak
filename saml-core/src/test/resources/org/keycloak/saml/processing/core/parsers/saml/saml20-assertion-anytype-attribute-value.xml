@@ -1,0 +1,25 @@
+<saml2:Assertion ID="_2fca2bd7a8a8d472d2d35a0d0d75f896" IssueInstant="2017-02-01T15:46:55.938Z" Version="2.0" xmlns:saml2="urn:oasis:names:tc:SAML:2.0:assertion" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <saml2:Issuer Format="urn:oasis:names:tc:SAML:2.0:nameid-format:entity">issuer</saml2:Issuer>
+    <saml2:AttributeStatement>
+        <saml2:Attribute Name="attr:type:string" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+            <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">CITIZEN</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="attr:notype:string" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+            <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">CITIZEN</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute Name="attr:notype:element" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+            <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                <ns4:Name xml:lang="nl" xmlns="urn:be:fgov:ehealth:aa:complextype:v1" xmlns:ns4="urn:be:fgov:ehealth:aa:complextype:v1">hospitaal x</ns4:Name>
+            </saml2:AttributeValue>
+            <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                <ns4:Name xml:lang="fr" xmlns="urn:be:fgov:ehealth:aa:complextype:v1" xmlns:ns4="urn:be:fgov:ehealth:aa:complextype:v1">hopital x</ns4:Name>
+            </saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute FriendlyName="Organisation Founded" Name="founded" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic">
+            <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:date">2002-05-30T09:30:10-06:00</saml2:AttributeValue>
+        </saml2:Attribute>
+        <saml2:Attribute FriendlyName="Organisation Expanded" Name="expanded" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic">
+            <saml2:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:date">2002-06-30</saml2:AttributeValue>
+        </saml2:Attribute>
+    </saml2:AttributeStatement>
+</saml2:Assertion>

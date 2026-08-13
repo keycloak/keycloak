@@ -1,0 +1,302 @@
+<?xml version="1.0"?>
+<!--
+~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+~ and other contributors as indicated by the @author tags.
+~
+~ Licensed under the Apache License, Version 2.0 (the "License");
+~ you may not use this file except in compliance with the License.
+~ You may obtain a copy of the License at
+~
+~ http://www.apache.org/licenses/LICENSE-2.0
+~
+~ Unless required by applicable law or agreed to in writing, software
+~ distributed under the License is distributed on an "AS IS" BASIS,
+~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~ See the License for the specific language governing permissions and
+~ limitations under the License.
+-->
+
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.keycloak.testsuite</groupId>
+        <artifactId>integration-arquillian-servers-cache-server</artifactId>
+        <version>999.0.0-SNAPSHOT</version>
+    </parent>
+
+    <packaging>pom</packaging>
+    <artifactId>integration-arquillian-servers-cache-server-infinispan</artifactId>
+    <name>Keycloak Arquillian Integration TestSuite - Cache Server - Infinispan</name>
+
+    <properties>
+        <common.resources>${project.parent.basedir}/common</common.resources>
+        <assembly.xml>${project.parent.basedir}/assembly.xml</assembly.xml>
+        
+        <cache.server.infinispan.home>${containers.home}/${cache.server.infinispan.unpacked.folder.name}</cache.server.infinispan.home>
+        <cache.server.infinispan.jdg-transactions-enabled>true</cache.server.infinispan.jdg-transactions-enabled>
+        <cache.server.infinispan.config.dir>${cache.server.infinispan.home}/server/conf</cache.server.infinispan.config.dir>
+        
+        <cache.server.cache-auth-xsl>cache-authentication-disabled.xsl</cache.server.cache-auth-xsl>
+    </properties>
+
+    <profiles>
+        
+        <profile>
+            <id>cache-auth</id>
+            <properties>
+                <cache.server.cache-auth-xsl>cache-authentication-enabled.xsl</cache.server.cache-auth-xsl>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>cache-server-infinispan-submodules</id>
+            <activation>
+                <file>
+                    <exists>src</exists>
+                </file>
+            </activation>
+            <build>
+                <plugins>
+
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>cache.server.infinispan.groupId</property>
+                                            <property>cache.server.infinispan.artifactId</property>
+                                            <property>cache.server.infinispan.version</property>
+                                            <property>cache.server.infinispan.unpacked.folder.name</property>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>xml-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>configure-keycloak-caches</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>transform</goal>
+                                </goals>
+                                <configuration>
+                                    <transformationSets>
+
+                                        <!-- Configure dc-0 site in file clustered-1.xml -->
+                                        <transformationSet>
+                                            <dir>${cache.server.infinispan.config.dir}</dir>
+                                            <includes>
+                                                <include>infinispan-xsite.xml</include>
+                                            </includes>
+                                            <stylesheet>${common.resources}/add-keycloak-caches.xsl</stylesheet>
+                                            <parameters>
+                                                <parameter>
+                                                    <name>local.site</name>
+                                                    <value>dc-0</value>
+                                                </parameter>
+                                                <parameter>
+                                                    <name>remote.site</name>
+                                                    <value>dc-1</value>
+                                                </parameter>
+                                                <parameter>
+                                                    <name>transactions.enabled</name>
+                                                    <value>${cache.server.infinispan.jdg-transactions-enabled}</value>
+                                                </parameter>
+                                            </parameters>
+                                            <outputDir>${cache.server.infinispan.config.dir}</outputDir>
+                                            <fileMappers>
+                                                <fileMapper implementation="org.codehaus.plexus.components.io.filemappers.RegExpFileMapper">
+                                                    <pattern>^(.*)\.xml$</pattern>
+                                                    <replacement>$1-1.xml</replacement>
+                                                </fileMapper>
+                                            </fileMappers>
+                                        </transformationSet>
+
+                                        <!-- Configure dc-1 site in file clustered-2.xml -->
+                                        <transformationSet>
+                                            <dir>${cache.server.infinispan.config.dir}</dir>
+                                            <includes>
+                                                <include>infinispan-xsite.xml</include>
+                                            </includes>
+                                            <stylesheet>${common.resources}/add-keycloak-caches.xsl</stylesheet>
+                                            <parameters>
+                                                <parameter>
+                                                    <name>local.site</name>
+                                                    <value>dc-1</value>
+                                                </parameter>
+                                                <parameter>
+                                                    <name>remote.site</name>
+                                                    <value>dc-0</value>
+                                                </parameter>
+                                                <parameter>
+                                                    <name>transactions.enabled</name>
+                                                    <value>${cache.server.infinispan.jdg-transactions-enabled}</value>
+                                                </parameter>
+                                            </parameters>
+                                            <outputDir>${cache.server.infinispan.config.dir}</outputDir>
+                                            <fileMappers>
+                                                <fileMapper implementation="org.codehaus.plexus.components.io.filemappers.RegExpFileMapper">
+                                                    <pattern>^(.*)\.xml$</pattern>
+                                                    <replacement>$1-2.xml</replacement>
+                                                </fileMapper>
+                                            </fileMappers>
+                                        </transformationSet>
+
+                                    </transformationSets>
+                                </configuration>
+                            </execution>
+
+                            <execution>
+                                <id>configure-keycloak-authorization</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>transform</goal>
+                                </goals>
+                                <configuration>
+                                    <transformationSets>
+                                        <!-- Configure authorization in files clustered-__dc__.xml -->
+                                        <transformationSet>
+                                            <dir>${cache.server.infinispan.config.dir}</dir>
+                                            <includes>
+                                                <include>infinispan-xsite-1.xml</include>
+                                                <include>infinispan-xsite-2.xml</include>
+                                            </includes>
+                                            <stylesheet>${common.resources}/${cache.server.cache-auth-xsl}</stylesheet>
+                                            <parameters>
+                                                <parameter>
+                                                    <name>hotrod.sasl.mechanism</name>
+                                                    <value>${hotrod.sasl.mechanism}</value>
+                                                </parameter>
+                                            </parameters>
+                                            <outputDir>${cache.server.infinispan.config.dir}</outputDir>
+                                        </transformationSet>
+                                    </transformationSets>
+                                </configuration>
+                            </execution>
+                            
+                        </executions>
+                    </plugin>
+                    
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-server-keystore</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${cache.server.infinispan.config.dir}</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${common.resources}</directory>
+                                            <includes>
+                                                <include>server.jks</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                    <overwrite>true</overwrite>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    
+                    
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>remove-empty-xmlns</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <replace file="${cache.server.infinispan.config.dir}/infinispan-xsite-1.xml" token="xmlns=&quot;&quot;" value=""/>
+                                        <replace file="${cache.server.infinispan.config.dir}/infinispan-xsite-2.xml" token="xmlns=&quot;&quot;" value=""/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.0.0</version>
+                        <executions>
+                            <execution>
+                                <id>create-infinispan-user</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>${cache.server.infinispan.home}/bin/cli.sh</executable>
+                                    <workingDirectory>${cache.server.infinispan.home}/bin</workingDirectory>
+                                    <arguments>
+                                        <argument>user</argument>
+                                        <argument>create</argument>
+                                        <argument>myuser</argument>
+                                        <argument>-p</argument>
+                                        <argument>"qwer1234!"</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    
+                    <plugin>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>create-zip</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <configuration>
+                                    <descriptors>
+                                        <descriptor>${assembly.xml}</descriptor>
+                                    </descriptors>
+                                    <appendAssemblyId>false</appendAssemblyId>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    
+                </plugins>
+            </build>
+        </profile>
+        
+        <profile>
+            <id>cache-server-infinispan</id>
+            <modules>
+                <module>infinispan</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>cache-server-datagrid</id>
+            <modules>
+                <module>datagrid</module>
+            </modules>
+        </profile>
+        
+    </profiles>
+
+</project>

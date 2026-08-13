@@ -1,0 +1,381 @@
+<!--
+~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+~ and other contributors as indicated by the @author tags.
+~
+~ Licensed under the Apache License, Version 2.0 (the "License");
+~ you may not use this file except in compliance with the License.
+~ You may obtain a copy of the License at
+~
+~ http://www.apache.org/licenses/LICENSE-2.0
+~
+~ Unless required by applicable law or agreed to in writing, software
+~ distributed under the License is distributed on an "AS IS" BASIS,
+~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~ See the License for the specific language governing permissions and
+~ limitations under the License.
+-->
+
+<arquillian xmlns="http://jboss.org/schema/arquillian"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://jboss.org/schema/arquillian
+        http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+
+    <extension qualifier="webdriver">
+        <property name="browser">${browser}</property>
+        <property name="downloadBinaries">${webdriverDownloadBinaries}</property>
+        <property name="githubUsername">${github.username}</property>
+        <property name="githubToken">${github.secretToken}</property>
+
+        <!-- htmlunit -->
+        <property name="htmlUnit.version">${htmlUnitBrowserVersion}</property>
+        <property name="htmlUnitWebClientOptions">cssEnabled=false;historyPageCacheLimit=1</property>
+
+        <!-- firefox -->
+        <property name="firefoxBinary">${firefox_binary}</property>
+        <property name="firefoxLogLevel">OFF</property>
+        <property name="firefoxLegacy">${firefoxLegacyDriver}</property>
+        <property name="firefoxDriverVersion">${firefoxDriverVersion}</property>
+        <property name="firefoxUserPreferences">${firefoxUserPreferences}</property>
+        <property name="firefoxArguments">${firefoxArguments}</property>
+
+        <!-- chrome -->
+        <property name="chromeBinary">${chromeBinary}</property>
+        <property name="chromeArguments">${chromeArguments}</property>
+        <property name="chromeDriverVersion">${chromeDriverVersion}</property>
+    </extension>
+
+    <extension qualifier="drone">
+       <property name="instantiationTimeoutInSeconds">${droneInstantiationTimeoutInSeconds}</property>
+    </extension>
+    
+    <extension qualifier="graphene">
+        <property name="waitGuiInterval">5</property>
+        <property name="waitAjaxInterval">5</property>
+        <property name="waitModelInterval">10</property>
+        <property name="waitGuardInterval">5</property>
+    </extension>
+
+    <extension qualifier="webdriver-javascriptbrowser">
+        <property name="browser">${js.browser}</property>
+        <property name="downloadBinaries">${webdriverDownloadBinaries}</property>
+        <property name="githubUsername">${github.username}</property>
+        <property name="githubToken">${github.secretToken}</property>
+        <property name="ieDriverArch">${ieDriverArch}</property>
+        <property name="ieDriverVersion">${ieDriverVersion}</property>
+
+        <!-- htmlunit -->
+        <property name="htmlUnit.version">${htmlUnitBrowserVersion}</property>
+        <property name="htmlUnitWebClientOptions">cssEnabled=false;historyPageCacheLimit=1</property>
+
+        <!-- firefox -->
+        <property name="firefoxBinary">${firefox_binary}</property>
+        <property name="firefoxLogLevel">OFF</property>
+        <property name="firefoxLegacy">${firefoxLegacyDriver}</property>
+        <property name="firefoxDriverVersion">${firefoxDriverVersion}</property>
+        <property name="firefoxUserPreferences">${firefoxUserPreferences}</property>
+        <property name="firefoxArguments">${firefoxArguments}</property>
+
+        <!-- chrome -->
+        <property name="chromeBinary">${chromeBinary}</property>
+        <property name="chromeArguments">${js.chromeArguments}</property>
+        <property name="chromeDriverVersion">${chromeDriverVersion}</property>
+    </extension>
+
+    <extension qualifier="webdriver-htmlunitbrowser">
+        <property name="browser">htmlunit</property>
+        <property name="htmlUnit.version">${htmlUnitBrowserVersion}</property>
+        <property name="htmlUnitWebClientOptions">cssEnabled=false;historyPageCacheLimit=1</property>
+    </extension>
+
+    <extension qualifier="graphene-secondbrowser">
+        <property name="browser">${browser}</property>
+        <property name="firefoxBinary">${firefox_binary}</property>
+    </extension>
+
+    <engine>
+        <!-- This allows manual inspection of deployed archives. -->
+        <property name="deploymentExportPath">target/deployments</property>
+    </engine>
+
+    <container qualifier="auth-server-undertow" mode="manual" default="true">
+        <configuration>
+            <property name="enabled">${auth.server.undertow} &amp;&amp; ! ${auth.server.crossdc}</property>
+            <property name="bindAddress">0.0.0.0</property>
+            <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
+            <property name="bindHttpPort">${auth.server.http.port}</property>
+            <property name="bindHttpsPort">${auth.server.https.port}</property>
+            <property name="remoteMode">${undertow.remote}</property>
+        </configuration>
+    </container>
+
+    <container qualifier="auth-server-${auth.server}" mode="manual" default="true">
+        <configuration>
+            <property name="enabled">${auth.server.jboss} &amp;&amp; ! ${auth.server.crossdc}</property>
+            <property name="adapterImplClass">${auth.server.adapter.impl.class}</property>
+            <property name="jbossHome">${auth.server.home}</property>
+            <property name="${auth.server.config.property.name}">${auth.server.config.property.value}</property>
+            <!-- This is required for domain mode -->
+            <property name="allowConnectingToRunningServer">true</property>
+            <property name="jbossArguments">
+                -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
+                -Djboss.socket.binding.port-offset=${auth.server.port.offset}
+                -Djboss.bind.address=0.0.0.0
+                -Dauth.server.host=${auth.server.host}
+                -Dauth.server.host2=${auth.server.host2}
+                -Dauth.server.ssl.required=${auth.server.ssl.required}
+                -Dauth.server.http.port=${auth.server.http.port}
+                -Dauth.server.https.port=${auth.server.https.port}
+                -Dkeycloak.password.blacklists.path=${keycloak.password.blacklists.path}
+                ${adapter.test.props}
+                ${auth.server.profile}
+                ${auth.server.feature}
+                ${kie.maven.settings}
+                -Dauth.server.truststore=${auth.server.truststore}
+                -Dauth.server.truststore.password=${auth.server.truststore.password}
+                -Dauth.server.db.host=${auth.server.db.host}
+            </property>
+            <property name="javaVmArguments">
+                ${auth.server.jboss.jvm.debug.args}
+                ${auth.server.memory.settings}
+                -Djava.net.preferIPv4Stack=true
+                ${auth.server.jvm.args.extra}
+            </property>
+            <property name="managementPort">${auth.server.management.port}</property>
+            <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
+            <property name="javaHome">${auth.server.java.home}</property>
+        </configuration>
+    </container>
+
+    <group qualifier="auth-server-${auth.server}-cluster">
+        <container qualifier="auth-server-${auth.server}-backend1" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.jboss.cluster}</property>
+                <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
+                <property name="jbossHome">${auth.server.backend1.home}</property>
+                <property name="serverConfig">standalone-ha.xml</property>
+                <property name="jbossArguments">
+                    -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
+                    -Djboss.socket.binding.port-offset=${auth.server.backend1.port.offset}
+                    -Djboss.node.name=node1
+                    ${adapter.test.props}
+                    ${auth.server.profile}
+                    -Dauth.server.truststore=${auth.server.truststore}
+                    -Dauth.server.truststore.password=${auth.server.truststore.password}
+                    -Dauth.server.db.host=${auth.server.db.host}
+                </property>
+                <property name="javaVmArguments">
+                    ${auth.server.backend1.jvm.debug.args}
+                    ${auth.server.memory.settings}
+                    -Djava.net.preferIPv4Stack=true
+                    ${auth.server.jvm.args.extra}
+                </property>
+                <property name="outputToConsole">${backends.console.output}</property>
+                <property name="managementPort">${auth.server.backend1.management.port}</property>
+                <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
+                <property name="bindHttpPortOffset">${auth.server.backend1.port.offset}</property>
+            </configuration>
+        </container>
+        <container qualifier="auth-server-${auth.server}-backend2" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.jboss.cluster}</property>
+                <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
+                <property name="jbossHome">${auth.server.backend2.home}</property>
+                <property name="serverConfig">standalone-ha.xml</property>
+                <property name="jbossArguments">
+                    -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
+                    -Djboss.socket.binding.port-offset=${auth.server.backend2.port.offset} 
+                    -Djboss.node.name=node2
+                    ${adapter.test.props}
+                    ${auth.server.profile}
+                    -Dauth.server.truststore=${auth.server.truststore}
+                    -Dauth.server.truststore.password=${auth.server.truststore.password}
+                    -Dauth.server.db.host=${auth.server.db.host}
+                </property>
+                <property name="javaVmArguments">
+                    ${auth.server.backend2.jvm.debug.args}
+                    ${auth.server.memory.settings}
+                    -Djava.net.preferIPv4Stack=true
+                    ${auth.server.jvm.args.extra}
+                </property>
+                <property name="outputToConsole">${backends.console.output}</property>
+                <property name="managementPort">${auth.server.backend2.management.port}</property>
+                <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
+                <property name="bindHttpPortOffset">${auth.server.backend2.port.offset}</property>
+            </configuration>
+        </container>
+        <container qualifier="auth-server-legacy" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.jboss.legacy}</property>
+                <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
+                <property name="jbossHome">${auth.server.legacy.home}</property>
+                <property name="serverConfig">standalone-ha.xml</property>
+                <property name="jbossArguments">
+                    -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
+                    -Djboss.socket.binding.port-offset=${auth.server.legacy.port.offset} 
+                    -Djboss.node.name=legacy
+                    -Dauth.server.truststore=${auth.server.truststore}
+                    -Dauth.server.truststore.password=${auth.server.truststore.password}
+                    -Dauth.server.db.host=${auth.server.db.host}
+                </property>
+                <property name="javaVmArguments">
+                    ${auth.server.legacy.jvm.debug.args}
+                    ${auth.server.memory.settings}
+                    -Djava.net.preferIPv4Stack=true
+                    ${auth.server.jvm.args.extra}
+                </property>
+                <property name="outputToConsole">true</property>
+                <property name="managementPort">${auth.server.legacy.management.port}</property>
+                <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
+                <property name="bindHttpPortOffset">${auth.server.legacy.port.offset}</property>
+            </configuration>
+        </container>
+    </group>
+
+    <!-- Clustering with embedded undertow -->
+    <group qualifier="auth-server-undertow-cluster">
+        <container qualifier="auth-server-undertow-backend1" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.undertow.cluster}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="bindHttpsPort">${auth.server.https.port}</property>
+                <property name="bindHttpPortOffset">1</property>
+                <property name="bindHttpsPortOffset">1</property>
+                <property name="route">node1</property>
+                <property name="remoteMode">${undertow.remote}</property>
+                <property name="keycloakConfigPropertyOverrides">{
+                    "keycloak.cacheEmbedded.nodeName": "node1"
+                    }
+                </property>
+            </configuration>
+        </container>
+        <container qualifier="auth-server-undertow-backend2" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.undertow.cluster}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow</property>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="bindHttpsPort">${auth.server.https.port}</property>
+                <property name="bindHttpPortOffset">2</property>
+                <property name="bindHttpsPortOffset">2</property>
+                <property name="route">node2</property>
+                <property name="remoteMode">${undertow.remote}</property>
+                <property name="keycloakConfigPropertyOverrides">{
+                    "keycloak.cacheEmbedded.nodeName": "node2"
+                    }
+                </property>
+            </configuration>
+        </container>
+
+        <container qualifier="auth-server-balancer-undertow" mode="suite" >
+            <configuration>
+                <property name="enabled">${auth.server.cluster}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.undertow.lb.SimpleUndertowLoadBalancerContainer</property>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="bindHttpsPort">${auth.server.https.port}</property>
+                <property name="nodes">node1=http://localhost:8181,node2=http://localhost:8182</property>
+            </configuration>
+        </container>
+    </group>
+
+    <container qualifier="auth-server-quarkus" mode="manual" >
+        <configuration>
+            <property name="enabled">${auth.server.quarkus}</property>
+            <property name="adapterImplClass">
+                org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer
+            </property>
+            <property name="bindHttpPortOffset">${auth.server.port.offset}</property>
+            <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m
+                -Dauth.server.db.host=some -Djava.net.preferIPv6Addresses=${auth.server.ipv6}
+            </property>
+            <property name="enabledFeatures">${auth.server.feature}</property>
+            <property name="disabledFeatures">${auth.server.feature.disable}</property>
+        </configuration>
+    </container>
+
+    <container qualifier="auth-server-quarkus-embedded" mode="manual" >
+        <configuration>
+            <property name="enabled">${auth.server.quarkus.embedded}</property>
+            <property name="adapterImplClass">
+                org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusEmbeddedDeployableContainer
+            </property>
+            <property name="bindHttpPortOffset">${auth.server.port.offset}</property>
+            <property name="enabledFeatures">${auth.server.feature}</property>
+            <property name="disabledFeatures">${auth.server.feature.disable}</property>
+        </configuration>
+    </container>
+
+    <!-- Clustering with Quarkus -->
+    <group qualifier="auth-server-quarkus-cluster">
+        <container qualifier="auth-server-quarkus-backend1" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.quarkus.cluster}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer</property>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="bindHttpsPort">${auth.server.https.port}</property>
+                <property name="bindHttpPortOffset">1</property>
+                <property name="bindHttpsPortOffset">1</property>
+                <property name="route">node1</property>
+                <property name="remoteMode">${quarkus.remote}</property>
+                <property name="profile">ha</property>
+                <property name="debugPort">5005</property>
+                <property name="keycloakConfigPropertyOverrides">{
+                    "keycloak.cacheEmbedded.nodeName": "node1"
+                    }
+                </property>
+                <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m</property>
+                <property name="outputToConsole">true</property>
+                <property name="enabledFeatures">${auth.server.feature}</property>
+                <property name="disabledFeatures">${auth.server.feature.disable}</property>
+            </configuration>
+        </container>
+        <container qualifier="auth-server-quarkus-backend2" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.quarkus.cluster}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer</property>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="bindHttpsPort">${auth.server.https.port}</property>
+                <property name="bindHttpPortOffset">2</property>
+                <property name="bindHttpsPortOffset">2</property>
+                <property name="managementPort">9001</property>
+                <property name="route">node2</property>
+                <property name="remoteMode">${quarkus.remote}</property>
+                <property name="profile">ha</property>
+                <property name="debugPort">5006</property>
+                <property name="keycloakConfigPropertyOverrides">{
+                    "keycloak.cacheEmbedded.nodeName": "node2"
+                    }
+                </property>
+                <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m</property>
+                <property name="outputToConsole">true</property>
+                <property name="enabledFeatures">${auth.server.feature}</property>
+                <property name="disabledFeatures">${auth.server.feature.disable}</property>
+            </configuration>
+        </container>
+    </group>
+
+    <!-- PREVIOUS VERSION OF KEYCLOAK FOR MIGRATION TESTS -->
+
+    <container qualifier="auth-server-migration" mode="manual">
+        <configuration>
+            <property name="enabled">${auth.server.migration}</property>
+            <property name="adapterImplClass">org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer</property>
+            <property name="bindHttpPortOffset">${auth.server.port.offset}</property>
+            <property name="importFile">${migration.import.file.name}</property>
+            <property name="providersPathString">${keycloak.migration.home}</property>
+            <property name="javaOpts">
+                -Xms512m
+                -Xmx512m
+                -XX:MetaspaceSize=96M
+                -XX:MaxMetaspaceSize=512m
+                ${auth.server.memory.settings}
+                -Dauth.server.db.host=${auth.server.db.host}
+            </property>
+        </configuration>
+    </container>
+
+</arquillian>

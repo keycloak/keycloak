@@ -1,0 +1,26 @@
+<project>
+
+    <target name="config">
+        <bin-chmod/>
+        <echo>Re-augmenting...</echo>
+        <exec osfamily="unix" dir="${auth.server.home}/bin" executable="./kc.sh" failonerror="true">
+            <arg value="build"/>
+            <arg value="--http-relative-path=/auth"/>
+        </exec>
+        <exec osfamily="windows" executable="${auth.server.home}/bin/kc.bat" failonerror="true">
+            <arg value="build"/>
+            <arg value="--http-relative-path=/auth"/>
+        </exec>
+    </target>
+
+    <macrodef name="bin-chmod">
+        <sequential>
+            <chmod perm="ug+x">
+                <fileset dir="${auth.server.home}/bin">
+                    <include name="*.sh"/>
+                </fileset>
+            </chmod>
+        </sequential>
+    </macrodef>
+
+</project>

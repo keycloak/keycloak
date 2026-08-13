@@ -1,0 +1,42 @@
+[[_service_user_managed_access]]
+= User-managed access
+
+{project_name} Authorization Services is based on User-Managed Access or UMA for short. UMA is a specification that
+enhances OAuth2 capabilities in the following ways:
+
+* *Privacy*
++
+Nowadays, user privacy is becoming a huge concern, as more and more data and devices are available and connected to the cloud. With
+UMA and {project_name}, resource servers can enhance their capabilities in order to improve how their resources are protected in respect
+to user privacy where permissions are granted based on policies defined by the user.
++
+* *Party-to-Party Authorization*
++
+Resource owners (e.g.: regular end-users) can manage access to their resources and authorize other parties (e.g: regular end-users)
+to access these resources. This is different from OAuth2 where consent is given to a client application acting on behalf of a user, with UMA
+resource owners are allowed to consent access to other users, in a completely asynchronous manner.
++
+* *Resource Sharing*
++
+Resource owners are allowed to manage permissions to their resources and decide who can access a particular resource and how.
+{project_name} can then act as a sharing management service from which resource owners can manage their resources.
+
+{project_name} is a UMA 2.0 compliant authorization server that provides most UMA capabilities.
+
+As an example, consider a user Alice (resource owner) using an Internet Banking Service (resource server) to manage her Bank Account (resource). One day, Alice decides
+to open her bank account to Bob (requesting party), an accounting professional. However, Bob should only have access to view (scope) Alice's account.
+
+As a resource server, the Internet Banking Service must be able to protect Alice's Bank Account. For that, it relies on {project_name}
+Resource Registration Endpoint to create a resource in the server representing Alice's Bank Account.
+
+At this moment, if Bob tries to access Alice's Bank Account, access will be denied. The Internet Banking Service defines a few default
+policies for banking accounts. One of them is that only the owner, in this case Alice, is allowed to access her bank account.
+
+However, Internet Banking Service in respect to Alice's privacy also allows her to change specific policies for the banking account. One of these
+policies that she can change is to define which people are allowed to view her bank account. For that, Internet Banking Service relies on {project_name}
+to provide to Alice a space where she can select individuals and the operations (or data) they are allowed to access. At any time, Alice
+can revoke access or grant additional permissions to Bob.
+
+
+
+

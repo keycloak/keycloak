@@ -1,0 +1,10 @@
+
+=== CSRF attacks
+
+A Cross-site request forgery (CSRF) attack uses HTTP requests from users that websites have already authenticated. Any site using cookie-based authentication is vulnerable to CSRF attacks. You can mitigate these attacks by matching a state cookie against a posted form or query parameter.
+
+The OAuth 2.0 login specification requires that a state cookie matches against a transmitted state parameter. {project_name} fully implements this part of the specification, so all logins are protected.
+
+The {project_name} Admin Console is a JavaScript/HTML5 application that makes REST calls to the backend {project_name} admin REST API. These calls all require bearer token authentication and consist of JavaScript Ajax calls, so CSRF is impossible. You can configure the admin REST API to validate the CORS origins.
+
+The Account Console in {project_name} can be vulnerable to CSRF. To prevent CSRF attacks, {project_name} sets a state cookie and embeds the value of this cookie in hidden form fields or query parameters within action links. {project_name} checks the query/form parameter against the state cookie to verify that the same user made the call.

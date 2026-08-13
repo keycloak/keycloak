@@ -1,0 +1,44 @@
+= Highlights
+
+== Identity Brokering Sync Mode
+
+With Identity Brokering Sync Mode it is now possible to control if user profiles are updated on first login, or
+every login from an external Identity Provider. It is also possible to override this behaviour on individual mappers.
+
+Thanks to https://github.com/Martin-Idel-SI[Martin Idel]
+
+
+== Client Session Timeout for OpenID Connect / OAuth 2.0
+
+Typically, an SSO session last for days if not months, while individual client sessions should ideally be a lot shorter.
+With the introduction of client session timeout it is now possible to configure a separate timeout for individual clients,
+as well as a default for all clients within a realm.
+
+Thanks to https://github.com/y-tabata[Yoshiyuki Tabata]
+
+
+== OAuth 2.0 Token Revocation (RFC 7009)
+
+For applications that use Keycloak as an OAuth 2.0 Authorization Server there is now support to revoke refresh tokens
+through the token revocation endpoint.
+
+Thanks to https://github.com/y-tabata[Yoshiyuki Tabata]
+
+
+== Security Headers SPI and Response Filter
+
+A new SPI was introduced to allow better flexibility when setting security related headers on responses. This provides
+a cleaner implementation within Keycloak, but also allows full customisation if needed. Security headers are now set
+by a response filter instead of within the code itself, which makes it less error-prone, removing the chance that
+some response are missing headers.
+
+
+== Upgrade to WildFly 19
+
+Keycloak server was upgraded to use WildFly 19 under the covers.
+
+
+== Other improvements
+
+* Support for invoking Application Initiated Actions added to Keycloak JavaScript adapter
+* Performance improvements to fetching resources and policies during evaluation

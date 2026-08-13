@@ -1,0 +1,2 @@
+NOTE: When histograms are enabled, the percentile buckets are available.
+Those are useful to create heat maps and analyze latencies, still collecting and exposing the percentile buckets will increase the load of to your monitoring system.

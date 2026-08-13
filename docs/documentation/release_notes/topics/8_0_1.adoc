@@ -1,0 +1,10 @@
+= Highlights
+
+== LDAP Issue
+
+This release fixes a critical vulnerability in LDAP introduced in Keycloak 7. If you are using Keycloak 7.0.0, 7.0.1 or
+8.0.0 in production we strongly suggest that you upgrade immediately.
+
+== WildFly 18.0.1.Final
+
+Upgrade to WildFly 18.0.1.Final which includes updates to a number of CVEs in third-party libraries.

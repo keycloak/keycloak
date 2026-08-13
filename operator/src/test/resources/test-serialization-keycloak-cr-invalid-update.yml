@@ -1,0 +1,9 @@
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: test-serialization-kc
+spec:
+  instances: 3
+  image: my-image
+  update:
+    strategy: abc

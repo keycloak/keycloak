@@ -1,0 +1,6 @@
+DeployedScriptAuthenticatorTest
+KcOidcBrokerTest
+KerberosLdapTest
+LDAPUserLoginTest
+X509BrowserLoginTest
+ThemeResourceProviderTest

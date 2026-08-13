@@ -1,0 +1,38 @@
+
+=== Administering sessions
+
+To see a top-level view of the active clients and sessions in {project_name}, click *Sessions* from the menu.
+
+.Sessions
+image:images/sessions.png[Sessions tab]
+
+==== Signing out all active sessions
+
+You can sign out all users in the realm. From the *Action* list, select *Sign out all active sessions*. All SSO cookies become invalid. {project_name} notifies clients by using the {project_name} OIDC client adapter of the logout event. Clients requesting authentication within active browser sessions must log in again. Client types such as SAML do not receive a back-channel logout request.
+
+[NOTE]
+====
+Clicking *Sign out all active sessions* does not revoke outstanding access tokens. Outstanding tokens must expire naturally. For clients using the {project_name} OIDC client adapter, you can push a <<_revocation-policy, revocation policy>> to revoke the token, but this does not work for other adapters.
+====
+
+==== Viewing client sessions
+
+.Procedure
+. Click *Clients* in the menu.
+. Click a client to see that client's sessions.
+. Click the *Sessions* tab.
++
+.Client sessions
+image:images/client-sessions.png[Client sessions]
+
+[#viewing-user-sessions]
+==== Viewing user sessions
+
+.Procedure
+. Click *Users* in the menu.
+. Click a user to see that user's sessions.
+. Click the *Sessions* tab.
++
+.User sessions
+image:images/user-sessions.png[User sessions]
+

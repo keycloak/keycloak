@@ -1,0 +1,118 @@
+/*
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.keycloak.testsuite.oidc.flows;
+
+import java.util.Arrays;
+import java.util.List;
+
+import org.keycloak.events.Details;
+import org.keycloak.jose.jws.crypto.HashUtils;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.representations.IDToken;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+
+/**
+ * Tests with response_type=code id_token token as detached signature
+ *
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
+public class OIDCHybridResponseTypeCodeIDTokenAsDetachedSigTokenTest extends AbstractOIDCResponseTypeTest {
+
+    @Before
+    public void clientConfiguration() {
+        clientManagerBuilder().standardFlow(true).implicitFlow(true).updateAttribute(OIDCConfigAttributes.ID_TOKEN_AS_DETACHED_SIGNATURE, Boolean.TRUE.toString());
+
+        oauth.client("test-app", "password");
+        oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " "  + OIDCResponseType.TOKEN);
+    }
+
+
+    @Override
+    protected boolean isFragment() {
+        return true;
+    }
+
+
+    protected List<IDToken> testAuthzResponseAndRetrieveIDTokens(AuthorizationEndpointResponse authzResponse, EventRepresentation loginEvent) {
+        Assertions.assertEquals(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN, loginEvent.getDetails().get(Details.RESPONSE_TYPE));
+
+        // IDToken from the authorization response
+        Assertions.assertNotNull(authzResponse.getAccessToken());
+        String idTokenStr = authzResponse.getIdToken();
+        IDToken idToken = oauth.verifyIDToken(idTokenStr);
+        // confirm ID token as detached signature does not include authenticated user's claims
+        Assertions.assertNull(idToken.getEmailVerified());
+        Assertions.assertNull(idToken.getName());
+        Assertions.assertNull(idToken.getPreferredUsername());
+        Assertions.assertNull(idToken.getGivenName());
+        Assertions.assertNull(idToken.getFamilyName());
+        Assertions.assertNull(idToken.getEmail());
+
+        // Validate "at_hash"
+        assertValidAccessTokenHash(idToken.getAccessTokenHash(), authzResponse.getAccessToken());
+
+        // Validate "c_hash"
+        assertValidCodeHash(idToken.getCodeHash(), authzResponse.getCode());
+
+        // Financial API - Part 2: Read and Write API Security Profile
+        // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
+        // Validate "s_hash"
+        Assertions.assertNotNull(idToken.getStateHash());
+
+        Assertions.assertEquals(idToken.getStateHash(), HashUtils.accessTokenHash(getIdTokenSignatureAlgorithm(), authzResponse.getState()));
+
+        // Validate if token_type is present
+        Assertions.assertNotNull(authzResponse.getTokenType());
+
+        // Validate if expires_in is present
+        Assertions.assertNotNull(authzResponse.getExpiresIn());
+
+        // IDToken exchanged for the code
+        IDToken idToken2 = sendTokenRequestAndGetIDToken(loginEvent);
+        // confirm ordinal ID token includes authenticated user's claims
+        Assertions.assertNotNull(idToken2.getEmailVerified());
+        Assertions.assertNotNull(idToken2.getName());
+        Assertions.assertNotNull(idToken2.getPreferredUsername());
+        Assertions.assertNotNull(idToken2.getGivenName());
+        Assertions.assertNotNull(idToken2.getFamilyName());
+        Assertions.assertNotNull(idToken2.getEmail());
+
+        return Arrays.asList(idToken, idToken2);
+    }
+
+    @Test
+    public void nonceNotUsedErrorExpected() {
+        super.validateNonceNotUsedErrorExpected();
+    }
+
+    @Test
+    public void errorStandardFlowNotAllowed() throws Exception {
+        super.validateErrorStandardFlowNotAllowed();
+    }
+
+    @Test
+    public void errorImplicitFlowNotAllowed() throws Exception {
+        super.validateErrorImplicitFlowNotAllowed();
+    }
+}

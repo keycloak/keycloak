@@ -1,0 +1,11 @@
+[[_enforcer_overview]]
+= Policy enforcers
+
+Policy Enforcement Point (PEP) is a design pattern and as such you can implement it in different ways. {project_name} provides all the necessary means to implement PEPs for different
+platforms, environments, and programming languages. {project_name} Authorization Services presents a RESTful API and leverages OAuth2 authorization capabilities for fine-grained
+authorization using a centralized authorization server.
+
+The Policy enforcers available by {project_name} are:
+
+* {securing_apps_java_policy_enforcer_link}[{securing_apps_java_policy_enforcer_name}] - useful to be used in the Java client applications
+* <<_enforcer_js_adapter, Javascript Policy enforcer>> - useful to be used in the applications secured by {project_name} Javascript adapter

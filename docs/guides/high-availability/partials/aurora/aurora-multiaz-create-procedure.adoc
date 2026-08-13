@@ -1,0 +1,358 @@
+. Create a VPC for the Aurora cluster
++
+.Command:
+[source,bash]
+----
+aws ec2 create-vpc \
+  --cidr-block 192.168.0.0/16 \
+  --tag-specifications "ResourceType=vpc, Tags=[{Key=AuroraCluster,Value=keycloak-aurora}]" \# <1>
+  --region eu-west-1
+----
+<1> We add an optional tag with the name of the Aurora cluster so that we can easily retrieve the VPC.
++
+.Output:
+[source,json]
+----
+{
+    "Vpc": {
+        "CidrBlock": "192.168.0.0/16",
+        "DhcpOptionsId": "dopt-0bae7798158bc344f",
+        "State": "pending",
+        "VpcId": "vpc-0b40bd7c59dbe4277",
+        "OwnerId": "606671647913",
+        "InstanceTenancy": "default",
+        "Ipv6CidrBlockAssociationSet": [],
+        "CidrBlockAssociationSet": [
+            {
+                "AssociationId": "vpc-cidr-assoc-09a02a83059ba5ab6",
+                "CidrBlock": "192.168.0.0/16",
+                "CidrBlockState": {
+                    "State": "associated"
+                }
+            }
+        ],
+        "IsDefault": false
+    }
+}
+----
++
+. Create a subnet for each availability zone that Aurora will be deployed to, using the `VpcId` of the newly created VPC.
++
+NOTE: The cidr-block range specified for each of the availability zones must not overlap.
++
+.. Zone A
++
+.Command:
+[source,bash]
+----
+aws ec2 create-subnet \
+  --availability-zone "eu-west-1a" \
+  --vpc-id vpc-0b40bd7c59dbe4277 \
+  --cidr-block 192.168.0.0/19 \
+  --region eu-west-1
+----
++
+.Output:
+[source,json]
+----
+{
+    "Subnet": {
+        "AvailabilityZone": "eu-west-1a",
+        "AvailabilityZoneId": "euw1-az3",
+        "AvailableIpAddressCount": 8187,
+        "CidrBlock": "192.168.0.0/19",
+        "DefaultForAz": false,
+        "MapPublicIpOnLaunch": false,
+        "State": "available",
+        "SubnetId": "subnet-0d491a1a798aa878d",
+        "VpcId": "vpc-0b40bd7c59dbe4277",
+        "OwnerId": "606671647913",
+        "AssignIpv6AddressOnCreation": false,
+        "Ipv6CidrBlockAssociationSet": [],
+        "SubnetArn": "arn:aws:ec2:eu-west-1:606671647913:subnet/subnet-0d491a1a798aa878d",
+        "EnableDns64": false,
+        "Ipv6Native": false,
+        "PrivateDnsNameOptionsOnLaunch": {
+            "HostnameType": "ip-name",
+            "EnableResourceNameDnsARecord": false,
+            "EnableResourceNameDnsAAAARecord": false
+        }
+    }
+}
+
+----
+.. Zone B
++
+.Command:
+[source,bash]
+----
+aws ec2 create-subnet \
+  --availability-zone "eu-west-1b" \
+  --vpc-id vpc-0b40bd7c59dbe4277 \
+  --cidr-block 192.168.32.0/19 \
+  --region eu-west-1
+----
++
+.Output:
+[source,json]
+----
+{
+    "Subnet": {
+        "AvailabilityZone": "eu-west-1b",
+        "AvailabilityZoneId": "euw1-az1",
+        "AvailableIpAddressCount": 8187,
+        "CidrBlock": "192.168.32.0/19",
+        "DefaultForAz": false,
+        "MapPublicIpOnLaunch": false,
+        "State": "available",
+        "SubnetId": "subnet-057181b1e3728530e",
+        "VpcId": "vpc-0b40bd7c59dbe4277",
+        "OwnerId": "606671647913",
+        "AssignIpv6AddressOnCreation": false,
+        "Ipv6CidrBlockAssociationSet": [],
+        "SubnetArn": "arn:aws:ec2:eu-west-1:606671647913:subnet/subnet-057181b1e3728530e",
+        "EnableDns64": false,
+        "Ipv6Native": false,
+        "PrivateDnsNameOptionsOnLaunch": {
+            "HostnameType": "ip-name",
+            "EnableResourceNameDnsARecord": false,
+            "EnableResourceNameDnsAAAARecord": false
+        }
+    }
+}
+
+----
++
+. Obtain the ID of the Aurora VPC route-table
++
+.Command:
+[source,bash]
+----
+aws ec2 describe-route-tables \
+  --filters Name=vpc-id,Values=vpc-0b40bd7c59dbe4277 \
+  --region eu-west-1
+----
++
+.Output:
+[source,json]
+----
+{
+    "RouteTables": [
+        {
+            "Associations": [
+                {
+                    "Main": true,
+                    "RouteTableAssociationId": "rtbassoc-02dfa06f4c7b4f99a",
+                    "RouteTableId": "rtb-04a644ad3cd7de351",
+                    "AssociationState": {
+                        "State": "associated"
+                    }
+                }
+            ],
+            "PropagatingVgws": [],
+            "RouteTableId": "rtb-04a644ad3cd7de351",
+            "Routes": [
+                {
+                    "DestinationCidrBlock": "192.168.0.0/16",
+                    "GatewayId": "local",
+                    "Origin": "CreateRouteTable",
+                    "State": "active"
+                }
+            ],
+            "Tags": [],
+            "VpcId": "vpc-0b40bd7c59dbe4277",
+            "OwnerId": "606671647913"
+        }
+    ]
+}
+
+----
++
+. Associate the Aurora VPC route-table each availability zone's subnet
+.. Zone A
++
+.Command:
+[source,bash]
+----
+aws ec2 associate-route-table \
+  --route-table-id rtb-04a644ad3cd7de351 \
+  --subnet-id subnet-0d491a1a798aa878d \
+  --region eu-west-1
+----
++
+.. Zone B
++
+.Command:
+[source,bash]
+----
+aws ec2 associate-route-table \
+  --route-table-id rtb-04a644ad3cd7de351 \
+  --subnet-id subnet-057181b1e3728530e \
+  --region eu-west-1
+----
++
+. Create Aurora Subnet Group
++
+.Command:
+[source,bash]
+----
+aws rds create-db-subnet-group \
+  --db-subnet-group-name keycloak-aurora-subnet-group \
+  --db-subnet-group-description "Aurora DB Subnet Group" \
+  --subnet-ids subnet-0d491a1a798aa878d subnet-057181b1e3728530e \
+  --region eu-west-1
+----
++
+. Create Aurora Security Group
++
+.Command:
+[source,bash]
+----
+aws ec2 create-security-group \
+  --group-name keycloak-aurora-security-group \
+  --description "Aurora DB Security Group" \
+  --vpc-id vpc-0b40bd7c59dbe4277 \
+  --region eu-west-1
+----
++
+.Output:
+[source,json]
+----
+{
+    "GroupId": "sg-0d746cc8ad8d2e63b"
+}
+----
++
+. Create the Aurora DB Cluster
++
+.Command:
+[source,bash]
+----
+aws rds create-db-cluster \
+    --db-cluster-identifier keycloak-aurora \
+    --database-name keycloak \
+    --engine aurora-postgresql \
+    --engine-version ${properties["aurora-postgresql.version"]} \
+    --master-username keycloak \
+    --master-user-password secret99 \
+    --vpc-security-group-ids sg-0d746cc8ad8d2e63b \
+    --db-subnet-group-name keycloak-aurora-subnet-group \
+    --region eu-west-1
+----
++
+NOTE: You should replace the `--master-username` and `--master-user-password` values.
+The values specified here must be used when configuring the {project_name} database credentials.
++
+.Output:
+[source,json]
+----
+{
+    "DBCluster": {
+        "AllocatedStorage": 1,
+        "AvailabilityZones": [
+            "eu-west-1b",
+            "eu-west-1c",
+            "eu-west-1a"
+        ],
+        "BackupRetentionPeriod": 1,
+        "DatabaseName": "keycloak",
+        "DBClusterIdentifier": "keycloak-aurora",
+        "DBClusterParameterGroup": "default.aurora-postgresql15",
+        "DBSubnetGroup": "keycloak-aurora-subnet-group",
+        "Status": "creating",
+        "Endpoint": "keycloak-aurora.cluster-clhthfqe0h8p.eu-west-1.rds.amazonaws.com",
+        "ReaderEndpoint": "keycloak-aurora.cluster-ro-clhthfqe0h8p.eu-west-1.rds.amazonaws.com",
+        "MultiAZ": false,
+        "Engine": "aurora-postgresql",
+        "EngineVersion": "15.5",
+        "Port": 5432,
+        "MasterUsername": "keycloak",
+        "PreferredBackupWindow": "02:21-02:51",
+        "PreferredMaintenanceWindow": "fri:03:34-fri:04:04",
+        "ReadReplicaIdentifiers": [],
+        "DBClusterMembers": [],
+        "VpcSecurityGroups": [
+            {
+                "VpcSecurityGroupId": "sg-0d746cc8ad8d2e63b",
+                "Status": "active"
+            }
+        ],
+        "HostedZoneId": "Z29XKXDKYMONMX",
+        "StorageEncrypted": false,
+        "DbClusterResourceId": "cluster-IBWXUWQYM3MS5BH557ZJ6ZQU4I",
+        "DBClusterArn": "arn:aws:rds:eu-west-1:606671647913:cluster:keycloak-aurora",
+        "AssociatedRoles": [],
+        "IAMDatabaseAuthenticationEnabled": false,
+        "ClusterCreateTime": "2023-11-01T10:40:45.964000+00:00",
+        "EngineMode": "provisioned",
+        "DeletionProtection": false,
+        "HttpEndpointEnabled": false,
+        "CopyTagsToSnapshot": false,
+        "CrossAccountClone": false,
+        "DomainMemberships": [],
+        "TagList": [],
+        "AutoMinorVersionUpgrade": true,
+        "NetworkType": "IPV4"
+    }
+}
+----
++
+
+. Create Aurora DB instances
++
+.. Create Zone A Writer instance
++
+.Command:
+[source,bash]
+----
+  aws rds create-db-instance \
+    --no-auto-minor-version-upgrade \
+    --db-cluster-identifier keycloak-aurora \
+    --db-instance-identifier "keycloak-aurora-instance-1" \
+    --db-instance-class db.t4g.large \
+    --engine aurora-postgresql \
+    --region eu-west-1
+----
++
+.. Create Zone B Reader instance
++
+.Command:
+[source,bash]
+----
+  aws rds create-db-instance \
+    --no-auto-minor-version-upgrade \
+    --db-cluster-identifier keycloak-aurora \
+    --db-instance-identifier "keycloak-aurora-instance-2" \
+    --db-instance-class db.t4g.large \
+    --engine aurora-postgresql \
+    --region eu-west-1
+----
++
+. Wait for all Writer and Reader instances to be ready
++
+.Command:
+[source,bash]
+----
+aws rds wait db-instance-available --db-instance-identifier keycloak-aurora-instance-1 --region eu-west-1
+aws rds wait db-instance-available --db-instance-identifier keycloak-aurora-instance-2 --region eu-west-1
+----
++
+. [[aurora-writer-url]]Obtain the Writer endpoint URL for use by Keycloak
++
+.Command:
+[source,bash]
+----
+aws rds describe-db-clusters \
+  --db-cluster-identifier keycloak-aurora \
+  --query 'DBClusters[*].Endpoint' \
+  --region eu-west-1 \
+  --output text
+----
++
+.Output:
+[source,json]
+----
+[
+    "keycloak-aurora.cluster-clhthfqe0h8p.eu-west-1.rds.amazonaws.com"
+]
+----

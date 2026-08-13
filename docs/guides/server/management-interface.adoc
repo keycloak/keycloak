@@ -1,0 +1,60 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Configuring the Management Interface"
+summary="Configure {project_name}'s management interface for endpoints such as metrics and health checks."
+includedOptions="http-management-* https-management-* legacy-observability-interface">
+
+The management interface allows accessing management endpoints via a different HTTP server than the primary one.
+It provides the possibility to hide endpoints like `/metrics` or `/health` from the outside world and, therefore, hardens the security.
+The most significant advantage might be seen in Kubernetes environments as the specific management port might not be exposed.
+
+== Management interface configuration
+
+The management interface is turned on when something is exposed on it.
+Management endpoints such as `/metrics` and `/health` are exposed on the default management port `9000` when metrics and health are enabled.
+The management interface provides a set of options and is fully configurable.
+
+NOTE: If management interface properties are not explicitly set, their values are automatically inherited from the default HTTP server.
+
+=== Port
+In order to change the port for the management interface, you can use the {project_name} option `http-management-port`.
+
+=== Relative path
+You can change the relative path of the management interface, as the prefix path for the management endpoints can be different.
+You can achieve it via the {project_name} option `http-management-relative-path`.
+
+For instance, if you set the CLI option `--http-management-relative-path=/management`, the metrics, and health endpoints will be accessed on the `/management/metrics` and `/management/health` paths.
+
+User is automatically *redirected* to the path where {project_name} is hosted when the relative path is specified.
+It means when the relative path is set to `/management`, and the user access `localhost:9000/`, the page is redirected to `localhost:9000/management`.
+
+NOTE: If you do not explicitly set the value for it, the value from the `http-relative-path` property is used. For instance,
+if you set the CLI option `--http-relative-path=/auth`, these endpoints are accessible on the `/auth/metrics` and `/auth/health` paths.
+
+=== TLS support
+
+When the TLS is set for the default {project_name} server, by default the management interface will be accessible through HTTPS as well.
+The management interface can run only either on HTTP or HTTPS, not both as for the main server.
+
+NOTE: If you do not want the management interface to use HTTPS, you may set the `http-management-scheme` option to `http`.
+
+Specific {project_name} management interface options with the prefix `https-management-*` were provided for setting different TLS parameters for the management HTTP server. Their function is similar to their counterparts for the main HTTP server, for details see <@links.server id="enabletls" />.
+When these options are not explicitly set, the TLS parameters are inherited from the default HTTP server.
+
+=== Disable Management interface
+
+The management interface is automatically turned off when nothing is exposed on it.
+Currently, only health checks and metrics are exposed on the management interface regardless.
+If you want to disable exposing them on the management interface, set the {project_name} property `legacy-observability-interface` to `true`.
+
+[WARNING]
+====
+Exposing health and metrics endpoints on the default server is not recommended for security reasons, and you should always use the management interface.
+Beware, the `legacy-observability-interface` option is deprecated and will be removed in future releases.
+It only allows you to give more time for the migration.
+====
+
+</@tmpl.guide>

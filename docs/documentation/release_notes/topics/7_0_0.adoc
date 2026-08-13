@@ -1,0 +1,32 @@
+= Highlights
+
+== WildFly 17 Upgrade
+
+Keycloak server was upgraded to use WildFly 17 under the covers.
+
+== Tomcat 9 adapter support
+
+Java adapter for Apache Tomcat 8 and Apache Tomcat 9 was unified and now it serves for both of them.
+
+== New Account Console
+
+A lot of work has been done on the new Account Console and Account REST API. It's not quite ready yet, but it's getting
+there and hopefully will be fully done for Keycloak 8.
+
+== Signed and Encrypted ID Token Support
+
+{project_name} can support the signed and encrypted ID token according to the Json Web Encryption (JWE) specification. Thanks to https://github.com/tnorimat[tnorimat].
+
+== Testing and release automation
+
+The Keycloak team has spent a significant amount of time on automation around testing and releases both for Keycloak and
+Red Hat Single Sign-On.
+
+= Other improvements
+
+* PKCE support added to JavaScript adapter. Thanks to https://github.com/thomasdarimont[thomasdarimont]
+* Oracle database support added to Keycloak container image. Thanks to https://github.com/nerdstep[nerdstep]
+* Clock Skew support added to SAML adapter. Thanks to https://github.com/steevebtib[steevebtib]
+* TypeScript support for Node.js adapter. Thanks to https://github.com/evanshortiss[evanshortiss]
+* Gatekeeper now allows to provide unencrypted token in header, while encrypting in cookie. There was also a bug on Gatekeeper when `Revoke Refresh Token` is enabled on the Keycloak server. The issue was fixed. Thanks to https://github.com/fredbi[fredbi]
+* New tab in the Admin console to display the list of users for client roles. Thanks to https://github.com/unly[unly]

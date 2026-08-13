@@ -1,0 +1,17 @@
+name: Testsuite deprecation check
+description: Check PR if there are changes in the old deprecated testsuite
+
+inputs:
+  token:
+    description: GitHub Token
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - id: check-testsuite-changes
+      name: Check Old Testsuite changes in PR
+      shell: bash
+      run: .github/actions/testsuite-deprecation-check/deprecation-check.sh ${{ github.repository }} ${{ github.ref }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
