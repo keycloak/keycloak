@@ -1769,7 +1769,7 @@ public class OID4VCIssuerEndpoint {
         VCIssuanceContext vcIssuanceContext = getVCToSign(protocolMappers, credentialConfig, authResult, authDetail, credentialRequestVO, credentialScopeModel, eventBuilder);
 
         // Enforce key binding prior to signing if necessary
-        enforceKeyBindingIfProofProvided(vcIssuanceContext);
+        enforceKeyBindingIfProofProvided(vcIssuanceContext, eventBuilder);
 
         return vcIssuanceContext;
     }
@@ -1893,7 +1893,7 @@ public class OID4VCIssuerEndpoint {
     /**
      * Enforce key binding: Validate proof and bind associated key to credential in issuance context.
      */
-    private void enforceKeyBindingIfProofProvided(VCIssuanceContext vcIssuanceContext) {
+    private void enforceKeyBindingIfProofProvided(VCIssuanceContext vcIssuanceContext, EventBuilder eventBuilder) {
         Proofs proofs = vcIssuanceContext.getCredentialRequest().getProofs();
         if (proofs == null) {
             LOGGER.debugf("No proofs provided, skipping key binding");
@@ -1902,11 +1902,11 @@ public class OID4VCIssuerEndpoint {
 
         // Validate each proof type that is present
         for (String proofType : proofs.getPresentProofTypes()) {
-            validateProofs(vcIssuanceContext, proofType);
+            validateProofs(vcIssuanceContext, proofType, eventBuilder);
         }
     }
 
-    private void validateProofs(VCIssuanceContext vcIssuanceContext, String proofType) {
+    private void validateProofs(VCIssuanceContext vcIssuanceContext, String proofType, EventBuilder eventBuilder) {
         ProofValidator proofValidator = session.getProvider(ProofValidator.class, proofType);
         if (proofValidator == null) {
             throw new BadRequestException(String.format("Unable to validate proofs of type %s", proofType));
@@ -1920,6 +1920,8 @@ public class OID4VCIssuerEndpoint {
                 vcIssuanceContext.getCredentialBody().addKeyBinding(jwks.get(0));
             }
         } catch (VCIssuerException e) {
+            eventBuilder.detail(Details.REASON, e.getMessage())
+                    .error(e.getErrorType().getValue());
             switch (e.getErrorType()) {
                 case INVALID_NONCE:
                     throw new ErrorResponseException(INVALID_NONCE.getValue(), e.getMessage(), Response.Status.BAD_REQUEST);
@@ -1957,8 +1959,10 @@ public class OID4VCIssuerEndpoint {
     private void validateRequestedClaimsArePresent(Map<String, Object> allClaims, SupportedCredentialConfiguration credentialConfig,
                                                    UserModel user, OID4VCAuthorizationDetail authzDetail, String scope, EventBuilder eventBuilder) {
         // Protocol mappers from configuration
-        Map<List<Object>, ClaimsDescription> claimsConfig = credentialConfig.getCredentialMetadata().getClaims()
+        Map<List<Object>, ClaimsDescription> claimsConfig = Optional.ofNullable(credentialConfig.getCredentialMetadata())
+                .map(metadata -> metadata.getClaims())
                 .stream()
+                .flatMap(claims -> claims.stream())
                 .map(claim -> {
                     List<Object> pathObj = new ArrayList<>(claim.getPath());
                     return new ClaimsDescription(pathObj, claim.isMandatory());

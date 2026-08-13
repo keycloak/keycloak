@@ -40,6 +40,8 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.models.Constants;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
@@ -73,6 +75,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.services.managers.AppAuthManager.BearerTokenAuthenticator;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testsuite.util.AccountHelper;
@@ -1041,6 +1044,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 .setCredentialIdentifier(credentialIdentifier)
                 .setProofs(new Proofs().setJwt(List.of(futureIatProof)));
 
+        events.clear();
         Oid4vcCredentialResponse response = oauth.oid4vc()
                 .credentialRequest(request)
                 .bearerToken(token)
@@ -1049,6 +1053,11 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
         assertEquals(ErrorType.INVALID_PROOF.getValue(), response.getError());
         assertTrue(response.getErrorDescription().contains("Proof iat is in the future"));
+        EventAssertion.assertError(events.poll())
+                .type(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
+                .clientId(OID4VCI_CLIENT_ID)
+                .error(ErrorType.INVALID_PROOF.getValue())
+                .details(Details.REASON, "Proof iat is in the future beyond allowed clock skew");
     }
 
     @Test
@@ -1496,6 +1505,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 VCFormat.JWT_VC,
                 null, null
         );
+        optionalScope.setProtocolMappers(List.of());
 
         optionalScope = registerOptionalClientScope(optionalScope);
         ClientRepresentation testClient = testRealm.admin().clients().findByClientId(OID4VCI_CLIENT_ID).get(0);
@@ -1526,6 +1536,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         CredentialRequest credentialRequest = new CredentialRequest()
                 .setCredentialIdentifier(credentialIdentifier);
 
+        events.clear();
         Oid4vcCredentialResponse response = oauth.oid4vc()
                 .credentialRequest(credentialRequest)
                 .bearerToken(token)
@@ -1538,6 +1549,10 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
         assertNotNull(credentialResponseVO.getCredentials(), "Credentials array should not be null");
         assertFalse(credentialResponseVO.getCredentials().isEmpty(), "Credentials array should not be empty");
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.VERIFIABLE_CREDENTIAL_REQUEST)
+                .clientId(OID4VCI_CLIENT_ID)
+                .details(Details.CREDENTIAL_TYPE, configId);
     }
 
     @Test
