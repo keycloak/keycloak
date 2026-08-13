@@ -9,14 +9,14 @@ import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 
 type OrganizationModalProps = {
-  isJoin?: boolean;
+  mode?: "join" | "send" | "add";
   existingOrgs: OrganizationRepresentation[];
   onAdd: (orgs: OrganizationRepresentation[]) => Promise<void>;
   onClose: () => void;
 };
 
 export const OrganizationModal = ({
-  isJoin = true,
+  mode = "join",
   existingOrgs,
   onAdd,
   onClose,
@@ -40,12 +40,18 @@ export const OrganizationModal = ({
   return (
     <Modal
       variant={ModalVariant.small}
-      title={isJoin ? t("joinOrganization") : t("sendInvitation")}
+      title={
+        mode === "add"
+          ? t("selectOrganization")
+          : mode === "join"
+            ? t("joinOrganization")
+            : t("sendInvitation") //will become very clunky if more modes are added but probably fine for now
+      }
       isOpen
       onClose={onClose}
       actions={[
         <Button
-          data-testid="join"
+          data-testid={mode === "add" ? "add" : "join"}
           key="confirm"
           variant="primary"
           onClick={async () => {
@@ -53,7 +59,7 @@ export const OrganizationModal = ({
             onClose();
           }}
         >
-          {isJoin ? t("join") : t("send")}
+          {t(mode)}
         </Button>,
         <Button
           data-testid="cancel"
