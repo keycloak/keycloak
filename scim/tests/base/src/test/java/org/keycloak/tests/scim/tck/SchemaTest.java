@@ -98,18 +98,18 @@ public class SchemaTest extends AbstractScimTest {
 
         assertAttribute(findAttribute(schema, "userName"), "string", false, true, false, "readWrite", "server");
         assertAttribute(findAttribute(schema, "emails"), "complex", true, false, false, "readWrite", "global");
-        assertAttribute(findAttribute(schema, "name"), "complex", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "displayName"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "title"), "string", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "name"), "complex", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "displayName"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "title"), "string", false, false, false, "readWrite", "none");
         assertAttribute(findAttribute(schema, "externalId"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "userType"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "nickName"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "locale"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "timezone"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "preferredLanguage"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "profileUrl"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "active"), "boolean", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "groups"), "complex", true, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "userType"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "nickName"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "locale"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "timezone"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "preferredLanguage"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "profileUrl"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "active"), "boolean", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "groups"), "complex", true, false, false, "readWrite", "none");
 
         // Verify name sub-attributes
         Schema.Attribute name = findAttribute(schema, "name");
@@ -146,7 +146,7 @@ public class SchemaTest extends AbstractScimTest {
 
         assertAttribute(findAttribute(schema, "displayName"), "string", false, false, false, "readWrite", "none");
         assertAttribute(findAttribute(schema, "externalId"), "string", false, false, true, "immutable", "none");
-        assertAttribute(findAttribute(schema, "members"), "complex", true, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "members"), "complex", true, false, false, "readWrite", "none");
     }
 
     @Test
@@ -167,11 +167,11 @@ public class SchemaTest extends AbstractScimTest {
         assertEquals(6, attributeNames.size(), "Enterprise User schema should have exactly 6 attributes");
 
         // Simple string attributes
-        assertAttribute(findAttribute(schema, "employeeNumber"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "costCenter"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "organization"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "division"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "department"), "string", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "employeeNumber"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "costCenter"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "organization"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "division"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "department"), "string", false, false, false, "readWrite", "none");
 
         // Manager is a complex attribute with sub-attributes
         assertAttribute(findAttribute(schema, "manager"), "complex", false, false, false, "readWrite", "none");
@@ -206,8 +206,8 @@ public class SchemaTest extends AbstractScimTest {
                 .map(Schema.Attribute::getName)
                 .collect(Collectors.toSet());
         assertEquals(2, attributeNames.size());
-        assertAttribute(findAttribute(schema, "myattribute"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "team"), "string", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "myattribute"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "team"), "string", false, false, false, "readWrite", "none");
 
         schema = client.schemas().get(barSchema);
         attributeNames = schema.getAttributes().stream()
@@ -215,7 +215,7 @@ public class SchemaTest extends AbstractScimTest {
                 .collect(Collectors.toSet());
         assertEquals(1, attributeNames.size());
         // Simple string attributes
-        assertAttribute(findAttribute(schema, "other"), "string", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "other"), "string", false, false, false, "readWrite", "none");
     }
 
     @Test
