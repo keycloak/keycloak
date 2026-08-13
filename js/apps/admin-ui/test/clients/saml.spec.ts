@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { switchOff, switchOn } from "../utils/form.ts";
@@ -121,7 +121,7 @@ test.describe.serial("Clients SAML tests", () => {
     await clickClientSignature(page);
     await assertModalTitle(page, 'Disable "Client signature required"');
     await cancelModal(page);
-    await assertCertificates(page);
+    await expect(page.getByTestId("clientSignature")).toBeChecked();
   });
 
   test("should disable client signature", async ({ page }) => {

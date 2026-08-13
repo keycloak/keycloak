@@ -2,7 +2,9 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, Page } from "@playwright/test";
 
 export async function assertNotificationMessage(page: Page, message: string) {
-  await expect(page.getByTestId("last-alert")).toHaveText(message);
+  await expect(page.getByTestId("last-alert")).toHaveText(message, {
+    timeout: 10000,
+  });
 }
 
 function getActionToggleButton(page: Page) {

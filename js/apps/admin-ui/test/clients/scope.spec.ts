@@ -154,6 +154,10 @@ test.describe.serial("Client details - Client scopes subtab", () => {
 
   test("Should show items on next page are more than 11", async ({ page }) => {
     await clickNextPageButton(page);
+    await page
+      .locator(`[role="row"]`)
+      .first()
+      .waitFor({ state: "visible", timeout: 10000 });
     const rows = await getTableData(page, tableName);
     expect(rows.length).toBeGreaterThan(1);
   });
