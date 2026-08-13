@@ -24,7 +24,8 @@
     "preview": "wireit",
     "lint": "wireit",
     "test": "wireit",
-    "test:integration": "wireit"
+    "test:integration": "wireit",
+    "test:typecheck": "wireit"
   },
   "wireit": {
     "dev": {
@@ -80,6 +81,12 @@
     },
     "test:integration": {
       "command": "playwright test",
+      "dependencies": [
+        "../../libs/keycloak-admin-client:build"
+      ]
+    },
+    "test:typecheck": {
+      "command": "tsc --project test/tsconfig.json",
       "dependencies": [
         "../../libs/keycloak-admin-client:build"
       ]

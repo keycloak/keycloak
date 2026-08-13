@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { toClientScopes } from "../../src/client-scopes/routes/ClientScopes.tsx";
+import { toClientScopes } from "../utils/routes.ts";
 import { createTestBed } from "../support/testbed.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
