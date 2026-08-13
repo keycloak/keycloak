@@ -12,6 +12,7 @@ package org.keycloak.scim.model.group;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
@@ -36,7 +37,6 @@ import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.Permissions;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.jpa.GroupAdapter;
 import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.scim.filter.ScimFilterParser;
@@ -138,7 +138,8 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
             query.where(predicates).distinct(true).orderBy(cb.asc(root.get("name")));
 
             return closing(paginateQuery(em.createQuery(query), firstResult, maxResults).getResultStream()
-                    .map(entity -> new GroupAdapter(session, realm, em, entity)));
+                    .map(entity -> session.groups().getGroupById(realm, entity.getId()))
+                    .filter(Objects::nonNull));
         } else {
             return session.groups().getTopLevelGroupsStream(realm, firstResult, maxResults);
         }
