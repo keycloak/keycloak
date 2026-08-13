@@ -51,6 +51,7 @@ import org.keycloak.config.Option;
 import org.keycloak.config.ProxyOptions;
 import org.keycloak.config.TruststoreOptions;
 import org.keycloak.marshalling.Marshalling;
+import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
@@ -75,6 +76,8 @@ import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.annotations.Recorder;
 import io.quarkus.vertx.http.runtime.security.SecurityHandlerPriorities;
 import io.vertx.core.Handler;
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import liquibase.Scope;
@@ -106,7 +109,23 @@ public class KeycloakRecorder {
 
     // default handler for redirecting to specific path
     public Handler<RoutingContext> getRedirectHandler(String redirectPath) {
-        return routingContext -> routingContext.redirect(redirectPath);
+        return routingContext -> {
+            HttpServerResponse response = routingContext.response();
+            addDefaultSecurityHeader(response, BrowserSecurityHeaders.STRICT_TRANSPORT_SECURITY);
+            addDefaultSecurityHeader(response, BrowserSecurityHeaders.X_CONTENT_TYPE_OPTIONS);
+            addDefaultSecurityHeader(response, BrowserSecurityHeaders.REFERRER_POLICY);
+            addDefaultSecurityHeader(response, BrowserSecurityHeaders.X_ROBOTS_TAG);
+
+            response.setStatusCode(302);
+            response.putHeader(HttpHeaders.LOCATION, redirectPath);
+            response.end();
+        };
+    }
+
+    private static void addDefaultSecurityHeader(HttpServerResponse response, BrowserSecurityHeaders header) {
+        if (!response.headers().contains(header.getHeaderName())) {
+            response.putHeader(header.getHeaderName(), header.getDefaultValue());
+        }
     }
 
     private static final List<ManagementInterfaceItem> MANAGEMENT_INTERFACE_ENDPOINTS = List.of(

@@ -71,6 +71,18 @@ public class HttpDistTest {
         RestAssured.useRelaxedHTTPSValidation();
         RestAssured.config = RestAssured.config.redirect(RedirectConfig.redirectConfig().followRedirects(false));
     }
+
+    @Test
+    @Launch({"start-dev", "--http-relative-path=/auth"})
+    public void rootRedirectIncludesSecurityHeaders() {
+        given().redirects().follow(false).when().get("/").then()
+                .statusCode(302)
+                .header("Location", Matchers.is("/auth"))
+                .header("Strict-Transport-Security", Matchers.notNullValue())
+                .header("X-Content-Type-Options", Matchers.notNullValue())
+                .header("Referrer-Policy", Matchers.notNullValue())
+                .header("X-Robots-Tag", Matchers.notNullValue());
+    }
     
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
