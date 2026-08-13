@@ -74,7 +74,9 @@ export async function assertCertificates(page: Page) {
     await page.getByTestId("clientSignature").isChecked(),
   ].filter(Boolean).length;
 
-  await expect(page.getByTestId("certificate")).toHaveCount(certsEnabled);
+  await expect(page.getByTestId("certificate")).toHaveCount(certsEnabled, {
+    timeout: 3000,
+  });
 }
 
 export async function clickEncryptionAssertions(page: Page) {
