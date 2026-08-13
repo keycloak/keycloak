@@ -278,6 +278,30 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     }
 
     @Test
+    public void putCreateOrUpdatesTypedConvenience() {
+        var clientId = "typed-upsert-client";
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId(clientId);
+        rep.setDescription("typed create");
+
+        try (var response = getClientsApi().client(clientId).createOrUpdate(rep)) {
+            assertThat(response.getResponse().getStatus(), is(201));
+            OIDCClientRepresentation client = response.readEntity();
+            assertThat(client.getDescription(), is("typed create"));
+            assertClientUuid(client);
+        }
+
+        rep.setDescription("typed update");
+        try (var response = getClientsApi().client(clientId).createOrUpdate(rep)) {
+            assertThat(response.getResponse().getStatus(), is(200));
+            OIDCClientRepresentation client = response.readEntity();
+            assertThat(client.getDescription(), is("typed update"));
+            assertClientUuid(client);
+        }
+    }
+
+    @Test
     public void createClient() {
         var clientId = "client-123";
         OIDCClientRepresentation rep = new OIDCClientRepresentation();
@@ -295,6 +319,28 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         try (var response = getClientsApi().createClient(rep)) {
             assertThat(response.getStatus(), is(409));
+        }
+    }
+
+    @Test
+    public void createClientTypedConvenience() {
+        var clientId = "typed-client-123";
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId(clientId);
+        rep.setDescription("I'm typed");
+
+        try (var response = getClientsApi().create(rep)) {
+            assertThat(response.getResponse().getStatus(), is(201));
+            OIDCClientRepresentation client = response.readEntity();
+            assertThat(client.getEnabled(), is(true));
+            assertThat(client.getClientId(), is(clientId));
+            assertThat(client.getDescription(), is("I'm typed"));
+            assertClientUuid(client);
+        }
+
+        try (var response = getClientsApi().create(rep)) {
+            assertThat(response.getResponse().getStatus(), is(409));
         }
     }
 

@@ -91,8 +91,10 @@ public interface Details {
     String CONSENT_VALUE_PERSISTED_CONSENT = "persistent_consent";    // Persistent consent used (was already granted by user before)
     String IMPERSONATOR_REALM = "impersonator_realm";
     String IMPERSONATOR = "impersonator";
+    String IMPERSONATOR_ID = "impersonator_id";
 
     String CLIENT_AUTH_METHOD = "client_auth_method";
+    String CLIENT_AUTH_DETAIL = "client_auth_detail";
 
     String SIGNATURE_REQUIRED = "signature_required";
     String SIGNATURE_ALGORITHM = "signature_algorithm";

@@ -25,7 +25,7 @@ import org.keycloak.jose.JOSEHeader;
 import org.keycloak.jose.jwe.JWEHeader.JWEHeaderBuilder;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
-import org.keycloak.util.JsonSerialization;
+import org.keycloak.json.KeycloakJsonMapperFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -62,7 +62,7 @@ public class JWE implements JOSE {
         if (header == null && base64Header != null) {
             try {
                 byte[] decodedHeader = Base64Url.decode(base64Header);
-                header = JsonSerialization.readValue(decodedHeader, JWEHeader.class);
+                header = KeycloakJsonMapperFactory.mapper().readValue(decodedHeader, JWEHeader.class);
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
             }
@@ -72,7 +72,7 @@ public class JWE implements JOSE {
 
     public String getBase64Header() throws IOException {
         if (base64Header == null && header != null) {
-            byte[] contentBytes = JsonSerialization.writeValueAsBytes(header);
+            byte[] contentBytes = KeycloakJsonMapperFactory.mapper().writeValueAsBytes(header);
             base64Header = Base64Url.encode(contentBytes);
         }
         return base64Header;

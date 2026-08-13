@@ -70,12 +70,14 @@ import org.keycloak.userprofile.validator.UsernameMutationValidator;
 import org.keycloak.utils.StringUtil;
 import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.validators.EmailValidator;
+import org.keycloak.validate.validators.LengthValidator;
 
 import org.jspecify.annotations.NonNull;
 
 import static java.util.Optional.ofNullable;
 
 import static org.keycloak.common.util.ObjectUtil.isBlank;
+import static org.keycloak.services.validation.Validation.MAX_USERNAME_LENGTH;
 import static org.keycloak.userprofile.DefaultAttributes.READ_ONLY_ATTRIBUTE_KEY;
 import static org.keycloak.userprofile.UserProfileContext.ACCOUNT;
 import static org.keycloak.userprofile.UserProfileContext.IDP_REVIEW;
@@ -424,7 +426,9 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         UserProfileMetadata metadata = new UserProfileMetadata(IDP_REVIEW);
 
         metadata.addAttribute(UserModel.USERNAME, -2, DeclarativeUserProfileProviderFactory::editUsernameCondition,
-                DeclarativeUserProfileProviderFactory::readUsernameCondition, new AttributeValidatorMetadata(BrokeringFederatedUsernameHasValueValidator.ID)).setAttributeDisplayName("${username}");
+                DeclarativeUserProfileProviderFactory::readUsernameCondition,
+                new AttributeValidatorMetadata(BrokeringFederatedUsernameHasValueValidator.ID),
+                createUsernameLengthValidator()).setAttributeDisplayName("${username}");
 
         metadata.addAttribute(UserModel.EMAIL, -1,
                         new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_EMAIL, true)))
@@ -466,7 +470,8 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
                 DeclarativeUserProfileProviderFactory::readUsernameCondition,
                 new AttributeValidatorMetadata(UsernameHasValueValidator.ID),
                 new AttributeValidatorMetadata(DuplicateUsernameValidator.ID),
-                new AttributeValidatorMetadata(UsernameMutationValidator.ID)).setAttributeDisplayName("${username}");
+                new AttributeValidatorMetadata(UsernameMutationValidator.ID),
+                createUsernameLengthValidator()).setAttributeDisplayName("${username}");
 
         metadata.addAttribute(UserModel.EMAIL, -1,
                         DeclarativeUserProfileProviderFactory::editEmailCondition,
@@ -498,7 +503,8 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
 
         metadata.addAttribute(UserModel.USERNAME, -2,
                         new AttributeValidatorMetadata(UsernameHasValueValidator.ID),
-                        new AttributeValidatorMetadata(DuplicateUsernameValidator.ID))
+                        new AttributeValidatorMetadata(DuplicateUsernameValidator.ID),
+                        createUsernameLengthValidator())
                 .addWriteCondition(DeclarativeUserProfileProviderFactory::editUsernameCondition);
         metadata.addAttribute(UserModel.EMAIL, -1,
                         new AttributeValidatorMetadata(DuplicateEmailValidator.ID),
@@ -611,5 +617,14 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         RealmModel realm = context1.getRealm();
 
         return UpdateEmail.isEnabled(realm);
+    }
+
+    private AttributeValidatorMetadata createUsernameLengthValidator() {
+        // IDP_REVIEW (brokering) profile has no UsernameHasValueValidator, provides the lower-bound guard.
+        return new AttributeValidatorMetadata(LengthValidator.ID,
+                ValidatorConfig.builder()
+                        .config(LengthValidator.KEY_MIN, "1")
+                        .config(LengthValidator.KEY_MAX, String.valueOf(MAX_USERNAME_LENGTH))
+                        .build());
     }
 }

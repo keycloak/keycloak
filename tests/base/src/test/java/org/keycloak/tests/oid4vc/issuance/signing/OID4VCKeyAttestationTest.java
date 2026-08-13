@@ -110,6 +110,7 @@ import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.toJwks;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -144,6 +145,9 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
                                            String leafPrivateKeyPem, String leafWithoutEkuCertificatePem,
                                            String leafWithoutEkuPrivateKeyPem, String caSignerCertificatePem,
                                            String caSignerPrivateKeyPem, String unrelatedCaCertificatePem,
+                                           String sameSubjectAttackerCaCertificatePem,
+                                           String sameSubjectAttackerLeafCertificatePem,
+                                           String sameSubjectAttackerLeafPrivateKeyPem,
                                            String caCertificatePath) {
 
         private static X5cTestCertificateChain create() {
@@ -159,16 +163,23 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
                 KeyPair leafWithoutEkuKeyPair = keyGen.generateKeyPair();
                 KeyPair caSignerKeyPair = keyGen.generateKeyPair();
                 KeyPair unrelatedCaKeyPair = keyGen.generateKeyPair();
+                KeyPair sameSubjectAttackerCaKeyPair = keyGen.generateKeyPair();
+                KeyPair sameSubjectAttackerLeafKeyPair = keyGen.generateKeyPair();
 
                 X509Certificate caCertificate = generateCaCertificate(caKeyPair, "OID4VC Test CA");
                 X509Certificate unrelatedCaCertificate = generateCaCertificate(
                         unrelatedCaKeyPair, "OID4VC Unrelated Test CA");
+                X509Certificate sameSubjectAttackerCaCertificate = generateCaCertificate(
+                        sameSubjectAttackerCaKeyPair, "OID4VC Test CA");
                 X509Certificate leafCertificate = generateLeafCertificate(leafKeyPair, caKeyPair, caCertificate,
                         true, false);
                 X509Certificate leafWithoutEkuCertificate = generateLeafCertificate(leafWithoutEkuKeyPair,
                         caKeyPair, caCertificate, false, false);
                 X509Certificate caSignerCertificate = generateLeafCertificate(caSignerKeyPair, caKeyPair,
                         caCertificate, true, true);
+                X509Certificate sameSubjectAttackerLeafCertificate = generateLeafCertificate(
+                        sameSubjectAttackerLeafKeyPair, sameSubjectAttackerCaKeyPair,
+                        sameSubjectAttackerCaCertificate, true, false);
 
                 String caCertificatePem = PemUtils.addCertificateBeginEnd(PemUtils.encodeCertificate(caCertificate));
                 String leafCertificatePem = PemUtils.addCertificateBeginEnd(PemUtils.encodeCertificate(leafCertificate));
@@ -181,13 +192,21 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
                 String caSignerPrivateKeyPem = Base64.encodeBytes(caSignerKeyPair.getPrivate().getEncoded());
                 String unrelatedCaCertificatePem = PemUtils.addCertificateBeginEnd(
                         PemUtils.encodeCertificate(unrelatedCaCertificate));
+                String sameSubjectAttackerCaCertificatePem = PemUtils.addCertificateBeginEnd(
+                        PemUtils.encodeCertificate(sameSubjectAttackerCaCertificate));
+                String sameSubjectAttackerLeafCertificatePem = PemUtils.addCertificateBeginEnd(
+                        PemUtils.encodeCertificate(sameSubjectAttackerLeafCertificate));
+                String sameSubjectAttackerLeafPrivateKeyPem = Base64.encodeBytes(
+                        sameSubjectAttackerLeafKeyPair.getPrivate().getEncoded());
                 Path caCertificatePath = Files.createTempFile("oid4vc-x5c-test-ca", ".pem");
                 Files.writeString(caCertificatePath, caCertificatePem, StandardCharsets.UTF_8);
                 caCertificatePath.toFile().deleteOnExit();
 
                 return new X5cTestCertificateChain(caCertificatePem, leafCertificatePem, leafPrivateKeyPem,
                         leafWithoutEkuCertificatePem, leafWithoutEkuPrivateKeyPem, caSignerCertificatePem,
-                        caSignerPrivateKeyPem, unrelatedCaCertificatePem, caCertificatePath.toString());
+                        caSignerPrivateKeyPem, unrelatedCaCertificatePem, sameSubjectAttackerCaCertificatePem,
+                        sameSubjectAttackerLeafCertificatePem, sameSubjectAttackerLeafPrivateKeyPem,
+                        caCertificatePath.toString());
             } catch (Exception e) {
                 throw new RuntimeException("Failed to create x5c test certificate chain", e);
             }
@@ -394,6 +413,43 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
             setupSessionContext(session);
             runAttestationWithX5cCertificateChain(session, cNonce, caCertificatePem, leafCertificatePem,
                     leafPrivateKeyPem, proofType, true, TEST_ATTESTATION_EKU, true);
+        });
+    }
+
+    @ParameterizedTest(name = "{0} proof")
+    @ValueSource(strings = {ATTESTATION, JWT})
+    public void testX5cKeyAttestationWithTrustAnchorOmitted(String proofType) {
+        String cNonce = getCNonce();
+        String caCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.caCertificatePem();
+        String leafCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.leafCertificatePem();
+        String leafPrivateKeyPem = X5C_TEST_CERTIFICATE_CHAIN.leafPrivateKeyPem();
+        runOnServer.run(session -> {
+            setupSessionContext(session);
+            runAttestationWithPresentedX5cCertificates(session, cNonce, caCertificatePem,
+                    List.of(leafCertificatePem), leafPrivateKeyPem, proofType, true,
+                    TEST_ATTESTATION_EKU, true);
+        });
+    }
+
+    @ParameterizedTest(name = "{0} proof")
+    @ValueSource(strings = {ATTESTATION, JWT})
+    public void testX5cKeyAttestationWithMatchingIssuerDnButWrongCaKeyIsRejected(String proofType) {
+        String cNonce = getCNonce();
+        String caCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.caCertificatePem();
+        String attackerCaCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.sameSubjectAttackerCaCertificatePem();
+        String attackerLeafCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.sameSubjectAttackerLeafCertificatePem();
+        String attackerLeafPrivateKeyPem = X5C_TEST_CERTIFICATE_CHAIN.sameSubjectAttackerLeafPrivateKeyPem();
+        X509Certificate trustedCaCertificate = PemUtils.decodeCertificate(caCertificatePem);
+        X509Certificate attackerCaCertificate = PemUtils.decodeCertificate(attackerCaCertificatePem);
+        X509Certificate attackerLeafCertificate = PemUtils.decodeCertificate(attackerLeafCertificatePem);
+        assertEquals(trustedCaCertificate.getSubjectX500Principal(), attackerCaCertificate.getSubjectX500Principal());
+        assertEquals(trustedCaCertificate.getSubjectX500Principal(), attackerLeafCertificate.getIssuerX500Principal());
+        assertNotEquals(trustedCaCertificate.getPublicKey(), attackerCaCertificate.getPublicKey());
+        runOnServer.run(session -> {
+            setupSessionContext(session);
+            runAttestationWithPresentedX5cCertificates(session, cNonce, caCertificatePem,
+                    List.of(attackerLeafCertificatePem), attackerLeafPrivateKeyPem, proofType, true,
+                    TEST_ATTESTATION_EKU, false);
         });
     }
 
@@ -1579,16 +1635,30 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
                                                               String caCertificatePem, String leafCertificatePem, String leafPrivateKeyPem,
                                                               String proofType, boolean configureTrustProvider,
                                                               String allowedExtendedKeyUsage, boolean expectSuccess) {
+        runAttestationWithPresentedX5cCertificates(session, cNonce, caCertificatePem,
+                List.of(leafCertificatePem, caCertificatePem), leafPrivateKeyPem, proofType,
+                configureTrustProvider, allowedExtendedKeyUsage, expectSuccess);
+    }
+
+    private static void runAttestationWithPresentedX5cCertificates(KeycloakSession session, String cNonce,
+                                                                   String trustedCaCertificatePem,
+                                                                   List<String> presentedCertificatePems,
+                                                                   String leafPrivateKeyPem, String proofType,
+                                                                   boolean configureTrustProvider,
+                                                                   String allowedExtendedKeyUsage,
+                                                                   boolean expectSuccess) {
         try {
-            X509Certificate caCert = PemUtils.decodeCertificate(caCertificatePem);
-            X509Certificate leafCert = PemUtils.decodeCertificate(leafCertificatePem);
+            List<X509Certificate> presentedCertificates = presentedCertificatePems.stream()
+                    .map(PemUtils::decodeCertificate)
+                    .toList();
+            X509Certificate leafCert = presentedCertificates.get(0);
 
             if (configureTrustProvider) {
                 configureTrustIdentityProvider(session.getContext().getRealm(), OID4VCI_ATTESTER_DEFAULT_TRUST_IDP_ALIAS,
                         DefaultTrustIdentityProviderFactory.PROVIDER_ID,
                         Map.of(
                                 DefaultTrustIdentityProviderConfig.USE_X509, "true",
-                                DefaultTrustIdentityProviderConfig.TRUSTED_CERTIFICATES, caCertificatePem,
+                                DefaultTrustIdentityProviderConfig.TRUSTED_CERTIFICATES, trustedCaCertificatePem,
                                 DefaultTrustIdentityProviderConfig.ATTESTATION_EXTENDED_KEY_USAGES,
                                 allowedExtendedKeyUsage));
             }
@@ -1616,7 +1686,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
 
             String attestationJwt = new JWSBuilder()
                     .type(AttestationValidatorUtil.ATTESTATION_JWT_TYP)
-                    .x5c(List.of(leafCert, caCert))
+                    .x5c(presentedCertificates)
                     .jsonContent(payload)
                     .sign(new ECDSASignatureSignerContext(signerKey));
 

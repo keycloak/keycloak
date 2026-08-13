@@ -25,6 +25,20 @@ This will build a container image from `Dockerfile`, using `docker` by default. 
 - Set the `DOCKER_HOST` environment variable to point at this user socket. For example: `DOCKER_HOST=unix:///run/user/1000/podman/podman.sock`.
 - You may also have to set `QUARKUS_DOCKER_EXECUTABLE_NAME=podman`
 
+## Helm chart
+
+A Helm chart is generated alongside the regular build, under `operator/target/helm/kubernetes/keycloak-operator/`. The chart is produced by the `quarkus-helm` + `quarkus-operator-sdk-helm` extensions from the same source manifests as the `kubectl` install path — it is not a hand-written copy.
+
+To regenerate locally (from the repo root):
+
+```bash
+./mvnw -Poperator -Pcluster-wide -pl :keycloak-operator -am package -DskipTests
+```
+
+Then `helm install` / `helm template` against `operator/target/helm/kubernetes/keycloak-operator/`. See the [Operator Installation guide](../docs/guides/operator/installation.adoc) for end-user instructions.
+
+Helm chart configuration lives in `operator/src/main/resources/application.properties` under the `quarkus.helm.*` keys. CRDs are post-processed by `operator/scripts/post-process-helm-chart.sh` (wrapping them in a `{{ if .Values.crds.enabled }}` guard) — the rest is purely declarative.
+
 ## Configuration
 
 The Keycloak image can be configured, when starting the operator, using the Java property:

@@ -5,6 +5,7 @@ import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -36,6 +37,7 @@ public class ScimJPAPredicateProvider {
     private final List<ModelSchema<?, ?>> schemas;
     private final CriteriaBuilder cb;
     private final Root<?> root;
+    private final BiPredicate<String, String> filterAuthorizationCheck;
 
     @SuppressWarnings("rawtypes,unchecked")
     private final Map<String, TriFunction<CriteriaBuilder, Expression, Object, Predicate>> operatorMap = Map.of(
@@ -55,10 +57,16 @@ public class ScimJPAPredicateProvider {
     private Map<String, Join<?, ?>> attributeJoin = new HashMap<>();
 
     public ScimJPAPredicateProvider(ScimResourceTypeProvider resourceTypeProvider, List<ModelSchema<?, ?>> schemas, CriteriaBuilder cb, Root<?> root) {
+        this(resourceTypeProvider, schemas, cb, root, null);
+    }
+
+    public ScimJPAPredicateProvider(ScimResourceTypeProvider resourceTypeProvider, List<ModelSchema<?, ?>> schemas, CriteriaBuilder cb, Root<?> root,
+                                    BiPredicate<String, String> filterAuthorizationCheck) {
         this.resourceTypeProvider = resourceTypeProvider;
         this.schemas = schemas;
         this.cb = cb;
         this.root = root;
+        this.filterAuthorizationCheck = filterAuthorizationCheck;
     }
 
     /**
@@ -84,11 +92,30 @@ public class ScimJPAPredicateProvider {
         // validate operator before normalization or predicate building
         validateOperator(attrInfo, path, op);
 
+        boolean authzProtected = false;
+        if (filterAuthorizationCheck != null) {
+            if (!"eq".equals(op)) {
+                // Only eq can be safely authorized through value comparison. All other
+                // operators (ne, pr, gt, ge, lt, le, co, sw, ew) can match unauthorized
+                // rows. Call with null to let the callback detect protected paths and block.
+                if (!filterAuthorizationCheck.test(path, null)) {
+                    return JPAFilterResult.unsupported(cb.disjunction());
+                }
+            } else if (!filterAuthorizationCheck.test(path, value)) {
+                return JPAFilterResult.unsupported(cb.disjunction());
+            } else if (!filterAuthorizationCheck.test(path, null)) {
+                // eq on an authorization-protected path that passed the check - flag it
+                // so that wrapping this predicate in NOT is blocked at the evaluator level
+                // (negating an authorized eq produces the equivalent of ne, leaking hidden rows)
+                authzProtected = true;
+            }
+        }
+
         // normalize the value (String -> Long, Boolean, etc.)
         Object normalizedValue = normalizeValue(attrInfo, value);
 
         // build the predicate
-        return JPAFilterResult.valid(getAttributePredicate(attrInfo, op, normalizedValue));
+        return JPAFilterResult.valid(getAttributePredicate(attrInfo, op, normalizedValue), authzProtected);
     }
 
     /**
@@ -140,9 +167,11 @@ public class ScimJPAPredicateProvider {
             basePredicate = cb.equal(join.get("name"), modelAttributeName);
         }
 
-        if (value != null && !attrInfo.isCaseExact() && "string".equals(attrInfo.getType())) {
+        if (value != null && (attrInfo.isStoredLowerCase() || !attrInfo.isCaseExact())) {
             value = value.toString().toLowerCase();
-            expression = cb.lower((Expression<String>) expression);
+            if (!attrInfo.isStoredLowerCase()) {
+                expression = cb.lower((Expression<String>) expression);
+            }
         }
 
         Predicate predicate = operatorMap.get(operation).apply(cb, expression, value);

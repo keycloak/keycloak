@@ -29,7 +29,6 @@ permissions:
   contents: read
 
 jobs:
-
   # Generate version compatibility matrix in a separate job to avoid multiline secret masking issues.
   version-compatibility:
     name: Version Compatibility Matrix
@@ -50,6 +49,7 @@ jobs:
       ci-azure: ${{ steps.azure-tests.outputs.run-azure-tests }}
       ci-additional-dbs: ${{ steps.additional-dbs-tests.outputs.run-additional-dbs-tests }}
       ci-admin-v2: ${{ steps.conditional.outputs.admin-v2 }}
+      ci-jackson3: ${{ steps.conditional.outputs.ci-jackson3 }}
     permissions:
       contents: read
       pull-requests: read
@@ -105,7 +105,6 @@ jobs:
         uses: ./.github/actions/testsuite-deprecation-check
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-
 
   build:
     name: Build
@@ -186,7 +185,7 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
         with:
-          jdk-version: '21'
+          jdk-version: "21"
 
       - name: Build adapter distributions
         run: ./mvnw install -DskipTests -f distribution/pom.xml
@@ -219,7 +218,7 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
         with:
-          jdk-version: '21'
+          jdk-version: "21"
 
       - name: Build adapter distributions
         run: ./mvnw install -DskipTests -f distribution/pom.xml
@@ -247,7 +246,7 @@ jobs:
     timeout-minutes: 15
     strategy:
       matrix:
-        os: [ ubuntu-latest, windows-latest ]
+        os: [ubuntu-latest, windows-latest]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
@@ -260,7 +259,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          ./mvnw test -f quarkus/pom.xml -pl '!tests,!tests/junit5,!tests/integration,!dist'
+          ./mvnw test -B -f quarkus/pom.xml -pl '!tests,!tests/junit5,!tests/integration,!dist'
 
   quarkus-integration-tests:
     name: Quarkus IT
@@ -354,8 +353,7 @@ jobs:
           fi
 
       - name: Build with JDK
-        run:
-          ./mvnw install -e -DskipTests -DskipExamples -DskipProtoLock=true
+        run: ./mvnw install -e -DskipTests -DskipExamples -DskipProtoLock=true
 
       - name: Run unit tests
         run: |
@@ -429,7 +427,7 @@ jobs:
 
   external-infinispan-tests:
     name: External Infinispan IT
-    needs: [ build, conditional ]
+    needs: [build, conditional]
     if: needs.conditional.outputs.ci-store == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 150
@@ -464,7 +462,7 @@ jobs:
 
   stateless-tests:
     name: Stateless IT
-    needs: [ build, conditional ]
+    needs: [build, conditional]
     if: needs.conditional.outputs.ci-store == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 150
@@ -482,7 +480,7 @@ jobs:
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dauth.server.feature=stateless -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
       - name: Run new base tests without caches
-        run: |          
+        run: |
           ./mvnw package -f tests/pom.xml -Dtest=StatelessTestSuite
 
       - uses: ./.github/actions/upload-flaky-tests
@@ -517,20 +515,20 @@ jobs:
         run: |
           AWS_REGION=us-east-1
           echo "AWS Region: ${AWS_REGION}"
-          
+
           aws configure set aws_access_key_id "${AWS_ACCESS_KEY_ID}"
           aws configure set aws_secret_access_key "${AWS_SECRET_ACCESS_KEY}"
           aws configure set region ${AWS_REGION}
-          
+
           AURORA_CLUSTER_NAME="gh-action-$(git rev-parse --short HEAD)-${{ github.run_id }}-${{ github.run_attempt }}"
           PASS=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 13; echo)
           echo "::add-mask::${PASS}"
-          
+
           echo "aurora-cluster-name=${AURORA_CLUSTER_NAME}" >> $GITHUB_OUTPUT
           echo "aurora-cluster-password=${PASS}" >> $GITHUB_OUTPUT
           echo "region=${AWS_REGION}" >> $GITHUB_OUTPUT
           curl --fail-with-body https://truststore.pki.rds.amazonaws.com/${AWS_REGION}/${AWS_REGION}-bundle.pem -o aws.pem
-          
+
           JDBC_PARAMS='?ssl=true&sslmode=verify-ca&sslrootcert=/opt/keycloak/aws.pem'
           echo "jdbc_params=${JDBC_PARAMS}" >> $GITHUB_OUTPUT
 
@@ -551,7 +549,7 @@ jobs:
           AWS_REGION=${{ steps.aurora-init.outputs.region }}
           EC2_CLUSTER_NAME=keycloak_$(git rev-parse --short HEAD)
           echo "ec2_cluster=${EC2_CLUSTER_NAME}" >> $GITHUB_OUTPUT
-          
+
           git archive --format=zip --output /tmp/keycloak.zip $GITHUB_REF
           zip -u /tmp/keycloak.zip aws.pem
           tar -C ~/ -czvf /tmp/m2.tar.gz .m2
@@ -605,11 +603,11 @@ jobs:
       - name: Clear Aurora DB schema
         id: aurora-clear-db-schema
         run: |
-         EC2_CLUSTER_NAME=${{ steps.ec2-create.outputs.ec2_cluster }}
-         AWS_REGION=${{ steps.aurora-init.outputs.region }}
-         
-         cd .github/scripts/ansible
-         ./mvn_remote_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "-Pexecute-sql -f tests/base/pom.xml sql:execute@clear-schema-psql -Dautocommit=true -Ddriver=software.amazon.jdbc.Driver -Durl=\"jdbc:aws-wrapper:postgresql://${{ steps.aurora-create.outputs.endpoint }}/keycloak${{ steps.aurora-init.outputs.jdbc_params }}\" -Dusername=keycloak -Dpassword=${{ steps.aurora-init.outputs.aurora-cluster-password }}"
+          EC2_CLUSTER_NAME=${{ steps.ec2-create.outputs.ec2_cluster }}
+          AWS_REGION=${{ steps.aurora-init.outputs.region }}
+
+          cd .github/scripts/ansible
+          ./mvn_remote_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "-Pexecute-sql -f tests/base/pom.xml sql:execute@clear-schema-psql -Dautocommit=true -Ddriver=software.amazon.jdbc.Driver -Durl=\"jdbc:aws-wrapper:postgresql://${{ steps.aurora-create.outputs.endpoint }}/keycloak${{ steps.aurora-init.outputs.jdbc_params }}\" -Dusername=keycloak -Dpassword=${{ steps.aurora-init.outputs.aurora-cluster-password }}"
 
       - name: Run Aurora new database tests on EC2
         id: aurora-new-integration-tests
@@ -714,7 +712,7 @@ jobs:
         env:
           AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Login to Azure
-        uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3.0.0
+        uses: azure/login@f5d393ae46f8fde4be8b75f32e3fc50e654ad0ca # v3.0.1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
@@ -792,11 +790,11 @@ jobs:
       - name: Clear Azure DB schema
         id: azure-clear-db-schema
         run: |
-         AZ_VM_CLUSTER_NAME=${{ steps.vm-create.outputs.az_vm_cluster }}
-         AZURE_REGION=${{ steps.azure-init.outputs.region }}
-         
-         cd .github/scripts/ansible
-         ./mvn_remote_runner.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} "-Pexecute-sql -f tests/base/pom.xml sql:execute@clear-schema-mssql -Dautocommit=true -Ddriver=com.microsoft.sqlserver.jdbc.SQLServerDriver -Durl=\"jdbc:sqlserver://${{ steps.azure-create.outputs.endpoint }}:1433;databaseName=${{ steps.azure-create.outputs.db }};encrypt=true;trustServerCertificate=false\" -Dusername=${{ steps.azure-create.outputs.username }} -Dpassword=${{ env.AZURE_DB_PASSWORD }}"
+          AZ_VM_CLUSTER_NAME=${{ steps.vm-create.outputs.az_vm_cluster }}
+          AZURE_REGION=${{ steps.azure-init.outputs.region }}
+
+          cd .github/scripts/ansible
+          ./mvn_remote_runner.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} "-Pexecute-sql -f tests/base/pom.xml sql:execute@clear-schema-mssql -Dautocommit=true -Ddriver=com.microsoft.sqlserver.jdbc.SQLServerDriver -Durl=\"jdbc:sqlserver://${{ steps.azure-create.outputs.endpoint }}:1433;databaseName=${{ steps.azure-create.outputs.db }};encrypt=true;trustServerCertificate=false\" -Dusername=${{ steps.azure-create.outputs.username }} -Dpassword=${{ env.AZURE_DB_PASSWORD }}"
 
       - name: Run Azure new database tests on VM
         id: azure-new-integration-tests
@@ -822,7 +820,7 @@ jobs:
           results=(files/keycloak/results/*)
           rsync -a $results/* ../../../
           rm -rf $results
-          
+
           exit $MVN_EXIT
 
       - uses: ./.github/actions/upload-flaky-tests
@@ -861,7 +859,7 @@ jobs:
         name: Run Store Integration Tests - ${{ matrix.db }}
         uses: ./.github/actions/run-store-tests
         with:
-            db: ${{ matrix.db }}
+          db: ${{ matrix.db }}
 
   store-integration-tests-additional:
     name: Store IT (additional)
@@ -1032,7 +1030,9 @@ jobs:
     name: WebAuthn IT
     if: needs.conditional.outputs.ci-webauthn == 'true'
     runs-on: ubuntu-latest
-    needs: build
+    needs:
+      - conditional
+      - build
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -1138,8 +1138,8 @@ jobs:
     timeout-minutes: 45
     strategy:
       matrix:
-        old-version: [ 24.0.4 ]
-        database: [ mssql ]
+        old-version: [24.0.4]
+        database: [mssql]
       fail-fast: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -1293,6 +1293,27 @@ jobs:
       - name: Run tests
         run: ./mvnw verify -pl rest/admin-v2/tests/pom.xml
 
+  jackson3-admin-client-tests:
+    name: Jackson 3 Admin Client
+    if: needs.conditional.outputs.ci-jackson3 == 'true'
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - conditional
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run Admin v2 tests with Jackson 3
+        run: ./mvnw verify -pl rest/admin-v2/tests/pom.xml -Pjackson3
+
+      - name: Run Base smoke tests with Jackson 3
+        run: ./mvnw verify -pl tests/base -Pjackson3
+
   mixed-cluster-compatibility-tests:
     name: Cluster Compatibility Tests
     if: needs.version-compatibility.outputs.matrix != 'skip'
@@ -1395,6 +1416,7 @@ jobs:
       - mixed-cluster-compatibility-tests
       - authzen-integration-tests
       - admin-v2-tests
+      - jackson3-admin-client-tests
       - testsuite-deprecation-check
       - stateless-tests
       - stateless-cluster-integration-tests

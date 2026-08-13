@@ -21,9 +21,11 @@ package org.keycloak.testsuite.federation.ldap;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import javax.naming.directory.SearchControls;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
@@ -33,7 +35,11 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.datastore.DefaultDatastoreProvider;
+import org.keycloak.storage.ldap.LDAPStorageProvider;
+import org.keycloak.storage.ldap.LDAPUtils;
+import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.LDAPRule;
@@ -194,6 +200,81 @@ public class LDAPSearchForUsersPaginationTest extends AbstractLDAPTest {
                 .stream().map(UserRepresentation::getUsername)
                 .collect(Collectors.toSet());
         Assertions.assertEquals(Set.of("john"), usernames);
+    }
+
+    @Test
+    public void testSearchLDAPLdapEntryDnOutsideUsersDn() {
+        // create an OU outside the configured users DN and add a user-like LDAP entry in it.
+        String outOfScopeDn = testingClient.server().fetchString(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            LDAPStorageProvider ldapProvider = ctx.getLdapProvider();
+            LDAPTestUtils.addLdapOUinBaseDn(ldapProvider, "ServiceAccounts");
+
+            LDAPObject ldapObject = new LDAPObject();
+            ldapObject.setRdnAttributeName(ldapProvider.getLdapIdentityStore().getConfig().getRdnLdapAttribute());
+            ldapObject.setObjectClasses(ldapProvider.getLdapIdentityStore().getConfig().getUserObjectClasses());
+            ldapObject.setSingleAttribute(ldapProvider.getLdapIdentityStore().getConfig().getRdnLdapAttribute(), "outsideuser");
+            ldapObject.setSingleAttribute(LDAPConstants.SN, "Outside");
+            ldapObject.setSingleAttribute(LDAPConstants.CN, "outsideuser");
+            ldapObject.setSingleAttribute(LDAPConstants.GIVENNAME, "Outside");
+            ldapObject.setSingleAttribute("mail", "outsideuser@example.org");
+
+            LDAPDn dn = LDAPDn.fromString(ldapProvider.getLdapIdentityStore().getConfig().getBaseDn());
+            dn.addFirst("ou", "ServiceAccounts");
+            dn.addFirst(ldapProvider.getLdapIdentityStore().getConfig().getRdnLdapAttribute(), "outsideuser");
+            ldapObject.setDn(dn);
+            ldapProvider.getLdapIdentityStore().add(ldapObject);
+
+            // verify the entry exists in LDAP.
+            try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(ldapProvider, ctx.getRealm())) {
+                ldapQuery.setSearchDn(dn.toString());
+                ldapQuery.setSearchScope(SearchControls.OBJECT_SCOPE);
+                Assertions.assertNotNull(ldapQuery.getFirstResult(), "Out-of-scope LDAP entry should exist");
+            }
+            return dn.toString();
+        }).replace("\"", "");
+
+        // search via the Admin REST API using the out-of-scope DN — should return no results.
+        final String dnForServerRun = outOfScopeDn;
+        Set<String> usernames = managedRealm.admin().users()
+                .searchByAttributes(LDAPConstants.LDAP_ENTRY_DN + ":" + outOfScopeDn)
+                .stream().map(UserRepresentation::getUsername).collect(Collectors.toSet());
+        Assertions.assertTrue(usernames.isEmpty(), "Admin API searchByAttributes with out-of-scope DN should return no results");
+
+        // verify the provider also rejects the out-of-scope DN via searchForUserStream and searchForUserByUserAttribute.
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            LDAPStorageProvider ldapProvider = ctx.getLdapProvider();
+
+            Map<String, String> params = new HashMap<>();
+            params.put(LDAPConstants.LDAP_ENTRY_DN, dnForServerRun);
+            Assertions.assertTrue(
+                    ldapProvider.searchForUserStream(appRealm, params, null, null).toList().isEmpty(),
+                    "searchForUserStream with out-of-scope DN should return no results");
+            Assertions.assertTrue(
+                    session.users().searchForUserByUserAttributeStream(appRealm, LDAPConstants.LDAP_ENTRY_DN, dnForServerRun).toList().isEmpty(),
+                    "searchForUserByUserAttribute with out-of-scope DN should return no results");
+        });
+
+        // cleanup.
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            LDAPStorageProvider ldapProvider = ctx.getLdapProvider();
+            UserModel localUser = session.users().getUserByUsername(appRealm, "outsideuser");
+            if (localUser != null) {
+                session.users().removeUser(appRealm, localUser);
+            }
+            LDAPObject ldapObject = new LDAPObject();
+            ldapObject.setDn(LDAPDn.fromString(dnForServerRun));
+            ldapProvider.getLdapIdentityStore().remove(ldapObject);
+            LDAPObject ouObject = new LDAPObject();
+            LDAPDn ouDn = LDAPDn.fromString(ldapProvider.getLdapIdentityStore().getConfig().getBaseDn());
+            ouDn.addFirst("ou", "ServiceAccounts");
+            ouObject.setDn(ouDn);
+            ldapProvider.getLdapIdentityStore().remove(ouObject);
+        });
     }
 
     public void testDuplicateEmailInDatabase() {

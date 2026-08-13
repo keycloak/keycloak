@@ -258,7 +258,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
     }
 
     @Override
-    public void validateClientScopeAssignment(KeycloakSession session, ClientScopeModel clientScope, boolean defaultScope, RealmModel realm) {
+    public void validateClientScopeAssignment(KeycloakSession session, ClientScopeModel clientScope, boolean defaultScope, RealmModel realm, boolean realmLevel) {
         if (!OID4VC_PROTOCOL.equals(clientScope.getProtocol())) {
             return;
         }
@@ -266,6 +266,17 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         if (!realm.isVerifiableCredentialsEnabled()) {
             throw new ErrorResponseException("invalid_request",
                     "OID4VCI client scopes cannot be assigned when Verifiable Credentials is disabled for the realm",
+                    Response.Status.BAD_REQUEST);
+        }
+
+        // Realm default/optional client scopes are only propagated to clients of the same protocol
+        // (see AbstractLoginProtocolFactory.addDefaultClientScopes) and OID4VCI cannot be used as a client
+        // protocol. A realm-level assignment of an OID4VCI client scope would therefore silently have no
+        // effect on any client. OID4VCI client scopes must be assigned explicitly to each OID4VCI-enabled client.
+        if (realmLevel) {
+            throw new ErrorResponseException("invalid_request",
+                    "OID4VCI client scopes cannot be assigned as realm Default or Optional client scopes. " +
+                            "They must be assigned explicitly to clients with OID4VCI enabled.",
                     Response.Status.BAD_REQUEST);
         }
 

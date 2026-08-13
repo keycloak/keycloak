@@ -155,7 +155,11 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
         getKerberosRule().setKrb5ConfPath(testingClient.testing());
 
-        spnegoSchemeFactory = new KeycloakSPNegoSchemeFactory(getKerberosConfig());
+        // Kerby KDC doesn't set the FORWARDED flag on TGS-REP (DIRKRB-458), causing
+        // JDK's KrbKdcRep.check() to reject the response with "Message stream modified (41)".
+        // Disable credential delegation when using the embedded Kerby KDC; external KDCs (e.g. MSAD) support it.
+        boolean credDelegEnabled = !getKerberosRule().isStartEmbeddedLdapServer();
+        spnegoSchemeFactory = new KeycloakSPNegoSchemeFactory(getKerberosConfig(), credDelegEnabled);
         initHttpClient(true);
         removeAllUsers();
 
@@ -239,11 +243,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
 
     protected Response spnegoLogin(String username, String password) {
-        String kcLoginPageLocation = oauth.loginForm().state("spnegoLogin").build();
-
-        // Request for SPNEGO login sent with Resteasy client
-        spnegoSchemeFactory.setCredentials(username, password);
-        Response response = client.target(kcLoginPageLocation).request().get();
+        Response response = spnegoLoginWithoutRedirect(username, password);
         if (response.getStatus() == 302) {
             if (response.getLocation() == null)
                 return response;
@@ -253,6 +253,15 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
             }
         }
         return response;
+
+    }
+
+    protected Response spnegoLoginWithoutRedirect(String username, String password) {
+        String kcLoginPageLocation = oauth.loginForm().state("spnegoLogin").build();
+
+        // Request for SPNEGO login sent with Resteasy client
+        spnegoSchemeFactory.setCredentials(username, password);
+        return client.target(kcLoginPageLocation).request().get();
 
     }
 
