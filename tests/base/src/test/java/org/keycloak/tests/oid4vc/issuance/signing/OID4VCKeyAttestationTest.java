@@ -18,8 +18,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.OID4VCConstants.KeyAttestationResistanceLevels;
 import org.keycloak.VCFormat;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.broker.provider.X509TrustMaterial;
 import org.keycloak.broker.trust.DefaultTrustIdentityProviderConfig;
 import org.keycloak.broker.trust.DefaultTrustIdentityProviderFactory;
@@ -36,6 +39,7 @@ import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.def.DefaultCryptoProvider;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
+import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -53,6 +57,7 @@ import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtProofValidatorFactory
 import org.keycloak.protocol.oid4vc.issuance.keybinding.StaticAttestationKeyResolver;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.TrustedAttestationKeyResolver;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
+import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
 import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
@@ -60,6 +65,8 @@ import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.SupportedProofTypeData;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
+import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
@@ -68,6 +75,11 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCProofTestUtils;
+import org.keycloak.tests.oid4vc.OID4VCTestContext;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.PkceGenerator;
+import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.util.JsonSerialization;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -88,11 +100,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_CNF;
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_JWK;
 import static org.keycloak.protocol.oid4vc.model.ProofType.ATTESTATION;
 import static org.keycloak.protocol.oid4vc.model.ProofType.JWT;
 import static org.keycloak.protocol.oidc.utils.JWKSServerUtils.toJwk;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.toJwks;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -569,6 +584,53 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         });
     }
 
+    @ParameterizedTest(name = "{0} proof")
+    @ValueSource(strings = {JWT, ATTESTATION})
+    public void testCompleteSdJwtIssuanceWithKidKeyAttestation(String proofType) {
+        KeyWrapper attestationKey = getECKey("trusted-attestation-key");
+        String attestationJwks = JsonSerialization.valueAsString(toJwks(attestationKey));
+
+        runOnServer.run(session -> {
+            setupSessionContext(session);
+            configureTrustIdentityProvider(session.getContext().getRealm(),
+                    OID4VCI_ATTESTER_DEFAULT_TRUST_IDP_ALIAS,
+                    DefaultTrustIdentityProviderFactory.PROVIDER_ID,
+                    Map.of(DefaultTrustIdentityProviderConfig.TRUSTED_JWKS, attestationJwks));
+        });
+
+        runCompleteSdJwtIssuance(proofType, attestationKey, null);
+    }
+
+    @ParameterizedTest(name = "{0} proof")
+    @ValueSource(strings = {JWT, ATTESTATION})
+    public void testCompleteSdJwtIssuanceWithX5cKeyAttestation(String proofType) throws Exception {
+        String caCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.caCertificatePem();
+        X509Certificate caCertificate = PemUtils.decodeCertificate(caCertificatePem);
+        X509Certificate leafCertificate = PemUtils.decodeCertificate(
+                X5C_TEST_CERTIFICATE_CHAIN.leafCertificatePem());
+
+        KeyWrapper attestationKey = new KeyWrapper();
+        attestationKey.setPrivateKey(PemUtils.decodePrivateKey(X5C_TEST_CERTIFICATE_CHAIN.leafPrivateKeyPem()));
+        attestationKey.setPublicKey(leafCertificate.getPublicKey());
+        attestationKey.setAlgorithm("ES256");
+        attestationKey.setType(KeyType.EC);
+        attestationKey.setKid(null);
+
+        runOnServer.run(session -> {
+            setupSessionContext(session);
+            configureTrustIdentityProvider(session.getContext().getRealm(),
+                    OID4VCI_ATTESTER_DEFAULT_TRUST_IDP_ALIAS,
+                    DefaultTrustIdentityProviderFactory.PROVIDER_ID,
+                    Map.of(
+                            DefaultTrustIdentityProviderConfig.USE_X509, "true",
+                            DefaultTrustIdentityProviderConfig.TRUSTED_CERTIFICATES, caCertificatePem,
+                            DefaultTrustIdentityProviderConfig.ATTESTATION_EXTENDED_KEY_USAGES,
+                            TEST_ATTESTATION_EKU));
+        });
+
+        runCompleteSdJwtIssuance(proofType, attestationKey, List.of(leafCertificate, caCertificate));
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {
             AttestationValidatorUtil.ATTESTATION_JWT_TYP,
@@ -710,6 +772,122 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         return oauth.oid4vc().nonceRequest().send().getNonce();
     }
 
+    private void runCompleteSdJwtIssuance(String proofType, KeyWrapper attestationKey,
+                                          List<X509Certificate> attestationCertificateChain) {
+        ClientResource clientResource = testRealm.admin().clients().get(pubClient.getId());
+        String holder = "alice";
+        String userId = testRealm.admin().users().search(holder, true).get(0).getId();
+        var credentialsResource = testRealm.admin().users().get(userId).verifiableCredentials();
+
+        clientResource.addOptionalClientScope(keyAttestationCredentialScope.getId());
+        boolean credentialCreated = false;
+        try {
+            UserVerifiableCredentialRepresentation credential = new UserVerifiableCredentialRepresentation();
+            credential.setCredentialScopeName(keyAttestationCredentialScope.getName());
+            credentialsResource.createCredential(credential);
+            credentialCreated = true;
+
+            oauth.client(pubClient.getClientId());
+            OID4VCTestContext ctx = new OID4VCTestContext(pubClient, keyAttestationCredentialScope);
+            ctx.setHolder(holder);
+
+            PkceGenerator pkce = PkceGenerator.s256();
+            AuthorizationEndpointResponse authorizationResponse = wallet.authorizationRequest()
+                    .scope(ctx.getScope())
+                    .codeChallenge(pkce)
+                    .send(ctx.getHolder(), TEST_PASSWORD);
+            assertNotNull(authorizationResponse.getCode(),
+                    "Authorization endpoint must return a code: " + authorizationResponse.getErrorDescription());
+
+            AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authorizationResponse.getCode())
+                    .codeVerifier(pkce)
+                    .send();
+            String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
+            assertNotNull(accessToken, "Token endpoint must return an access token");
+
+            String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
+            assertNotNull(credentialIdentifier, "Token response must authorize one credential identifier");
+
+            KeyWrapper proofKey = getECKey("credential-holder-key");
+            JWK proofJwk = JWKBuilder.create().ec(proofKey.getPublicKey());
+            proofJwk.setKeyId(proofKey.getKid());
+            proofJwk.setAlgorithm(proofKey.getAlgorithm());
+
+            String cNonce = getCNonce();
+            String attestationJwt = createCompleteFlowAttestationJwt(attestationKey,
+                    attestationCertificateChain, proofJwk, cNonce);
+            Proofs proofs;
+            if (JWT.equals(proofType)) {
+                String credentialIssuer = wallet.getIssuerMetadata(ctx).getCredentialIssuer();
+                String jwtProof = generateJwtProofWithKeyAttestation(
+                        credentialIssuer, proofKey, attestationJwt, cNonce);
+                proofs = new Proofs().setJwt(List.of(jwtProof));
+            } else if (ATTESTATION.equals(proofType)) {
+                proofs = new Proofs().setAttestation(List.of(attestationJwt));
+            } else {
+                throw new IllegalArgumentException("Unsupported proof type: " + proofType);
+            }
+
+            Oid4vcCredentialResponse response = wallet.credentialRequest(ctx, accessToken)
+                    .credentialIdentifier(credentialIdentifier)
+                    .proofs(proofs)
+                    .send();
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode(),
+                    "Credential endpoint rejected " + proofType + " proof: " + response.getErrorDescription());
+
+            assertSdJwtBoundToProofKey(response.getCredentialResponse(), proofKey);
+        } finally {
+            if (credentialCreated) {
+                credentialsResource.revokeCredential(keyAttestationCredentialScope.getName());
+            }
+            clientResource.removeOptionalClientScope(keyAttestationCredentialScope.getId());
+        }
+    }
+
+    private static String createCompleteFlowAttestationJwt(KeyWrapper attestationKey,
+                                                           List<X509Certificate> certificateChain,
+                                                           JWK proofJwk,
+                                                           String cNonce) {
+        KeyAttestationJwtBody payload = new KeyAttestationJwtBody();
+        long now = Time.currentTime();
+        payload.setIat(now);
+        payload.setExp(now + 3600);
+        payload.setNonce(cNonce);
+        payload.setAttestedKeys(List.of(proofJwk));
+        payload.setKeyStorage(List.of(KeyAttestationResistanceLevels.MODERATE));
+        payload.setUserAuthentication(List.of(KeyAttestationResistanceLevels.MODERATE));
+        payload.setStatus(Map.of("status", "valid"));
+
+        JWSBuilder builder = new JWSBuilder().type(AttestationValidatorUtil.ATTESTATION_JWT_TYP);
+        if (certificateChain == null) {
+            builder.kid(attestationKey.getKid());
+        } else {
+            builder.x5c(certificateChain);
+        }
+        return builder.jsonContent(payload).sign(new ECDSASignatureSignerContext(attestationKey));
+    }
+
+    private static void assertSdJwtBoundToProofKey(CredentialResponse response, KeyWrapper proofKey) {
+        assertNotNull(response, "Credential response body must be present");
+        assertNotNull(response.getCredentials(), "Credentials array must be present");
+        assertEquals(1, response.getCredentials().size(), "Exactly one credential must be issued");
+
+        Object credential = response.getCredentials().get(0).getCredential();
+        assertNotNull(credential, "Issued credential must be present");
+        SdJwtVP sdJwt = SdJwtVP.of(credential.toString());
+        var cnf = sdJwt.getIssuerSignedJWT().getPayload().get(CLAIM_NAME_CNF);
+        assertNotNull(cnf, "Issued SD-JWT must contain the cnf holder-binding claim");
+        var boundJwkNode = cnf.get(CLAIM_NAME_JWK);
+        assertNotNull(boundJwkNode, "SD-JWT cnf claim must contain a jwk");
+
+        JWK boundJwk = JsonSerialization.mapper.convertValue(boundJwkNode, JWK.class);
+        assertEquals(proofKey.getKid(), boundJwk.getKeyId(),
+                "SD-JWT must retain the attested proof key identifier");
+        assertArrayEquals(proofKey.getPublicKey().getEncoded(),
+                JWKParser.create(boundJwk).toPublicKey().getEncoded(),
+                "SD-JWT holder binding must use the exact key from the proof");
+    }
+
     private static KeyWrapper getECKey(String keyId) {
         return OID4VCProofTestUtils.createEcKeyPair(keyId);
     }
@@ -792,10 +970,27 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
                                                              KeyWrapper proofKey,
                                                              String attestationJwt,
                                                              String cNonce) {
-        return generateJwtProofWithKeyAttestation(session, proofKey, attestationJwt, cNonce, false);
+        String credentialIssuer = OID4VCIssuerWellKnownProvider.getIssuer(session.getContext());
+        return generateJwtProofWithKeyAttestation(credentialIssuer, proofKey, attestationJwt, cNonce, false);
     }
 
     private static String generateJwtProofWithKeyAttestation(KeycloakSession session,
+                                                             KeyWrapper proofKey,
+                                                             String attestationJwt,
+                                                             String cNonce,
+                                                             boolean useKidHeader) {
+        String credentialIssuer = OID4VCIssuerWellKnownProvider.getIssuer(session.getContext());
+        return generateJwtProofWithKeyAttestation(credentialIssuer, proofKey, attestationJwt, cNonce, useKidHeader);
+    }
+
+    private static String generateJwtProofWithKeyAttestation(String credentialIssuer,
+                                                             KeyWrapper proofKey,
+                                                             String attestationJwt,
+                                                             String cNonce) {
+        return generateJwtProofWithKeyAttestation(credentialIssuer, proofKey, attestationJwt, cNonce, false);
+    }
+
+    private static String generateJwtProofWithKeyAttestation(String credentialIssuer,
                                                              KeyWrapper proofKey,
                                                              String attestationJwt,
                                                              String cNonce,
@@ -806,7 +1001,6 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
             proofJwk.setAlgorithm(proofKey.getAlgorithm());
 
             AccessToken token = new AccessToken();
-            String credentialIssuer = OID4VCIssuerWellKnownProvider.getIssuer(session.getContext());
             token.addAudience(credentialIssuer);
             token.setNonce(cNonce);
             token.issuedNow();
