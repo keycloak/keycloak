@@ -70,6 +70,7 @@ jobs:
         with:
           scan-type: 'fs'
           scan-ref: '.'
+          trivyignores: .trivy/trivyignore.yaml
           format: 'json'
           output: 'trivy-report.json'
           scanners: 'vuln'          
