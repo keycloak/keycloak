@@ -7,7 +7,7 @@ import {
   FormGroup,
   TextInput,
 } from "@patternfly/react-core";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -17,6 +17,48 @@ type FormFields = {
   borderRadiusButton: string;
 };
 
+type DependentBorderRadiusField = "borderRadiusInput" | "borderRadiusButton";
+
+const BORDER_RADIUS_PATTERN = /^(?:0|(?:\d+|\d*\.\d+)(?:px|rem|em|%))$/;
+const BORDER_RADIUS_WITH_UNIT_PATTERN = /^(\d*\.?\d+)(px|rem|em|%)$/;
+
+export function sanitizeBorderRadiusValue(value?: string) {
+  const trimmed = value?.trim();
+  if (!trimmed || !BORDER_RADIUS_PATTERN.test(trimmed)) {
+    return undefined;
+  }
+
+  return trimmed;
+}
+
+function toBorderRadiusDeclaration(value?: string) {
+  const borderRadius = sanitizeBorderRadiusValue(value);
+  return borderRadius ? `border-radius: ${borderRadius};` : "";
+}
+
+function toCssVariableDeclaration(variable: string, value?: string) {
+  const borderRadius = sanitizeBorderRadiusValue(value);
+  return borderRadius ? `${variable}: ${borderRadius};` : "";
+}
+
+function toSubcomponentRadius(value?: string) {
+  const borderRadius = sanitizeBorderRadiusValue(value);
+  if (!borderRadius) {
+    return "";
+  }
+
+  if (borderRadius === "0") {
+    return "0";
+  }
+
+  const match = BORDER_RADIUS_WITH_UNIT_PATTERN.exec(borderRadius);
+  if (!match) {
+    return "";
+  }
+
+  return `${Number.parseFloat(match[1]) / 2}${match[2]}`;
+}
+
 export function borderRadiusToCss({
   borderRadiusMain,
   borderRadiusInput,
@@ -24,38 +66,33 @@ export function borderRadiusToCss({
 }: FormFields | Record<string, string>) {
   return `
 .pf-v5-c-login__main {
-  ${borderRadiusMain ? "border-radius:" + borderRadiusMain : ""};
+  ${toBorderRadiusDeclaration(borderRadiusMain)}
 }
 .pf-v5-c-login__main-header {
-  ${borderRadiusMain ? "border-radius:" + borderRadiusMain : ""};
+  ${toBorderRadiusDeclaration(borderRadiusMain)}
 }
 .pf-v5-c-button {
-  ${borderRadiusButton ? "border-radius:" + borderRadiusButton : ""};
-  --pf-v5-c-button--after--BorderRadius: ${borderRadiusButton};
+  ${toBorderRadiusDeclaration(borderRadiusButton)}
+  ${toCssVariableDeclaration(
+    "--pf-v5-c-button--after--BorderRadius",
+    borderRadiusButton,
+  )}
 }
-.pf-v5-c-form-control {
-  ${borderRadiusMain ? "border-radius:" + borderRadiusMain : ""};
-}
-.pf-v5-c-form-control input {
-  ${borderRadiusInput ? "border-radius:" + borderRadiusInput : ""};
-}
+.pf-v5-c-form-control,
 .pf-v5-c-form-control::after {
-  ${borderRadiusButton ? "border-radius:" + borderRadiusButton : ""};
+  ${toBorderRadiusDeclaration(borderRadiusInput)}
 }
 .pf-v5-c-button.pf-m-control::after {
-  ${borderRadiusButton ? "border-radius:" + borderRadiusButton : ""};
+  ${toBorderRadiusDeclaration(borderRadiusButton)}
 }
   `;
-}
-function pxToNumber(value: string) {
-  return parseInt(value.replaceAll("px", ""), 10) || 0;
 }
 
 export const BorderRadiusControl = () => {
   const { t } = useTranslation();
   const { control, setValue, register } = useFormContext();
   const [expanded, setExpanded] = useState(false);
-  const [dependent, setDependent] = useState([
+  const dependentFieldsRef = useRef<DependentBorderRadiusField[]>([
     "borderRadiusInput",
     "borderRadiusButton",
   ]);
@@ -67,16 +104,23 @@ export const BorderRadiusControl = () => {
   });
 
   useEffect(() => {
-    dependent.map((d) =>
-      setValue(d, `${Math.floor(pxToNumber(mainBorderValue) / 2)}px`),
+    const subcomponentRadius = toSubcomponentRadius(mainBorderValue);
+    dependentFieldsRef.current.forEach((field) => {
+      setValue(field, subcomponentRadius);
+    });
+  }, [mainBorderValue, setValue]);
+
+  const stopAutoUpdate = (field: DependentBorderRadiusField) => {
+    dependentFieldsRef.current = dependentFieldsRef.current.filter(
+      (dependentField) => dependentField !== field,
     );
-  }, [mainBorderValue]);
+  };
 
   return (
     <>
       <TextControl
         name={"borderRadiusMain"}
-        label={t("borderRadius")}
+        label={t("defaultBorderRadius")}
         placeholder="in px"
         defaultValue=""
       />
@@ -85,11 +129,11 @@ export const BorderRadiusControl = () => {
           <AccordionToggle
             onClick={() => setExpanded(!expanded)}
             isExpanded={expanded}
-            id="default-color-toggle"
+            id="border-radius-toggle"
           >
-            {t("borderRadius")}
+            {t("subcomponentBorderRadius")}
           </AccordionToggle>
-          <AccordionContent id="default-color-content" isHidden={!expanded}>
+          <AccordionContent id="border-radius-content" isHidden={!expanded}>
             <div className="pf-v5-c-form">
               <FormGroup
                 label={t("borderRadiusInput")}
@@ -97,10 +141,7 @@ export const BorderRadiusControl = () => {
               >
                 <TextInput
                   {...register("borderRadiusInput", {
-                    onChange: () =>
-                      setDependent(
-                        dependent.filter((d) => d !== "borderRadiusInput"),
-                      ),
+                    onChange: () => stopAutoUpdate("borderRadiusInput"),
                   })}
                   id="borderRadiusInput"
                   placeholder="0px"
@@ -112,10 +153,7 @@ export const BorderRadiusControl = () => {
               >
                 <TextInput
                   {...register("borderRadiusButton", {
-                    onChange: () =>
-                      setDependent(
-                        dependent.filter((d) => d !== "borderRadiusButton"),
-                      ),
+                    onChange: () => stopAutoUpdate("borderRadiusButton"),
                   })}
                   id="borderRadiusButton"
                   placeholder="4px"

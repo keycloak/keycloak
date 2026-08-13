@@ -6,6 +6,10 @@ import { LogoContext } from "./LogoContext";
 import { ThemeColors } from "./ThemeColors";
 import { BackgroundContext } from "./BackgroundContext";
 import type { Environment } from "../../environment-types";
+import {
+  borderRadiusToCss,
+  sanitizeBorderRadiusValue,
+} from "./BorderRadiusControl";
 
 export type ThemeRealmRepresentation = RealmRepresentation & {
   themeName?: string;
@@ -146,6 +150,10 @@ styles=css/styles.css css/theme-styles.css
       Object.entries(obj || {})
         .map(([key, value]) => `--pf-v5-global--${key}: ${value};`)
         .join("\n");
+    const borderRadiusMain = sanitizeBorderRadiusValue(styles.borderRadiusMain);
+    const borderRadiusButton = sanitizeBorderRadiusValue(
+      styles.borderRadiusButton,
+    );
 
     const loginCss = (
       await fetch(
@@ -166,31 +174,13 @@ styles=css/styles.css css/theme-styles.css
       `:root {
         ${bgimage ? `--keycloak-bg-logo-url: url('../${bgimageName}');` : ""}
         ${logo ? `--keycloak-logo-url: url('../${logoName}');` : ""}
-        ${styles.borderRadiusButton ? `--pf-v5-global--BorderRadius--sm: ${styles.borderRadiusButton};` : ""}
-        ${
-          styles.borderRadiusInput
-            ? `
-          .pf-v5-c-form-control::after {
-              border-radius: ${styles.borderRadiusInput};
-          }
-
-          .pf-v5-c-form-control {
-              border-radius: ${styles.borderRadiusInput};
-              overflow: hidden;
-          }
-          `
-            : ""
-        }
-        ${
-          styles.borderRadiusMain
-            ? `--pf-v5-global--BorderRadius--lg: ${styles.borderRadiusMain};\n
-        --pf-v5-c-button--after--BorderRadius: ${styles.borderRadiusMain}; \n`
-            : ""
-        }
+        ${borderRadiusButton ? `--pf-v5-global--BorderRadius--sm: ${borderRadiusButton};` : ""}
+        ${borderRadiusMain ? `--pf-v5-global--BorderRadius--lg: ${borderRadiusMain};` : ""}
         --keycloak-logo-height: ${realm.logoHeight};
         --keycloak-logo-width: ${realm.logoWidth};
         ${toCss(styles.light)}
       }
+      ${borderRadiusToCss(styles)}
       .pf-v5-theme-dark {
         ${toCss(styles.dark)}
       }
