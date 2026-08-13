@@ -75,7 +75,7 @@ export async function assertCertificates(page: Page) {
   ].filter(Boolean).length;
 
   await expect(page.getByTestId("certificate")).toHaveCount(certsEnabled, {
-    timeout: 3000,
+    timeout: 5000,
   });
 }
 

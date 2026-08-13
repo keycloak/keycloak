@@ -25,6 +25,9 @@ public class DefaultClientAssertionStrategy implements ClientAssertionIdentityPr
         String issuer = clientAssertionState.getToken().getIssuer();
         String federatedClientId =  clientAssertionState.getToken().getSubject();
 
+        if (issuer == null || federatedClientId == null) {
+            return null;
+        }
         IdentityProviderModel identityProvider = lookupProvider.lookupIdentityProviderFromIssuer(context.getSession(), IdentityProviderType.CLIENT_ASSERTION, issuer);
         if (identityProvider == null) {
             return null;

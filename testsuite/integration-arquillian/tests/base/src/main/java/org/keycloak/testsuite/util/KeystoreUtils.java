@@ -67,14 +67,12 @@ public class KeystoreUtils {
 
     public static KeystoreInfo generateKeystore(TemporaryFolder folder, KeystoreUtil.KeystoreFormat keystoreType,
             String subject, String keystorePassword, String keyPassword, PrivateKey privKey, Certificate certificate) throws Exception {
-        String fileName = "keystore." + keystoreType.getPrimaryExtension();
-
         KeyStore keyStore = CryptoIntegration.getProvider().getKeyStore(keystoreType);
         keyStore.load(null, null);
         Certificate[] chain = {certificate};
         keyStore.setKeyEntry(subject, privKey, keyPassword.trim().toCharArray(), chain);
 
-        File file = File.createTempFile("keystore-", "." + keystoreType.getPrimaryExtension(), folder.getRoot());
+        File file = File.createTempFile("keystore-" + System.nanoTime(), "." + keystoreType.getPrimaryExtension(), folder.getRoot());
         keyStore.store(new FileOutputStream(file), keystorePassword.trim().toCharArray());
 
         CertificateRepresentation certRep = new CertificateRepresentation();
