@@ -42,6 +42,7 @@ interface EvaluateFormInputs
   groups: string[];
   users: string[];
   roles: string[];
+  organizations: string[];
   resourceType?: string;
 }
 
@@ -114,6 +115,8 @@ const PermissionEvaluateContent = ({ client }: Props) => {
           return getSingleValue(formValues.clients);
         case "Roles":
           return getSingleValue(formValues.roles);
+        case "Organizations":
+          return getSingleValue(formValues.organizations);
         default:
           return undefined;
       }
