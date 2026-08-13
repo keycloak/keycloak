@@ -2,6 +2,7 @@ import { type Page, expect } from "@playwright/test";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 
 const SERVER_URL = "http://localhost:8080";
+const KUBERNETES_API_SERVER_URL = "https://kubernetes.default.svc";
 const discoveryUrl = `${SERVER_URL}/realms/master/.well-known/openid-configuration`;
 const authorizationUrl = `${SERVER_URL}/realms/master/protocol/openid-connect/auth`;
 
@@ -117,6 +118,31 @@ export async function createKubernetesProvider(
   issuerUrl: string,
 ) {
   await clickProviderCard(page, providerName);
+  await expect(
+    page.getByTestId("kubernetes-in-cluster-discovery"),
+  ).toBeChecked();
+  await expect(page.getByTestId("config.issuerDiscoveryUrl")).toHaveValue(
+    KUBERNETES_API_SERVER_URL,
+  );
+  await expect(
+    page.getByTestId("config.issuerDiscoveryUrl"),
+  ).not.toBeEditable();
+
+  await page.getByTestId("kubernetes-external-discovery").click();
+  await expect(page.getByTestId("config.issuerDiscoveryUrl")).toBeEditable();
+  await page
+    .getByTestId("config.issuerDiscoveryUrl")
+    .fill("https://oidc.example.test");
+
+  await page.getByTestId("kubernetes-in-cluster-discovery").click();
+  await expect(page.getByTestId("config.issuerDiscoveryUrl")).toHaveValue(
+    KUBERNETES_API_SERVER_URL,
+  );
+  await expect(
+    page.getByTestId("config.issuerDiscoveryUrl"),
+  ).not.toBeEditable();
+
+  await expect(page.getByTestId("config.issuer")).toBeEnabled();
   await page.getByTestId("config.issuer").fill(issuerUrl);
   await clickAddButton(page);
 }
