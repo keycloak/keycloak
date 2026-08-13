@@ -93,7 +93,6 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
     @Override
     protected Map<String, Attribute<GroupModel, Group>> getAttributeMappers() {
         List<Attribute<GroupModel, Group>> attributes = new ArrayList<>(Attribute.<GroupModel, Group>simple("displayName")
-                    .notCaseExact()
                     .modelAttributeResolver((attribute) -> {
                         if (attribute.getName().equals("displayName")) {
                             return "name";
@@ -107,6 +106,7 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
                     })
                     .build());
         attributes.addAll(Attribute.<GroupModel, Group>simple("externalId")
+                .caseExact()
                 .immutable()
                 .string()
                 .withModelSetter(GroupModel::setSingleAttribute)

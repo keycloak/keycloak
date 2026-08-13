@@ -46,6 +46,7 @@ public abstract class BaseClientModelSchema<R extends BaseClientRepresentation>
             BiConsumer<BaseClientRepresentation, String> repSetter,
             BiConsumer<ClientModel, String> modelSetter) {
         return Attribute.<ClientModel, R>simple(name)
+                .caseExact()
                 .modelAttributeResolver(a -> entityField)
                 .withModelSetter(
                         modelSetter != null ? (TriConsumer<ClientModel, String, String>) (model, n, v) -> modelSetter.accept(model, v) : null,

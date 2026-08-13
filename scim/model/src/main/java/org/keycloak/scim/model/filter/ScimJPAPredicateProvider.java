@@ -167,7 +167,7 @@ public class ScimJPAPredicateProvider {
             basePredicate = cb.equal(join.get("name"), modelAttributeName);
         }
 
-        if (value != null && (attrInfo.isStoredLowerCase() || !attrInfo.isCaseExact())) {
+        if (value instanceof String && (attrInfo.isStoredLowerCase() || !attrInfo.isCaseExact())) {
             value = value.toString().toLowerCase();
             if (!attrInfo.isStoredLowerCase()) {
                 expression = cb.lower((Expression<String>) expression);
