@@ -16,3 +16,10 @@ Additionally, tokens issued from impersonation sessions now include the `act` (a
 The social identity provider section on the login page has been refreshed with updated icons, a new divider layout, and improved button labels.
 
 If you have a custom login theme, see the link:{upgradingguide_link}[{upgradingguide_name}] for details on what changed.
+
+== Enhanced HTTP performance
+
+The `http-optimized-serializers` feature is now supported and enabled by default.
+This improves how {project_name} handles JSON in the HTTP layer, increasing throughput by about 5%, stabilizing response times, and reducing resource usage.
+
+If you need to disable it, use the `--features-disabled=http-optimized-serializers` server option.

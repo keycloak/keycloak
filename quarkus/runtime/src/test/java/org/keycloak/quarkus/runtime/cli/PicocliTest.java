@@ -1083,12 +1083,12 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void httpOptimizedSerializers() {
         var nonRunningPicocli = pseudoLaunch("start-dev");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertExternalConfigNull("quarkus.rest.jackson.optimization.enable-reflection-free-serializers");
+        assertExternalConfig("quarkus.rest.jackson.optimization.enable-reflection-free-serializers", "true");
         onAfter();
 
-        nonRunningPicocli = pseudoLaunch("start-dev", "--features=http-optimized-serializers");
+        nonRunningPicocli = pseudoLaunch("start-dev", "--features-disabled=http-optimized-serializers");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertExternalConfig("quarkus.rest.jackson.optimization.enable-reflection-free-serializers", "true");
+        assertExternalConfigNull("quarkus.rest.jackson.optimization.enable-reflection-free-serializers");
     }
 
     @Test

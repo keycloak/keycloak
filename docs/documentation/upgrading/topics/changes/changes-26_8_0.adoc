@@ -30,6 +30,13 @@ When calling {project_name}'s experimental AuthZEN endpoints, the caller now nee
 
 The Admin REST API endpoints for listing client sessions (`GET /admin/realms/\{realm}/clients/\{id}/user-sessions` and `GET /admin/realms/\{realm}/clients/\{id}/offline-sessions`) now filter out sessions belonging to users that the caller does not have permission to view. Previously, any caller with the `view-clients` role could see all user sessions for a client, potentially exposing user identities to callers without the `view-users` role. After upgrading, callers without `view-users` permission will see fewer results from these endpoints.
 
+=== HTTP optimized serializers enabled by default
+
+The `http-optimized-serializers` feature is now enabled by default.
+If you enabled it explicitly in a previous release, the `--features=http-optimized-serializers` option is no longer required.
+
+If needed, you can disable it with `--features-disabled=http-optimized-serializers`.
+
 === Redesigned identity provider buttons on the login page
 
 The social identity provider section on the login page has been redesigned with updated icons and layout.
