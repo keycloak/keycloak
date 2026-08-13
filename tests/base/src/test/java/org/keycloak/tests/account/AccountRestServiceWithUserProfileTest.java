@@ -134,6 +134,38 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
     }
 
     @Test
+    public void testScopeSelectorBypassedInAccountContext() throws IOException {
+        managedRealm.cleanup().add(r -> UserProfileUtil.setUserProfileConfiguration(r, null));
+
+        String upConfigScopeSelector = "{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"attr_scope_profile\"," + PERMISSIONS_ALL + ", \"selector\": {\"scopes\": [\"profile\"]}},"
+                + "{\"name\": \"attr_scope_address\"," + PERMISSIONS_ALL + ", \"selector\": {\"scopes\": [\"address\"]}},"
+                + "{\"name\": \"attr_scope_multiple\"," + PERMISSIONS_ALL + ", \"selector\": {\"scopes\": [\"profile\", \"phone\"]}},"
+                + "{\"name\": \"attr_no_selector\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"attr_scope_admin_only\"," + PERMISSIONS_ADMIN_ONLY + ", \"selector\": {\"scopes\": [\"profile\"]}}"
+                + "]}";
+
+        setUserProfileConfiguration(upConfigScopeSelector);
+
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+        UserRepresentation user = getUser(token);
+        Assertions.assertNotNull(user.getUserProfileMetadata());
+
+        // scope selectors are bypassed in account context — all attributes with selector.scopes are visible
+        assertUserProfileAttributeMetadata(user, "attr_scope_profile", "attr_scope_profile", false, false);
+        assertUserProfileAttributeMetadata(user, "attr_scope_address", "attr_scope_address", false, false);
+        assertUserProfileAttributeMetadata(user, "attr_scope_multiple", "attr_scope_multiple", false, false);
+
+        // attribute without selector is also visible
+        assertUserProfileAttributeMetadata(user, "attr_no_selector", "attr_no_selector", false, false);
+
+        // permissions still restrict visibility independently of scope selector
+        Assertions.assertNull(getUserProfileAttributeMetadata(user, "attr_scope_admin_only"));
+    }
+
+    @Test
     public void testGetUserProfileMetadata_NoAccessToNameFields() throws IOException {
         managedRealm.cleanup().add(r -> UserProfileUtil.setUserProfileConfiguration(r, null));
         managedRealm.updateWithCleanup(r -> r.editUsernameAllowed(false));
