@@ -4,11 +4,11 @@ import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { goToIdentityProviders } from "../utils/sidebar.ts";
 import { clickTableRowItem } from "../utils/table.ts";
+import { SERVER_URL } from "../utils/constants.ts";
 import { clickSaveButton, createDefaultTrustProvider } from "./main.ts";
 
 const alias = "default-trust";
-const addDefaultTrustProviderUrl =
-  "http://localhost:8080/admin/master/console/#/master/identity-providers/default-trust/add";
+const addDefaultTrustProviderUrl = `${SERVER_URL}/admin/master/console/#/master/identity-providers/default-trust/add`;
 const jwksUrl = "https://localhost/realms/test/protocol/openid-connect/certs";
 const jwks = '{"keys":[]}';
 
