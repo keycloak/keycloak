@@ -3,6 +3,7 @@ import type ComponentExportRepresentation from "./componentExportRepresentation.
 import type UserRepresentation from "./userRepresentation.js";
 import type GroupRepresentation from "./groupRepresentation.js";
 import type IdentityProviderRepresentation from "./identityProviderRepresentation.js";
+import type EventHookTargetRepresentation from "./eventHookTargetRepresentation.js";
 import type RequiredActionProviderRepresentation from "./requiredActionProviderRepresentation.js";
 import type RolesRepresentation from "./rolesRepresentation.js";
 import type ClientProfilesRepresentation from "./clientProfilesRepresentation.js";
@@ -70,6 +71,7 @@ export default interface RealmRepresentation {
   // IdentityProviderMapperRepresentation
   identityProviderMappers?: any[];
   identityProviders?: IdentityProviderRepresentation[];
+  eventHookTargets?: EventHookTargetRepresentation[];
   internationalizationEnabled?: boolean;
   keycloakVersion?: string;
   loginTheme?: string;

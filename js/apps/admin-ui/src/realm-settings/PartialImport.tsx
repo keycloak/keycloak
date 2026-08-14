@@ -43,7 +43,12 @@ export type PartialImportProps = {
 // or a single realm object.
 type ImportedMultiRealm = RealmRepresentation | RealmRepresentation[];
 
-type NonRoleResource = "users" | "clients" | "groups" | "identityProviders";
+type NonRoleResource =
+  | "users"
+  | "clients"
+  | "groups"
+  | "identityProviders"
+  | "eventHookTargets";
 type RoleResource = "realmRoles" | "clientRoles";
 type Resource = NonRoleResource | RoleResource;
 
@@ -56,6 +61,7 @@ const INITIAL_RESOURCES: Readonly<ResourceChecked> = {
   clients: false,
   groups: false,
   identityProviders: false,
+  eventHookTargets: false,
   realmRoles: false,
   clientRoles: false,
 };
@@ -97,7 +103,10 @@ export const PartialImportDialog = (props: PartialImportProps) => {
   useEffect(() => {
     setImportInProgress(false);
     setImportResponse(undefined);
-    resetInputState();
+    setImportedFile(undefined);
+    setTargetRealm({});
+    setCollisionOption("FAIL");
+    setResourcesToImport(INITIAL_RESOURCES);
   }, [props.open]);
 
   const handleFileChange = (value: ImportedMultiRealm) => {
@@ -165,6 +174,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
       targetHasResource("groups") ||
       targetHasResource("clients") ||
       targetHasResource("identityProviders") ||
+      targetHasResource("eventHookTargets") ||
       targetHasRealmRoles() ||
       targetHasClientRoles()
     );
@@ -246,12 +256,19 @@ export const PartialImportDialog = (props: PartialImportProps) => {
     if (resourcesToImport["groups"]) jsonToImport.groups = targetRealm.groups;
     if (resourcesToImport["identityProviders"])
       jsonToImport.identityProviders = targetRealm.identityProviders;
+    if (resourcesToImport["eventHookTargets"])
+      jsonToImport.eventHookTargets = targetRealm.eventHookTargets;
     if (resourcesToImport["clients"])
       jsonToImport.clients = targetRealm.clients;
     if (resourcesToImport["realmRoles"] || resourcesToImport["clientRoles"]) {
-      jsonToImport.roles = targetRealm.roles;
-      if (!resourcesToImport["realmRoles"]) delete jsonToImport.roles?.realm;
-      if (!resourcesToImport["clientRoles"]) delete jsonToImport.roles?.client;
+      jsonToImport.roles = {
+        ...(resourcesToImport["realmRoles"] && targetRealm.roles?.realm
+          ? { realm: targetRealm.roles.realm }
+          : {}),
+        ...(resourcesToImport["clientRoles"] && targetRealm.roles?.client
+          ? { client: targetRealm.roles.client }
+          : {}),
+      };
     }
     return jsonToImport;
   };
@@ -356,6 +373,11 @@ export const PartialImportDialog = (props: PartialImportProps) => {
                       "identityProviders",
                       t("identityProviders"),
                     )}
+                  {targetHasResource("eventHookTargets") &&
+                    resourceDataListItem(
+                      "eventHookTargets",
+                      t("eventHookTargets"),
+                    )}
                   {targetHasRealmRoles() &&
                     resourceDataListItem("realmRoles", t("realmRoles"))}
                   {targetHasClientRoles() &&
@@ -436,6 +458,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
       ["USER", t("users")],
       ["CLIENT_ROLE", t("clientRoles")],
       ["IDP", t("identityProviders")],
+      ["EVENT_HOOK_TARGET", t("eventHookTargets")],
       ["GROUP", t("groups")],
     ]);
 

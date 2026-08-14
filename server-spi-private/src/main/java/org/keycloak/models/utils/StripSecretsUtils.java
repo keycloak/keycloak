@@ -37,6 +37,7 @@ import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ConfigurableAuthenticatorFactory;
 import org.keycloak.authentication.FormAction;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.events.hooks.EventHookTargetRepresentationUtil;
 import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -201,6 +202,9 @@ public class StripSecretsUtils {
 
         Optional.ofNullable(rep.getIdentityProviders())
                 .ifPresent(providers -> providers.forEach(StripSecretsUtils::stripBroker));
+
+        Optional.ofNullable(rep.getEventHookTargets())
+            .ifPresent(targets -> targets.forEach(target -> EventHookTargetRepresentationUtil.redactRepresentation(session, target)));
 
         Optional.ofNullable(rep.getComponents())
                 .ifPresent(components -> components

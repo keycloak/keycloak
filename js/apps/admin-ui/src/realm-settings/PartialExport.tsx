@@ -38,6 +38,7 @@ export const PartialExportDialog = ({
 
   const [exportGroupsAndRoles, setExportGroupsAndRoles] = useState(false);
   const [exportClients, setExportClients] = useState(false);
+  const [exportEventHookTargets, setExportEventHookTargets] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
   const showWarning = exportGroupsAndRoles || exportClients;
@@ -49,6 +50,7 @@ export const PartialExportDialog = ({
       const realmExport = await adminClient.realms.export({
         realm,
         exportClients,
+        exportEventHookTargets,
         exportGroupsAndRoles,
       });
 
@@ -128,6 +130,21 @@ export const PartialExportDialog = ({
             label={t("on")}
             labelOff={t("off")}
             aria-label={t("includeClients")}
+          />
+        </FormGroup>
+        <FormGroup
+          label={t("includeEventHookTargets")}
+          fieldId="include-event-hook-targets-check"
+          hasNoPaddingTop
+        >
+          <Switch
+            id="include-event-hook-targets-check"
+            data-testid="include-event-hook-targets-check"
+            onChange={(_event, val) => setExportEventHookTargets(val)}
+            isChecked={exportEventHookTargets}
+            label={t("on")}
+            labelOff={t("off")}
+            aria-label={t("includeEventHookTargets")}
           />
         </FormGroup>
       </Form>

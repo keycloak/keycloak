@@ -80,6 +80,7 @@ export class Realms extends Resource {
     {
       realm: string;
       exportClients?: boolean;
+      exportEventHookTargets?: boolean;
       exportGroupsAndRoles?: boolean;
     },
     RealmRepresentation
@@ -87,7 +88,11 @@ export class Realms extends Resource {
     method: "POST",
     path: "/{realm}/partial-export",
     urlParamKeys: ["realm"],
-    queryParamKeys: ["exportClients", "exportGroupsAndRoles"],
+    queryParamKeys: [
+      "exportClients",
+      "exportEventHookTargets",
+      "exportGroupsAndRoles",
+    ],
   });
 
   public getDefaultGroups = this.makeRequest<

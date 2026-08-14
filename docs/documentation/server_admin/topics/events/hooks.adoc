@@ -1,0 +1,203 @@
+[id="event-hooks_{context}"]
+=== Delivering events with event hooks
+
+Event hooks allow you to forward user and admin events to HTTP services, SQL databases, pull consumers, and custom targets.
+Unlike the built-in logging and email listeners, event hooks persist deliveries in an outbox and send them asynchronously.
+This helps avoid blocking the original login or admin request while still keeping a delivery history that administrators can inspect later.
+Event hooks ship with built-in `http`, `pull`, and `sql` target types, and you can add custom target types through the Event Hook Target SPI.
+
+==== How event hooks work
+
+When a configured user event or admin event occurs, {project_name} stores a delivery message in its internal outbox.
+A background delivery task polls the outbox, claims pending messages, and sends them to the configured target.
+Each attempt is recorded so that administrators can inspect delivery status and failures.
+
+The built-in delivery behavior has the following characteristics:
+
+* Delivery is asynchronous and based on persisted outbox messages.
+* Failed deliveries can be retried with exponential backoff.
+* For HTTP targets, a `Retry-After` response header delays the next retry attempt when it specifies a longer wait time than the configured exponential backoff.
+* Pull targets can keep messages in a waiting state until an external consumer explicitly fetches them.
+* Cluster nodes can process deliveries cooperatively.
+* Delivery is at-least-once, so receivers should treat requests as potentially duplicated and implement idempotency.
+
+==== Managing event hooks in the Admin Console
+
+When the feature is enabled, the *Events* section in the Admin Console contains a *Hooks* page with the following subpages:
+
+* *Targets* for creating and managing delivery targets.
+* *Logs* for inspecting delivery attempts.
+
+Targets define where events are sent or exposed.
+Logs show the outcome of each delivery attempt, including retry attempts, returned status codes, and diagnostic details.
+
+.Procedure
+
+Use this procedure to manage event hooks in the Admin Console.
+
+. Click *Events* in the menu.
+. Click the *Hooks* tab.
+. Use the *Targets* page to create, update, test, enable, or disable targets.
+. Use the *Logs* page to inspect delivery attempts, diagnose failures, and manually retry retryable deliveries.
+
+==== Built-in target types
+
+===== HTTP targets
+
+The built-in target type is `http`.
+It delivers events to an absolute `http` or `https` URL and supports the following settings:
+
+[cols="1,3",options="header"]
+|===
+|Setting |Description
+
+|`url`
+|Absolute target URL.
+
+|`method`
+|HTTP method used for delivery. Supported values are `POST`, `PUT`, and `PATCH`.
+
+|`deliveryMode`
+|Whether events are sent one-by-one as `SINGLE` deliveries or grouped into `BULK` requests.
+
+|`headers`
+|Static headers added to every request.
+
+|`hmacAlgorithm`
+|HMAC algorithm used to sign the payload. Supported values are `HmacSHA256` and `HmacSHA512`.
+
+|`hmacSecret`
+|Shared secret used for payload signing.
+
+|`maxAttempts`
+|Maximum number of delivery attempts before the message is marked as exhausted.
+
+|`retryDelayMs`
+|Base retry delay in milliseconds.
+
+|`maxEventsPerBatch`
+|Maximum number of events included in a bulk request.
+
+|`connectTimeoutMs`
+|HTTP connection timeout in milliseconds.
+
+|`readTimeoutMs`
+|HTTP read timeout in milliseconds.
+
+|===
+
+If an HMAC secret is configured, {project_name} signs the payload before sending it.
+Use this together with HTTPS and a receiver-side signature validation step to verify the origin and integrity of requests.
+
+If the receiving service returns a `Retry-After` response header with an HTTP `429` or `5xx` response, {project_name} honors that delay when it is longer than the configured exponential backoff.
+
+===== Pull targets
+
+The built-in target type `pull` exposes waiting event hook messages through a protected realm-specific endpoint instead of pushing them to another system.
+Use this target type when a downstream consumer should poll {project_name} for new events.
+
+[cols="1,3",options="header"]
+|===
+|Setting |Description
+
+|`pullSecret`
+|Shared secret required to consume waiting events from the pull endpoint.
+
+|`deliveryMode`
+|Whether the consume endpoint returns one event at a time as `SINGLE` or returns multiple events as `BULK`.
+
+|`maxEventsPerBatch`
+|Maximum number of events returned by one bulk consume request.
+
+|`events`
+|Optional event filter for selecting which user or admin events are queued for this target.
+
+|===
+
+Pull targets expose the endpoint `/realms/{realm}/event-hooks/{targetId}/consume`.
+Consumers can use either `GET` or `POST`. If a `pullSecret` is configured, clients must send it through the `X-Keycloak-Event-Hook-Secret` header.
+
+Deliveries for pull targets are recorded as `WAITING` until a client consumes them.
+Once consumed, {project_name} marks the underlying messages as successful and creates a `PULL_CONSUMED` delivery log entry.
+Pull targets do not use automatic retries.
+
+===== SQL targets
+
+The built-in target type `sql` executes a configured prepared statement for each delivered event.
+Use this target type when event data should be written directly into a relational database.
+
+[cols="1,3",options="header"]
+|===
+|Setting |Description
+
+|`databaseKind`
+|Database family used to select the JDBC driver.
+
+|`jdbcUrl`
+|JDBC connection URL.
+
+|`jdbcUsername`
+|Database username.
+
+|`jdbcPassword`
+|Database password.
+
+|`sqlStatement`
+|Prepared statement executed for each event.
+
+|`sqlParameters`
+|Prepared statement parameter mappings in placeholder order.
+
+|`queryTimeoutSeconds`
+|Maximum statement execution time in seconds.
+
+|`events`
+|Optional event filter for selecting which user or admin events are delivered to the database.
+
+|===
+
+Each entry in `sqlParameters` is mapped against the JSON payload of the delivered event.
+Use `$payload` to bind the complete JSON payload, or use dot notation such as `details.clientId`, `realm.name`, or `details.roles.0` to bind nested properties and list items.
+You can also use `$payload.details.clientId` style paths explicitly relative to the full payload.
+If a mapped path cannot be resolved, {project_name} binds `null` for that parameter.
+If a mapped value resolves to an object or collection, {project_name} serializes it back to JSON before binding it.
+
+SQL targets currently support single-message delivery only.
+They do not support bulk delivery or custom target endpoints.
+
+If you want to add your own event hook target type, see link:{developerguide_link}#_event_hook_target_spi[Event Hook Target SPI] in the {developerguide_name}.
+
+==== Delivery administration API
+
+Event hooks can also be managed through the Admin REST API under the realm-specific path `/admin/realms/{realm}/event-hooks`.
+The built-in endpoints provide the following capabilities:
+
+* List, create, update, and delete targets.
+* Test a target without writing regular outbox messages or delivery logs.
+* Discover available target providers and their configuration metadata.
+* Inspect queued or processed messages.
+* Inspect delivery logs for all messages or for a specific message.
+* Retry failed, exhausted, or dead messages through `POST /admin/realms/{realm}/event-hooks/messages/{messageId}/retry`.
+* Expose provider-specific target endpoints such as `/realms/{realm}/event-hooks/{targetId}/consume` for pull targets.
+
+==== Realm export and import
+
+Event hook targets are included in regular realm export and import.
+They can also be handled through partial realm export and partial import.
+
+In the Admin Console partial export dialog, use *Include event hook targets* to include target definitions in the exported JSON.
+In the partial import dialog, event hook targets appear as a separate selectable resource type.
+
+==== Operational considerations
+
+Event hook delivery uses a scheduled poller and a claim timeout.
+You can tune the built-in listener using the following provider options:
+
+* `spi-events-listener--event-hooks--poll-interval-millis`
+* `spi-events-listener--event-hooks--claim-timeout-millis`
+* `spi-events-listener--event-hooks--max-poll-batch-size`
+
+These settings control how often the outbox is scanned, how long an in-progress claim remains valid, and how many messages are claimed in a single poll cycle.
+
+Because delivery is at-least-once, duplicate deliveries are still possible after crashes, timeouts, or retries.
+Receivers should therefore process requests idempotently, for example by tracking the delivered event identifier.

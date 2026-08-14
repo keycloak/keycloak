@@ -142,7 +142,7 @@ export const MultiValuedListComponent = ({
             >
               {options?.map((option) => (
                 <SelectOption key={option} value={option}>
-                  {option}
+                  {t(option)}
                 </SelectOption>
               ))}
             </KeycloakSelect>

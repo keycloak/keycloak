@@ -78,6 +78,7 @@ export const SingleSelect = ({
           {childArray.find((c) => c.props.value === selections)?.props
             .children ||
             selections ||
+            props.placeholderText ||
             props["aria-label"]}
         </MenuToggle>
       )}
