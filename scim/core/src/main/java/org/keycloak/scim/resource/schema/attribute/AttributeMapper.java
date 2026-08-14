@@ -41,6 +41,13 @@ public class AttributeMapper<M extends Model, R> {
         }
     }
 
+    public void setModelAttribute(M model, Object value) {
+        if (modelSetter != null) {
+            String name = attribute.getModelAttributeName();
+            ((TriConsumer<M, String, Object>) modelSetter).accept(model, name, value);
+        }
+    }
+
     public void setValue(M model, JsonNode value) {
         setValue(model, value, (TriConsumer<M, String, Object>) modelSetter);
     }
