@@ -41,7 +41,7 @@ public class ExportOptions {
         usersIncluded = users;
         clientsIncluded = clients;
         groupsAndRolesIncluded = groupsAndRoles;
-        eventHookTargetsIncluded = eventHookTargetsIncluded;
+        this.eventHookTargetsIncluded = eventHookTargetsIncluded;
         onlyServiceAccountsIncluded = onlyServiceAccounts;
         this.partial = partial;
     }

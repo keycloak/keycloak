@@ -21,7 +21,7 @@ Event Hooks build on the existing events infrastructure and use an internal outb
 
 In this first iteration, Event Hooks provide:
 
-* built-in `http`, `pull`, and `sql` target types
+* built-in `http`, `pull`, `sql`, and `email` target types
 * HTTP targets with support for `POST`, `PUT`, and `PATCH`
 * optional HMAC signing for HTTP deliveries
 * retry handling with exponential backoff, including manual retry from the delivery logs for retryable failures

@@ -44,7 +44,7 @@ public final class EventHookTargetEventFilter {
     }
 
     public static boolean matchesUserEvent(EventHookTargetModel target, Event event) {
-        return matches(normalizeFilters(target == null ? null : target.getSettings().get(SETTINGS_KEY)), USER_PREFIX,
+        return matches(normalizeFilters(target == null || target.getSettings() == null ? null : target.getSettings().get(SETTINGS_KEY)), USER_PREFIX,
                 event == null || event.getType() == null ? null : event.getType().name());
     }
 
