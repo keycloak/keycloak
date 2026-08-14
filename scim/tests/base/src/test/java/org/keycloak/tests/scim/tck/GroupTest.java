@@ -772,4 +772,24 @@ public class GroupTest extends AbstractScimTest {
         adminEvents.clear();
         return created;
     }
+
+    @Test
+    public void testPatchWithUnrecognizedPath() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .replace("bogusAttribute", "someValue")
+                    .build());
+            fail("should fail because of unrecognized attribute path");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("noTarget", error.getScimType());
+            assertTrue(error.getDetail().contains("bogusAttribute"));
+        }
+    }
 }

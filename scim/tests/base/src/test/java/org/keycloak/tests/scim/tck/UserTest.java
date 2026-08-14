@@ -1553,7 +1553,6 @@ public class UserTest extends AbstractScimTest {
         return user;
     }
 
-    @Disabled("Update attribute validation after adding custom attributes")
     @Test
     public void testCreateWithInvalidAttribute() {
         User user = new User() {
@@ -1568,6 +1567,9 @@ public class UserTest extends AbstractScimTest {
             }
         };
 
+        user.setUserName(KeycloakModelUtils.generateId());
+        user.setEmail(user.getUserName() + "@keycloak.org");
+
         try {
             client.users().create(user);
             fail("should fail because of invalid attribute");
@@ -1575,8 +1577,148 @@ public class UserTest extends AbstractScimTest {
             ErrorResponse error = sce.getError();
             assertNotNull(error);
             assertEquals(400, error.getStatusInt());
+            assertEquals("invalidValue", error.getScimType());
             assertNotNull(error.getDetail());
             assertTrue(error.getDetail().contains("invalidAttribute"));
+        }
+    }
+
+    @Test
+    public void testCreateWithUnrecognizedSchema() throws Exception {
+        SimpleHttp http = SimpleHttp.create(httpClient);
+        AccessTokenResponse tokenResponse = http.doPost(keycloakUrls.getToken(realm.getName()))
+                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS)
+                .param(OAuth2Constants.CLIENT_ID, "scim-client")
+                .param(OAuth2Constants.CLIENT_SECRET, "secret")
+                .asJson(AccessTokenResponse.class);
+
+        String url = keycloakUrls.getBase() + "/realms/" + realm.getName() + "/scim/v2/Users";
+        try (SimpleHttpResponse response = http.doPost(url)
+                .header("Authorization", "Bearer " + tokenResponse.getToken())
+                .header("Content-Type", "application/scim+json")
+                .entity(new StringEntity(
+                        "{\"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\", \"urn:bogus:Schema\"], "
+                                + "\"userName\": \"testuser\", \"emails\": [{\"value\": \"test@test.com\"}]}",
+                        ContentType.create("application/scim+json")))
+                .asResponse()) {
+            assertEquals(400, response.getStatus());
+            ErrorResponse error = response.asJson(ErrorResponse.class);
+            assertEquals("invalidValue", error.getScimType());
+            assertTrue(error.getDetail().contains("urn:bogus:Schema"));
+        }
+    }
+
+    @Test
+    public void testPatchWithUnrecognizedPath() {
+        User expected = client.users().create(createUser());
+
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .replace("bogusAttribute", "someValue")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains("bogusAttribute"));
+    }
+
+    @Test
+    public void testPatchWithUnrecognizedSchemaPath() {
+        User expected = client.users().create(createUser());
+
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .add("urn:bogus:Schema:fakeAttr", "someValue")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+    }
+
+    @Test
+    public void testPatchRemoveWithUnrecognizedPath() {
+        User expected = client.users().create(createUser());
+
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .remove("bogusAttribute")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains("bogusAttribute"));
+    }
+
+    @Test
+    public void testPatchWithUnrecognizedFilteredPath() {
+        User expected = client.users().create(createUser());
+
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .replace("bogus[type eq \"work\"].value", "someValue")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains("bogus[type eq \"work\"].value"));
+    }
+
+    @Test
+    public void testUpdateWithUnrecognizedSchema() throws Exception {
+        User expected = client.users().create(createUser());
+
+        SimpleHttp http = SimpleHttp.create(httpClient);
+        AccessTokenResponse tokenResponse = http.doPost(keycloakUrls.getToken(realm.getName()))
+                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS)
+                .param(OAuth2Constants.CLIENT_ID, "scim-client")
+                .param(OAuth2Constants.CLIENT_SECRET, "secret")
+                .asJson(AccessTokenResponse.class);
+
+        String url = keycloakUrls.getBase() + "/realms/" + realm.getName() + "/scim/v2/Users/" + expected.getId();
+        try (SimpleHttpResponse response = http.doPut(url)
+                .header("Authorization", "Bearer " + tokenResponse.getToken())
+                .header("Content-Type", "application/scim+json")
+                .entity(new StringEntity(
+                        "{\"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\", \"urn:bogus:Schema\"], "
+                                + "\"id\": \"" + expected.getId() + "\", "
+                                + "\"userName\": \"" + expected.getUserName() + "\", "
+                                + "\"emails\": [{\"value\": \"" + expected.getEmail() + "\"}]}",
+                        ContentType.create("application/scim+json")))
+                .asResponse()) {
+            assertEquals(400, response.getStatus());
+            ErrorResponse error = response.asJson(ErrorResponse.class);
+            assertEquals("invalidValue", error.getScimType());
+            assertTrue(error.getDetail().contains("urn:bogus:Schema"));
+        }
+    }
+
+    @Test
+    public void testUpdateWithUnrecognizedExtension() throws Exception {
+        User expected = client.users().create(createUser());
+
+        SimpleHttp http = SimpleHttp.create(httpClient);
+        AccessTokenResponse tokenResponse = http.doPost(keycloakUrls.getToken(realm.getName()))
+                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS)
+                .param(OAuth2Constants.CLIENT_ID, "scim-client")
+                .param(OAuth2Constants.CLIENT_SECRET, "secret")
+                .asJson(AccessTokenResponse.class);
+
+        String url = keycloakUrls.getBase() + "/realms/" + realm.getName() + "/scim/v2/Users/" + expected.getId();
+        try (SimpleHttpResponse response = http.doPut(url)
+                .header("Authorization", "Bearer " + tokenResponse.getToken())
+                .header("Content-Type", "application/scim+json")
+                .entity(new StringEntity(
+                        "{\"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"], "
+                                + "\"id\": \"" + expected.getId() + "\", "
+                                + "\"userName\": \"" + expected.getUserName() + "\", "
+                                + "\"emails\": [{\"value\": \"" + expected.getEmail() + "\"}], "
+                                + "\"totallyBogus\": \"data\"}",
+                        ContentType.create("application/scim+json")))
+                .asResponse()) {
+            assertEquals(400, response.getStatus());
+            ErrorResponse error = response.asJson(ErrorResponse.class);
+            assertEquals("invalidValue", error.getScimType());
+            assertTrue(error.getDetail().contains("totallyBogus"));
         }
     }
 
