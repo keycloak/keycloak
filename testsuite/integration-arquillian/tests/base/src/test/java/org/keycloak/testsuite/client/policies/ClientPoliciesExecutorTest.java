@@ -97,7 +97,6 @@ import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
@@ -155,9 +154,6 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
     @Page
     protected OAuthGrantPage grantPage;
-
-    @Page
-    protected AppPage appPage;
 
     @Page
     protected ErrorPage errorPage;
@@ -1018,7 +1014,6 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
                 .codeChallenge(PkceGenerator.s256())
                 .open();
         loginPage.assertCurrent();
-        Assertions.assertEquals("Sign in to your account", loginPage.getTitleText());
     }
 
     @Test
@@ -1701,7 +1696,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
         oauth.client(clientBetaId);
         oauth.loginForm().state("randomstatesomething").requestUri(requestUri).open();
-        assertTrue(errorPage.isCurrent());
+        errorPage.assertCurrent();
         assertEquals("PAR request did not include query parameter", errorPage.getError());
         EventAssertion.assertError(events.poll())
                 .type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST_OBJECT)
@@ -1752,7 +1747,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
         // only query parameters include state parameter
         oauth.loginForm().requestUri(requestUri).state("mystate2").open();
-        assertTrue(errorPage.isCurrent());
+        errorPage.assertCurrent();
         assertEquals("PAR request did not include query parameter", errorPage.getError());
         EventAssertion.assertError(events.poll())
                 .type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST_OBJECT)

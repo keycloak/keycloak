@@ -44,7 +44,7 @@ public class FipsDistTest {
             CLIResult cliResult = runner.run("start");
             cliResult.assertStarted();
             // Not shown as FIPS is not a preview anymore
-            cliResult.assertMessageWasShownExactlyNumberOfTimes("Preview features enabled: fips:v1", 0);
+            cliResult.assertNoStartupMessage("Preview features enabled: fips:v1");
             cliResult.assertMessage("FIPS1402Provider created: KC(" + BCFIPS_VERSION + ", FIPS-JVM: " + FIPS1402Provider.isSystemFipsEnabled() + ")");
         });
     }

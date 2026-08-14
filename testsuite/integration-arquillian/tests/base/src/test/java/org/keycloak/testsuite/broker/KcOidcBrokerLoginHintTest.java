@@ -47,7 +47,8 @@ public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
     @Override
     protected void loginUser() {
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         
         driver.navigate().to(driver.getCurrentUrl() + "&login_hint=" + USER_EMAIL);
 
@@ -104,7 +105,8 @@ public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
                         .build()
             )) {
             oauth.client("broker-app");
-            loginPage.open(bc.consumerRealmName());
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
             waitForPageToLoad();
             driver.navigate().to(driver.getCurrentUrl() + "&login_hint=" + USER_EMAIL + "&kc_idp_hint=" + IDP_OIDC_ALIAS);
             waitForPageToLoad();

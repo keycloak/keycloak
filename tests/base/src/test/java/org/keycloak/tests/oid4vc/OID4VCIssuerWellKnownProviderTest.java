@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import org.keycloak.VCFormat;
+import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ComponentsResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
@@ -62,6 +63,7 @@ import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.SupportedProofTypeData;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
@@ -80,6 +82,8 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.OID4VCConstants.KeyAttestationResistanceLevels.HIGH;
+import static org.keycloak.OID4VCConstants.KeyAttestationResistanceLevels.MODERATE;
 import static org.keycloak.OID4VCConstants.SIGNED_METADATA_JWT_TYPE;
 import static org.keycloak.VCFormat.JWT_VC;
 import static org.keycloak.VCFormat.SD_JWT_VC;
@@ -385,7 +389,8 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
 
     /**
      * This test uses the configured scopes {@link #jwtTypeCredentialScope} and
-     * {@link #sdJwtTypeCredentialScope} to verify that the metadata endpoint is presenting the expected data
+     * {@link #sdJwtTypeCredentialScope}, including {@link #keyAttestationCredentialScope}, to verify that the metadata
+     * endpoint is presenting the expected data.
      */
     @Test
     public void testMetaDataEndpointIsCorrectlySetup() throws Exception {
@@ -424,7 +429,8 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
         assertNotNull(batch, "batch_credential_issuance should be present");
         assertEquals(Integer.valueOf(10), batch.getBatchSize());
 
-        for (CredentialScopeRepresentation credScope : List.of(jwtTypeCredentialScope, sdJwtTypeCredentialScope, minimalJwtTypeCredentialScope)) {
+        for (CredentialScopeRepresentation credScope : List.of(jwtTypeCredentialScope, sdJwtTypeCredentialScope,
+                keyAttestationCredentialScope, minimalJwtTypeCredentialScope)) {
             compareMetadataToClientScope(credentialIssuer, credScope);
         }
     }
@@ -565,6 +571,118 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
 
         // Non-numeric value should be rejected (parsing exception)
         testBatchSizeValidation("invalid", false, null);
+    }
+
+    /**
+     * Configured key attestation resistance levels must reach the metadata.
+     *
+     * <p>The {@code key-attestation-credential} scope is set up with {@link org.keycloak.OID4VCConstants.KeyAttestationResistanceLevels#MODERATE}
+     * for both members, so the metadata has to advertise it. Asserting the literal value matters here:
+     * deriving the expectation from {@code CredentialScopeModel} would pass even when the configured
+     * values never made it into the client scope attribute in the first place.
+     */
+    @Test
+    public void testKeyAttestationsRequiredAdvertisesConfiguredResistanceLevels() {
+
+        KeyAttestationsRequired keyAttestationsRequired = getKeyAttestationsRequired(
+                keyAttestationCredentialScope.getCredentialConfigurationId(), ProofType.JWT);
+
+        assertNotNull(keyAttestationsRequired, "key_attestations_required should be advertised");
+        MatcherAssert.assertThat("Configured key_storage level should reach the metadata",
+                keyAttestationsRequired.getKeyStorage(), Matchers.contains(MODERATE));
+        MatcherAssert.assertThat("Configured user_authentication level should reach the metadata",
+                keyAttestationsRequired.getUserAuthentication(), Matchers.contains(MODERATE));
+    }
+
+    /**
+     * Key attestation required, but neither resistance level configured.
+     *
+     * <p>Per OID4VCI 12.2.4 {@code key_storage} and {@code user_authentication} are non-empty arrays
+     * when present, and {@code key_attestations_required} may be empty when neither is constrained.
+     * The attribute is stored blank rather than absent in this case, which previously produced
+     * {@code {"key_storage":[""],"user_authentication":[""]}}.
+     */
+    @Test
+    public void testKeyAttestationsRequiredOmitsUnconfiguredResistanceLevels() throws IOException {
+
+        ClientScopeResource scopeResource = testRealm.admin().clientScopes()
+                .get(keyAttestationCredentialScope.getId());
+        ClientScopeRepresentation original = scopeResource.toRepresentation();
+
+        try {
+            // neither constrained -> "key_attestations_required": {}
+            KeyAttestationsRequired neither = updateResistanceLevels(scopeResource, "", "");
+            assertNotNull(neither,
+                    "key_attestations_required should still be advertised when attestation is required");
+            assertNull(neither.getKeyStorage(),
+                    "key_storage must be omitted rather than advertised as an array of blanks");
+            assertNull(neither.getUserAuthentication(),
+                    "user_authentication must be omitted rather than advertised as an array of blanks");
+            assertEquals("{}", JsonSerialization.valueAsString(neither),
+                    "key_attestations_required should serialize to an empty object");
+
+            // only key_storage constrained
+            KeyAttestationsRequired keyStorageOnly = updateResistanceLevels(scopeResource, HIGH, "");
+            MatcherAssert.assertThat(keyStorageOnly.getKeyStorage(), Matchers.contains(HIGH));
+            assertNull(keyStorageOnly.getUserAuthentication(),
+                    "user_authentication must be omitted when it is not constrained");
+
+            // only user_authentication constrained
+            KeyAttestationsRequired userAuthOnly = updateResistanceLevels(scopeResource, "", HIGH);
+            assertNull(userAuthOnly.getKeyStorage(),
+                    "key_storage must be omitted when it is not constrained");
+            MatcherAssert.assertThat(userAuthOnly.getUserAuthentication(), Matchers.contains(HIGH));
+
+            // separator-only and padded values collapse the same way
+            KeyAttestationsRequired separatorOnly = updateResistanceLevels(scopeResource, ",", " , ");
+            assertEquals("{}", JsonSerialization.valueAsString(separatorOnly),
+                    "Separator-only values must not produce blank entries");
+
+            KeyAttestationsRequired padded = updateResistanceLevels(scopeResource, " " + HIGH + " ", "");
+            MatcherAssert.assertThat("Surrounding whitespace should be trimmed",
+                    padded.getKeyStorage(), Matchers.contains(HIGH));
+        } finally {
+            scopeResource.update(original);
+        }
+    }
+
+    /**
+     * Rewrites both resistance-level attributes on a credential scope and returns the
+     * {@code key_attestations_required} the metadata endpoint advertises afterwards.
+     */
+    private KeyAttestationsRequired updateResistanceLevels(ClientScopeResource scopeResource,
+                                                           String keyStorage,
+                                                           String userAuthentication) {
+        ClientScopeRepresentation update = scopeResource.toRepresentation();
+        update.getAttributes().put(CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED_KEY_STORAGE, keyStorage);
+        update.getAttributes().put(CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED_USER_AUTH, userAuthentication);
+        scopeResource.update(update);
+
+        return getKeyAttestationsRequired(
+                keyAttestationCredentialScope.getCredentialConfigurationId(), ProofType.JWT);
+    }
+
+    /**
+     * Reads {@code key_attestations_required} for one credential configuration straight off the
+     * metadata endpoint.
+     */
+    private KeyAttestationsRequired getKeyAttestationsRequired(String credentialConfigurationId, String proofType) {
+
+        CredentialIssuer credentialIssuer = oauth.oid4vc()
+                .doIssuerMetadataRequest()
+                .getMetadata();
+
+        SupportedCredentialConfiguration supportedConfig = credentialIssuer.getCredentialsSupported()
+                .get(credentialConfigurationId);
+        assertNotNull(supportedConfig, "Configuration '" + credentialConfigurationId + "' must be present");
+
+        ProofTypesSupported proofTypesSupported = supportedConfig.getProofTypesSupported();
+        assertNotNull(proofTypesSupported, "proof_types_supported must be present");
+
+        SupportedProofTypeData proofTypeData = proofTypesSupported.getSupportedProofTypes().get(proofType);
+        assertNotNull(proofTypeData, proofType + " proof type must be present");
+
+        return proofTypeData.getKeyAttestationsRequired();
     }
 
     @Test

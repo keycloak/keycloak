@@ -794,7 +794,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         AuthenticatorConfigRepresentation executionConfig = new AuthenticatorConfigRepresentation();
 
         executionConfig.setAlias("test-execution-config");
-        executionConfig.setConfig(Map.of("key", "value"));
+        executionConfig.setConfig(Map.of("site.key", "value"));
 
         try (Response response = authMgmtResource.newExecutionConfig(executionWithConfig.getId(), executionConfig)) {
             managedRealm.cleanup().add(r -> r.flows().removeAuthenticatorConfig(ApiUtil.getCreatedId(response)));

@@ -455,7 +455,6 @@ export function KeycloakDataTable<T>({
   const [max, setMax] = useState(defaultPageSize);
   const [first, setFirst] = useState(0);
   const [search, setSearch] = useState<string>("");
-  const prevSearch = useRef<string>();
 
   const [key, setKey] = useState(0);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
@@ -488,6 +487,18 @@ export function KeycloakDataTable<T>({
 
     return () => window.clearInterval(interval);
   }, [autoRefreshEnabled, autoRefreshTimeout, onRefresh]);
+
+  // A different search term yields a different result set, so the current page
+  // offset no longer applies and has to be reset along with it. Without this the
+  // offset is carried over and applied to the new results, which makes the table
+  // come up empty even when there are matches on the first page.
+  const onSearchChange = (value: string) => {
+    if (value === search) {
+      return;
+    }
+    setFirst(0);
+    setSearch(value);
+  };
 
   const renderCell = (columns: (Field<T> | DetailField<T>)[], value: T) => {
     return columns.map((col) => {
@@ -629,7 +640,7 @@ export function KeycloakDataTable<T>({
         );
         if (result) {
           if (!isPaginated) {
-            setSearch("");
+            onSearchChange("");
           }
           refresh();
         }
@@ -667,7 +678,7 @@ export function KeycloakDataTable<T>({
           inputGroupName={
             searchPlaceholderKey ? `${ariaLabelKey}input` : undefined
           }
-          inputGroupOnEnter={setSearch}
+          inputGroupOnEnter={onSearchChange}
           inputGroupPlaceholder={t(searchPlaceholderKey || "")}
           searchTypeComponent={searchTypeComponent}
           toolbarItem={

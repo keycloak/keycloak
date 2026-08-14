@@ -5,7 +5,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -14,9 +13,6 @@ import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
 public class AppInitiatedRegistrationTest extends AbstractTestRealmKeycloakTest {
-
-    @Page
-    protected AppPage appPage;
 
     @Page
     protected RegisterPage registerPage;
@@ -40,7 +36,7 @@ public class AppInitiatedRegistrationTest extends AbstractTestRealmKeycloakTest 
         registerPage.assertCurrent();
         registerPage.register("first", "last", "test-user@localhost", "test-user", "test","test");
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         UserRepresentation user = managedRealm.admin().users().searchByEmail("test-user@localhost", true).get(0);
         // ensure that the locale was set on the user

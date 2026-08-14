@@ -739,6 +739,43 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         Assertions.assertEquals("Client scopes not allowed: [foo2]", error.getErrorMessage());
     }
 
+    @Test
+    public void testMapperTypeSwap() {
+        setTrustedHost("localhost");
+
+        ProtocolMapperRepresentation allowedMapper = new ProtocolMapperRepresentation();
+        allowedMapper.setName("swap-mapper");
+        allowedMapper.setProtocolMapper(UserAttributeMapper.PROVIDER_ID);
+        allowedMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        allowedMapper.getConfig().put(HardcodedRole.ROLE_CONFIG, "realm-management.manage-users");
+        allowedMapper.getConfig().put("user.attribute", "attr");
+        allowedMapper.getConfig().put("claim.name", "claim");
+
+        ClientRepresentation clientRep = createRep("swap-test-client");
+        clientRep.setProtocolMappers(List.of(allowedMapper));
+        Response adminClientCreationResponse = managedRealm.admin().clients().create(clientRep);
+        String clientTechnicalId = ApiUtil.getCreatedId(adminClientCreationResponse);
+        adminClientCreationResponse.close();
+
+        try {
+            ClientResource clientResource = managedRealm.admin().clients().get(clientTechnicalId);
+            reg.auth(Auth.token(clientResource.regenerateRegistrationAccessToken()));
+            ClientRepresentation representation = clientResource.toRepresentation();
+
+            // Swap the mapper type from allowed
+            representation.getProtocolMappers().forEach(mapper -> {
+                if ("swap-mapper".equals(mapper.getName())) {
+                    mapper.setProtocolMapper(HardcodedRole.PROVIDER_ID);
+                }
+            });
+
+            // The type-swap MUST be rejected with 403
+            assertFail(ClientRegOp.UPDATE, representation, 403, "ProtocolMapper type not allowed");
+        } finally {
+            managedRealm.admin().clients().get(clientTechnicalId).remove();
+        }
+    }
+
     // HELPER METHODS
 
 

@@ -566,7 +566,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
                 oauth.openLoginForm();
                 loginPage.assertCurrent();
                 loginPage.login("test-user@localhost", "password");
-                appPage.assertCurrent();
+                Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
                 EventAssertion.expectLoginSuccess(events.poll()).hasUserId().details(Details.USERNAME, "test-user@localhost");
 
                 // navigate to the authenticate page with the other auth_session_id, tab_id and client_data

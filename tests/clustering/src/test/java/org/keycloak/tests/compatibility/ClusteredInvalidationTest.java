@@ -4,8 +4,11 @@ import java.util.Objects;
 
 import org.keycloak.testframework.annotations.InjectLoadBalancer;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectTestDatabase;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.clustering.LoadBalancer;
+import org.keycloak.testframework.database.TestDatabase;
+import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 
 import org.junit.jupiter.api.AfterEach;
@@ -22,6 +25,10 @@ public class ClusteredInvalidationTest {
 
     @InjectLoadBalancer
     LoadBalancer loadBalancer;
+
+    // we cannot reuse the database between tests with mix-cluster; Keycloak won't start.
+    @InjectTestDatabase(lifecycle = LifeCycle.CLASS)
+    TestDatabase database;
 
     @AfterEach
     public void cleanup() {

@@ -126,12 +126,16 @@ public class ClientScopeResource {
     })
     public Response update(final ClientScopeRepresentation rep) {
         auth.clients().requireManageClientScopes();
+        rep.setId(clientScope.getId());
+        if (rep.getProtocol() == null) {
+            rep.setProtocol(clientScope.getProtocol());
+        }
         ClientScopeResource.validateClientScope(session, rep);
         validateParameterizedScopeUpdate(rep);
         try {
             LoginProtocolFactory loginProtocolFactory = //
                     (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class,
-                                                                                                  clientScope.getProtocol());
+                                                                                                  rep.getProtocol());
             Optional.ofNullable(loginProtocolFactory).ifPresent(lp -> lp.addClientScopeDefaults(rep));
             RepresentationToModel.updateClientScope(rep, clientScope);
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();

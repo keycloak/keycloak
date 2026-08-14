@@ -49,6 +49,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.http.HttpRequest;
@@ -379,7 +380,8 @@ public class AccountRestService {
         ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
             String msg = String.format("No client with clientId: %s found.", clientId);
-            event.error(msg);
+            event.detail(Details.REASON, msg);
+            event.error(Errors.CLIENT_NOT_FOUND);
             throw ErrorResponse.error(msg, Response.Status.NOT_FOUND);
         }
 
@@ -438,7 +440,8 @@ public class AccountRestService {
         ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
             String msg = String.format("No client with clientId: %s found.", clientId);
-            event.error(msg);
+            event.detail(Details.REASON, msg);
+            event.error(Errors.CLIENT_NOT_FOUND);
             throw ErrorResponse.error(msg, Response.Status.NOT_FOUND);
         }
 
@@ -483,12 +486,14 @@ public class AccountRestService {
             ClientScopeModel scopeModel = availableGrants.get(scopeRepresentation.getId());
             if (scopeModel == null) {
                 String msg = String.format("Scope id %s does not exist for client %s.", scopeRepresentation, consent.getClient().getName());
-                event.error(msg);
+                event.detail(Details.REASON, msg);
+                event.error(Errors.INVALID_SCOPE);
                 throw new IllegalArgumentException(msg);
             }
             if (ClientScopeModel.isParameterizedScope(scopeModel)) {
                 String msg = String.format("Cannot create Scope id %s for client %s because is parameterized.", scopeRepresentation, consent.getClient().getName());
-                event.error(msg);
+                event.detail(Details.REASON, msg);
+                event.error(Errors.INVALID_SCOPE);
                 throw new IllegalArgumentException(msg);
             }
             consent.addGrantedClientScope(scopeModel, null);

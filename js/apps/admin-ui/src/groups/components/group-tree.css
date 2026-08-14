@@ -4,3 +4,8 @@
   text-overflow: ellipsis;
   display: block;
 }
+
+.keycloak-groups-tree__non-viewable {
+  color: var(--pf-v5-global--Color--200);
+  cursor: default;
+}

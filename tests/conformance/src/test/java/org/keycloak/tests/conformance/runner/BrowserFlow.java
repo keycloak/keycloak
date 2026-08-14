@@ -19,13 +19,31 @@ package org.keycloak.tests.conformance.runner;
 
 import java.util.List;
 
-public record BrowserFlow(String match, List<BrowserTask> tasks) {
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-    public record BrowserTask(String task, String match, List<List<Object>> commands) {
+public record BrowserFlow(
+        String match,
+        // The suite uses this flow at most matchLimit times, then falls through to the next matching flow. This
+        // lets a module that visits the authorization endpoint several times run a different flow per visit.
+        @JsonProperty("match-limit") @JsonInclude(JsonInclude.Include.NON_NULL) Integer matchLimit,
+        List<BrowserTask> tasks) {
+
+    public BrowserFlow(String match, List<BrowserTask> tasks) {
+        this(match, null, tasks);
+    }
+
+    public record BrowserTask(String task, String match, boolean optional, List<List<Object>> commands) {
+
         public static final String TEXT = "text";
         public static final String CLICK = "click";
         public static final String WAIT = "wait";
         // Predefined action of the wait command that snapshots the page into the screenshot placeholder
         public static final String UPDATE_IMAGE_PLACEHOLDER = "update-image-placeholder";
+
+        // A required task: the suite fails the run if its URL is never visited
+        public BrowserTask(String task, String match, List<List<Object>> commands) {
+            this(task, match, false, commands);
+        }
     }
 }

@@ -49,7 +49,6 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -107,9 +106,6 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
-
-    @Page
-    protected AppPage appPage;
 
     @Page
     protected LoginPage loginPage;
@@ -249,7 +245,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
-        assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         String sessionId2 = EventAssertion.expectLoginSuccess(events.poll()).getEvent().getSessionId();
         assertNotEquals(sessionId, sessionId2);
@@ -279,7 +275,8 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             oauth.logoutForm().postLogoutRedirectUri(APP_REDIRECT_URI).idTokenHint(idTokenString).open();
 
             // should not throw an internal server error. But no logout event is sent as nothing was logged-out
-            appPage.assertCurrent();
+            Assertions.assertFalse(oauth.parseLoginResponse().isRedirected());
+            Assertions.assertTrue(driver.getCurrentUrl().equals(oauth.getRedirectUri()));
             EventAssertion.assertError(events.poll()).type(EventType.LOGOUT_ERROR).error(Errors.SESSION_EXPIRED).clientId(oauth.getClientId());
             MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
 
@@ -322,7 +319,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
             oauth.openLoginForm();
             // Assert rememberMe not checked nor username/email prefilled
-            assertTrue(loginPage.isCurrent());
+            loginPage.assertCurrent();
             assertFalse(loginPage.isRememberMeChecked());
             assertNotEquals(testUsername, loginPage.getUsername());
         }

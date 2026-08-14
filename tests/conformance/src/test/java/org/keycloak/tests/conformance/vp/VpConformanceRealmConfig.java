@@ -80,11 +80,16 @@ public class VpConformanceRealmConfig implements RealmConfig {
         idp.setProviderId(OID4VPIdentityProviderFactory.PROVIDER_ID);
         idp.setEnabled(true);
         idp.setFirstBrokerLoginFlowAlias("first broker login");
-        idp.setConfig(Map.of(
+        idp.setConfig(idpConfig());
+        return idp;
+    }
+
+    // Overridable so the encrypted direct_post.jwt variant can enable response encryption.
+    protected Map<String, String> idpConfig() {
+        return Map.of(
                 OID4VPIdentityProviderConfig.TRUSTED_ISSUER_JWKS, VpVerifierKey.publicJwks().toString(),
                 OID4VPIdentityProviderConfig.DCQL_QUERY, DCQL_QUERY,
-                OID4VPIdentityProviderConfig.PRINCIPAL_ATTRIBUTE, "given_name"));
-        return idp;
+                OID4VPIdentityProviderConfig.PRINCIPAL_ATTRIBUTE, "given_name");
     }
 
     // The verifier's request-signing key, holding the CA-issued certificate the suite trusts.

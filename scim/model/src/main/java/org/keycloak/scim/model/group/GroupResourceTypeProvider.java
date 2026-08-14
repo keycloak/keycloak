@@ -12,8 +12,10 @@ package org.keycloak.scim.model.group;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -32,11 +34,11 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
+import org.keycloak.models.Permissions;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.jpa.GroupAdapter;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
-import org.keycloak.scim.filter.FilterUtils;
 import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.model.filter.ScimAttributeJpaExpressionResolver;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
@@ -45,7 +47,6 @@ import org.keycloak.scim.resource.group.Group;
 import org.keycloak.scim.resource.group.Member;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider;
-import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
@@ -122,13 +123,11 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
         RealmModel realm = session.getContext().getRealm();
         Integer firstResult = searchRequest.getStartIndex() != null ? searchRequest.getStartIndex() - 1 : null;
         Integer maxResults = searchRequest.getCount();
-        maxResults = maxResults != null ? Math.min(maxResults, DEFAULT_MAX_RESULTS) : DEFAULT_MAX_RESULTS;
+        maxResults = maxResults != null ? Math.max(0, Math.min(maxResults, DEFAULT_MAX_RESULTS)) : DEFAULT_MAX_RESULTS;
 
-        if (StringUtil.isNotBlank(searchRequest.getFilter())) {
-            // parse filter into AST
-            ScimFilterParser.FilterContext filterContext = FilterUtils.parseFilter(searchRequest.getFilter());
+        ScimFilterParser.FilterContext filterContext = searchRequest.getFilterContext();
 
-            // execute JPA query with filter
+        if (filterContext != null) {
             EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<GroupEntity> query = cb.createQuery(GroupEntity.class);
@@ -138,9 +137,9 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
             // apply distinct and order by name to ensure consistency with no-filter case
             query.where(predicates).distinct(true).orderBy(cb.asc(root.get("name")));
 
-            // execute query and convert to UserModel stream
             return closing(paginateQuery(em.createQuery(query), firstResult, maxResults).getResultStream()
-                    .map(entity -> new GroupAdapter(session, realm, em, entity)));
+                    .map(entity -> session.groups().getGroupById(realm, entity.getId()))
+                    .filter(Objects::nonNull));
         } else {
             return session.groups().getTopLevelGroupsStream(realm, firstResult, maxResults);
         }
@@ -149,11 +148,9 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     @Override
     public Long count(SearchRequest searchRequest) {
         RealmModel realm = session.getContext().getRealm();
-        if (StringUtil.isNotBlank(searchRequest.getFilter())) {
-            // parse filter into AST
-            ScimFilterParser.FilterContext filterContext = FilterUtils.parseFilter(searchRequest.getFilter());
+        ScimFilterParser.FilterContext filterContext = searchRequest.getFilterContext();
 
-            // execute JPA query with filter
+        if (filterContext != null) {
             EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<Long> query = cb.createQuery(Long.class);
@@ -185,13 +182,34 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     private List<Predicate> getGroupPredicates(ScimFilterParser.FilterContext filterContext, CriteriaBuilder cb, CriteriaQuery<?> query, Root<GroupEntity> root) {
         List<Predicate> predicates = new ArrayList<>();
 
+        RealmModel realm = session.getContext().getRealm();
+        Permissions permissions = session.getContext().getPermissions();
+
+        // When FGAP is enabled, only the eq operator is supported for members.value filters. The callback
+        // verifies that the caller has VIEW permission on the specific user being matched. Other operators
+        // (ne, pr, gt, co, etc.) cannot be safely authorized through value comparison because they can match
+        // rows the caller is not permitted to see, so they silently return empty results for this path.
+        // This restriction only applies to the members.value/members paths; all other filter attributes are
+        // unaffected. When FGAP is disabled, all operators are allowed.
+        BiPredicate<String, String> authCheck = (path, value) -> {
+            if ("members.value".equalsIgnoreCase(path) || "members".equalsIgnoreCase(path)) {
+                if (!realm.isAdminPermissionsEnabled()) {
+                    return true;
+                }
+                if (value == null) {
+                    return false;
+                }
+                UserModel user = session.users().getUserById(realm, value);
+                return user != null && permissions.hasPermission(user, AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
+            }
+            return true;
+        };
+
         // create filter predicate using the same query and root that will be used for execution
-        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, root);
+        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, root, authCheck);
         predicates.add(evaluator.visit(filterContext).predicate());
 
         // apply realm restriction and group type restrictions
-        RealmModel realm = session.getContext().getRealm();
-
         predicates.add(cb.equal(root.get("realm"), realm.getId()));
         predicates.add(cb.equal(root.get("type"), GroupModel.Type.REALM.intValue()));
         predicates.add(cb.equal(root.get("parentId"), GroupEntity.TOP_PARENT_ID));

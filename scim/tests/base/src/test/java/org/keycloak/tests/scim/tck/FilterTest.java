@@ -502,6 +502,11 @@ public class FilterTest extends AbstractScimTest {
         filter = ResourceFilter.filter().co("emails", "keycloak").build();
         response = client.users().getAll(filter);
         assertThat(response.getTotalResults(), is(2));
+
+        // using a mixed case email
+        filter = ResourceFilter.filter().eq("emails.value", "ALICE@KEYCLOAK.org").build();
+        response = client.users().getAll(filter);
+        assertSingleResult(response, alice.getUserName());
     }
 
     @Test
@@ -579,6 +584,27 @@ public class FilterTest extends AbstractScimTest {
         response = client.users().getAll(filter);
         assertThat(response, is(not(nullValue())));
         assertThat(response.getTotalResults(), is(2));
+    }
+
+    @Test
+    public void testNestedValuePathDoesNotDropOuterAttributePath() {
+        createUser("bob", "Robert", "Anderson", "bob@keycloak.org", true);
+
+        // emails.name.familyName is not a valid attribute path, so the filter must not match anything;
+        // it must not be evaluated as if it were name[familyName eq "Anderson"]
+        String filter = "emails[name[familyName eq \"Anderson\"]]";
+        ListResponse<User> response = client.users().getAll(filter);
+        assertNoResults(response);
+    }
+
+    @Test
+    public void testNestedValuePathRestoresOuterAttributePath() {
+        User bob = createUser("bob", "Robert", "Anderson", "bob@keycloak.org", true);
+
+        // after the inner value path completes, familyName must still resolve to name.familyName
+        String filter = "name[bogus[value eq \"x\"] or familyName eq \"Anderson\"]";
+        ListResponse<User> response = client.users().getAll(filter);
+        assertSingleResult(response, bob.getUserName());
     }
 
     @Test

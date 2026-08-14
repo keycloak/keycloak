@@ -23,7 +23,8 @@ public abstract class AbstractSamlLoginHintTest extends AbstractInitializedBaseB
         createUser(bc.providerRealmName(), username, "password");
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         log.debug("Clicking social " + bc.getIDPAlias());
         addLoginHintOnSocialButton(username);
@@ -47,7 +48,8 @@ public abstract class AbstractSamlLoginHintTest extends AbstractInitializedBaseB
         createUser(bc.providerRealmName(), username, "password", "FirstName");
 
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         log.debug("Clicking social " + bc.getIDPAlias());
         addLoginHintOnSocialButton("");

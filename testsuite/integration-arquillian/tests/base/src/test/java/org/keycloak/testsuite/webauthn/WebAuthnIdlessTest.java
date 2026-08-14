@@ -44,8 +44,6 @@ import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
@@ -58,6 +56,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.logging.Logger;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.ALTERNATIVE;
@@ -79,9 +78,6 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
-
-    @Page
-    protected AppPage appPage;
 
     @Page
     protected LoginPage loginPage;
@@ -146,7 +142,6 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
 
         setUpIDLessOnlyFlow("idless-only-flow");
         idlessAuthentication(username, credentialId, false, false);
-
     }
 
     // Authenticate IDLess with no webauthn-passwordless credential registered: should fail
@@ -224,8 +219,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
         String authenticatorLabel = labelPrefix + SecretGenerator.getInstance().randomString(24);
         webAuthnRegisterPage.registerWebAuthnCredential(authenticatorLabel);
 
-        appPage.assertCurrent();
-        assertThat(appPage.getRequestType(), is(RequestType.AUTH_RESPONSE));
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventRepresentation eventRep1 = EventAssertion.expectRequiredAction(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION)
                 .userId(userId)
                 .details(Details.CUSTOM_REQUIRED_ACTION, raProviderID)
@@ -309,7 +303,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
         loginPage.login(username, getPassword(username));
         webAuthnLoginPage.assertCurrent();
         webAuthnLoginPage.clickAuthenticate();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventRepresentation eventRepWithSession = events.poll();
         EventAssertion.expectLoginSuccess(eventRepWithSession)
@@ -342,7 +336,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
         loginUsernamePage.login(username);
         webAuthnLoginPage.assertCurrent();
         webAuthnLoginPage.clickAuthenticate();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventRepresentation eventRepWithSession = events.poll();
         EventAssertion.expectLoginSuccess(eventRepWithSession)
@@ -366,8 +360,8 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
         String userId = getUserRepresentation(username).getId();
 
         oauth.openLoginForm();
-        loginPage.assertCurrent();
         if (tryAnotherMethod) {
+            loginPage.assertCurrent();
             loginPage.assertTryAnotherWayLinkAvailability(true);
             loginPage.clickTryAnotherWayLink();
             selectAuthenticatorPage.assertCurrent();
@@ -378,7 +372,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
         webAuthnLoginPage.clickAuthenticate();
 
         if (shouldSuccess) {
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             EventRepresentation eventRepWithSession = events.poll();
             EventAssertion.expectLoginSuccess(eventRepWithSession)
@@ -397,8 +391,8 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
                     .withoutDetails(Details.REDIRECT_URI);
         }
         else {
-            loginPage.assertCurrent();
-            assertThat(loginPage.getError(), containsString("Failed to authenticate by the Passkey."));
+            webAuthnErrorPage.assertCurrent();
+            assertThat(loginPage.getError(), containsString("The Passkey operation was not allowed or timed out."));
         }
     }
 

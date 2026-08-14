@@ -51,7 +51,6 @@ import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.broker.KcSamlBrokerConfiguration;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
@@ -213,12 +212,10 @@ public class LDAPSamlIdPInitiatedVaryingLetterCaseTest extends AbstractLDAPTest 
     public void loginLDAPTest() {
         oauth.openLoginForm();
         loginPage.login(USER_NAME_LDAP, USER_PASSWORD);
-        appPage.assertCurrent();
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         String code = oauth.parseLoginResponse().getCode();
         String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
-        appPage.logout(idTokenHint);
+        oauth.doLogout(idTokenHint);
     }
 
     protected URI getAuthServerBrokerSamlEndpoint(String realm, String identityProviderAlias, String samlClientId) throws IllegalArgumentException, UriBuilderException {

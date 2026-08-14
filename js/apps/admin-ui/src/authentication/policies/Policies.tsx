@@ -1,7 +1,7 @@
 import { Tab, Tabs, TabTitleText } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { CibaPolicy } from "./CibaPolicy";
 import { OtpPolicy } from "./OtpPolicy";
@@ -18,8 +18,8 @@ const DEFAULT_TAB = PASSWORD_POLICY;
 
 export const Policies = () => {
   const { t } = useTranslation();
-  const { hash } = useLocation();
-  const initialTab = hash.replace("#", "") || DEFAULT_TAB;
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab") || DEFAULT_TAB;
   const [subTab, setSubTab] = useState(initialTab);
   const { realmRepresentation: realm, refresh } = useRealm();
 

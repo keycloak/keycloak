@@ -1206,6 +1206,18 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
+    public boolean removeIssuedVerifiableCredential(String userId, String issuedCredentialId) {
+        FederatedUserIssuedVerifiableCredentialEntity entity = em.find(FederatedUserIssuedVerifiableCredentialEntity.class, issuedCredentialId, LockModeType.PESSIMISTIC_WRITE);
+        if (entity == null || !userId.equals(entity.getUserId())) {
+            return false;
+        }
+
+        em.remove(entity);
+        em.flush();
+        return true;
+    }
+
+    @Override
     public void removeExpiredIssuedVerifiableCredentials() {
         long currentTime = Time.currentTimeMillis();
         int deletedCount = em.createNamedQuery("deleteExpiredFederatedIssuedVcs")

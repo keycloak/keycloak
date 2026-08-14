@@ -37,8 +37,6 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
@@ -85,9 +83,6 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
     public MailServer mail = new MailServer();
 
     @Page
-    protected AppPage appPage;
-
-    @Page
     protected LoginPage loginPage;
 
     @Page
@@ -115,7 +110,7 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
 
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventRepresentation loginEvent = events.poll();
         EventAssertion.expectLoginSuccess(loginEvent);

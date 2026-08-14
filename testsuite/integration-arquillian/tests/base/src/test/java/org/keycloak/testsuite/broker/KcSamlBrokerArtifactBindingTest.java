@@ -157,13 +157,14 @@ public final class KcSamlBrokerArtifactBindingTest extends AbstractInitializedBa
     private void login(boolean success) {
         // login using artifact binding
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         logInWithBroker(bc);
 
         if (success) {
             updateAccountInformationPage.assertCurrent();
             updateAccountInformationPage.updateAccountInformation("f", "l");
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         } else {
             errorPage.assertCurrent();
             Assertions.assertEquals("Invalid signature in response from identity provider.", errorPage.getError());

@@ -28,7 +28,7 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 /**
  * Migrated from old testsuite.  Previous version by Pedro Igor.
- * 
+ *
  * @author Stan Silvert ssilvert@redhat.com (C) 2019 Red Hat Inc.
  * @author pedroigor
  */
@@ -42,7 +42,8 @@ public class KcOidcBrokerIdpHintTest extends AbstractInitializedBaseBrokerTest {
     @Test
     public void testSuccessfulRedirect() {
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         waitForPage(driver, "sign in to", true);
         String url = driver.getCurrentUrl() + "&kc_idp_hint=" + bc.getIDPAlias();
         driver.navigate().to(url);
@@ -52,43 +53,50 @@ public class KcOidcBrokerIdpHintTest extends AbstractInitializedBaseBrokerTest {
 
         log.debug("Logging in");
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
-        
+
+        updateAccountInformationPage.assertCurrent();
+        updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
+
         // authenticated and redirected to app
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+        Assertions.assertTrue(driver.getCurrentUrl().contains(bc.consumerRealmName()));
     }
-    
+
     // KEYCLOAK-5260
     @Test
     public void testSuccessfulRedirectToProviderAfterLoginPageShown() {
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         waitForPage(driver, "sign in to", true);
-        
-        String urlWithHint = driver.getCurrentUrl() + "&kc_idp_hint=" + bc.getIDPAlias();        
+
+        String urlWithHint = driver.getCurrentUrl() + "&kc_idp_hint=" + bc.getIDPAlias();
         driver.navigate().to(urlWithHint);
         waitForPage(driver, "sign in to", true);
         Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
                 "Driver should be on the provider realm page right now");
-        
+
         // do the same thing a second time
         driver.navigate().to(urlWithHint);
         waitForPage(driver, "sign in to", true);
         Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
                 "Driver should be on the provider realm page right now");
-        
+
         // redirect shouldn't happen
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         waitForPage(driver, "sign in to", true);
         Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
                 "Driver should be on the consumer realm page");
     }
-    
-        @Test
+
+    @Test
     public void testInvalidIdentityProviderHint() {
-            oauth.client("broker-app");
-            loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         waitForPage(driver, "sign in to", true);
         String url = driver.getCurrentUrl() + "&kc_idp_hint=bogus-idp";
         driver.navigate().to(url);
@@ -110,7 +118,8 @@ public class KcOidcBrokerIdpHintTest extends AbstractInitializedBaseBrokerTest {
 
         try {
             oauth.client("broker-app");
-            loginPage.open(bc.consumerRealmName());
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
             waitForPage(driver, "sign in to", true);
 
             // Add kc_idp_hint parameter to redirect to IdP

@@ -76,6 +76,9 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
                 .detail(Details.REFRESH_TOKEN_ID, oldRefreshToken.getId())
                 .detail(Details.REFRESH_TOKEN_TYPE, oldRefreshToken.getType());
 
+        String providerIdDetail = oldRefreshToken.getProvider() != null ? oldRefreshToken.getProvider() : getProviderId();
+        event.detail(Details.REFRESH_TOKEN_PROVIDER_ID, providerIdDetail);
+
         if (oldRefreshToken.getSubject() != null) {
             event.detail(Details.REFRESH_TOKEN_SUB, oldRefreshToken.getSubject());
         }
@@ -98,6 +101,7 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
         ClientSessionContext clientSessionCtx = validation.clientSessionCtx;
         UserSessionModel userSession = validation.userSession;
 
+        event.session(userSession);
         tokenManager.validateSelectedOrganization(session, oldRefreshToken, user);
 
         try {
@@ -274,7 +278,11 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
                     logger.debugf("Failed validation of refresh token %s due it was used before. Realm: %s, client: %s, user: %s, user session: %s. Will detach client session from user session",
                             refreshToken.getId(), realm.getName(), clientSession.getClient().getClientId(), clientSession.getUserSession().getUser().getUsername(), clientSession.getUserSession().getId());
                 }
-                clientSession.detachFromUserSession();
+                // Detach must persist even when the error response rolls back the main tx.
+                KeycloakModelUtils.enlistAfterRollback(session, ctx -> {
+                    AuthenticatedClientSessionModel cs = ctx.findClientSession(clientSession);
+                    if (cs != null) cs.detachFromUserSession();
+                });
                 throw oee;
             }
         }

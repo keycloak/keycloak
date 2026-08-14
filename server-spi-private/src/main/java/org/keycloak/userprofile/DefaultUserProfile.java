@@ -227,6 +227,11 @@ public final class DefaultUserProfile implements UserProfile {
 
     @Override
     public <R extends AbstractUserRepresentation> R toRepresentation(boolean full) {
+        return toRepresentation(full, full);
+    }
+
+    @Override
+    public <R extends AbstractUserRepresentation> R toRepresentation(boolean full, boolean includeMetadata) {
         if (user == null) {
             throw new IllegalStateException("Can not create the representation because the user is not yet created");
         }
@@ -236,7 +241,9 @@ public final class DefaultUserProfile implements UserProfile {
 
         if (full) {
             attributesRep = new HashMap<>(attributes.getReadable());
-            rep.setUserProfileMetadata(createUserProfileMetadata(session, this));
+            if (includeMetadata) {
+                rep.setUserProfileMetadata(createUserProfileMetadata(session, this));
+            }
         } else {
             attributesRep = new HashMap<>(attributes.getDefaultAttributes());
         }

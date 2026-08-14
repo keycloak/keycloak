@@ -17,6 +17,10 @@
 
 package org.keycloak.tests.conformance.vp;
 
+import java.util.List;
+
+import org.keycloak.tests.conformance.runner.BrowserFlow;
+import org.keycloak.tests.conformance.runner.BrowserFlow.BrowserTask;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -27,7 +31,22 @@ import com.fasterxml.jackson.databind.JsonNode;
  * verifier's client id, the trust anchor used to validate the request object chain, and the signing
  * JWK the suite uses to sign the presented credential.
  */
-record VpSuiteConfig(String alias, String description, String publish, Client client, Credential credential) {
+record VpSuiteConfig(String alias, String description, String publish, Client client, Credential credential,
+        List<BrowserFlow> browser) {
+
+    // Since suite 5.2.2 a 2xx at the response_uri no longer proves verification as the spec allows
+    // deferring it, so positive verifier modules wait for screenshot evidence and finish as REVIEW.
+    // The suite serves this page itself as a stand in for that screenshot and this flow captures it.
+    private static final String VERIFICATION_EVIDENCE_URL = "https://*/test/a/*/verification-evidence";
+
+    private static final BrowserFlow VERIFICATION_EVIDENCE_CAPTURE = new BrowserFlow(
+            VERIFICATION_EVIDENCE_URL,
+            List.of(new BrowserTask(
+                    "Capture verification evidence",
+                    VERIFICATION_EVIDENCE_URL,
+                    // command, element selector type, element selector, timeout in seconds, element text regexp, action
+                    List.of(List.of(BrowserTask.WAIT, "xpath", "//*", 10,
+                            ".*Deferred verification evidence.*", BrowserTask.UPDATE_IMAGE_PLACEHOLDER)))));
 
     static VpSuiteConfig create(String alias, String clientId, String requestObjectTrustAnchorPem, JsonNode signingJwk) {
         return new VpSuiteConfig(
@@ -35,7 +54,8 @@ record VpSuiteConfig(String alias, String description, String publish, Client cl
                 "Keycloak OID4VP verifier conformance",
                 "private",
                 new Client(clientId, requestObjectTrustAnchorPem),
-                new Credential(signingJwk));
+                new Credential(signingJwk),
+                List.of(VERIFICATION_EVIDENCE_CAPTURE));
     }
 
     JsonNode toJson() {

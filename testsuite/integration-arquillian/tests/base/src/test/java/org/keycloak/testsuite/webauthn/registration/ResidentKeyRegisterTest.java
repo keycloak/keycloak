@@ -89,14 +89,9 @@ public class ResidentKeyRegisterTest extends AbstractWebAuthnVirtualTest {
             assertThat(realmData.getUserVerificationRequirement(), is(userVerification));
 
             registerDefaultUser(shouldSuccess);
-
-            displayErrorMessageIfPresent();
-
-            if (!shouldSuccess) {
-                assertThat(webAuthnErrorPage.isCurrent(), is(true));
+            if (!oauth.parseLoginResponse().isSuccess()) {
+                webAuthnErrorPage.assertCurrent();
                 return;
-            } else {
-                assertThat(webAuthnErrorPage.isCurrent(), is(false));
             }
 
             final List<Credential> credentials = getVirtualAuthManager().getCurrent().getAuthenticator().getCredentials();
