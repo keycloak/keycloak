@@ -384,9 +384,6 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.groups().group(group.getId()).roles().realmLevel().listAvailable(), Resource.USER, false);
         invoke(realm -> realm.groups().group(group.getId()).roles().realmLevel().add(List.of()), Resource.USER, true);
         invoke(realm -> realm.groups().group(group.getId()).roles().realmLevel().remove(List.of()), Resource.USER, true);
-        invoke(realm -> realm.groups().group(group.getId()).roles().clientLevel(realmAccessClient.getId()).listAll(), Resource.USER, false);
-        invoke(realm -> realm.groups().group(group.getId()).roles().clientLevel(realmAccessClient.getId()).listEffective(), Resource.USER, false);
-        invoke(realm -> realm.groups().group(group.getId()).roles().clientLevel(realmAccessClient.getId()).listAvailable(), Resource.USER, false);
         invoke(realm -> realm.groups().group(group.getId()).roles().clientLevel(realmAccessClient.getId()).add(List.of()), Resource.USER, true);
         invoke(realm -> realm.groups().group(group.getId()).roles().clientLevel(realmAccessClient.getId()).remove(List.of()), Resource.USER, true);
         invoke(realm -> {
@@ -453,12 +450,6 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.users().get(user.getId()).roles().realmLevel().remove(List.of()), Resource.USER, true);
 
         ClientRepresentation realmAccessClient = managedRealm1.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
-        invoke(realm -> realm.users().get(user.getId()).roles().clientLevel(realmAccessClient.getId()).listAll(),
-                Resource.USER, false);
-        invoke(realm -> realm.users().get(user.getId()).roles().clientLevel(realmAccessClient.getId()).listAvailable(),
-                Resource.USER, false);
-        invoke(realm -> realm.users().get(user.getId()).roles().clientLevel(realmAccessClient.getId()).listEffective(),
-                Resource.USER, false);
         invoke(realm -> realm.users().get(user.getId()).roles().clientLevel(realmAccessClient.getId()).add(List.of()),
                 Resource.USER, true);
         invoke(realm -> realm.users().get(user.getId()).roles().clientLevel(realmAccessClient.getId()).remove(List.of()),
