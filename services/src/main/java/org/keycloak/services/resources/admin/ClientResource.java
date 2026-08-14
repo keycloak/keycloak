@@ -61,6 +61,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
@@ -205,6 +206,10 @@ public class ClientResource {
         viewClientModel();
 
         ClientRepresentation representation = ModelToRepresentation.toRepresentation(client, session);
+
+        if (!auth.clients().canManage(client)) {
+            StripSecretsUtils.strip(representation);
+        }
 
         if (!auth.clients().canViewClientScopes()) {
             representation.setDefaultClientScopes(Collections.emptyList());
@@ -367,7 +372,7 @@ public class ClientResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
     @Operation( summary = "Get the client secret")
     public CredentialRepresentation getClientSecret() {
-        auth.clients().requireView(client);
+        auth.clients().requireManage(client);
 
         logger.debug("getClientSecret");
         UserCredentialModel model = UserCredentialModel.secret(client.getSecret());
@@ -831,7 +836,7 @@ public class ClientResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
     @Operation( summary = "Get the rotated client secret")
     public CredentialRepresentation getClientRotatedSecret() {
-        auth.clients().requireView(client);
+        auth.clients().requireManage(client);
 
         logger.debug("getClientRotatedSecret");
         OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client);

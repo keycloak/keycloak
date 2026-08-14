@@ -234,6 +234,10 @@ public class StripSecretsUtils {
         return rep;
     }
 
+    public static ClientRepresentation strip(ClientRepresentation rep) {
+        return stripClient(rep);
+    }
+
     private static ComponentExportRepresentation stripComponentExport(KeycloakSession session, String providerType, ComponentExportRepresentation rep) {
         return stripComponentExport(session, providerType, rep, ComponentUtil::getComponentConfigProperties);
     }
