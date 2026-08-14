@@ -39,6 +39,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.AccessTokenIntrospectionProviderFactory;
 import org.keycloak.protocol.oidc.TokenIntrospectionProvider;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
+import org.keycloak.protocol.oidc.utils.ContentTypeValidationUtil;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -77,6 +78,10 @@ public class TokenIntrospectionEndpoint {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, org.keycloak.utils.MediaType.APPLICATION_JWT})
     public Response introspect() {
+        // https://datatracker.ietf.org/doc/html/rfc7662#section-2.1 says 'application/x-www-form-urlencoded'
+        // not requiring concrete content type to keep this backwards compatible for the moment being
+        ContentTypeValidationUtil.requireValidOrNoContentType(request.getHttpHeaders());
+
         event.event(EventType.INTROSPECT_TOKEN);
 
         checkSsl();
