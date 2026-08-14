@@ -24,7 +24,7 @@ import org.keycloak.models.KeycloakSession;
  */
 public class RefreshTokenIntrospectionProviderFactory extends AccessTokenIntrospectionProviderFactory {
 
-    private static final String REFRESH_TOKEN_TYPE = "refresh_token";
+    public static final String REFRESH_TOKEN_TYPE = "refresh_token";
 
     @Override
     public TokenIntrospectionProvider create(KeycloakSession session) {

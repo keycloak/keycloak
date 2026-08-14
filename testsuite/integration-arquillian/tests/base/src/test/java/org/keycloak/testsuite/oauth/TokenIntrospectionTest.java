@@ -269,6 +269,26 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void testIntrospectRefreshTokenWithoutTokenTypeHint() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
+        oauth.client("test-app", "password");
+        events.clear();
+
+        // test-app has an audience mapper adding test-app to access tokens, but refresh tokens do not include aud
+        JsonNode jsonNode = oauth.introspectionRequest(accessTokenResponse.getRefreshToken()).send().asJsonNode();
+
+        EventAssertion.assertSuccess(events.poll()).type(EventType.INTROSPECT_TOKEN)
+                .clientId("test-app")
+                .sessionId(loginEvent.getSessionId());
+        Assertions.assertNull(events.poll());
+        assertTrue(jsonNode.get("active").asBoolean());
+        assertEquals("test-app", jsonNode.get("client_id").asText());
+    }
+
+    @Test
     public void testIntrospectRefreshTokenDeniedForNotIssuedFor() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
         String code = oauth.parseLoginResponse().getCode();
@@ -693,6 +713,9 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
             oauth.client("test-app", "password");
             jsonNode = oauth.doIntrospectionRefreshTokenRequest(oldRefreshToken).asJsonNode();
+            assertFalse(jsonNode.get("active").asBoolean());
+
+            jsonNode = oauth.introspectionRequest(oldRefreshToken).send().asJsonNode();
             assertFalse(jsonNode.get("active").asBoolean());
         } finally {
             realm.setRevokeRefreshToken(false);
