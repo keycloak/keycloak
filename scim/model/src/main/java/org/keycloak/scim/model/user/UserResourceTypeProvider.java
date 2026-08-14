@@ -131,9 +131,6 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     @Override
     protected Stream<UserModel> getModels(SearchRequest searchRequest) {
         RealmModel realm = session.getContext().getRealm();
-        Integer firstResult = searchRequest.getStartIndex() != null ? searchRequest.getStartIndex() - 1 : null;
-        Integer maxResults = searchRequest.getCount();
-        maxResults = maxResults != null ? Math.max(0, Math.min(maxResults, DEFAULT_MAX_RESULTS)) : DEFAULT_MAX_RESULTS;
 
         ScimFilterParser.FilterContext filterContext = searchRequest.getFilterContext();
 
@@ -147,16 +144,20 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
 
             query.where(predicates).distinct(true).orderBy(cb.asc(root.get("username")));
 
-            return closing(paginateQuery(em.createQuery(query), firstResult, maxResults).getResultStream()
+            return closing(paginateQuery(em.createQuery(query), searchRequest.getStartIndex() - 1, searchRequest.getCount()).getResultStream()
                     .map(entity -> session.users().getUserById(realm, entity.getId()))
                     .filter(Objects::nonNull));
         } else {
-            return session.users().searchForUserStream(realm, Map.of(UserModel.INCLUDE_SERVICE_ACCOUNT, "false"), firstResult, maxResults);
+            return session.users().searchForUserStream(realm, Map.of(UserModel.INCLUDE_SERVICE_ACCOUNT, "false"), searchRequest.getStartIndex() - 1, searchRequest.getCount());
         }
     }
 
     @Override
-    public Long count(SearchRequest searchRequest) {
+    public Long count(SearchRequest searchRequest, int resourceSize) {
+        if (resourceSize < searchRequest.getCount() && (resourceSize > 0 || searchRequest.getStartIndex() == 1)) {
+            return (long) (searchRequest.getStartIndex() - 1 + resourceSize);
+        }
+
         RealmModel realm = session.getContext().getRealm();
         ScimFilterParser.FilterContext filterContext = searchRequest.getFilterContext();
 

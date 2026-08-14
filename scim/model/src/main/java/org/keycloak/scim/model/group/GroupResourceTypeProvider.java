@@ -121,9 +121,6 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     @Override
     protected Stream<GroupModel> getModels(SearchRequest searchRequest) {
         RealmModel realm = session.getContext().getRealm();
-        Integer firstResult = searchRequest.getStartIndex() != null ? searchRequest.getStartIndex() - 1 : null;
-        Integer maxResults = searchRequest.getCount();
-        maxResults = maxResults != null ? Math.max(0, Math.min(maxResults, DEFAULT_MAX_RESULTS)) : DEFAULT_MAX_RESULTS;
 
         ScimFilterParser.FilterContext filterContext = searchRequest.getFilterContext();
 
@@ -137,16 +134,20 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
             // apply distinct and order by name to ensure consistency with no-filter case
             query.where(predicates).distinct(true).orderBy(cb.asc(root.get("name")));
 
-            return closing(paginateQuery(em.createQuery(query), firstResult, maxResults).getResultStream()
+            return closing(paginateQuery(em.createQuery(query), searchRequest.getStartIndex() - 1, searchRequest.getCount()).getResultStream()
                     .map(entity -> session.groups().getGroupById(realm, entity.getId()))
                     .filter(Objects::nonNull));
         } else {
-            return session.groups().getTopLevelGroupsStream(realm, firstResult, maxResults);
+            return session.groups().getTopLevelGroupsStream(realm, searchRequest.getStartIndex() - 1, searchRequest.getCount());
         }
     }
 
     @Override
-    public Long count(SearchRequest searchRequest) {
+    public Long count(SearchRequest searchRequest, int resourceSize) {
+        if (resourceSize < searchRequest.getCount() && (resourceSize > 0 || searchRequest.getStartIndex() == 1)) {
+            return (long) (searchRequest.getStartIndex() - 1 + resourceSize);
+        }
+
         RealmModel realm = session.getContext().getRealm();
         ScimFilterParser.FilterContext filterContext = searchRequest.getFilterContext();
 
