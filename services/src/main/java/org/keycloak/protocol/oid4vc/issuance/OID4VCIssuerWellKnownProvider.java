@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 
@@ -65,7 +66,6 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 import org.keycloak.wellknown.WellKnownProvider;
 
-import org.apache.http.HttpHeaders;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.OID4VCConstants.SIGNED_METADATA_JWT_TYPE;
@@ -117,7 +117,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         }
         CredentialIssuer issuer = getIssuerMetadata();
         // Keep Date explicit for RFC7231 compliance and conformance-suite header validation.
-        keycloakSession.getContext().getHttpResponse().setHeader(HttpHeaders.DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)));
+        keycloakSession.getContext().getHttpResponse().setHeader("Date", DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)));
         return getMetadataResponse(issuer, keycloakSession);
     }
 
