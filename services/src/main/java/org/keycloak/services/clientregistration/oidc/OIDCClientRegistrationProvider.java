@@ -143,14 +143,17 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
             // representation, so existing defaults must be merged into the representation
             // before reconciliation. This prevents default scopes from being silently demoted
             // when an OIDC update sets scope (optionalClientScopes) but omits defaultClientScopes.
+            // The client lookup is safe here because we only read defaults; auth enforcement
+            // happens inside update() via auth.requireUpdate(), which throws 401 if unauthenticated.
+            // The pre-existing 404 for non-existent clients is intentionally not thrown here,
+            // to allow auth.requireUpdate() to run first and return the correct 401 error.
             if (clientOIDC.getScope() != null) {
-                ClientModel oldClient = session.getContext().getRealm().getClientByClientId(clientOIDC.getClientId());
-                if (oldClient == null) {
-                    throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client not found: " + clientOIDC.getClientId(), Response.Status.NOT_FOUND);
-                }
-                Set<String> existingDefaults = oldClient.getClientScopes(true).keySet();
-                if (!existingDefaults.isEmpty() && client.getDefaultClientScopes() == null) {
-                    client.setDefaultClientScopes(new ArrayList<>(existingDefaults));
+                ClientModel oldClient = session.getContext().getRealm().getClientByClientId(clientId);
+                if (oldClient != null) {
+                    Set<String> existingDefaults = oldClient.getClientScopes(true).keySet();
+                    if (!existingDefaults.isEmpty() && client.getDefaultClientScopes() == null) {
+                        client.setDefaultClientScopes(new ArrayList<>(existingDefaults));
+                    }
                 }
             }
 
