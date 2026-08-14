@@ -1,5 +1,7 @@
 package org.keycloak.services;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import jakarta.ws.rs.core.Context;
@@ -10,6 +12,7 @@ import jakarta.ws.rs.ext.Provider;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.error.KeycloakErrorHandler;
 
 /**
@@ -29,11 +32,36 @@ public class ServiceExceptionMapper implements ExceptionMapper<ServiceException>
         Optional<Object[]> parameters = exception.getParameters();
         if (exception.getMessage() != null && parameters.isPresent()
                 && response.getMediaType() != null && MediaType.APPLICATION_JSON_TYPE.isCompatible(response.getMediaType())) {
-            ErrorRepresentation error = new ErrorRepresentation();
-            error.setErrorMessage(exception.getMessage());
-            error.setParams(parameters.get());
-            return Response.fromResponse(response).entity(error).build();
+            return Response.fromResponse(response)
+                    .entity(addParameters(response.getEntity(), exception.getMessage(), parameters.get()))
+                    .build();
         }
         return response;
+    }
+
+    static Object addParameters(Object entity, String message, Object[] parameters) {
+        Object[] stableParameters = parameters.clone();
+        if (entity instanceof ErrorRepresentation error) {
+            if (error.getErrorMessage() == null) {
+                error.setErrorMessage(message);
+            }
+            error.setParams(stableParameters);
+            return error;
+        }
+        if (entity instanceof OAuth2ErrorRepresentation error) {
+            Map<String, Object> enriched = new LinkedHashMap<>();
+            enriched.put("error", error.getError());
+            if (error.getErrorDescription() != null) {
+                enriched.put("error_description", error.getErrorDescription());
+            }
+            enriched.put("errorMessage", message);
+            enriched.put("params", stableParameters);
+            return enriched;
+        }
+
+        ErrorRepresentation error = new ErrorRepresentation();
+        error.setErrorMessage(message);
+        error.setParams(stableParameters);
+        return error;
     }
 }

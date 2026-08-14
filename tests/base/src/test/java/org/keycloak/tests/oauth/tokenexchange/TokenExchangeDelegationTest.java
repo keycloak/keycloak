@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import jakarta.ws.rs.core.Response;
@@ -12,6 +13,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -32,10 +34,13 @@ import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.ParameterizedScopeUserPropertyMapper;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectEvents;
@@ -66,6 +71,7 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
 import org.keycloak.testsuite.util.oauth.ciba.AuthenticationRequestAcknowledgement;
@@ -119,6 +125,7 @@ public class TokenExchangeDelegationTest {
         if (consents.stream().anyMatch(m -> oauth.getClientId().equals(m.get("clientId")))) {
             AccountHelper.revokeConsents(realm.admin(), USERNAME, oauth.getClientId());
         }
+        oauth.responseType(OAuth2Constants.CODE);
     }
 
     @Test
@@ -178,6 +185,121 @@ public class TokenExchangeDelegationTest {
         // logout
         LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
         Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
+    }
+
+    @Test
+    public void delegationFGAP() throws Exception {
+        realm.updateWithCleanup(r -> r.adminPermissionsEnabled(true));
+
+        // create a policy that allows administrator to impersonate
+        ClientResource adminPerms = AdminApiUtil.findClientByClientId(realm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
+        UserPolicyRepresentation policy = new UserPolicyRepresentation();
+        policy.setName("Administrator Policy");
+        policy.addUser(administrator.getId());
+        try (Response response = adminPerms.authorization().policies().user().create(policy)) {
+            Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            policy = response.readEntity(UserPolicyRepresentation.class);
+        }
+
+        // create the permission to impersonate the user
+        ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
+        permission.setName("Administrator impersonation");
+        permission.setScopes(Set.of(AdminPermissionsSchema.IMPERSONATE));
+        permission.setResourceType(AdminPermissionsSchema.USERS_RESOURCE_TYPE);
+        permission.setResources(Set.of(AdminApiUtil.findUserByUsername(realm.admin(), USERNAME).getId()));
+        permission.setPolicies(Set.of(policy.getId()));
+        try (Response response = adminPerms.authorization().permissions().scope().create(permission)) {
+            Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            permission = response.readEntity(ScopePermissionRepresentation.class);
+        }
+
+        // request the delegation to administrator and accept the delegation
+        final String scope = OIDCLoginProtocolFactory.DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + administrator.getUsername();
+        AccessTokenResponse res = loginWithDelegation(scope);
+
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), administrator.getId());
+
+        // refresh the token
+        res = oauth.scope(null).doRefreshTokenRequest(res.getRefreshToken());
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeContains(res.getScope(), scope);
+        assertMayActPresent(oauth.verifyToken(res.getAccessToken()), administrator.getId());
+
+        // perform the token exchange with delegation
+        tokenExchangeDelegationSuccess(res.getAccessToken(), getActorToken());
+
+        // remove the impersonation and refresh the token
+        adminPerms.authorization().permissions().scope().findById(permission.getId()).remove();
+        adminPerms.authorization().policies().user().findById(policy.getId()).remove();
+        res = oauth.doRefreshTokenRequest(res.getRefreshToken());
+        Assertions.assertTrue(res.isSuccess(), res.getError() + " - " + res.getErrorDescription());
+        assertScopeNotContains(res.getScope(), scope);
+        assertMayActNotPresent(oauth.verifyToken(res.getAccessToken()));
+
+        // token exchange does not work without "may_act" claim
+        String actorToken = getActorToken();
+        AccessTokenResponse tokenExchangeRes = oauth.client("test-app", "test-secret").tokenExchangeRequest(res.getAccessToken())
+                .actorToken(actorToken).actorTokenType(OAuth2Constants.ACCESS_TOKEN_TYPE).send();
+        assertExchangeError(tokenExchangeRes, Errors.INVALID_TOKEN, "Invalid may_act claim in the subject_token");
+
+        // logout
+        LogoutResponse logout = oauth.doLogout(res.getRefreshToken());
+        Assertions.assertTrue(logout.isSuccess(), logout.getError() + " - " + logout.getErrorDescription());
+    }
+
+    @Test
+    public void delegationImplicit() {
+        final ClientResource realmManagement = AdminApiUtil.findClientByClientId(realm.admin(), Constants.REALM_MANAGEMENT_CLIENT_ID);
+        final String clientUUID = realmManagement.toRepresentation().getId();
+        final RoleRepresentation impersonation = realmManagement.roles().get(AdminRoles.IMPERSONATION).toRepresentation();
+        administrator.admin().roles().clientLevel(clientUUID).add(List.of(impersonation));
+
+        // enable implicit flow for the client
+        ClientRepresentation clientRep = oauth.clientResource().toRepresentation();
+        clientRep.setImplicitFlowEnabled(Boolean.TRUE);
+        oauth.clientResource().update(clientRep);
+        realm.cleanup().add(r -> {
+            clientRep.setImplicitFlowEnabled(Boolean.FALSE);
+            r.clients().get(clientRep.getId()).update(clientRep);
+        });
+
+        // request the delegation to administrator and accept the delegation using implicit
+        final String scope = OIDCLoginProtocolFactory.DELEGATION_SCOPE + ClientScopeModel.VALUE_SEPARATOR + administrator.getUsername();
+        oauth.scope(scope).responseType(OAuth2Constants.TOKEN).openLoginForm();
+        oauth.fillLoginForm(USERNAME, PASSWORD);
+        grantPage.assertCurrent();
+        List<String> grants = grantPage.getDisplayedGrants();
+        MatcherAssert.assertThat(grants, Matchers.hasItem("Delegate token to administrator administrator?"));
+        grantPage.accept();
+
+        AuthorizationEndpointResponse res = new AuthorizationEndpointResponse(oauth);
+
+        Assertions.assertTrue(res.isRedirected());
+        Assertions.assertNotNull(res.getAccessToken());
+        AccessToken token = oauth.verifyToken(res.getAccessToken());
+        assertScopeContains(token.getScope(), scope);
+        assertMayActPresent(token, administrator.getId());
+
+        // logout
+        AdminApiUtil.findUserByUsernameId(realm.admin(), USERNAME).logout();
+
+        // remove the impersonation from the user and try again
+        administrator.admin().roles().clientLevel(clientUUID).remove(List.of(impersonation));
+
+        oauth.scope(scope).responseType(OAuth2Constants.TOKEN).openLoginForm();
+        oauth.fillLoginForm(USERNAME, PASSWORD);
+        res = new AuthorizationEndpointResponse(oauth);
+
+        Assertions.assertTrue(res.isRedirected());
+        Assertions.assertNotNull(res.getAccessToken());
+        token = oauth.verifyToken(res.getAccessToken());
+        assertScopeNotContains(token.getScope(), scope);
+        assertMayActNotPresent(token);
+
+        // logout
+        AdminApiUtil.findUserByUsernameId(realm.admin(), USERNAME).logout();
     }
 
     @Test

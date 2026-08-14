@@ -172,6 +172,14 @@ test.describe.serial("Permissions section tests", () => {
         page.getByRole("heading", { name: "Warning alert: account with" }),
       ).toBeVisible();
     });
+
+    test("should select groups for evaluation", async ({ page }) => {
+      await goToEvaluation(page);
+      await selectItem(page, page.getByTestId("user"), "user1");
+      await selectItem(page, "#resourceType", "Groups");
+
+      await expect(page.getByTestId("select-group-button")).toBeVisible();
+    });
   });
 
   test.describe.serial("permission search", () => {

@@ -38,7 +38,7 @@
                                             <div class="${properties.kcWebAuthnDefaultIcon!}">
                                             <#if authenticator.iconLight?? || authenticator.iconDark??>
                                                 <picture>
-                                                    <#if authenticator.iconDark??>
+                                                    <#if darkMode && authenticator.iconDark??>
                                                         <source srcset="${url.resourcesPath}/img/passkeys/${authenticator.iconDark}" media="(prefers-color-scheme: dark)">
                                                     </#if>
                                                     <img src="${url.resourcesPath}/img/passkeys/${authenticator.iconLight!authenticator.iconDark!''}" alt="" width="40" height="40">

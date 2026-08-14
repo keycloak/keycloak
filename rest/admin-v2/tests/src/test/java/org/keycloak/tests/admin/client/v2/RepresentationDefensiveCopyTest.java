@@ -9,6 +9,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RepresentationDefensiveCopyTest {
 
@@ -20,8 +22,8 @@ class RepresentationDefensiveCopyTest {
 
         new ObjectMapper().readerForUpdating(representation).readValue("{\"description\":\"updated\"}");
 
-        assertEquals(false, representation.isFieldExplicitlySet("type"));
-        assertEquals(true, representation.isFieldExplicitlySet("description"));
+        assertFalse(representation.isFieldExplicitlySet("type"));
+        assertTrue(representation.isFieldExplicitlySet("description"));
     }
 
     @Test

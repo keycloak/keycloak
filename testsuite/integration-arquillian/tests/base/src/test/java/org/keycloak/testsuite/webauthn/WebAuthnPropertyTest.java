@@ -103,7 +103,7 @@ public class WebAuthnPropertyTest extends AbstractWebAuthnVirtualTest {
             authenticateDefaultUser(false);
             WaitUtils.pause((TIMEOUT + 2) * 1000);
             webAuthnErrorPage.assertCurrent();
-            assertThat(webAuthnErrorPage.getError(), containsString("Failed to authenticate by the Passkey."));
+            assertThat(webAuthnErrorPage.getError(), containsString("The Passkey operation was not allowed or timed out."));
         }
     }
 

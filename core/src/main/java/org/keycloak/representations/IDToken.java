@@ -20,7 +20,7 @@ package org.keycloak.representations;
 import java.util.Map;
 
 import org.keycloak.TokenCategory;
-import org.keycloak.util.JsonSerialization;
+import org.keycloak.json.KeycloakJsonMapperFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -345,12 +345,12 @@ public class IDToken extends JsonWebToken {
             return null;
         }
 
-        return JsonSerialization.mapper.convertValue(value, AddressClaimSet.class);
+        return KeycloakJsonMapperFactory.mapper().convertValue(value, AddressClaimSet.class);
     }
 
     @JsonIgnore
     public void setAddress(AddressClaimSet address) {
-        getOtherClaims().put(ADDRESS, JsonSerialization.mapper.convertValue(address, Map.class));
+        getOtherClaims().put(ADDRESS, KeycloakJsonMapperFactory.mapper().convertValue(address, Map.class));
     }
 
     @JsonIgnore

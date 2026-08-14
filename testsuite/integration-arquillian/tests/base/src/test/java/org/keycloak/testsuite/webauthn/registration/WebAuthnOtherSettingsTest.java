@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
@@ -45,6 +46,7 @@ import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 
 import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverFirefox;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
@@ -143,7 +145,7 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
             pause((TIMEOUT + 2) * 1000);
 
             webAuthnErrorPage.assertCurrent();
-            assertThat(webAuthnErrorPage.getError(), containsString("The operation either timed out or was not allowed"));
+            assertThat(webAuthnErrorPage.getError(), containsString("The Passkey operation was not allowed or timed out."));
 
             webAuthnErrorPage.clickTryAgain();
             waitForPageToLoad();
@@ -179,7 +181,7 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
             registerDefaultUser();
 
             webAuthnErrorPage.assertCurrent();
-            assertThat(webAuthnErrorPage.getError(), containsString("Not acceptable authenticator model"));
+            assertThat(webAuthnErrorPage.getError(), containsString("This security key model is not allowed (AAGUID " + CHROME_AAGUID + "). Please use a different security key."));
         } finally {
             testingClient.testing().reenableTruststoreSpi();
         }
@@ -223,7 +225,87 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
             registerDefaultUser();
 
             webAuthnErrorPage.assertCurrent();
-            assertThat(webAuthnErrorPage.getError(), containsString("Acceptable AAGUIDs require an attestation format other than 'none'."));
+            assertThat(webAuthnErrorPage.getError(), containsString("Your organization requires verified security keys. Attestation format 'none' is not accepted; please use a key that provides attestation."));
         }
+    }
+
+    @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
+    public void apiNotAllowedErrorMessage() throws IOException {
+        final Integer TIMEOUT = 3; //seconds
+        try (Closeable u = getWebAuthnRealmUpdater().setWebAuthnPolicyCreateTimeout(TIMEOUT).update()) {
+            assertBrowserApiErrorMessage(options -> options.setIsUserConsenting(false),
+                    "The Passkey operation was not allowed or timed out.", TIMEOUT);
+        }
+    }
+
+    @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
+    public void apiInvalidStateErrorMessage() throws IOException {
+        registerDefaultUser();
+        UserRepresentation user = userResource().toRepresentation();
+        logout();
+
+        user.setRequiredActions(Collections.singletonList(isPasswordless()
+                ? WebAuthnPasswordlessRegisterFactory.PROVIDER_ID
+                : WebAuthnRegisterFactory.PROVIDER_ID));
+        userResource().update(user);
+
+        oauth.openLoginForm();
+        waitForPageToLoad();
+        loginPage.assertCurrent();
+        loginPage.login(USERNAME, getPassword(USERNAME));
+
+        waitForPageToLoad();
+        webAuthnLoginPage.assertCurrent();
+        webAuthnLoginPage.clickAuthenticate();
+
+        waitForPageToLoad();
+        webAuthnRegisterPage.assertCurrent();
+        webAuthnRegisterPage.clickRegister();
+
+        webAuthnErrorPage.assertCurrent();
+        assertThat(webAuthnErrorPage.getError(), containsString("This Passkey is already registered."));
+    }
+
+    @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
+    public void apiSecurityErrorMessage() throws IOException {
+        try (Closeable u = getWebAuthnRealmUpdater()
+                .setWebAuthnPolicyRpId("invalid.example.com")
+                .update()) {
+            oauth.openLoginForm();
+            loginPage.clickRegister();
+            registerPage.assertCurrent();
+            registerPage.register("firstName", "lastName", EMAIL, USERNAME, generatePassword(USERNAME));
+
+            webAuthnRegisterPage.assertCurrent();
+            webAuthnRegisterPage.clickRegister();
+
+            webAuthnErrorPage.assertCurrent();
+            assertThat(webAuthnErrorPage.getError(), containsString("A security error occurred during the Passkey operation. Please ensure you are on the correct site and try again."));
+        }
+    }
+
+    private void assertBrowserApiErrorMessage(Consumer<VirtualAuthenticatorOptions> optionsConsumer, String expectedMessage, Integer waitSeconds) throws IOException {
+        getVirtualAuthManager().removeAuthenticator();
+        VirtualAuthenticatorOptions options = getDefaultAuthenticatorOptions();
+        optionsConsumer.accept(options);
+        getVirtualAuthManager().useAuthenticator(options);
+
+        oauth.openLoginForm();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+        registerPage.register("firstName", "lastName", EMAIL, USERNAME, generatePassword(USERNAME));
+
+        webAuthnRegisterPage.assertCurrent();
+        webAuthnRegisterPage.clickRegister();
+
+        if (waitSeconds != null) {
+            pause((waitSeconds + 2) * 1000);
+        }
+
+        webAuthnErrorPage.assertCurrent();
+        assertThat(webAuthnErrorPage.getError(), containsString(expectedMessage));
     }
 }

@@ -29,7 +29,10 @@ public interface HttpResponse {
      * Gets the current status code.
      *
      * <p><strong>Warning:</strong> this will typically not be the actual status returned as that will be managed by JAX-RS based upon the return value or exception from the endpoint method.
+     *
+     * @deprecated This method is not useful for JAX-RS resource endpoints.
      */
+    @Deprecated
     int getStatus();
 
     /**
@@ -38,7 +41,9 @@ public interface HttpResponse {
      * <p><strong>Warning:</strong> this value is silently overwritten by the JAX-RS runtime based upon the return value or exception from the endpoint method. Please use a JAX-RS compatible way of setting the status instead.
      *
      * @param statusCode the status code
+     * @deprecated This method is not useful for JAX-RS resource endpoints.
      */
+    @Deprecated
     void setStatus(int statusCode);
 
     /**

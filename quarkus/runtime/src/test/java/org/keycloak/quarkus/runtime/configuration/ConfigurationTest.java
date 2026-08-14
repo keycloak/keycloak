@@ -33,6 +33,7 @@ import org.keycloak.config.CachingOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
+import org.keycloak.quarkus.runtime.configuration.mappers.ManagementPropertyMappers;
 import org.keycloak.quarkus.runtime.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.quarkus.runtime.vault.FilesPlainTextVaultProviderFactory;
 import org.keycloak.spi.infinispan.CacheEmbeddedConfigProviderSpi;
@@ -600,24 +601,26 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     public void testReloadPeriod() {
         ConfigArgsConfigSource.setCliArgs("");
         var config = createConfig();
+        String httpReloadPeriod = HttpPropertyMappers.TLS_PREFIX + "reload-period";
+        String mgmtReloadPeriod = ManagementPropertyMappers.MGMT_TLS_PREFIX + "reload-period";
         assertExternalConfig(Map.of(
-                "quarkus.http.ssl.certificate.reload-period", "1h",
-                "quarkus.management.ssl.certificate.reload-period", "1h"
+                httpReloadPeriod, "1h",
+                mgmtReloadPeriod, "1h"
         ));
-        assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false).anyMatch("quarkus.http.ssl.certificate.reload-period"::equals));
+        assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false).anyMatch(httpReloadPeriod::equals));
 
         ConfigArgsConfigSource.setCliArgs("--https-certificates-reload-period=-1");
         config = createConfig();
 
-        assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false).noneMatch("quarkus.http.ssl.certificate.reload-period"::equals));
-        assertExternalConfigNull("quarkus.http.ssl.certificate.reload-period");
-        assertExternalConfigNull("quarkus.management.ssl.certificate.reload-period");
+        assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false).noneMatch(httpReloadPeriod::equals));
+        assertExternalConfigNull(httpReloadPeriod);
+        assertExternalConfigNull(mgmtReloadPeriod);
 
         ConfigArgsConfigSource.setCliArgs("--https-certificates-reload-period=2h");
         initConfig();
         assertExternalConfig(Map.of(
-                "quarkus.http.ssl.certificate.reload-period", "2h",
-                "quarkus.management.ssl.certificate.reload-period", "2h"
+                httpReloadPeriod, "2h",
+                mgmtReloadPeriod, "2h"
         ));
     }
 
@@ -629,16 +632,21 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         if (FileSystems.getDefault().getSeparator().equals("\\")) {
             expected = "/some/file";
         }
-        assertEquals(expected, createConfig().getConfigValue("quarkus.http.ssl.certificate.files").getValue());
+        assertEquals(expected, createConfig().getConfigValue(HttpPropertyMappers.TLS_PREFIX + "key-store.pem.default.cert").getValue());
     }
 
     @Test
     public void testHttpTrustStoreType() {
-        ConfigArgsConfigSource.setCliArgs("--fips-mode=strict");
-        assertEquals("BCFKS", createConfig().getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE).getValue());
+        String otherTypeProp = HttpPropertyMappers.TLS_PREFIX + "trust-store.other.type";
 
-        ConfigArgsConfigSource.setCliArgs("--https-trust-store-type=jks");
-        assertEquals("jks", createConfig().getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_TRUST_STORE_FILE_TYPE).getValue());
+        ConfigArgsConfigSource.setCliArgs("--fips-mode=strict", "--https-trust-store-file=trust.bcfks");
+        assertEquals("BCFKS", createConfig().getConfigValue(otherTypeProp).getValue());
+
+        ConfigArgsConfigSource.setCliArgs("--https-trust-store-type=jks", "--https-trust-store-file=trust.jks", "--https-trust-store-password=pass");
+        assertNull(createConfig().getConfigValue(otherTypeProp).getValue());
+
+        ConfigArgsConfigSource.setCliArgs("--https-trust-store-type=BCFKS", "--https-trust-store-file=trust.bcfks");
+        assertEquals("BCFKS", createConfig().getConfigValue(otherTypeProp).getValue());
     }
 
     @Test
@@ -675,8 +683,8 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     public void testKeycloakConfQuarkusPropertyNotUsed() {
         ConfigArgsConfigSource.setCliArgs("");
         SmallRyeConfig config = createConfig();
-        assertNull(config.getConfigValue("quarkus.management.ssl.cipher-suites").getValue());
-        assertNotNull(config.getConfigValue("kc.quarkus.management.ssl.cipher-suites").getValue());
+        assertNull(config.getConfigValue(ManagementPropertyMappers.MGMT_TLS_PREFIX + "cipher-suites").getValue());
+        assertNotNull(config.getConfigValue("kc." + ManagementPropertyMappers.MGMT_TLS_PREFIX + "cipher-suites").getValue());
     }
 
     @Test
@@ -700,6 +708,15 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         ConfigArgsConfigSource.setCliArgs("");
         SmallRyeConfig config = createConfig();
         assertEquals("200k", config.getConfigValue("quarkus.http.limits.max-header-size").getValue());
+    }
+
+    @Test
+    public void testHttp2HeaderListSizeMatchesHttp1HeaderSizeDefault() {
+        ConfigArgsConfigSource.setCliArgs("");
+        SmallRyeConfig config = createConfig();
+        assertEquals(config.getConfigValue("quarkus.http.limits.max-header-size").getValue(),
+                config.getConfigValue("quarkus.http.limits.max-header-list-size").getValue());
+        assertEquals("65535", config.getConfigValue("quarkus.http.limits.max-header-list-size").getValue());
     }
 
     @Test
@@ -1116,5 +1133,174 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         var config = createConfigFromCliArguments("--cache-embedded-mtls-enabled=false");
         assertEquals("false", config.getConfigValue("kc.spi-jgroups-mtls--default--activated").getValue());
         assertNull(config.getConfigValue("kc.spi-jgroups-mtls--default--enabled").getValue());
+    }
+    
+    @Test
+    public void testSniNotSetViaConfig() {
+        // SNI is enabled via KeycloakHttpServerOptionsCustomizer, not via config property
+        var config = createConfigFromCliArguments("--https-certificate-file=\\some\\file");
+        assertNull(config.getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_SNI).getValue());
+    }
+
+    @Test
+    public void testTlsConfigNameWiring() {
+        var config = createConfigFromCliArguments("--https-certificate-file=/cert.pem", "--https-certificate-key-file=/key.pem");
+        assertEquals(HttpPropertyMappers.TLS_BUCKET,
+                config.getConfigValue("quarkus.http.tls-configuration-name").getValue());
+
+        config = createConfigFromCliArguments();
+        assertNull(config.getConfigValue("quarkus.http.tls-configuration-name").getValue());
+    }
+
+    @Test
+    public void testHttpPemCertKeyMapping() {
+        ConfigArgsConfigSource.setCliArgs("--https-certificate-file=/my/cert.pem", "--https-certificate-key-file=/my/key.pem");
+        initConfig();
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "key-store.pem.default.cert", "/my/cert.pem",
+                HttpPropertyMappers.TLS_PREFIX + "key-store.pem.default.key", "/my/key.pem"
+        ));
+    }
+
+    @Test
+    public void testHttpPemKeyFilePassword() {
+        ConfigArgsConfigSource.setCliArgs("--https-certificate-file=/cert.pem",
+                "--https-certificate-key-file=/key.pem",
+                "--https-certificate-key-file-password=secret");
+        initConfig();
+        assertExternalConfig(HttpPropertyMappers.TLS_PREFIX + "key-store.pem.default.password", "secret");
+    }
+
+    @Test
+    public void testHttpKeystoreDispatchPkcs12() {
+        ConfigArgsConfigSource.setCliArgs("--https-key-store-file=server.p12", "--https-key-store-password=pass");
+        initConfig();
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "key-store.p12.path", "server.p12",
+                HttpPropertyMappers.TLS_PREFIX + "key-store.p12.password", "pass"
+        ));
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.jks.path");
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.other.path");
+    }
+
+    @Test
+    public void testHttpKeystoreDispatchJks() {
+        ConfigArgsConfigSource.setCliArgs("--https-key-store-file=server.jks", "--https-key-store-password=pass");
+        initConfig();
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "key-store.jks.path", "server.jks",
+                HttpPropertyMappers.TLS_PREFIX + "key-store.jks.password", "pass"
+        ));
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.p12.path");
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.other.path");
+    }
+
+    @Test
+    public void testHttpKeystoreDispatchBcfks() {
+        ConfigArgsConfigSource.setCliArgs("--https-key-store-file=server.bcfks",
+                "--https-key-store-type=BCFKS", "--https-key-store-password=pass");
+        initConfig();
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "key-store.other.path", "server.bcfks",
+                HttpPropertyMappers.TLS_PREFIX + "key-store.other.password", "pass",
+                HttpPropertyMappers.TLS_PREFIX + "key-store.other.type", "BCFKS"
+        ));
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.p12.path");
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.jks.path");
+    }
+
+    @Test
+    public void testHttpKeystoreExplicitTypeOverridesExtension() {
+        ConfigArgsConfigSource.setCliArgs("--https-key-store-file=server.p12",
+                "--https-key-store-type=JKS", "--https-key-store-password=pass");
+        initConfig();
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "key-store.jks.path", "server.p12",
+                HttpPropertyMappers.TLS_PREFIX + "key-store.jks.password", "pass"
+        ));
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.p12.path");
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.other.type");
+    }
+
+    @Test
+    public void testHttpTrustStoreDispatchPkcs12() {
+        ConfigArgsConfigSource.setCliArgs("--https-trust-store-file=truststore.p12", "--https-trust-store-password=pass");
+        initConfig();
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "trust-store.p12.path", "truststore.p12",
+                HttpPropertyMappers.TLS_PREFIX + "trust-store.p12.password", "pass"
+        ));
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "trust-store.jks.path");
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "trust-store.other.path");
+    }
+
+    @Test
+    public void testHttpTrustStoreDispatchJks() {
+        ConfigArgsConfigSource.setCliArgs("--https-trust-store-file=truststore.jks", "--https-trust-store-password=pass");
+        initConfig();
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "trust-store.jks.path", "truststore.jks",
+                HttpPropertyMappers.TLS_PREFIX + "trust-store.jks.password", "pass"
+        ));
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "trust-store.p12.path");
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "trust-store.other.path");
+    }
+
+    @Test
+    public void testHttpCipherSuitesAndProtocols() {
+        ConfigArgsConfigSource.setCliArgs("--https-cipher-suites=TLS_AES_256_GCM_SHA384",
+                "--https-protocols=TLSv1.3");
+        initConfig();
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "cipher-suites", "TLS_AES_256_GCM_SHA384",
+                HttpPropertyMappers.TLS_PREFIX + "protocols", "TLSv1.3"
+        ));
+    }
+
+    @Test
+    public void testHttpKeyStoreTypeFilterOnlyOther() {
+        ConfigArgsConfigSource.setCliArgs("--https-key-store-type=PKCS12");
+        initConfig();
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.other.type");
+
+        ConfigArgsConfigSource.setCliArgs("--https-key-store-type=JKS");
+        initConfig();
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.other.type");
+
+        ConfigArgsConfigSource.setCliArgs("--https-key-store-type=BCFKS", "--https-key-store-file=server.bcfks", "--https-key-store-password=pass");
+        initConfig();
+        assertExternalConfig(HttpPropertyMappers.TLS_PREFIX + "key-store.other.type", "BCFKS");
+    }
+
+    @Test
+    public void testDefaultProtocolsPreserved() {
+        ConfigArgsConfigSource.setCliArgs("--https-certificate-file=/cert.pem", "--https-certificate-key-file=/key.pem");
+        initConfig();
+        assertExternalConfig(HttpPropertyMappers.TLS_PREFIX + "protocols", "TLSv1.3,TLSv1.2");
+    }
+
+    @Test
+    public void testPemPasswordNotSetWhenNotSpecified() {
+        ConfigArgsConfigSource.setCliArgs("--https-certificate-file=/cert.pem", "--https-certificate-key-file=/key.pem");
+        initConfig();
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.pem.default.password");
+    }
+
+    @Test
+    public void testPasswordOnlyDoesNotWireTlsConfigName() {
+        ConfigArgsConfigSource.setCliArgs("--https-certificate-key-file-password=secret");
+        initConfig();
+        assertNull(createConfig().getConfigValue("quarkus.http.tls-configuration-name").getValue());
+    }
+
+    @Test
+    public void testPemPasswordViaEnvVar() {
+        putEnvVars(Map.of(
+                "KC_HTTPS_CERTIFICATE_FILE", "/cert.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE", "/key.pem",
+                "KC_HTTPS_CERTIFICATE_KEY_FILE_PASSWORD", "env-secret"
+        ));
+        initConfig();
+        assertExternalConfig(HttpPropertyMappers.TLS_PREFIX + "key-store.pem.default.password", "env-secret");
     }
 }

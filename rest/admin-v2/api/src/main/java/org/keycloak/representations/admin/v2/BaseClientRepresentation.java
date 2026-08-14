@@ -172,6 +172,7 @@ public class BaseClientRepresentation extends BaseRepresentation {
     }
 
     public void setRoles(Set<String> roles) {
+        markFieldAsExplicitlySet("roles");
         this.roles = roles == null ? new LinkedHashSet<>() : new LinkedHashSet<>(roles);
     }
 

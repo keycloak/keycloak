@@ -96,6 +96,7 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
     String PARAMETERIZED_SCOPE_REGEXP = "parameterized.scope.regexp";
     String PARAMETERIZED_SCOPE_TYPE = "parameterized.scope.type";
     String IS_REPEATABLE_SCOPE = "parameterized.scope.repeatable";
+    String ALLOW_USER_DATA_ACCESS = "parameterized.scope.allow.user.data";
     String IS_ALWAYS_CONSENT = "always.display.consent";
 
     /** @deprecated Use {@link #IS_PARAMETERIZED_SCOPE} instead. */
@@ -151,6 +152,24 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
 
     default boolean isParameterizedScope() {
         return Boolean.parseBoolean(getAttribute(IS_PARAMETERIZED_SCOPE));
+    }
+
+    /**
+     * Returns the parameterized scope type identifier, or {@code null} if this scope is not parameterized.
+     */
+    default String getParameterizedScopeType() {
+        if (!isParameterizedScope()) {
+            return null;
+        }
+        return getAttribute(PARAMETERIZED_SCOPE_TYPE);
+    }
+
+    /**
+     * Returns whether protocol mappers on this scope are allowed to expose target user attributes
+     * without requiring the authenticated user to have view-users permission.
+     */
+    default boolean isAllowUserDataAccess() {
+        return isParameterizedScope() && Boolean.parseBoolean(getAttribute(ALLOW_USER_DATA_ACCESS));
     }
 
     default boolean isAlwaysConsent() {

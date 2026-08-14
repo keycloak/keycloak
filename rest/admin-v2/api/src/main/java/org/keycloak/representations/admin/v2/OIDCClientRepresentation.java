@@ -98,6 +98,7 @@ public class OIDCClientRepresentation extends BaseClientRepresentation {
     }
 
     public void setServiceAccountRoles(Set<String> serviceAccountRoles) {
+        markFieldAsExplicitlySet("serviceAccountRoles");
         this.serviceAccountRoles = serviceAccountRoles == null ? new LinkedHashSet<>() : new LinkedHashSet<>(serviceAccountRoles);
     }
 

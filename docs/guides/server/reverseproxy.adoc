@@ -90,6 +90,9 @@ Mitigate this risk, for example, by restricting network access.
 
 * Allow a longer `--shutdown-delay` (for example, 10–30 seconds) to give keepalive connections time to drain during shutdown, since the proxy cannot signal a connection close at the HTTP connection level.
 
+* Due to HTTP/2 connection coalescing, do not configure {project_name} to be the proxy's default backend when {project_name} is using a wildcard certificate and that certificate is shared among several services behind the proxy. 
+In this configuration {project_name} will not be able to distinguish between misdirected requests and those sent by default - when no SNI information is sent or SNI does not match any backend.  
+
 === Backchannel access considerations
 
 If private backchannel access to {project_name} is requested, using a proxy might be challenging:

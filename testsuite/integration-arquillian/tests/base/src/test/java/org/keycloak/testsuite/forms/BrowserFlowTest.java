@@ -102,6 +102,18 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        super.configureTestRealm(testRealm);
+        testRealm.setOtpPolicyAlgorithm("HmacSHA1");
+        testRealm.setOtpPolicyDigits(6);
+        testRealm.setOtpPolicyInitialCounter(0);
+        testRealm.setOtpPolicyLookAheadWindow(1);
+        testRealm.setOtpPolicyPeriod(30);
+        testRealm.setOtpPolicyType("totp");
+        testRealm.setOtpPolicyCodeReusable(Boolean.TRUE);
+    }
+
     private void importTestRealm(Consumer<RealmRepresentation> realmUpdater) {
         if (testRealmReps == null) {
             testRealmReps = testContext.getTestRealmReps();

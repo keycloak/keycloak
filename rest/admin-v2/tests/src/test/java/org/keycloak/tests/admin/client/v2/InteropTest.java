@@ -33,6 +33,8 @@ import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientTypeRepresentation;
+import org.keycloak.representations.idm.ClientTypesRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -359,6 +361,47 @@ public class InteropTest extends AbstractClientApiV2Test {
             assertThat(patched.isServiceAccountsEnabled(), is(true));
         } finally {
             realm.clients().get(created.getId()).remove();
+        }
+    }
+
+    @Test
+    public void createMinimalSamlWithV2PreservesClientTypeFields() {
+        RealmResource realm = adminClient.realm(getRealmName());
+        ClientTypesRepresentation originalTypes = realm.clientTypes().getClientTypes();
+        ClientTypeRepresentation.PropertyConfig signDocuments = new ClientTypeRepresentation.PropertyConfig();
+        signDocuments.setApplicable(true);
+        signDocuments.setValue(true);
+        ClientTypeRepresentation samlType = new ClientTypeRepresentation();
+        samlType.setName("signed-saml");
+        samlType.setProvider("default");
+        samlType.setConfig(Map.of(SAML_SERVER_SIGNATURE, signDocuments));
+
+        ClientTypesRepresentation updatedTypes = realm.clientTypes().getClientTypes();
+        updatedTypes.setRealmClientTypes(List.of(samlType));
+        realm.clientTypes().updateClientTypes(updatedTypes);
+
+        SAMLClientRepresentation client = new SAMLClientRepresentation();
+        client.setClientId("v2-minimal-typed-saml-client");
+        client.setType(samlType.getName());
+
+        try {
+            try (var response = getClientsApi().createClient(client)) {
+                assertThat(response.getStatus(), is(201));
+            }
+
+            ClientRepresentation created = realm.clients().findByClientId(client.getClientId()).get(0);
+            assertThat(created.getAttributes().get(SAML_SERVER_SIGNATURE), is("true"));
+
+            SAMLClientRepresentation conflictingClient = new SAMLClientRepresentation();
+            conflictingClient.setClientId("v2-explicit-typed-saml-client");
+            conflictingClient.setType(samlType.getName());
+            conflictingClient.setSignDocuments(false);
+            try (var response = getClientsApi().createClient(conflictingClient)) {
+                assertThat(response.getStatus(), is(400));
+            }
+        } finally {
+            realm.clients().findByClientId(client.getClientId()).forEach(c -> realm.clients().get(c.getId()).remove());
+            realm.clientTypes().updateClientTypes(originalTypes);
         }
     }
 

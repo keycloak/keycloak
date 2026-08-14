@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -50,7 +49,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.validator.OrganizationMemberValidator;
-import org.keycloak.protocol.oid4vc.userprofile.DuplicateDidValidator;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.userprofile.config.UPAttribute;
@@ -72,13 +70,14 @@ import org.keycloak.userprofile.validator.UsernameMutationValidator;
 import org.keycloak.utils.StringUtil;
 import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.validators.EmailValidator;
-import org.keycloak.validate.validators.PatternValidator;
+import org.keycloak.validate.validators.LengthValidator;
 
 import org.jspecify.annotations.NonNull;
 
 import static java.util.Optional.ofNullable;
 
 import static org.keycloak.common.util.ObjectUtil.isBlank;
+import static org.keycloak.services.validation.Validation.MAX_USERNAME_LENGTH;
 import static org.keycloak.userprofile.DefaultAttributes.READ_ONLY_ATTRIBUTE_KEY;
 import static org.keycloak.userprofile.UserProfileContext.ACCOUNT;
 import static org.keycloak.userprofile.UserProfileContext.IDP_REVIEW;
@@ -427,7 +426,9 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         UserProfileMetadata metadata = new UserProfileMetadata(IDP_REVIEW);
 
         metadata.addAttribute(UserModel.USERNAME, -2, DeclarativeUserProfileProviderFactory::editUsernameCondition,
-                DeclarativeUserProfileProviderFactory::readUsernameCondition, new AttributeValidatorMetadata(BrokeringFederatedUsernameHasValueValidator.ID)).setAttributeDisplayName("${username}");
+                DeclarativeUserProfileProviderFactory::readUsernameCondition,
+                new AttributeValidatorMetadata(BrokeringFederatedUsernameHasValueValidator.ID),
+                createUsernameLengthValidator()).setAttributeDisplayName("${username}");
 
         metadata.addAttribute(UserModel.EMAIL, -1,
                         new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_EMAIL, true)))
@@ -458,8 +459,6 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         metadata.addAttribute(UserModel.LOCALE, -1, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled)
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
 
-        addAttributeUserDid(metadata);
-
         return metadata;
     }
 
@@ -471,7 +470,8 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
                 DeclarativeUserProfileProviderFactory::readUsernameCondition,
                 new AttributeValidatorMetadata(UsernameHasValueValidator.ID),
                 new AttributeValidatorMetadata(DuplicateUsernameValidator.ID),
-                new AttributeValidatorMetadata(UsernameMutationValidator.ID)).setAttributeDisplayName("${username}");
+                new AttributeValidatorMetadata(UsernameMutationValidator.ID),
+                createUsernameLengthValidator()).setAttributeDisplayName("${username}");
 
         metadata.addAttribute(UserModel.EMAIL, -1,
                         DeclarativeUserProfileProviderFactory::editEmailCondition,
@@ -503,7 +503,8 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
 
         metadata.addAttribute(UserModel.USERNAME, -2,
                         new AttributeValidatorMetadata(UsernameHasValueValidator.ID),
-                        new AttributeValidatorMetadata(DuplicateUsernameValidator.ID))
+                        new AttributeValidatorMetadata(DuplicateUsernameValidator.ID),
+                        createUsernameLengthValidator())
                 .addWriteCondition(DeclarativeUserProfileProviderFactory::editUsernameCondition);
         metadata.addAttribute(UserModel.EMAIL, -1,
                         new AttributeValidatorMetadata(DuplicateEmailValidator.ID),
@@ -531,8 +532,6 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
                 .setAttributeDisplayName("${termsAndConditionsUserAttribute}")
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
 
-        addAttributeUserDid(metadata);
-
         return metadata;
     }
 
@@ -541,8 +540,6 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
 
         defaultProfile.addAttribute(UserModel.LOCALE, -1, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled)
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
-
-        addAttributeUserDid(defaultProfile);
 
         return defaultProfile;
     }
@@ -622,21 +619,12 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         return UpdateEmail.isEnabled(realm);
     }
 
-    private static boolean isVerifiableCredentialsEnabled(AttributeContext context) {
-        RealmModel realm = context.getSession().getContext().getRealm();
-        return realm.isVerifiableCredentialsEnabled();
-    }
-
-    private void addAttributeUserDid(UserProfileMetadata metadata) {
-        Predicate<AttributeContext> required = AttributeMetadata.ALWAYS_FALSE;
-        Predicate<AttributeContext> selector = DeclarativeUserProfileProviderFactory::isVerifiableCredentialsEnabled;
-        Predicate<AttributeContext> readAllowed = DeclarativeUserProfileProviderFactory::isVerifiableCredentialsEnabled;
-        Predicate<AttributeContext> writeAllowed = c -> isVerifiableCredentialsEnabled(c) && USER_API.equals(c.getContext());
-        AttributeValidatorMetadata patternValidator = new AttributeValidatorMetadata(PatternValidator.ID, new ValidatorConfig(Map.of(
-                "pattern", "^did:[a-z0-9]+:\\S+$",
-                "error-message", "Value must follow the format 'did:method:identifier'",
-                "ignore.empty.value", "true")));
-        AttributeValidatorMetadata duplicateValidator = new AttributeValidatorMetadata(DuplicateDidValidator.ID);
-        metadata.addAttribute(UserModel.DID, 10, List.of(patternValidator, duplicateValidator), selector, writeAllowed, required, readAllowed).setAttributeDisplayName("${did}");
+    private AttributeValidatorMetadata createUsernameLengthValidator() {
+        // IDP_REVIEW (brokering) profile has no UsernameHasValueValidator, provides the lower-bound guard.
+        return new AttributeValidatorMetadata(LengthValidator.ID,
+                ValidatorConfig.builder()
+                        .config(LengthValidator.KEY_MIN, "1")
+                        .config(LengthValidator.KEY_MAX, String.valueOf(MAX_USERNAME_LENGTH))
+                        .build());
     }
 }

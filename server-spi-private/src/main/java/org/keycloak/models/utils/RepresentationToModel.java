@@ -67,6 +67,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.connections.jpa.support.EntityManagers;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.migration.migrators.MigrationUtils;
@@ -133,6 +134,7 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
@@ -163,7 +165,7 @@ public class RepresentationToModel {
         if (realmRoles.getRealm() != null) { // realm roles
             for (RoleRepresentation roleRep : realmRoles.getRealm()) {
                 if (! realm.getDefaultRole().getName().equals(roleRep.getName())) { // default role was already imported
-                    createRole(realm, roleRep);
+                    importRealmRole(realm, roleRep);
                 }
             }
         }
@@ -175,11 +177,7 @@ public class RepresentationToModel {
                 }
                 for (RoleRepresentation roleRep : entry.getValue()) {
                     // Application role may already exists (for example if it is defaultRole)
-                    RoleModel role = roleRep.getId() != null ? client.addRole(roleRep.getId(), roleRep.getName()) : client.addRole(roleRep.getName());
-                    role.setDescription(roleRep.getDescription());
-                    if (roleRep.getAttributes() != null) {
-                        roleRep.getAttributes().forEach((key, value) -> role.setAttribute(key, value));
-                    }
+                    importClientRole(client, roleRep);
                 }
             }
         }
@@ -201,6 +199,31 @@ public class RepresentationToModel {
                     addComposites(role, roleRep, realm);
                 }
             }
+        }
+    }
+
+    private static RoleModel importRealmRole(RealmModel realm, RoleRepresentation roleRep) {
+        RoleModel role = realm.getRole(roleRep.getName());
+        if (role == null) {
+            role = roleRep.getId() != null ? realm.addRole(roleRep.getId(), roleRep.getName()) : realm.addRole(roleRep.getName());
+        }
+        updateRole(role, roleRep);
+        return role;
+    }
+
+    private static RoleModel importClientRole(ClientModel client, RoleRepresentation roleRep) {
+        RoleModel role = client.getRole(roleRep.getName());
+        if (role == null) {
+            role = roleRep.getId() != null ? client.addRole(roleRep.getId(), roleRep.getName()) : client.addRole(roleRep.getName());
+        }
+        updateRole(role, roleRep);
+        return role;
+    }
+
+    private static void updateRole(RoleModel role, RoleRepresentation roleRep) {
+        role.setDescription(roleRep.getDescription());
+        if (roleRep.getAttributes() != null) {
+            roleRep.getAttributes().forEach(role::setAttribute);
         }
     }
 
@@ -780,6 +803,12 @@ public class RepresentationToModel {
     }
 
     public static void createGroups(KeycloakSession session, UserRepresentation userRep, RealmModel newRealm, UserModel user) {
+        createGroups(session, userRep, newRealm, user, user::joinGroup);
+    }
+
+    public static void createGroups(KeycloakSession session, UserRepresentation userRep, RealmModel newRealm, UserModel user, Consumer<GroupModel> membershipHandler) {
+        Objects.requireNonNull(membershipHandler, "membershipHandler must not be null");
+
         if (userRep.getGroups() != null) {
             for (String path : userRep.getGroups()) {
                 GroupModel group = KeycloakModelUtils.findGroupByPath(session, newRealm, path);
@@ -787,7 +816,7 @@ public class RepresentationToModel {
                     throw new RuntimeException("Unable to find group specified by path: " + path);
 
                 }
-                user.joinGroup(group);
+                membershipHandler.accept(group);
             }
         }
     }
@@ -869,12 +898,17 @@ public class RepresentationToModel {
 
     // Role mappings
 
-    public static void createRoleMappings(UserRepresentation userRep, UserModel user, RealmModel realm) {
+    public static void createRoleMappings(KeycloakSession session, UserRepresentation userRep, UserModel user, RealmModel realm) {
         if (userRep.getRealmRoles() != null) {
             for (String roleString : userRep.getRealmRoles()) {
                 RoleModel role = realm.getRole(roleString.trim());
                 if (role == null) {
                     role = realm.addRole(roleString.trim());
+                    // when running in batch mode queries cannot see non-flushed changes, so flush the newly
+                    // created role to avoid creating it twice when another user references the same role
+                    if (EntityManagers.isBatchMode()) {
+                        EntityManagers.flush(session, false);
+                    }
                 }
                 user.grantRole(role);
             }
@@ -885,12 +919,12 @@ public class RepresentationToModel {
                 if (client == null) {
                     throw new RuntimeException("Unable to find client role mappings for client: " + entry.getKey());
                 }
-                createClientRoleMappings(client, user, entry.getValue());
+                createClientRoleMappings(session, client, user, entry.getValue());
             }
         }
     }
 
-    private static void createClientRoleMappings(ClientModel clientModel, UserModel user, List<String> roleNames) {
+    private static void createClientRoleMappings(KeycloakSession session, ClientModel clientModel, UserModel user, List<String> roleNames) {
         if (user == null) {
             throw new RuntimeException("User not found");
         }
@@ -899,6 +933,11 @@ public class RepresentationToModel {
             RoleModel role = clientModel.getRole(roleName.trim());
             if (role == null) {
                 role = clientModel.addRole(roleName.trim());
+                // when running in batch mode queries cannot see non-flushed changes, so flush the newly
+                // created role to avoid creating it twice when another user references the same role
+                if (EntityManagers.isBatchMode()) {
+                    EntityManagers.flush(session, false);
+                }
             }
             user.grantRole(role);
 
@@ -1389,6 +1428,7 @@ public class RepresentationToModel {
 
         updateResources(representation, model, authorization);
         updateScopes(representation, model, storeFactory);
+        validateScopesAssociatedWithResources(representation, model, authorization);
         updateAssociatedPolicies(representation, model, storeFactory);
 
         PolicyProviderFactory provider = authorization.getProviderFactory(model.getType());
@@ -1461,6 +1501,48 @@ public class RepresentationToModel {
         }
 
         policy.removeConfig("scopes");
+    }
+
+    private static void validateScopesAssociatedWithResources(AbstractPolicyRepresentation representation, Policy policy, AuthorizationProvider authorization) {
+        if (!(representation instanceof ScopePermissionRepresentation)) {
+            // only scope-based permissions bind scopes to specific resources
+            return;
+        }
+
+        String resourceType = representation.getResourceType();
+
+        if (StringUtil.isNotBlank(resourceType)) {
+            // permissions applied to a resource type manage their scopes through the type
+            return;
+        }
+
+        if (policy.getResources().isEmpty() || policy.getScopes().isEmpty()) {
+            // resource-less scope permissions are not bound to any resource
+            return;
+        }
+
+        ResourceServer resourceServer = policy.getResourceServer();
+        ResourceStore resourceStore = authorization.getStoreFactory().getResourceStore();
+        Set<String> resourceScopeIds = new HashSet<>();
+
+        for (Resource resource : policy.getResources()) {
+            resource.getScopes().forEach(scope -> resourceScopeIds.add(scope.getId()));
+
+            // a typed resource not owned by the resource server inherits the scopes defined by its resource type
+            if (resource.getType() != null && !resourceServer.getClientId().equals(resource.getOwner())) {
+                resourceStore.findByType(resourceServer, resource.getType(), resourceServer.getClientId(), typed -> {
+                    if (!typed.getId().equals(resource.getId())) {
+                        typed.getScopes().forEach(scope -> resourceScopeIds.add(scope.getId()));
+                    }
+                });
+            }
+        }
+
+        for (Scope scope : policy.getScopes()) {
+            if (!resourceScopeIds.contains(scope.getId())) {
+                throw new ModelValidationException("Scope [" + scope.getName() + "] is not associated with any of the resources set to the permission");
+            }
+        }
     }
 
     private static void updateAssociatedPolicies(AbstractPolicyRepresentation representation, Policy policy, StoreFactory storeFactory) {

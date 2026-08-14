@@ -559,6 +559,12 @@ public class LDAPStorageProvider implements UserStorageProvider,
                     Condition usernameCondition = conditionsBuilder.equal(uuidLDAPAttributeName, entry.getValue());
                     ldapQuery.addWhereCondition(usernameCondition);
                 } else if (LDAPConstants.LDAP_ENTRY_DN.equals(attrName)) {
+                    LDAPDn entryDn = LDAPDn.fromString(entry.getValue());
+                    LDAPDn usersDn = LDAPDn.fromString(ldapIdentityStore.getConfig().getUsersDn());
+                    if (!entryDn.isDescendantOf(usersDn)) {
+                        logger.debugf("LDAP_ENTRY_DN [%s] is not within configured usersDn [%s], returning empty stream", entry.getValue(), ldapIdentityStore.getConfig().getUsersDn());
+                        return Stream.empty();
+                    }
                     ldapQuery.setSearchDn(entry.getValue());
                     ldapQuery.setSearchScope(SearchControls.OBJECT_SCOPE);
                 } else if (managedAttrs.contains(attrName)) {
@@ -981,6 +987,11 @@ public class LDAPStorageProvider implements UserStorageProvider,
                         credential.setNote(KerberosConstants.AUTHENTICATED_SPNEGO_CONTEXT, spnegoAuthenticator);
                         return CredentialValidationOutput.fallback();
                     } else {
+                        String responseToken = spnegoAuthenticator.getResponseToken();
+                        if (responseToken != null) {
+                            state.put(KerberosConstants.RESPONSE_TOKEN, responseToken);
+                        }
+
                         String delegationCredential = spnegoAuthenticator.getSerializedDelegationCredential();
                         if (delegationCredential != null) {
                             state.put(KerberosConstants.GSS_DELEGATION_CREDENTIAL, delegationCredential);
