@@ -52,7 +52,7 @@ jobs:
         with:
           ref: ${{ matrix.ref }}
       - name: Checkout latest trivyignore.yaml
-        run: git checkout main .trivy/trivyignore.yaml
+        run: git checkout origin/main .trivy/trivyignore.yaml
       - name: Get head commit
         run: echo "CURRENT_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
       - name: Trivy setup
