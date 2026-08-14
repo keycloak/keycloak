@@ -132,6 +132,18 @@ public class SqlEventHookTargetProviderFactoryTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
+    public void shouldRejectJdbcUrlWithDangerousH2InitParameter() {
+        factory.validateConfig(null, Map.of(
+                "databaseKind", "h2",
+                "jdbcUrl", "jdbc:h2:mem:eventhook;INIT=CREATE ALIAS ...",
+                "jdbcUsername", "sa",
+                "jdbcPassword", "secret",
+                "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID) values (:eventId)",
+                "sqlParameters", List.of("eventId")
+        ));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
     public void shouldRejectMissingJdbcUsername() {
         factory.validateConfig(null, Map.of(
                 "databaseKind", "h2",

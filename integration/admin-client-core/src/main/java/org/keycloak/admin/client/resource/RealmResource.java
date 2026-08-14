@@ -320,6 +320,10 @@ public interface RealmResource {
                                       @QueryParam("exportClients") Boolean exportClients,
                                       @QueryParam("exportEventHookTargets") Boolean exportEventHookTargets);
 
+    default RealmRepresentation partialExport(boolean exportGroupsAndRoles, boolean exportClients) {
+        return partialExport(exportGroupsAndRoles, exportClients, false);
+    }
+
     @Path("authentication")
     @Consumes(MediaType.APPLICATION_JSON)
     AuthenticationManagementResource flows();

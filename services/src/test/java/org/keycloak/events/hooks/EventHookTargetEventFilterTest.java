@@ -22,6 +22,15 @@ public class EventHookTargetEventFilterTest {
     }
 
     @Test
+    public void shouldMatchAllEventsWhenSettingsAreNull() {
+        EventHookTargetModel target = new EventHookTargetModel();
+        target.setSettings(null);
+
+        assertTrue(EventHookTargetEventFilter.matchesUserEvent(target, userEvent(EventType.LOGIN)));
+        assertTrue(EventHookTargetEventFilter.matchesAdminEvent(target, adminEvent(OperationType.CREATE)));
+    }
+
+    @Test
     public void shouldMatchConfiguredUserEventNames() {
         EventHookTargetModel target = target(Map.of("events", List.of("LOGIN", "REGISTER")));
 

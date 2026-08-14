@@ -26,6 +26,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.TypedQuery;
 
 import org.keycloak.events.hooks.EventHookLogModel;
@@ -372,6 +373,7 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
             .setParameter("executing", EventHookMessageStatus.EXECUTING.name())
                 .setParameter("now", now)
             .setParameter("staleBefore", staleBefore)
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
                 .setMaxResults(maxResults)
             .getResultStream()
             .map(entity -> reserve(entity, now, UUID.randomUUID().toString()))
@@ -393,6 +395,7 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
             .setParameter("executing", EventHookMessageStatus.EXECUTING.name())
                 .setParameter("now", now)
             .setParameter("staleBefore", staleBefore)
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
                 .setMaxResults(maxResults)
             .getResultStream()
             .map(entity -> reserve(entity, now, UUID.randomUUID().toString()))
@@ -417,6 +420,7 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
             .setParameter("executing", EventHookMessageStatus.EXECUTING.name())
             .setParameter("staleBefore", staleBefore)
                 .setParameter("test", test)
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
                 .setMaxResults(maxResults)
                 .getResultStream()
             .map(entity -> reserve(entity, now, executionId))

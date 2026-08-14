@@ -49,7 +49,7 @@ public final class EventHookTargetEventFilter {
     }
 
     public static boolean matchesAdminEvent(EventHookTargetModel target, AdminEvent event) {
-        return matches(normalizeFilters(target == null ? null : target.getSettings().get(SETTINGS_KEY)), ADMIN_PREFIX,
+        return matches(normalizeFilters(target == null || target.getSettings() == null ? null : target.getSettings().get(SETTINGS_KEY)), ADMIN_PREFIX,
                 event == null || event.getOperationType() == null ? null : event.getOperationType().name());
     }
 

@@ -120,9 +120,7 @@ public class SqlEventHookTargetProviderFactory implements EventHookTargetProvide
         requireDriver(databaseType);
 
         String jdbcUrl = stringValue(settings, "jdbcUrl", true);
-        if (!jdbcUrl.startsWith("jdbc:")) {
-            throw new IllegalArgumentException("Target JDBC URL must start with jdbc:");
-        }
+        validateJdbcUrl(jdbcUrl);
 
         stringValue(settings, "jdbcUsername", true);
         String sqlStatement = stringValue(settings, "sqlStatement", true);
@@ -131,6 +129,18 @@ public class SqlEventHookTargetProviderFactory implements EventHookTargetProvide
             throw new IllegalArgumentException("Prepared statement placeholder count must match configured SQL parameters");
         }
         positiveInteger(settings, "queryTimeoutSeconds");
+    }
+
+    private void validateJdbcUrl(String jdbcUrl) {
+        if (!jdbcUrl.startsWith("jdbc:")) {
+            throw new IllegalArgumentException("Target JDBC URL must start with jdbc:");
+        }
+
+        String normalizedJdbcUrl = jdbcUrl.toUpperCase(Locale.ROOT);
+        if (normalizedJdbcUrl.contains(";INIT=") || normalizedJdbcUrl.contains(";RUNSCRIPT=") || normalizedJdbcUrl.contains(";CREATE=")
+                || normalizedJdbcUrl.contains(";PASSWORD=") || normalizedJdbcUrl.contains(";USER=")) {
+            throw new IllegalArgumentException("Target JDBC URL contains forbidden initialization or execution parameters");
+        }
     }
 
     private void requireDriver(SqlEventHookTargetProvider.DatabaseType databaseType) {

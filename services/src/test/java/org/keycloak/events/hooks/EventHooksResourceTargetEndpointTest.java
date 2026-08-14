@@ -70,8 +70,8 @@ public class EventHooksResourceTargetEndpointTest {
                                 assertEquals(Boolean.TRUE, store.createdLog.isTest());
         }
 
-        @Test
-        public void shouldConsumeWaitingEntriesWithoutSecretWhenPullTargetHasNoSecret() {
+        @Test(expected = NotAuthorizedException.class)
+        public void shouldRequireAuthenticationWhenPullTargetHasNoSecret() {
                                 RecordingStoreProvider store = new RecordingStoreProvider();
                                 RealmModel realm = realm("realm-1");
                                 KeycloakSession session = session(realm, store, new PullEventHookTargetProviderFactory());
@@ -98,12 +98,7 @@ public class EventHooksResourceTargetEndpointTest {
                 store.hasMoreMessages = false;
 
                 Object endpoint = new EventHooksResource(session, null, null).getTargetEndpoint("target-1", "consume");
-                EventHookPullRepresentation representation = (EventHookPullRepresentation) ((PullEventHookTargetEndpointResource) endpoint).consumeGet(headers);
-
-                assertNotNull(representation.getEvent());
-                assertEquals("LOGIN", ((Map<?, ?>) representation.getEvent()).get("event"));
-                assertNotNull(store.updatedMessage);
-                assertEquals(EventHookMessageStatus.SUCCESS, store.updatedMessage.getStatus());
+                ((PullEventHookTargetEndpointResource) endpoint).consumeGet(headers);
         }
 
         @Test
