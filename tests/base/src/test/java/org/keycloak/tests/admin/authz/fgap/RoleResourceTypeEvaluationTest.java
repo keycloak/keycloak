@@ -56,6 +56,7 @@ import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLE_CO
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
@@ -506,5 +507,90 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
                     .post(Entity.json(List.of(new RoleDeleteRequest(allowedRole.getId(), allowedRole.getName(), null))));
             assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
         }
+    }
+
+    @Test
+    public void testUiExtEndpointsFilterHiddenCompositeRoles() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserRepresentation targetUser = createUser("targetUser");
+
+        ClientRepresentation visibleClient = new ClientRepresentation();
+        visibleClient.setClientId("visible-client");
+        try (Response response = realm.admin().clients().create(visibleClient)) {
+            visibleClient.setId(ApiUtil.getCreatedId(response));
+        }
+
+        ClientRepresentation secretClient = new ClientRepresentation();
+        secretClient.setClientId("secret-client");
+        try (Response response = realm.admin().clients().create(secretClient)) {
+            secretClient.setId(ApiUtil.getCreatedId(response));
+        }
+
+        RoleRepresentation visibleChild = new RoleRepresentation();
+        visibleChild.setName("VISIBLE_CHILD");
+        realm.admin().clients().get(visibleClient.getId()).roles().create(visibleChild);
+        visibleChild = realm.admin().clients().get(visibleClient.getId()).roles().get("VISIBLE_CHILD").toRepresentation();
+
+        RoleRepresentation secretChild = new RoleRepresentation();
+        secretChild.setName("SECRET_CHILD");
+        realm.admin().clients().get(secretClient.getId()).roles().create(secretChild);
+        secretChild = realm.admin().clients().get(secretClient.getId()).roles().get("SECRET_CHILD").toRepresentation();
+
+        RoleRepresentation visibleParent = new RoleRepresentation();
+        visibleParent.setName("VISIBLE_PARENT");
+        realm.admin().clients().get(visibleClient.getId()).roles().create(visibleParent);
+        visibleParent = realm.admin().clients().get(visibleClient.getId()).roles().get("VISIBLE_PARENT").toRepresentation();
+        realm.admin().clients().get(visibleClient.getId()).roles().get("VISIBLE_PARENT").addComposites(List.of(visibleChild, secretChild));
+
+        realm.admin().users().get(targetUser.getId()).roles().clientLevel(visibleClient.getId()).add(List.of(visibleParent));
+        realm.admin().users().get(targetUser.getId()).roles().clientLevel(secretClient.getId()).add(List.of(secretChild));
+
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createPermission(adminPermissionsClient, visibleClient.getId(), AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, Set.of(VIEW), policy);
+        createPermission(adminPermissionsClient, targetUser.getId(), AdminPermissionsSchema.USERS_RESOURCE_TYPE, Set.of(VIEW), policy);
+
+        try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+            String baseUiExtPath = keycloakUrls.getBaseUrl().toString();
+            BearerAuthFilter bearerAuth = new BearerAuthFilter(realmAdminClient.tokenManager());
+
+            // RoleCompositeResource: GET /ui-ext/role-mappings/roles/{id}
+            String body = getUiExtEndpoint(httpClient, baseUiExtPath, realm.getName(),
+                    "role-mappings/roles/" + visibleParent.getId(), bearerAuth);
+            assertThat("Visible child role should be present", body, containsString("VISIBLE_CHILD"));
+            assertThat("Secret child role should be filtered out", body, not(containsString("SECRET_CHILD")));
+            assertThat("Secret client should not be disclosed", body, not(containsString("secret-client")));
+
+            // EffectiveRoleMappingResource: GET /ui-ext/effective-roles/users/{id}
+            body = getUiExtEndpoint(httpClient, baseUiExtPath, realm.getName(),
+                    "effective-roles/users/" + targetUser.getId(), bearerAuth);
+            assertThat("Visible child role should be present", body, containsString("VISIBLE_CHILD"));
+            assertThat("Secret child role should be filtered out", body, not(containsString("SECRET_CHILD")));
+            assertThat("Secret client should not be disclosed", body, not(containsString("secret-client")));
+
+            // AllEffectiveRoleMappingResource: GET /ui-ext/effective-roles-all/roles/{id}
+            body = getUiExtEndpoint(httpClient, baseUiExtPath, realm.getName(),
+                    "effective-roles-all/roles/" + visibleParent.getId(), bearerAuth);
+            assertThat("Visible parent role should be present", body, containsString("VISIBLE_PARENT"));
+            assertThat("Visible child role should be present", body, containsString("VISIBLE_CHILD"));
+            assertThat("Secret child role should be filtered out", body, not(containsString("SECRET_CHILD")));
+            assertThat("Secret client should not be disclosed", body, not(containsString("secret-client")));
+
+            // AllEffectiveRoleMappingResource: GET /ui-ext/effective-roles-all/users/{id}
+            body = getUiExtEndpoint(httpClient, baseUiExtPath, realm.getName(),
+                    "effective-roles-all/users/" + targetUser.getId(), bearerAuth);
+            assertThat("Visible child role should be present", body, containsString("VISIBLE_CHILD"));
+            assertThat("Directly mapped secret role should be filtered out", body, not(containsString("SECRET_CHILD")));
+            assertThat("Secret client should not be disclosed", body, not(containsString("secret-client")));
+        }
+    }
+
+    private String getUiExtEndpoint(Client httpClient, String baseUrl, String realmName, String subPath, BearerAuthFilter bearerAuth) {
+        WebTarget target = httpClient.target(baseUrl)
+                .path("admin").path("realms").path(realmName)
+                .path("ui-ext").path(subPath)
+                .register(bearerAuth);
+        Response response = target.request(MediaType.APPLICATION_JSON).get();
+        assertThat(response.getStatus(), equalTo(Response.Status.OK.getStatusCode()));
+        return response.readEntity(String.class);
     }
 }
