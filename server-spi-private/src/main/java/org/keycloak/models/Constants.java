@@ -226,6 +226,9 @@ public final class Constants {
     // Provider ID of the openid-connect protocol
     public static final String OIDC_PROTOCOL = "openid-connect";
 
+    // Default login protocol
+    public static final String DEFAULT_PROTOCOL = OIDC_PROTOCOL;
+
     // Internal note for storing authorization details response in client session context
     public static final String AUTHORIZATION_DETAILS_RESPONSE = "authorization_details_response";
 

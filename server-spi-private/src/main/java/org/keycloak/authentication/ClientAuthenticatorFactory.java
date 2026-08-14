@@ -71,7 +71,7 @@ public interface ClientAuthenticatorFactory extends ProviderFactory<ClientAuthen
      *         For example "client_secret_basic", "client_secret_post" or "private_key_jwt" might be used as returned values.
      */
     default String getProtocolAuthenticatorMethod(ClientRepresentation client) {
-        String loginProtocol = client.getProtocol() == null ? Constants.OIDC_PROTOCOL : client.getProtocol();
+        String loginProtocol = client.getProtocol() == null ? Constants.DEFAULT_PROTOCOL : client.getProtocol();
         Set<String> protocolAuthMethods = getProtocolAuthenticatorMethods(loginProtocol);
         return protocolAuthMethods == null || protocolAuthMethods.isEmpty() ? null : protocolAuthMethods.iterator().next();
     }

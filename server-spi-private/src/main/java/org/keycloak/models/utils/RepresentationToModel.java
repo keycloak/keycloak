@@ -137,14 +137,13 @@ import org.jboss.logging.Logger;
 
 import static java.util.Optional.ofNullable;
 
+import static org.keycloak.models.Constants.DEFAULT_PROTOCOL;
 import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
 import static org.keycloak.protocol.saml.util.ArtifactBindingUtils.computeArtifactBindingIdentifierString;
 
 public class RepresentationToModel {
 
     private static Logger logger = Logger.getLogger(RepresentationToModel.class);
-    public static final String OIDC = "openid-connect";
-
 
     public static void importRealm(KeycloakSession session, RealmRepresentation rep, RealmModel newRealm, Runnable userImport) {
         session.getProvider(DatastoreProvider.class).getExportImportManager().importRealm(rep, newRealm, userImport);
@@ -527,7 +526,7 @@ public class RepresentationToModel {
             add(updatePropertyAction(client::setFrontchannelLogout, rep::isFrontchannelLogout, client::isFrontchannelLogout));
             add(updatePropertyAction(client::setNotBefore, rep::getNotBefore, client::getNotBefore));
             // Fields with defaults if not initially provided
-            add(updatePropertyAction(client::setProtocol, rep::getProtocol, client::getProtocol, () -> OIDC));
+            add(updatePropertyAction(client::setProtocol, rep::getProtocol, client::getProtocol, () -> DEFAULT_PROTOCOL));
             add(updatePropertyAction(client::setNodeReRegistrationTimeout, rep::getNodeReRegistrationTimeout, () -> defaultNodeReRegistrationTimeout(client, isNew)));
             add(updatePropertyAction(client::setClientAuthenticatorType, rep::getClientAuthenticatorType, client::getClientAuthenticatorType, KeycloakModelUtils::getDefaultClientAuthenticatorType));
             add(updatePropertyAction(client::setFullScopeAllowed, rep::isFullScopeAllowed, () -> defaultFullScopeAllowed(client, isNew)));
