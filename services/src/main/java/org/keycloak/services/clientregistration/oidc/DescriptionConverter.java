@@ -154,7 +154,7 @@ public class DescriptionConverter {
             clientAuthFactory.setClientAuthenticationMethod(client, authMethod);
         }
 
-        boolean publicKeySet = setPublicKey(clientOIDC, client);
+        boolean publicKeySet = setPublicKey(session, clientOIDC, client);
         if (authMethod != null && authMethod.equals(OIDCLoginProtocol.PRIVATE_KEY_JWT) && !publicKeySet) {
             throw new ClientRegistrationException("Didn't find key of supported keyType for use " + JWK.Use.SIG.asString());
         }
@@ -311,7 +311,7 @@ public class DescriptionConverter {
         return supportedAlgorithms.collect(Collectors.toList());
     }
 
-    private static boolean setPublicKey(OIDCClientRepresentation clientOIDC, ClientRepresentation clientRep) {
+    private static boolean setPublicKey(KeycloakSession session, OIDCClientRepresentation clientOIDC, ClientRepresentation clientRep) {
         OIDCAdvancedConfigWrapper configWrapper = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
 
         if (clientOIDC.getJwks() != null) {
@@ -323,7 +323,7 @@ public class DescriptionConverter {
             JWK publicKeyJWk = JWKSUtils.getKeyForUse(keySet, JWK.Use.SIG);
 
             try {
-                configWrapper.setJwksString(CertificateInfoHelper.stripPrivateKeyParams(
+                configWrapper.setJwksString(CertificateInfoHelper.stripPrivateKeyParams(session.getKeycloakSessionFactory(),
                         JsonSerialization.writeValueAsPrettyString(clientOIDC.getJwks())));
             } catch (IOException e) {
                 throw new ClientRegistrationException("Illegal jwks format");

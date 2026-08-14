@@ -55,11 +55,14 @@ public interface ClientAttributeCertificateResource {
     CertificateRepresentation generate();
 
     /**
-     * Upload certificate and eventually private key
+     * Upload only certificate, not private key
+     *
+     * @deprecated Use {@link #uploadJksCertificate(Object)} instead.
      *
      * @param output
      * @return
      */
+    @Deprecated
     @POST
     @Path("upload")
     @Consumes(MediaType.MULTIPART_FORM_DATA)

@@ -1043,6 +1043,9 @@ export class Clients extends Resource<{ realm?: string }> {
     },
   });
 
+  /**
+   * @deprecated Use {@link uploadCertificate} instead.
+   */
   public uploadKey = this.makeUpdateRequest<
     { id: string; attr: string },
     FormData

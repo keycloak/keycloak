@@ -59,6 +59,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
 /**
@@ -68,6 +69,8 @@ import org.jboss.resteasy.reactive.NoCache;
  */
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class ClientAttributeCertificateResource {
+
+    private static final Logger logger = Logger.getLogger(ClientAttributeCertificateResource.class);
 
     protected final RealmModel realm;
     private final AdminPermissionEvaluator auth;
@@ -98,7 +101,7 @@ public class ClientAttributeCertificateResource {
     public CertificateRepresentation getKeyInfo() {
         auth.clients().requireView(client);
 
-        CertificateRepresentation info = CertificateInfoHelper.getCertificateFromClient(client, attributePrefix);
+        CertificateRepresentation info = CertificateInfoHelper.getCertificateFromClient(client, attributePrefix, session.getKeycloakSessionFactory());
         return info;
     }
 
@@ -118,6 +121,7 @@ public class ClientAttributeCertificateResource {
     @Operation(summary = "Generate a new certificate with new key pair", deprecated = true)
     public CertificateRepresentation generate() {
         auth.clients().requireConfigure(client);
+        logger.warnf("Endpoint for generating key pair for a client is deprecated. Clients should generate their own key pairs and upload only the public key/certificate.");
 
         CertificateRepresentation info = KeycloakModelUtils.generateKeyPairCertificate(client.getClientId());
         CertificateRepresentation infoForStorage = new CertificateRepresentation();
@@ -132,19 +136,23 @@ public class ClientAttributeCertificateResource {
     }
 
     /**
-     * Upload certificate and eventually private key
+     * Upload only certificate, not private key
+     *
+     * @deprecated Use {@link #uploadJksCertificate()} instead.
      *
      * @return
      * @throws IOException
      */
+    @Deprecated
     @POST
     @Path("upload")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ATTRIBUTE_CERTIFICATE)
-    @Operation( summary = "Upload certificate and eventually private key")
+    @Operation( summary = "Upload only certificate, not private key", deprecated = true)
     public CertificateRepresentation uploadJks() throws IOException {
         auth.clients().requireConfigure(client);
+        logger.warnf("Endpoint for uploading key for a client is deprecated.");
         try {
             CertificateRepresentation info = CertificateInfoHelper.getCertificateFromRequest(session);
             updateCertFromRequest(info);
@@ -183,7 +191,7 @@ public class ClientAttributeCertificateResource {
 
     private void updateCertFromRequest(CertificateRepresentation info) {
         if (OIDCLoginProtocol.LOGIN_PROTOCOL.equals(client.getProtocol()) && info.getJwks() != null) {
-            CertificateInfoHelper.updateClientModelJwksString(client, attributePrefix, info.getJwks());
+            CertificateInfoHelper.updateClientModelJwksString(client, attributePrefix, info.getJwks(), session.getKeycloakSessionFactory());
         } else {
             CertificateRepresentation infoForStorage = new CertificateRepresentation();
             infoForStorage.setCertificate(info.getCertificate());
@@ -195,7 +203,7 @@ public class ClientAttributeCertificateResource {
         sanitized.setCertificate(info.getCertificate());
         sanitized.setPublicKey(info.getPublicKey());
         sanitized.setKid(info.getKid());
-        sanitized.setJwks(info.getJwks() != null ? CertificateInfoHelper.stripPrivateKeyParams(info.getJwks()) : null);
+        sanitized.setJwks(info.getJwks() != null ? CertificateInfoHelper.stripPrivateKeyParams(session.getKeycloakSessionFactory(), info.getJwks()) : null);
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(sanitized).success();
     }
 
@@ -217,10 +225,11 @@ public class ClientAttributeCertificateResource {
     @Operation( summary = "Get a keystore file for the client, containing the public certificate", deprecated = true)
     public byte[] getKeystore(@Parameter(description = "Keystore configuration as JSON") final KeyStoreConfig config) {
         auth.clients().requireView(client);
+        logger.warnf("Endpoint for downloading keystore for a client is deprecated.");
 
         checkKeystoreFormat(config);
 
-        CertificateRepresentation info = CertificateInfoHelper.getCertificateFromClient(client, attributePrefix);
+        CertificateRepresentation info = CertificateInfoHelper.getCertificateFromClient(client, attributePrefix, session.getKeycloakSessionFactory());
         String privatePem = info.getPrivateKey();
         String certPem = info.getCertificate();
 
@@ -263,6 +272,7 @@ public class ClientAttributeCertificateResource {
                     "Only generated public certificate is saved in Keycloak DB - the private key is not.", deprecated = true)
     public byte[] generateAndGetKeystore(@Parameter(description = "Keystore configuration as JSON") final KeyStoreConfig config) {
         auth.clients().requireConfigure(client);
+        logger.warnf("Endpoint for generating and downloading keystore for a client is deprecated.");
 
         checkKeystoreFormat(config);
         if (config.getKeyPassword() == null) {
@@ -346,6 +356,4 @@ public class ClientAttributeCertificateResource {
             }
         }
     }
-
-
 }

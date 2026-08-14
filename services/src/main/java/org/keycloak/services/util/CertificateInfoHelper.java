@@ -26,6 +26,7 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -34,12 +35,15 @@ import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.StreamUtil;
+import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.SignatureProviderFactory;
 import org.keycloak.http.FormPartValue;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -71,14 +75,14 @@ public class CertificateInfoHelper {
 
     // CLIENT MODEL METHODS
 
-    public static CertificateRepresentation getCertificateFromClient(ClientModel client, String attributePrefix) {
+    public static CertificateRepresentation getCertificateFromClient(ClientModel client, String attributePrefix, KeycloakSessionFactory sessionFactory) {
         String certificateAttribute = attributePrefix + "." + X509CERTIFICATE;
         String publicKeyAttribute = attributePrefix + "." + PUBLIC_KEY;
         String kidAttribute = attributePrefix + "." + KID;
 
         if (OIDCLoginProtocol.LOGIN_PROTOCOL.equals(client.getProtocol())
                 && Boolean.parseBoolean(client.getAttribute(OIDCConfigAttributes.USE_JWKS_STRING))) {
-            return jwksStringToSigCertificateRepresentation(client.getAttribute(OIDCConfigAttributes.JWKS_STRING));
+            return jwksStringToSigCertificateRepresentation(sessionFactory, client.getAttribute(OIDCConfigAttributes.JWKS_STRING));
         }
 
         CertificateRepresentation rep = new CertificateRepresentation();
@@ -89,7 +93,7 @@ public class CertificateInfoHelper {
         return rep;
     }
 
-    public static CertificateRepresentation jwksStringToSigCertificateRepresentation(String jwks) {
+    public static CertificateRepresentation jwksStringToSigCertificateRepresentation(KeycloakSessionFactory sessionFactory, String jwks) {
         if (jwks == null) {
             throw new IllegalStateException("The jwks is null!");
         }
@@ -104,8 +108,9 @@ public class CertificateInfoHelper {
                 throw new IllegalStateException("Certificate not found for use sig");
             }
 
+            Set<String> privateKeyClaims = getAllJwkPrivateKeyClaims(sessionFactory);
             for (JWK key : keySet.getKeys()) {
-                key.getOtherClaims().keySet().removeAll(JWK_PRIVATE_KEY_PARAMS);
+                key.getOtherClaims().keySet().removeAll(privateKeyClaims);
             }
             String publicOnlyJwks = JsonSerialization.writeValueAsPrettyString(keySet);
 
@@ -146,7 +151,7 @@ public class CertificateInfoHelper {
         }
     }
 
-    public static void updateClientModelJwksString(ClientModel client, String attributePrefix, String jwks) {
+    public static void updateClientModelJwksString(ClientModel client, String attributePrefix, String jwks, KeycloakSessionFactory sessionFactory) {
         if (jwks == null) {
             throw new IllegalStateException("jwks string is null!");
         }
@@ -165,17 +170,16 @@ public class CertificateInfoHelper {
         setOrRemoveAttr(client, certificateAttribute, null);
         setOrRemoveAttr(client, kidAttribute, null);
         setOrRemoveAttr(client, OIDCConfigAttributes.USE_JWKS_STRING, Boolean.TRUE.toString());
-        setOrRemoveAttr(client, OIDCConfigAttributes.JWKS_STRING, stripPrivateKeyParams(jwks));
+        setOrRemoveAttr(client, OIDCConfigAttributes.JWKS_STRING, stripPrivateKeyParams(sessionFactory, jwks));
     }
 
-    private static final Set<String> JWK_PRIVATE_KEY_PARAMS = Set.of("d", "p", "q", "dp", "dq", "qi", "oth", "k");
-
-    public static String stripPrivateKeyParams(String jwks) {
+    public static String stripPrivateKeyParams(KeycloakSessionFactory sessionFactory, String jwks) {
         try {
             JSONWebKeySet keySet = JsonSerialization.readValue(jwks, JSONWebKeySet.class);
             if (keySet != null && keySet.getKeys() != null) {
+                Set<String> privateKeyClaims = getAllJwkPrivateKeyClaims(sessionFactory);
                 for (JWK key : keySet.getKeys()) {
-                    key.getOtherClaims().keySet().removeAll(JWK_PRIVATE_KEY_PARAMS);
+                    key.getOtherClaims().keySet().removeAll(privateKeyClaims);
                 }
                 return JsonSerialization.writeValueAsPrettyString(keySet);
             }
@@ -183,6 +187,15 @@ public class CertificateInfoHelper {
         } catch (IOException e) {
             throw new IllegalArgumentException("Failed to parse JWKS for private key stripping", e);
         }
+    }
+
+    private static Set<String> getAllJwkPrivateKeyClaims(KeycloakSessionFactory sessionFactory) {
+        return sessionFactory.getProviderFactoriesStream(SignatureProvider.class)
+                .filter(SignatureProviderFactory.class::isInstance)
+                .map(SignatureProviderFactory.class::cast)
+                .map(SignatureProviderFactory::getJwkPrivateKeyClaims)
+                .flatMap(Set::stream)
+                .collect(Collectors.toSet());
     }
 
     private static void setOrRemoveAttr(ClientModel client, String attrName, String attrValue) {
@@ -255,7 +268,7 @@ public class CertificateInfoHelper {
         } else if (keystoreFormat.equals(JSON_WEB_KEY_SET)) {
             String jwks = StreamUtil.readString(inputParts.asInputStream(), StandardCharsets.UTF_8);
 
-            info = CertificateInfoHelper.jwksStringToSigCertificateRepresentation(jwks);
+            info = CertificateInfoHelper.jwksStringToSigCertificateRepresentation(session.getKeycloakSessionFactory(), jwks);
             return info;
         }
 
