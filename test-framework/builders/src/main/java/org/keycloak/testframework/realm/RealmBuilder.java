@@ -418,6 +418,11 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder maxSecondaryAuthFailures(int count) {
+        rep.setMaxSecondaryAuthFailures(count);
+        return this;
+    }
+
     public RealmBuilder duplicateEmailsAllowed(boolean allowed) {
         rep.setDuplicateEmailsAllowed(allowed);
         return this;
