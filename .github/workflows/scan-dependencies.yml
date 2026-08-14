@@ -51,6 +51,8 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ matrix.ref }}
+      - name: Checkout latest trivyignore.yaml
+        run: git checkout main .trivy/trivyignore.yaml
       - name: Get head commit
         run: echo "CURRENT_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
       - name: Trivy setup
