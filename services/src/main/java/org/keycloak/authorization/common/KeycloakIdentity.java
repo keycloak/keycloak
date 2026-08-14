@@ -37,9 +37,11 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessToken.Access;
@@ -66,6 +68,7 @@ public class KeycloakIdentity implements Identity {
     protected final Attributes attributes;
     private final boolean resourceServer;
     private final String id;
+    private UserModel user;
 
     public KeycloakIdentity(KeycloakSession keycloakSession) {
         this(Tokens.getAccessToken(keycloakSession), keycloakSession);
@@ -185,10 +188,10 @@ public class KeycloakIdentity implements Identity {
     }
 
     public KeycloakIdentity(AccessToken accessToken, KeycloakSession keycloakSession) {
-        this(accessToken, keycloakSession, keycloakSession.getContext().getRealm());
+        this(accessToken, keycloakSession, keycloakSession.getContext().getRealm(), false);
     }
 
-    public KeycloakIdentity(AccessToken accessToken, KeycloakSession keycloakSession, RealmModel realm) {
+    public KeycloakIdentity(AccessToken accessToken, KeycloakSession keycloakSession, RealmModel realm, boolean ignoreTokenRoles) {
         if (accessToken == null) {
             throw new ErrorResponseException("invalid_bearer_token", "Could not obtain bearer access_token from request.", Status.FORBIDDEN);
         }
@@ -248,7 +251,11 @@ public class KeycloakIdentity implements Identity {
                 throw new IllegalArgumentException("User from token not found");
             }
 
-            addRolesAsAttributes(accessToken, realm, user, attributes);
+            if (!ignoreTokenRoles) {
+                addRolesAsAttributes(accessToken, realm, user, attributes);
+            } else {
+                this.user = user;
+            }
 
             if (clientUser != null && user.getId().equals(clientUser.getId())) {
                 AuthorizationProvider provider = keycloakSession.getProvider(AuthorizationProvider.class);
@@ -281,6 +288,36 @@ public class KeycloakIdentity implements Identity {
         return this.attributes;
     }
 
+    @Override
+    public boolean hasClientRole(String clientId, String roleName) {
+        if (user == null) {
+            return Identity.super.hasClientRole(clientId, roleName);
+        }
+
+        RoleModel role = KeycloakModelUtils.getRoleByName(realm, clientId, roleName);
+
+        if (role == null) {
+            return false;
+        }
+
+        return user.hasRole(role);
+    }
+
+    @Override
+    public boolean hasRealmRole(String roleName) {
+        if (user == null) {
+            return Identity.super.hasRealmRole(roleName);
+        }
+
+        RoleModel role = KeycloakModelUtils.getRoleByName(realm, null, roleName);
+
+        if (role == null) {
+            return false;
+        }
+
+        return user.hasRole(role);
+    }
+
     public AccessToken getAccessToken() {
         return this.accessToken;
     }
@@ -303,6 +340,9 @@ public class KeycloakIdentity implements Identity {
     }
 
     private UserModel getUserFromToken() {
+        if (user != null) {
+            return user;
+        }
         if (accessToken.getSessionState() == null) {
             return TokenManager.lookupUserFromStatelessToken(keycloakSession, realm, accessToken);
         }
