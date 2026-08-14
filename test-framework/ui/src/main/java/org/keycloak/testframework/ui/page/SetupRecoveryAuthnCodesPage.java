@@ -7,6 +7,9 @@ import java.util.Scanner;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.StaleElementReferenceException;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -60,13 +63,13 @@ public class SetupRecoveryAuthnCodesPage extends AbstractLoginPage {
     }
 
     public List<String> getRecoveryAuthnCodes() {
-        String recoveryAuthnCodesText =  recoveryAuthnCodesList.getText();
+        String recoveryAuthnCodesText = recoveryAuthnCodesList.getText();
         List<String> recoveryAuthnCodesList = new ArrayList<>();
-        Scanner scanner = new Scanner(recoveryAuthnCodesText);
-        while (scanner.hasNextLine()) {
-            recoveryAuthnCodesList.add(scanner.nextLine());
+        try (Scanner scanner = new Scanner(recoveryAuthnCodesText)) {
+            while (scanner.hasNextLine()) {
+                recoveryAuthnCodesList.add(scanner.nextLine());
+            }
         }
-        scanner.close();
         return recoveryAuthnCodesList;
     }
 
@@ -77,6 +80,16 @@ public class SetupRecoveryAuthnCodesPage extends AbstractLoginPage {
 
     public boolean isLogoutSessionsChecked() {
         return logoutSessionsCheckbox.isSelected();
+    }
+
+    public void waitUntilReloaded() {
+        driver.waiting().until((WebDriver d) -> {
+            try {
+                return !kcRecoveryCodesConfirmationCheck.isSelected() && !recoveryAuthnCodesList.getText().isEmpty();
+            } catch (StaleElementReferenceException | NoSuchElementException expected) {
+                return false;
+            }
+        });
     }
 
     public void checkLogoutSessions() {

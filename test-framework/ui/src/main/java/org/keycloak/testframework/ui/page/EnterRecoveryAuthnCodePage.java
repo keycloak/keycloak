@@ -3,6 +3,10 @@ package org.keycloak.testframework.ui.page;
 
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
+import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.StaleElementReferenceException;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -22,9 +26,6 @@ public class EnterRecoveryAuthnCodePage extends AbstractLoginPage {
     @FindBy(id = "kc-login")
     private WebElement signInButton;
 
-    @FindBy(className = "kc-feedback-text")
-    private WebElement feedbackText;
-
     public EnterRecoveryAuthnCodePage(ManagedWebDriver driver) {
         super(driver);
     }
@@ -42,12 +43,22 @@ public class EnterRecoveryAuthnCodePage extends AbstractLoginPage {
         signInButton.click();
     }
 
+    public void waitUntilReloaded() {
+        driver.waiting().until((WebDriver d) -> {
+            try {
+                return recoveryAuthnCodeTextField.getAttribute("value").isEmpty() && !getFeedbackText().isEmpty();
+            } catch (StaleElementReferenceException | NoSuchElementException expected) {
+                return false;
+            }
+        });
+    }
+
     @Override
     public String getExpectedPageId() {
         return "login-login-recovery-authn-code-input";
     }
 
     public String getFeedbackText() {
-        return feedbackText.getText().trim();
+        return driver.findElement(By.className("kc-feedback-text")).getText().trim();
     }
 }
