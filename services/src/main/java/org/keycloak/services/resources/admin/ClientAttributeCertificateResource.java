@@ -177,7 +177,7 @@ public class ClientAttributeCertificateResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ATTRIBUTE_CERTIFICATE)
     @Operation( summary = "Upload only certificate, not private key")
     public CertificateRepresentation uploadJksCertificate() throws IOException {
-        auth.clients().requireManage(client);
+        auth.clients().requireConfigure(client);
         try {
             CertificateRepresentation info = CertificateInfoHelper.getCertificateFromRequest(session);
             updateCertFromRequest(info);

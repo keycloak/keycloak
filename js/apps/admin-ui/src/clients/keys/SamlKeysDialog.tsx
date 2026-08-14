@@ -59,8 +59,7 @@ export const submitForm = async (
     );
     formData.append("file", file);
 
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    await adminClient.clients.uploadKey({ id, attr }, formData);
+    await adminClient.clients.uploadCertificate({ id, attr }, formData);
     callback();
   } catch (error) {
     callback(error);
