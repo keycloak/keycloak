@@ -107,6 +107,7 @@ public class ClientRoleMappingsResource {
     @Operation( summary = "Get client-level role mappings for the user or group, and the app")
     public Stream<RoleRepresentation> getClientRoleMappings() {
         viewPermission.require();
+        auth.roles().requireView(client);
 
         return user.getClientRoleMappingsStream(client).map(ModelToRepresentation::toBriefRepresentation);
     }
@@ -128,6 +129,7 @@ public class ClientRoleMappingsResource {
     @Operation( summary = "Get effective client-level role mappings This recurses any composite roles")
     public Stream<RoleRepresentation> getCompositeClientRoleMappings(@Parameter(description = "if false, return roles with their attributes") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         viewPermission.require();
+        auth.roles().requireView(client);
 
         Function<RoleModel, RoleRepresentation> toBriefRepresentation = briefRepresentation
                 ? ModelToRepresentation::toBriefRepresentation : ModelToRepresentation::toRepresentation;
