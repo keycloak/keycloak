@@ -71,40 +71,19 @@ mappings or group memberships, and not to users with admin roles mapped only thr
 
 When a user in the `master` realm is granted the `admin` role or realm-specific roles across many realms,
 the access token issued during authentication includes admin roles for every realm the user can administer.
-In deployments with a large number of realms, this has several implications.
+In deployments with a large number of realms, keep the following in mind.
 
 ===== Token size
 
-Access tokens grow with the number of realms the user can administer. Each realm adds its
-`realm-management` client roles to the token. With hundreds of realms, the resulting token can exceed
-HTTP `Authorization` header size limits enforced by load balancers, reverse proxies, or application servers,
-causing authentication failures.
+Each realm adds its `realm-management` client roles to the token. With hundreds of realms, the token
+can exceed HTTP header size limits enforced by load balancers or reverse proxies.
 
-Use lightweight access tokens to mitigate this. Since Keycloak 26, the `security-admin-console` and
-`admin-cli` clients use lightweight access tokens by default. Lightweight tokens do not carry roles over the
-wire — the server resolves them from the user session when processing admin API requests.
-
-===== Access control model
-
-When using the default role-based access control (RBAC), admin roles embedded in the token are not used
-for Admin API authorization decisions. The server checks the user's actual role assignments directly. In this
-model, the roles in the token are informational and their presence adds overhead without contributing to
-access control.
-
-When using fine-grained admin permissions (FGAP), role-based policies can be configured to resolve roles
-from the user's actual role assignments rather than from the token. Enable the *Fetch Roles* setting on
-role policies associated with permissions to avoid relying on roles embedded in the token.
+To mitigate this, use lightweight access tokens. The `security-admin-console` and `admin-cli` clients
+use lightweight access tokens by default since {project_name} 26. Lightweight tokens do not carry roles
+over the wire — the server resolves them from the user session when needed.
 
 ===== Cache sizing
 
-Deployments with many realms increase the working set of the `realms`, `users`, and `authorization` caches.
-Undersized caches lead to frequent evictions and cache misses, resulting in additional database round-trips
-that degrade admin API performance. Refer to the
-ifeval::[{project_community}==true]
-link:{adminguide_link}#_cache_configuration[cache configuration]
-endif::[]
-ifeval::[{project_product}==true]
-link:{adminguide_link}#_cache_configuration[cache configuration]
-endif::[]
-documentation for guidance on monitoring cache metrics and tuning cache sizes for your deployment.
+Deployments with many realms should size the `realms`, `users`, and `authorization` caches.
+See the server caching guide for guidance on tuning cache sizes.
 
