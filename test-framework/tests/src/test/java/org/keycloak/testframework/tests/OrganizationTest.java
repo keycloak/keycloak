@@ -7,7 +7,9 @@ import jakarta.mail.Address;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.ws.rs.NotFoundException;
 
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
@@ -17,13 +19,12 @@ import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
+import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.ManagedOrganization;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.OrganizationBuilder;
 import org.keycloak.testframework.realm.OrganizationConfig;
-import org.keycloak.testframework.realm.RealmBuilder;
-import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
 
@@ -39,14 +40,22 @@ public class OrganizationTest {
 
     private static final String CUSTOM_ORG_REF = "custom";
     private static final String REALM_B_REF = "realmB";
+    private static final String REALM_C_REF = "realmC";
     private static final String ORG_B_REF = "orgB";
     private static final String INVITEE_EMAIL = "invitee@example.org";
+    private static final String SURVIVING_GROUP = "surviving-group";
 
-    @InjectRealm(config = OrganizationRealmConfig.class)
+    @InjectRealm
     ManagedRealm realm;
 
-    @InjectRealm(ref = REALM_B_REF, config = OrganizationRealmConfig.class)
+    @InjectRealm(ref = REALM_B_REF)
     ManagedRealm realmB;
+
+    /**
+     * No organization is injected for this realm, so organizations must not be enabled on it
+     */
+    @InjectRealm(ref = REALM_C_REF)
+    ManagedRealm realmC;
 
     @InjectOrganization
     ManagedOrganization organization;
@@ -114,6 +123,17 @@ public class OrganizationTest {
 
     @Test
     @Order(4)
+    public void testOrganizationsEnabledOnlyOnTargetedRealms() {
+        Assertions.assertTrue(realm.admin().toRepresentation().isOrganizationsEnabled());
+        Assertions.assertTrue(realmB.admin().toRepresentation().isOrganizationsEnabled());
+
+        // no organization is injected for realmC, so it must be left untouched
+        Assertions.assertFalse(realmC.admin().toRepresentation().isOrganizationsEnabled());
+        Assertions.assertThrows(NotFoundException.class, () -> realmC.admin().organizations().list(null, null));
+    }
+
+    @Test
+    @Order(5)
     public void updateWithRollback() {
         organization.updateWithCleanup(o -> o.description("updated description").redirectUrl("http://localhost:8080/updated"));
 
@@ -123,7 +143,7 @@ public class OrganizationTest {
     }
 
     @Test
-    @Order(5)
+    @Order(6)
     public void verifyUpdateWithRollback() {
         OrganizationRepresentation rep = organization.admin().toRepresentation();
         Assertions.assertNull(rep.getDescription());
@@ -131,16 +151,20 @@ public class OrganizationTest {
     }
 
     @Test
-    @Order(6)
+    @Order(7)
     public void markOrganizationDirty() {
         organization.updateWithCleanup(o -> o.description("dirty description"));
         organization.dirty();
+
+        // realmC is not intercepted, so it must not be registered as a dependent of the organization and must
+        // survive the organization being re-created
+        realmC.admin().groups().add(GroupBuilder.create().name(SURVIVING_GROUP).build()).close();
 
         Assertions.assertEquals("dirty description", organization.admin().toRepresentation().getDescription());
     }
 
     @Test
-    @Order(7)
+    @Order(8)
     public void verifyOrganizationRecreatedAfterDirty() {
         OrganizationRepresentation rep = organization.admin().toRepresentation();
         Assertions.assertEquals("default", rep.getName());
@@ -152,6 +176,12 @@ public class OrganizationTest {
         Assertions.assertEquals(2, defaultRealmOrgs.size());
         Assertions.assertTrue(defaultRealmOrgs.contains(organization.getId()));
         Assertions.assertTrue(defaultRealmOrgs.contains(customOrganization.getId()));
+
+        // realmC was not destroyed together with the organization, so the group added before is still there
+        List<String> realmCGroups = realmC.admin().groups().groups().stream()
+                .map(GroupRepresentation::getName)
+                .toList();
+        Assertions.assertEquals(List.of(SURVIVING_GROUP), realmCGroups);
     }
 
     @Test
@@ -210,14 +240,6 @@ public class OrganizationTest {
         return managedRealm.admin().organizations().list(null, null).stream()
                 .map(OrganizationRepresentation::getId)
                 .toList();
-    }
-
-    public static class OrganizationRealmConfig implements RealmConfig {
-
-        @Override
-        public RealmBuilder configure(RealmBuilder realm) {
-            return realm.organizationsEnabled(true);
-        }
     }
 
     public static class CustomOrganizationConfig implements OrganizationConfig {
