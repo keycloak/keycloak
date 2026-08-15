@@ -111,14 +111,18 @@ public class JsonLdContextDocumentLoader implements DocumentLoader {
 
         // Coalesce concurrent misses for the same URL so only one request populates the cache.
         Object lock = locks.computeIfAbsent(url, u -> new Object());
-        synchronized (lock) {
-            cached = getCached(url);
-            if (cached == null) {
-                cached = delegate.loadDocument(url, options);
-                putCached(url, cached);
+        try {
+            synchronized (lock) {
+                cached = getCached(url);
+                if (cached == null) {
+                    cached = delegate.loadDocument(url, options);
+                    putCached(url, cached);
+                }
+                return cached;
             }
+        } finally {
+            // Always release the lock entry so a failed load cannot leak it.
             locks.remove(url, lock);
-            return cached;
         }
     }
 

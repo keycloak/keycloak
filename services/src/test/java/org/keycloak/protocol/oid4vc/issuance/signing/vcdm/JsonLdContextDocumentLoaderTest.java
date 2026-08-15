@@ -2,11 +2,13 @@ package org.keycloak.protocol.oid4vc.issuance.signing.vcdm;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
 
@@ -188,6 +190,22 @@ public class JsonLdContextDocumentLoaderTest {
         JsonLdContextDocumentLoader loader = JsonLdContextDocumentLoader.forTesting(
                 Set.of("localhost"), Duration.ofSeconds(5), Duration.ofSeconds(5));
         loader.loadDocument(URI.create(baseUrl + "/large"), new DocumentLoaderOptions());
+    }
+
+    @Test
+    public void testFailedLoadDoesNotLeakLockEntry() throws Exception {
+        // A failed load must release the single-flight lock entry, otherwise every URL that
+        // ever fails keeps an entry in the locks map for the lifetime of the server.
+        JsonLdContextDocumentLoader loader = JsonLdContextDocumentLoader.forTesting(
+                Set.of("localhost"), Duration.ofSeconds(5), Duration.ofSeconds(5));
+                
+        Assert.assertThrows(JsonLdError.class, () -> loader.loadDocument(
+                URI.create(baseUrl + "/large"), new DocumentLoaderOptions()));
+
+        Field locks = JsonLdContextDocumentLoader.class.getDeclaredField("locks");
+        locks.setAccessible(true);
+        Map<?, ?> lockEntries = (Map<?, ?>) locks.get(loader);
+        Assert.assertTrue("Failed loads must not leak single-flight lock entries", lockEntries.isEmpty());
     }
 
     private static void handleRequest(HttpExchange exchange, int status, String body, String contentType)
