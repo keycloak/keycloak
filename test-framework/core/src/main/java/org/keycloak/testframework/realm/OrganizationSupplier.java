@@ -1,6 +1,7 @@
 package org.keycloak.testframework.realm;
 
 import java.util.List;
+import java.util.Objects;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -12,11 +13,12 @@ import org.keycloak.testframework.injection.DependenciesBuilder;
 import org.keycloak.testframework.injection.Dependency;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.RequestedInstance;
+import org.keycloak.testframework.injection.StringUtil;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.injection.SupplierHelpers;
 import org.keycloak.testframework.util.ApiUtil;
 
-public class OrganizationSupplier implements Supplier<ManagedOrganization, InjectOrganization> {
+public class OrganizationSupplier implements Supplier<ManagedOrganization, InjectOrganization>, RealmConfigInterceptor<ManagedOrganization, InjectOrganization> {
 
     private static final String ORG_UUID_KEY = "organizationUuid";
 
@@ -30,8 +32,9 @@ public class OrganizationSupplier implements Supplier<ManagedOrganization, Injec
         ManagedRealm realm = instanceContext.getDependency(ManagedRealm.class, instanceContext.getAnnotation().realmRef());
 
         if (!Boolean.TRUE.equals(realm.admin().toRepresentation().isOrganizationsEnabled())) {
-            throw new IllegalStateException("Organizations are not enabled for realm '" + realm.getName()
-                    + "'. Configure the realm with a RealmConfig calling RealmBuilder.organizationsEnabled(true).");
+            // For realms created by the framework organizations are enabled through intercept(..).
+            // For unmanaged realms organizations might not be enabled.
+            throw new IllegalStateException("Organizations are not enabled for realm '%s'".formatted(realm.getName()));
         }
 
         OrganizationConfig config = SupplierHelpers.getInstanceWithInjectedFields(instanceContext.getAnnotation().config(), instanceContext);
@@ -59,6 +62,18 @@ public class OrganizationSupplier implements Supplier<ManagedOrganization, Injec
             throw new IllegalStateException("Organization '%s' already exists".formatted(organizationRepresentation.getName()));
         }
         ApiUtil.expectStatus(response, "create organization '%s'".formatted(organizationRepresentation.getName()), Status.CREATED);
+    }
+
+    @Override
+    public RealmBuilder intercept(RealmBuilder realm, InstanceContext<ManagedOrganization, InjectOrganization> instanceContext) {
+        // instanceContext is null here as this supplier is never deployed before the realm it depends on
+        return realm.organizationsEnabled(true);
+    }
+
+    @Override
+    public boolean appliesTo(InjectOrganization annotation, InstanceContext<?, ?> realmInstanceContext) {
+        return Objects.equals(StringUtil.convertEmptyToNull(annotation.realmRef()),
+                StringUtil.convertEmptyToNull(realmInstanceContext.getRef()));
     }
 
     @Override

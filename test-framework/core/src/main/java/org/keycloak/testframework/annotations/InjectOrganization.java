@@ -13,9 +13,12 @@ import org.keycloak.testframework.realm.OrganizationConfig;
 /**
  * Injects a {@link ManagedOrganization} used to create an organization within the realm.
  * <p>
- * The realm the organization is created in must have organizations enabled, otherwise the injection fails. Configure
- * the realm with a {@link org.keycloak.testframework.realm.RealmConfig} calling
- * {@link org.keycloak.testframework.realm.RealmBuilder#organizationsEnabled(boolean)}.
+ * Organizations are automatically enabled on the referenced realm, and only on that realm. Realms that are attached to
+ * an existing Keycloak instance through {@link InjectRealm#attachTo()} are not created by the framework and therefore
+ * not configured by it, so those have to have organizations enabled already, otherwise the injection fails.
+ * <p>
+ * Note that enabling organizations changes the behaviour of the realm once an organization exists, most notably the
+ * browser login becomes identity-first.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
@@ -27,7 +30,10 @@ public @interface InjectOrganization {
     Class<? extends OrganizationConfig> config() default DefaultOrganizationConfig.class;
 
     /**
-     * Controls the lifecycle of the resource
+     * Controls the lifecycle of the resource.
+     * <p>
+     * Since the organization configures the realm it belongs to, the realm is destroyed together with the organization.
+     * Using {@link LifeCycle#METHOD} therefore re-creates the realm for every test method as well.
      */
     LifeCycle lifecycle() default LifeCycle.CLASS;
 
