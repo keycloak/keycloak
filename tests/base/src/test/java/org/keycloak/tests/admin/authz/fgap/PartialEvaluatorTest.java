@@ -1,5 +1,6 @@
 package org.keycloak.tests.admin.authz.fgap;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -31,6 +32,7 @@ import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest(config = PartialEvaluatorServerConfig.class)
 public class PartialEvaluatorTest {
@@ -80,12 +82,30 @@ public class PartialEvaluatorTest {
         });
     }
 
+    @Test
+    public void parameterCountResetsWhenContextIsReusedForAnotherQuery() {
+        String realmName = realm.getName();
+        runOnServer.run((RunOnServer) session -> {
+            Set<String> allowedIds = Set.of("allowed-1", "allowed-2", "allowed-3");
+            List<String> sql = executeQueries(session, realmName, allowedIds, Set.of(), 2);
+
+            int firstQueryParameterCount = countParameters(sql.get(0));
+            assertTrue(firstQueryParameterCount > 0);
+            assertEquals(firstQueryParameterCount, countParameters(sql.get(1)));
+        });
+    }
+
     private static String executeQuery(org.keycloak.models.KeycloakSession keycloakSession, String realmName, Set<String> allowedIds, Set<String> deniedIds) {
+        return executeQueries(keycloakSession, realmName, allowedIds, deniedIds, 1).get(0);
+    }
+
+    private static List<String> executeQueries(org.keycloak.models.KeycloakSession keycloakSession, String realmName, Set<String> allowedIds, Set<String> deniedIds, int queryCount) {
         RealmModel realmModel = keycloakSession.realms().getRealmByName(realmName);
         keycloakSession.getContext().setRealm(realmModel);
         EntityManager em = keycloakSession.getProvider(JpaConnectionProvider.class).getEntityManager();
         SessionFactory sf = em.getEntityManagerFactory().unwrap(SessionFactory.class);
         AtomicReference<String> lastSql = new AtomicReference<>();
+        List<String> statements = new ArrayList<>();
 
         try (Session hibernateSession = sf.withOptions()
                 .statementInspector((UnaryOperator<String>) sql -> {
@@ -97,17 +117,29 @@ public class PartialEvaluatorTest {
                 .openSession()) {
 
             CriteriaBuilder builder = hibernateSession.getCriteriaBuilder();
-            CriteriaQuery<GroupEntity> query = builder.createQuery(GroupEntity.class);
-            Root<GroupEntity> root = query.from(GroupEntity.class);
             ResourceType resourceType = AdminPermissionsSchema.GROUPS;
-            PartialEvaluationContext context = new PartialEvaluationContext(
-                    keycloakSession, resourceType, allowedIds, deniedIds, null, builder, query, root);
-            List<Predicate> predicates = new PartialEvaluator().buildPredicates(context);
+            PartialEvaluationContext context = null;
 
-            query.select(root).where(predicates.toArray(Predicate[]::new));
-            hibernateSession.createQuery(query).getResultList();
+            for (int i = 0; i < queryCount; i++) {
+                CriteriaQuery<GroupEntity> query = builder.createQuery(GroupEntity.class);
+                Root<GroupEntity> root = query.from(GroupEntity.class);
 
-            return lastSql.get();
+                if (context == null) {
+                    context = new PartialEvaluationContext(keycloakSession, resourceType, allowedIds, deniedIds, null, builder, query, root);
+                } else {
+                    context.setCriteriaBuilder(builder);
+                    context.setCriteriaQuery(query);
+                    context.setPath(root);
+                }
+
+                List<Predicate> predicates = new PartialEvaluator().buildPredicates(context);
+
+                query.select(root).where(predicates.toArray(Predicate[]::new));
+                hibernateSession.createQuery(query).getResultList();
+                statements.add(lastSql.getAndSet(null));
+            }
+
+            return statements;
         }
     }
 

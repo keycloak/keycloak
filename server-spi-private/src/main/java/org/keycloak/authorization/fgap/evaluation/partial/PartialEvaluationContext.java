@@ -141,6 +141,7 @@ public final class PartialEvaluationContext {
 
     public void setCriteriaQuery(CriteriaQuery<?> criteriaQuery) {
         this.criteriaQuery = criteriaQuery;
+        this.parameterCount = 0;
     }
 
     public void setPath(Path<?> path) {
