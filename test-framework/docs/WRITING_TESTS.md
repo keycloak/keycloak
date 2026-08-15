@@ -488,6 +488,7 @@ Complete list of resources that can be injected into tests:
 | `@InjectSysLogServer`       | `org.keycloak.testframework.events.SysLogServer`         | Add/remove listener for logs from Keycloak server |
 | `@InjectTestDatabase`       | `org.keycloak.testframework.database.TestDatabase`       | Database                                          |
 | `@InjectUser`               | `org.keycloak.testframework.realm.ManagedUser`           | Managed user                                      |
+| `@InjectOrganization`       | `org.keycloak.testframework.realm.ManagedOrganization`   | Managed organization (realm needs orgs enabled)   |
 
 ## `keycloak-test-framework-email-server` extension
 
