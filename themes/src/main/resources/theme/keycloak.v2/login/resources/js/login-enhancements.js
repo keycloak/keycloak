@@ -297,9 +297,67 @@ function setupDeviceCallback() {
   }, DEVICE_CALLBACK_DELAY_MS);
 }
 
-setupCapsLockWarning();
-setupRipple();
-setupSubmitState();
-setupThemeToggle();
-setupRealmLogo();
-setupDeviceCallback();
+/**
+ * Quantum Pass registration: skip the browser prompt() that asks the user to
+ * name the credential, and generate a label instead.
+ *
+ * Upstream's base/login/resources/js/webauthnRegister.js calls
+ * window.prompt(initLabelPrompt, initLabel) before it submits the registration
+ * form. Editing that file would leave us resolving a conflict on every sync
+ * with keycloak/keycloak, so the call is intercepted here instead — this module
+ * is ours and template.ftl already loads it on every login page.
+ *
+ * The hidden #authenticatorLabel input only exists on webauthn-register.ftl, so
+ * its presence *is* the condition; window.prompt is left alone on every other
+ * screen. If upstream ever stops prompting, this override simply never fires.
+ */
+function setupWebAuthnLabel() {
+  if (!document.getElementById("authenticatorLabel")) {
+    return;
+  }
+
+  window.prompt = () => `Fidar-QuantumPass-${credentialSuffix()}`;
+}
+
+function credentialSuffix() {
+  // randomUUID needs a secure context, which plain-HTTP dev hosts are not.
+  if (typeof crypto?.randomUUID === "function") {
+    return crypto.randomUUID().split("-")[0];
+  }
+
+  return Math.random().toString(16).slice(2, 10);
+}
+
+/**
+ * Skip the required-action interstitial for Quantum Pass enrolment.
+ *
+ * template.ftl emits data-skip-to-action only when an outstanding required
+ * action is webauthn-register or webauthn-register-passwordless, so the
+ * attribute's presence *is* the condition — nothing is inferred from the page
+ * text here, unlike the Keycloakify build this replaces.
+ *
+ * replace() rather than assign() keeps the interstitial out of session history,
+ * so a Back press does not drop the user right back onto it.
+ */
+function setupRequiredActionSkip() {
+  const target = document.body.dataset.skipToAction;
+
+  if (!target) {
+    return;
+  }
+
+  window.location.replace(target);
+  return true;
+}
+
+// Runs first: if we are leaving the page anyway, the decorative setup below is
+// wasted work and can briefly paint a screen the user should never see.
+if (!setupRequiredActionSkip()) {
+  setupCapsLockWarning();
+  setupRipple();
+  setupSubmitState();
+  setupThemeToggle();
+  setupRealmLogo();
+  setupDeviceCallback();
+  setupWebAuthnLabel();
+}
