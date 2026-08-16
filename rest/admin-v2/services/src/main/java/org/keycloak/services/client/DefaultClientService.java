@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -18,13 +17,11 @@ import jakarta.annotation.Nonnull;
 import jakarta.validation.groups.Default;
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.events.admin.v2.AdminEventV2Builder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -43,9 +40,6 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.PatchType;
 import org.keycloak.services.RolesService;
 import org.keycloak.services.ServiceException;
-import org.keycloak.services.client.query.ClientQueryEvaluator;
-import org.keycloak.services.client.query.FieldResolver;
-import org.keycloak.services.client.query.QueryParseUtils;
 import org.keycloak.services.client.scim.BaseClientModelSchema;
 import org.keycloak.services.client.scim.OIDCClientModelSchema;
 import org.keycloak.services.client.scim.SAMLClientModelSchema;
@@ -78,7 +72,6 @@ import org.apache.http.HttpEntity;
 import org.apache.http.util.EntityUtils;
 
 import static org.keycloak.representations.admin.v2.validators.ClientSecretNotBlankValidator.isClientSecret;
-import static org.keycloak.utils.StreamsUtil.paginatedStream;
 import static org.keycloak.utils.StringUtil.isBlank;
 
 /**
@@ -133,57 +126,7 @@ public class DefaultClientService implements ClientService {
                                                        @Nonnull ClientProjectionOptions projectionOptions,
                                                        ClientSearchOptions searchOptions,
                                                        @Nonnull ClientSortAndSliceOptions sortAndSliceOptions) {
-        permissions.clients().requireList();
-
-        // TODO: this check is weak
-        //  a stronger check is whether the remaining fields have repSetters
-        //  however this highlights an issue we may hit with polymorphism a field may
-        //  be projectable in one subtype, but fixed in another
-
-        projectionOptions.getFields().forEach(s -> {
-            if (!FieldResolver.isKnownField(s)) {
-                throw new ServiceException("%s is an unknown field".formatted(s), Response.Status.BAD_REQUEST);
-            }
-        });
-
-        // When FGAP is enabled, authorization filtering is applied at the JPA layer (via PartialEvaluator predicates), so we trust the DB results.
-        // When disabled, we fall back to in-memory filtering by VIEW_CLIENTS role.
-        boolean canView = AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || permissions.clients().canView();
-        boolean hasQuery = searchOptions != null && searchOptions.query() != null && !searchOptions.query().isBlank();
-        boolean useJpaPagination = canView && !hasQuery;
-        int offset = sortAndSliceOptions.offset();
-        int limit = sortAndSliceOptions.limit();
-
-        Comparator<BaseClientRepresentation> sortComparator = sortAndSliceOptions.getSortComparator();
-        try {
-            Stream<ClientModel> clientModels = useJpaPagination
-                    ? realm.getClientsStream(offset, limit)
-                    : realm.getClientsStream();
-
-            Stream<BaseClientRepresentation> stream = clientModels
-                    .filter(client -> canView || permissions.clients().canView(client))
-                    .filter(client -> client.getProtocol() != null)
-                    .<BaseClientRepresentation>map(client -> getSchema(client.getProtocol()).fromModel(client))
-                    .filter(Objects::nonNull);
-
-            stream = applySearchFilter(stream, searchOptions).sorted(sortComparator);
-            if (!useJpaPagination) {
-                stream = paginatedStream(stream, offset, limit);
-            }
-            return applyProjection(stream, projectionOptions);
-
-        } catch (ModelException e) {
-            throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
-        }
-    }
-
-    protected Stream<BaseClientRepresentation> applySearchFilter(Stream<BaseClientRepresentation> stream, ClientSearchOptions searchOptions) {
-        if (searchOptions != null && searchOptions.query() != null && !searchOptions.query().isBlank()) {
-            var queryCtx = QueryParseUtils.parse(searchOptions.query());
-            QueryParseUtils.validate(queryCtx);
-            return stream.filter(client -> ClientQueryEvaluator.matches(queryCtx, client));
-        }
-        return stream;
+        throw new UnsupportedOperationException();
     }
 
     @SuppressWarnings("unchecked")
@@ -279,12 +222,6 @@ public class DefaultClientService implements ClientService {
         }
 
         return createOrUpdate(realm, clientId, updated, CreateOrUpdateStrategy.PATCH, patchExplicitNullSecret).representation();
-    }
-
-    @Override
-    public Stream<BaseClientRepresentation> deleteClients(RealmModel realm, ClientSearchOptions searchOptions) {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     protected enum CreateOrUpdateStrategy {

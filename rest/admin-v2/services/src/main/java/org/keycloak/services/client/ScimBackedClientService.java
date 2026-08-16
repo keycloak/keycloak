@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import jakarta.annotation.Nonnull;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
@@ -24,7 +25,6 @@ import org.keycloak.scim.filter.ScimFilterParser.FilterContext;
 import org.keycloak.services.PatchType;
 import org.keycloak.services.ServiceException;
 import org.keycloak.services.client.query.ClientQueryException;
-import org.keycloak.services.client.query.QueryFieldExtractor;
 import org.keycloak.services.client.query.QueryParseUtils;
 import org.keycloak.services.client.scim.BaseClientModelSchema;
 import org.keycloak.services.client.scim.ClientJpaQueryExecutor;
@@ -65,13 +65,17 @@ public class ScimBackedClientService implements ClientService {
         try {
             filterContext = parseQuery(searchOptions);
         } catch (ClientQueryException e) {
-            return delegate.getClients(realm, projectionOptions, searchOptions, sortAndSliceOptions);
-        }
-        if (!canUseJpaQuery(realm, filterContext)) {
-            return delegate.getClients(realm, projectionOptions, searchOptions, sortAndSliceOptions);
+            throw new ServiceException(e.getMessage(), Status.BAD_REQUEST);
         }
 
         permissions.clients().requireList();
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) && !permissions.clients().canView()) {
+            // TODO: this requires memory based post processing, which defers the slicing operation
+            // meaning that all clients could be iterated in the worst case - may be allowable only if we eventually allow
+            // unlimited limit values
+            throw new ForbiddenException(); 
+        }
+        
         validateProjectionFields(projectionOptions);
 
         int offset = sortAndSliceOptions.offset();
@@ -108,21 +112,6 @@ public class ScimBackedClientService implements ClientService {
         return QueryParseUtils.parse(searchOptions.query());
     }
 
-    private boolean canViewAll(RealmModel realm) {
-        return AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || permissions.clients().canView();
-    }
-
-    private boolean canUseJpaQuery(RealmModel realm, FilterContext filterContext) {
-        if (!canViewAll(realm)) {
-            return false;
-        }
-        if (filterContext == null) {
-            return true;
-        }
-        Set<String> queryFields = QueryFieldExtractor.extractFields(filterContext);
-        return BaseClientModelSchema.QUERYABLE_FIELDS.containsAll(queryFields);
-    }
-
     private static <R extends BaseClientRepresentation> R populateFromSchema(
             BaseClientModelSchema<R> schema, ClientModel client, List<String> includeFields) {
         R rep = schema.createRepresentation();
@@ -137,11 +126,6 @@ public class ScimBackedClientService implements ClientService {
                 throw new ServiceException("%s is an unknown field".formatted(field), Status.BAD_REQUEST);
             }
         });
-    }
-
-    @Override
-    public Stream<BaseClientRepresentation> deleteClients(RealmModel realm, ClientSearchOptions searchOptions) {
-        return delegate.deleteClients(realm, searchOptions);
     }
 
     @Override
