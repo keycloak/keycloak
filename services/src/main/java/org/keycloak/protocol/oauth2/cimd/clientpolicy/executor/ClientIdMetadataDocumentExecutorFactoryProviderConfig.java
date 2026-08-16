@@ -45,7 +45,7 @@ public class ClientIdMetadataDocumentExecutorFactoryProviderConfig {
     /**
      * Default value for {@link #maxCacheTime} : 3 days
      */
-    public static final int DEFAULT_CONFIG_MAX_CACHE_TIME = 259200; // 3days
+    public static final int DEFAULT_CONFIG_MAX_CACHE_TIME = 259200; // 3 days in seconds
 
     /**
      * Default value for {@link #upperLimitMetadataBytes} : 5KB
