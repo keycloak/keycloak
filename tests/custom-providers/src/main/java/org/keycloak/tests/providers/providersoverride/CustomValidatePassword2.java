@@ -17,18 +17,19 @@
  *
  */
 
-package org.keycloak.examples.providersoverride;
+package org.keycloak.tests.providers.providersoverride;
 
 import org.keycloak.authentication.authenticators.directgrant.ValidatePassword;
 
 /**
- * Test for order (This one is not called due CustomValidatePassword2 has bigger order)
+ * Test for order (This one should be called in favour of ValidatePassword, CustomValidatePassword1, CustomValidatePassword3 as it has highest order)
  *
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class CustomValidatePassword1 extends ValidatePassword {
+public class CustomValidatePassword2 extends ValidatePassword {
 
     @Override
     public int order() {
-        return 1;
+        return 2;
     }
 }

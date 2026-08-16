@@ -17,18 +17,20 @@
  *
  */
 
-package org.keycloak.examples.providersoverride;
+package org.keycloak.tests.providers.providersoverride;
 
-import org.keycloak.authentication.authenticators.directgrant.ValidatePassword;
+import java.util.Map;
+
+import org.keycloak.email.DefaultEmailSenderProvider;
+import org.keycloak.email.EmailAuthenticator;
+import org.keycloak.models.KeycloakSession;
 
 /**
- * Test for order (This one is not called due CustomValidatePassword2 has bigger order)
- *
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class CustomValidatePassword3 extends ValidatePassword  {
+public class CustomDefaultEmailSenderProvider1 extends DefaultEmailSenderProvider {
 
-    @Override
-    public int order() {
-        return -1;
+    public CustomDefaultEmailSenderProvider1(KeycloakSession session, Map<EmailAuthenticator.AuthenticatorType, EmailAuthenticator> authenticators) {
+        super(session, authenticators);
     }
 }
