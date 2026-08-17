@@ -229,6 +229,9 @@ public class StripSecretsUtils {
         if (rep.getSecret() != null) {
             rep.setSecret(maskNonVaultValue(rep.getSecret()));
         }
+        if (rep.getRegistrationAccessToken() != null) {
+            rep.setRegistrationAccessToken(maskNonVaultValue(rep.getRegistrationAccessToken()));
+        }
 
         stripFromMap(rep.getAttributes(), ClientSecretConstants.CLIENT_ROTATED_SECRET);
         return rep;

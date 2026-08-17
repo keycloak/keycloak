@@ -357,6 +357,7 @@ public class ClientResource {
         rep.setRegistrationAccessToken(token);
 
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(rep).success();
+        rep.setRegistrationAccessToken(token); // Reset again to the "real" value. In the admin event, it is masked
         return rep;
     }
 
