@@ -43,18 +43,44 @@ public class LoginPage extends AbstractLoginPage {
     }
 
     public void fillLogin(String username, String password) {
+        if (!isUsernameInputPresent() || !isPasswordInputPresent()) {
+            return;
+        }
         usernameInput.clear();
         usernameInput.sendKeys(username);
         passwordInput.clear();
         passwordInput.sendKeys(password);
     }
 
+    public void login(String username, String password) {
+        if (!isUsernameInputPresent() || !isPasswordInputPresent()) {
+            return;
+        }
+        fillLogin(username, password);
+        submit();
+    }
+
+    public void login(String username) {
+        if (!isUsernameInputPresent()) {
+            return;
+        }
+        usernameInput.clear();
+        usernameInput.sendKeys(username);
+        submit();
+    }
+
     public void fillPassword(String password) {
+        if (!isPasswordInputPresent()) {
+            return;
+        }
         passwordInput.clear();
         passwordInput.sendKeys(password);
     }
 
     public void submit() {
+        if (driver.driver().findElements(By.cssSelector("[type=submit]")).isEmpty()) {
+            return;
+        }
         submitButton.click();
     }
 
@@ -155,6 +181,14 @@ public class LoginPage extends AbstractLoginPage {
 
     public void clickResetLogin() {
         driver.findElement(By.id("reset-login")).click();
+    }
+
+    public String getError() {
+        return getErrorMessage().orElse(null);
+    }
+
+    public void openLanguage(String language) {
+        selectLanguage(language);
     }
 
     public boolean isTryAnotherWayPresent() {

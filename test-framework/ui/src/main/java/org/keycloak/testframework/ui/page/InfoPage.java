@@ -19,6 +19,7 @@ package org.keycloak.testframework.ui.page;
 
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -32,6 +33,9 @@ public class InfoPage extends AbstractLoginPage {
 
     @FindBy(linkText = "« Back to Application")
     private WebElement backToApplicationLink;
+
+    @FindBy(linkText = "» Click here to proceed")
+    private WebElement clickToContinue;
 
     public InfoPage(ManagedWebDriver driver) {
         super(driver);
@@ -47,6 +51,33 @@ public class InfoPage extends AbstractLoginPage {
     }
 
     public void clickBackToApplicationLink() {
-        backToApplicationLink.click();
+        if (!driver.driver().findElements(By.linkText("« Back to Application")).isEmpty()) {
+            backToApplicationLink.click();
+            return;
+        }
+        if (!driver.driver().findElements(By.id("backToApplication")).isEmpty()) {
+            driver.findElement(By.id("backToApplication")).click();
+            return;
+        }
+        if (!driver.driver().findElements(By.cssSelector("#kc-info-wrapper a")).isEmpty()) {
+            driver.findElement(By.cssSelector("#kc-info-wrapper a")).click();
+        }
+    }
+
+    public String getBackToApplicationLink() {
+        if (!driver.driver().findElements(By.linkText("« Back to Application")).isEmpty()) {
+            return backToApplicationLink.getAttribute("href");
+        }
+        if (!driver.driver().findElements(By.id("backToApplication")).isEmpty()) {
+            return driver.findElement(By.id("backToApplication")).getAttribute("href");
+        }
+        if (!driver.driver().findElements(By.cssSelector("#kc-info-wrapper a")).isEmpty()) {
+            return driver.findElement(By.cssSelector("#kc-info-wrapper a")).getAttribute("href");
+        }
+        return null;
+    }
+
+    public void clickToContinue() {
+        clickToContinue.click();
     }
 }

@@ -1,6 +1,7 @@
 package org.keycloak.testframework.ui.webdriver;
 
 import java.net.URL;
+import java.util.List;
 
 import org.keycloak.testframework.injection.ManagedTestResource;
 
@@ -46,8 +47,24 @@ public class ManagedWebDriver extends ManagedTestResource {
         return driver.getCurrentUrl();
     }
 
+    public String getPageSource() {
+        return driver.getPageSource();
+    }
+
+    public String getTitle() {
+        return driver.getTitle();
+    }
+
+    public WebDriver.Options manage() {
+        return driver.manage();
+    }
+
     public WebElement findElement(By by) {
         return driver.findElement(by);
+    }
+
+    public List<WebElement> findElements(By by) {
+        return driver.findElements(by);
     }
 
     public void open(String url) {

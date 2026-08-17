@@ -25,7 +25,7 @@ import org.openqa.selenium.support.FindBy;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class LoginConfigTotpPage extends AbstractLoginPage {
+public class LoginConfigTotpPage extends LogoutSessionsPage {
 
     @FindBy(id = "totpSecret")
     private WebElement totpSecret;
@@ -63,6 +63,62 @@ public class LoginConfigTotpPage extends AbstractLoginPage {
 
     public String getTotpSecret() {
         return totpSecret.getAttribute("value");
+    }
+
+    public void configure(String code) {
+        totpInput.clear();
+        if (code != null) {
+            totpInput.sendKeys(code);
+        }
+        submitButton.click();
+    }
+
+    public void configure(String code, String label) {
+        totpInput.clear();
+        if (code != null) {
+            totpInput.sendKeys(code);
+        }
+        totpLabelInput.clear();
+        if (label != null) {
+            totpLabelInput.sendKeys(label);
+        }
+        submitButton.click();
+    }
+
+    public void submit() {
+        submitButton.click();
+    }
+
+    public void clickBarcode() {
+        barcodeLink.click();
+    }
+
+    public void clickManual() {
+        manualLink.click();
+    }
+
+    public String getAlertError() {
+        try {
+            return loginAlertErrorMessage.getText();
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+    }
+
+    public String getInputCodeError() {
+        try {
+            return totpInputCodeError.getText();
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+    }
+
+    public String getInputLabelError() {
+        try {
+            return totpInputLabelError.getText();
+        } catch (NoSuchElementException e) {
+            return null;
+        }
     }
 
     public boolean isCancelDisplayed() {

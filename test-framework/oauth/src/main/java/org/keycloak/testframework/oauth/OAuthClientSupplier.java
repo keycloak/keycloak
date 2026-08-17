@@ -1,6 +1,9 @@
 package org.keycloak.testframework.oauth;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -61,7 +64,31 @@ public class OAuthClientSupplier implements Supplier<OAuthClient, InjectOAuthCli
         }
         String clientSecret = testAppClient.getSecret();
 
-        String id = ApiUtil.getCreatedId(realm.admin().clients().create(testAppClient));
+        String id;
+        Response response = realm.admin().clients().create(testAppClient);
+        try {
+            if (response.getStatus() == 201) {
+                id = ApiUtil.getCreatedId(response);
+            } else if (response.getStatus() == 409) {
+                id = realm.admin().clients().findByClientId(clientId).get(0).getId();
+                ClientResource existingClient = realm.admin().clients().get(id);
+                ClientRepresentation existingClientRep = existingClient.toRepresentation();
+                if (existingClientRep.getRedirectUris() == null) {
+                    existingClientRep.setRedirectUris(new ArrayList<>());
+                }
+                if (!existingClientRep.getRedirectUris().contains(redirectUri)) {
+                    existingClientRep.getRedirectUris().add(redirectUri);
+                    existingClient.update(existingClientRep);
+                }
+                if (existingClientRep.getSecret() != null) {
+                    clientSecret = existingClientRep.getSecret();
+                }
+            } else {
+                throw new RuntimeException("Unable to create OAuth test client. HTTP status: " + response.getStatus());
+            }
+        } finally {
+            response.close();
+        }
         ClientResource clientResource = realm.admin().clients().get(id);
         OAuthClient oAuthClient = new OAuthClient(keycloakUrls.getBase(), httpClient, webDriver, clientResource);
         oAuthClient.config().realm(realm.getName()).client(clientId, clientSecret).redirectUri(redirectUri);

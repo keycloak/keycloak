@@ -14,6 +14,10 @@ public class NavigateUtils {
         driver.driver().navigate().refresh();
     }
 
+    public void to(String url) {
+        driver.driver().navigate().to(url);
+    }
+
     public void backWithRefresh(AbstractPage expectedPage) {
         driver.driver().navigate().back();
 

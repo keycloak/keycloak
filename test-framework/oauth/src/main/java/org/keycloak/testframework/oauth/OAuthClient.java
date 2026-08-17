@@ -19,7 +19,7 @@ import org.openqa.selenium.support.PageFactory;
  */
 public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
-    private final ManagedWebDriver managedWebDriver;
+    private ManagedWebDriver managedWebDriver;
     private final ClientResource clientResource;
 
     public OAuthClient(String baseUrl, CloseableHttpClient httpClient, ManagedWebDriver managedWebDriver, ClientResource clientResource) {
@@ -33,6 +33,27 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
     public OAuthClient(String baseUrl, CloseableHttpClient httpClient, ManagedWebDriver managedWebDriver) {
         this(baseUrl, httpClient, managedWebDriver, null);
+    }
+
+    public OAuthClient newConfig() {
+        OAuthClient newClient = new OAuthClient(baseUrl, httpClientManager.get(), managedWebDriver);
+        newClient.config()
+                .realm(config.getRealm())
+                .client(config.getClientId(), config.getClientSecret())
+                .redirectUri(config.getRedirectUri())
+                .postLogoutRedirectUri(config.getPostLogoutRedirectUri())
+                .origin(config.getOrigin())
+                .scope(config.getScope(false))
+                .openid(config.isOpenid())
+                .responseType(config.getResponseType())
+                .responseMode(config.getResponseMode());
+        return newClient;
+    }
+
+    public OAuthClient driver(ManagedWebDriver managedWebDriver) {
+        this.managedWebDriver = managedWebDriver;
+        super.driver(managedWebDriver.driver());
+        return this;
     }
 
     @Override

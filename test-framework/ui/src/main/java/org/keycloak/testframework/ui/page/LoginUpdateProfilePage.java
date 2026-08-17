@@ -18,6 +18,7 @@
 package org.keycloak.testframework.ui.page;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
@@ -255,28 +256,11 @@ public class LoginUpdateProfilePage extends AbstractLoginPage {
         }
 
         public void submit() {
-            if (username != null) {
-                page.usernameInput.clear();
-                page.usernameInput.sendKeys(username);
-            }
-            if (firstName != null) {
-                page.firstNameInput.clear();
-                page.firstNameInput.sendKeys(firstName);
-            }
-            if (lastName != null) {
-                page.lastNameInput.clear();
-                page.lastNameInput.sendKeys(lastName);
-            }
-
-            if (department != null) {
-                page.departmentInput.clear();
-                page.departmentInput.sendKeys(department);
-            }
-
-            if (email != null) {
-                page.emailInput.clear();
-                page.emailInput.sendKeys(email);
-            }
+            fillIfPresent(By.id("username"), username);
+            fillIfPresent(By.name("firstName"), firstName);
+            fillIfPresent(By.name("lastName"), lastName);
+            fillIfPresent(By.name("department"), department);
+            fillIfPresent(By.name("email"), email);
 
             for (Map.Entry<String, String> entry : other.entrySet()) {
                 WebElement el = page.driver.findElement(By.id(entry.getKey()));
@@ -286,7 +270,23 @@ public class LoginUpdateProfilePage extends AbstractLoginPage {
                 }
             }
 
-            page.submitButton.submit();
+            List<WebElement> submitButtons = page.driver.findElements(By.cssSelector("input[type=\"submit\"],button[type=\"submit\"]"));
+            if (!submitButtons.isEmpty()) {
+                submitButtons.get(0).submit();
+            }
+        }
+
+        private void fillIfPresent(By locator, String value) {
+            if (value == null) {
+                return;
+            }
+            List<WebElement> elements = page.driver.findElements(locator);
+            if (elements.isEmpty()) {
+                return;
+            }
+            WebElement field = elements.get(0);
+            field.clear();
+            field.sendKeys(value);
         }
     }
 

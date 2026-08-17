@@ -18,6 +18,7 @@ package org.keycloak.testframework.ui.page;
 
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -44,6 +45,9 @@ public class LoginPasswordUpdatePage extends AbstractLoginPage {
     @FindBy(name = "cancel-aia")
     private WebElement cancelAIAButton;
 
+    @FindBy(id = "logout-sessions")
+    private WebElement logoutSessionsCheckbox;
+
     public LoginPasswordUpdatePage(ManagedWebDriver driver) {
         super(driver);
     }
@@ -69,6 +73,31 @@ public class LoginPasswordUpdatePage extends AbstractLoginPage {
 
     public boolean isCancelDisplayed() {
         return cancelAIAButton.isDisplayed();
+    }
+
+    public boolean isLogoutSessionsChecked() {
+        try {
+            return logoutSessionsCheckbox.isSelected();
+        } catch (NoSuchElementException e) {
+            return false;
+        }
+    }
+
+    public void checkLogoutSessions() {
+        try {
+            if (!logoutSessionsCheckbox.isSelected()) {
+                logoutSessionsCheckbox.click();
+            }
+        } catch (NoSuchElementException ignored) {
+        }
+    }
+
+    public boolean isLogoutSessionDisplayed() {
+        try {
+            return logoutSessionsCheckbox.isDisplayed();
+        } catch (NoSuchElementException e) {
+            return false;
+        }
     }
 
     @Override
