@@ -1,4 +1,8 @@
-import { HelpItem, useFetch } from "@keycloak/keycloak-ui-shared";
+import {
+  FormErrorText,
+  HelpItem,
+  useFetch,
+} from "@keycloak/keycloak-ui-shared";
 
 import { useTranslation } from "react-i18next";
 import { Button, FormGroup } from "@patternfly/react-core";
@@ -31,7 +35,12 @@ export const OrganizationSelect = ({
 }: OrganizationSelectProps) => {
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
-  const { control, setValue, getValues } = useFormContext();
+  const {
+    control,
+    setValue,
+    getValues,
+    formState: { errors },
+  } = useFormContext();
 
   const values: string[] = getValues(name!) || [];
   const [open, setOpen] = useState(false);
@@ -149,6 +158,7 @@ export const OrganizationSelect = ({
           </Tbody>
         </Table>
       )}
+      {errors[name!] && <FormErrorText message={t("requiredOrganizations")} />}
     </FormGroup>
   );
 };
