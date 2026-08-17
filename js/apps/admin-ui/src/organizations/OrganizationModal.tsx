@@ -1,6 +1,9 @@
 import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
 import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
+import {
+  KeycloakDataTable,
+  ListEmptyState,
+} from "@keycloak/keycloak-ui-shared";
 import { Button, Modal, ModalVariant } from "@patternfly/react-core";
 import { TableText } from "@patternfly/react-table";
 import { differenceBy } from "lodash-es";
@@ -25,6 +28,10 @@ export const OrganizationModal = ({
   const { t } = useTranslation();
 
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
+  const [organizations, setOrganizations] = useState<
+    OrganizationRepresentation[]
+  >([]);
+  const [search, setSearch] = useState("");
 
   const loader = async (first?: number, max?: number, search?: string) => {
     const params = {
@@ -34,7 +41,10 @@ export const OrganizationModal = ({
     };
 
     const orgs = await adminClient.organizations.find(params);
-    return differenceBy(orgs, existingOrgs, "id");
+    const diff = differenceBy(orgs, existingOrgs, "id");
+    setSearch(search || "");
+    setOrganizations(diff);
+    return diff;
   };
 
   return (
@@ -92,6 +102,17 @@ export const OrganizationModal = ({
           },
         ]}
       />
+      {
+        organizations.length === 0 && search === "" && (
+          <ListEmptyState
+            hasIcon={false}
+            message={t("emptyOrganizations")}
+            instructions={t("emptyOrganizationsInstructions")}
+          />
+        ) /* This component doesn't ever get rendered on the user join org screen if there are
+        no organizations so this doesn't actually change any functionality there.
+        Empty message when searching already handled within KeycloakDataTable. */
+      }
     </Modal>
   );
 };
