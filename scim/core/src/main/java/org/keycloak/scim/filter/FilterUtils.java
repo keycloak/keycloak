@@ -1,5 +1,7 @@
 package org.keycloak.scim.filter;
 
+import org.keycloak.utils.StringUtil;
+
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -12,6 +14,9 @@ import org.antlr.v4.runtime.CommonTokenStream;
  */
 public class FilterUtils {
 
+    public static final int MAX_FILTER_LENGTH = 2048;
+    public static final int MAX_FILTER_DEPTH = 10;
+
     /**
      * Parses a SCIM filter expression string into an abstract syntax tree.
      *
@@ -20,9 +25,14 @@ public class FilterUtils {
      * @throws ScimFilterException if the filter expression has syntax errors
      */
     public static ScimFilterParser.FilterContext parseFilter(String filterExpression) {
-        if (filterExpression == null || filterExpression.trim().isEmpty()) {
+        if (StringUtil.isBlank(filterExpression)) {
             throw new ScimFilterException("Filter expression cannot be null or empty");
         }
+        if (filterExpression.length() > MAX_FILTER_LENGTH) {
+            throw new ScimFilterException(
+                    "Filter expression exceeds maximum allowed length of %d characters".formatted(MAX_FILTER_LENGTH));
+        }
+        validateFilterDepth(filterExpression);
 
         CharStream charStream = CharStreams.fromString(filterExpression);
         ScimFilterLexer lexer = new ScimFilterLexer(charStream);
@@ -61,6 +71,40 @@ public class FilterUtils {
         if (ctx.NULL() != null) return null;
         if (ctx.NUMBER() != null) return ctx.NUMBER().getText();
         return null;
+    }
+
+    /**
+     * Validates that the nesting depth of parenthesized groups and value path brackets does not exceed {@link #MAX_FILTER_DEPTH}.
+     * Runs before ANTLR parsing to avoid building a deep parse tree that could cause a {@code StackOverflowError}.
+     */
+    private static void validateFilterDepth(String filterExpression) {
+        int depth = 0;
+        int maxDepth = 0;
+        boolean inString = false;
+        for (int i = 0; i < filterExpression.length(); i++) {
+            char c = filterExpression.charAt(i);
+            // skip characters inside quoted string literals — they are values, not structural
+            if (inString) {
+                if (c == '\\' && i + 1 < filterExpression.length()) {
+                    i++; // skip escaped character
+                    continue;
+                }
+                if (c == '"') {
+                    inString = false;
+                }
+                continue;
+            }
+            switch (c) {
+                case '"' -> inString = true;
+                // parenthesized groups and value path brackets both produce recursive grammar rules
+                case '(', '[' -> maxDepth = Math.max(maxDepth, ++depth);
+                case ')', ']' -> depth = Math.max(0, depth - 1);
+            }
+        }
+        if (maxDepth > MAX_FILTER_DEPTH) {
+            throw new ScimFilterException(
+                    "Filter expression exceeds maximum allowed nesting depth of %d".formatted(MAX_FILTER_DEPTH));
+        }
     }
 
     private static void validateNullCompValues(ScimFilterParser.FilterContext filterCtx) {

@@ -29,6 +29,7 @@ import {
   clickDefaultSwitchPolicy,
   clickDeleteRow,
   clickSwitchPolicy,
+  dragExecutionAboveExecution,
   fillBindFlowModal,
   fillCreateForm,
   fillDuplicateFlowModal,
@@ -187,29 +188,21 @@ test.describe("Authentication flow details", () => {
   });
 
   test("drags and drops execution", async ({ page }) => {
+    test.setTimeout(60_000);
     await using testBed = await createTestBed();
 
     await adminClient.copyFlow("browser", flowName, testBed.realm);
     await login(page, { to: toAuthentication({ realm: testBed.realm }) });
 
     await clickTableRowItem(page, flowName);
-
-    const sourceBox = await page
-      .getByText("Identity Provider Redirector")
-      .boundingBox();
-    const targetBox = await page.getByText("Kerberos").boundingBox();
-
-    await page.mouse.move(
-      sourceBox!.x + sourceBox!.width / 2,
-      sourceBox!.y + sourceBox!.height / 2,
+    const moved = await dragExecutionAboveExecution(
+      page,
+      "Identity Provider Redirector",
+      "Kerberos",
     );
-    await page.mouse.down();
-    await page.mouse.move(
-      targetBox!.x + targetBox!.width / 2,
-      targetBox!.y + targetBox!.height / 2,
-      { steps: 10 },
+    expect(moved, "Expected drag interaction to reorder execution rows").toBe(
+      true,
     );
-    await page.mouse.up();
 
     await assertNotificationMessage(page, "Flow successfully updated");
   });

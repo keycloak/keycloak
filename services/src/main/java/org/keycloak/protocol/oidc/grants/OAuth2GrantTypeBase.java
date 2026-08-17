@@ -164,7 +164,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
     }
 
     protected Response createTokenResponse(TokenManager.AccessTokenResponseBuilder responseBuilder, ClientSessionContext clientSessionCtx, boolean code) {
-        AccessTokenResponse res = null;
+        AccessTokenResponse res;
         if (code) {
             try {
                 res = responseBuilder.build();
@@ -182,6 +182,10 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
 
         // Extension point for subclasses to add custom claims
         addCustomTokenResponseClaims(res, clientSessionCtx);
+
+        // Sanitize authorization details before they are sent as part of the Token Response
+        var authDetailsProcessor = new AuthorizationDetailsProcessorManager(session);
+        authDetailsProcessor.sanitizeBeforeSendingTokenResponse(res);
 
         event.success();
 
@@ -215,7 +219,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         }
     }
 
-    protected void updateClientSession(AuthenticatedClientSessionModel clientSession) {
+    public void updateClientSession(AuthenticatedClientSessionModel clientSession) {
 
         if(clientSession == null) {
             ServicesLogger.LOGGER.clientSessionNull();
@@ -252,7 +256,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         }
     }
 
-    protected void updateUserSessionFromClientAuth(UserSessionModel userSession) {
+    public void updateUserSessionFromClientAuth(UserSessionModel userSession) {
         for (Map.Entry<String, String> attr : clientAuthAttributes.entrySet()) {
             userSession.setNote(attr.getKey(), attr.getValue());
         }

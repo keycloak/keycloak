@@ -188,6 +188,22 @@ class ClientQueryEvaluatorTest {
     }
 
     @Test
+    void notEqualOnCollection() {
+        var client = createClient("test", true);
+        client.setRoles(Set.of("admin", "user", "viewer"));
+        // ne is the logical negation of eq: matches if NO element equals the value
+        assertTrue(matches("roles ne \"superadmin\"", client));
+        assertFalse(matches("roles ne \"admin\"", client));
+    }
+
+    @Test
+    void notEqualOnEmptyCollection() {
+        var client = createClient("test", true);
+        client.setRoles(Set.of());
+        assertTrue(matches("roles ne \"admin\"", client));
+    }
+
+    @Test
     void containsOnCollection() {
         var client = createClient("test", true);
         client.setRoles(Set.of("admin-role", "user-role"));

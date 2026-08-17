@@ -52,9 +52,9 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
         super(session);
         this.session = session;
         this.client = client;
-        Map<String, String> retrievedRequest = removeRequestObject(session, requestUri);
+        Map<String, String> retrievedRequest = getRequestObject(session, requestUri);
         if (retrievedRequest == null) {
-            throw new RuntimeException("PAR not found. not issued or used multiple times.");
+            throw new RuntimeException("PAR not found, not issued or used multiple times.");
         }
 
         RealmModel realm = session.getContext().getRealm();

@@ -124,12 +124,14 @@ public interface ScimResourceTypeProvider<R extends ResourceTypeRepresentation> 
 
     /**
      * Counts the total number of resources of this type that match the given search request. This method is invoked when
-     * a client requests a list of resources,
+     * a client requests a list of resources.
      *
      * @param searchRequest the search request containing the filter and other parameters to count the matching resources
+     * @param resourceSize  the size of the resource list returned by {@link #getAll}, used by pageable implementations to compute
+     *                      the count without an extra database trip
      * @return the total number of resources of this type that match the given search request
      */
-    Long count(SearchRequest searchRequest);
+    Long count(SearchRequest searchRequest, int resourceSize);
 
     /**
      * Deletes a resource of this type by its identifier. This method is invoked when a client requests the deletion of a specific resource,

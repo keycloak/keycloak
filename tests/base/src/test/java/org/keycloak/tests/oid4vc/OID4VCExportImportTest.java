@@ -12,6 +12,7 @@ import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.exportimport.dir.DirExportProvider;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.models.IssuedVerifiableCredentialModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
@@ -158,14 +159,32 @@ public class OID4VCExportImportTest extends OID4VCIssuerTestBase {
                 .orElseThrow()
                 .getId();
 
+        String scope1Id = testRealm.admin().clientScopes().findAll().stream()
+                .filter(s -> jwtTypeCredentialScopeName.equals(s.getName()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Client scope not found: " + jwtTypeCredentialScopeName))
+                .getId();
+
+        String scope2Id = testRealm.admin().clientScopes().findAll().stream()
+                .filter(s -> sdJwtTypeCredentialScopeName.equals(s.getName()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Client scope not found: " + sdJwtTypeCredentialScopeName))
+                .getId();
+
         // Create issued credentials based on existing verifiable credentials
         runOnServer.run(session -> {
-            IssuedVerifiableCredentialModel issuedCred1 = new IssuedVerifiableCredentialModel(userId, jwtTypeCredentialScopeName, walletClientId);
+            RealmModel realm = session.realms().getRealmByName(VCTestRealmConfig.TEST_REALM_NAME);
+            session.getContext().setRealm(realm);
+
+            String vc1Id = session.users().getVerifiableCredentialByClientScope(userId, scope1Id).getId();
+            String vc2Id = session.users().getVerifiableCredentialByClientScope(userId, scope2Id).getId();
+
+            IssuedVerifiableCredentialModel issuedCred1 = new IssuedVerifiableCredentialModel(userId, vc1Id, walletClientId);
             issuedCred1.setRevision("rev-001");
             issuedCred1.setIssuedAt(System.currentTimeMillis());
             session.users().addIssuedVerifiableCredential(issuedCred1);
 
-            IssuedVerifiableCredentialModel issuedCred2 = new IssuedVerifiableCredentialModel(userId, sdJwtTypeCredentialScopeName, walletClientId);
+            IssuedVerifiableCredentialModel issuedCred2 = new IssuedVerifiableCredentialModel(userId, vc2Id, walletClientId);
             issuedCred2.setRevision("rev-002");
             issuedCred2.setIssuedAt(System.currentTimeMillis());
             session.users().addIssuedVerifiableCredential(issuedCred2);

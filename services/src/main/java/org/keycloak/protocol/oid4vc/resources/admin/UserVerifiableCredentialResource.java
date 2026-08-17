@@ -106,10 +106,10 @@ public class UserVerifiableCredentialResource {
         CredentialScopeModel credentialScope = checkCredentialScope(representation.getCredentialScopeName());
 
         try {
-            UserVerifiableCredentialModel modelToCreate = RepresentationToModel.toModel(representation);
+            UserVerifiableCredentialModel modelToCreate = RepresentationToModel.toModel(representation, realm);
             UserVerifiableCredentialModel createdModel = session.users().addVerifiableCredential(user.getId(), modelToCreate);
 
-            UserVerifiableCredentialRepresentation createdRep = ModelToRepresentation.toRepresentation(createdModel);
+            UserVerifiableCredentialRepresentation createdRep = ModelToRepresentation.toRepresentation(createdModel, credentialScope.getName());
             createdRep.setCredentialConfigurationId(credentialScope.getCredentialConfigurationId());
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri()).representation(createdRep).success();
             return createdRep;
@@ -139,11 +139,7 @@ public class UserVerifiableCredentialResource {
         checkOid4VCIEnabled();
 
         return session.users().getVerifiableCredentialsByUser(user.getId())
-                .map(ModelToRepresentation::toRepresentation)
-                .peek(userVerifiableCredential -> {
-                    CredentialScopeModel credentialScope = checkCredentialScope(userVerifiableCredential.getCredentialScopeName());
-                    userVerifiableCredential.setCredentialConfigurationId(credentialScope.getCredentialConfigurationId());
-                })
+                .map(model -> ModelToRepresentation.toRepresentation(model, realm))
                 .toList();
     }
 
@@ -163,12 +159,18 @@ public class UserVerifiableCredentialResource {
         auth.users().requireManage(user);
         checkOid4VCIEnabled();
 
+        // Resolve name to ID
+        ClientScopeModel clientScope = realm.getClientScopesStream()
+                .filter(s -> s.getName().equals(credentialScopeName))
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException("Client scope not found: " + credentialScopeName));
+
         try {
-            UserVerifiableCredentialModel updatedModel = session.users().updateVerifiableCredential(user.getId(), credentialScopeName);
+            UserVerifiableCredentialModel updatedModel = session.users().updateVerifiableCredential(user.getId(), clientScope.getId());
 
-            UserVerifiableCredentialRepresentation updatedRep = ModelToRepresentation.toRepresentation(updatedModel);
+            UserVerifiableCredentialRepresentation updatedRep = ModelToRepresentation.toRepresentation(updatedModel, realm);
 
-            CredentialScopeModel credentialScope = checkCredentialScope(updatedRep.getCredentialScopeName());
+            CredentialScopeModel credentialScope = new CredentialScopeModel(clientScope);
             updatedRep.setCredentialConfigurationId(credentialScope.getCredentialConfigurationId());
 
             adminEvent.operation(OperationType.UPDATE)
@@ -204,7 +206,13 @@ public class UserVerifiableCredentialResource {
         auth.users().requireManage(user);
         checkOid4VCIEnabled();
 
-        boolean removed = session.users().removeVerifiableCredential(user.getId(), credentialScopeName);
+        // Resolve name to ID
+        ClientScopeModel clientScope = realm.getClientScopesStream()
+                .filter(s -> s.getName().equals(credentialScopeName))
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException("Client scope not found: " + credentialScopeName));
+
+        boolean removed = session.users().removeVerifiableCredential(user.getId(), clientScope.getId());
         if (!removed) {
             logger.warn(String.format("Verifiable credential '%s' not found for user '%s' in the realm '%s'.",
                     credentialScopeName, user.getUsername(), realm.getName()));
@@ -228,7 +236,7 @@ public class UserVerifiableCredentialResource {
         checkOid4VCIEnabled();
 
         return session.users().getIssuedVerifiableCredentialsStreamByUser(user.getId())
-                .map(ModelToRepresentation::toRepresentation)
+                .map(model -> ModelToRepresentation.toRepresentation(model, session, realm))
                 .toList();
     }
 

@@ -4,10 +4,12 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.keycloak.json.RawJsonValue;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyMode;
+import org.keycloak.services.clientpolicy.condition.ClientAccessTypeCondition;
 import org.keycloak.services.clientpolicy.condition.ClientScopesCondition;
 import org.keycloak.services.clientpolicy.condition.GrantTypeCondition;
 import org.keycloak.services.clientpolicy.condition.IdentityProviderCondition;
@@ -59,6 +61,13 @@ public class ClientPolicyBuilder extends Builder<ClientPolicyRepresentation> {
         return config;
     }
 
+    public static ClientAccessTypeCondition.Configuration clientAccessTypeCondition(boolean negativeLogic, String... types) {
+        ClientAccessTypeCondition.Configuration config = new ClientAccessTypeCondition.Configuration();
+        config.setNegativeLogic(negativeLogic);
+        config.setType(List.of(types));
+        return config;
+    }
+
     public ClientPolicyBuilder enabled(boolean enabled) {
         rep.setEnabled(enabled);
         return this;
@@ -86,7 +95,7 @@ public class ClientPolicyBuilder extends Builder<ClientPolicyRepresentation> {
             config = new ClientPolicyConditionConfigurationRepresentation();
         }
         try {
-            condition.setConfiguration(JsonSerialization.mapper.readValue(JsonSerialization.mapper.writeValueAsBytes(config), JsonNode.class));
+            condition.setConfiguration(RawJsonValue.of(JsonSerialization.mapper.readValue(JsonSerialization.mapper.writeValueAsBytes(config), JsonNode.class)));
         } catch(IOException e) {
             throw new IllegalArgumentException("Invalid configuration", e);
         }

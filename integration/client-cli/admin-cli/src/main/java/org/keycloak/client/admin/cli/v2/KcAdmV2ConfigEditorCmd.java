@@ -29,7 +29,7 @@ class KcAdmV2ConfigEditorCmd implements Runnable {
 
     @Override
     public void run() {
-        FileConfigHandler.setConfigFile(config != null ? config : KcAdmMain.DEFAULT_CONFIG_FILE_PATH);
+        FileConfigHandler.setConfigFile(resolveConfigPath());
         try {
             new FileConfigHandler().saveMergeConfig(c -> c.setEditor(editorValue));
         } finally {
@@ -38,6 +38,15 @@ class KcAdmV2ConfigEditorCmd implements Runnable {
         }
 
         spec.commandLine().getErr().println("Editor configured: " + editorValue);
+    }
+
+    private String resolveConfigPath() {
+        if (config != null) {
+            return config;
+        }
+        String rootConfig = spec.commandLine().getParseResult().commandSpec()
+                .root().findOption(KcAdmV2Cmd.CONFIG_OPTION).getValue();
+        return rootConfig != null ? rootConfig : KcAdmMain.DEFAULT_CONFIG_FILE_PATH;
     }
 
 }

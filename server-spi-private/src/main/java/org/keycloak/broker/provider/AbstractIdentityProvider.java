@@ -72,6 +72,10 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
         return this.config;
     }
 
+    protected String getFederatedAccessTokenKey() {
+        return FEDERATED_ACCESS_TOKEN + ":" + getConfig().getAlias();
+    }
+
     @Override
     public void close() {
         // no-op
@@ -230,12 +234,32 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
         return new DefaultDataMarshaller();
     }
 
-    protected String getFederatedAccessToken(UserSessionModel userSession) {
-        // return the FEDERATED_ACCESS_TOKEN but just if logged in using this identity provider
-        if (getConfig().getAlias().equals(userSession.getNote(Details.IDENTITY_PROVIDER))) {
-             return userSession.getNote(FEDERATED_ACCESS_TOKEN);
+    protected String getFederatedTokenNote(UserSessionModel userSession, String namespacedKey, String legacyKey) {
+        String value = userSession.getNote(namespacedKey);
+        if (value != null) {
+            return value;
+        }
+        // Fallback to un-namespaced key for backward compatibility
+        String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
+        if (brokerId == null) {
+            brokerId = userSession.getNote(EXTERNAL_IDENTITY_PROVIDER);
+        }
+        if (getConfig().getAlias().equals(brokerId)) {
+            return userSession.getNote(legacyKey);
         }
         return null;
+    }
+
+    protected String getFederatedAccessToken(UserSessionModel userSession) {
+        return getFederatedTokenNote(userSession, getFederatedAccessTokenKey(), FEDERATED_ACCESS_TOKEN);
+    }
+
+    protected void setFederatedAccessToken(UserSessionModel userSession, String token) {
+        userSession.setNote(getFederatedAccessTokenKey(), token);
+    }
+
+    protected void setFederatedAccessToken(AuthenticationSessionModel authSession, String token) {
+        authSession.setUserSessionNote(getFederatedAccessTokenKey(), token);
     }
 
     protected Response buildTokenResponse(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient,

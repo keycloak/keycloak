@@ -18,10 +18,10 @@ import jakarta.persistence.Table;
         @NamedQuery(name="issuedVcsByUser", query="select vc from IssuedVerifiableCredentialEntity vc where vc.user.id = :userId order by vc.issuedAt desc"),
         @NamedQuery(name="deleteIssuedVcsByRealm", query="delete from IssuedVerifiableCredentialEntity vc where vc.user IN (select u from UserEntity u where u.realmId = :realmId)"),
         @NamedQuery(name="deleteIssuedVcsByUser",  query="delete from IssuedVerifiableCredentialEntity vc where vc.user.id = :userId"),
-        @NamedQuery(name="deleteIssuedVcsByClientScope", query="delete from IssuedVerifiableCredentialEntity vc where vc.credentialType = :scopeName"),
+        @NamedQuery(name="deleteIssuedVcsByClientScope", query="delete from IssuedVerifiableCredentialEntity vc where vc.verifiableCredentialId in (select uvc.id from UserVerifiableCredentialEntity uvc where uvc.clientScopeId = :scopeId)"),
         @NamedQuery(name="deleteIssuedVcsByClient", query="delete from IssuedVerifiableCredentialEntity vc where vc.clientId = :clientId"),
-        @NamedQuery(name="deleteIssuedVcsByUserAndType", query="delete from IssuedVerifiableCredentialEntity vc where vc.user.id = :userId and vc.credentialType = :credentialType"),
         @NamedQuery(name="deleteExpiredIssuedVcs", query="delete from IssuedVerifiableCredentialEntity vc where vc.expiresAt IS NOT NULL and vc.expiresAt < :currentTime"),
+        @NamedQuery(name="deleteIssuedVcsByUserAndType", query="delete from IssuedVerifiableCredentialEntity vc where vc.user.id = :userId and vc.verifiableCredentialId = :verifiableCredentialId"),
 })
 public class IssuedVerifiableCredentialEntity {
 
@@ -34,8 +34,8 @@ public class IssuedVerifiableCredentialEntity {
     @JoinColumn(name="USER_ID")
     protected UserEntity user;
 
-    @Column(name="CREDENTIAL_TYPE")
-    protected String credentialType;
+    @Column(name="VER_CREDENTIAL_ID")
+    protected String verifiableCredentialId;
 
     @Column(name="ISSUED_AT")
     protected Long issuedAt;
@@ -66,12 +66,12 @@ public class IssuedVerifiableCredentialEntity {
         this.user = user;
     }
 
-    public String getCredentialType() {
-        return credentialType;
+    public String getVerifiableCredentialId() {
+        return verifiableCredentialId;
     }
 
-    public void setCredentialType(String credentialType) {
-        this.credentialType = credentialType;
+    public void setVerifiableCredentialId(String verifiableCredentialId) {
+        this.verifiableCredentialId = verifiableCredentialId;
     }
 
     public Long getIssuedAt() {

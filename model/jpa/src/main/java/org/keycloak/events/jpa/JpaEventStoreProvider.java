@@ -22,12 +22,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.TypedQuery;
 
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
@@ -40,10 +41,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.entities.RealmAttributeEntity;
 import org.keycloak.models.jpa.entities.RealmAttributes;
-import org.keycloak.models.jpa.entities.RealmEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;
+
+import static jakarta.persistence.PersistenceConfiguration.LOCK_TIMEOUT;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -51,6 +54,9 @@ import org.jboss.logging.Logger;
 public class JpaEventStoreProvider implements EventStoreProvider {
 
     private static final Logger logger = Logger.getLogger(JpaEventStoreProvider.class);
+    private static final int EXPIRED_DELETE_MAX_RESULTS = 500;
+    // maximum 4 minutes duration in case there is a big backlog of old events to be deleted
+    private static final long EXPIRED_DELETE_TIME_LIMIT_MS = 4 * 60 * 1000L;
 
     private final KeycloakSession session;
     private final EntityManager em;
@@ -84,18 +90,22 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     public void clearExpiredEvents() {
         int numDeleted = 0;
         long currentTimeMillis = Time.currentTimeMillis();
+        long deadline = currentTimeMillis + EXPIRED_DELETE_TIME_LIMIT_MS;
 
-        // Group realms by expiration times. This will be effective if different realms have same/similar event expiration times, which will probably be the case in most environments
-        List<Long> eventExpirations = em.createQuery("select distinct realm.eventsExpiration from RealmEntity realm where realm.eventsExpiration > 0").getResultList();
-        for (Long expiration : eventExpirations) {
-            List<String> realmIds = em.createQuery("select realm.id from RealmEntity realm where realm.eventsExpiration = :expiration")
-                    .setParameter("expiration", expiration)
-                    .getResultList();
-            int currentNumDeleted = em.createQuery("delete from EventEntity where realmId in :realmIds and time < :eventTime")
-                    .setParameter("realmIds", realmIds)
-                    .setParameter("eventTime", currentTimeMillis - (expiration * 1000))
-                    .executeUpdate();
-            logger.tracef("Deleted %d events for the expiration %d", currentNumDeleted, expiration);
+        List<Object[]> realmExpirations = em.createQuery(
+                "select r.id, r.eventsExpiration from RealmEntity r where r.eventsExpiration > 0", Object[].class)
+                .getResultList();
+
+        for (Object[] row : realmExpirations) {
+            String realmId = (String) row[0];
+            long expiration = (Long) row[1];
+            long eventTime = currentTimeMillis - (expiration * 1000);
+            int currentNumDeleted = deleteByIdBatches(
+                    "select event.id from EventEntity event where event.realmId = :realmId and event.time < :eventTime order by event.time",
+                    query -> query.setParameter("realmId", realmId).setParameter("eventTime", eventTime),
+                    "delete from EventEntity event where event.id in :eventIds",
+                    deadline);
+            logger.tracef("Deleted %d events for realm %s with expiration %d", (Object) currentNumDeleted, realmId, expiration);
             numDeleted += currentNumDeleted;
         }
         logger.debugf("Cleared %d expired events in all realms", numDeleted);
@@ -232,31 +242,75 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     protected void clearExpiredAdminEvents() {
         TypedQuery<RealmAttributeEntity> query = em.createNamedQuery("selectRealmAttributesNotEmptyByName", RealmAttributeEntity.class)
                 .setParameter("name", RealmAttributes.ADMIN_EVENTS_EXPIRATION);
-        Map<Long, List<RealmAttributeEntity>> realms = query.getResultStream()
-                // filtering again on the attribute as parsing the CLOB to BIGINT didn't work in H2 2.x, and it also different on OracleDB
+        // filtering on the attribute in Java as parsing the CLOB to BIGINT didn't work in H2 2.x, and it is also different on OracleDB
+        List<Object[]> realmExpirations = query.getResultStream()
                 .filter(attribute -> {
                     try {
                         return Long.parseLong(attribute.getValue()) > 0;
                     } catch (NumberFormatException ex) {
-                        logger.warnf("Unable to parse value '%s' for attribute '%s' in realm '%s' (expecting it to be decimal numeric)",
+                        logger.warnf(ex, "Unable to parse value '%s' for attribute '%s' in realm '%s' (expecting it to be decimal numeric)",
                                 attribute.getValue(),
                                 RealmAttributes.ADMIN_EVENTS_EXPIRATION,
-                                attribute.getRealm().getId(),
-                                ex);
+                                attribute.getRealm().getId());
                         return false;
                     }
                 })
-                .collect(Collectors.groupingBy(attribute -> Long.valueOf(attribute.getValue())));
+                .map(attribute -> new Object[]{attribute.getRealm().getId(), Long.parseLong(attribute.getValue())})
+                .toList();
 
+        int numDeleted = 0;
         long current = Time.currentTimeMillis();
-        realms.forEach((key, value) -> {
-            List<String> realmIds = value.stream().map(RealmAttributeEntity::getRealm).map(RealmEntity::getId).collect(Collectors.toList());
-            int currentNumDeleted = em.createQuery("delete from AdminEventEntity where realmId in :realmIds and time < :eventTime")
-                    .setParameter("realmIds", realmIds)
-                    .setParameter("eventTime", current - (key * 1000))
-                    .executeUpdate();
-            logger.tracef("Deleted %d admin events for the expiration %d", currentNumDeleted, key);
-        });
+        long deadline = current + EXPIRED_DELETE_TIME_LIMIT_MS;
+        for (Object[] row : realmExpirations) {
+            String realmId = (String) row[0];
+            long expiration = (Long) row[1];
+            long eventTime = current - (expiration * 1000);
+            int currentNumDeleted = deleteByIdBatches(
+                    "select event.id from AdminEventEntity event where event.realmId = :realmId and event.time < :eventTime order by event.time",
+                    queryBuilder -> queryBuilder.setParameter("realmId", realmId).setParameter("eventTime", eventTime),
+                    "delete from AdminEventEntity event where event.id in :eventIds",
+                    deadline);
+            logger.tracef("Deleted %d admin events for realm %s with expiration %d", (Object) currentNumDeleted, realmId, expiration);
+            numDeleted += currentNumDeleted;
+        }
+        logger.debugf("Cleared %d expired admin events in all realms", numDeleted);
+    }
+
+    private int deleteByIdBatches(String selectIdsQuery, Consumer<TypedQuery<String>> queryConfigurator, String deleteByIdsQuery, long deadline) {
+        int deleted = 0;
+        while (true) {
+            if (Time.currentTimeMillis() > deadline) {
+                logger.debugf("Batch delete reached time limit after deleting %d rows", deleted);
+                return deleted;
+            }
+            int currentBatchDeleted = KeycloakModelUtils.runJobInTransactionWithResult(
+                    session.getKeycloakSessionFactory(),
+                    session.getContext(),
+                    innerSession -> {
+                        EntityManager innerEm = innerSession.getProvider(JpaConnectionProvider.class).getEntityManager();
+                        TypedQuery<String> selectQuery = innerEm.createQuery(selectIdsQuery, String.class);
+                        queryConfigurator.accept(selectQuery);
+                        List<String> eventIds = selectQuery
+                                .setMaxResults(EXPIRED_DELETE_MAX_RESULTS)
+                                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                                .setHint(LOCK_TIMEOUT, -2) // skip locked
+                                .getResultList();
+                        if (eventIds.isEmpty()) {
+                            return 0;
+                        }
+
+                        return innerEm.createQuery(deleteByIdsQuery)
+                                .setParameter("eventIds", eventIds)
+                                .executeUpdate();
+                    },
+                    "event-store-delete-batch");
+
+            if (currentBatchDeleted == 0) {
+                // No IDs left in this scope. Return how many rows were deleted across previous batches.
+                return deleted;
+            }
+            deleted += currentBatchDeleted;
+        }
     }
 
     private static void setDetails(Consumer<String> setter, Map<String, String> details) {

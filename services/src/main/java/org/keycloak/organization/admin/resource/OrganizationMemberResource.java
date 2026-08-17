@@ -179,7 +179,9 @@ public class OrganizationMemberResource {
             @Parameter(description = "Boolean which defines whether the param 'search' must match exactly or not") @QueryParam("exact") Boolean exact,
             @Parameter(description = "The position of the first result to be processed (pagination offset)") @QueryParam("first") @DefaultValue("0") Integer first,
             @Parameter(description = "The maximum number of results to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
-            @Parameter(description = "The membership type") @QueryParam("membershipType") String membershipType
+            @Parameter(description = "The membership type") @QueryParam("membershipType") String membershipType,
+            @Parameter(description = "Boolean to return either a brief or a full user representation. If not specified, the brief representation is returned by default.")
+            @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation
     ) {
         auth.users().requireQuery();
 
@@ -198,7 +200,7 @@ public class OrganizationMemberResource {
             filters.put(MembershipType.NAME, MembershipType.valueOf(membershipType.toUpperCase()).name());
         }
 
-        return provider.getMembersStream(organization, filters, exact, first, max).map(this::toRepresentation);
+        return provider.getMembersStream(organization, filters, exact, first, max).map(m -> toRepresentation(m, briefRepresentation));
     }
 
     /**
@@ -226,7 +228,7 @@ public class OrganizationMemberResource {
 
         UserModel member = getMember(memberId);
         auth.users().requireView(member);
-        return toRepresentation(member);
+        return toRepresentation(member, false);
     }
 
     @Path("{member-id}")
@@ -383,8 +385,8 @@ public class OrganizationMemberResource {
         return user;
     }
 
-    private MemberRepresentation toRepresentation(UserModel member) {
-        MemberRepresentation result = new MemberRepresentation(ModelToRepresentation.toRepresentation(session, member, false));
+    private MemberRepresentation toRepresentation(UserModel member, boolean brief) {
+        MemberRepresentation result = new MemberRepresentation(ModelToRepresentation.toRepresentation(session, member, brief));
         result.setMembershipType(provider.isManagedMember(organization, member) ? MembershipType.MANAGED : MembershipType.UNMANAGED);
         return result;
     }

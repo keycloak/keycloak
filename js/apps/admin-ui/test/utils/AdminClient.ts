@@ -11,17 +11,23 @@ import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/def
 import type { UserProfileConfig } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata.js";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation.js";
 import type { Credentials } from "@keycloak/keycloak-admin-client/lib/utils/auth.js";
+import {
+  ADMIN_PASSWORD,
+  ADMIN_USER,
+  DEFAULT_REALM,
+  SERVER_URL,
+} from "./constants.ts";
 
 class AdminClient {
   readonly #client = new KeycloakAdminClient({
-    baseUrl: "http://localhost:8080",
-    realmName: "master",
+    baseUrl: SERVER_URL,
+    realmName: DEFAULT_REALM,
   });
 
   #login() {
     return this.#client.auth({
-      username: "admin",
-      password: "admin",
+      username: ADMIN_USER,
+      password: ADMIN_PASSWORD,
       grantType: "password",
       clientId: "admin-cli",
     });
@@ -63,15 +69,24 @@ class AdminClient {
     return await this.#client.clients.create(client);
   }
 
-  async deleteClient(clientName: string) {
+  async getClient(clientName: string, realmName?: string) {
     await this.#login();
-    const client = (
-      await this.#client.clients.find({ clientId: clientName })
-    )[0];
+    return (
+      await this.#client.clients.find({
+        clientId: clientName,
+        ...(realmName !== undefined && { realm: realmName }),
+      })
+    ).at(0);
+  }
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- find()[0] is undefined when client does not exist
+  async deleteClient(
+    clientName: string,
+    realmName: string = this.#client.realmName,
+  ) {
+    const client = await this.getClient(clientName, realmName);
     if (client) {
-      await this.#client.clients.del({ id: client.id! });
+      await this.#login();
+      await this.#client.clients.del({ id: client.id!, realm: realmName });
     }
   }
 
@@ -98,11 +113,11 @@ class AdminClient {
     return createdGroups;
   }
 
-  async deleteGroups() {
+  async deleteGroups(realm: string = this.#client.realmName) {
     await this.#login();
-    const groups = await this.#client.groups.find();
+    const groups = await this.#client.groups.find({ realm });
     for (const group of groups) {
-      await this.#client.groups.del({ id: group.id! });
+      await this.#client.groups.del({ id: group.id!, realm });
     }
   }
 
@@ -332,6 +347,25 @@ class AdminClient {
       displayName: idpDisplayName,
       alias: alias,
     });
+  }
+
+  async isFeatureEnabled(
+    featureName: string,
+    realm: string = this.#client.realmName,
+  ): Promise<boolean> {
+    await this.#login();
+    const features = (await this.#client.serverInfo.find({ realm })).features;
+    const normalizeServerFeatureName = (name?: string) =>
+      name?.replace(/_V\d+$/, "");
+
+    return (
+      features?.some(
+        (feature) =>
+          feature.enabled &&
+          (feature.name === featureName ||
+            normalizeServerFeatureName(feature.name) === featureName),
+      ) ?? false
+    );
   }
 
   async deleteIdentityProvider(idpAlias: string) {

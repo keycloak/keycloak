@@ -28,6 +28,7 @@ import org.keycloak.testsuite.util.LDAPTestUtils;
 
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 public class LDAPPasswordPolicyTest extends AbstractLDAPTest {
 
@@ -74,13 +75,13 @@ public class LDAPPasswordPolicyTest extends AbstractLDAPTest {
 
         // Change password and verify that user can login with new password.
         passwordUpdatePage.changePassword("changedpassword", "changedpassword");
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         UserRepresentation user = managedRealm.admin().users().search("mustchange").get(0);
         managedRealm.admin().users().get(user.getId()).logout();
         oauth.openLoginForm();
         loginPage.login("mustchange", "changedpassword");
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 }

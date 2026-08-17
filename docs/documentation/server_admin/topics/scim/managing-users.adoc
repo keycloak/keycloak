@@ -147,7 +147,7 @@ The response uses the SCIM list format:
 }
 ----
 
-For filtering and pagination of results, see <<_scim_filtering_resources_,Filtering resources>>.
+For filtering and pagination of results, see <<_scim_filtering_resources,Filtering resources>>.
 
 == Selecting attributes
 
@@ -211,6 +211,9 @@ The `id` in the request body must match the `id` in the URL path, otherwise the 
 The `PATCH` method allows you to modify specific attributes without replacing the entire resource. A patch request
 contains one or more operations, each specifying an action (`add`, `replace`, or `remove`), an optional path to
 the attribute, and a value.
+
+NOTE: A single PATCH request can contain at most 100 operations. Requests exceeding this limit are rejected with
+a `400 Bad Request` response and `scimType: "tooMany"`.
 
 === Adding or replacing attributes
 

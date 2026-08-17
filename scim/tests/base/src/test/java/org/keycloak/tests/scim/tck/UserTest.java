@@ -10,12 +10,20 @@ import java.util.Set;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.GroupResource;
+import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
@@ -35,6 +43,7 @@ import org.keycloak.scim.resource.user.EnterpriseUser.Manager;
 import org.keycloak.scim.resource.user.GroupMembership;
 import org.keycloak.scim.resource.user.Name;
 import org.keycloak.scim.resource.user.User;
+import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
@@ -45,6 +54,9 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.userprofile.config.UPConfigUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.http.client.HttpClient;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -56,14 +68,17 @@ import static org.keycloak.scim.model.user.UserExtensionModelSchema.KEYCLOAK_USE
 import static org.keycloak.scim.resource.Scim.ENTERPRISE_USER_SCHEMA;
 import static org.keycloak.scim.resource.Scim.USER_RESOURCE_TYPE;
 import static org.keycloak.scim.resource.Scim.getCoreSchema;
+import static org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider.MAX_PATCH_OPERATIONS;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -72,6 +87,9 @@ public class UserTest extends AbstractScimTest {
 
     @InjectScimClient(clientId = "noaccess-scim-client", clientSecret = "secret", attachTo = "noaccess-scim-client")
     ScimClient noAccessClient;
+
+    @InjectHttpClient
+    HttpClient httpClient;
 
     @BeforeEach
     public void onBefore() {
@@ -122,8 +140,12 @@ public class UserTest extends AbstractScimTest {
     @Test
     public void testCreateWithExternalId() {
         UPConfig configuration = realm.admin().users().userProfile().getConfiguration();
-        configuration.addOrReplaceAttribute(new UPAttribute("myExternalId", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "externalId")));
+        UPAttribute externalIdAttr = new UPAttribute("myExternalId", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "externalId"));
+        externalIdAttr.setPermissions(new UPAttributePermissions(
+                Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER),
+                Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER)));
+        configuration.addOrReplaceAttribute(externalIdAttr);
         realm.admin().users().userProfile().update(configuration);
 
         User expected = new User();
@@ -139,12 +161,18 @@ public class UserTest extends AbstractScimTest {
     @Test
     public void testCreateWithFullNameAttributes() {
         UPConfig configuration = realm.admin().users().userProfile().getConfiguration();
-        configuration.addOrReplaceAttribute(new UPAttribute("middleName", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.middleName")));
-        configuration.addOrReplaceAttribute(new UPAttribute("honorificPrefix", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.honorificPrefix")));
-        configuration.addOrReplaceAttribute(new UPAttribute("honorificSuffix", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.honorificSuffix")));
+        UPAttributePermissions scimPermissions = new UPAttributePermissions(
+                Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER),
+                Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER));
+        for (String[] attr : new String[][] {
+                {"middleName", "name.middleName"},
+                {"honorificPrefix", "name.honorificPrefix"},
+                {"honorificSuffix", "name.honorificSuffix"}
+        }) {
+            UPAttribute upAttr = new UPAttribute(attr[0], Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, attr[1]));
+            upAttr.setPermissions(scimPermissions);
+            configuration.addOrReplaceAttribute(upAttr);
+        }
         realm.admin().users().userProfile().update(configuration);
 
         User expected = new User();
@@ -166,6 +194,23 @@ public class UserTest extends AbstractScimTest {
         assertEquals(name.getHonorificPrefix(), actualName.getHonorificPrefix());
         assertEquals(name.getHonorificSuffix(), actualName.getHonorificSuffix());
         assertEquals("Mr. John M Doe Jr.", actualName.getFormatted());
+    }
+
+    @Test
+    public void testCreateWithRegularNameFormatted() {
+        User expected = new User();
+        expected.setUserName(KeycloakModelUtils.generateId());
+        Name name = new Name();
+        name.setGivenName("John");
+        name.setFamilyName("Doe");
+        expected.setName(name);
+
+        User actual = client.users().create(expected);
+        actual = client.users().get(actual.getId());
+
+        assertRootAttributes(actual, expected);
+        assertNotNull(actual.getName());
+        assertEquals("John Doe", actual.getName().getFormatted());
     }
 
     @Test
@@ -241,6 +286,46 @@ public class UserTest extends AbstractScimTest {
         String id = client.users().create(expected).getId();
         User actual = client.users().get(id);
         assertRootAttributes(actual, expected);
+    }
+
+    @Test
+    public void testGetByIdServiceAccount() {
+        String clientId = "service-account-target-" + KeycloakModelUtils.generateId();
+        ClientRepresentation targetClient = ClientBuilder.create()
+                .clientId(clientId)
+                .secret("secret")
+                .serviceAccountsEnabled(true)
+                .enabled(true)
+                .build();
+        try (Response response = realm.admin().clients().create(targetClient)) {
+            targetClient.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(realm -> realm.clients().get(targetClient.getId()).remove());
+
+        UserRepresentation serviceAccount = realm.admin().clients().get(targetClient.getId()).getServiceAccountUser();
+        User actual = client.users().get(serviceAccount.getId());
+
+        assertNull(actual);
+    }
+
+    @Test
+    public void testQueryByIdServiceAccount() {
+        String clientId = "service-account-target-" + KeycloakModelUtils.generateId();
+        ClientRepresentation targetClient = ClientBuilder.create()
+                .clientId(clientId)
+                .secret("secret")
+                .serviceAccountsEnabled(true)
+                .enabled(true)
+                .build();
+        try (Response response = realm.admin().clients().create(targetClient)) {
+            targetClient.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(realm -> realm.clients().get(targetClient.getId()).remove());
+
+        UserRepresentation serviceAccount = realm.admin().clients().get(targetClient.getId()).getServiceAccountUser();
+        ListResponse<User> response = client.users().getAll(ResourceFilter.filter().eq("id", serviceAccount.getId()).build());
+
+        assertEquals(0, response.getTotalResults());
     }
 
     @Test
@@ -375,13 +460,7 @@ public class UserTest extends AbstractScimTest {
 
     @Test
     public void testNoManagePermission() {
-        realm.admin().clients().create(ClientBuilder
-                .create()
-                .clientId("noaccess-scim-client")
-                .secret("secret")
-                .serviceAccountsEnabled(true)
-                .enabled(true)
-                .build()).close();
+        createScimClient("noaccess-scim-client");
 
         try {
             noAccessClient.users().create(createUser());
@@ -552,6 +631,29 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testPatchWithNullSchemas() throws Exception {
+        User expected = client.users().create(createUser());
+
+        SimpleHttp http = SimpleHttp.create(httpClient);
+        AccessTokenResponse tokenResponse = http.doPost(keycloakUrls.getToken(realm.getName()))
+                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS)
+                .param(OAuth2Constants.CLIENT_ID, "scim-client")
+                .param(OAuth2Constants.CLIENT_SECRET, "secret")
+                .asJson(AccessTokenResponse.class);
+
+        String url = keycloakUrls.getBase() + "/realms/" + realm.getName() + "/scim/v2/Users/" + expected.getId();
+        try (SimpleHttpResponse response = http.doPatch(url)
+                .header("Authorization", "Bearer " + tokenResponse.getToken())
+                .header("Content-Type", "application/scim+json")
+                .entity(new StringEntity(
+                        "{\"schemas\": null, \"Operations\": [{\"op\": \"replace\", \"path\": \"active\", \"value\": false}]}",
+                        ContentType.create("application/scim+json")))
+                .asResponse()) {
+            assertEquals(400, response.getStatus());
+        }
+    }
+
+    @Test
     public void testPatchReplace() {
         User expected = client.users().create(createUser());
         addOrReplaceUPAttribute("name.middleName");
@@ -719,6 +821,39 @@ public class UserTest extends AbstractScimTest {
         assertNotNull(actual.getEnterpriseUser());
         assertNull(actual.getEnterpriseUser().getEmployeeNumber());
         assertEquals("5678", actual.getEnterpriseUser().getCostCenter());
+    }
+
+    @Test
+    public void testPatchExceedingMaxOperations() {
+        User expected = client.users().create(createUser());
+        PatchRequest.Builder builder = PatchRequest.create();
+        for (int i = 0; i <= MAX_PATCH_OPERATIONS; i++) {
+            builder.add("displayName", "name-" + i);
+        }
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), builder.build()));
+        assertNotNull(ce.getError());
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), ce.getError().getStatusInt());
+        assertEquals("tooMany", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains("maximum allowed number"));
+    }
+
+    @Test
+    public void testPatchImmutableMetaCreated() {
+        User user = client.users().create(createUser());
+        adminEvents.clear();
+
+        try {
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .replace("meta.created", "2020-01-01T00:00:00Z")
+                    .build());
+            fail("should fail because meta.created is immutable");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("mutability", error.getScimType());
+        }
     }
 
     @Test
@@ -1157,7 +1292,7 @@ public class UserTest extends AbstractScimTest {
         // adds a user profile attribute
         UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
         UPAttribute upAttribute = new UPAttribute("keycloak.team", Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, KEYCLOAK_USER_SCHEMA + ".memberOf"));
-        upAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER), Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER)));
         upConfig.addOrReplaceAttribute(upAttribute);
         realm.admin().users().userProfile().update(upConfig);
         existing = realm.admin().users().get(existing.getId()).toRepresentation();
@@ -1166,7 +1301,7 @@ public class UserTest extends AbstractScimTest {
 
         String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
         upAttribute = new UPAttribute("keycloak.area", Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, customSchema + ".myattribute"));
-        upAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER), Set.of(UPConfigUtils.ROLE_ADMIN, UPConfigUtils.ROLE_USER)));
         upConfig.addOrReplaceAttribute(upAttribute);
         realm.admin().users().userProfile().update(upConfig);
         existing = realm.admin().users().get(existing.getId()).toRepresentation();
@@ -1220,6 +1355,50 @@ public class UserTest extends AbstractScimTest {
         } finally {
             client.users().delete(user.getId());
         }
+    }
+
+    @Test
+    public void testOrganizationGroupsNotExposedOnUser() {
+        realm.updateWithCleanup(realm -> realm.organizationsEnabled(true));
+
+        OrganizationRepresentation orgRep = new OrganizationRepresentation();
+        String orgName = KeycloakModelUtils.generateId();
+        orgRep.setName(orgName);
+        orgRep.setAlias(orgName);
+        orgRep.addDomain(new OrganizationDomainRepresentation(orgName + ".org"));
+        try (Response response = realm.admin().organizations().create(orgRep)) {
+            orgRep.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(realm -> realm.organizations().get(orgRep.getId()).delete().close());
+
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
+
+        GroupRepresentation orgGroup = new GroupRepresentation();
+        orgGroup.setName(KeycloakModelUtils.generateId());
+        try (Response response = orgResource.groups().addTopLevelGroup(orgGroup)) {
+            orgGroup.setId(ApiUtil.getCreatedId(response));
+        }
+
+        GroupRepresentation realmGroup = createGroup(KeycloakModelUtils.generateId());
+
+        User user = createUser();
+        user.addGroup(realmGroup.getId());
+        User expected = client.users().create(user);
+
+        // organization membership is itself a membership in the organization's internal group
+        try (Response response = orgResource.members().addMember(expected.getId())) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+        }
+        orgResource.groups().group(orgGroup.getId()).addMember(expected.getId());
+
+        User actual = client.users().get(expected.getId(), List.of("groups"));
+        List<GroupMembership> groups = actual.getGroups();
+
+        assertNotNull(groups);
+        assertTrue(groups.stream().anyMatch(g -> realmGroup.getId().equals(g.getValue())));
+        assertTrue(groups.stream().noneMatch(g -> orgGroup.getId().equals(g.getValue())));
+        // neither the organization group nor the organization's internal group are exposed
+        assertEquals(1, groups.size());
     }
 
     private static void assertGroup(List<GroupMembership> groups, GroupRepresentation group, String type) {
@@ -1398,6 +1577,91 @@ public class UserTest extends AbstractScimTest {
             assertEquals(400, error.getStatusInt());
             assertNotNull(error.getDetail());
             assertTrue(error.getDetail().contains("invalidAttribute"));
+        }
+    }
+
+    @Test
+    public void testPatchAndUpdateRespectEditPermissions() {
+        String attributeName = "scim.protectedAttribute";
+        String scimAttributePath = KEYCLOAK_USER_SCHEMA + ":protectedAttribute";
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+        UPAttribute upAttribute = new UPAttribute(attributeName, Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, scimAttributePath));
+        upAttribute.setPermissions(
+                new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of()));
+        upConfig.addOrReplaceAttribute(upAttribute);
+        realm.admin().users().userProfile().update(upConfig);
+
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+        try {
+            user = client.users().create(user);
+
+            // PATCH replace should not be able to write a view-only attribute
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .replace(scimAttributePath, "scim-patch")
+                    .build());
+            Map<String, List<String>> attributes = realm.admin().users().get(user.getId())
+                    .toRepresentation().getAttributes();
+            assertTrue(attributes == null || !attributes.containsKey(attributeName));
+
+            // PATCH add should not be able to write a view-only attribute
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .add(scimAttributePath, "scim-add")
+                    .build());
+            attributes = realm.admin().users().get(user.getId())
+                    .toRepresentation().getAttributes();
+            assertTrue(attributes == null || !attributes.containsKey(attributeName));
+
+            // temporarily allow admin edits so we can set the attribute value
+            upAttribute.setPermissions(
+                    new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+            upConfig.addOrReplaceAttribute(upAttribute);
+            realm.admin().users().userProfile().update(upConfig);
+            UserRepresentation rep = realm.admin().users().get(user.getId()).toRepresentation();
+            rep.singleAttribute(attributeName, "admin-set-value");
+            realm.admin().users().get(user.getId()).update(rep);
+            // restore view-only permissions
+            upAttribute.setPermissions(
+                    new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of()));
+            upConfig.addOrReplaceAttribute(upAttribute);
+            realm.admin().users().userProfile().update(upConfig);
+            attributes = realm.admin().users().get(user.getId()).toRepresentation().getAttributes();
+            assertNotNull(attributes);
+            assertEquals(List.of("admin-set-value"), attributes.get(attributeName));
+
+            // PATCH remove should not be able to remove a view-only attribute
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .remove(scimAttributePath)
+                    .build());
+            attributes = realm.admin().users().get(user.getId())
+                    .toRepresentation().getAttributes();
+            assertNotNull(attributes);
+            assertEquals(List.of("admin-set-value"), attributes.get(attributeName));
+
+            // PUT should not be able to write a view-only attribute
+            user.addSchema(KEYCLOAK_USER_SCHEMA);
+            user.setExtensions(new HashMap<>());
+            Map<Object, Object> extensionValues = new HashMap<>();
+            extensionValues.put("protectedAttribute", "scim-update");
+            user.getExtensions().put(KEYCLOAK_USER_SCHEMA, extensionValues);
+            User updated = client.users().update(user.getId(), user);
+            attributes = realm.admin().users().get(user.getId())
+                    .toRepresentation().getAttributes();
+            assertNotNull(attributes);
+            assertEquals(List.of("admin-set-value"), attributes.get(attributeName));
+
+            // verify the SCIM response reflects the actual stored value, not the sent value
+            Map<String, Object> responseExtensions = updated.getExtensions();
+            if (responseExtensions != null && responseExtensions.containsKey(KEYCLOAK_USER_SCHEMA)) {
+                Map<String, Object> schemaValues = (Map<String, Object>) responseExtensions.get(KEYCLOAK_USER_SCHEMA);
+                assertNotEquals("scim-update", schemaValues.get("protectedAttribute"),
+                        "PUT response should not echo back the value that was not persisted");
+            }
+        } finally {
+            if (user.getId() != null) {
+                client.users().delete(user.getId());
+            }
         }
     }
 

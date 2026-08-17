@@ -194,17 +194,35 @@ image::images/oid4vci/screenshot-realm-verifiable-credentials.png[Enabling Verif
 
 This enables the OID4VCI functionality for the realm. Once enabled, the **OID4VC Issuer Metadata** link appears in the *Endpoints* section of the General tab, and an **OID4VCI Attributes** section appears in the *Tokens* tab.
 
+[[_oid4vci_key_management]]
 ==== Key Management Configuration
 
-Because EC (Elliptic Curve) cryptography is strongly encouraged in the OpenID4VC ecosystem, add a **P-256 Elliptic Curve key pair** to the realm's set of keys under *Realm Settings > Keys > Providers*. This will later enable configuring the signing of issued VCs with the `ES256` algorithm.
+Credentials are signed with a realm signing key. For SD-JWT VCs, the selected key must also provide an X.509 certificate chain that satisfies the https://openid.net/specs/openid4vc-high-assurance-interoperability-profile-1_0-final.html#section-6.1.1[HAIP issuer key resolution requirements]:
 
-.Adding ECDSA Key Provider
-image::images/oid4vci/screenshot-realm-ecdsa-generated-provider.png[Adding ECDSA key provider in Realm Settings, width=650]
+* The first certificate must be the leaf certificate for the credential signing key.
+* The leaf certificate must not be self-signed.
+* Any intermediate certificates must follow the leaf certificate in chain order.
+* The trust anchor must not be included in the `x5c` JOSE header. If the configured chain ends with a self-signed root certificate, {project_name} removes it when creating the SD-JWT VC. Any non-self-signed trust anchor must be omitted from the configured chain.
+
+[IMPORTANT]
+====
+Do not use a generated realm key to sign SD-JWT VCs. A generated key either has no certificate or uses a self-signed certificate, so SD-JWT VC issuance fails. This restriction does not apply to JWT VCs.
+====
+
+Elliptic Curve cryptography with the P-256 curve and `ES256` algorithm is recommended for OpenID4VC. To configure a suitable signing key:
+
+. Obtain a P-256 private key and a corresponding leaf certificate issued by a certificate authority. Include intermediate certificates when applicable.
+. Store the private key and its certificate chain in a supported Java keystore. The private-key entry must contain the leaf certificate first, followed by any intermediate certificates. You may append a self-signed root certificate, but you must not append a non-self-signed certificate that is intended to be the trust anchor.
+. In the Admin Console, go to *Realm Settings* > *Keys* > *Providers*.
+. Add a *java-keystore* provider and configure the keystore path, type, passwords, and key alias.
+. Set *Algorithm* to `ES256` and *Key use* to `sig`.
+. Make the provider active and assign it sufficient priority to become the active `ES256` realm key. Alternatively, explicitly select this key as the *Signing Key ID* when configuring the credential client scope.
 
 [NOTE]
 ====
-For a detailed guide on configuring realm keys, refer to the {project_name} documentation:
-<<realm_keys,Managing Realm Keys>>.
+The keystore may contain a self-signed root certificate so that {project_name} can load and validate the complete chain. {project_name} removes a trailing self-signed root certificate from the SD-JWT VC `x5c` header. It does not remove a non-self-signed trust anchor, which must therefore be omitted from the configured chain.
+
+For details about the keystore location and provider fields, see <<realm_keys,Configuring realm keys>>.
 ====
 
 ==== Configuring Realm-Level OID4VCI Attributes
@@ -299,6 +317,7 @@ How normalization is applied during issuance:
 * For JWT-VC, the credential `issuanceDate` is normalized at issuance; the JWT `nbf` is derived from the normalized value. If a mapper sets a VC `expirationDate`, it is normalized and emitted as JWT `exp`.
 * For SD-JWT VCs, time-related claims (`iat`, `nbf`, `exp`) are typically set using protocol mappers such as the Issued At Time Claim Mapper. Values are automatically normalized according to the realm strategy.
 
+[[_oid4vci_user_setup]]
 === Creating a User Account
 
 A test user is required to simulate credential issuance and verify the setup.
@@ -367,7 +386,11 @@ After selecting the OID4VCI protocol, the following configuration fields become 
 
 | Credential Lifetime
 | `31536000` seconds (1 year)
-| How long the issued credential remains valid.
+| How long the issued credential remains valid. This controls the expiration of the refresh token and the database record.
+
+| Credential Refresh Interval
+| `604800` seconds (7 days), or credential lifetime if shorter
+| How often the wallet should refresh the credential. This sets the expiration (`exp` claim) of the issued VC JWT. If not explicitly set, defaults to 7 days or the credential lifetime, whichever is smaller. The credential can be refreshed using the refresh token as long as the credential lifetime has not expired. Must not exceed the credential lifetime.
 
 | Supported Format
 | SD-JWT VC (`dc+sd-jwt`)
@@ -379,11 +402,11 @@ After selecting the OID4VCI protocol, the following configuration fields become 
 
 | Signing Key ID
 | (default realm key)
-| Select a specific realm key for signing this credential. The signing algorithm updates automatically.
+| Select a specific realm key for signing this credential. The signing algorithm updates automatically. For SD-JWT VCs, the selected key must have a non-self-signed leaf certificate and the required certificate chain.
 
 | Credential Signing Algorithm
 | (auto)
-| The algorithm used to sign the credential. Automatically populated when a signing key is selected.
+| The algorithm used to sign the credential. Automatically populated when a signing key is selected. If no key is selected, the active realm signing key for this algorithm is used and must satisfy the SD-JWT certificate requirements.
 
 | Hash Algorithm
 | `sha-256`
@@ -425,6 +448,37 @@ image::images/oid4vci/screenshot-oid4vci-scope-form.png[OID4VCI configuration fi
 [NOTE]
 ====
 When you select a **Signing Key ID**, the **Credential Signing Algorithm** is automatically populated with the corresponding algorithm of the selected key. To override the algorithm, leave the signing key field empty and set the algorithm manually.
+
+For an SD-JWT VC, issuance fails with a `CredentialSignerException` if the resolved signing key has no certificate chain or its leaf certificate is self-signed. Verify that the selected key, or the active realm key for the configured algorithm, is backed by the intended keystore provider.
+====
+
+===== Understanding Credential Lifetime vs. Refresh Interval
+
+{project_name} provides separate time-based settings for verifiable credential validity:
+
+* **Credential Lifetime** (`vc.expiry_in_seconds`) — Controls how long the credential record remains valid in the database and determines the refresh token expiration. Default: 1 year (31536000 seconds).
+
+* **Credential Refresh Interval** (`vc.refresh_interval_in_seconds`) — Controls the `exp` (expiration) claim in the actual VC JWT returned to the wallet. Default: 7 days (604800 seconds), or the credential lifetime if shorter.
+
+This separation enables a periodic refresh cycle:
+
+. The wallet receives a VC with a 7-day expiration
+. The wallet also receives a refresh token valid for 1 year
+. After 7 days, the VC expires (wallet can verify this locally)
+. The wallet uses the refresh token to obtain a new access token
+. The wallet requests a new VC, which is valid for another 7 days
+. This cycle continues until the refresh token expires (after 1 year)
+. After 1 year, both the refresh token and the database record expire, requiring re-authentication
+
+This design provides:
+
+* **Enhanced security** — Regular credential rotation reduces the impact of credential theft
+* **Privacy protection** — Fresh credentials with updated timestamps prevent long-term correlation
+* **User convenience** — Automatic refresh without re-authentication for up to 1 year
+
+[IMPORTANT]
+====
+The credential refresh interval must not exceed the credential lifetime. {project_name} validates this constraint when creating or updating credential scopes. If you set a credential lifetime shorter than 7 days without explicitly configuring the refresh interval, the refresh interval automatically adjusts to match the credential lifetime.
 ====
 
 ==== Adding Protocol Mappers
@@ -590,5 +644,7 @@ For a **complete reference implementation**, see the sample project:
 https://github.com/adorsys/{project_name}-ssi-deployment/tree/main[{project_name} SSI Deployment^].
 
 include::requesting-credentials.adoc[]
+
+include::wallet-integration.adoc[]
 
 include::proofs.adoc[]

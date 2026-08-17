@@ -446,7 +446,7 @@ public class ExportUtils {
 
         // Verifiable credentials
         List<UserVerifiableCredentialRepresentation> verifiableCredentialReps = session.users().getVerifiableCredentialsByUser(user.getId())
-                .map(ModelToRepresentation::toRepresentation)
+                .map(model -> ModelToRepresentation.toRepresentation(model, realm))
                 .toList();
         if (!verifiableCredentialReps.isEmpty()) {
             userRep.setVerifiableCredentials(verifiableCredentialReps);
@@ -454,7 +454,7 @@ public class ExportUtils {
 
         // Issued verifiable credentials
         List<IssuedVerifiableCredentialRepresentation> issuedCredentialReps = session.users().getIssuedVerifiableCredentialsStreamByUser(user.getId())
-                .map(ModelToRepresentation::toRepresentation)
+                .map(model -> ModelToRepresentation.toRepresentation(model, session, realm))
                 .toList();
         if (!issuedCredentialReps.isEmpty()) {
             userRep.setIssuedVerifiableCredentials(issuedCredentialReps);

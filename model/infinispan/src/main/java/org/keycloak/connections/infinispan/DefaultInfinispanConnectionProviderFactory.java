@@ -252,7 +252,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         var holder = session.getProvider(CacheEmbeddedConfigProvider.class).configuration();
 
         // remove clustered caches
-        if (Profile.isFeatureEnabled(Profile.Feature.CACHELESS)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
             Arrays.stream(CLUSTERED_CACHE_NAMES)
                     .filter(Predicate.not(WORK_CACHE_NAME::equals))
                     .forEach(holder.getNamedConfigurationBuilders()::remove);
@@ -407,6 +407,16 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     @Override
     public boolean isClusterHealthSupported() {
         return clusterHealth.isSupported();
+    }
+
+    @Override
+    public boolean isCoordinator() {
+        return cacheManager.isCoordinator();
+    }
+
+    @Override
+    public boolean isCoordinatorSupported() {
+        return true;
     }
 
     private void addEmbeddedOperationalInfo(Map<String, String> info) {

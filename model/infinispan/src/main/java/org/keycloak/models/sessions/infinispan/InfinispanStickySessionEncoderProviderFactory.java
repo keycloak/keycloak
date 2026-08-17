@@ -71,7 +71,7 @@ public class InfinispanStickySessionEncoderProviderFactory implements StickySess
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        if (Profile.isFeatureEnabled(Profile.Feature.CACHELESS)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
             clustered = false;
             return;
         }

@@ -29,12 +29,12 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.common.Profile;
 import org.keycloak.models.AccountRoles;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.cors.Cors;
@@ -74,14 +74,7 @@ public class AccountVerifiableCredentialResource {
 
         List<UserVerifiableCredentialRepresentation> credentials = session.users()
                 .getVerifiableCredentialsByUser(user.getId())
-                .map(model -> {
-                    UserVerifiableCredentialRepresentation userVerifiableCredentialRepresentation = ModelToRepresentation.toRepresentation(model);
-                    CredentialScopeModel credScope = CredentialScopeUtils.findCredentialScopeModelByName(realm, realm::getClientScopesStream, model.getCredentialScopeName());
-                    if(credScope != null){
-                         userVerifiableCredentialRepresentation.setCredentialConfigurationId(credScope.getCredentialConfigurationId());
-                    }
-                    return userVerifiableCredentialRepresentation;
-                })
+                .map(model -> ModelToRepresentation.toRepresentation(model, realm))
                 .peek(rep -> rep.setUserAttributes(null))  // Do not expose attributes snapshot to users
                 .toList();
 
@@ -103,7 +96,13 @@ public class AccountVerifiableCredentialResource {
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS);
         checkOid4VCIEnabled();
 
-        boolean removed = session.users().removeVerifiableCredential(user.getId(), credentialScopeName);
+        // Resolve name to ID
+        ClientScopeModel clientScope = KeycloakModelUtils.getClientScopeByName(realm, credentialScopeName);
+        if (clientScope == null) {
+            throw new NotFoundException("Client scope not found: " + credentialScopeName);
+        }
+
+        boolean removed = session.users().removeVerifiableCredential(user.getId(), clientScope.getId());
         if (!removed) {
             logger.warn(String.format("Verifiable credential '%s' not found for user '%s' in the realm '%s'.",
                     credentialScopeName, user.getUsername(), realm.getName()));

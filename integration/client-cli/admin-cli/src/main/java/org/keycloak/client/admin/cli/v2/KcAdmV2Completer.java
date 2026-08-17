@@ -75,6 +75,9 @@ public class KcAdmV2Completer {
         }
 
         for (var opt : current.getCommandSpec().options()) {
+            if (opt.hidden() && !opt.usageHelp()) {
+                continue;
+            }
             for (String name : opt.names()) {
                 if (name.startsWith(LONG_OPTION_PREFIX)) {
                     out.println(name);

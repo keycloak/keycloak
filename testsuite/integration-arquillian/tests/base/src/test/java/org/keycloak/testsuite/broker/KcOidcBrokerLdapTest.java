@@ -58,10 +58,11 @@ public final class KcOidcBrokerLdapTest extends AbstractInitializedBaseBrokerTes
     public void testUpdateProfileOnFirstLogin() {
         updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         logInWithBroker(bc);
         updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "f", "l");
-        Assertions.assertFalse(errorPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     private ComponentRepresentation getUserStorageConfiguration(String providerName, String providerId) {

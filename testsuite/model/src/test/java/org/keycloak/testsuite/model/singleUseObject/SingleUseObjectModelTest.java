@@ -45,6 +45,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThrows;
 
 @RequireProvider(SingleUseObjectProvider.class)
 public class SingleUseObjectModelTest extends KeycloakModelTest {
@@ -215,6 +216,31 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
             assertThat(session.revokedTokens().contains(revokedKey), Matchers.is(false));
         });
 
+    }
+
+    @Test
+    public void testNullKey() {
+        inComittedTransaction(session -> {
+            var singleUseStore = session.singleUseObjects();
+            assertThrows(NullPointerException.class, () -> singleUseStore.put(null, 60, Map.of()));
+            assertThrows(NullPointerException.class, () -> singleUseStore.get(null));
+            assertThrows(NullPointerException.class, () -> singleUseStore.remove(null));
+            assertThrows(NullPointerException.class, () -> singleUseStore.replace(null, Map.of()));
+            assertThrows(NullPointerException.class, () -> singleUseStore.putIfAbsent(null, 60));
+            assertThrows(NullPointerException.class, () -> singleUseStore.contains(null));
+        });
+    }
+
+    @Test
+    public void testNonPositiveLifespan() {
+        inComittedTransaction(session -> {
+            var singleUseStore = session.singleUseObjects();
+            var key = UUID.randomUUID().toString();
+            assertThrows(IllegalArgumentException.class, () -> singleUseStore.put(key, 0, Map.of()));
+            assertThrows(IllegalArgumentException.class, () -> singleUseStore.put(key, -1, Map.of()));
+            assertThrows(IllegalArgumentException.class, () -> singleUseStore.putIfAbsent(key, 0));
+            assertThrows(IllegalArgumentException.class, () -> singleUseStore.putIfAbsent(key, -1));
+        });
     }
 
     @Test

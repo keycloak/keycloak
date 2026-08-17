@@ -31,6 +31,7 @@ import jakarta.persistence.criteria.Predicate;
 
 import org.keycloak.Config;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider.Outcome;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.common.Profile;
@@ -56,6 +57,12 @@ public final class PartialEvaluator {
         if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
             // feature not enabled, if a storage evaluator is provided try to resolve any filter from there
             return storage == null ? List.of() : storage.getFilters(new PartialEvaluationContext(storage, builder, queryBuilder, path));
+        }
+
+        // check before getUser() to avoid infinite recursion when called from a runWithoutAuthorization block
+        // (e.g. isReadOnlyOrganizationMember -> getByMember -> applyAuthorizationFilters -> getPredicates -> getUser -> getUserById -> validateUser -> isReadOnlyOrganizationMember -> ...)
+        if (isSkipEvaluation(session)) {
+            return List.of();
         }
 
         UserModel adminUser = session.getContext().getUser();
@@ -99,13 +106,22 @@ public final class PartialEvaluator {
                         continue;
                     }
 
-                    boolean granted = provider.evaluate(session, policy, adminUser);
+                    Outcome granted = provider.evaluateOutcome(session, policy, adminUser);
 
-                    if (Logic.NEGATIVE.equals(policy.getLogic())) {
-                        granted = !granted;
+                    if (Outcome.SKIP.equals(granted)) {
+                        continue;
                     }
 
-                    if (granted) {
+                    if (Outcome.FORCE_DENY.equals(granted)) {
+                        deniedResources.addAll(ids);
+                        continue;
+                    }
+
+                    if (Logic.NEGATIVE.equals(policy.getLogic())) {
+                        granted = granted == Outcome.GRANT ? Outcome.DENY : Outcome.GRANT;
+                    }
+
+                    if (Outcome.GRANT.equals(granted)) {
                         allowedResources.addAll(ids);
                     } else {
                         deniedResources.addAll(ids);

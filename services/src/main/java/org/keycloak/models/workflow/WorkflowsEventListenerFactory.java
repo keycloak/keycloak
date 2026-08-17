@@ -25,6 +25,7 @@ import java.time.format.DateTimeParseException;
 import org.keycloak.Config.Scope;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.DurationConverter;
+import org.keycloak.common.util.Environment;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
@@ -73,6 +74,11 @@ public class WorkflowsEventListenerFactory implements EventListenerProviderFacto
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        // skip event listener registration and scheduled tasks in non-server mode (export, import)
+        if (Environment.isNonServerMode()) {
+            return;
+        }
+
         factory.register(event -> {
             KeycloakSession session = event.getKeycloakSession();
 

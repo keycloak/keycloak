@@ -199,7 +199,10 @@ public class OrganizationInvitationResource {
             throw ErrorResponse.error("Failed to send invite email", Status.INTERNAL_SERVER_ERROR);
         }
 
-        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
+        adminEvent.operation(OperationType.ACTION)
+                .representation(toMinimalRepresentation(invitation))
+                .resourcePath(session.getContext().getUri())
+                .success();
 
         return Response.noContent().build();
     }
@@ -326,9 +329,12 @@ public class OrganizationInvitationResource {
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         InvitationManager invitationManager = provider.getInvitationManager();
 
-        verifyInvitationById(invitationManager, id);
+        OrganizationInvitationModel invitation = verifyInvitationById(invitationManager, id);
         invitationManager.remove(id);
-        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+        adminEvent.operation(OperationType.DELETE)
+                .representation(toMinimalRepresentation(invitation))
+                .resourcePath(session.getContext().getUri())
+                .success();
 
         return Response.noContent().build();
     }
@@ -378,13 +384,21 @@ public class OrganizationInvitationResource {
         rep.setOrganizationId(model.getOrganizationId());
         rep.setSentDate(model.getCreatedAt());
         rep.setExpiresAt(model.getExpiresAt());
-        rep.setInviteLink(model.getInviteLink());
-
         OrganizationInvitationRepresentation.Status dynamicStatus = model.isExpired() ?
                 EXPIRED :
                 PENDING;
         rep.setStatus(dynamicStatus);
 
+        return rep;
+    }
+
+    private OrganizationInvitationRepresentation toMinimalRepresentation(OrganizationInvitationModel model) {
+        if (model == null) return null;
+
+        OrganizationInvitationRepresentation rep = new OrganizationInvitationRepresentation();
+        rep.setId(model.getId());
+        rep.setEmail(model.getEmail());
+        rep.setOrganizationId(model.getOrganizationId());
         return rep;
     }
 

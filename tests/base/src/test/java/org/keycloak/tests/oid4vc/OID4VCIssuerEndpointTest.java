@@ -47,7 +47,6 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
@@ -67,8 +66,6 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.userprofile.config.UPAttribute;
-import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -78,7 +75,6 @@ import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.validate.validators.PatternValidator;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.logging.Logger;
@@ -88,8 +84,6 @@ import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_URI_CODE_SCOPE;
 import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY;
-import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
-import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 import static org.keycloak.util.JsonSerialization.valueAsPrettyString;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -199,21 +193,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCIssuerTestBase {
     }
 
     protected ComponentRepresentation getUserProfileProvider() {
-        // Add the User DID attribute, with the same logic as in DeclarativeUserProfileProviderFactory
         UPConfig profileConfig = UPConfigUtils.parseSystemDefaultConfig();
-
-        if (profileConfig.getAttribute(UserModel.DID) == null) {
-            UPAttribute attr = new UPAttribute(UserModel.DID);
-            attr.setDisplayName("${did}");
-            attr.setPermissions(new UPAttributePermissions(Set.of(ROLE_ADMIN, ROLE_USER), Set.of(ROLE_ADMIN, ROLE_USER)));
-            attr.setValidations(Map.of(
-                    PatternValidator.ID, Map.of(
-                            "pattern", "^did:.+:.+$",
-                            "error-message", "Value must start with 'did:scheme:'"
-                    )
-            ));
-            profileConfig.addOrReplaceAttribute(attr);
-        }
 
         ComponentRepresentation componentRepresentation = new ComponentRepresentation();
         componentRepresentation.setId(UUID.randomUUID().toString());

@@ -35,7 +35,6 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.actions.AbstractAppInitiatedActionTest;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -104,9 +103,6 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
 
     @Page
     protected ErrorPage errorPage;
-
-    @Page
-    protected AppPage appPage;
 
     protected TimeBasedOTP totp = new TimeBasedOTP();
 
@@ -256,7 +252,6 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             updatePasswordPage.changePassword("resetPassword", "resetPassword");
 
             // Assert user authenticated
-            Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
             Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         } finally {
             revertFlows();
@@ -451,8 +446,6 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "");
 
             // Assert user authenticated
-            appPage.assertCurrent();
-            Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
             Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             Assertions.assertTrue(AccountHelper.isTotpPresent(managedRealm.admin(), "bwilson"));
@@ -482,8 +475,6 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), secondOtpLabel);
 
             // Assert user authenticated
-            appPage.assertCurrent();
-            Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
             Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             // Verify 2nd OTP credential was successfully created too

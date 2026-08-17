@@ -43,7 +43,7 @@ public class LoadBalancer {
         node(currentNodeIndex);
 
         HttpServer proxyServer = vertx.createHttpServer();
-        proxyServer.requestHandler(proxy).listen(9999, "localhost");
+        Future.await(proxyServer.requestHandler(proxy).listen(9999, "localhost"));
     }
 
     public void node(int index) {
@@ -67,7 +67,7 @@ public class LoadBalancer {
 
     private Origin origin(int index) {
         if (index >= server.clusterSize()) {
-            throw new IllegalArgumentException("Node index out of bounds. Requested nodeIndex: %d, cluster size: %d".formatted(server.clusterSize(), index));
+            throw new IllegalArgumentException("Node index out of bounds. Requested nodeIndex: %d, cluster size: %d".formatted(index, server.clusterSize()));
         }
         return urls.computeIfAbsent(index, i ->
               new Origin("localhost", server.getBasePort(i), new KeycloakUrls(server.getBaseUrl(i), server.getManagementBaseUrl(i)))

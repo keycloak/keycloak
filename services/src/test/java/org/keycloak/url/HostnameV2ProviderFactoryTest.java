@@ -77,15 +77,20 @@ public class HostnameV2ProviderFactoryTest {
     }
 
     private void assertHostname(String hostname, boolean valid) {
-        Map<String, String> values = new HashMap<>();
-        values.put("hostname", hostname);
-        HostnameV2ProviderFactory factory = new HostnameV2ProviderFactory();
         try {
-            factory.init(ScopeUtil.createScope(values));
+            init(hostname);
             assertTrue(valid);
         } catch (IllegalArgumentException e) {
             assertFalse(valid);
         }
+    }
+
+    public static HostnameV2ProviderFactory init(String hostname) {
+        Map<String, String> values = new HashMap<>();
+        values.put("hostname", hostname);
+        HostnameV2ProviderFactory factory = new HostnameV2ProviderFactory();
+        factory.init(ScopeUtil.createScope(values));
+        return factory;
     }
 
 }

@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.GET;
@@ -84,7 +83,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.protocol.oidc.utils.JWKSServerUtils;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
@@ -153,7 +151,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
      * @return
      */
     public String refreshTokenForLogout(KeycloakSession session, UserSessionModel userSession) {
-        String refreshToken = userSession.getNote(FEDERATED_REFRESH_TOKEN);
+        String refreshToken = getFederatedRefreshToken(userSession);
         try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
             return getRefreshTokenRequest(session, refreshToken, getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret())).asString();
         } catch (IOException e) {
@@ -165,7 +163,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     public void backchannelLogout(KeycloakSession session, UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
         if (getConfig().getLogoutUrl() == null || getConfig().getLogoutUrl().trim().equals("") || !getConfig().isBackchannelSupported())
             return;
-        String idToken = userSession.getNote(FEDERATED_ID_TOKEN);
+        String idToken = getFederatedIdToken(userSession);
         if (idToken == null) return;
         backchannelLogout(userSession, idToken);
     }
@@ -196,7 +194,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     @Override
     public Response keycloakInitiatedBrowserLogout(KeycloakSession session, UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
         if (getConfig().getLogoutUrl() == null || getConfig().getLogoutUrl().trim().equals("")) return null;
-        String idToken = userSession.getNote(FEDERATED_ID_TOKEN);
+        String idToken = getFederatedIdToken(userSession);
         if (getConfig().isBackchannelSupported()) {
             backchannelLogout(userSession, idToken);
             return null;
@@ -258,7 +256,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 updateStoredTokenModel(realm, tokenSubject, model, currentTime, newResponse, tokenResponse);
 
                 if (tokenUserSession != null) {
-                    String oldToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
+                    String oldToken = getFederatedAccessToken(tokenUserSession);
                     if (oldToken != null && oldToken.equals(tokenResponse.getToken())) {
                         updateUserSessionFromRefresh(tokenUserSession, newResponse, currentTime);
                     }
@@ -278,8 +276,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     @Override
     protected Response exchangeSessionToken(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
         RealmModel realm = authorizedClient != null ? authorizedClient.getRealm() : session.getContext().getRealm();
-        String refreshToken = tokenUserSession.getNote(FEDERATED_REFRESH_TOKEN);
-        String accessToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
+        String refreshToken = getFederatedRefreshToken(tokenUserSession);
+        String accessToken = getFederatedAccessToken(tokenUserSession);
 
         if (accessToken == null) {
             if (event != null) {
@@ -290,7 +288,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
 
         try {
-            long expiration = Long.parseLong(tokenUserSession.getNote(FEDERATED_TOKEN_EXPIRATION));
+            String expirationNote = getFederatedTokenExpiration(tokenUserSession);
+            long expiration = Long.parseLong(expirationNote);
             final int currentTime = Time.currentTime();
 
             if (expiration == 0 || expiration > currentTime + getConfig().getMinValidityToken()) {
@@ -361,12 +360,13 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         final boolean isStoreTokenInSession = getConfig().isStoreTokenInSession();
         if (isStoreTokenInSession) {
             long accessTokenExpiration = newResponse.getExpiresIn() > 0 ? currentTime + newResponse.getExpiresIn() : 0;
-            tokenUserSession.setNote(FEDERATED_TOKEN_EXPIRATION, Long.toString(accessTokenExpiration));
-            tokenUserSession.setNote(FEDERATED_REFRESH_TOKEN, newResponse.getRefreshToken());
-            tokenUserSession.setNote(FEDERATED_ACCESS_TOKEN, newResponse.getToken());
+            String expirationStr = Long.toString(accessTokenExpiration);
+            setFederatedTokenExpiration(tokenUserSession, expirationStr);
+            setFederatedRefreshToken(tokenUserSession, newResponse.getRefreshToken());
+            setFederatedAccessToken(tokenUserSession, newResponse.getToken());
         }
         if (newResponse.getIdToken() != null && (isStoreTokenInSession || getConfig().isSendIdTokenOnLogout())) {
-            tokenUserSession.setNote(FEDERATED_ID_TOKEN, newResponse.getIdToken());
+            setFederatedIdToken(tokenUserSession, newResponse.getIdToken());
         }
     }
 
@@ -563,6 +563,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         String familyName = (String)idToken.getOtherClaims().get(IDToken.FAMILY_NAME);
         String preferredUsername = (String) idToken.getOtherClaims().get(getusernameClaimNameForIdToken());
         String email = (String) idToken.getOtherClaims().get(IDToken.EMAIL);
+        Boolean emailVerified =  getEmailVerifiedClaim(idToken);
 
         if (!getConfig().isDisableUserInfoService()) {
             String userInfoUrl = getUserInfoUrl();
@@ -595,11 +596,23 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                     givenName = getJsonProperty(userInfo, IDToken.GIVEN_NAME);
                     familyName = getJsonProperty(userInfo, IDToken.FAMILY_NAME);
                     preferredUsername = getUsernameFromUserInfo(userInfo);
-                    email = getJsonProperty(userInfo, "email");
+                    String userInfoEmail = getJsonProperty(userInfo, "email");
+                    Boolean userInfoEmailVerified = Boolean.parseBoolean(getJsonProperty(userInfo, IDToken.EMAIL_VERIFIED));
+
+                    if (userInfoEmail != null) {
+                        email = userInfoEmail;
+                        emailVerified = userInfoEmailVerified;
+                    }
+
                     AbstractJsonUserAttributeMapper.storeUserProfileForMapper(identity, userInfo, getConfig().getAlias());
                 }
             }
         }
+
+        if (emailVerified != null) {
+            identity.getContextData().put(IDToken.EMAIL_VERIFIED, emailVerified);
+        }
+
         identity.getContextData().put(VALIDATED_ID_TOKEN, idToken);
 
         identity.setId(id);
@@ -844,12 +857,13 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         if (isStoreTokenInSession) {
             int currentTime = Time.currentTime();
             long expiration = tokenResponse.getExpiresIn() > 0 ? tokenResponse.getExpiresIn() + currentTime : 0;
-            authSession.setUserSessionNote(FEDERATED_TOKEN_EXPIRATION, Long.toString(expiration));
-            authSession.setUserSessionNote(FEDERATED_REFRESH_TOKEN, tokenResponse.getRefreshToken());
-            authSession.setUserSessionNote(FEDERATED_ACCESS_TOKEN, tokenResponse.getToken());
+            String expirationStr = Long.toString(expiration);
+            setFederatedTokenExpiration(authSession, expirationStr);
+            setFederatedRefreshToken(authSession, tokenResponse.getRefreshToken());
+            setFederatedAccessToken(authSession, tokenResponse.getToken());
         }
         if (isStoreTokenInSession || getConfig().isSendIdTokenOnLogout()) {
-            authSession.setUserSessionNote(FEDERATED_ID_TOKEN, tokenResponse.getIdToken());
+            setFederatedIdToken(authSession, tokenResponse.getIdToken());
         }
     }
 
@@ -1010,7 +1024,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     @Override
-    protected BrokeredIdentityContext exchangeExternalTokenV1Impl(EventBuilder event, MultivaluedMap<String, String> params) {
+    protected BrokeredIdentityContext exchangeExternalImpl(EventBuilder event, MultivaluedMap<String, String> params) {
         if (!supportsExternalExchange()) return null;
         String subjectToken = params.getFirst(OAuth2Constants.SUBJECT_TOKEN);
         if (subjectToken == null) {
@@ -1031,14 +1045,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             event.error(Errors.INVALID_TOKEN_TYPE);
             throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token type", Response.Status.BAD_REQUEST);
         }
-    }
-
-    @Override
-    protected BrokeredIdentityContext exchangeExternalTokenV2Impl(TokenExchangeContext tokenExchangeContext) {
-        // Supporting only introspection-endpoint validation for now
-        validateExternalTokenWithIntrospectionEndpoint(tokenExchangeContext);
-
-        return exchangeExternalUserInfoValidationOnly(tokenExchangeContext.getEvent(), tokenExchangeContext.getFormParams());
     }
 
     @Override
@@ -1109,9 +1115,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     protected void setEmailVerified(UserModel user, BrokeredIdentityContext context) {
         OIDCIdentityProviderConfig config = getConfig();
         Map<String, Object> contextData = context.getContextData();
-        JsonWebToken token = (JsonWebToken) Optional.ofNullable(contextData.get(VALIDATED_ID_TOKEN))
-                .orElseGet(() -> contextData.get(VALIDATED_ACCESS_TOKEN));
-        Boolean emailVerified = getEmailVerifiedClaim(token);
+
+        Boolean emailVerified = (Boolean) contextData.get(IDToken.EMAIL_VERIFIED);
 
         if (Booleans.isFalse(config.isTrustEmail()) || emailVerified == null) {
             // fallback to the default behavior if trust is disabled or there is no email_verified claim

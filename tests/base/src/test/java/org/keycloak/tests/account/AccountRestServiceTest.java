@@ -89,6 +89,7 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.TokenRevocationResponse;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.UserProfileContext;
 
@@ -1771,6 +1772,58 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 .asResponse()) {
             Assertions.assertEquals(204, response.getStatus());
         }
+    }
+
+    @Test
+    public void revokeConsentDoesNotCauseRevokeGrantErrorOnSubsequentTokenRevocation() throws IOException {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+
+        String manageConsentToken = oauth.client("direct-grant", "password")
+                .doPasswordGrantRequest("manage-consent-access", "password")
+                .getAccessToken();
+        String appId = "in-use-client";
+
+        List<ClientScopeRepresentation> scopes = managedRealm.admin().clientScopes().findAll().subList(0, 1);
+        ConsentRepresentation requestedConsent = createRequestedConsent(scopes);
+
+        simpleHttp.doPost(getAccountUrl("applications/" + appId + "/consent"))
+                .header("Accept", "application/json")
+                .json(requestedConsent)
+                .auth(manageConsentToken)
+                .asResponse()
+                .close();
+
+        // Obtain a live session + refresh token for in-use-client.
+        AccessTokenResponse tokenResponse = oauth.client(appId, "secret1")
+                .doPasswordGrantRequest("manage-consent-access", "password");
+
+        Assertions.assertNull(tokenResponse.getErrorDescription(),
+                "Password grant should succeed: " + tokenResponse.getErrorDescription());
+        String refreshToken = tokenResponse.getRefreshToken();
+        Assertions.assertNotNull(refreshToken, "Refresh token must be present");
+
+        events.skip(3);
+
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("applications/" + appId +"/consent"))
+                .header("Accept", "application/json")
+                .auth(manageConsentToken)
+                .asResponse()) {
+            Assertions.assertEquals(204, response.getStatus());
+        }
+
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.REVOKE_GRANT)
+                .clientId("account")
+                .details(Details.REVOKED_CLIENT, appId);
+
+        TokenRevocationResponse revokeResponse = oauth.client(appId, "secret1").doTokenRevoke(refreshToken);
+        Assertions.assertTrue(revokeResponse.isSuccess(), "RFC 7009 revocation must return 200 even for a stale token");
+
+        EventRepresentation errorEvent = events.poll();
+        Assertions.assertNull(errorEvent,
+                "No REVOKE_GRANT_ERROR should be emitted after revoking a token whose session was already destroyed by consent revocation, got: "
+                        + (errorEvent != null ? errorEvent.getType() + " / " + errorEvent.getError() : "null"));
     }
 
     @Test

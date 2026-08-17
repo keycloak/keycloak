@@ -4,7 +4,7 @@ public class IssuedVerifiableCredentialModel {
 
     private String id;
     private String userId;
-    private String credentialType;
+    private String verifiableCredentialId;
     private Long issuedAt;
     private Long expiresAt;
     // This represents UUID of the client, which acts as OID4VCI wallet
@@ -14,9 +14,9 @@ public class IssuedVerifiableCredentialModel {
     public IssuedVerifiableCredentialModel() {
     }
 
-    public IssuedVerifiableCredentialModel(String userId, String credentialType, String clientId) {
+    public IssuedVerifiableCredentialModel(String userId, String verifiableCredentialId, String clientId) {
         this.userId = userId;
-        this.credentialType = credentialType;
+        this.verifiableCredentialId = verifiableCredentialId;
         this.clientId = clientId;
     }
 
@@ -36,12 +36,12 @@ public class IssuedVerifiableCredentialModel {
         this.userId = userId;
     }
 
-    public String getCredentialType() {
-        return credentialType;
+    public String getVerifiableCredentialId() {
+        return verifiableCredentialId;
     }
 
-    public void setCredentialType(String credentialType) {
-        this.credentialType = credentialType;
+    public void setVerifiableCredentialId(String verifiableCredentialId) {
+        this.verifiableCredentialId = verifiableCredentialId;
     }
 
     public Long getIssuedAt() {

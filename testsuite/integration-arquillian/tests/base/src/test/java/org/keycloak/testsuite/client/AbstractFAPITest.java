@@ -45,7 +45,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
@@ -87,10 +86,7 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
     @Page
     protected OAuthGrantPage grantPage;
 
-    @Page
-    protected AppPage appPage;
-
-    protected PkceGenerator pkceGenerator;
+        protected PkceGenerator pkceGenerator;
 
     @BeforeClass
     public static void verifySSL() {
@@ -192,7 +188,7 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
     }
 
     protected void assertRedirectedToClientWithError(String expectedError, String expectedErrorDescription) {
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isError());
         AuthorizationEndpointResponse response = oauth.parseLoginResponse();
         assertEquals(expectedError, response.getError());
         assertEquals(expectedErrorDescription, response.getErrorDescription());

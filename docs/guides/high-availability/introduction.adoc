@@ -25,7 +25,7 @@ in such high availability architectures.
 
 == Architectures
 
-This document describes two high availability architectures in which to deploy {project_name}: Single-cluster deployments and multi-cluster deployments.
+This document describes the high availability architectures in which to deploy {project_name}.
 
 === Single-cluster deployments
 
@@ -53,7 +53,7 @@ Disadvantages::
 * {kubernetes} cluster is a single point of failure:
 ** Control-plane failures could impact all {project_name} pods
 
-=== Multi-cluster deployments
+=== Multi-cluster deployments (v1)
 
 Connect two {project_name} clusters deployed for example in different {kubernetes} clusters in two availability zones
 or data centers with the required network latency and database configuration using <@links.ha id="multi-cluster-introduction" />.
@@ -74,6 +74,30 @@ Disadvantages::
 ** Two {kubernetes} control-planes must be provisioned
 * Not supported with three or more availability zones
 
+<@profile.ifCommunity>
+
+=== Multi-cluster deployments (v2)
+
+WARNING: This section is describing a feature which is currently in preview.
+Please provide your feedback by link:https://github.com/keycloak/keycloak/discussions/50640[joining this discussion] while we’re continuing to work on this.
+
+Connect two or more {project_name} clusters without an external {jdgserver_name} cluster using <@links.ha id="multi-cluster-v2-introduction" />.
+
+Advantages::
+* Tolerate availability-zone failure
+* Tolerate cluster failure
+* Simpler architecture: no external {jdgserver_name} cluster required
+* No requirement for a specific environment such as {kubernetes} or AWS
+
+Disadvantages::
+* Complexity:
+** External load-balancer required
+* Cost:
+** Additional load-balancer required
+** Two or more control-planes must be provisioned
+** Higher database load as session data is stored in the database and less data is cached. You might see approximately twice the CPU usage and write IOPS on your database, though your results might vary based on your use case.
+</@profile.ifCommunity>
+
 === Next Steps
 
 To learn more about the different high-availability architectures and their supported configurations, please consult the individual {sections}.
@@ -81,6 +105,7 @@ To learn more about the different high-availability architectures and their supp
 <@profile.ifCommunity>
 * <@links.ha id="single-cluster-introduction" />
 * <@links.ha id="multi-cluster-introduction" />
+* <@links.ha id="multi-cluster-v2-introduction" />
 </@profile.ifCommunity>
 
 </@tmpl.guide>

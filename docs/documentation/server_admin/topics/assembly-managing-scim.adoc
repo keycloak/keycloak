@@ -6,6 +6,7 @@
 include::scim/intro.adoc[leveloffset=+2]
 include::scim/enabling-scim.adoc[leveloffset=+2]
 include::scim/accessing-endpoints.adoc[leveloffset=+2]
+include::scim/admin-resource-protection.adoc[leveloffset=+2]
 include::scim/understanding-scim-endpoints.adoc[leveloffset=+2]
 include::scim/accessing-service-config.adoc[leveloffset=+2]
 include::scim/managing-users.adoc[leveloffset=+2]

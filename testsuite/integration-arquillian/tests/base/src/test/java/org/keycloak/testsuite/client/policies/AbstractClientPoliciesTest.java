@@ -71,6 +71,7 @@ import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.json.RawJsonValue;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -263,7 +264,8 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     @Before
     public void before() throws Exception {
         setInitialAccessTokenForDynamicClientRegistration();
-        adminClient.realm(REALM_NAME).clientScopes().create(ClientScopeBuilder.create().name(SAMPLE_CLIENT_SCOPE).protocol(OIDCLoginProtocol.LOGIN_PROTOCOL).build());
+        Response response = adminClient.realm(REALM_NAME).clientScopes().create(ClientScopeBuilder.create().name(SAMPLE_CLIENT_SCOPE).protocol(OIDCLoginProtocol.LOGIN_PROTOCOL).build());
+        response.close();
     }
 
     protected void setInitialAccessTokenForDynamicClientRegistration() {
@@ -1071,7 +1073,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         ClientPolicyExecutorRepresentation executorRep = profileRep.getExecutors().stream()
                 .filter(profileRepp -> providerId.equals(profileRepp.getExecutorProviderId()))
                 .findFirst().orElse(null);
-        return executorRep == null ? null : executorRep.getConfiguration();
+        return executorRep == null ? null : RawJsonValue.unwrap(JsonNode.class, executorRep.getConfiguration());
     }
 
     // Assertions about policies
@@ -1580,7 +1582,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     @NotNull
     protected ClientSecretRotationExecutor.Configuration getClientProfileConfiguration(
-            int expirationPeriod, int rotatedExpirationPeriod, int remainExpirationPeriod) {
+            long expirationPeriod, long rotatedExpirationPeriod, long remainExpirationPeriod) {
         ClientSecretRotationExecutor.Configuration profileConfig = new ClientSecretRotationExecutor.Configuration();
         profileConfig.setExpirationPeriod(expirationPeriod);
         profileConfig.setRotatedExpirationPeriod(rotatedExpirationPeriod);

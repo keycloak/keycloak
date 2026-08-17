@@ -34,7 +34,6 @@ import org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMappe
 import org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.msad.UserAccountControl;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
@@ -117,7 +116,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
 
         // Strong password. Successfully update password and being redirected to the app
         passwordUpdatePage.changePassword("Password1", "Password1");
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
@@ -153,7 +152,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
 
         passwordUpdatePage.assertCurrent();
         passwordUpdatePage.changePassword("Password1", "Password1");
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // Check in LDAP, that johnkeycloak does not have pwdLastSet set to 0
         assertThat(getPwdLastSetOfJohn(), Matchers.greaterThan(0L));
@@ -166,7 +165,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         john.logout();
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 
@@ -202,7 +201,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         john.logout();
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 
@@ -234,7 +233,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
 
         passwordUpdatePage.assertCurrent();
         passwordUpdatePage.changePassword("Password1", "Password1");
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // Check in LDAP, that johnkeycloak does not have pwdLastSet set to 0
         assertThat(getPwdLastSetOfJohn(), Matchers.greaterThan(0L));
@@ -247,7 +246,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         john.logout();
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 
@@ -278,7 +277,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
 
         passwordUpdatePage.assertCurrent();
         passwordUpdatePage.changePassword("Password1", "Password1");
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // Check in LDAP, that pwdLastSet attribute of MSAD user johnkeycloak did not change in MSAD
         Assertions.assertEquals(pwdLastSetFromLDAP, getPwdLastSetOfJohn());
@@ -291,7 +290,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         john.logout();
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // Switch edit mode back to WRITABLE
         testingClient.server().run(session -> {
@@ -312,7 +311,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
 
         // Register user
         registerPage.register("firstName", "lastName", "email3@check.cz", "registeruser3", "Password1", "Password1");
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // Check user enabled in MSAD
         testingClient.server().run(session -> {
@@ -331,7 +330,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         AdminApiUtil.findUserByUsernameId(adminClient.realm("test"), "registeruser3").logout();
         oauth.openLoginForm();
         loginPage.login("registeruser3", "Password1");
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 
@@ -375,7 +374,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         john.logout();
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 
@@ -424,7 +423,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         // Login again. User should be enabled
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // Switch edit mode back to WRITABLE
         testingClient.server().run(session -> {
@@ -483,7 +482,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         // Login again. User should be enabled.
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         testingClient.server().run(session -> {
             // restore import enabled mode in the storage provider.
@@ -527,7 +526,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
         // Login again. User should be enabled.
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     private long getPwdLastSetOfJohn() {

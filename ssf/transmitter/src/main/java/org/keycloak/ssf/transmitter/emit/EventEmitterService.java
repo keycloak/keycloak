@@ -20,12 +20,12 @@ import org.keycloak.ssf.subject.ComplexSubjectId;
 import org.keycloak.ssf.subject.OpaqueSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
 import org.keycloak.ssf.subject.SubjectUserLookup;
-import org.keycloak.ssf.transmitter.SsfTransmitter;
 import org.keycloak.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.ssf.transmitter.subject.SsfSubjectInclusionResolver;
+import org.keycloak.ssf.transmitter.support.SsfUtil;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;
@@ -106,9 +106,16 @@ public class EventEmitterService {
         // routes through the same gate, so a request targeting a
         // non-SSF client surfaces this as a 500 with the message —
         // intentional: the caller's configuration is wrong.
-        if (!isSsfReceiverClient(receiverClient)) {
+        if (!SsfUtil.isReceiverClient(receiverClient)) {
             throw new SsfException("Client '" + receiverClient.getClientId()
                     + "' is not an SSF Receiver");
+        }
+        // A disabled receiver keeps its stream config but is off the air —
+        // mirror the dispatch-path gate (SsfUtil#isReceiverEnabled)
+        // so synthetic emit doesn't deliver to a client the operator has
+        // switched off. Re-enabling the client resumes delivery
+        if (!receiverClient.isEnabled()) {
+            return EmitEventResult.dropped(EmitEventStatus.RECEIVER_DISABLED);
         }
         if (eventTypeAliasOrUri == null || eventTypeAliasOrUri.isBlank()) {
             return EmitEventResult.dropped(EmitEventStatus.INVALID_REQUEST);
@@ -202,12 +209,14 @@ public class EventEmitterService {
         // status enum (invalid_event_data) so callers get one stable
         // identifier that names both the failure category and the
         // offending alias.field — they can localise from there.
-        if (eventPayload instanceof SsfEvent typedEvent) {
-            try {
-                typedEvent.validate();
-            } catch (SsfEventValidationException e) {
-                return EmitEventResult.dropped(EmitEventStatus.INVALID_EVENT_DATA, e.getMessage());
-            }
+        if (!(eventPayload instanceof SsfEvent typedEvent)) {
+            return EmitEventResult.dropped(EmitEventStatus.INVALID_EVENT_DATA, "Event payload is not an ssf event");
+        }
+
+        try {
+            typedEvent.validate();
+        } catch (SsfEventValidationException e) {
+            return EmitEventResult.dropped(EmitEventStatus.INVALID_EVENT_DATA, e.getMessage());
         }
 
         // 6. Build the SET (sub_id verbatim from the emitter) and hand
@@ -225,7 +234,7 @@ public class EventEmitterService {
         log.debugf("SSF synthetic event dispatched. receiverClientId=%s streamId=%s eventType=%s jti=%s",
                 receiverClient.getClientId(), stream.getStreamId(), eventTypeUri, token.getJti());
 
-        return EmitEventResult.dispatched(token.getJti());
+        return EmitEventResult.dispatched(token.getJti(), typedEvent);
     }
 
     /**
@@ -271,13 +280,6 @@ public class EventEmitterService {
             org = orgProvider.getById(opaque.getId());
         }
         return org;
-    }
-
-    protected boolean isSsfReceiverClient(ClientModel client) {
-        // Delegates to the public helper so anyone (REST callers,
-        // extensions, tests) shares one definition of "is this client
-        // an SSF Receiver."
-        return SsfTransmitter.isReceiverClient(client);
     }
 
     protected boolean isStreamEvent(String eventTypeUri) {

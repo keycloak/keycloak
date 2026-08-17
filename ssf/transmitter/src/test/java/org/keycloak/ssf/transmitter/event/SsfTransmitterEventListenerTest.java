@@ -222,6 +222,7 @@ class SsfTransmitterEventListenerTest {
         when(context.getRealm()).thenReturn(realm);
         when(realm.getClientByClientId(RECEIVER_CLIENT_ID)).thenReturn(client);
         when(client.getAttribute(ClientStreamStore.SSF_ENABLED_KEY)).thenReturn("true");
+        when(client.isEnabled()).thenReturn(true);
         when(client.getAttribute(ClientStreamStore.SSF_AUTO_NOTIFY_ON_LOGIN_KEY)).thenReturn("true");
         // SSF_DEFAULT_SUBJECTS_KEY left unstubbed (null) → not broadcast (ALL).
         when(session.users()).thenReturn(users);

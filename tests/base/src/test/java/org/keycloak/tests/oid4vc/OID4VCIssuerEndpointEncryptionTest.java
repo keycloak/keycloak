@@ -39,12 +39,14 @@ import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
+import static org.keycloak.jose.jwe.JWEConstants.RSA1_5;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_REQUEST_ENCRYPTION_REQUIRED;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_RESPONSE_ENCRYPTION_REQUIRED;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.generateJwtProof;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -129,6 +131,33 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                     "oid4vci.request.zip.algorithms", ""
             ));
         }
+    }
+
+    @Test
+    void testRequestCredentialRejectsKeyManagementAlgorithmDowngrade() throws Exception {
+        FlowData flow = prepareFlow();
+        Map<String, Object> jwkPair = generateRsaJwkWithPrivateKey();
+        JWK responseJwk = (JWK) jwkPair.get("jwk");
+
+        CredentialRequest credentialRequest = new CredentialRequest()
+                .setCredentialIdentifier(flow.credentialIdentifier())
+                .setProofs(new Proofs().setJwt(List.of(generateJwtProof(flow.issuer(), flow.cNonce()))))
+                .setCredentialResponseEncryption(new CredentialResponseEncryption().setEnc(A256GCM).setJwk(responseJwk));
+
+        // The issuer advertises this key with an RSA-OAEP family algorithm, never legacy RSA1_5.
+        // Encrypt the same request to the same RSA public key (same kid), but downgrade the JWE
+        // header to alg=RSA1_5.
+        JWK requestEncryptionJwk = flow.issuerMetadata().getCredentialRequestEncryption().getJwks().getKeys()[0];
+        assertNotEquals(RSA1_5, requestEncryptionJwk.getAlgorithm());
+
+        var response = oauth.oid4vc()
+                .credentialRequest(credentialRequest)
+                .bearerToken(flow.token())
+                .encryptRequest(requestEncryptionJwk, false, RSA1_5)
+                .send();
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), response.getError());
     }
 
     @Test

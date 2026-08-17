@@ -183,7 +183,7 @@ public class GroupLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFact
         String groupRetrieversHelpText = "Specify how to retrieve groups of user. LOAD_GROUPS_BY_MEMBER_ATTRIBUTE means that roles of user will be retrieved by sending LDAP query to retrieve all groups where 'member' is our user. " +
                 "GET_GROUPS_FROM_USER_MEMBEROF_ATTRIBUTE means that groups of user will be retrieved from 'memberOf' attribute of our user. Or from the other attribute specified by 'Member-Of LDAP Attribute' . ";
         if (isActiveDirectory) {
-            groupRetrieversHelpText = groupRetrieversHelpText + "LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY is applicable just in Active Directory and it means that groups of user will be retrieved recursively with usage of LDAP_MATCHING_RULE_IN_CHAIN Ldap extension.";
+            groupRetrieversHelpText = groupRetrieversHelpText + "LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY is applicable just in Active Directory and it means that groups of user will be retrieved recursively with usage of LDAP_MATCHING_RULE_IN_CHAIN Ldap extension. When this strategy is selected, listing the members of a group also returns the members of its nested groups.";
         } else {
             // Option should be available just for the Active Directory
             groupRetrievers.remove(GroupMapperConfig.LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY);

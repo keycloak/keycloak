@@ -4,11 +4,11 @@ import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { goToIdentityProviders } from "../utils/sidebar.ts";
 import { clickTableRowItem } from "../utils/table.ts";
+import { SERVER_URL } from "../utils/constants.ts";
 import { clickSaveButton, createDefaultTrustProvider } from "./main.ts";
 
 const alias = "default-trust";
-const addDefaultTrustProviderUrl =
-  "http://localhost:8080/admin/master/console/#/master/identity-providers/default-trust/add";
+const addDefaultTrustProviderUrl = `${SERVER_URL}/admin/master/console/#/master/identity-providers/default-trust/add`;
 const jwksUrl = "https://localhost/realms/test/protocol/openid-connect/certs";
 const jwks = '{"keys":[]}';
 
@@ -34,6 +34,7 @@ test.describe.serial("Default Trust identity provider test", () => {
     await page.goto(addDefaultTrustProviderUrl);
 
     await expect(page.getByTestId("alias")).toHaveValue(alias);
+    await expect(page.getByTestId("config.useX509")).not.toBeChecked();
     await expect(page.getByTestId("config.useJwksUrl")).toBeChecked();
     await expect(page.getByTestId("config.jwksUrl")).toBeVisible();
 
@@ -52,14 +53,17 @@ test.describe.serial("Default Trust identity provider test", () => {
       page.getByTestId("config.publicKeySignatureVerifierKeyId"),
     ).toBeVisible();
     await expect(page.getByTestId("import-certificate-button")).toBeVisible();
+
+    await page.getByTestId("config.useX509").click({ force: true });
+    await expect(page.getByTestId("config.useJwksUrl")).toBeHidden();
+    await expect(page.getByTestId("config.trustedCertificates")).toBeVisible();
+    await expect(
+      page.getByTestId("config.attestationExtendedKeyUsages"),
+    ).toBeVisible();
   });
 
   test("should create and edit a Default Trust provider", async ({ page }) => {
-    await createDefaultTrustProvider(page, jwksUrl);
-    await assertNotificationMessage(
-      page,
-      "Identity provider successfully created",
-    );
+    await createDefaultTrustProvider(page, alias, jwksUrl);
 
     await goToIdentityProviders(page);
     await clickTableRowItem(page, alias);
@@ -70,6 +74,18 @@ test.describe.serial("Default Trust identity provider test", () => {
     await expect(page.getByTestId("config.clientId")).toBeHidden();
     await expect(page.getByTestId("config.clientSecret")).toBeHidden();
     await expect(page.getByTestId("mappers-tab")).toBeHidden();
+
+    await page.getByTestId("config.useX509").click({ force: true });
+    await page
+      .getByTestId("config.trustedCertificates")
+      .fill("stale certificate");
+    await page
+      .getByTestId("config.attestationExtendedKeyUsages")
+      .fill("1.2.3.4");
+    await page.getByTestId("config.useX509").click({ force: true });
+    await clickSaveButton(page);
+
+    await assertNotificationMessage(page, "Provider successfully updated");
 
     await page.getByTestId("config.useJwksUrl").click({ force: true });
     await page.getByTestId("config.publicKeySignatureVerifier").fill(jwks);

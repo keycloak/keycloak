@@ -52,7 +52,11 @@ public class AsyncResponseTransaction implements KeycloakTransaction {
 
     @Override
     public void rollback() {
-        responseToFinishInTransaction.resume(ErrorPage.error(session, null, Response.Status.INTERNAL_SERVER_ERROR, Messages.INTERNAL_SERVER_ERROR));
+        // Preserve the original error response on rollback — the caller already chose the appropriate status.
+        // For success responses, override with 500 since the state they depend on was not committed.
+        responseToFinishInTransaction.resume(responseToSend.getStatus() >= 400
+                ? responseToSend
+                : ErrorPage.error(session, null, Response.Status.INTERNAL_SERVER_ERROR, Messages.INTERNAL_SERVER_ERROR));
     }
 
     @Override
