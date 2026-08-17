@@ -103,6 +103,7 @@ import static java.util.Arrays.asList;
 import static org.keycloak.models.Constants.OIDC_PROTOCOL;
 import static org.keycloak.models.Constants.REALM_MANAGEMENT_CLIENT_ID;
 import static org.keycloak.models.Constants.defaultClients;
+import static org.keycloak.representations.idm.ComponentRepresentation.SECRET_VALUE;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -818,6 +819,21 @@ public class ClientTest {
         MatcherAssert.assertThat("service-account-serviceclient", Matchers.equalTo(userRep.getUsername()));
         // KEYCLOAK-11197 service accounts are no longer created with a placeholder e-mail.
         assertNull(userRep.getEmail());
+    }
+
+    // GH issue 51241
+    @Test
+    public void updateClientMaskedPrivateKeys() {
+        ClientRepresentation client = createClient();
+
+        ClientResource clientRes = managedRealm.admin().clients().get(client.getId());
+        client = clientRes.toRepresentation();
+        client.getAttributes().put("jwt.credential.private.key", "example-private-key");
+        clientRes.update(client);
+
+        // The "jwt.credential.private.key" is present in the event, but masked
+        client.getAttributes().put("jwt.credential.private.key", SECRET_VALUE);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientResourcePath(client.getId()), client, ResourceType.CLIENT);
     }
 
     @Test
