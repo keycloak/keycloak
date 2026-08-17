@@ -271,7 +271,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             try (Response resp = managedRealm.admin().users().create(newUser1)) {
                 Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), resp.getStatus());
                 OAuth2ErrorRepresentation error = resp.readEntity(OAuth2ErrorRepresentation.class);
-                Assertions.assertEquals("unknown_error", error.getError());
+                Assertions.assertEquals("invalid_request", error.getError());
             }
             Assertions.assertTrue(managedRealm.admin().users().search("newuser1").isEmpty());
 

@@ -30,6 +30,13 @@ When calling {project_name}'s experimental AuthZEN endpoints, the caller now nee
 
 The Admin REST API endpoints for listing client sessions (`GET /admin/realms/\{realm}/clients/\{id}/user-sessions` and `GET /admin/realms/\{realm}/clients/\{id}/offline-sessions`) now filter out sessions belonging to users that the caller does not have permission to view. Previously, any caller with the `view-clients` role could see all user sessions for a client, potentially exposing user identities to callers without the `view-users` role. After upgrading, callers without `view-users` permission will see fewer results from these endpoints.
 
+=== HTTP optimized serializers enabled by default
+
+The `http-optimized-serializers` feature is now enabled by default.
+If you enabled it explicitly in a previous release, the `--features=http-optimized-serializers` option is no longer required.
+
+If needed, you can disable it with `--features-disabled=http-optimized-serializers`.
+
 === Redesigned identity provider buttons on the login page
 
 The social identity provider section on the login page has been redesigned with updated icons and layout.
@@ -37,6 +44,20 @@ For details, see the https://github.com/keycloak/keycloak/issues/50992[GitHub is
 Custom login themes that override `social-providers.ftl` or apply CSS targeting the identity provider icons may render incorrectly after upgrading.
 
 Test your custom login theme to ensure the identity provider buttons display correctly.
+
+=== Token introspection `act` claim now uses user ID for `sub`
+
+The token introspection endpoint previously set the `act.sub` field to the impersonator's username. It now uses the impersonator's user ID to be consistent with the `act` claim in JWT access tokens and ID tokens. The `preferred_username` field has been added to the introspection `act` object for consumers that need the impersonator's username.
+
+If you have resource servers that parse `act.sub` from introspection responses and expect a username, update them to read `act.preferred_username` instead.
+
+=== Authorization services claim handling changes
+
+Two changes affect how claims are handled in the authorization services token endpoint:
+
+* Claims with the `kc.` prefix are now reserved for server-controlled evaluation context attributes (such as `kc.time.date_time`, `kc.client.id`, and `kc.realm.name`). User-supplied claims with this prefix, whether pushed via `claim_token` or via the UMA permission ticket, are filtered out before policy evaluation. If your authorization policies rely on custom claims that start with `kc.`, rename them to use a different prefix.
+
+* When both a UMA permission ticket and a `claim_token` contain claims with the same key, ticket claims now take precedence. Previously, `claim_token` claims would silently override ticket claims on collision. This change ensures that claims set by the resource server when creating the permission ticket cannot be overridden by the requesting party.
 
 === Email is no longer marked as verified by other flows
 
@@ -52,6 +73,19 @@ The *Trust Email* setting of identity providers and LDAP federation is not affec
 
 The following sections provide details on deprecated features.
 
+=== Client certificate REST API endpoints for key pair management
+
+Several REST API endpoints under `/admin/realms/\{realm}/clients/\{id}/certificates/\{attr}` that deal with server-side key pair generation or private key storage are now deprecated:
+
+* `POST .../generate` -- Generates a key pair on the server. Clients should generate their own key pairs locally and upload only the public certificate.
+* `POST .../upload` -- Superseded by `POST .../upload-certificate`, which is functionally identical but not deprecated.
+* `POST .../download` -- Downloads a keystore containing the client's private key. Clients should manage their own private keys.
+* `POST .../generate-and-download` -- Generates a key pair and returns the private key as a keystore download. Clients should generate their own key pairs locally.
+
+These endpoints no longer store private keys in the database. The `generate` endpoint returns the private key in the response but only persists the public certificate. The `generate-and-download` endpoint returns the private key in the keystore download but only persists the public certificate.
+
+Use the `POST .../upload-certificate` endpoint to upload a public certificate or JWKS after generating your key pair locally.
+
 === Introspection endpoint 'jwt' extension
 
 Proprietary {project_name} extension to invoke introspection endpoint with the HTTP header `Accept: application/jwt` instead of `Accept: application/json` is
@@ -63,6 +97,16 @@ link:{securing_apps_token_exchange_link}[Token Exchange].
 `org.keycloak.http.HttpResponse#getStatus()` and `org.keycloak.http.HttpResponse#setStatus(int)` are now deprecated.
 These methods are not useful for JAX-RS resource endpoints because the JAX-RS runtime usually determines the final HTTP status from the endpoint return value or exception.
 Use JAX-RS response handling for setting and observing status codes in resource endpoints.
+
+=== Organization invitation link no longer exposed in API responses
+
+The `inviteLink` field in `OrganizationInvitationRepresentation` is deprecated and is no longer returned in Admin REST API responses from the organization invitation endpoints.
+
+Previously, the invitation link containing the signed registration token was stored and returned in the representation. The invitation link is still sent via email to the intended recipient.
+
+The `getInviteLink()` and `setInviteLink()` methods on `OrganizationInvitationRepresentation` are deprecated and will be removed in a future major version. If your code reads `inviteLink` from invitation API responses, it will now receive `null`.
+
+The "Copy invite link" action has also been removed from the admin console invitations management UI.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features

@@ -65,8 +65,8 @@ public class ResourceTypeProvider implements ScimResourceTypeProvider<ResourceTy
     }
 
     @Override
-    public Long count(SearchRequest searchRequest) {
-        return getAll(searchRequest).count();
+    public Long count(SearchRequest searchRequest, int resourceSize) {
+        return (long) resourceSize;
     }
 
     private ResourceType toRepresentation(ScimResourceTypeProviderFactory<? extends ScimResourceTypeProvider<? extends ResourceTypeRepresentation>> factory) {

@@ -77,7 +77,7 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
                 tamperCreateOptions(
                         "opts.publicKey.authenticatorSelection = opts.publicKey.authenticatorSelection || {};" +
                         "opts.publicKey.authenticatorSelection.userVerification = 'discouraged';"),
-                "Failed to register your Passkey.");
+                "User verification is required.");
     }
 
     @Test
@@ -127,7 +127,7 @@ public class WebAuthnPolicyComplianceTest extends AbstractWebAuthnVirtualTest {
 
         webAuthnErrorPage.assertCurrent();
         assertThat(webAuthnErrorPage.getError(),
-                containsString("Failed to register your Passkey."));
+                containsString("Passkey challenge mismatch or expired."));
     }
 
     @Test

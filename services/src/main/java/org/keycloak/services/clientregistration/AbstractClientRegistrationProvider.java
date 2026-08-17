@@ -178,6 +178,18 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client Identifier modified", Response.Status.BAD_REQUEST);
         }
 
+        if (auth.isRegistrationAccessToken()) {
+            String existingProtocol = client.getProtocol();
+            String requestedProtocol = rep.getProtocol();
+            if (requestedProtocol != null && !requestedProtocol.equals(existingProtocol)) {
+                throw new ErrorResponseException(
+                        ErrorCodes.INVALID_CLIENT_METADATA,
+                        "Protocol cannot be changed via registration access token",
+                        Response.Status.BAD_REQUEST
+                );
+            }
+        }
+
         ClientResource.updateClientServiceAccount(session, client, rep.isServiceAccountsEnabled());
         RepresentationToModel.updateClient(rep, client, session);
         RepresentationToModel.updateClientProtocolMappers(rep, client);

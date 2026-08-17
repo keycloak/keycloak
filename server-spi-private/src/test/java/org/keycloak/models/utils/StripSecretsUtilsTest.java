@@ -187,7 +187,15 @@ public class StripSecretsUtilsTest {
 
         rep.setSmtpServer(new HashMap<>());
         rep.getSmtpServer().put("password", "secret");
+        rep.getSmtpServer().put("authTokenClientSecret", "tokenSecret");
         rep.getSmtpServer().put("user", "smtpUser");
+        rep.getSmtpServer().put("host", "mail.example.org");
+        rep.getSmtpServer().put("port", "587");
+        rep.getSmtpServer().put("ssl", "true");
+        rep.getSmtpServer().put("starttls", "false");
+        rep.getSmtpServer().put("from", "keycloak@example.org");
+        rep.getSmtpServer().put("replyTo", "noreply@example.org");
+        rep.getSmtpServer().put("envelopeFrom", "bounce@example.org");
 
         ClientRepresentation client = new ClientRepresentation();
         client.setId("clientId");
@@ -244,9 +252,17 @@ public class StripSecretsUtilsTest {
 
         assertEquals("Master", rep.getRealm());
         assertEquals("realmId", rep.getId());
-        assertEquals(2, rep.getSmtpServer().size());
+        assertEquals(10, rep.getSmtpServer().size());
         assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getSmtpServer().get("password"));
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getSmtpServer().get("authTokenClientSecret"));
         assertEquals("smtpUser", rep.getSmtpServer().get("user"));
+        assertEquals("mail.example.org", rep.getSmtpServer().get("host"));
+        assertEquals("587", rep.getSmtpServer().get("port"));
+        assertEquals("true", rep.getSmtpServer().get("ssl"));
+        assertEquals("false", rep.getSmtpServer().get("starttls"));
+        assertEquals("keycloak@example.org", rep.getSmtpServer().get("from"));
+        assertEquals("noreply@example.org", rep.getSmtpServer().get("replyTo"));
+        assertEquals("bounce@example.org", rep.getSmtpServer().get("envelopeFrom"));
 
         assertEquals(1, rep.getClients().size());
         assertEquals("clientId", rep.getClients().get(0).getId());

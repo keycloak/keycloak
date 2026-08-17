@@ -183,11 +183,12 @@ public class ScimBackedClientQueryTest extends AbstractClientApiV2Test {
         try (var stream = getClientsApi().getClients(
                 new ListOptions()
                         .query("clientId eq \"scim-jpa-2\"")
-                        .fields(Set.of("clientId", "description")))) {
+                        .fields(Set.of("clientId", "description", "uuid")))) {
             List<BaseClientRepresentation> clients = stream.toList();
             assertThat(clients, hasSize(1));
             assertThat(clients.get(0).getClientId(), is("scim-jpa-2"));
             assertThat(clients.get(0).getDescription(), is("scim jpa test client 2"));
+            assertNotNull(clients.get(0).getUuid());
             assertNull(clients.get(0).getDisplayName());
             assertNull(clients.get(0).getEnabled());
         }

@@ -16,6 +16,7 @@ import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.common.MultiValuedAttribute;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.schema.path.Path;
+import org.keycloak.scim.resource.spi.ScimMutabilityException;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -159,7 +160,7 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
             throw new RuntimeException("Failed to convert representation to JSON", e);
         }
 
-        for (Entry<String, Attribute<M, R>> entry : getAttributeMappers().entrySet()) {
+        for (Entry<String, Attribute<M, R>> entry : getAttributes().entrySet()) {
             Attribute<M, R> attribute = entry.getValue();
             String scimName = attribute.getName();
             ObjectNode valueNode = resourceNode;
@@ -184,7 +185,7 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
     }
 
     private void populateResourceType(R resource, M model, List<String> requestedAttributes, List<String> excludedAttributes) {
-        for (Entry<String, Attribute<M, R>> entry : getAttributeMappers().entrySet()) {
+        for (Entry<String, Attribute<M, R>> entry : getAttributes().entrySet()) {
             Attribute<M, R> attribute = entry.getValue();
 
             if (!attribute.isExcluded(this, requestedAttributes, excludedAttributes)) {
@@ -352,6 +353,17 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
         Objects.requireNonNull(model, "model cannot be null");
         Objects.requireNonNull(attribute, "attribute cannot be null");
         Objects.requireNonNull(operation, "operation cannot be null");
+
+        if (attribute.isImmutable() && operation != SET) {
+            String modelAttrName = attribute.getModelAttributeName();
+            if (modelAttrName == null || getAttributeValue(model, modelAttrName) != null) {
+                throw new ScimMutabilityException(
+                        "Attribute '" + attribute.getName() + "' is immutable");
+            }
+            if (operation == REMOVE) {
+                return;
+            }
+        }
 
         JsonNode jsonValue = toJsonNode(value);
 

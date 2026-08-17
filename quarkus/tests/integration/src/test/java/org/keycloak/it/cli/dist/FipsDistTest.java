@@ -77,7 +77,7 @@ public class FipsDistTest {
         runOnFipsEnabledDistribution(runner, () -> {
             runner.getDistribution(RawKeycloakDistribution.class).copyOrReplaceFileFromClasspath("/server.keystore", Path.of("conf", "server.keystore"));
             CLIResult cliResult = runner.run("start", "--fips-mode=strict");
-            cliResult.assertMessage("ERROR: java.lang.IllegalArgumentException: malformed sequence");
+            cliResult.assertMessage("ERROR: malformed sequence");
         });
     }
 
@@ -124,7 +124,7 @@ public class FipsDistTest {
         runOnFipsEnabledDistribution(runner, () -> {
             runner.getDistribution(RawKeycloakDistribution.class).copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.keystore"));
             CLIResult cliResult = runner.run("start", "--fips-mode=strict", "--https-key-store-password=passwordpassword");
-            cliResult.assertMessage("ERROR: java.lang.IllegalArgumentException: malformed sequence");
+            cliResult.assertMessage("ERROR: malformed sequence");
         });
     }
 
@@ -147,7 +147,7 @@ public class FipsDistTest {
 
             CLIResult cliResult = runner.run("--verbose", "start", "--fips-mode=non-strict", "--https-key-store-password=passwordpassword",
                     "--https-trust-store-file=" + truststorePath, "--https-trust-store-password=passwordpassword");
-            cliResult.assertMessage("Unable to determine 'https-trust-store-type' automatically. Adjust the file extension or specify the property.");
+            cliResult.assertError("Unable to determine 'https-trust-store-type' automatically. Adjust the file extension or specify the property.");
             runner.stop();
 
             rawDist.copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.p12"));

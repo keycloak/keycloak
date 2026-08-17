@@ -64,20 +64,23 @@ public abstract class AbstractScimTest {
         UPConfig originalConfig = configuration.clone();
         realm.cleanup().add(realm -> realm.users().userProfile().update(originalConfig));
 
-        configuration.addOrReplaceAttribute(new UPAttribute("department", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ":department")));
-        configuration.addOrReplaceAttribute(new UPAttribute("division", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ":division")));
-        configuration.addOrReplaceAttribute(new UPAttribute("costCenter", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ":costCenter")));
-        configuration.addOrReplaceAttribute(new UPAttribute("employeeNumber", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ":employeeNumber")));
-        configuration.addOrReplaceAttribute(new UPAttribute("organization", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ":organization")));
-        configuration.addOrReplaceAttribute(new UPAttribute("manager", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ":manager.value")));
-        configuration.addOrReplaceAttribute(new UPAttribute("managerName", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ":manager.displayName")));
+        UPAttributePermissions adminPermissions = new UPAttributePermissions(
+                Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN));
+
+        for (String[] attr : new String[][] {
+                {"department", ENTERPRISE_USER_SCHEMA + ":department"},
+                {"division", ENTERPRISE_USER_SCHEMA + ":division"},
+                {"costCenter", ENTERPRISE_USER_SCHEMA + ":costCenter"},
+                {"employeeNumber", ENTERPRISE_USER_SCHEMA + ":employeeNumber"},
+                {"organization", ENTERPRISE_USER_SCHEMA + ":organization"},
+                {"manager", ENTERPRISE_USER_SCHEMA + ":manager.value"},
+                {"managerName", ENTERPRISE_USER_SCHEMA + ":manager.displayName"}
+        }) {
+            UPAttribute upAttribute = new UPAttribute(attr[0], Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, attr[1]));
+            upAttribute.setPermissions(adminPermissions);
+            configuration.addOrReplaceAttribute(upAttribute);
+        }
+
         realm.admin().users().userProfile().update(configuration);
     }
 

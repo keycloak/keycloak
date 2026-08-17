@@ -101,6 +101,7 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
         ClientSessionContext clientSessionCtx = validation.clientSessionCtx;
         UserSessionModel userSession = validation.userSession;
 
+        event.session(userSession);
         tokenManager.validateSelectedOrganization(session, oldRefreshToken, user);
 
         try {
