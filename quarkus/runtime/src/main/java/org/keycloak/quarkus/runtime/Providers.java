@@ -17,16 +17,32 @@
 
 package org.keycloak.quarkus.runtime;
 
+import java.util.Collection;
+import java.util.Set;
+
 import org.keycloak.provider.KeycloakDeploymentInfo;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderManager;
 
 public final class Providers {
 
     public static ProviderManager getProviderManager(ClassLoader classLoader) {
+        return getProviderManager(classLoader, Set.of());
+    }
+
+    /**
+     * @param providerFactoryClasses provider factory classes discovered at build time via the
+     * {@link org.keycloak.provider.KeycloakProvider} annotation, registered in addition to
+     * {@link java.util.ServiceLoader} discovery
+     */
+    public static ProviderManager getProviderManager(ClassLoader classLoader,
+            Collection<Class<? extends ProviderFactory>> providerFactoryClasses) {
         KeycloakDeploymentInfo keycloakDeploymentInfo = KeycloakDeploymentInfo.create()
                 .name("classpath")
                 .services()
                 .themeResources();
+
+        providerFactoryClasses.forEach(keycloakDeploymentInfo::addProviderFactoryClass);
 
         return new ProviderManager(keycloakDeploymentInfo, classLoader);
     }

@@ -17,10 +17,13 @@
 
 package org.keycloak.provider;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.Set;
 
 import org.keycloak.theme.ClasspathThemeProviderFactory;
 import org.keycloak.theme.ClasspathThemeResourceProviderFactory;
@@ -56,9 +59,26 @@ public class DefaultProviderLoader implements ProviderLoader {
     @Override
     public List<ProviderFactory> load(Spi spi) {
         List<ProviderFactory> list = new LinkedList<>();
+        // Factory classes registered directly on the deployment info (discovered at build
+        // time via the @KeycloakProvider annotation scan), then ServiceLoader for anything
+        // not yet annotated (including third-party providers that ship META-INF/services
+        // descriptors). Dedup is by factory Class so a provider listed in both sources is
+        // instantiated only once.
+        Set<Class<?>> seen = new HashSet<>();
+        Class<? extends ProviderFactory> spiFactoryClass = spi.getProviderFactoryClass();
+        for (Class<? extends ProviderFactory> factoryClass : info.getProviderFactoryClasses()) {
+            if (!spiFactoryClass.isAssignableFrom(factoryClass)) {
+                continue;
+            }
+            if (seen.add(factoryClass)) {
+                list.add(instantiate(factoryClass));
+            }
+        }
         if (info.hasServices()) {
-            for (ProviderFactory f : ServiceLoader.load(spi.getProviderFactoryClass(), classLoader)) {
-                list.add(f);
+            for (ProviderFactory f : ServiceLoader.load(spiFactoryClass, classLoader)) {
+                if (seen.add(f.getClass())) {
+                    list.add(f);
+                }
             }
         }
 
@@ -73,6 +93,18 @@ public class DefaultProviderLoader implements ProviderLoader {
         }
 
         return list;
+    }
+
+    private static ProviderFactory<?> instantiate(Class<? extends ProviderFactory> factoryClass) {
+        try {
+            return factoryClass.getDeclaredConstructor().newInstance();
+        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException e) {
+            throw new IllegalStateException("Cannot instantiate provider factory " + factoryClass.getName()
+                    + " — a public no-arg constructor is required", e);
+        } catch (InvocationTargetException e) {
+            throw new IllegalStateException("Provider factory " + factoryClass.getName()
+                    + " threw during instantiation", e.getCause());
+        }
     }
 
 }

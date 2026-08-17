@@ -2,8 +2,10 @@ package org.keycloak.provider;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class KeycloakDeploymentInfo {
 
@@ -12,9 +14,10 @@ public class KeycloakDeploymentInfo {
     private boolean themes;
     private boolean themeResources;
     private Map<Class<? extends Spi>, List<ProviderFactory>> providers = new HashMap<>();
+    private Set<Class<? extends ProviderFactory>> providerFactoryClasses = new LinkedHashSet<>();
 
     public boolean isProvider() {
-        return services || themes || themeResources || !providers.isEmpty();
+        return services || themes || themeResources || !providers.isEmpty() || !providerFactoryClasses.isEmpty();
     }
 
     public boolean hasServices() {
@@ -78,5 +81,19 @@ public class KeycloakDeploymentInfo {
 
     public Map<Class<? extends Spi>, List<ProviderFactory>> getProviders() {
         return providers;
+    }
+
+    /**
+     * Registers a {@link ProviderFactory} class without associating it with a {@link Spi} yet.
+     * The SPI is resolved by assignability when factories are loaded for a given SPI.
+     * Used for provider factories discovered at build time via the
+     * {@link KeycloakProvider} annotation instead of a {@code META-INF/services} descriptor.
+     */
+    public void addProviderFactoryClass(Class<? extends ProviderFactory> factoryClass) {
+        providerFactoryClasses.add(factoryClass);
+    }
+
+    public Set<Class<? extends ProviderFactory>> getProviderFactoryClasses() {
+        return providerFactoryClasses;
     }
 }

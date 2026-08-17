@@ -666,13 +666,14 @@ class KeycloakProcessor {
     @Consume(ConfigBuildItem.class)
     @Consume(CryptoProviderInitBuildItem.class)
     @Produce(KeycloakSessionFactoryPreInitBuildItem.class)
-    SyntheticBeanBuildItem configureKeycloakSessionFactory(KeycloakRecorder recorder, List<PersistenceXmlDescriptorBuildItem> descriptors) {
+    SyntheticBeanBuildItem configureKeycloakSessionFactory(KeycloakRecorder recorder, List<PersistenceXmlDescriptorBuildItem> descriptors,
+            ProviderRegistryBuildItem providerRegistry) {
         Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories = new HashMap<>();
         Map<Class<? extends Provider>, String> defaultProviders = new HashMap<>();
         Map<String, ProviderFactory> preConfiguredProviders = new HashMap<>();
 
-        for (Entry<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> entry : loadFactories(preConfiguredProviders)
-                .entrySet()) {
+        for (Entry<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> entry : loadFactories(preConfiguredProviders,
+                providerRegistry.getProviderFactoryClasses()).entrySet()) {
             Spi spi = entry.getKey();
 
             checkProviders(spi, entry.getValue(), defaultProviders);
@@ -942,9 +943,9 @@ class KeycloakProcessor {
     }
 
     private Map<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> loadFactories(
-            Map<String, ProviderFactory> preConfiguredProviders) {
+            Map<String, ProviderFactory> preConfiguredProviders, Set<Class<? extends ProviderFactory>> providerFactoryClasses) {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        ProviderManager pm = getProviderManager(classLoader);
+        ProviderManager pm = getProviderManager(classLoader, providerFactoryClasses);
         Map<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> factories = new HashMap<>();
 
         for (Spi spi : pm.loadSpis()) {
