@@ -11,7 +11,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.testframework.admin.AdminClientFactory;
-import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -47,9 +46,6 @@ public class ClientSecretVisibilityTest {
     @InjectAdminClientFactory
     AdminClientFactory adminClientFactory;
 
-    @InjectAdminClient
-    Keycloak adminClient;
-
     private String confidentialClientUuid;
 
     @BeforeEach
@@ -62,15 +58,11 @@ public class ClientSecretVisibilityTest {
     @Test
     public void viewOnly_getClient_secretIsMasked() {
         try (Keycloak viewClient = createViewOnlyClient()) {
-            try {
-                ClientRepresentation rep = viewClient.realm(realm.getName())
-                        .clients().get(confidentialClientUuid)
-                        .toRepresentation();
-                assertThat(rep.getSecret(), is(not(CONFIDENTIAL_CLIENT_SECRET)));
-                assertThat(rep.getSecret(), anyOf(nullValue(), is(ComponentRepresentation.SECRET_VALUE)));
-            } catch (ForbiddenException expected) {
-                    // Expected -- view-only users must not access the dedicated secret endpoint
-            }
+            ClientRepresentation rep = viewClient.realm(realm.getName())
+                    .clients().get(confidentialClientUuid)
+                    .toRepresentation();
+            assertThat(rep.getSecret(), is(not(CONFIDENTIAL_CLIENT_SECRET)));
+            assertThat(rep.getSecret(), anyOf(nullValue(), is(ComponentRepresentation.SECRET_VALUE)));
         }
     }
 

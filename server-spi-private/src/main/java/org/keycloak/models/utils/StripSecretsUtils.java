@@ -225,17 +225,13 @@ public class StripSecretsUtils {
         return user;
     }
 
-    protected static ClientRepresentation stripClient(ClientRepresentation rep) {
+    public static ClientRepresentation stripClient(ClientRepresentation rep) {
         if (rep.getSecret() != null) {
             rep.setSecret(maskNonVaultValue(rep.getSecret()));
         }
 
         stripFromMap(rep.getAttributes(), ClientSecretConstants.CLIENT_ROTATED_SECRET);
         return rep;
-    }
-
-    public static ClientRepresentation strip(ClientRepresentation rep) {
-        return stripClient(rep);
     }
 
     private static ComponentExportRepresentation stripComponentExport(KeycloakSession session, String providerType, ComponentExportRepresentation rep) {

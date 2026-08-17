@@ -127,7 +127,7 @@ public class ClientsResource {
                 getClientModels(clientId, viewableOnly, search, searchQuery, firstResult, maxResults), c -> {
                     ClientRepresentation representation = ModelToRepresentation.toRepresentation(c, session);
                     if (!auth.clients().canManage(c)) {
-                        StripSecretsUtils.strip(representation);
+                        StripSecretsUtils.stripClient(representation);
                     }
                     representation.setAccess(auth.clients().getAccess(c));
                     return representation;

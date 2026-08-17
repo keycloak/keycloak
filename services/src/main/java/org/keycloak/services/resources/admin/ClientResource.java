@@ -208,7 +208,7 @@ public class ClientResource {
         ClientRepresentation representation = ModelToRepresentation.toRepresentation(client, session);
 
         if (!auth.clients().canManage(client)) {
-            StripSecretsUtils.strip(representation);
+            StripSecretsUtils.stripClient(representation);
         }
 
         if (!auth.clients().canViewClientScopes()) {
