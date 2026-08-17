@@ -4,6 +4,8 @@ import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.TestProvider;
+import org.keycloak.it.provider.annotation.AbstractProviderFactory;
+import org.keycloak.it.provider.annotation.AbstractProviderFactoryTestProvider;
 import org.keycloak.it.provider.annotation.AnnotatedEventListenerProviderFactory;
 import org.keycloak.it.provider.annotation.AnnotatedEventListenerTestProvider;
 import org.keycloak.it.provider.annotation.NoPublicConstructorProviderFactory;
@@ -31,6 +33,14 @@ public class KeycloakProviderAnnotationDistTest {
     void annotatedProviderIsDiscoveredWithoutServiceDescriptor(CLIResult cliResult) {
         cliResult.assertMessage(AnnotatedEventListenerProviderFactory.INIT_MESSAGE);
         cliResult.assertStartedDevMode();
+    }
+
+    @Test
+    @TestProvider(AbstractProviderFactoryTestProvider.class)
+    @Launch({ "build" })
+    void buildFailsForAbstractAnnotatedClass(CLIResult cliResult) {
+        cliResult.assertError("@" + KeycloakProvider.class.getSimpleName() + " class "
+                + AbstractProviderFactory.class.getName() + " must be a public, non-abstract class");
     }
 
     @Test

@@ -46,6 +46,7 @@ import org.jboss.logging.Logger;
  * <ul>
  *   <li>the annotation target must be a class (the annotation is already {@code @Target(TYPE)},
  *       so a non-class target indicates an illegal state),</li>
+ *   <li>the class must be a public, non-abstract class (no interface, enum or annotation),</li>
  *   <li>the class must declare a public no-arg constructor (Jandex check).</li>
  * </ul>
  * The {@link ProviderFactory} assignability check happens inside
@@ -73,6 +74,10 @@ class ProviderRegistryProcessor {
             }
 
             ClassInfo classInfo = target.asClass();
+            if (!isPublicConcreteClass(classInfo)) {
+                throw new IllegalStateException("@" + KeycloakProvider.class.getSimpleName()
+                        + " class " + classInfo.name() + " must be a public, non-abstract class");
+            }
             if (!hasPublicNoArgConstructor(classInfo)) {
                 throw new IllegalStateException("@" + KeycloakProvider.class.getSimpleName()
                         + " class " + classInfo.name() + " must have a public no-arg constructor");
@@ -100,6 +105,12 @@ class ProviderRegistryProcessor {
             }
         }
         return classes;
+    }
+
+    private static boolean isPublicConcreteClass(ClassInfo classInfo) {
+        short flags = classInfo.flags();
+        return !classInfo.isInterface() && !classInfo.isEnum() && !classInfo.isAnnotation()
+                && Modifier.isPublic(flags) && !Modifier.isAbstract(flags);
     }
 
     private static boolean hasPublicNoArgConstructor(ClassInfo classInfo) {

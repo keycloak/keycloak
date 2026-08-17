@@ -75,11 +75,12 @@ public class DefaultProviderLoader implements ProviderLoader {
             }
         }
         if (info.hasServices()) {
-            for (ProviderFactory f : ServiceLoader.load(spiFactoryClass, classLoader)) {
-                if (seen.add(f.getClass())) {
-                    list.add(f);
-                }
-            }
+            // Provider.type() resolves the class without instantiating it, so a factory that
+            // was already registered above is never constructed a second time.
+            ServiceLoader.load(spiFactoryClass, classLoader).stream()
+                    .filter(provider -> seen.add(provider.type()))
+                    .map(ServiceLoader.Provider::get)
+                    .forEach(list::add);
         }
 
         if (spi.getClass().equals(ThemeResourceSpi.class) && info.hasThemeResources()) {
@@ -100,7 +101,7 @@ public class DefaultProviderLoader implements ProviderLoader {
             return factoryClass.getDeclaredConstructor().newInstance();
         } catch (NoSuchMethodException | InstantiationException | IllegalAccessException e) {
             throw new IllegalStateException("Cannot instantiate provider factory " + factoryClass.getName()
-                    + " — a public no-arg constructor is required", e);
+                    + " — it must be a public, concrete class with a public no-arg constructor", e);
         } catch (InvocationTargetException e) {
             throw new IllegalStateException("Provider factory " + factoryClass.getName()
                     + " threw during instantiation", e.getCause());
