@@ -151,7 +151,7 @@ export default function WorkflowsSection() {
               title: t("copy"),
               onRowClick: (workflow) => {
                 setSelectedWorkflow(workflow);
-                navigate(
+                void navigate(
                   toWorkflowDetail({ realm, mode: "copy", id: workflow.id! }),
                 );
               },
@@ -165,7 +165,9 @@ export default function WorkflowsSection() {
               instructions={t("emptyWorkflowsInstructions")}
               primaryActionText={t("createWorkflow")}
               onPrimaryAction={() =>
-                navigate(toWorkflowDetail({ realm, mode: "create", id: "new" }))
+                void navigate(
+                  toWorkflowDetail({ realm, mode: "create", id: "new" }),
+                )
               }
             />
           }

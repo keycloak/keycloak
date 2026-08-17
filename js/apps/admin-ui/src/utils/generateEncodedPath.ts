@@ -35,5 +35,8 @@ export function generateEncodedPath<Path extends string>(
     encodedParams[pathKey] = encodeURIComponent(encodedParams[pathKey]);
   }
 
-  return generatePath(originalPath, encodedParams);
+  return generatePath(
+    originalPath,
+    encodedParams as Parameters<typeof generatePath<Path>>[1],
+  );
 }
