@@ -270,6 +270,18 @@ public class SamlService extends AuthorizationEndpointBase {
             }
 
             session.getContext().setClient(client);
+
+            SamlClient samlClient = new SamlClient(client);
+            try {
+                if(samlClient.requiresClientSignature()) {
+                    verifySignature(holder,client);
+                }
+            } catch (VerificationException e) {
+                SamlService.logger.error("LogoutResponse signature validation failed");
+                event.error(Errors.INVALID_SIGNATURE);
+                return error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
+            }
+
             logger.debug("logout response");
             Response response = authManager.browserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);
             event.success();
