@@ -16,19 +16,25 @@
  */
 package org.keycloak.tests.admin.client.v2;
 
+import java.io.ByteArrayInputStream;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientTypeRepresentation;
+import org.keycloak.representations.idm.ClientTypesRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -329,6 +335,126 @@ public class InteropTest extends AbstractClientApiV2Test {
     }
 
     @Test
+    public void createWithV2AppliesClientType() throws Exception {
+        RealmResource realm = adminClient.realm(getRealmName());
+        OIDCClientRepresentation client = new OIDCClientRepresentation("v2-client-with-type");
+        client.setType(ClientTypeManager.SERVICE_ACCOUNT);
+
+        try (var response = getClientsApi().createClient(client)) {
+            assertThat(response.getStatus(), is(201));
+        }
+
+        ClientRepresentation created = realm.clients().findByClientId(client.getClientId()).get(0);
+        try {
+            created = realm.clients().get(created.getId()).toRepresentation();
+            assertThat(created.getType(), is(ClientTypeManager.SERVICE_ACCOUNT));
+            assertThat(created.isStandardFlowEnabled(), is(false));
+            assertThat(created.isServiceAccountsEnabled(), is(true));
+
+            BaseClientRepresentation v2Client = getClientsApi().client(client.getClientId()).getClient();
+            assertThat(v2Client.getType(), is(ClientTypeManager.SERVICE_ACCOUNT));
+
+            getClientsApi().client(client.getClientId()).patchClient(new ByteArrayInputStream(
+                    mapper.writeValueAsBytes(Map.of("description", "updated description"))));
+            ClientRepresentation patched = realm.clients().get(created.getId()).toRepresentation();
+            assertThat(patched.getDescription(), is("updated description"));
+            assertThat(patched.isServiceAccountsEnabled(), is(true));
+        } finally {
+            realm.clients().get(created.getId()).remove();
+        }
+    }
+
+    @Test
+    public void createMinimalSamlWithV2PreservesClientTypeFields() {
+        RealmResource realm = adminClient.realm(getRealmName());
+        ClientTypesRepresentation originalTypes = realm.clientTypes().getClientTypes();
+        ClientTypeRepresentation.PropertyConfig signDocuments = new ClientTypeRepresentation.PropertyConfig();
+        signDocuments.setApplicable(true);
+        signDocuments.setValue(true);
+        ClientTypeRepresentation samlType = new ClientTypeRepresentation();
+        samlType.setName("signed-saml");
+        samlType.setProvider("default");
+        samlType.setConfig(Map.of(SAML_SERVER_SIGNATURE, signDocuments));
+
+        ClientTypesRepresentation updatedTypes = realm.clientTypes().getClientTypes();
+        updatedTypes.setRealmClientTypes(List.of(samlType));
+        realm.clientTypes().updateClientTypes(updatedTypes);
+
+        SAMLClientRepresentation client = new SAMLClientRepresentation();
+        client.setClientId("v2-minimal-typed-saml-client");
+        client.setType(samlType.getName());
+
+        try {
+            try (var response = getClientsApi().createClient(client)) {
+                assertThat(response.getStatus(), is(201));
+            }
+
+            ClientRepresentation created = realm.clients().findByClientId(client.getClientId()).get(0);
+            assertThat(created.getAttributes().get(SAML_SERVER_SIGNATURE), is("true"));
+
+            SAMLClientRepresentation conflictingClient = new SAMLClientRepresentation();
+            conflictingClient.setClientId("v2-explicit-typed-saml-client");
+            conflictingClient.setType(samlType.getName());
+            conflictingClient.setSignDocuments(false);
+            try (var response = getClientsApi().createClient(conflictingClient)) {
+                assertThat(response.getStatus(), is(400));
+            }
+        } finally {
+            realm.clients().findByClientId(client.getClientId()).forEach(c -> realm.clients().get(c.getId()).remove());
+            realm.clientTypes().updateClientTypes(originalTypes);
+        }
+    }
+
+    @Test
+    public void typedClientCreationAndExplicitEmptyPatchRemainDistinct() throws Exception {
+        RealmResource realm = adminClient.realm(getRealmName());
+        OIDCClientRepresentation client = new OIDCClientRepresentation("v2-mutable-typed-client");
+        client.setType("oidc");
+        client.setDescription("description");
+        client.setDisplayName("display name");
+        client.setAppUrl("https://client.example.com");
+        client.setRedirectUris(Set.of("https://client.example.com/callback"));
+        client.setWebOrigins(Set.of("https://client.example.com"));
+        client.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.STANDARD));
+        client.setEnabled(true);
+        OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
+        auth.setMethod("client-secret");
+        auth.setSecret("test-secret");
+        client.setAuth(auth);
+
+        try (var response = getClientsApi().createClient(client)) {
+            assertThat(response.getStatus(), is(201));
+        }
+
+        ClientRepresentation created = realm.clients().findByClientId(client.getClientId()).get(0);
+        try {
+            Map<String, Object> patch = new HashMap<>();
+            patch.put("enabled", null);
+            patch.put("description", null);
+            patch.put("displayName", null);
+            patch.put("appUrl", null);
+            patch.put("auth", null);
+            patch.put("redirectUris", null);
+            patch.put("webOrigins", null);
+            patch.put("loginFlows", null);
+            getClientsApi().client(client.getClientId()).patchClient(
+                    new ByteArrayInputStream(mapper.writeValueAsBytes(patch)));
+
+            ClientRepresentation updated = realm.clients().get(created.getId()).toRepresentation();
+            assertThat(updated.isEnabled(), is(false));
+            assertThat(updated.getDescription(), is((String) null));
+            assertThat(updated.getName(), is((String) null));
+            assertThat(updated.getBaseUrl(), is((String) null));
+            assertThat(updated.getRedirectUris(), is(List.of()));
+            assertThat(updated.getWebOrigins(), is(List.of()));
+            assertThat(updated.isStandardFlowEnabled(), is(false));
+            assertThat(updated.isPublicClient(), is(true));
+        } finally {
+            realm.clients().get(created.getId()).remove();
+        }
+    }
+
+    @Test
     public void createMinimalSamlWithV2AppliesProtocolDefaults() {
         RealmResource realm = adminClient.realm(getRealmName());
         SAMLClientRepresentation client = new SAMLClientRepresentation();
@@ -500,7 +626,7 @@ public class InteropTest extends AbstractClientApiV2Test {
     public static class ServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.CLIENT_ADMIN_API_V2);
+            return config.features(Profile.Feature.CLIENT_ADMIN_API_V2, Profile.Feature.CLIENT_TYPES);
         }
     }
 }

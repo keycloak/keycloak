@@ -114,6 +114,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
     }
 
     public void setForceNameIdFormat(Boolean forceNameIdFormat) {
+        markFieldAsExplicitlySet("forceNameIdFormat");
         this.forceNameIdFormat = forceNameIdFormat;
     }
 
@@ -122,6 +123,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
     }
 
     public void setIncludeAuthnStatement(Boolean includeAuthnStatement) {
+        markFieldAsExplicitlySet("includeAuthnStatement");
         this.includeAuthnStatement = includeAuthnStatement;
     }
 
@@ -130,6 +132,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
     }
 
     public void setSignDocuments(Boolean signDocuments) {
+        markFieldAsExplicitlySet("signDocuments");
         this.signDocuments = signDocuments;
     }
 
@@ -138,6 +141,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
     }
 
     public void setSignAssertions(Boolean signAssertions) {
+        markFieldAsExplicitlySet("signAssertions");
         this.signAssertions = signAssertions;
     }
 
@@ -146,6 +150,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
     }
 
     public void setClientSignatureRequired(Boolean clientSignatureRequired) {
+        markFieldAsExplicitlySet("clientSignatureRequired");
         this.clientSignatureRequired = clientSignatureRequired;
     }
 
@@ -154,6 +159,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
     }
 
     public void setForcePostBinding(Boolean forcePostBinding) {
+        markFieldAsExplicitlySet("forcePostBinding");
         this.forcePostBinding = forcePostBinding;
     }
 
@@ -162,6 +168,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
     }
 
     public void setFrontChannelLogout(Boolean frontChannelLogout) {
+        markFieldAsExplicitlySet("frontChannelLogout");
         this.frontChannelLogout = frontChannelLogout;
     }
 
@@ -170,6 +177,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
     }
 
     public void setSignatureAlgorithm(SignatureAlgorithm signatureAlgorithm) {
+        markFieldAsExplicitlySet("signatureAlgorithm");
         this.signatureAlgorithm = signatureAlgorithm;
     }
 
@@ -178,6 +186,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
     }
 
     public void setSignatureCanonicalizationMethod(String signatureCanonicalizationMethod) {
+        markFieldAsExplicitlySet("signatureCanonicalizationMethod");
         this.signatureCanonicalizationMethod = signatureCanonicalizationMethod;
     }
 
@@ -186,6 +195,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
     }
 
     public void setSigningCertificate(String signingCertificate) {
+        markFieldAsExplicitlySet("signingCertificate");
         this.signingCertificate = signingCertificate;
     }
 
@@ -194,6 +204,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
     }
 
     public void setAllowEcpFlow(Boolean allowEcpFlow) {
+        markFieldAsExplicitlySet("allowEcpFlow");
         this.allowEcpFlow = allowEcpFlow;
     }
 

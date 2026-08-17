@@ -36,6 +36,7 @@ public abstract class BaseClientModelSchema<R extends BaseClientRepresentation>
         map.put("protocol",         stringAttr("protocol",         "protocol",              BaseClientRepresentation::setProtocol,       ClientModel::setProtocol));
         map.put("uuid",             stringAttr("uuid",             "id",                    BaseClientRepresentation::setUuid,           null));  // read-only
         map.put("clientId",         stringAttr("clientId",         "clientId",              BaseClientRepresentation::setClientId,       ClientModel::setClientId));
+        map.put("type",             stringAttr("type",             "type",                  BaseClientRepresentation::setType,           null));
         map.put("enabled",          boolAttr  ("enabled",          "enabled",               BaseClientRepresentation::setEnabled,        (model, v) -> model.setEnabled(Boolean.TRUE.equals(v))));
         map.put("description",      stringAttr("description",      "description",           BaseClientRepresentation::setDescription,    ClientModel::setDescription));
         map.put("displayName",      stringAttr("displayName",      "name",                  BaseClientRepresentation::setDisplayName,    ClientModel::setName));
@@ -189,6 +190,7 @@ public abstract class BaseClientModelSchema<R extends BaseClientRepresentation>
             case "protocol"              -> model.getProtocol();
             case "id"                    -> model.getId();
             case "clientId"              -> model.getClientId();
+            case "type"                  -> model.getType();
             case "enabled"               -> model.isEnabled();
             case "description"           -> model.getDescription();
             case "name"                  -> model.getName();
@@ -227,6 +229,7 @@ public abstract class BaseClientModelSchema<R extends BaseClientRepresentation>
     public R fromModel(ClientModel model, List<String> attributes) {
         R rep = createRepresentation();
         populate(rep, model, attributes, null);
+        rep.clearExplicitlySetFields();
         return rep;
     }
 
@@ -238,6 +241,7 @@ public abstract class BaseClientModelSchema<R extends BaseClientRepresentation>
             case "protocol"         -> rep.getProtocol();
             case "uuid"             -> rep.getUuid();
             case "clientId"         -> rep.getClientId();
+            case "type"             -> rep.getType();
             case "enabled"          -> rep.getEnabled();
             case "description"      -> rep.getDescription();
             case "displayName"      -> rep.getDisplayName();
@@ -266,7 +270,14 @@ public abstract class BaseClientModelSchema<R extends BaseClientRepresentation>
      */
     @Override
     public void populate(ClientModel model, R representation) {
+        populate(model, representation, Set.of());
+    }
+
+    public void populate(ClientModel model, R representation, Set<String> excludedFields) {
         for (Attribute<ClientModel, R> attribute : getAttributes().values()) {
+            if (excludedFields.contains(attribute.getName())) {
+                continue;
+            }
             Object value = getRepresentationValue(representation, attribute.getName());
             attribute.setModelAttribute(model, value);
         }

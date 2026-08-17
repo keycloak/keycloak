@@ -81,6 +81,11 @@ public class OIDCClientModelMapperTest {
             assertThat(oidcRep.getDisplayName(), is("Test Client"));
             assertThat(oidcRep.getAppUrl(), is("http://localhost:8080"));
             assertThat(oidcRep.getRedirectUris(), contains("http://localhost:8080/callback"));
+            assertThat(oidcRep.isFieldExplicitlySet("type"), is(false));
+            assertThat(oidcRep.isFieldExplicitlySet("loginFlows"), is(false));
+
+            oidcRep.setType(null);
+            assertThat(oidcRep.isFieldExplicitlySet("type"), is(true));
         } finally {
             realm.removeClient(clientModel.getId());
         }

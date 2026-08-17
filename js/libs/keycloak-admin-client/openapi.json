@@ -40,6 +40,11 @@
             "maxLength" : 255,
             "description" : "ID uniquely identifying this client. Validation: must not be blank; size must be between 1 and 255"
           },
+          "type" : {
+            "type" : "string",
+            "maxLength" : 255,
+            "description" : "Client type. Validation: size must be between 0 and 255; on update/on patch: type cannot be changed for an existing client"
+          },
           "displayName" : {
             "type" : "string",
             "maxLength" : 255,
