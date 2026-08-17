@@ -58,6 +58,7 @@ export const OrganizationModal = ({
             await onAdd(selectedRows);
             onClose();
           }}
+          isDisabled={selectedRows.length === 0}
         >
           {t(mode)}
         </Button>,
