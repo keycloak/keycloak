@@ -5,6 +5,7 @@ import java.lang.reflect.Constructor;
 import org.keycloak.testframework.ui.page.AbstractPage;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.support.PageFactory;
 
 public class PageUtils {
@@ -27,7 +28,15 @@ public class PageUtils {
     }
 
     public String getCurrentPageId() {
-        return managed.findElement(By.xpath("//body")).getAttribute("data-page-id");
+        try {
+            return managed.findElement(By.xpath("//body")).getAttribute("data-page-id");
+        } catch (WebDriverException e) {
+
+            if (e.getMessage() != null && e.getMessage().contains("unhandled inspector error")) {
+                return null;
+            }
+            throw e;
+        }
     }
 
     public String getTitle() {

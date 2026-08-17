@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,13 +15,17 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.webauthn.registration.passwordless;
+package org.keycloak.tests.webauthn.registration.passwordless;
 
-import org.keycloak.testsuite.webauthn.registration.WebAuthnOtherSettingsTest;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.webauthn.registration.WebAuthnOtherSettingsTest;
 
 /**
+ * Migrated from {@code org.keycloak.testsuite.webauthn.registration.passwordless.PwdLessOtherSettingsTest}.
+ *
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
+@KeycloakIntegrationTest
 public class PwdLessOtherSettingsTest extends WebAuthnOtherSettingsTest {
 
     @Override
