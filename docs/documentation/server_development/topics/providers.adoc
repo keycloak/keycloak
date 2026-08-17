@@ -85,6 +85,8 @@ Example service configuration file (`META-INF/services/org.keycloak.theme.ThemeS
 org.acme.provider.MyThemeSelectorProviderFactory
 ----
 
+Alternatively, you can annotate the factory class with `@KeycloakProvider` instead of creating the service configuration file, see <<_provider_annotation,Registering a factory with the @KeycloakProvider annotation>>.
+
 To configure your provider, see the link:https://www.keycloak.org/server/configuration-provider[Configuring Providers] {section}.
 
 For example, to configure a provider you can set options as follows:
@@ -216,6 +218,44 @@ public class MyThemeSelectorProviderFactory implements ThemeSelectorProviderFact
     }
 }
 ----
+
+[[_provider_annotation]]
+==== Registering a factory with the @KeycloakProvider annotation
+
+As an alternative to the `META-INF/services` service configuration file, a `ProviderFactory` implementation can be
+registered by annotating the class with `org.keycloak.provider.KeycloakProvider`. The annotation ships in
+`keycloak-server-spi` alongside `ProviderFactory`, so no additional dependency is required:
+
+[source,java]
+----
+package org.acme.provider;
+
+import org.keycloak.provider.KeycloakProvider;
+import org.keycloak.theme.ThemeSelectorProviderFactory;
+
+@KeycloakProvider
+public class MyThemeSelectorProviderFactory implements ThemeSelectorProviderFactory {
+    ...
+}
+----
+
+No service configuration file is needed in this case. The SPI is derived from the `ProviderFactory` interface the class
+implements, and configuration, ordering and the `enabled` option work exactly as for factories registered through a
+service configuration file.
+
+Annotated factories are discovered when the server is built, that is during `kc.[sh|bat] build` or a non-optimized start,
+after the provider JAR was copied to the `providers` directory. Annotated classes are validated at that point and the build
+fails with a descriptive error if a class:
+
+* does not implement `ProviderFactory`,
+* is not a public, non-abstract class, or
+* has no public no-arg constructor.
+
+Both registration mechanisms can be used side by side, also within the same JAR. A factory that is annotated and listed in a
+service configuration file is loaded only once.
+
+NOTE: The annotation is only evaluated by the {project_name} server build. If your JAR must also be discovered by tooling
+that loads providers via `java.util.ServiceLoader` without running the server build, keep the service configuration file.
 
 [[_use_available_providers]]
 === Use available providers
