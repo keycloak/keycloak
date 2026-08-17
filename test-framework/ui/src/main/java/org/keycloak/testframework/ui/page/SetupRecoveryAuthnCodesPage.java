@@ -44,7 +44,7 @@ public class SetupRecoveryAuthnCodesPage extends LogoutSessionsPage {
 
     public void setGeneratedRecoveryAuthnCodesHidden(String codes) {
         JavascriptExecutor js = (JavascriptExecutor) driver.driver();
-        js.executeScript("document.getElementsByName('generatedRecoveryAuthnCodes')[0].value='" + codes + "'");
+        js.executeScript("document.getElementsByName('generatedRecoveryAuthnCodes')[0].value=arguments[0]", codes);
     }
 
     public String getGeneratedAtHidden() {
@@ -53,7 +53,7 @@ public class SetupRecoveryAuthnCodesPage extends LogoutSessionsPage {
 
     public void setGeneratedAtHidden(String at) {
         JavascriptExecutor js = (JavascriptExecutor) driver.driver();
-        js.executeScript("document.getElementsByName('generatedAt')[0].value='" + at + "'");
+        js.executeScript("document.getElementsByName('generatedAt')[0].value=arguments[0]", at);
     }
 
     public List<String> getRecoveryAuthnCodes() {

@@ -553,7 +553,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
                         + "?tab_id=" + attrs.get("tab_id")
                         + "&client_id=" + oauth.getClientId()
                         + "&client_data=" + attrs.get("client_data")
-                        + "auth_session_id=" + authSessionId))) {
+                        + "&auth_session_id=" + authSessionId))) {
                     Assertions.assertEquals(302, response2.getStatusLine().getStatusCode());
                 }
                 EventAssertion.assertSuccess(events.poll()).type(EventType.RESTART_AUTHENTICATION).userId(null);

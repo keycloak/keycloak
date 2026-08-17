@@ -43,29 +43,39 @@ public class LoginPage extends AbstractLoginPage {
     }
 
     public void fillLogin(String username, String password) {
-        if (!isUsernameInputPresent() || !isPasswordInputPresent()) {
-            return;
+        boolean usernamePresent = isUsernameInputPresent();
+        boolean passwordPresent = isPasswordInputPresent();
+
+        if (!usernamePresent && !passwordPresent) {
+            throw new IllegalStateException("Unable to fill login form. Username and password inputs are missing.");
         }
-        usernameInput.clear();
-        usernameInput.sendKeys(username);
-        passwordInput.clear();
-        passwordInput.sendKeys(password);
+
+        if (usernamePresent) {
+            usernameInput.clear();
+            usernameInput.sendKeys(username);
+        }
+
+        if (passwordPresent) {
+            passwordInput.clear();
+            passwordInput.sendKeys(password);
+        }
     }
 
     public void login(String username, String password) {
-        if (!isUsernameInputPresent() || !isPasswordInputPresent()) {
-            return;
-        }
         fillLogin(username, password);
         submit();
     }
 
     public void login(String username) {
-        if (!isUsernameInputPresent()) {
-            return;
+        if (isUsernameInputPresent()) {
+            usernameInput.clear();
+            usernameInput.sendKeys(username);
+        } else if (isPasswordInputPresent()) {
+            passwordInput.clear();
+            passwordInput.sendKeys(username);
+        } else {
+            throw new IllegalStateException("Unable to submit login form. Username and password inputs are missing.");
         }
-        usernameInput.clear();
-        usernameInput.sendKeys(username);
         submit();
     }
 
@@ -79,7 +89,7 @@ public class LoginPage extends AbstractLoginPage {
 
     public void submit() {
         if (driver.driver().findElements(By.cssSelector("[type=submit]")).isEmpty()) {
-            return;
+            throw new IllegalStateException("Unable to submit login form. Submit control is missing.");
         }
         submitButton.click();
     }

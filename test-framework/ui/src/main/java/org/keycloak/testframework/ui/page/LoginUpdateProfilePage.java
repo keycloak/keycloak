@@ -270,10 +270,17 @@ public class LoginUpdateProfilePage extends AbstractLoginPage {
                 }
             }
 
-            List<WebElement> submitButtons = page.driver.findElements(By.cssSelector("input[type=\"submit\"],button[type=\"submit\"]"));
-            if (!submitButtons.isEmpty()) {
-                submitButtons.get(0).submit();
+            List<WebElement> forms = page.driver.findElements(By.id("kc-update-profile-form"));
+            if (forms.isEmpty()) {
+                throw new IllegalStateException("Unable to submit update profile form. Form with id 'kc-update-profile-form' was not found.");
             }
+
+            List<WebElement> submitButtons = forms.get(0).findElements(By.cssSelector("input[type=\"submit\"],button[type=\"submit\"]"));
+            if (submitButtons.isEmpty()) {
+                throw new IllegalStateException("Unable to submit update profile form. Submit control is missing.");
+            }
+
+            submitButtons.get(0).click();
         }
 
         private void fillIfPresent(By locator, String value) {

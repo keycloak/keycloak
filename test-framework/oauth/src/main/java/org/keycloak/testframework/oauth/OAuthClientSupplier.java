@@ -7,6 +7,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.testframework.injection.DependenciesBuilder;
 import org.keycloak.testframework.injection.Dependency;
 import org.keycloak.testframework.injection.InstanceContext;
@@ -80,8 +81,9 @@ public class OAuthClientSupplier implements Supplier<OAuthClient, InjectOAuthCli
                     existingClientRep.getRedirectUris().add(redirectUri);
                     existingClient.update(existingClientRep);
                 }
-                if (existingClientRep.getSecret() != null) {
-                    clientSecret = existingClientRep.getSecret();
+                CredentialRepresentation existingClientSecret = existingClient.getSecret();
+                if (existingClientSecret != null && existingClientSecret.getValue() != null) {
+                    clientSecret = existingClientSecret.getValue();
                 }
             } else {
                 throw new RuntimeException("Unable to create OAuth test client. HTTP status: " + response.getStatus());
