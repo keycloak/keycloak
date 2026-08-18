@@ -50,6 +50,8 @@ public class JsonLdContextDocumentLoaderTest {
     @BeforeClass
     public static void startServer() throws IOException {
         server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
+        // The port is already bound here, so the base URL is available to the handlers below.
+        baseUrl = "http://localhost:" + server.getAddress().getPort();
         server.createContext("/context", exchange -> {
             contextRequests.incrementAndGet();
             handleRequest(exchange, 200, CONTEXT_DOCUMENT, "application/ld+json");
@@ -107,7 +109,6 @@ public class JsonLdContextDocumentLoaderTest {
         executor = Executors.newFixedThreadPool(4);
         server.setExecutor(executor);
         server.start();
-        baseUrl = "http://localhost:" + server.getAddress().getPort();
         // Short socket timeout so the slow-handler tests fail fast instead of hanging.
         client = new HttpClientBuilder()
                 .socketTimeout(500, TimeUnit.MILLISECONDS)
