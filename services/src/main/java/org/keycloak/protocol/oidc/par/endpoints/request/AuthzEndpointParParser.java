@@ -60,6 +60,12 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
         RealmModel realm = session.getContext().getRealm();
         int expiresIn = realm.getParPolicy().getRequestUriLifespan();
         long created = Long.parseLong(retrievedRequest.get(PAR_CREATED_TIME));
+        // Redemption-window check (RFC 9126, sections 2.2 and 4), evaluated on every visit to the
+        // authorization endpoint. This explicit PAR_CREATED_TIME comparison - not the single-use
+        // store TTL - is the authoritative enforcement of the request_uri lifetime: the store entry
+        // is deliberately kept alive well past this window (see ParEndpoint) so that a valid, already
+        // redeemed login can still complete, so expiry must be checked by value here rather than
+        // inferred from the entry's existence.
         if (System.currentTimeMillis() - created < (expiresIn * 1000L)) {
             requestParams = retrievedRequest;
         } else {
