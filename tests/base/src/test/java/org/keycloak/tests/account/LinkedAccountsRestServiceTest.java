@@ -40,8 +40,7 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.tests.utils.LegacyRealmConfig;
+import org.keycloak.testframework.realm.RealmBuilder;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.NameValuePair;
@@ -147,7 +146,7 @@ public class LinkedAccountsRestServiceTest {
                 });
         URI brokerUri = rep.getAccountLinkUri();
 
-        assertTrue(brokerUri.getPath().endsWith("/auth/realms/test/broker/github/link"));
+        assertTrue(brokerUri.getPath().endsWith("/realms/test/broker/github/link"));
 
         List<NameValuePair> queryParams = URLEncodedUtils.parse(brokerUri, Charset.defaultCharset());
         assertEquals(4, queryParams.size());
@@ -356,25 +355,28 @@ public class LinkedAccountsRestServiceTest {
         void run() throws IOException;
     }
 
-    private static class LinkedAccountsRestServiceRealmConfig extends LegacyRealmConfig {
+    private static class LinkedAccountsRestServiceRealmConfig extends AbstractRestServiceTest.AccountRestRealmConfig {
 
         @Override
-        public void configureTestRealm(RealmRepresentation testRealm) {
-            testRealm.getUsers().add(UserBuilder.create().username("no-account-access").password("password").build());
-            testRealm.getUsers().add(UserBuilder.create().username("view-account-access").clientRoles("account", "view-profile").password("password").build());
+        public RealmBuilder configure(RealmBuilder realm) {
+            super.configure(realm);
 
-            String[] providers = new String[]{"saml:mysaml:saml-idp", "oidc:myoidc:oidc-idp", "github", "gitlab", "twitter", "facebook", "bitbucket", "microsoft"};
-            for (int i = 0; i < providers.length; i++) {
-                String[] idpInfo = providers[i].split(":");
-                testRealm.addIdentityProvider(IdentityProviderBuilder.create()
-                        .providerId(idpInfo[0])
-                        .alias(idpInfo.length == 1 ? idpInfo[0] : idpInfo[1])
-                        .displayName(idpInfo.length == 1 ? null : idpInfo[2])
-                        .attribute("guiOrder", String.valueOf(i))
-                        .build());
-            }
+            realm.update(testRealm -> {
+                String[] providers = new String[] {"saml:mysaml:saml-idp", "oidc:myoidc:oidc-idp", "github", "gitlab", "twitter", "facebook", "bitbucket", "microsoft"};
+                for (int i = 0; i < providers.length; i++) {
+                    String[] idpInfo = providers[i].split(":");
+                    testRealm.addIdentityProvider(IdentityProviderBuilder.create()
+                            .providerId(idpInfo[0])
+                            .alias(idpInfo.length == 1 ? idpInfo[0] : idpInfo[1])
+                            .displayName(idpInfo.length == 1 ? null : idpInfo[2])
+                            .attribute("guiOrder", String.valueOf(i))
+                            .build());
+                }
 
-            addFederatedIdentities(testRealm, "github", "gitlab", "mysaml");
+                addFederatedIdentities(testRealm, "github", "gitlab", "mysaml");
+            });
+
+            return realm;
         }
     }
 }

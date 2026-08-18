@@ -92,10 +92,13 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
     OAuthClient oauth;
 
     private List<String> userNames = new ArrayList<>(Arrays.asList("alice", "jdoe", "bob"));
+    private String accessToken;
+    private String protectionToken;
 
     @BeforeAll
     public static void enabled() {
-        Assumptions.assumeTrue(Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION),
+        Profile profile = Profile.getInstance();
+        Assumptions.assumeTrue(profile == null || Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION),
                 "Authorization feature must be enabled");
     }
 
@@ -740,18 +743,18 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         PermissionTicketRepresentation ticket = new PermissionTicketRepresentation();
         ticket.setGranted(false);
         ticket.setOwner("test-authz-user@localhost");
-        ticket.setRequesterName("alice");
+        ticket.setRequesterName("jdoe");
         ticket.setResource(resource.getId());
         ticket.setScopeName("Scope A");
 
         createPermissionTicket(ticket);
 
-        UserRepresentation userRep = doGet("/" + encodePathAsIs(resource.getId()) + "/user?value=alice",
+        UserRepresentation userRep = doGet("/" + encodePathAsIs(resource.getId()) + "/user?value=jdoe",
                 UserRepresentation.class);
 
         assertNotNull(userRep);
         assertNotNull(userRep.getId(), "User ID should be returned");
-        assertEquals("alice", userRep.getUsername());
+        assertEquals("jdoe", userRep.getUsername());
         assertNull(userRep.getCreatedTimestamp(), "Creation timestamp should not be exposed");
         assertNull(userRep.isEnabled(), "Enabled status should not be exposed");
     }
@@ -889,11 +892,18 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
     }
 
     private String getToken() {
-        return token("test-authz-user@localhost", "password");
+        if (accessToken == null) {
+            accessToken = token("test-authz-user@localhost", "password");
+        }
+        return accessToken;
     }
 
     private String token(String username, String password) {
-        return oauth.client("direct-grant", "password").doPasswordGrantRequest(username, password).getAccessToken();
+        String accessToken = oauth.client("direct-grant", "password").doPasswordGrantRequest(username, password).getAccessToken();
+        if (accessToken == null) {
+            throw new IllegalStateException("Failed to obtain access token for user: " + username);
+        }
+        return accessToken;
     }
 
     private String getAuthServerUrl() {
@@ -905,9 +915,12 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
     }
 
     private String getProtectionToken() {
-        return oauth.client("my-resource-server", "secret")
-                .doPasswordGrantRequest("test-authz-user@localhost", "password")
-                .getAccessToken();
+        if (protectionToken == null) {
+            protectionToken = oauth.client("my-resource-server", "secret")
+                    .doPasswordGrantRequest("test-authz-user@localhost", "password")
+                    .getAccessToken();
+        }
+        return protectionToken;
     }
 
     private String getProtectionPermissionTicketUrl() {
@@ -920,7 +933,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
                     .auth(getProtectionToken())
                     .json(ticket)
                     .asStatus();
-            assertTrue(status == Response.Status.CREATED.getStatusCode() || status == Response.Status.NO_CONTENT.getStatusCode());
+            assertEquals(Response.Status.OK.getStatusCode(), status);
         } catch (IOException cause) {
             throw new RuntimeException("Failed to create permission ticket", cause);
         }
@@ -941,6 +954,9 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
                 .firstName(firstName)
                 .lastName(lastName)
                 .email(email)
+                .attribute("attr_required", "value")
+                .attribute("attr_required_by_role", "value")
+                .attribute("attr_required_by_scope", "value")
                 .attribute("secret-attr", "secret-value")
                 .clientRoles("account", AccountRoles.MANAGE_ACCOUNT)
                 .build();
@@ -1067,7 +1083,13 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
                     createUser("alice", "password", "Alice", "A", "alice@localhost"),
                     createUser("jdoe", "password", "John", "Doe", "jdoe@localhost"),
                     createUser("bob", "password", "Bob", "B", "bob@localhost"),
-                    UserBuilder.create().username("test-authz-user@localhost").password("password")
+                    UserBuilder.create().username("test-authz-user@localhost")
+                            .email("test-authz-user@localhost")
+                            .name("Test", "Authz")
+                            .password("password")
+                            .attribute("attr_required", "value")
+                            .attribute("attr_required_by_role", "value")
+                            .attribute("attr_required_by_scope", "value")
                             .realmRoles("uma_authorization", "uma_protection")
                             .clientRoles("my-resource-server", "uma_protection")
                             .clientRoles("account", AccountRoles.MANAGE_ACCOUNT)

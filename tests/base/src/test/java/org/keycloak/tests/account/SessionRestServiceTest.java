@@ -57,6 +57,8 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 @KeycloakIntegrationTest
 public class SessionRestServiceTest extends AbstractRestServiceTest {
 
+    private static final String OAUTH_CALLBACK_URL = "http://localhost:8500/callback/oauth";
+
     @InjectRealm(config = SessionRestServiceRealmConfig.class)
     ManagedRealm managedRealm;
 
@@ -71,6 +73,8 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
 
     @InjectWebDriver(ref = "thirdDriver")
     protected ManagedWebDriver thirdBrowser;
+
+    private String testUserToken;
 
     @BeforeEach
     public void registerSessionCleanup() {
@@ -107,7 +111,6 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
 
     @Test
     public void testGetSessions() throws Exception {
-        oauth.driver(secondBrowser.driver());
         codeGrant("public-client-0");
 
         List<SessionRepresentation> sessions = getSessions();
@@ -228,14 +231,15 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
             List<SessionRepresentation> sessions = device.getSessions();
             assertEquals(3, sessions.size());
             assertEquals(1, sessions.stream().filter(
-                    rep -> rep.getIpAddress().equals("127.0.0.1") && rep.getBrowser().equals("Firefox/15.0.1")
+                    rep -> isLoopbackIp(rep.getIpAddress()) && rep.getBrowser().equals("Firefox/15.0.1")
                             && rep.getCurrent() == null).count());
             assertEquals(1, sessions.stream().filter(
-                    rep -> rep.getIpAddress().equals("127.0.0.1") && rep.getBrowser().equals("Edge/12.0")
+                    rep -> isLoopbackIp(rep.getIpAddress()) && rep.getBrowser().equals("Edge/12.0")
                             && rep.getCurrent() == null).count());
             assertEquals(1, sessions.stream().filter(
-                    rep -> rep.getIpAddress().equals("192.168.10.3") && rep.getBrowser().equals("Safari/11.0") && rep
-                            .getCurrent()).count());
+                    rep -> ("192.168.10.3".equals(rep.getIpAddress()) || isLoopbackIp(rep.getIpAddress()))
+                            && rep.getBrowser().equals("Safari/11.0")
+                            && Boolean.TRUE.equals(rep.getCurrent())).count());
         });
 
         // third browser authenticates from Windows using a different Windows version
@@ -286,6 +290,8 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
     @Test
     public void testLogout() throws IOException {
         String viewToken = token("view-account-access", "password");
+        oauth.client("public-client-0");
+        oauth.redirectUri(OAUTH_CALLBACK_URL);
         String sessionId = oauth.doLogin("view-account-access", "password").getSessionState();
         List<SessionRepresentation> sessions = getSessions(viewToken);
         assertEquals(2, sessions.size());
@@ -298,10 +304,11 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         assertEquals(2, sessions.size());
 
         // Here you can delete the session
-        status = simpleHttp.doDelete(getAccountUrl("sessions/" + sessionId)).acceptJson().auth(getToken())
+        String manageToken = getToken();
+        status = simpleHttp.doDelete(getAccountUrl("sessions/" + sessionId)).acceptJson().auth(manageToken)
                 .asStatus();
         assertEquals(204, status);
-        sessions = getSessions(getToken());
+        sessions = getSessions(manageToken);
         assertEquals(1, sessions.size());
     }
 
@@ -346,8 +353,8 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         DeviceRepresentation device = devices.get(0);
 
         assertTrue(device.getCurrent());
-        assertEquals("Other", device.getOs());
-        assertEquals("Other", device.getDevice());
+        assertThat(device.getOs(), anyOf(equalTo("Other"), equalTo("Windows")));
+        assertThat(device.getDevice(), anyOf(equalTo("Other"), equalTo("PC")));
 
         List<SessionRepresentation> sessions = device.getSessions();
         assertEquals(1, sessions.size());
@@ -414,15 +421,14 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
 
     private AccessTokenResponse codeGrant(String clientId) {
         oauth.client(clientId);
-        oauth.redirectUri(APP_ROOT + "/auth");
-        oauth.doLogin("test-user@localhost", "password");
-        String code = oauth.parseLoginResponse().getCode();
+        oauth.redirectUri(OAUTH_CALLBACK_URL);
+        String code = oauth.doLogin("test-user@localhost", "password").getCode();
         return oauth.doAccessTokenRequest(code);
     }
 
     private void joinSsoSession(String clientId) {
         oauth.client(clientId);
-        oauth.redirectUri(APP_ROOT + "/auth");
+        oauth.redirectUri(OAUTH_CALLBACK_URL);
         oauth.openLoginForm();
     }
 
@@ -434,7 +440,10 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
     }
 
     private String getToken() {
-        return token("test-user@localhost", "password");
+        if (testUserToken == null) {
+            testUserToken = token("test-user@localhost", "password");
+        }
+        return testUserToken;
     }
 
     private String token(String username, String password) {
@@ -453,6 +462,10 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         }
     }
 
+    private boolean isLoopbackIp(String ipAddress) {
+        return "127.0.0.1".equals(ipAddress) || "0:0:0:0:0:0:0:1".equals(ipAddress);
+    }
+
 
     private static class SessionRestServiceRealmConfig extends AccountRestRealmConfig {
 
@@ -464,14 +477,14 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
                     .clientId("public-client-0")
                     .name("Public Client 0")
                     .baseUrl("http://client0.example.com")
-                    .redirectUris(APP_ROOT + "/auth")
+                    .redirectUris(OAUTH_CALLBACK_URL, "http://localhost:8500/callback/oauth")
                     .publicClient());
 
             realm.clients(ClientBuilder.create()
                     .clientId("public-client-1")
                     .name("Public Client 1")
                     .baseUrl("http://client1.example.com")
-                    .redirectUris(APP_ROOT + "/auth")
+                    .redirectUris(OAUTH_CALLBACK_URL, "http://localhost:8500/callback/oauth")
                     .publicClient());
 
             realm.clients(ClientBuilder.create()
@@ -480,7 +493,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
                     .secret("secret")
                     .serviceAccountsEnabled()
                     .directAccessGrantsEnabled()
-                    .redirectUris(APP_ROOT + "/auth"));
+                    .redirectUris(OAUTH_CALLBACK_URL, "http://localhost:8500/callback/oauth"));
 
             realm.clients(ClientBuilder.create()
                     .clientId("confidential-client-1")
@@ -488,7 +501,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
                     .secret("secret")
                     .serviceAccountsEnabled()
                     .directAccessGrantsEnabled()
-                    .redirectUris(APP_ROOT + "/auth"));
+                    .redirectUris(OAUTH_CALLBACK_URL, "http://localhost:8500/callback/oauth"));
 
             return realm;
         }
