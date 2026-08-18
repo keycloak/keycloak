@@ -219,17 +219,26 @@ public class RefreshTokenRevokeClientOverrideTest {
     }
 
     @Test
-    public void invalidMaxReuseIsRejectedByClientValidation() {
+    public void invalidOverridesAreRejectedByClientValidation() {
         ClientRepresentation rep = oauth.clientResource().toRepresentation();
         Map<String, String> attributes = rep.getAttributes() != null ? new HashMap<>(rep.getAttributes()) : new HashMap<>();
+        rep.setAttributes(attributes);
 
         attributes.put(OIDCConfigAttributes.REFRESH_TOKEN_MAX_REUSE, "-1");
-        rep.setAttributes(attributes);
         assertThrows(BadRequestException.class, () -> oauth.clientResource().update(rep));
 
         attributes.put(OIDCConfigAttributes.REFRESH_TOKEN_MAX_REUSE, "abc");
-        rep.setAttributes(attributes);
         assertThrows(BadRequestException.class, () -> oauth.clientResource().update(rep));
+
+        // Malformed boolean must not be silently interpreted as "false"
+        attributes.remove(OIDCConfigAttributes.REFRESH_TOKEN_MAX_REUSE);
+        attributes.put(OIDCConfigAttributes.REVOKE_REFRESH_TOKEN, "tru");
+        assertThrows(BadRequestException.class, () -> oauth.clientResource().update(rep));
+
+        // Valid values (case-insensitive) are accepted
+        attributes.put(OIDCConfigAttributes.REVOKE_REFRESH_TOKEN, "TRUE");
+        attributes.put(OIDCConfigAttributes.REFRESH_TOKEN_MAX_REUSE, "0");
+        oauth.clientResource().update(rep);
     }
 
     private void assertSingleReuseAllowed() {
