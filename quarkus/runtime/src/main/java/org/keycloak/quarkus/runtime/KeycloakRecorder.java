@@ -50,6 +50,7 @@ import org.keycloak.config.OpenApiOptions;
 import org.keycloak.config.Option;
 import org.keycloak.config.ProxyOptions;
 import org.keycloak.config.TruststoreOptions;
+import org.keycloak.headers.SecurityHeadersUtils;
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.provider.Provider;
@@ -111,10 +112,9 @@ public class KeycloakRecorder {
     public Handler<RoutingContext> getRedirectHandler(String redirectPath) {
         return routingContext -> {
             HttpServerResponse response = routingContext.response();
-            addDefaultSecurityHeader(response, BrowserSecurityHeaders.STRICT_TRANSPORT_SECURITY);
-            addDefaultSecurityHeader(response, BrowserSecurityHeaders.X_CONTENT_TYPE_OPTIONS);
-            addDefaultSecurityHeader(response, BrowserSecurityHeaders.REFERRER_POLICY);
-            addDefaultSecurityHeader(response, BrowserSecurityHeaders.X_ROBOTS_TAG);
+            for (BrowserSecurityHeaders header : BrowserSecurityHeaders.REDIRECT_HEADERS) {
+                addDefaultSecurityHeader(response, header);
+            }
 
             response.setStatusCode(302);
             response.putHeader(HttpHeaders.LOCATION, redirectPath);
@@ -123,9 +123,7 @@ public class KeycloakRecorder {
     }
 
     private static void addDefaultSecurityHeader(HttpServerResponse response, BrowserSecurityHeaders header) {
-        if (!response.headers().contains(header.getHeaderName())) {
-            response.putHeader(header.getHeaderName(), header.getDefaultValue());
-        }
+        SecurityHeadersUtils.addDefaultHeaderIfAbsent(header, response.headers()::contains, (headerName, value) -> response.putHeader(headerName, value));
     }
 
     private static final List<ManagementInterfaceItem> MANAGEMENT_INTERFACE_ENDPOINTS = List.of(
