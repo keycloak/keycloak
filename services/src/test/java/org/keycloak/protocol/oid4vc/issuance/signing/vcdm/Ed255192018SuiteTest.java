@@ -9,7 +9,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSignerException;
@@ -35,14 +37,15 @@ public class Ed255192018SuiteTest {
                     "\"VerifiableCredential\":\"https://www.w3.org/2018/credentials#VerifiableCredential\"}}";
 
     private static HttpServer server;
+    private static ExecutorService executor;
     private static String contextUrl;
-    private static int contextRequests;
+    private static final AtomicInteger contextRequests = new AtomicInteger();
 
     @BeforeClass
     public static void startServer() throws IOException {
         server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
         server.createContext("/context", exchange -> {
-            contextRequests++;
+            contextRequests.incrementAndGet();
             byte[] bytes = CONTEXT_DOCUMENT.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/ld+json");
             exchange.sendResponseHeaders(200, bytes.length);
@@ -51,13 +54,15 @@ public class Ed255192018SuiteTest {
             }
             exchange.close();
         });
-        server.setExecutor(Executors.newFixedThreadPool(2));
+        executor = Executors.newFixedThreadPool(2);
+        server.setExecutor(executor);
         server.start();
         contextUrl = "http://localhost:" + server.getAddress().getPort() + "/context";
     }
 
     @AfterClass
     public static void stopServer() {
+        executor.shutdownNow();
         server.stop(0);
     }
 
@@ -66,7 +71,7 @@ public class Ed255192018SuiteTest {
         JsonLdContextDocumentLoader loader = JsonLdContextDocumentLoader.forTesting(
                 Set.of("localhost"), Duration.ofSeconds(5), Duration.ofSeconds(5));
         Ed255192018Suite suite = new Ed255192018Suite(testSigner(), loader);
-        contextRequests = 0;
+        contextRequests.set(0);
 
         byte[] firstSignature = suite.getSignature(createCredential());
         Assert.assertNotNull("A signature should be produced", firstSignature);
@@ -74,7 +79,7 @@ public class Ed255192018SuiteTest {
 
         // Signing a second credential must reuse the cached context document.
         suite.getSignature(createCredential());
-        Assert.assertEquals("The context document should be fetched only once", 1, contextRequests);
+        Assert.assertEquals("The context document should be fetched only once", 1, contextRequests.get());
 
         // URDNA2015 canonicalization and the signature are deterministic.
         Assert.assertArrayEquals("Signing the same credential twice must produce the same signature",

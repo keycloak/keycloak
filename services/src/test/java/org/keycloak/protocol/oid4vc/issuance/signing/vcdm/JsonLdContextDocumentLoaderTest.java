@@ -10,7 +10,9 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.apicatalog.jsonld.JsonLdError;
 import com.apicatalog.jsonld.document.Document;
@@ -36,19 +38,20 @@ public class JsonLdContextDocumentLoaderTest {
                     "\"credentialSubject\":\"https://www.w3.org/2018/credentials#credentialSubject\"}}";
 
     private static HttpServer server;
+    private static ExecutorService executor;
     private static String baseUrl;
-    private static int contextRequests;
-    private static int redirectRequests;
+    private static final AtomicInteger contextRequests = new AtomicInteger();
+    private static final AtomicInteger redirectRequests = new AtomicInteger();
 
     @BeforeClass
     public static void startServer() throws IOException {
         server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
         server.createContext("/context", exchange -> {
-            contextRequests++;
+            contextRequests.incrementAndGet();
             handleRequest(exchange, 200, CONTEXT_DOCUMENT, "application/ld+json");
         });
         server.createContext("/redirect", exchange -> {
-            redirectRequests++;
+            redirectRequests.incrementAndGet();
             exchange.getResponseHeaders().add("Location", baseUrl + "/context");
             exchange.sendResponseHeaders(302, -1);
             exchange.close();
@@ -97,13 +100,15 @@ public class JsonLdContextDocumentLoaderTest {
             exchange.close();
         });
         // A dedicated pool so the blocking /slow handler cannot starve other tests.
-        server.setExecutor(Executors.newFixedThreadPool(4));
+        executor = Executors.newFixedThreadPool(4);
+        server.setExecutor(executor);
         server.start();
         baseUrl = "http://localhost:" + server.getAddress().getPort();
     }
 
     @AfterClass
     public static void stopServer() {
+        executor.shutdownNow();
         server.stop(0);
     }
 
@@ -126,14 +131,14 @@ public class JsonLdContextDocumentLoaderTest {
         JsonLdContextDocumentLoader loader = JsonLdContextDocumentLoader.forTesting(
                 Set.of("localhost"), Duration.ofSeconds(5), Duration.ofSeconds(5));
         URI url = URI.create(baseUrl + "/context");
-        contextRequests = 0;
+        contextRequests.set(0);
 
         Document first = loader.loadDocument(url, new DocumentLoaderOptions());
         Document second = loader.loadDocument(url, new DocumentLoaderOptions());
 
         Assert.assertNotNull("Context document should be loaded", first);
         Assert.assertSame("Second load should return the cached document", first, second);
-        Assert.assertEquals("The context should be fetched only once", 1, contextRequests);
+        Assert.assertEquals("The context should be fetched only once", 1, contextRequests.get());
     }
 
     @Test
@@ -141,14 +146,14 @@ public class JsonLdContextDocumentLoaderTest {
         JsonLdContextDocumentLoader loader = JsonLdContextDocumentLoader.forTesting(
                 Set.of("localhost"), Duration.ofSeconds(5), Duration.ofSeconds(5));
         URI url = URI.create(baseUrl + "/redirect");
-        redirectRequests = 0;
-        contextRequests = 0;
+        redirectRequests.set(0);
+        contextRequests.set(0);
 
         loader.loadDocument(url, new DocumentLoaderOptions());
         loader.loadDocument(url, new DocumentLoaderOptions());
 
-        Assert.assertEquals("The redirect target should be fetched only once", 1, redirectRequests);
-        Assert.assertEquals("The context should be fetched only once", 1, contextRequests);
+        Assert.assertEquals("The redirect target should be fetched only once", 1, redirectRequests.get());
+        Assert.assertEquals("The context should be fetched only once", 1, contextRequests.get());
     }
 
     @Test(expected = JsonLdError.class)
@@ -198,7 +203,7 @@ public class JsonLdContextDocumentLoaderTest {
         // ever fails keeps an entry in the locks map for the lifetime of the server.
         JsonLdContextDocumentLoader loader = JsonLdContextDocumentLoader.forTesting(
                 Set.of("localhost"), Duration.ofSeconds(5), Duration.ofSeconds(5));
-                
+
         Assert.assertThrows(JsonLdError.class, () -> loader.loadDocument(
                 URI.create(baseUrl + "/large"), new DocumentLoaderOptions()));
 

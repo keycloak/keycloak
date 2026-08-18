@@ -92,7 +92,7 @@ public class JsonLdContextDocumentLoader implements DocumentLoader {
                 .map(host -> host.toLowerCase(Locale.ROOT))
                 .collect(Collectors.toUnmodifiableSet());
         this.allowInsecureScheme = allowInsecureScheme;
-        this.delegate = new HttpLoader(new HardenedHttpClient(allowedHosts, connectTimeout, requestTimeout, allowInsecureScheme));
+        this.delegate = new HttpLoader(new HardenedHttpClient(this.allowedHosts, connectTimeout, requestTimeout, allowInsecureScheme));
     }
 
     /** Shared instance used by the credential signing suites. */
