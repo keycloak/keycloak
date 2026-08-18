@@ -1363,7 +1363,18 @@ html[dir="rtl"] #password-new {
     .pf-v5-c-login__container {
         grid-template-areas: "brand" "form";
         grid-template-columns: 1fr;
-        min-height: auto;
+        /* Fill the viewport and centre the stack rather than collapsing to
+           content height. `auto` let the rows sit at the top while the parent
+           still held 100dvh, so on a tall phone every pixel of leftover height
+           landed under the card as one dead block. Centring splits it above and
+           below; `1fr` rows would stretch the card instead, so the tracks stay
+           content-sized and the free space goes to the container's alignment.
+           `safe` keeps the top edge reachable when content exceeds the viewport
+           — centred overflow would otherwise push it past the scroll origin. */
+        min-height: 100vh;
+        min-height: 100dvh;
+        grid-template-rows: auto auto;
+        align-content: safe center;
     }
 
     /* Stacked, the brand block sits above the form on every phone regardless
@@ -1889,15 +1900,33 @@ html.login-pf,
 
 @media (max-width: 640px) {
     .kc-realm-logo {
-        padding-block: 1.25rem 0.25rem;
+        padding-block: 1rem 0.25rem;
         padding-inline: 1.35rem;
+        /* Holds the slot open for an undersized upload now that the image is
+           capped rather than fixed, so a small file still sits in a consistent
+           footprint instead of collapsing the header. Wide marks stay shorter
+           than this and simply centre within it. */
+        min-block-size: 56px;
+        box-sizing: content-box;
     }
 
     .kc-realm-logo img {
         /* Larger than the clamp's 88px floor, not smaller: on a phone this is the
            only tenant cue on screen, and many uploads are square logos with
-           their own internal padding, which costs apparent size. */
-        block-size: 96px;
+           their own internal padding, which costs apparent size.
+
+           Capped rather than fixed. An explicit 96px height stops matching the
+           image's ratio once a wide wordmark hits the 86% width cap, and
+           `contain` then letterboxes it inside its own box — measured at 393px:
+           18px of dead space at 4:1, 57px at 8:1, 70px at 12:1. That empty band
+           sits directly above the title and reads as a gap in the card.
+
+           Letting height follow the width keeps the painted mark flush with its
+           box at every ratio. The base rule's objection to a cap — that a small
+           upload then renders at its natural size — is handled on the container
+           instead, which reserves the slot without stretching the image. */
+        block-size: auto;
+        max-block-size: 96px;
         max-inline-size: 86%;
     }
 }
