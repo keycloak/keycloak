@@ -19,6 +19,12 @@ type OrganizationModalProps = {
   isRadio?: boolean;
 };
 
+const TITLES = {
+  join: "Join organization",
+  send: "Send invitation",
+  add: "Select Organization",
+};
+
 export const OrganizationModal = ({
   mode = "join",
   existingOrgs,
@@ -52,13 +58,7 @@ export const OrganizationModal = ({
   return (
     <Modal
       variant={ModalVariant.small}
-      title={
-        mode === "add"
-          ? t("selectOrganization")
-          : mode === "join"
-            ? t("joinOrganization")
-            : t("sendInvitation") //will become very clunky if more modes are added but probably fine for now
-      }
+      title={TITLES[mode]}
       isOpen
       onClose={onClose}
       actions={[
