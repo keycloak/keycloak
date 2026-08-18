@@ -18,6 +18,7 @@ import { OrganizationModal } from "../../organizations/OrganizationModal";
 type OrganizationSelectProps = Omit<ComponentProps, "convertToName"> & {
   variant?: "typeahead" | "typeaheadMulti";
   isRequired?: boolean;
+  isRadio?: boolean;
 };
 
 const convertOrganizations = (
@@ -32,6 +33,7 @@ export const OrganizationSelect = ({
   isRequired,
   name,
   variant = "typeaheadMulti",
+  isRadio = false,
 }: OrganizationSelectProps) => {
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
@@ -105,6 +107,7 @@ export const OrganizationSelect = ({
                   }
                   setOpen(false);
                 }}
+                isRadio={isRadio}
               />
             )}
             <Button

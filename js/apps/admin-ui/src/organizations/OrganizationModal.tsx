@@ -16,6 +16,7 @@ type OrganizationModalProps = {
   existingOrgs: OrganizationRepresentation[];
   onAdd: (orgs: OrganizationRepresentation[]) => Promise<void>;
   onClose: () => void;
+  isRadio?: boolean;
 };
 
 export const OrganizationModal = ({
@@ -23,6 +24,7 @@ export const OrganizationModal = ({
   existingOrgs,
   onAdd,
   onClose,
+  isRadio = false,
 }: OrganizationModalProps) => {
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
@@ -87,7 +89,7 @@ export const OrganizationModal = ({
         isPaginated
         ariaLabelKey="organizationsList"
         searchPlaceholderKey="searchOrganization"
-        canSelectAll
+        canSelectAll={!isRadio}
         onSelect={(rows) => setSelectedRows([...rows])}
         columns={[
           {
@@ -101,6 +103,7 @@ export const OrganizationModal = ({
             ),
           },
         ]}
+        isRadio={isRadio}
       />
       {
         organizations.length === 0 && search === "" && (
