@@ -53,7 +53,7 @@ export const OrganizationSelect = ({
       if (values.length > 0) {
         return Promise.all(
           (values as string[]).map((id) =>
-            adminClient.organizations.findOne({ id }),
+            adminClient.organizations.findOne({ id }, { catchNotFound: true }),
           ),
         );
       }
