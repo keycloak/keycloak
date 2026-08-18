@@ -66,7 +66,7 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
         ClientModel authorizedClient = ctx.grantContext().getClient();
         String scopeParameter = ctx.scopeParameter();
 
-        if (realm.isRevokeRefreshToken()) {
+        if (TokenManager.isRevokeRefreshToken(realm, authorizedClient)) {
             // If refresh tokens are revoked, we need to serialize all requests to avoid wrong conclusions.
             // This needs to be called before we load the user session from the database or the cache
             createTemporaryExclusiveLockForTokenRefreshOperation(session, oldRefreshToken, tokenManager);
@@ -266,8 +266,8 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
 
     private void validateTokenReuseForRefresh(KeycloakSession session, RealmModel realm, RefreshToken refreshToken,
                                               TokenManager.TokenValidation validation, TokenManager tokenManager) throws OAuthErrorException {
-        if (realm.isRevokeRefreshToken()) {
-            AuthenticatedClientSessionModel clientSession = validation.clientSessionCtx.getClientSession();
+        AuthenticatedClientSessionModel clientSession = validation.clientSessionCtx.getClientSession();
+        if (TokenManager.isRevokeRefreshToken(realm, clientSession.getClient())) {
             try {
                 tokenManager.validateTokenReuse(session, realm, refreshToken, clientSession, true);
                 String key = tokenManager.getReuseIdKey(refreshToken);

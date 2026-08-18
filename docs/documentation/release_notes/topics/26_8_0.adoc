@@ -9,6 +9,10 @@ As part of ongoing secure-by-default improvements to impersonation, token lifecy
 
 Additionally, tokens issued from impersonation sessions now include the `act` (actor) claim (https://datatracker.ietf.org/doc/html/rfc8693#section-4.1[RFC 8693 Section 4.1]) in both access tokens and ID tokens. This allows downstream resource servers to identify the impersonator for audit purposes. The claim is always present and cannot be disabled.
 
+== Refresh token revocation configurable per client
+
+The realm settings *Revoke Refresh Token* and *Refresh Token Max Reuse* can now be overridden per client in the *Advanced settings* section of the client. This allows enabling refresh token rotation only for clients that need it, or exempting specific clients when rotation is enabled for the realm. When no client override is set, the realm setting is used.
+
 = Configuring and Running
 
 == Support for encrypted PEM private keys

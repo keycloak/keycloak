@@ -191,6 +191,8 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
                       "client.session.max.lifespan",
                       "client.offline.session.idle.timeout",
                       "client.offline.session.max.lifespan",
+                      "revoke.refresh.token",
+                      "refresh.token.max.reuse",
                       "dpop.bound.access.tokens",
                       "tls.client.certificate.bound.access.tokens",
                       "require.pushed.authorization.requests",
