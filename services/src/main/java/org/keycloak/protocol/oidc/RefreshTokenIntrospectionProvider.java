@@ -54,11 +54,11 @@ public class RefreshTokenIntrospectionProvider extends AccessTokenIntrospectionP
     protected boolean verifyTokenReuse() {
 
         String tokenType = token.getType();
-        if (realm.isRevokeRefreshToken()
+        if (TokenManager.isRevokeRefreshToken(realm, client)
                 && (tokenType.equals(TokenUtil.TOKEN_TYPE_REFRESH) || tokenType.equals(TokenUtil.TOKEN_TYPE_OFFLINE))
                 && !validateTokenReuse()) {
             logger.debugf("Introspection access token for %s client: failed to validate Token reuse for introspection", token.getIssuedFor());
-            eventBuilder.detail(Details.REASON, "Realm revoke refresh token, token type is "+tokenType+ " and token is not eligible for introspection");
+            eventBuilder.detail(Details.REASON, "Revoke refresh token is enabled, token type is "+tokenType+ " and token is not eligible for introspection");
             eventBuilder.error(Errors.INVALID_TOKEN);
             return false;
         }

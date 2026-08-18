@@ -213,6 +213,45 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         setAttribute(OIDCConfigAttributes.USE_REFRESH_TOKEN, val);
     }
 
+    /**
+     * @return the client-level override of the realm setting "Revoke Refresh Token", or {@code null} if the client
+     * inherits the realm setting
+     */
+    public Boolean getRevokeRefreshToken() {
+        String value = getAttribute(OIDCConfigAttributes.REVOKE_REFRESH_TOKEN);
+        return StringUtil.isBlank(value) ? null : Boolean.parseBoolean(value.trim());
+    }
+
+    /**
+     * @param revokeRefreshToken the client-level override, or {@code null} to inherit the realm setting
+     */
+    public void setRevokeRefreshToken(Boolean revokeRefreshToken) {
+        setAttribute(OIDCConfigAttributes.REVOKE_REFRESH_TOKEN, revokeRefreshToken == null ? null : String.valueOf(revokeRefreshToken));
+    }
+
+    /**
+     * @return the client-level override of the realm setting "Refresh Token Max Reuse", or {@code null} if the client
+     * inherits the realm setting (also when the attribute value is not a valid integer)
+     */
+    public Integer getRefreshTokenMaxReuse() {
+        String value = getAttribute(OIDCConfigAttributes.REFRESH_TOKEN_MAX_REUSE);
+        if (StringUtil.isBlank(value)) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
+     * @param refreshTokenMaxReuse the client-level override, or {@code null} to inherit the realm setting
+     */
+    public void setRefreshTokenMaxReuse(Integer refreshTokenMaxReuse) {
+        setAttribute(OIDCConfigAttributes.REFRESH_TOKEN_MAX_REUSE, refreshTokenMaxReuse == null ? null : String.valueOf(refreshTokenMaxReuse));
+    }
+
     public boolean isUseLowerCaseInTokenResponse() {
         return Boolean.parseBoolean(getAttribute(USE_LOWER_CASE_IN_TOKEN_RESPONSE, "false"));
     }
