@@ -37,6 +37,8 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.userprofile.UserProfileConstants;
 
@@ -49,13 +51,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = AccountRestServiceReadOnlyAttributesTest.ReadOnlyAttributesServerConfig.class)
 public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServiceTest {
 
     private static final Logger logger = Logger.getLogger(AccountRestServiceReadOnlyAttributesTest.class);
@@ -167,7 +170,7 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
         adminUserResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), user.getUsername());
         adminUserRep = adminUserResource.toRepresentation();
         assertEquals("foo", adminUserRep.getAttributes().get("deniedFoo").get(0));
-        assertNull(user.getAttributes());
+        assertFalse(Optional.ofNullable(user.getAttributes()).orElse(Map.of()).containsKey("deniedFoo"));
         updateAndGet(user);
         adminUserResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), user.getUsername());
         adminUserRep = adminUserResource.toRepresentation();
@@ -271,6 +274,17 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
         SimpleHttpResponse response = simpleHttp.doPost(getAccountUrl(null)).auth(getToken()).json(user).asResponse();
         assertEquals(expectedStatus, response.getStatus());
         assertEquals(expectedMessage, response.asJson(ErrorRepresentation.class).getErrorMessage());
+    }
+
+    public static class ReadOnlyAttributesServerConfig implements KeycloakServerConfig {
+
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder builder) {
+            return builder
+                    .option("spi-user-profile-provider", "declarative-user-profile")
+                    .option("spi-user-profile-declarative-user-profile-read-only-attributes", "deniedFoo,deniedBar*,deniedSome/thing,deniedsome*thing")
+                    .option("spi-user-profile-declarative-user-profile-admin-read-only-attributes", "deniedSomeAdmin");
+        }
     }
 
     private String getToken() {

@@ -16,16 +16,17 @@
  */
 package org.keycloak.tests.account;
 
+import java.util.List;
+
 import org.keycloak.common.enums.AccountRestApiVersion;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
-import org.keycloak.tests.utils.LegacyRealmConfig;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,8 +51,10 @@ public class AccountRestServiceCorsTest {
     @InjectOAuthClient
     OAuthClient oauth;
 
-    private static final String VALID_CORS_URL = "http://localtest.me:8180/auth";
-    private static final String INVALID_CORS_URL = "http://invalid.localtest.me:8180/auth";
+    private static final String VALID_CORS_ORIGIN = "http://127.0.0.1:8500";
+    private static final String INVALID_CORS_ORIGIN = "http://localhost:8500";
+    private static final String VALID_CORS_URL = VALID_CORS_ORIGIN + "/callback/oauth";
+    private static final String INVALID_CORS_URL = INVALID_CORS_ORIGIN + "/callback/oauth";
 
     private JavascriptExecutor executor;
 
@@ -181,11 +184,17 @@ public class AccountRestServiceCorsTest {
     }
 
 
-    private static class AccountRestServiceCorsRealmConfig extends LegacyRealmConfig {
+    private static class AccountRestServiceCorsRealmConfig extends AbstractRestServiceTest.AccountRestRealmConfig {
 
         @Override
-        public void configureTestRealm(RealmRepresentation testRealm) {
-            testRealm.setEditUsernameAllowed(false);
+        public RealmBuilder configure(RealmBuilder realm) {
+            super.configure(realm);
+            realm.editUsernameAllowed(false);
+            realm.update(testRealm -> testRealm.getClients().stream()
+                    .filter(client -> "direct-grant".equals(client.getClientId()))
+                    .findFirst()
+                    .ifPresent(client -> client.setWebOrigins(List.of(VALID_CORS_ORIGIN))));
+            return realm;
         }
     }
 }
