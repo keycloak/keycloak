@@ -18,8 +18,12 @@
  */
 package org.keycloak.protocol.oidc.tokenexchange;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
 
@@ -39,15 +43,18 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.CorsErrorResponseException;
-import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserSessionManager;
+import org.keycloak.util.JsonSerialization;
 
 /**
  *
  * @author rmartinc
  */
 public class TokenExchangeDelegationProvider extends StandardTokenExchangeProvider {
+
+    public static final String ENFORCE_CLAIMS = "enforce_claims";
+    public static final List<String> DEFAULT_ENFORCED_CLAIMS = List.of(JsonWebToken.SUBJECT, OIDCLoginProtocol.ISSUER);
 
     private AccessToken actorAccessToken;
     private AccessToken subjectAccessToken;
@@ -149,25 +156,49 @@ public class TokenExchangeDelegationProvider extends StandardTokenExchangeProvid
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid may_act claim in the subject_token", Response.Status.BAD_REQUEST);
         }
 
-        Object issObject = mayActMap.get(OIDCLoginProtocol.ISSUER);
-        if (issObject != null && !issObject.equals(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()))) {
-            event.detail(Details.REASON, "Invalid issuer in the may_act claim of the subject_token");
+        if (!mayActMap.containsKey(JsonWebToken.SUBJECT)) {
+            event.detail(Details.REASON, "Missing mandatory 'sub' claim in may_act");
             event.error(Errors.INVALID_TOKEN);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid issuer in the may_act claim of the subject_token", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Missing mandatory 'sub' claim in may_act", Response.Status.BAD_REQUEST);
         }
 
-        Object subjectObject = mayActMap.get(JsonWebToken.SUBJECT);
-        if (!(subjectObject instanceof String subject)) {
-            event.detail(Details.REASON, "Invalid may_act claim in the subject_token");
+        Collection<String> enforcedClaims;
+        try {
+            enforcedClaims = getEnforcedClaims(mayActMap);
+        } catch (IllegalArgumentException e) {
+            event.detail(Details.REASON, e.getMessage());
             event.error(Errors.INVALID_TOKEN);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid may_act claim in the subject_token", Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, e.getMessage(), Response.Status.BAD_REQUEST);
         }
+        Map<String, Object> actorClaims = JsonSerialization.mapper.convertValue(actorAccessToken, Map.class);
+        for (String claimName : enforcedClaims) {
+            Object mayActValue = mayActMap.get(claimName);
+            if (mayActValue == null) {
+                continue;
+            }
+            Object actorValue = actorClaims.get(claimName);
+            if (!mayActValue.equals(actorValue)) {
+                String reason = String.format("Enforced claim '%s' in may_act does not match actor token claim '%s'", claimName, claimName);
+                event.detail(Details.REASON, reason);
+                event.error(Errors.INVALID_TOKEN);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, reason, Response.Status.BAD_REQUEST);
+            }
+        }
+    }
 
-        if (!actorUser.getId().equals(subject)) {
-            event.detail(Details.REASON, "Actor user is not allowed by the may_act claim inside the subject_token");
-            event.error(Errors.INVALID_TOKEN);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Actor user is not allowed by the may_act claim inside the subject_token", Response.Status.BAD_REQUEST);
+    private Collection<String> getEnforcedClaims(Map<String, Object> mayActMap) {
+        Object enforceClaimsObj = mayActMap.get(ENFORCE_CLAIMS);
+        if (enforceClaimsObj instanceof Collection<?> list && !list.isEmpty()) {
+            Set<String> merged = new HashSet<>(DEFAULT_ENFORCED_CLAIMS);
+            for (Object item : list) {
+                if (!(item instanceof String s)) {
+                    throw new IllegalArgumentException("enforce_claims must contain only string values");
+                }
+                merged.add(s);
+            }
+            return merged;
         }
+        return DEFAULT_ENFORCED_CLAIMS;
     }
 
     @Override
@@ -176,6 +207,7 @@ public class TokenExchangeDelegationProvider extends StandardTokenExchangeProvid
 
         // add the "act" claim using the "may_act" claim sent in the subjectToken, chain current actor if present
         Map act = new HashMap((Map) subjectAccessToken.getOtherClaims().get(IDToken.MAY_ACT)); // should be present at this point
+        act.remove(ENFORCE_CLAIMS);
         Object prevAct = actorAccessToken.getOtherClaims().get(IDToken.ACT);
         if (prevAct != null) {
             act.put(IDToken.ACT, prevAct);

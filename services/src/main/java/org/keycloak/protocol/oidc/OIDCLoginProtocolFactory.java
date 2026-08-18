@@ -46,6 +46,7 @@ import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.protocol.oidc.mappers.AllowedWebOriginsProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.AudienceResolveProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.FullNameMapper;
+import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.ParameterizedScopeUserPropertyMapper;
 import org.keycloak.protocol.oidc.mappers.SubMapper;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
@@ -54,12 +55,14 @@ import org.keycloak.protocol.oidc.mappers.UserPropertyMapper;
 import org.keycloak.protocol.oidc.mappers.UserRealmRoleMappingMapper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.protocol.oidc.scope.DelegationScopeType;
+import org.keycloak.protocol.oidc.tokenexchange.TokenExchangeDelegationProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;
 
@@ -112,6 +115,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String ALLOWED_WEB_ORIGINS = "allowed web origins";
     public static final String ACR = "acr loa level";
     public static final String DELEGATION_MAY_ACT_SUB = "may_act sub";
+    public static final String DELEGATION_ENFORCE_CLAIMS = "may_act enforce_claims";
     public static final String ORGANIZATION = "organization";
     // microprofile-jwt claims
     public static final String UPN = "upn";
@@ -279,6 +283,10 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             model = ParameterizedScopeUserPropertyMapper.create(
                     DELEGATION_MAY_ACT_SUB, "id", MAY_ACT + "." + SUBJECT, "String", true, true, true);
             builtins.put(DELEGATION_MAY_ACT_SUB, model);
+
+            model = HardcodedClaim.create(DELEGATION_ENFORCE_CLAIMS,
+                    MAY_ACT + "." + TokenExchangeDelegationProvider.ENFORCE_CLAIMS, toJsonString(TokenExchangeDelegationProvider.DEFAULT_ENFORCED_CLAIMS), "JSON", true, true, true);
+            builtins.put(DELEGATION_ENFORCE_CLAIMS, model);
         }
 
         model = UserSessionNoteMapper.createClaimMapper(IDToken.AUTH_TIME, AuthenticationManager.AUTH_TIME,
@@ -391,6 +399,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             delegationScope.setProtocol(getId());
             delegationScope.setConsentScreenText("${delegationScopeConsentText}");
             delegationScope.addProtocolMapper(builtins.get(DELEGATION_MAY_ACT_SUB));
+            delegationScope.addProtocolMapper(builtins.get(DELEGATION_ENFORCE_CLAIMS));
         }
     }
 
@@ -683,5 +692,13 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                     .defaultValue(OIDCProviderConfig.DEFAULT_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN)
                     .add()
                 .build();
+    }
+
+    private static String toJsonString(Object value) {
+        try {
+            return JsonSerialization.writeValueAsString(value);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize value to JSON", e);
+        }
     }
 }
