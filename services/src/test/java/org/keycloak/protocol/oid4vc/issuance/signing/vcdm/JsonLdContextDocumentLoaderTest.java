@@ -6,11 +6,15 @@ import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -79,6 +83,15 @@ public class JsonLdContextDocumentLoaderTest {
                 Thread.currentThread().interrupt();
             }
             exchange.close();
+        });
+        server.createContext("/delayed", exchange -> {
+            contextRequests.incrementAndGet();
+            try {
+                Thread.sleep(300);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            handleRequest(exchange, 200, CONTEXT_DOCUMENT, "application/ld+json");
         });
         server.createContext("/slowBody", exchange -> {
             exchange.getResponseHeaders().set("Content-Type", "application/ld+json");
@@ -210,19 +223,56 @@ public class JsonLdContextDocumentLoaderTest {
     }
 
     @Test
-    public void testFailedLoadDoesNotLeakLockEntry() throws Exception {
-        // A failed load must release the single-flight lock entry, otherwise every URL that
-        // ever fails keeps an entry in the locks map for the lifetime of the server.
+    public void testFailedLoadDoesNotLeakInFlightEntry() throws Exception {
+        // A failed load must release the in-flight entry, otherwise every URL that ever fails
+        // keeps an entry in the inflight map for the lifetime of the server.
         JsonLdContextDocumentLoader loader = JsonLdContextDocumentLoader.forTesting(
                 client, Set.of("localhost"));
 
         Assert.assertThrows(JsonLdError.class, () -> loader.loadDocument(
                 URI.create(baseUrl + "/large"), new DocumentLoaderOptions()));
 
-        Field locks = JsonLdContextDocumentLoader.class.getDeclaredField("locks");
-        locks.setAccessible(true);
-        Map<?, ?> lockEntries = (Map<?, ?>) locks.get(loader);
-        Assert.assertTrue("Failed loads must not leak single-flight lock entries", lockEntries.isEmpty());
+        Field inflight = JsonLdContextDocumentLoader.class.getDeclaredField("inflight");
+        inflight.setAccessible(true);
+        Map<?, ?> inFlightEntries = (Map<?, ?>) inflight.get(loader);
+        Assert.assertTrue("Failed loads must not leak in-flight entries", inFlightEntries.isEmpty());
+    }
+
+    @Test(timeout = 15000)
+    public void testConcurrentLoadsAreCoalesced() throws Exception {
+        // Concurrent misses for the same URL must share a single load: the first caller fetches
+        // the document and the others wait on the in-flight future instead of fetching again.
+        try (CloseableHttpClient slowClient = new HttpClientBuilder()
+                .socketTimeout(5000, TimeUnit.MILLISECONDS)
+                .disableRedirectHandling()
+                .build()) {
+            JsonLdContextDocumentLoader loader = JsonLdContextDocumentLoader.forTesting(
+                    slowClient, Set.of("localhost"));
+            URI url = URI.create(baseUrl + "/delayed");
+            contextRequests.set(0);
+
+            int threads = 8;
+            ExecutorService pool = Executors.newFixedThreadPool(threads);
+            try {
+                CountDownLatch start = new CountDownLatch(1);
+                List<Future<?>> results = new ArrayList<>();
+                for (int i = 0; i < threads; i++) {
+                    results.add(pool.submit(() -> {
+                        start.await();
+                        return loader.loadDocument(url, new DocumentLoaderOptions());
+                    }));
+                }
+                start.countDown();
+                for (Future<?> result : results) {
+                    result.get(10, TimeUnit.SECONDS);
+                }
+            } finally {
+                pool.shutdownNow();
+            }
+
+            Assert.assertEquals("Concurrent loads of the same URL must fetch it only once",
+                    1, contextRequests.get());
+        }
     }
 
     private static void handleRequest(HttpExchange exchange, int status, String body, String contentType)

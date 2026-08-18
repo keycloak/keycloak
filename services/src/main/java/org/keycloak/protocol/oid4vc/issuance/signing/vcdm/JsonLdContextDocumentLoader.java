@@ -13,7 +13,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import org.keycloak.connections.httpclient.HttpClientProvider;
@@ -77,7 +79,7 @@ public class JsonLdContextDocumentLoader implements DocumentLoader {
             return size() > MAX_CACHE_ENTRIES;
         }
     };
-    private final Map<URI, Object> locks = new ConcurrentHashMap<>();
+    private final Map<URI, CompletableFuture<Document>> inflight = new ConcurrentHashMap<>();
 
     /** Creates a loader with the default https-only allowlist, using the given HTTP client. */
     public JsonLdContextDocumentLoader(CloseableHttpClient client) {
@@ -127,20 +129,47 @@ public class JsonLdContextDocumentLoader implements DocumentLoader {
             return cached;
         }
 
-        // Coalesce concurrent misses for the same URL so only one request populates the cache.
-        Object lock = locks.computeIfAbsent(url, u -> new Object());
+        // Coalesce concurrent misses for the same URL: the caller that creates the in-flight entry
+        // performs the load, everyone else waits on the shared future, so only one request reaches
+        // the context host. Waiters inherit the result of the in-flight load, including a failure,
+        // so a failed load cannot trigger duplicate concurrent requests.
+        CompletableFuture<Document> future = new CompletableFuture<>();
+        CompletableFuture<Document> existing = inflight.putIfAbsent(url, future);
+        if (existing != null) {
+            return await(existing);
+        }
+
         try {
-            synchronized (lock) {
-                cached = getCached(url);
-                if (cached == null) {
-                    cached = delegate.loadDocument(url, options);
-                    putCached(url, cached);
-                }
-                return cached;
+            // A just-completed load may have populated the cache between the check above and here.
+            cached = getCached(url);
+            if (cached == null) {
+                cached = delegate.loadDocument(url, options);
+                putCached(url, cached);
             }
+            future.complete(cached);
+            return cached;
+        } catch (JsonLdError | RuntimeException e) {
+            future.completeExceptionally(e);
+            throw e;
         } finally {
-            // Always release the lock entry so a failed load cannot leak it.
-            locks.remove(url, lock);
+            // Only the caller that created the entry removes it, after the load completed,
+            // so a failed load cannot leak the entry.
+            inflight.remove(url, future);
+        }
+    }
+
+    private static Document await(CompletableFuture<Document> future) throws JsonLdError {
+        try {
+            return future.get();
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof JsonLdError jsonLdError) {
+                throw jsonLdError;
+            }
+            throw new JsonLdError(JsonLdErrorCode.LOADING_DOCUMENT_FAILED, cause);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new JsonLdError(JsonLdErrorCode.LOADING_DOCUMENT_FAILED, e);
         }
     }
 
