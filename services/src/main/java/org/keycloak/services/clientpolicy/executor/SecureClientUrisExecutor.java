@@ -122,6 +122,10 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Se
         String logoutUrl = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL);
         if (logoutUrl != null) confirmSecureUris(List.of(logoutUrl), "logoutUrl");
 
+        // front-channel logout URL
+        String frontChannelLogoutUrl = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI);
+        if (frontChannelLogoutUrl != null) confirmSecureUris(List.of(frontChannelLogoutUrl), "frontChannelLogoutUrl");
+
         // OAuth2 : redirectUris
         List<String> redirectUris = clientRep.getRedirectUris();
         if (redirectUris != null) confirmSecureUris(redirectUris, "redirectUris");

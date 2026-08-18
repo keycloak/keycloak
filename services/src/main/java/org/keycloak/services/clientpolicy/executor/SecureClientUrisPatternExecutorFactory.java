@@ -46,6 +46,7 @@ public class SecureClientUrisPatternExecutorFactory implements ClientPolicyExecu
             "jwksUri",
             "requestUris",
             "backchannelLogoutUrl",
+            "frontChannelLogoutUrl",
             "postLogoutRedirectUris",
             "cibaClientNotificationEndpoint",
             OIDCConfigAttributes.LOGO_URI,
