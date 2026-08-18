@@ -32,4 +32,10 @@ public class PwdLessOtherSettingsTest extends WebAuthnOtherSettingsTest {
     public boolean isPasswordless() {
         return true;
     }
+
+    @Override
+    protected void switchExecutionInBrowserFormToPasswordless() {
+        // These tests register a passwordless-only credential, so use a login flow that goes straight from the password form to passwordless webauthn
+        managedRealm.updateWithCleanup(r -> r.browserFlow("passwordless-only"));
+    }
 }
