@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { v4 as uuidv4 } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { login } from "../utils/login.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
 import { goToClients, goToRealm } from "../utils/sidebar.ts";
 import { assertEmptyTable, clickTableRowItem } from "../utils/table.ts";
 import { createDefaultTrustProvider } from "../identity-providers/main.ts";
@@ -13,6 +14,12 @@ import {
   assertTestClusterAvailability,
   assertTokenLifespanClientOfflineSessionMaxVisible,
   assertDirectGrantInput,
+  assertRefreshTokenMaxReuse,
+  assertRefreshTokenMaxReusePlaceholder,
+  assertRefreshTokenMaxReuseVisible,
+  assertRevokeRefreshToken,
+  fillRefreshTokenMaxReuse,
+  selectRevokeRefreshToken,
   clickAdvancedSwitches,
   clickAllCompatibilitySwitch,
   deleteClusterNode,
@@ -94,6 +101,60 @@ test.describe.serial("Advanced tab test", () => {
     await clickAdvancedSwitches(page, false);
     await revertAdvanced(page);
     await assertAdvancedSwitchesOn(page);
+  });
+
+  test("Refresh token revocation override", async ({ page }) => {
+    const inherited = "Inherits from realm settings (Disabled)";
+    const getAttributes = async () =>
+      (await adminClient.getClient(clientId))?.attributes ?? {};
+
+    // Default: inherits from realm (master realm has revocation disabled), no max reuse field
+    await assertRevokeRefreshToken(page, inherited);
+    await assertRefreshTokenMaxReuseVisible(page, false);
+
+    // Enable for the client: max reuse field appears, showing the realm value as placeholder
+    await selectRevokeRefreshToken(page, "Enabled");
+    await assertRefreshTokenMaxReuseVisible(page, true);
+    await assertRefreshTokenMaxReusePlaceholder(
+      page,
+      "Inherits from realm settings (0)",
+    );
+    await fillRefreshTokenMaxReuse(page, "2");
+    await saveAdvanced(page);
+    await assertNotificationMessage(page, "Client successfully updated");
+
+    let attributes = await getAttributes();
+    expect(attributes["revoke.refresh.token"]).toBe("true");
+    expect(attributes["refresh.token.max.reuse"]).toBe("2");
+
+    // Persisted values are loaded again after reload
+    await page.reload();
+    await goToAdvancedTab(page);
+    await assertRevokeRefreshToken(page, "Enabled");
+    await assertRefreshTokenMaxReuse(page, "2");
+
+    // Disabling hides the max reuse field, revert restores the saved state
+    await selectRevokeRefreshToken(page, "Disabled");
+    await assertRefreshTokenMaxReuseVisible(page, false);
+    await revertAdvanced(page);
+    await assertRevokeRefreshToken(page, "Enabled");
+    await assertRefreshTokenMaxReuse(page, "2");
+
+    // Disable for the client and save
+    await selectRevokeRefreshToken(page, "Disabled");
+    await assertRefreshTokenMaxReuseVisible(page, false);
+    await saveAdvanced(page);
+    await assertNotificationMessage(page, "Client successfully updated");
+    attributes = await getAttributes();
+    expect(attributes["revoke.refresh.token"]).toBe("false");
+
+    // Back to inheriting from the realm
+    await selectRevokeRefreshToken(page, inherited);
+    await assertRefreshTokenMaxReuseVisible(page, false);
+    await saveAdvanced(page);
+    await assertNotificationMessage(page, "Client successfully updated");
+    attributes = await getAttributes();
+    expect(attributes["revoke.refresh.token"] ?? "").toBe("");
   });
 
   test("Authentication flow override", async ({ page }) => {
