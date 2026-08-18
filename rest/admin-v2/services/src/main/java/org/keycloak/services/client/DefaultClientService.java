@@ -23,6 +23,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.events.admin.v2.AdminEventV2Builder;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
@@ -32,6 +33,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
@@ -56,6 +58,8 @@ import org.keycloak.services.clientpolicy.context.AdminClientUnregisterContext;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdatedContext;
 import org.keycloak.services.clientpolicy.context.AdminClientViewContext;
+import org.keycloak.services.clientpolicy.context.ClientModelContext;
+import org.keycloak.services.clientpolicy.context.ClientSecretRotationContext;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
@@ -329,7 +333,7 @@ public class DefaultClientService implements ClientService {
                         // Check permissions, execute validations and trigger client policies
                         permissions.clients().requireConfigure(model);
                         // Must run before bean validation: PutClient requires a non-blank secret for client-secret methods
-                        generateClientSecretIfNeeded(client, model, strategy, patchExplicitNullSecret);
+                        String currentSecret = generateClientSecretIfNeeded(client, model, strategy, patchExplicitNullSecret);
                         validator.validate(client, strategy.getValidationGroup(), Default.class);
                         var proposedRepresentation = getProposedOldRepresentation(realm, client, schema);
                         session.clientPolicy().triggerOnEvent(new AdminClientUpdateContext(proposedRepresentation, model, permissions.adminAuth()));
@@ -345,7 +349,14 @@ public class DefaultClientService implements ClientService {
 
                         model.updateClient();
 
-                        session.clientPolicy().triggerOnEvent(new AdminClientUpdatedContext(proposedRepresentation, model, permissions.adminAuth()));
+                        ClientModelContext updatedContext = currentSecret != null
+                                ? new ClientSecretRotationContext(proposedRepresentation, model, currentSecret, permissions.adminAuth())
+                                : new AdminClientUpdatedContext(proposedRepresentation, model, permissions.adminAuth());
+                        session.clientPolicy().triggerOnEvent(updatedContext);
+
+                        if (!Boolean.TRUE.equals(session.removeAttribute(ClientSecretConstants.CLIENT_SECRET_ROTATION_ENABLED))) {
+                            OIDCClientSecretConfigWrapper.fromClientModel(model).removeClientSecretRotationInfo();
+                        }
                     }
                 }
             } else {
@@ -444,12 +455,14 @@ public class DefaultClientService implements ClientService {
         return proposedRepresentation;
     }
 
-    private void generateClientSecretIfNeeded(BaseClientRepresentation client, ClientModel model, CreateOrUpdateStrategy strategy, boolean patchExplicitNullSecret) {
+    private String generateClientSecretIfNeeded(BaseClientRepresentation client, ClientModel model, CreateOrUpdateStrategy strategy, boolean patchExplicitNullSecret) {
+        String currentSecret = null;
         if (client instanceof OIDCClientRepresentation oidcClient
                 && OIDCClientRepresentation.PROTOCOL.equals(client.getProtocol())) {
             var auth = oidcClient.getAuth();
             if (auth != null && isClientSecret(auth.getMethod()) && isBlank(auth.getSecret())) {
                 if (strategy == CreateOrUpdateStrategy.PATCH && patchExplicitNullSecret) {
+                    currentSecret = model.getSecret(); // return current password for rotation
                     auth.setSecret(KeycloakModelUtils.generateSecret(model));
                 } else {
                     // On PUT the client often omits the secret; reuse the persisted secret before bean validation (PutClient).
@@ -462,6 +475,7 @@ public class DefaultClientService implements ClientService {
                 }
             }
         }
+        return currentSecret;
     }
 
     protected void assertSameClientIds(String pathId, String payloadId) {
