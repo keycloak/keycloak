@@ -19,8 +19,13 @@ package org.keycloak.quarkus.deployment;
 
 import java.lang.reflect.Modifier;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.keycloak.provider.KeycloakProvider;
@@ -30,6 +35,7 @@ import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
+import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
@@ -40,19 +46,20 @@ import org.jboss.logging.Logger;
  * Scans the Quarkus Jandex index for classes annotated with {@link KeycloakProvider},
  * validates them at build time, and publishes them as a {@link ProviderRegistryBuildItem}
  * for {@link KeycloakProcessor#configureKeycloakSessionFactory} to feed into provider
- * discovery.
+ * discovery. Each annotated class is registered for the provider factory interface named
+ * by {@link KeycloakProvider#value()}, mirroring a {@code META-INF/services/<value>} entry.
  *
  * Build-time validation:
  * <ul>
  *   <li>the annotation target must be a class (the annotation is already {@code @Target(TYPE)},
  *       so a non-class target indicates an illegal state),</li>
  *   <li>the class must be a public, non-abstract class (no interface, enum or annotation),</li>
- *   <li>the class must declare a public no-arg constructor (Jandex check).</li>
+ *   <li>the class must declare a public no-arg constructor (Jandex check),</li>
+ *   <li>the annotation value must be a {@link ProviderFactory} type and the class must implement it.</li>
  * </ul>
- * The {@link ProviderFactory} assignability check happens inside
- * {@link #loadFactoryClasses(Set)} via {@link Class#asSubclass(Class)} so we do not need
- * to pull {@code keycloak-server-spi} into the Quarkus Jandex index just to walk the
- * interface chain.
+ * The assignability checks happen inside {@link #loadFactoryClasses(SortedMap)} via
+ * {@link Class#asSubclass(Class)} / {@link Class#isAssignableFrom(Class)} so we do not need to
+ * pull {@code keycloak-server-spi} into the Quarkus Jandex index just to walk the interface chain.
  */
 class ProviderRegistryProcessor {
 
@@ -63,7 +70,8 @@ class ProviderRegistryProcessor {
     @BuildStep
     ProviderRegistryBuildItem scanKeycloakProviders(CombinedIndexBuildItem indexBuildItem) {
         IndexView index = indexBuildItem.getIndex();
-        TreeSet<String> classNames = new TreeSet<>();
+        // factory interface name -> annotated class names, both sorted for a deterministic build
+        SortedMap<String, SortedSet<String>> classNames = new TreeMap<>();
 
         Collection<AnnotationInstance> annotations = index.getAnnotations(KEYCLOAK_PROVIDER);
         for (AnnotationInstance annotation : annotations) {
@@ -82,27 +90,53 @@ class ProviderRegistryProcessor {
                 throw new IllegalStateException("@" + KeycloakProvider.class.getSimpleName()
                         + " class " + classInfo.name() + " must have a public no-arg constructor");
             }
-            classNames.add(classInfo.name().toString());
+
+            AnnotationValue value = annotation.value();
+            if (value == null) {
+                throw new IllegalStateException("@" + KeycloakProvider.class.getSimpleName()
+                        + " on class " + classInfo.name() + " must specify the provider factory interface it is registered for");
+            }
+            String factoryInterfaceName = value.asClass().name().toString();
+            classNames.computeIfAbsent(factoryInterfaceName, key -> new TreeSet<>()).add(classInfo.name().toString());
         }
 
-        logger.debugf("Discovered %d @KeycloakProvider-annotated provider factories", classNames.size());
+        logger.debugf("Discovered %d @KeycloakProvider-annotated provider factories", annotations.size());
         return new ProviderRegistryBuildItem(loadFactoryClasses(classNames));
     }
 
-    @SuppressWarnings("rawtypes")
-    private static Set<Class<? extends ProviderFactory>> loadFactoryClasses(Set<String> classNames) {
+    private static Map<Class<? extends ProviderFactory>, Set<Class<? extends ProviderFactory>>> loadFactoryClasses(
+            SortedMap<String, SortedSet<String>> classNames) {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        Set<Class<? extends ProviderFactory>> classes = new LinkedHashSet<>(classNames.size());
-        for (String className : classNames) {
+        Map<Class<? extends ProviderFactory>, Set<Class<? extends ProviderFactory>>> classes = new LinkedHashMap<>();
+        for (Map.Entry<String, SortedSet<String>> entry : classNames.entrySet()) {
+            String factoryInterfaceName = entry.getKey();
+            Class<? extends ProviderFactory> factoryInterface;
             try {
-                classes.add(Class.forName(className, false, classLoader).asSubclass(ProviderFactory.class));
+                factoryInterface = Class.forName(factoryInterfaceName, false, classLoader).asSubclass(ProviderFactory.class);
             } catch (ClassNotFoundException e) {
                 throw new IllegalStateException("@" + KeycloakProvider.class.getSimpleName()
-                        + " class " + className + " is in the Jandex index but not on the deployment classpath", e);
+                        + " value " + factoryInterfaceName + " is not on the deployment classpath", e);
             } catch (ClassCastException e) {
                 throw new IllegalStateException("@" + KeycloakProvider.class.getSimpleName()
-                        + " class " + className + " does not implement " + ProviderFactory.class.getName(), e);
+                        + " value " + factoryInterfaceName + " is not a " + ProviderFactory.class.getName() + " type", e);
             }
+
+            Set<Class<? extends ProviderFactory>> implementations = new LinkedHashSet<>();
+            for (String className : entry.getValue()) {
+                Class<?> implementation;
+                try {
+                    implementation = Class.forName(className, false, classLoader);
+                } catch (ClassNotFoundException e) {
+                    throw new IllegalStateException("@" + KeycloakProvider.class.getSimpleName()
+                            + " class " + className + " is in the Jandex index but not on the deployment classpath", e);
+                }
+                if (!factoryInterface.isAssignableFrom(implementation)) {
+                    throw new IllegalStateException("@" + KeycloakProvider.class.getSimpleName()
+                            + " class " + className + " does not implement " + factoryInterfaceName);
+                }
+                implementations.add(implementation.asSubclass(factoryInterface));
+            }
+            classes.put(factoryInterface, implementations);
         }
         return classes;
     }

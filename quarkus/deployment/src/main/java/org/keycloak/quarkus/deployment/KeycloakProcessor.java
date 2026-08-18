@@ -943,7 +943,8 @@ class KeycloakProcessor {
     }
 
     private Map<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> loadFactories(
-            Map<String, ProviderFactory> preConfiguredProviders, Set<Class<? extends ProviderFactory>> providerFactoryClasses) {
+            Map<String, ProviderFactory> preConfiguredProviders,
+            Map<Class<? extends ProviderFactory>, Set<Class<? extends ProviderFactory>>> providerFactoryClasses) {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         ProviderManager pm = getProviderManager(classLoader, providerFactoryClasses);
         Map<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> factories = new HashMap<>();

@@ -11,7 +11,7 @@ import org.keycloak.provider.KeycloakProvider;
  * Invalid {@link KeycloakProvider} factory: no public no-arg constructor, so the build-time
  * validation must reject it.
  */
-@KeycloakProvider
+@KeycloakProvider(EventListenerProviderFactory.class)
 public class NoPublicConstructorProviderFactory implements EventListenerProviderFactory {
 
     private NoPublicConstructorProviderFactory() {

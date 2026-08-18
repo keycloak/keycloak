@@ -30,10 +30,10 @@ import org.junit.jupiter.api.Assertions;
 
 /**
  * Verifies the dual-mode discovery in {@link DefaultProviderLoader}: factory classes
- * registered on the {@link KeycloakDeploymentInfo} (as the Quarkus deployment processor
- * does with the classes discovered by the build-time {@code @KeycloakProvider} scan) are
- * combined with {@link java.util.ServiceLoader}-discovered factories, with deduplication
- * by factory class.
+ * registered on the {@link KeycloakDeploymentInfo} for a provider factory interface (as the
+ * Quarkus deployment processor does with the classes discovered by the build-time
+ * {@code @KeycloakProvider} scan) are combined with {@link java.util.ServiceLoader}-discovered
+ * factories, with deduplication by factory class.
  *
  * ServiceLoader picks up factories from
  * {@code src/test/resources/META-INF/services/org.keycloak.provider.DefaultProviderLoaderTest$TestProviderFactory}.
@@ -43,9 +43,9 @@ public class DefaultProviderLoaderTest {
     @Test
     public void loadCombinesRegisteredClassesAndServiceLoaderWithDedup() {
         KeycloakDeploymentInfo info = KeycloakDeploymentInfo.create().services();
-        info.addProviderFactoryClass(BothFactory.class);
-        info.addProviderFactoryClass(RegisteredOnlyFactory.class);
-        info.addProviderFactoryClass(UnrelatedFactory.class);
+        info.addProviderFactoryClass(TestProviderFactory.class, BothFactory.class);
+        info.addProviderFactoryClass(TestProviderFactory.class, RegisteredOnlyFactory.class);
+        info.addProviderFactoryClass(OtherProviderFactory.class, UnrelatedFactory.class);
 
         DefaultProviderLoader loader = new DefaultProviderLoader(info, getClass().getClassLoader());
 
@@ -59,11 +59,32 @@ public class DefaultProviderLoaderTest {
         Assertions.assertTrue(classes.contains(BothFactory.class),
                 "factory listed in both sources must be loaded");
         Assertions.assertFalse(classes.contains(UnrelatedFactory.class),
-                "factory implementing a different SPI must be filtered out");
+                "factory registered for a different SPI must be filtered out");
 
         long bothCount = factories.stream().filter(f -> f.getClass() == BothFactory.class).count();
         Assertions.assertEquals(1, bothCount,
                 "factory registered on the deployment info AND listed in META-INF/services must be deduplicated by class");
+    }
+
+    /**
+     * A factory registered for a sub-SPI whose factory interface extends this SPI's factory
+     * interface must not be picked up for this SPI — registration is by exact factory interface,
+     * mirroring how a {@code META-INF/services} file is bound to one interface only.
+     */
+    @Test
+    public void loadRegistersByExactFactoryInterfaceNotByAssignability() {
+        KeycloakDeploymentInfo info = KeycloakDeploymentInfo.create();
+        info.addProviderFactoryClass(SubProviderFactory.class, SubFactory.class);
+
+        DefaultProviderLoader loader = new DefaultProviderLoader(info, getClass().getClassLoader());
+
+        List<ProviderFactory> forTestSpi = loader.load(new TestSpi());
+        Assertions.assertTrue(forTestSpi.isEmpty(),
+                "factory registered for the sub-SPI must not be loaded for the parent SPI although it is assignable to its factory interface");
+
+        List<ProviderFactory> forSubSpi = loader.load(new SubSpi());
+        Assertions.assertEquals(1, forSubSpi.size());
+        Assertions.assertEquals(SubFactory.class, forSubSpi.get(0).getClass());
     }
 
     public interface TestProvider extends Provider {
@@ -112,12 +133,32 @@ public class DefaultProviderLoaderTest {
     public interface OtherProviderFactory extends ProviderFactory<OtherProvider> {
     }
 
-    /** Registered but for a different SPI — must be filtered out when loading TestSpi. */
+    /** Registered for a different SPI — must be filtered out when loading TestSpi. */
     public static final class UnrelatedFactory implements OtherProviderFactory {
         @Override public OtherProvider create(KeycloakSession session) { return null; }
         @Override public void init(Config.Scope config) { }
         @Override public void postInit(KeycloakSessionFactory factory) { }
         @Override public void close() { }
         @Override public String getId() { return "unrelated"; }
+    }
+
+    /** Sub-SPI whose factory interface extends {@link TestProviderFactory}. */
+    public interface SubProviderFactory extends TestProviderFactory {
+    }
+
+    public static final class SubSpi implements Spi {
+        @Override public boolean isInternal() { return true; }
+        @Override public String getName() { return "default-provider-loader-sub-test"; }
+        @Override public Class<? extends Provider> getProviderClass() { return TestProvider.class; }
+        @Override public Class<? extends ProviderFactory> getProviderFactoryClass() { return SubProviderFactory.class; }
+    }
+
+    /** Registered for the sub-SPI only; assignable to TestProviderFactory but must not be loaded for TestSpi. */
+    public static final class SubFactory implements SubProviderFactory {
+        @Override public TestProvider create(KeycloakSession session) { return null; }
+        @Override public void init(Config.Scope config) { }
+        @Override public void postInit(KeycloakSessionFactory factory) { }
+        @Override public void close() { }
+        @Override public String getId() { return "sub"; }
     }
 }

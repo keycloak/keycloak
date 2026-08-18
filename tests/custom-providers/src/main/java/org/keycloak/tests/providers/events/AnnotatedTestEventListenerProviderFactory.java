@@ -16,7 +16,7 @@ import org.keycloak.provider.KeycloakProvider;
  * if this provider shows up in the running server, the build-time annotation scan and the wiring into
  * provider discovery worked end-to-end.
  */
-@KeycloakProvider
+@KeycloakProvider(EventListenerProviderFactory.class)
 public class AnnotatedTestEventListenerProviderFactory implements EventListenerProviderFactory, EventListenerProvider {
 
     public static final String PROVIDER_ID = "test-annotated-event-listener";

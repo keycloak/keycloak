@@ -59,17 +59,14 @@ public class DefaultProviderLoader implements ProviderLoader {
     @Override
     public List<ProviderFactory> load(Spi spi) {
         List<ProviderFactory> list = new LinkedList<>();
-        // Factory classes registered directly on the deployment info (discovered at build
-        // time via the @KeycloakProvider annotation scan), then ServiceLoader for anything
-        // not yet annotated (including third-party providers that ship META-INF/services
-        // descriptors). Dedup is by factory Class so a provider listed in both sources is
-        // instantiated only once.
+        // Factory classes registered on the deployment info for this SPI's factory interface
+        // (discovered at build time via the @KeycloakProvider annotation scan), then
+        // ServiceLoader for anything not annotated (including third-party providers that ship
+        // META-INF/services descriptors). Dedup is by factory Class so a provider registered
+        // through both sources is instantiated only once.
         Set<Class<?>> seen = new HashSet<>();
         Class<? extends ProviderFactory> spiFactoryClass = spi.getProviderFactoryClass();
-        for (Class<? extends ProviderFactory> factoryClass : info.getProviderFactoryClasses()) {
-            if (!spiFactoryClass.isAssignableFrom(factoryClass)) {
-                continue;
-            }
+        for (Class<? extends ProviderFactory> factoryClass : info.getProviderFactoryClasses(spiFactoryClass)) {
             if (seen.add(factoryClass)) {
                 list.add(instantiate(factoryClass));
             }

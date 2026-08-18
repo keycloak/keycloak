@@ -223,8 +223,9 @@ public class MyThemeSelectorProviderFactory implements ThemeSelectorProviderFact
 ==== Registering a factory with the @KeycloakProvider annotation
 
 As an alternative to the `META-INF/services` service configuration file, a `ProviderFactory` implementation can be
-registered by annotating the class with `org.keycloak.provider.KeycloakProvider`. The annotation ships in
-`keycloak-server-spi` alongside `ProviderFactory`, so no additional dependency is required:
+registered by annotating the class with `org.keycloak.provider.KeycloakProvider`. The annotation value is the provider
+factory interface of the SPI, that is the interface the service configuration file would otherwise be named after. The
+annotation ships in `keycloak-server-spi` alongside `ProviderFactory`, so no additional dependency is required:
 
 [source,java]
 ----
@@ -233,21 +234,21 @@ package org.acme.provider;
 import org.keycloak.provider.KeycloakProvider;
 import org.keycloak.theme.ThemeSelectorProviderFactory;
 
-@KeycloakProvider
+@KeycloakProvider(ThemeSelectorProviderFactory.class)
 public class MyThemeSelectorProviderFactory implements ThemeSelectorProviderFactory {
     ...
 }
 ----
 
-No service configuration file is needed in this case. The SPI is derived from the `ProviderFactory` interface the class
-implements, and configuration, ordering and the `enabled` option work exactly as for factories registered through a
-service configuration file.
+No service configuration file is needed in this case. Configuration, ordering and the `enabled` option work exactly as for
+factories registered through a service configuration file. A class is registered for exactly one SPI this way; in the rare
+case that one class must serve several SPIs, keep using service configuration files for it.
 
 Annotated factories are discovered when the server is built, that is during `kc.[sh|bat] build` or a non-optimized start,
 after the provider JAR was copied to the `providers` directory. Annotated classes are validated at that point and the build
 fails with a descriptive error if a class:
 
-* does not implement `ProviderFactory`,
+* does not implement the provider factory interface given as the annotation value,
 * is not a public, non-abstract class, or
 * has no public no-arg constructor.
 

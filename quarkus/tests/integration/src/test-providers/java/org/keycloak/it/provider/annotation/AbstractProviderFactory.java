@@ -11,7 +11,7 @@ import org.keycloak.provider.KeycloakProvider;
  * Invalid {@link KeycloakProvider} target: abstract, so it cannot be instantiated even though it has a
  * public no-arg constructor. The build-time validation must reject it.
  */
-@KeycloakProvider
+@KeycloakProvider(EventListenerProviderFactory.class)
 public abstract class AbstractProviderFactory implements EventListenerProviderFactory {
 
     public AbstractProviderFactory() {

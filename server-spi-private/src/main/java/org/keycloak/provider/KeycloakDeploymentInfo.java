@@ -1,6 +1,7 @@
 package org.keycloak.provider;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -14,7 +15,7 @@ public class KeycloakDeploymentInfo {
     private boolean themes;
     private boolean themeResources;
     private Map<Class<? extends Spi>, List<ProviderFactory>> providers = new HashMap<>();
-    private Set<Class<? extends ProviderFactory>> providerFactoryClasses = new LinkedHashSet<>();
+    private Map<Class<? extends ProviderFactory>, Set<Class<? extends ProviderFactory>>> providerFactoryClasses = new HashMap<>();
 
     public boolean isProvider() {
         return services || themes || themeResources || !providers.isEmpty() || !providerFactoryClasses.isEmpty();
@@ -84,16 +85,26 @@ public class KeycloakDeploymentInfo {
     }
 
     /**
-     * Registers a {@link ProviderFactory} class without associating it with a {@link Spi} yet.
-     * The SPI is resolved by assignability when factories are loaded for a given SPI.
-     * Used for provider factories discovered at build time via the
-     * {@link KeycloakProvider} annotation instead of a {@code META-INF/services} descriptor.
+     * Registers a {@link ProviderFactory} class for the SPI identified by its provider factory
+     * interface — the same association a {@code META-INF/services/<factoryInterface>} descriptor
+     * expresses. Used for provider factories discovered at build time via the
+     * {@link KeycloakProvider} annotation.
+     *
+     * @param factoryInterface the SPI's provider factory interface (see {@link Spi#getProviderFactoryClass()})
+     * @param factoryClass the implementation to register for that SPI
      */
-    public void addProviderFactoryClass(Class<? extends ProviderFactory> factoryClass) {
-        providerFactoryClasses.add(factoryClass);
+    public void addProviderFactoryClass(Class<? extends ProviderFactory> factoryInterface, Class<? extends ProviderFactory> factoryClass) {
+        providerFactoryClasses.computeIfAbsent(factoryInterface, key -> new LinkedHashSet<>()).add(factoryClass);
     }
 
-    public Set<Class<? extends ProviderFactory>> getProviderFactoryClasses() {
+    /**
+     * @return the factory classes registered for the SPI identified by {@code factoryInterface}, in registration order
+     */
+    public Set<Class<? extends ProviderFactory>> getProviderFactoryClasses(Class<? extends ProviderFactory> factoryInterface) {
+        return providerFactoryClasses.getOrDefault(factoryInterface, Collections.emptySet());
+    }
+
+    public Map<Class<? extends ProviderFactory>, Set<Class<? extends ProviderFactory>>> getProviderFactoryClasses() {
         return providerFactoryClasses;
     }
 }

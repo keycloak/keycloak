@@ -15,7 +15,7 @@ import org.jboss.logging.Logger;
  * Valid {@link KeycloakProvider} factory: discovered purely through the annotation, no
  * {@code META-INF/services} entry is shipped with it.
  */
-@KeycloakProvider
+@KeycloakProvider(EventListenerProviderFactory.class)
 public class AnnotatedEventListenerProviderFactory implements EventListenerProviderFactory, EventListenerProvider {
 
     public static final String PROVIDER_ID = "annotated-event-listener";

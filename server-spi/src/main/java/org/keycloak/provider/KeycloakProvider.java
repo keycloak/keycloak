@@ -24,17 +24,29 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marker annotation for Keycloak {@link ProviderFactory} implementations.
- *
- * Annotated classes are discovered at build time by the Quarkus deployment processor
- * and registered with the deployment used for provider discovery, removing the need for a
+ * Registers a {@link ProviderFactory} implementation for a given SPI without a
  * {@code META-INF/services/...} descriptor.
- * Discovery via {@link java.util.ServiceLoader} continues to work in parallel
- * so that third-party extensions distributed as JARs with service descriptors remain
- * supported during the transition.
+ * <p>
+ * The {@link #value()} names the SPI's provider factory interface the annotated class is registered
+ * for — exactly the interface a {@code META-INF/services} file would be named after, for example
+ * {@code @KeycloakProvider(EventListenerProviderFactory.class)}. The annotated class must be a public,
+ * non-abstract class with a public no-arg constructor that implements that interface. A class is
+ * registered for exactly one SPI this way; a class that must serve several SPIs keeps using
+ * {@code META-INF/services} descriptors.
+ * <p>
+ * Annotated classes are discovered at build time by the Quarkus deployment processor and registered
+ * with the deployment used for provider discovery. Discovery via {@link java.util.ServiceLoader}
+ * continues to work in parallel, so extensions shipping service descriptors remain supported and a
+ * factory registered through both mechanisms is loaded only once.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface KeycloakProvider {
+
+    /**
+     * The provider factory interface of the SPI the annotated class is registered for.
+     */
+    Class<? extends ProviderFactory> value();
+
 }
