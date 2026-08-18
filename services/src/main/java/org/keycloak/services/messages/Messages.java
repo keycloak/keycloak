@@ -384,4 +384,5 @@ public class Messages {
     public static final String CLIENT_IDLE = "clientSessionIdleTimeoutExceedsRealm";
     public static final String CLIENT_MAXLIFE_SPAN = "clientSessionMaxLifespanExceedsRealm";
     public static final String CLIENT_MAXLIFESPAN_REMEMBERME = "clientSessionMaxLifespanExceedsRealmRememberMeMaxSpan";
+    public static final String REFRESH_TOKEN_MAX_REUSE_INVALID = "clientRefreshTokenMaxReuseInvalid";
 }

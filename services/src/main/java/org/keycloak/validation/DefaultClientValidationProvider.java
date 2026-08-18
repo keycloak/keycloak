@@ -235,9 +235,23 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         validateDefaultAcrValues(context);
         validateMinimumAcrValue(context);
         validateClientSessionTimeout(context);
+        validateRefreshTokenMaxReuse(context);
         validateX509Credentials(context);
 
         return context.toResult();
+    }
+
+    private void validateRefreshTokenMaxReuse(ValidationContext<ClientModel> context) {
+        ClientModel client = context.getObjectToValidate();
+        if (client == null) return;
+        String value = client.getAttribute(OIDCConfigAttributes.REFRESH_TOKEN_MAX_REUSE);
+        if (value == null || value.trim().isEmpty()) return;
+        Integer maxReuse = parseIntAttribute(value.trim());
+        if (maxReuse == null || maxReuse < 0) {
+            context.addError(OIDCConfigAttributes.REFRESH_TOKEN_MAX_REUSE,
+                    "Refresh token max reuse must be a non-negative integer.",
+                    Messages.REFRESH_TOKEN_MAX_REUSE_INVALID);
+        }
     }
 
     @Override
