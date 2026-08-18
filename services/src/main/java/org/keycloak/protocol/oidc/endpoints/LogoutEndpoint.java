@@ -64,6 +64,7 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
+import org.keycloak.protocol.oidc.utils.ContentTypeValidationUtil;
 import org.keycloak.protocol.oidc.utils.LogoutUtil;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.IDToken;
@@ -311,6 +312,7 @@ public class LogoutEndpoint {
     @NoCache
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response logout() {
+        ContentTypeValidationUtil.requireValidContentType(headers, MediaType.APPLICATION_FORM_URLENCODED_TYPE);
         MultivaluedMap<String, String> form = request.getDecodedFormParameters();
         if (form.containsKey(OAuth2Constants.REFRESH_TOKEN)) {
             return logoutToken();

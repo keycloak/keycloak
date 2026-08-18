@@ -40,6 +40,8 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.models.Constants;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
@@ -73,6 +75,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.services.managers.AppAuthManager.BearerTokenAuthenticator;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testsuite.util.AccountHelper;
@@ -900,6 +903,40 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     }
 
     @Test
+    public void testRequestCredentialWithMalformedJwkCrvRejected() {
+        final String scopeName = jwtTypeCredentialScope.getName();
+        String credConfigId = jwtTypeCredentialScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
+
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credConfigId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+
+        String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+        AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
+        String token = tokenResponse.getAccessToken();
+        String credentialIdentifier = tokenResponse.getOID4VCAuthorizationDetails().get(0).getCredentialIdentifiers().get(0);
+        String cNonce = getCNonce();
+
+        String issuer = credentialIssuer.getCredentialIssuer();
+        String validJwtProof = generateJwtProof(issuer, cNonce);
+        String malformedCrvProof = withMalformedJwkCrvInHeader(validJwtProof);
+
+        CredentialRequest request = new CredentialRequest()
+                .setCredentialIdentifier(credentialIdentifier)
+                .setProofs(new Proofs().setJwt(List.of(malformedCrvProof)));
+
+        Oid4vcCredentialResponse response = oauth.oid4vc()
+                .credentialRequest(request)
+                .bearerToken(token)
+                .send();
+
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(ErrorType.INVALID_PROOF.getValue(), response.getError());
+    }
+
+    @Test
     public void testRequestCredentialWithMissingIssuerInClientBoundFlowAllowed() {
         final String scopeName = jwtTypeCredentialScope.getName();
         String credConfigId = jwtTypeCredentialScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
@@ -1041,6 +1078,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 .setCredentialIdentifier(credentialIdentifier)
                 .setProofs(new Proofs().setJwt(List.of(futureIatProof)));
 
+        events.clear();
         Oid4vcCredentialResponse response = oauth.oid4vc()
                 .credentialRequest(request)
                 .bearerToken(token)
@@ -1049,6 +1087,11 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
         assertEquals(ErrorType.INVALID_PROOF.getValue(), response.getError());
         assertTrue(response.getErrorDescription().contains("Proof iat is in the future"));
+        EventAssertion.assertError(events.poll())
+                .type(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
+                .clientId(OID4VCI_CLIENT_ID)
+                .error(ErrorType.INVALID_PROOF.getValue())
+                .details(Details.REASON, "Proof iat is in the future beyond allowed clock skew");
     }
 
     @Test
@@ -1496,6 +1539,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 VCFormat.JWT_VC,
                 null, null
         );
+        optionalScope.setProtocolMappers(List.of());
 
         optionalScope = registerOptionalClientScope(optionalScope);
         ClientRepresentation testClient = testRealm.admin().clients().findByClientId(OID4VCI_CLIENT_ID).get(0);
@@ -1526,6 +1570,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         CredentialRequest credentialRequest = new CredentialRequest()
                 .setCredentialIdentifier(credentialIdentifier);
 
+        events.clear();
         Oid4vcCredentialResponse response = oauth.oid4vc()
                 .credentialRequest(credentialRequest)
                 .bearerToken(token)
@@ -1538,6 +1583,10 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
         assertNotNull(credentialResponseVO.getCredentials(), "Credentials array should not be null");
         assertFalse(credentialResponseVO.getCredentials().isEmpty(), "Credentials array should not be empty");
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.VERIFIABLE_CREDENTIAL_REQUEST)
+                .clientId(OID4VCI_CLIENT_ID)
+                .details(Details.CREDENTIAL_TYPE, configId);
     }
 
     @Test
@@ -1583,8 +1632,60 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             fail("Expected BadRequestException when trying to assign OID4VCI scope as realm Default");
         } catch (BadRequestException e) {
             OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
-            assertEquals("OID4VCI client scopes cannot be assigned as Default scopes. Only Optional scope assignment is supported.",
+            assertEquals("OID4VCI client scopes cannot be assigned as realm Default or Optional client scopes. " +
+                            "They must be assigned explicitly to clients with OID4VCI enabled.",
                     error.getErrorDescription());
+        }
+    }
+
+    @Test
+    public void testCannotAssignOid4vciScopeAsOptionalToRealm() {
+        ClientScopeRepresentation oid4vciScope = createOptionalClientScope(
+                "test-oid4vci-realm-optional-scope",
+                TEST_ISSUER_DID,
+                "test-oid4vci-realm-optional-config-id",
+                null, null,
+                VCFormat.JWT_VC,
+                null, null
+        );
+
+        oid4vciScope = registerOptionalClientScope(oid4vciScope);
+
+        try {
+            testRealm.admin().addDefaultOptionalClientScope(oid4vciScope.getId());
+            fail("Expected BadRequestException when trying to assign OID4VCI scope as realm Optional");
+        } catch (BadRequestException e) {
+            OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
+            assertEquals("OID4VCI client scopes cannot be assigned as realm Default or Optional client scopes. " +
+                            "They must be assigned explicitly to clients with OID4VCI enabled.",
+                    error.getErrorDescription());
+        }
+    }
+
+    @Test
+    public void testCanAssignOid4vciScopeAsOptionalToClient() {
+        ClientScopeRepresentation oid4vciScope = createOptionalClientScope(
+                "test-oid4vci-client-optional-scope",
+                TEST_ISSUER_DID,
+                "test-oid4vci-client-optional-config-id",
+                null, null,
+                VCFormat.JWT_VC,
+                null, null
+        );
+
+        oid4vciScope = registerOptionalClientScope(oid4vciScope);
+        final String oid4vciScopeId = oid4vciScope.getId();
+        ClientRepresentation testClient = testRealm.admin().clients().findByClientId(OID4VCI_CLIENT_ID).get(0);
+        ClientResource clientResource = testRealm.admin().clients().get(testClient.getId());
+
+        try {
+            clientResource.addOptionalClientScope(oid4vciScopeId);
+            // Explicit per-client assignment of an OID4VCI scope as Optional remains the supported way to enable it
+            assertTrue(clientResource.getOptionalClientScopes().stream()
+                            .anyMatch(scope -> scope.getId().equals(oid4vciScopeId)),
+                    "The OID4VCI scope should be assigned as an Optional client scope");
+        } finally {
+            clientResource.removeOptionalClientScope(oid4vciScopeId);
         }
     }
 
@@ -1903,6 +2004,20 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             });
             jwk.put("d", "fake-private-material");
             header.put("jwk", jwk);
+            parts[0] = Base64Url.encode(JsonSerialization.writeValueAsString(header).getBytes(StandardCharsets.UTF_8));
+            return String.join(".", parts);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static String withMalformedJwkCrvInHeader(String jwt) {
+        try {
+            String[] parts = jwt.split("\\.");
+            Map<String, Object> header = JsonSerialization.readValue(Base64Url.decode(parts[0]), new TypeReference<>() {
+            });
+            // Replace the jwk with a malformed one where crv is an empty array instead of a string
+            header.put("jwk", Map.of("crv", List.of()));
             parts[0] = Base64Url.encode(JsonSerialization.writeValueAsString(header).getBytes(StandardCharsets.UTF_8));
             return String.join(".", parts);
         } catch (IOException e) {

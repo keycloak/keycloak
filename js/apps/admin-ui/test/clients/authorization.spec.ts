@@ -30,7 +30,10 @@ import {
   createResource,
   deletePolicy,
   fillForm,
+  getEvaluateResourceKeyInput,
+  getEvaluateResourceKeyOptions,
   goToAuthorizationTab,
+  goToEvaluateSubTab,
   goToExportSubTab,
   goToPermissionsSubTab,
   goToPoliciesSubTab,
@@ -350,5 +353,124 @@ test.describe.serial("Client authorization resources pagination", () => {
     await page.locator('[aria-label="Go to next page"]').first().click();
     await expect(page.getByText("Resource-11", { exact: true })).toBeVisible();
     await expect(page.getByText("Resource-10", { exact: true })).toBeHidden();
+  });
+});
+
+test.describe.serial("Client authorization evaluate resource key", () => {
+  const clientId = `client-authz-evaluate-${crypto.randomUUID()}`;
+  const resourceNames = [
+    "alpha-resource",
+    "bravo-resource",
+    "charlie-resource",
+  ];
+
+  test.beforeAll(async () => {
+    await adminClient.createClient({
+      protocol: "openid-connect",
+      clientId,
+      publicClient: false,
+      authorizationServicesEnabled: true,
+      serviceAccountsEnabled: true,
+      standardFlowEnabled: true,
+    });
+
+    for (const name of resourceNames) {
+      await adminClient.createResource(clientId, { name });
+    }
+  });
+
+  test.afterAll(async () => {
+    await adminClient.deleteClient(clientId);
+  });
+
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+    await goToClients(page);
+    await searchItem(page, "Search for client", clientId);
+    await clickTableRowItem(page, clientId);
+    await goToAuthorizationTab(page);
+    await goToEvaluateSubTab(page);
+  });
+
+  test("Should filter the resource key options while typing", async ({
+    page,
+  }) => {
+    const key = getEvaluateResourceKeyInput(page);
+    const options = getEvaluateResourceKeyOptions(page);
+
+    await key.click();
+    await key.pressSequentially("charlie");
+
+    await expect(key).toHaveValue("charlie");
+    await expect(options).toHaveText(["charlie-resource"]);
+
+    await key.press("Enter");
+    await expect(key).toHaveValue("charlie-resource");
+  });
+
+  test("Should replace an existing resource key selection by typing", async ({
+    page,
+  }) => {
+    const key = getEvaluateResourceKeyInput(page);
+    const options = getEvaluateResourceKeyOptions(page);
+
+    await key.click();
+    await options.filter({ hasText: "charlie-resource" }).click();
+    await expect(key).toHaveValue("charlie-resource");
+
+    // Typing over an existing selection must show what was typed, not the
+    // selection it replaces, and must narrow the menu down to it.
+    await key.click();
+    await key.press("ControlOrMeta+a");
+    await key.pressSequentially("alpha");
+
+    await expect(key).toHaveValue("alpha");
+    await expect(options).toHaveText(["alpha-resource"]);
+
+    await key.press("Enter");
+    await expect(key).toHaveValue("alpha-resource");
+  });
+
+  test("Should restore the selection when an edit is abandoned", async ({
+    page,
+  }) => {
+    const key = getEvaluateResourceKeyInput(page);
+    const options = getEvaluateResourceKeyOptions(page);
+
+    await key.click();
+    await options.filter({ hasText: "bravo-resource" }).click();
+    await expect(key).toHaveValue("bravo-resource");
+
+    await key.click();
+    await key.press("ControlOrMeta+a");
+    await key.pressSequentially("zzz");
+    await key.press("Escape");
+    await expect(key).toHaveValue("bravo-resource");
+
+    // Re-opening must offer the whole list again, not just the last filter.
+    await key.click();
+    await expect(options).toHaveText(resourceNames);
+  });
+
+  test("Should not satisfy a required select by clearing the input", async ({
+    page,
+  }) => {
+    await goToPermissionsSubTab(page);
+    await createPermission(page, "resource", {
+      name: "clear-input-permission",
+    });
+
+    // Clearing has to reset the consumer's value via onClear. Falling back to
+    // onSelect("") would store [""], which is non-empty and would let the
+    // required check pass with nothing actually selected.
+    const resources = page.locator("#resources").getByRole("combobox");
+    await resources.click();
+    await resources.pressSequentially("alpha");
+    await page.locator("#resources").getByLabel("Clear input value").click();
+
+    await clickSaveButton(page);
+    await expect(
+      page.getByText("Required field", { exact: true }),
+    ).toBeVisible();
   });
 });

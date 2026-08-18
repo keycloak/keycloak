@@ -56,11 +56,42 @@ attribute should be mapped to.
   for attributes from other schemas by typing the full URN-prefixed value (for example,
   `urn:my:params:scim:schemas:extension:custom:1.0:User:memberOf`).
   See <<_scim_managing_schema_extensions_,Managing schema extensions>> for more details on custom schemas.
-. Configure the attribute permissions as needed (at minimum, grant *admin* read and write access).
+. Configure the attribute permissions as needed. At minimum, grant *admin* view access for the attribute
+  to appear in SCIM responses, and *admin* edit access for the attribute to be writable. See
+  <<Attribute permissions and SCIM>> for details.
 . Click *Save*.
 
 .Configuring a SCIM attribute mapping in User Profile
 image:images/scim-user-profile-mapping.png[alt="Configuring a SCIM attribute mapping"]
+
+== Attribute permissions and SCIM
+
+SCIM operates as an admin-level API and uses the same User Profile permission model as the Admin API. The
+permissions configured on a user profile attribute determine whether the attribute is visible and writable
+through SCIM.
+
+=== Visibility
+
+Custom attributes are only included in SCIM responses if they have admin *view* permissions. Attributes without
+any view roles configured are not exposed through SCIM - they will not appear in GET responses, schema discovery,
+or search results.
+
+=== Mutability
+
+Custom attributes are only writable through SCIM if they have admin *edit* permissions. If an attribute has
+admin view permissions but no edit permissions, it is treated as read-only:
+
+* *PUT requests* - read-only attribute values are silently ignored, as required by
+  https://datatracker.ietf.org/doc/html/rfc7644#section-3.5.1[RFC 7644, Section 3.5.1]. The response reflects
+  the actual stored value, not the value sent in the request.
+* *PATCH requests* - read-only attribute values are silently ignored. The attribute retains its existing value.
+
+=== Core SCIM attributes
+
+Core SCIM attributes such as `userName`, `displayName`, `name.givenName`, and `name.familyName` are always
+readable and writable through SCIM, regardless of User Profile permission settings. These attributes are governed
+by the SCIM protocol specification (https://datatracker.ietf.org/doc/html/rfc7643[RFC 7643]) and SCIM clients
+expect to be able to read and set them.
 
 == Mapping additional name attributes
 

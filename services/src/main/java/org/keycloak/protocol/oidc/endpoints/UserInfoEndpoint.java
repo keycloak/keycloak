@@ -70,6 +70,7 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.TokenManager.NotBeforeCheck;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
+import org.keycloak.protocol.oidc.utils.ContentTypeValidationUtil;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -133,6 +134,7 @@ public class UserInfoEndpoint {
     public Response issueUserInfoGet() {
         setNoCacheHeaders();
         setupCors();
+        ContentTypeValidationUtil.requireValidOrNoContentType(request.getHttpHeaders());
         AppAuthManager.AuthHeader accessToken = AppAuthManager.extractAuthorizationHeaderTokenOrReturnNull(session.getContext().getRequestHeaders());
         authorization(accessToken);
         return issueUserInfo();

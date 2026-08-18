@@ -194,6 +194,7 @@ image::images/oid4vci/screenshot-realm-verifiable-credentials.png[Enabling Verif
 
 This enables the OID4VCI functionality for the realm. Once enabled, the **OID4VC Issuer Metadata** link appears in the *Endpoints* section of the General tab, and an **OID4VCI Attributes** section appears in the *Tokens* tab.
 
+[[_oid4vci_key_management]]
 ==== Key Management Configuration
 
 Credentials are signed with a realm signing key. For SD-JWT VCs, the selected key must also provide an X.509 certificate chain that satisfies the https://openid.net/specs/openid4vc-high-assurance-interoperability-profile-1_0-final.html#section-6.1.1[HAIP issuer key resolution requirements]:
@@ -316,6 +317,7 @@ How normalization is applied during issuance:
 * For JWT-VC, the credential `issuanceDate` is normalized at issuance; the JWT `nbf` is derived from the normalized value. If a mapper sets a VC `expirationDate`, it is normalized and emitted as JWT `exp`.
 * For SD-JWT VCs, time-related claims (`iat`, `nbf`, `exp`) are typically set using protocol mappers such as the Issued At Time Claim Mapper. Values are automatically normalized according to the realm strategy.
 
+[[_oid4vci_user_setup]]
 === Creating a User Account
 
 A test user is required to simulate credential issuance and verify the setup.
@@ -642,5 +644,7 @@ For a **complete reference implementation**, see the sample project:
 https://github.com/adorsys/{project_name}-ssi-deployment/tree/main[{project_name} SSI Deployment^].
 
 include::requesting-credentials.adoc[]
+
+include::wallet-integration.adoc[]
 
 include::proofs.adoc[]

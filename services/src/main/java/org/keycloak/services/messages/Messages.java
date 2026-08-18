@@ -350,6 +350,12 @@ public class Messages {
     public static final String WEBAUTHN_ERROR_API_SECURITY = "webauthn-error-api-security";
     public static final String WEBAUTHN_ERROR_UNSUPPORTED_BROWSER = "webauthn-unsupported-browser-text";
     public static final String WEBAUTHN_ERROR_DUPLICATED_DEVICE = "webauthn-error-duplicated-device";
+    public static final String WEBAUTHN_ERROR_USER_NOT_PRESENT = "webauthn-error-user-not-present";
+    public static final String WEBAUTHN_ERROR_USER_NOT_VERIFIED = "webauthn-error-user-not-verified";
+    public static final String WEBAUTHN_ERROR_BAD_ORIGIN = "webauthn-error-bad-origin";
+    public static final String WEBAUTHN_ERROR_BAD_RPID = "webauthn-error-bad-rpid";
+    public static final String WEBAUTHN_ERROR_BAD_CHALLENGE = "webauthn-error-bad-challenge";
+    public static final String WEBAUTHN_ERROR_BAD_SIGNATURE = "webauthn-error-bad-signature";
 
     // Conditions in Conditional Flow
     public static final String ACCESS_DENIED = "access-denied";

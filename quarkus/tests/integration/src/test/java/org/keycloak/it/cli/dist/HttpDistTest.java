@@ -17,7 +17,10 @@
 
 package org.keycloak.it.cli.dist;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -160,6 +163,82 @@ public class HttpDistTest {
     }
 
     @Test
+    @TestProvider(TestRealmResourceTestProvider.class)
+    public void misdirectedRequestDetectionSurvivesTlsReload(KeycloakRunner runner) throws Exception {
+        RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
+        rawDist.copyOrReplaceFileFromClasspath("/server.keystore", Path.of("target", "misdirected-reload-test.p12"));
+        rawDist.copyOrReplaceFileFromClasspath("/self-signed.p12", Path.of("target", "misdirected-reload-test-replacement.p12"));
+
+        CLIResult result = runner.run("start-dev",
+                "--hostname=https://example.com",
+                "--https-key-store-file=../target/misdirected-reload-test.p12",
+                "--https-key-store-password=password");
+        result.assertStartedDevMode();
+
+        Vertx vertx = Vertx.vertx();
+        try {
+            // verify the original certificate is served before reload
+            HttpClient client = vertx.createHttpClient(new HttpClientOptions()
+                    .setSsl(true)
+                    .setTrustAll(true)
+                    .setVerifyHost(false)
+                    .setProtocolVersion(HttpVersion.HTTP_2)
+                    .setUseAlpn(true));
+            try {
+                var response = client.request(new RequestOptions()
+                                .setServer(SocketAddress.inetSocketAddress(8443, "localhost"))
+                                .setPort(8443).setSsl(true).setURI("/realms/master").setMethod(HttpMethod.GET))
+                        .compose(HttpClientRequest::send)
+                        .toCompletionStage().toCompletableFuture().get(10, TimeUnit.SECONDS);
+                var certs = response.request().connection().peerCertificates();
+                var x509 = (X509Certificate) certs.get(0);
+                assertThat("Before reload: certificate CN should be from the original keystore",
+                        x509.getSubjectX500Principal().getName(), containsString("CN=mykeycloak"));
+            } finally {
+                client.close().toCompletionStage().toCompletableFuture().get(5, TimeUnit.SECONDS);
+            }
+
+            // replace the keystore with one containing a different certificate
+            Path distPath = rawDist.getDistPath();
+            Files.copy(distPath.resolve("target/misdirected-reload-test-replacement.p12"),
+                    distPath.resolve("target/misdirected-reload-test.p12"), StandardCopyOption.REPLACE_EXISTING);
+
+            // trigger certificate reload via CDI event — content changed, so Vert.x rebuilds the SSL context
+            when().get("/realms/master/test-resources/tls-reload").then().statusCode(200).body("reloaded", Matchers.is(true));
+
+            // new client to force a fresh TLS handshake with the reloaded certificate
+            client = vertx.createHttpClient(new HttpClientOptions()
+                    .setSsl(true)
+                    .setTrustAll(true)
+                    .setVerifyHost(false)
+                    .setProtocolVersion(HttpVersion.HTTP_2)
+                    .setUseAlpn(true));
+            try {
+                // verify the reloaded certificate is actually served
+                var response = client.request(new RequestOptions()
+                                .setServer(SocketAddress.inetSocketAddress(8443, "localhost"))
+                                .setPort(8443).setSsl(true).setURI("/realms/master").setMethod(HttpMethod.GET))
+                        .compose(HttpClientRequest::send)
+                        .toCompletionStage().toCompletableFuture().get(10, TimeUnit.SECONDS);
+                var certs = response.request().connection().peerCertificates();
+                var x509 = (X509Certificate) certs.get(0);
+                assertThat("After reload: certificate CN should be from the replacement keystore",
+                        x509.getSubjectX500Principal().getName(), containsString("CN=Key Cloak"));
+
+                assertThat("After reload: matching indicated to authority is allowed",
+                        misdirectedRequest(client, "servicehost.com", "servicehost.com", 8443), Matchers.is(200));
+
+                assertThat("After reload: mismatch is still rejected",
+                        misdirectedRequest(client, "example.com", "misdirected.com", 443), Matchers.is(421));
+            } finally {
+                client.close().toCompletionStage().toCompletableFuture().get(5, TimeUnit.SECONDS);
+            }
+        } finally {
+            vertx.close().toCompletionStage().toCompletableFuture().get(5, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
     @Launch({"start-dev"})
     public void largeHeadersTest() throws Exception {
         String largeValue = "a".repeat(32 * 1024);
@@ -226,15 +305,15 @@ public class HttpDistTest {
     public void httpStoreTypeValidation(KeycloakRunner runner) {
         CLIResult result = runner.run("start", "--https-key-store-file=not-there.ks", "--hostname-strict=false");
         result.assertExitCode(-1);
-        result.assertMessage("ERROR: Unable to determine 'https-key-store-type' automatically. Adjust the file extension or specify the property");
+        result.assertError("Unable to determine 'https-key-store-type' automatically. Adjust the file extension or specify the property.");
 
         result = runner.run("start", "--https-trust-store-file=not-there.ks", "--hostname-strict=false");
         result.assertExitCode(-1);
-        result.assertMessage("ERROR: Unable to determine 'https-trust-store-type' automatically. Adjust the file extension or specify the property");
+        result.assertError("Unable to determine 'https-trust-store-type' automatically. Adjust the file extension or specify the property.");
 
         result = runner.run("start", "--https-key-store-file=not-there.ks", "--hostname-strict=false", "--https-key-store-type=jdk");
         result.assertExitCode(-1);
-        result.assertMessage("ERROR: Failed to load 'https-*' material: NoSuchFileException not-there.ks");
+        result.assertMessage("cannot read the key store file");
 
         RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
         rawDist.copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.p12"));
@@ -242,9 +321,52 @@ public class HttpDistTest {
 
         result = runner.run("start", "--https-trust-store-file=" + truststorePath, "--hostname-strict=false");
         result.assertExitCode(-1);
-        result.assertMessage("ERROR: No trust store password provided");
+        result.assertError("No trust store password provided");
     }
     
+    @StopServer(Mode.MANUAL)
+    @Test
+    public void testEncryptedPemKeyFile(KeycloakRunner runner) throws Exception {
+        RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
+        rawDist.copyOrReplaceFileFromClasspath("/encrypted-test.crt.pem", Path.of("conf", "tls.crt"));
+        rawDist.copyOrReplaceFileFromClasspath("/encrypted-test.key.pem", Path.of("conf", "tls.key"));
+
+        Path certPath = rawDist.getDistPath().resolve("conf").resolve("tls.crt").toAbsolutePath();
+        Path keyPath = rawDist.getDistPath().resolve("conf").resolve("tls.key").toAbsolutePath();
+
+        CLIResult result = runner.run("start", "--db=dev-file", "--hostname-strict=false", "--http-enabled=true",
+                "--https-certificate-file=" + certPath,
+                "--https-certificate-key-file=" + keyPath,
+                "--https-certificate-key-file-password=testpassword");
+        result.assertStarted();
+
+        // verify the server is accessible and presents the expected certificate
+        Vertx vertx = Vertx.vertx();
+        try {
+            HttpClient client = vertx.createHttpClient(new HttpClientOptions()
+                    .setSsl(true).setTrustAll(true).setVerifyHost(false));
+            try {
+                var response = client.request(new RequestOptions()
+                                .setServer(SocketAddress.inetSocketAddress(8443, "localhost"))
+                                .setPort(8443).setSsl(true).setURI("/").setMethod(HttpMethod.GET))
+                        .compose(HttpClientRequest::send)
+                        .toCompletionStage().toCompletableFuture().get(10, TimeUnit.SECONDS);
+                assertThat(response.statusCode(), Matchers.is(200));
+
+                // verify the presented cert is the one from our encrypted PEM
+                var certs = response.request().connection().peerCertificates();
+                assertThat("Server should present exactly one certificate", certs.size(), Matchers.is(1));
+                var x509 = (java.security.cert.X509Certificate) certs.get(0);
+                assertThat("Certificate CN should be localhost",
+                        x509.getSubjectX500Principal().getName(), containsString("CN=localhost"));
+            } finally {
+                client.close().toCompletionStage().toCompletableFuture().get(5, TimeUnit.SECONDS);
+            }
+        } finally {
+            vertx.close().toCompletionStage().toCompletableFuture().get(5, TimeUnit.SECONDS);
+        }
+    }
+
     @StopServer(Mode.MANUAL)
     @Test
     @Launch({"start", "--db=dev-file", "--hostname-strict=false", "--http-enabled=true"})
@@ -278,4 +400,5 @@ public class HttpDistTest {
         CLIResult result = runner.run("start-dev", "--shutdown-delay=-1s");
         result.assertError("Invalid duration '-1s'. Duration must be zero or positive");
     }
+
 }

@@ -1,6 +1,20 @@
 // Release notes should contain only headline-worthy new features,
 // assuming that people who migrate will read the upgrading guide anyway.
 
+= Security and Standards
+
+== Impersonation audit improvements
+
+As part of ongoing secure-by-default improvements to impersonation, token lifecycle events (`CODE_TO_TOKEN`, `REFRESH_TOKEN`, and others) are now enriched with `impersonator` and `impersonator_id` details, providing a complete audit trail across all token operations performed under impersonation.
+
+Additionally, tokens issued from impersonation sessions now include the `act` (actor) claim (https://datatracker.ietf.org/doc/html/rfc8693#section-4.1[RFC 8693 Section 4.1]) in both access tokens and ID tokens. This allows downstream resource servers to identify the impersonator for audit purposes. The claim is always present and cannot be disabled.
+
+= Configuring and Running
+
+== Support for encrypted PEM private keys
+
+{project_name} now supports encrypted PKCS#8 private keys in PEM format for HTTPS configuration. Use the new `--https-certificate-key-file-password` option to provide the decryption password. The management interface also supports this via `--https-management-certificate-key-file-password`. For details, see <@links.server id="enabletls"/>.
+
 = Themes
 
 == Redesigned identity provider buttons on the login page
@@ -8,3 +22,10 @@
 The social identity provider section on the login page has been refreshed with updated icons, a new divider layout, and improved button labels.
 
 If you have a custom login theme, see the link:{upgradingguide_link}[{upgradingguide_name}] for details on what changed.
+
+== Enhanced HTTP performance
+
+The `http-optimized-serializers` feature is now supported and enabled by default.
+This improves how {project_name} handles JSON in the HTTP layer, increasing throughput by about 5%, stabilizing response times, and reducing resource usage.
+
+If you need to disable it, use the `--features-disabled=http-optimized-serializers` server option.

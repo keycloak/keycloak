@@ -20,6 +20,7 @@ import org.keycloak.scim.resource.schema.ModelSchema;
 import org.keycloak.scim.resource.schema.Schema;
 import org.keycloak.scim.resource.schema.Schema.Attribute;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
+import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.scim.resource.Scim.hasDiscoveryEndpointPermission;
 
@@ -210,7 +211,7 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
 
     @Override
     public Stream<Schema> getAll(SearchRequest searchRequest) {
-        if (hasDiscoveryEndpointPermission(session)) {
+        if (hasDiscoveryEndpointPermission(session) && (searchRequest == null || StringUtil.isBlank(searchRequest.getFilter()))) {
             // Per RFC 7644 Section 4, /Schemas is a discovery endpoint that SHALL return all schemas.
             // Filtering, sorting, and pagination are not supported for discovery endpoints.
             // The searchRequest parameter is ignored.
@@ -221,8 +222,8 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
     }
 
     @Override
-    public Long count(SearchRequest searchRequest) {
-        return getAll(null).count();
+    public Long count(SearchRequest searchRequest, int resourceSize) {
+        return (long) resourceSize;
     }
 
     @Override

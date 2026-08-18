@@ -149,6 +149,13 @@ The response uses the SCIM list format:
 
 For filtering and pagination of results, see <<_scim_filtering_resources,Filtering resources>>.
 
+NOTE: The SCIM `/Users` endpoint only returns users that are stored locally in the {project_name} database. Users
+that are managed by external user federation providers (such as LDAP or custom providers) and have not been imported
+into {project_name} are not included in SCIM search results. Federated users that have been imported (that is,
+synchronized into the local database) are included. This is because {project_name} acts as the identity authority
+only for locally stored users - external identity sources should expose their own SCIM endpoints for managing
+their users.
+
 == Selecting attributes
 
 You can control which attributes are included in the response for both single-resource and list requests

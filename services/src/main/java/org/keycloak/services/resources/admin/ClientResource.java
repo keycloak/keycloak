@@ -61,6 +61,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
@@ -205,6 +206,10 @@ public class ClientResource {
         viewClientModel();
 
         ClientRepresentation representation = ModelToRepresentation.toRepresentation(client, session);
+
+        if (!auth.clients().canManage(client)) {
+            StripSecretsUtils.stripClient(representation);
+        }
 
         if (!auth.clients().canViewClientScopes()) {
             representation.setDefaultClientScopes(Collections.emptyList());
@@ -367,7 +372,7 @@ public class ClientResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
     @Operation( summary = "Get the client secret")
     public CredentialRepresentation getClientSecret() {
-        auth.clients().requireView(client);
+        auth.clients().requireManage(client);
 
         logger.debug("getClientSecret");
         UserCredentialModel model = UserCredentialModel.secret(client.getSecret());
@@ -443,7 +448,7 @@ public class ClientResource {
             throw new ErrorResponseException("invalid_request", "Can't assign a Parameterized Scope to a Client as a Default Scope", Response.Status.BAD_REQUEST);
         }
 
-        validateClientScopeAssignment(session, clientScope, defaultScope, realm);
+        validateClientScopeAssignment(session, clientScope, defaultScope, realm, false);
 
         client.addClientScope(clientScope, defaultScope);
 
@@ -831,7 +836,7 @@ public class ClientResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
     @Operation( summary = "Get the rotated client secret")
     public CredentialRepresentation getClientRotatedSecret() {
-        auth.clients().requireView(client);
+        auth.clients().requireManage(client);
 
         logger.debug("getClientRotatedSecret");
         OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client);
@@ -870,13 +875,15 @@ public class ClientResource {
      * @param clientScope  the client scope to be assigned
      * @param defaultScope true if assigning as Default scope, false if Optional
      * @param realm        the realm where the assignment is happening
+     * @param realmLevel   true if the scope is assigned as a realm default/optional client scope,
+     *                     false if it is assigned to a specific client
      */
     public static void validateClientScopeAssignment(KeycloakSession session, ClientScopeModel clientScope,
-                                                     boolean defaultScope, RealmModel realm) {
+                                                     boolean defaultScope, RealmModel realm, boolean realmLevel) {
         LoginProtocolFactory loginProtocolFactory = (LoginProtocolFactory) session.getKeycloakSessionFactory()
                 .getProviderFactory(LoginProtocol.class, clientScope.getProtocol());
         if (loginProtocolFactory != null) {
-            loginProtocolFactory.validateClientScopeAssignment(session, clientScope, defaultScope, realm);
+            loginProtocolFactory.validateClientScopeAssignment(session, clientScope, defaultScope, realm, realmLevel);
         }
     }
 

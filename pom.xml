@@ -40,8 +40,8 @@
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
-        <quarkus.version>3.38.0</quarkus.version>
-        <quarkus.build.version>3.38.0</quarkus.build.version>
+        <quarkus.version>3.38.1</quarkus.version>
+        <quarkus.build.version>3.38.1</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
@@ -99,7 +99,6 @@
         <jboss-servlet-api_4.0_spec>2.0.0.Final</jboss-servlet-api_4.0_spec>
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.1.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
-        <log4j2-api.version>2.26.0</log4j2-api.version> <!-- Odd name needs to align with Quarkus -->
         <resteasy.version>6.2.16.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20260101.1</owasp.html.sanitizer.version>
@@ -125,8 +124,9 @@
         <org.snakeyaml.snakeyaml-engine.version>2.6</org.snakeyaml.snakeyaml-engine.version>
 
         <!-- Others -->
-        <apacheds.version>2.0.0.AM26</apacheds.version>
-        <apacheds.codec.version>2.0.0</apacheds.codec.version>
+        <apacheds.version>2.0.0.AM27</apacheds.version>
+        <apacheds.codec.version>2.1.8</apacheds.codec.version>
+        <kerby.version>2.1.0</kerby.version>
         <google.zxing.version>3.4.0</google.zxing.version>
         <freemarker.version>2.3.32</freemarker.version>
         <sundrio.version>0.200.0</sundrio.version>
@@ -570,16 +570,6 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-core</artifactId>
-                <version>${log4j2-api.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-api</artifactId>
-                <version>${log4j2-api.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
                 <artifactId>owasp-java-html-sanitizer</artifactId>
                 <version>${owasp.html.sanitizer.version}</version>
@@ -717,10 +707,13 @@
                 <artifactId>apacheds-server-annotations</artifactId>
                 <version>${apacheds.version}</version>
             </dependency>
+            <!-- POM import to align all API module versions at 2.1.8. -->
             <dependency>
                 <groupId>org.apache.directory.api</groupId>
-                <artifactId>api-ldap-codec-standalone</artifactId>
+                <artifactId>api-parent</artifactId>
                 <version>${apacheds.codec.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.jmeter</groupId>

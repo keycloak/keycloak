@@ -176,7 +176,7 @@ public class Profile {
 
         SSF("Shared Signals Framework", Type.EXPERIMENTAL),
 
-        HTTP_OPTIMIZED_SERIALIZERS("Optimized JSON serializers for better performance of the HTTP layer", Type.PREVIEW),
+        HTTP_OPTIMIZED_SERIALIZERS("Optimized JSON serializers for better performance of the HTTP layer", Type.DEFAULT),
 
         OPENAPI("OpenAPI specification served at runtime", Type.EXPERIMENTAL, CLIENT_ADMIN_API_V2),
 

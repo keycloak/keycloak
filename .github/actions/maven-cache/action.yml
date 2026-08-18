@@ -7,7 +7,7 @@ inputs:
       Only those callers which fill the cache with the right contents should set this to true to avoid creating a cache
       which contains too few or too many entries.
     required: false
-    default: false
+    default: 'false'
 
 runs:
   using: composite
@@ -20,44 +20,29 @@ runs:
     - id: cache-maven-repository
       name: Maven cache
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-      if: inputs.create-cache-if-it-doesnt-exist == 'true'
+      # On Windows, always use read/write cache: the central build that sets create-cache-if-it-doesnt-exist
+      # only runs on Linux, so a Windows cache would never be created otherwise.
+      if: inputs.create-cache-if-it-doesnt-exist == 'true' || runner.os == 'Windows'
       with:
         # Two asterisks are needed to make the follow-up exclusion work
         # see https://github.com/actions/toolkit/issues/713 for the upstream issue
-        #
-        # Hybrid cache strategy: Use an OS-specific key for writing, but allow fallback to a cross-OS cache for reading.
         path: |
           ~/.m2/repository/*/*
+          ~/.m2/wrapper/dists
           !~/.m2/repository/org/keycloak
-        key: mvn-${{ runner.os }}-${{ steps.weekly-cache-key.outputs.key }}
-        restore-keys: |
-          mvn--${{ steps.weekly-cache-key.outputs.key }}
-        # Enable cross-os archive use the cache on both Linux and Windows
-        enableCrossOsArchive: true
+        key: mvn-and-wrapper-${{ runner.os }}-${{ steps.weekly-cache-key.outputs.key }}
 
     - id: restore-maven-repository
       name: Maven cache
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-      if: inputs.create-cache-if-it-doesnt-exist == 'false'
+      if: inputs.create-cache-if-it-doesnt-exist == 'false' && runner.os != 'Windows'
       with:
         # This needs to repeat the same path pattern as above to find the matching cache
-        # Hybrid cache strategy used again
         path: |
           ~/.m2/repository/*/*
+          ~/.m2/wrapper/dists
           !~/.m2/repository/org/keycloak
-        key: mvn-${{ runner.os }}-${{ steps.weekly-cache-key.outputs.key }}
-        restore-keys: |
-          mvn--${{ steps.weekly-cache-key.outputs.key }}
-        enableCrossOsArchive: true
-
-    - shell: bash
-      name: Copy restored maven repo to home folder in Windows
-      if: (steps.cache-maven-repository.outputs.cache-hit == 'true' || steps.restore-maven-repository.outputs.cache-hit == 'true') && runner.os == 'Windows'
-      run: |
-        if [ -d ../../../.m2/repository ]; then
-          cp -r ../../../.m2/repository ~/.m2
-          rm -r ../../../.m2/repository
-        fi
+        key: mvn-and-wrapper-${{ runner.os }}-${{ steps.weekly-cache-key.outputs.key }}
 
     - id: node-cache
       name: Node cache
