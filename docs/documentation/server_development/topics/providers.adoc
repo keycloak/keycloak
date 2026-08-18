@@ -249,6 +249,7 @@ after the provider JAR was copied to the `providers` directory. Annotated classe
 fails with a descriptive error if a class:
 
 * does not implement the provider factory interface given as the annotation value,
+* names an annotation value that is not the provider factory interface of any SPI,
 * is not a public, non-abstract class, or
 * has no public no-arg constructor.
 

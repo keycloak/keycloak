@@ -15,6 +15,8 @@ import org.keycloak.it.provider.annotation.NoPublicConstructorProviderFactory;
 import org.keycloak.it.provider.annotation.NoPublicConstructorTestProvider;
 import org.keycloak.it.provider.annotation.NotAProviderFactory;
 import org.keycloak.it.provider.annotation.NotAProviderFactoryTestProvider;
+import org.keycloak.it.provider.annotation.NotAnSpiFactoryProviderFactory;
+import org.keycloak.it.provider.annotation.NotAnSpiFactoryTestProvider;
 import org.keycloak.provider.KeycloakProvider;
 
 import io.quarkus.test.junit.main.Launch;
@@ -74,5 +76,19 @@ public class KeycloakProviderAnnotationDistTest {
     void buildFailsForAnnotatedClassNotImplementingProviderFactory(CLIResult cliResult) {
         cliResult.assertError("@" + KeycloakProvider.class.getSimpleName() + " class "
                 + NotAProviderFactory.class.getName() + " does not implement " + EventListenerProviderFactory.class.getName());
+    }
+
+    /**
+     * The annotation value must be the provider factory class of an SPI. A concrete factory class (or any other
+     * {@code ProviderFactory} type no SPI uses) is accepted by the type bound and implemented by the class, but
+     * nothing would ever look the registration up — so the build must fail instead of silently dropping the provider.
+     */
+    @Test
+    @TestProvider(NotAnSpiFactoryTestProvider.class)
+    @Launch({ "build" })
+    void buildFailsForAnnotationValueThatIsNotAnSpiFactoryClass(CLIResult cliResult) {
+        cliResult.assertError("@" + KeycloakProvider.class.getSimpleName() + " value "
+                + NotAnSpiFactoryProviderFactory.class.getName() + " on class " + NotAnSpiFactoryProviderFactory.class.getName()
+                + " is not the provider factory class of any SPI");
     }
 }

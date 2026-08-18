@@ -43,6 +43,7 @@ import java.util.function.Predicate;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Handler;
+import java.util.stream.Collectors;
 
 import jakarta.inject.Singleton;
 import jakarta.persistence.Entity;
@@ -79,6 +80,7 @@ import org.keycloak.protocol.ProtocolMapperSpi;
 import org.keycloak.protocol.oidc.mappers.DeployedScriptOIDCProtocolMapper;
 import org.keycloak.protocol.saml.mappers.DeployedScriptSAMLProtocolMapper;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.KeycloakProvider;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderManager;
@@ -949,7 +951,10 @@ class KeycloakProcessor {
         ProviderManager pm = getProviderManager(classLoader, providerFactoryClasses);
         Map<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> factories = new HashMap<>();
 
-        for (Spi spi : pm.loadSpis()) {
+        List<Spi> spis = pm.loadSpis();
+        ensureProviderFactoryClassesBelongToSpi(spis, providerFactoryClasses);
+
+        for (Spi spi : spis) {
             Map<Class<? extends Provider>, Map<String, ProviderFactory>> providers = new HashMap<>();
             List<ProviderFactory> loadedFactories = new ArrayList<>();
             String provider = Config.getProvider(spi.getName());
@@ -992,6 +997,29 @@ class KeycloakProcessor {
         }
 
         return factories;
+    }
+
+    /**
+     * Fails the build if a {@link org.keycloak.provider.KeycloakProvider} value is not the provider factory class of
+     * any SPI. The annotation's type bound only guarantees a {@link ProviderFactory} type, so a concrete factory class
+     * or an intermediate interface would otherwise be registered under a key no {@link Spi} ever asks for and the
+     * provider would silently never be loaded.
+     */
+    private static void ensureProviderFactoryClassesBelongToSpi(List<Spi> spis,
+                                                                Map<Class<? extends ProviderFactory>, Set<Class<? extends ProviderFactory>>> providerFactoryClasses) {
+        Set<Class<? extends ProviderFactory>> spiFactoryClasses = spis.stream()
+                .map(Spi::getProviderFactoryClass)
+                .collect(Collectors.toSet());
+
+        for (Entry<Class<? extends ProviderFactory>, Set<Class<? extends ProviderFactory>>> entry : providerFactoryClasses.entrySet()) {
+            Class<? extends ProviderFactory> factoryInterface = entry.getKey();
+            if (!spiFactoryClasses.contains(factoryInterface)) {
+                String annotatedClasses = entry.getValue().stream().map(Class::getName).collect(Collectors.joining(", "));
+                throw new IllegalStateException("@" + KeycloakProvider.class.getSimpleName()
+                        + " value " + factoryInterface.getName() + " on class " + annotatedClasses
+                        + " is not the provider factory class of any SPI");
+            }
+        }
     }
 
     private Map<String, ProviderFactory<?>> loadDeployedScriptProviders(ClassLoader classLoader, Spi spi) {
