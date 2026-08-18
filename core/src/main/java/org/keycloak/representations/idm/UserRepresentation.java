@@ -36,6 +36,7 @@ public class UserRepresentation extends AbstractUserRepresentation{
     protected Boolean totp;
     protected String federationLink;
     protected String serviceAccountClientId; // For rep, it points to clientId (not DB ID)
+    protected Boolean serviceAccount;
 
     protected List<CredentialRepresentation> credentials;
     protected Set<String> disableableCredentialTypes;
@@ -77,6 +78,7 @@ public class UserRepresentation extends AbstractUserRepresentation{
         this.totp = rep.isTotp();
         this.federationLink = rep.getFederationLink();
         this.serviceAccountClientId = rep.getServiceAccountClientId();
+        this.serviceAccount = rep.isServiceAccount();
         this.credentials = rep.getCredentials();
         this.disableableCredentialTypes = rep.getDisableableCredentialTypes();
         this.requiredActions = rep.getRequiredActions();
@@ -218,8 +220,41 @@ public class UserRepresentation extends AbstractUserRepresentation{
         return serviceAccountClientId;
     }
 
+    /**
+     * Sets the client ID associated with this user representation.
+     * <p>
+     * Providing a non-null client id implies that this user representation is a
+     * service account, so this method also sets {@code serviceAccount} to
+     * {@code true}. Providing {@code null} also sets {@code serviceAccount} to
+     * {@code false}.
+     *
+     * @param serviceAccountClientId the client id of the backing service account client
+     */
     public void setServiceAccountClientId(String serviceAccountClientId) {
         this.serviceAccountClientId = serviceAccountClientId;
+        this.serviceAccount = serviceAccountClientId != null;
+    }
+
+    public Boolean isServiceAccount() {
+        return serviceAccount;
+    }
+
+    /**
+     * Sets whether this user representation is a service account.
+     * <p>
+     * Setting this value to {@code false} clears any previously assigned
+     * {@code serviceAccountClientId} to keep the representation consistent.
+     * Note that this may be {@code true} while {@code serviceAccountClientId} is
+     * {@code null} if the client link (database ID) of the underlying
+     * user model has not been resolved to the client ID.
+     *
+     * @param serviceAccount whether this representation is for a service account
+     */
+    public void setServiceAccount(Boolean serviceAccount) {
+        this.serviceAccount = serviceAccount;
+        if (Boolean.FALSE.equals(serviceAccount)) {
+            this.serviceAccountClientId = null;
+        }
     }
 
     public List<String> getGroups() {

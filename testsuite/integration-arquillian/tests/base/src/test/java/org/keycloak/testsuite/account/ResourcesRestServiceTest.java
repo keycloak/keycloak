@@ -362,6 +362,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         assertNull(user.getCreatedTimestamp(), "Created timestamp should not be exposed");
         assertNull(user.isEnabled(), "Enabled status should not be exposed");
         assertNull(user.isEmailVerified(), "Email verified should not be exposed");
+        assertNull(user.isServiceAccount(), "Whether user is service account should not be exposed");
         assertNull(user.getFederationLink(), "Federation link should not be exposed");
         assertNull(user.getNotBefore(), "NotBefore should not be exposed");
     }

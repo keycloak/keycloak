@@ -262,6 +262,7 @@ public class UsersResource {
      * @param enabled Boolean representing if user is enabled or not
      * @param briefRepresentation Boolean which defines whether brief representations are returned (default: false)
      * @param exact Boolean which defines whether the params "last", "first", "email" and "username" must match exactly
+     * @param includeServiceAccounts Boolean which defines whether service accounts are returned (default depends on other query parameters)
      * @param searchQuery A query to search for custom attributes, in the format 'key1:value2 key2:value2'
      * @return a non-null {@code Stream} of users
      */
@@ -291,7 +292,8 @@ public class UsersResource {
             @Parameter(description = "Boolean which defines whether the params \"last\", \"first\", \"email\" and \"username\" must match exactly") @QueryParam("exact") Boolean exact,
             @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery,
             @Parameter(description = "Only return users created after (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdAfter") String createdAfter,
-            @Parameter(description = "Only return users created before (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdBefore") String createdBefore) {
+            @Parameter(description = "Only return users created before (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdBefore") String createdBefore,
+            @Parameter(description = "Boolean which defines whether service accounts are returned (default: false)") @QueryParam("includeServiceAccounts") Boolean includeServiceAccounts) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
 
         userPermissionEvaluator.requireQuery();
@@ -323,13 +325,15 @@ public class UsersResource {
                     attributes.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
                 }
                 addCreatedTimestampConditions(attributes, createdAfter, createdBefore);
+                // Only include service accounts in this branch if explicitly requested.
+                Boolean serviceAccounts = includeServiceAccounts != null ? includeServiceAccounts : false;
 
                 return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
-                        maxResults, false);
+                        maxResults, serviceAccounts);
             }
         } else if (last != null || first != null || email != null || username != null || emailVerified != null
                 || idpAlias != null || idpUserId != null || enabled != null || exact != null || !searchAttributes.isEmpty()
-                || createdAfter != null || createdBefore != null) {
+                || createdAfter != null || createdBefore != null || includeServiceAccounts != null) {
                     Map<String, String> attributes = new HashMap<>();
                     if (last != null) {
                         attributes.put(UserModel.LAST_NAME, last);
@@ -362,8 +366,11 @@ public class UsersResource {
 
                     attributes.putAll(searchAttributes);
 
+                    // Include service accounts in this branch unless explicitly disabled.
+                    Boolean serviceAccounts = includeServiceAccounts != null ? includeServiceAccounts : true;
+
                     return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
-                            maxResults, true);
+                            maxResults, serviceAccounts);
                 } else {
                     return searchForUser(new HashMap<>(), realm, userPermissionEvaluator, briefRepresentation,
                             firstResult, maxResults, false);
@@ -397,6 +404,7 @@ public class UsersResource {
      * @param idpUserId The userId at an Identity Provider linked to the user
      * @param enabled Boolean representing if user is enabled or not
      * @param exact Boolean which defines whether the params "last", "first", "email" and "username" must match exactly
+     * @param includeServiceAccounts Boolean which defines whether service accounts are returned (default depends on other query parameters)
      * @param searchQuery A query to search for custom attributes, in the format 'key1:value2 key2:value2'
      * @return the number of users that match the given criteria
      */
@@ -428,7 +436,8 @@ public class UsersResource {
             @Parameter(description = "Boolean which defines whether the params \"last\", \"first\", \"email\" and \"username\" must match exactly") @QueryParam("exact") Boolean exact,
             @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery,
             @Parameter(description = "Only return users created after (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdAfter") String createdAfter,
-            @Parameter(description = "Only return users created before (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdBefore") String createdBefore) {
+            @Parameter(description = "Only return users created before (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdBefore") String createdBefore,
+            @Parameter(description = "Boolean which defines whether service accounts are returned (default: false)") @QueryParam("includeServiceAccounts") Boolean includeServiceAccounts) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
         userPermissionEvaluator.requireQuery();
 
@@ -455,8 +464,10 @@ public class UsersResource {
                 parameters.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
             }
             addCreatedTimestampConditions(parameters, createdAfter, createdBefore);
-            // search /users equivalent to this doesn't include service-accounts so counting shouldn't as well
-            parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, "false");
+            // Only include service accounts in this branch if explicitly requested.
+            // This behavior is equivalent to the /users endpoint.
+            Boolean serviceAccounts = includeServiceAccounts != null ? includeServiceAccounts : false;
+            parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, serviceAccounts.toString());
             if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, parameters);
             } else {
@@ -468,7 +479,7 @@ public class UsersResource {
             }
         } else if (last != null || first != null || email != null || username != null || emailVerified != null
                 || idpAlias != null || idpUserId != null || enabled != null || exact != null || !searchAttributes.isEmpty()
-                || createdAfter != null || createdBefore != null) {
+                || createdAfter != null || createdBefore != null || includeServiceAccounts != null) {
             Map<String, String> parameters = new HashMap<>();
             if (last != null) {
                 parameters.put(UserModel.LAST_NAME, last);
@@ -499,8 +510,10 @@ public class UsersResource {
             }
             addCreatedTimestampConditions(parameters, createdAfter, createdBefore);
             parameters.putAll(searchAttributes);
-            // search /users equivalent to this does include service-accounts so we should be explicit
-            parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, "true");
+            // Include service accounts in this branch unless explicitly disabled.
+            // This behavior is equivalent to the /users endpoint.
+            Boolean serviceAccounts = includeServiceAccounts != null ? includeServiceAccounts : true;
+            parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, serviceAccounts.toString());
             if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, parameters);
             } else {
