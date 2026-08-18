@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.util.Tokens;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
@@ -64,6 +65,8 @@ public class KeycloakIdentity implements Identity {
     private final boolean resourceServer;
     private final String id;
     private UserModel user;
+    private ClientModel requestingClient;
+    private boolean transientRolesResolved;
 
     public KeycloakIdentity(KeycloakSession keycloakSession) {
         this(Tokens.getAccessToken(keycloakSession), keycloakSession);
@@ -288,7 +291,40 @@ public class KeycloakIdentity implements Identity {
             return false;
         }
 
-        return user.hasRole(role);
+        boolean hasRole = user.hasRole(role);
+
+        if (AdminRoles.isAdminRole(role) && !hasRole) {
+            return false;
+        }
+
+        ClientModel requestingClient = getRequestingClient();
+
+        if (requestingClient != null && !requestingClient.hasScope(role)) {
+            resolveTransientClientScopeRoles();
+
+            Map<String, Access> resourceAccess = accessToken.getResourceAccess();
+
+            if (resourceAccess == null) {
+                return false;
+            }
+
+            Access access = resourceAccess.get(clientId);
+
+            if (access == null) {
+                return false;
+            }
+
+            hasRole = access.isUserInRole(roleName);
+        }
+
+        return hasRole;
+    }
+
+    private void resolveTransientClientScopeRoles() {
+        if (!transientRolesResolved) {
+            AuthenticationManager.resolveLightweightAccessTokenRoles(keycloakSession, accessToken, realm);
+            transientRolesResolved = true;
+        }
     }
 
     @Override
@@ -303,7 +339,27 @@ public class KeycloakIdentity implements Identity {
             return false;
         }
 
-        return user.hasRole(role);
+        boolean hasRole = user.hasRole(role);
+
+        if (AdminRoles.isAdminRole(role) && !hasRole) {
+            return false;
+        }
+
+        ClientModel requestingClient = getRequestingClient();
+
+        if (requestingClient != null && !requestingClient.hasScope(role)) {
+            resolveTransientClientScopeRoles();
+
+            Access realmAccess = accessToken.getRealmAccess();
+
+            if (realmAccess == null) {
+                return false;
+            }
+
+            hasRole = realmAccess.isUserInRole(roleName);
+        }
+
+        return hasRole;
     }
 
     public AccessToken getAccessToken() {
@@ -325,6 +381,15 @@ public class KeycloakIdentity implements Identity {
         }
 
         return null;
+    }
+
+    private ClientModel getRequestingClient() {
+        if (requestingClient == null) {
+            if (this.accessToken.getIssuedFor() != null) {
+                requestingClient = realm.getClientByClientId(accessToken.getIssuedFor());
+            }
+        }
+        return requestingClient;
     }
 
     private UserModel getUserFromToken() {
