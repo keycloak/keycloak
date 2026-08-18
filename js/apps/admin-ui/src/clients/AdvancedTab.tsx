@@ -47,6 +47,20 @@ export const parseResult = (
   }
 };
 
+// The ACR to LoA mapping is stored as a JSON string but edited as key/value pairs (see setupForm in ClientDetails)
+const toFormValue = (name: string, value?: string) => {
+  if (!value) {
+    return "";
+  }
+  if (name === "acr.loa.map") {
+    return Object.entries(JSON.parse(value)).flatMap(([key, value]) => ({
+      key,
+      value,
+    }));
+  }
+  return value;
+};
+
 export type AdvancedProps = {
   save: (options?: SaveOptions) => void;
   client: ClientRepresentation;
@@ -69,7 +83,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
     for (const name of names) {
       setValue(
         convertAttributeNameToForm<FormFields>(`attributes.${name}`),
-        attributes?.[name] || "",
+        toFormValue(name, attributes?.[name]),
       );
     }
   };
