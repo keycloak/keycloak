@@ -324,8 +324,14 @@ public class AdminConsole {
      */
     @GET
     @NoCache
+    public Response getMainPage() throws IOException, FreeMarkerException {
+        return getMainPageForPath("");
+    }
+
+    @GET
+    @NoCache
     @Path("{path:.*}")
-    public Response getMainPage(@PathParam("path") String path) throws IOException, FreeMarkerException {
+    public Response getMainPageForPath(@PathParam("path") String path) throws IOException, FreeMarkerException {
         final var baseUriInfo = session.getContext().getUri(UrlType.FRONTEND);
         final var adminUriInfo = session.getContext().getUri(UrlType.ADMIN);
 
