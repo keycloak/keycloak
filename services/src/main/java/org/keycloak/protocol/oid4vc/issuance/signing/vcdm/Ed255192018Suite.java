@@ -30,6 +30,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 
 import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSignerException;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.util.JsonSerialization;
@@ -65,8 +66,8 @@ public class Ed255192018Suite implements LinkedDataCryptographicSuite {
 
     public static final String PROOF_TYPE = "Ed25519Signature2018";
 
-    public Ed255192018Suite(SignatureSignerContext signerContext) {
-        this(signerContext, JsonLdContextDocumentLoader.defaultInstance());
+    public Ed255192018Suite(KeycloakSession session, SignatureSignerContext signerContext) {
+        this(signerContext, JsonLdContextDocumentLoader.defaultInstance(session));
     }
 
     // Package-private constructor to inject a custom document loader, e.g. for tests.

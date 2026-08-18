@@ -6,19 +6,22 @@ import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.keycloak.connections.httpclient.HttpClientBuilder;
 
 import com.apicatalog.jsonld.JsonLdError;
 import com.apicatalog.jsonld.document.Document;
 import com.apicatalog.jsonld.loader.DocumentLoaderOptions;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -39,6 +42,7 @@ public class JsonLdContextDocumentLoaderTest {
 
     private static HttpServer server;
     private static ExecutorService executor;
+    private static CloseableHttpClient client;
     private static String baseUrl;
     private static final AtomicInteger contextRequests = new AtomicInteger();
     private static final AtomicInteger redirectRequests = new AtomicInteger();
@@ -104,32 +108,38 @@ public class JsonLdContextDocumentLoaderTest {
         server.setExecutor(executor);
         server.start();
         baseUrl = "http://localhost:" + server.getAddress().getPort();
+        // Short socket timeout so the slow-handler tests fail fast instead of hanging.
+        client = new HttpClientBuilder()
+                .socketTimeout(500, TimeUnit.MILLISECONDS)
+                .disableRedirectHandling()
+                .build();
     }
 
     @AfterClass
-    public static void stopServer() {
+    public static void stopServer() throws IOException {
         executor.shutdownNow();
         server.stop(0);
+        client.close();
     }
 
     @Test(expected = JsonLdError.class)
     public void testRejectsPlainHttpSchemeByDefault() throws JsonLdError {
         // Default policy is https-only; the allowlist is never reached for plain http.
-        JsonLdContextDocumentLoader loader = new JsonLdContextDocumentLoader();
+        JsonLdContextDocumentLoader loader = new JsonLdContextDocumentLoader(client);
         loader.loadDocument(URI.create("http://www.w3.org/ns/credentials/v1"), new DocumentLoaderOptions());
     }
 
     @Test(expected = JsonLdError.class)
     public void testRejectsHostNotInAllowlist() throws JsonLdError {
         // Well-formed https URL, but the host is not in the allowlist.
-        JsonLdContextDocumentLoader loader = new JsonLdContextDocumentLoader();
+        JsonLdContextDocumentLoader loader = new JsonLdContextDocumentLoader(client);
         loader.loadDocument(URI.create("https://contexts.example.org/credentials/v1"), new DocumentLoaderOptions());
     }
 
     @Test
     public void testCachesDocumentAcrossLoads() throws JsonLdError {
         JsonLdContextDocumentLoader loader = JsonLdContextDocumentLoader.forTesting(
-                Set.of("localhost"), Duration.ofSeconds(5), Duration.ofSeconds(5));
+                client, Set.of("localhost"));
         URI url = URI.create(baseUrl + "/context");
         contextRequests.set(0);
 
@@ -144,7 +154,7 @@ public class JsonLdContextDocumentLoaderTest {
     @Test
     public void testFollowsRedirectAndCachesResult() throws JsonLdError {
         JsonLdContextDocumentLoader loader = JsonLdContextDocumentLoader.forTesting(
-                Set.of("localhost"), Duration.ofSeconds(5), Duration.ofSeconds(5));
+                client, Set.of("localhost"));
         URI url = URI.create(baseUrl + "/redirect");
         redirectRequests.set(0);
         contextRequests.set(0);
@@ -160,7 +170,7 @@ public class JsonLdContextDocumentLoaderTest {
     public void testRejectsRedirectToUnsupportedScheme() throws JsonLdError {
         // Even when the initial URL is allowed, the https-only policy applies to redirect hops.
         JsonLdContextDocumentLoader loader = JsonLdContextDocumentLoader.forTesting(
-                Set.of("localhost"), Duration.ofSeconds(5), Duration.ofSeconds(5));
+                client, Set.of("localhost"));
         loader.loadDocument(URI.create(baseUrl + "/redirectToFile"), new DocumentLoaderOptions());
     }
 
@@ -168,23 +178,24 @@ public class JsonLdContextDocumentLoaderTest {
     public void testRejectsRedirectToNonAllowlistedHost() throws JsonLdError {
         // Redirect hops are validated against the same host allowlist as the initial URL.
         JsonLdContextDocumentLoader loader = JsonLdContextDocumentLoader.forTesting(
-                Set.of("localhost"), Duration.ofSeconds(5), Duration.ofSeconds(5));
+                client, Set.of("localhost"));
         loader.loadDocument(URI.create(baseUrl + "/redirectToEvil"), new DocumentLoaderOptions());
     }
 
     @Test(timeout = 5000, expected = JsonLdError.class)
     public void testRequestTimeout() throws JsonLdError {
+        // A server that never answers is cut off by the client's socket timeout.
         JsonLdContextDocumentLoader loader = JsonLdContextDocumentLoader.forTesting(
-                Set.of("localhost"), Duration.ofMillis(500), Duration.ofMillis(500));
+                client, Set.of("localhost"));
         loader.loadDocument(URI.create(baseUrl + "/slow"), new DocumentLoaderOptions());
     }
 
     @Test(timeout = 5000, expected = JsonLdError.class)
     public void testSlowBodyTimesOut() throws JsonLdError {
-        // The full body is consumed within the request timeout, so a server that sends
-        // headers and then stalls must time out instead of blocking the caller.
+        // The body is consumed through the client's socket timeout, so a server that sends
+        // headers and then stalls must fail instead of blocking the caller.
         JsonLdContextDocumentLoader loader = JsonLdContextDocumentLoader.forTesting(
-                Set.of("localhost"), Duration.ofMillis(500), Duration.ofMillis(500));
+                client, Set.of("localhost"));
         loader.loadDocument(URI.create(baseUrl + "/slowBody"), new DocumentLoaderOptions());
     }
 
@@ -193,7 +204,7 @@ public class JsonLdContextDocumentLoaderTest {
         // The body is buffered with a size limit, so an oversized response must be aborted
         // instead of exhausting the heap.
         JsonLdContextDocumentLoader loader = JsonLdContextDocumentLoader.forTesting(
-                Set.of("localhost"), Duration.ofSeconds(5), Duration.ofSeconds(5));
+                client, Set.of("localhost"));
         loader.loadDocument(URI.create(baseUrl + "/large"), new DocumentLoaderOptions());
     }
 
@@ -202,7 +213,7 @@ public class JsonLdContextDocumentLoaderTest {
         // A failed load must release the single-flight lock entry, otherwise every URL that
         // ever fails keeps an entry in the locks map for the lifetime of the server.
         JsonLdContextDocumentLoader loader = JsonLdContextDocumentLoader.forTesting(
-                Set.of("localhost"), Duration.ofSeconds(5), Duration.ofSeconds(5));
+                client, Set.of("localhost"));
 
         Assert.assertThrows(JsonLdError.class, () -> loader.loadDocument(
                 URI.create(baseUrl + "/large"), new DocumentLoaderOptions()));

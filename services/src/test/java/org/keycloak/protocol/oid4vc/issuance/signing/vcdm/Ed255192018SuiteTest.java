@@ -4,21 +4,23 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.keycloak.connections.httpclient.HttpClientBuilder;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSignerException;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 
 import com.sun.net.httpserver.HttpServer;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -38,6 +40,7 @@ public class Ed255192018SuiteTest {
 
     private static HttpServer server;
     private static ExecutorService executor;
+    private static CloseableHttpClient client;
     private static String contextUrl;
     private static final AtomicInteger contextRequests = new AtomicInteger();
 
@@ -58,18 +61,23 @@ public class Ed255192018SuiteTest {
         server.setExecutor(executor);
         server.start();
         contextUrl = "http://localhost:" + server.getAddress().getPort() + "/context";
+        client = new HttpClientBuilder()
+                .socketTimeout(5000, TimeUnit.MILLISECONDS)
+                .disableRedirectHandling()
+                .build();
     }
 
     @AfterClass
-    public static void stopServer() {
+    public static void stopServer() throws IOException {
         executor.shutdownNow();
         server.stop(0);
+        client.close();
     }
 
     @Test
     public void testSignatureUsesCachedContextAndIsDeterministic() {
         JsonLdContextDocumentLoader loader = JsonLdContextDocumentLoader.forTesting(
-                Set.of("localhost"), Duration.ofSeconds(5), Duration.ofSeconds(5));
+                client, Set.of("localhost"));
         Ed255192018Suite suite = new Ed255192018Suite(testSigner(), loader);
         contextRequests.set(0);
 
@@ -88,9 +96,10 @@ public class Ed255192018SuiteTest {
 
     @Test(expected = CredentialSignerException.class)
     public void testRejectsContextFromNonAllowlistedHost() {
-        // The default loader only allows well-known https hosts, so an https URL on a host
+        // The default allowlist only contains well-known https hosts, so an https URL on a host
         // outside the allowlist fails fast without any network access.
-        Ed255192018Suite suite = new Ed255192018Suite(testSigner());
+        Ed255192018Suite suite = new Ed255192018Suite(testSigner(),
+                JsonLdContextDocumentLoader.forTesting(client, JsonLdContextDocumentLoader.DEFAULT_ALLOWED_HOSTS));
         VerifiableCredential credential = createCredential();
         credential.setContext(List.of("https://contexts.example.org/credentials/v1"));
 
