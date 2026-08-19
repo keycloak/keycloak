@@ -150,7 +150,7 @@ public class PasskeysUsernameFormTest extends AbstractWebAuthnVirtualTest {
             loginPage.fillLoginWithUsernameOnly("invalid-user");
             loginPage.submit();
             loginPage.assertCurrent();
-            loginPage.waitUntilReloaded();
+            //loginPage.waitUntilReloaded();
             MatcherAssert.assertThat(loginPage.getUsernameAutocomplete(), Matchers.is("username webauthn"));
             MatcherAssert.assertThat(loginPage.getUsernameInputError(), Matchers.is("Invalid username or email."));
             EventAssertion.assertError(events.poll())
