@@ -21,7 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.broker.KcSamlBrokerConfiguration.ATTRIBUTE_TO_MAP_FRIENDLY_NAME;
+import static org.keycloak.tests.broker.KcSamlBrokerConfiguration.ATTRIBUTE_TO_MAP_FRIENDLY_NAME;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -33,7 +33,7 @@ import static org.hamcrest.Matchers.nullValue;
  *
  * @author hmlnarik
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public abstract class AbstractUserAttributeMapperTest extends AbstractIdentityProviderMapperTest {
 
     @InjectRealm

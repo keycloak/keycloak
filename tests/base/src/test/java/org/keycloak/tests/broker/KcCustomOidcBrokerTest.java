@@ -25,12 +25,12 @@ import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
-import org.keycloak.testsuite.broker.oidc.TestKeycloakOidcIdentityProviderFactory;
+import org.keycloak.tests.broker.oidc.TestKeycloakOidcIdentityProviderFactory;
 
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.tests.broker.BrokerTestTools.createIdentityProvider;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -38,7 +38,7 @@ import static org.hamcrest.Matchers.containsString;
 /**
  * Test methods for testing a custom OIDC broker
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcCustomOidcBrokerTest extends AbstractInitializedBaseBrokerTest {
 
     @InjectRealm

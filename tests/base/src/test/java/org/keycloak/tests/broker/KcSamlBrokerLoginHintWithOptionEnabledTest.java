@@ -1,8 +1,6 @@
 package org.keycloak.tests.broker;
 
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Assertions;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -11,11 +9,14 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcSamlBrokerLoginHintWithOptionEnabledTest extends AbstractSamlLoginHintTest {
 
     @InjectRealm

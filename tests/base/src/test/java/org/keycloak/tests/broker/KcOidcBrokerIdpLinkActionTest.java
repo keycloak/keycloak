@@ -51,23 +51,20 @@ import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
+import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
-import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testframework.ui.page.IdpLinkActionPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.utils.BrokerUtil;
 
 import org.hamcrest.MatcherAssert;
-import org.keycloak.testframework.ui.annotations.InjectPage;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.Rule;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 
 import static org.hamcrest.Matchers.is;
 
@@ -76,7 +73,7 @@ import static org.hamcrest.Matchers.is;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBrokerTest {
 
     @InjectRealm

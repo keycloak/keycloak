@@ -13,6 +13,8 @@ import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 public class ManagedWebDriver extends ManagedTestResource {
 
+    private static final ThreadLocal<WebDriver> CURRENT_DRIVER = new ThreadLocal<>();
+
     private WebDriver driver;
 
     private AssertionUtils assertionUtils = new AssertionUtils(this);
@@ -24,11 +26,16 @@ public class ManagedWebDriver extends ManagedTestResource {
 
     public ManagedWebDriver(WebDriver driver) {
         this.driver = driver;
+        CURRENT_DRIVER.set(driver);
         this.tabUtils = new BrowserTabUtils(this);
     }
 
     public WebDriver driver() {
         return driver;
+    }
+
+    public static WebDriver currentDriver() {
+        return CURRENT_DRIVER.get();
     }
 
     public BrowserType getBrowserType() {
@@ -46,8 +53,24 @@ public class ManagedWebDriver extends ManagedTestResource {
         return driver.getCurrentUrl();
     }
 
+    public String getTitle() {
+        return driver.getTitle();
+    }
+
+    public String getPageSource() {
+        return driver.getPageSource();
+    }
+
+    public WebDriver.Options manage() {
+        return driver.manage();
+    }
+
     public WebElement findElement(By by) {
         return driver.findElement(by);
+    }
+
+    public java.util.List<WebElement> findElements(By by) {
+        return driver.findElements(by);
     }
 
     public void open(String url) {

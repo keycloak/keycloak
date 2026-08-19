@@ -4,8 +4,6 @@ import java.util.List;
 
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.UserRepresentation;
-
-import org.junit.jupiter.api.Assertions;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -14,9 +12,11 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import org.junit.jupiter.api.Assertions;
 
-@KeycloakIntegrationTest
+import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
+
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcOidcBrokerAcrParameterTest extends AbstractBrokerTest {
 
     @InjectRealm

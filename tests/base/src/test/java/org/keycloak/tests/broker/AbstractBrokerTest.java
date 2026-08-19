@@ -27,18 +27,18 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
-import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.ui.page.ConsentPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.AccountHelper;
 
-import org.keycloak.testframework.ui.annotations.InjectPage;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.models.utils.DefaultAuthenticationFlows.IDP_REVIEW_PROFILE_CONFIG_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.tests.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -52,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Contains just few basic tests. This is good class to override if you're testing custom IDP configuration and you need
  * to verify if login with IDP works as expected
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTest {
 
     @InjectRealm

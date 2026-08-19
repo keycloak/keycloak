@@ -20,8 +20,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testsuite.util.AccountHelper;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -33,7 +33,7 @@ import static org.hamcrest.Matchers.not;
  * @author <a href="mailto:artur.baltabayev@bosch.io">Artur Baltabayev</a>,
  * <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public abstract class AbstractGroupMapperTest extends AbstractIdentityProviderMapperTest {
 
     @InjectRealm

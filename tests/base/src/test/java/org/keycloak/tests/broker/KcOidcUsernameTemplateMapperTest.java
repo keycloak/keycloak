@@ -6,16 +6,16 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-
-import com.google.common.collect.ImmutableMap;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 
+import com.google.common.collect.ImmutableMap;
+
 /**
  * @author <a href="mailto:external.martin.idel@bosch.io">Martin Idel</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcOidcUsernameTemplateMapperTest extends AbstractUsernameTemplateMapperTest {
 
     @InjectRealm

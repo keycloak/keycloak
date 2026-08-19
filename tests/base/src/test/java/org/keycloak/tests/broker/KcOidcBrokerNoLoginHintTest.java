@@ -8,9 +8,6 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-
-import org.apache.commons.lang3.StringUtils;
-import org.junit.jupiter.api.Assertions;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -19,13 +16,16 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
-import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import org.apache.commons.lang3.StringUtils;
+import org.junit.jupiter.api.Assertions;
 
-@KeycloakIntegrationTest
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
+import static org.keycloak.tests.broker.BrokerTestConstants.USER_EMAIL;
+import static org.keycloak.tests.broker.BrokerTestTools.createIdentityProvider;
+import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
+
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcOidcBrokerNoLoginHintTest extends AbstractBrokerTest {
 
     @InjectRealm

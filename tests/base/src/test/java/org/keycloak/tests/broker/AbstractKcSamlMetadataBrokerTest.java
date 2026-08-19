@@ -35,7 +35,7 @@ import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testsuite.saml.AbstractSamlTest;
+import org.keycloak.tests.saml.AbstractSamlTest;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.util.saml.SamlDocumentStepBuilder;
@@ -54,7 +54,7 @@ import static org.keycloak.testsuite.util.Matchers.bodyHC;
  *
  * @author rmartinc
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public abstract class AbstractKcSamlMetadataBrokerTest extends AbstractBrokerTest {
 
     @InjectRealm

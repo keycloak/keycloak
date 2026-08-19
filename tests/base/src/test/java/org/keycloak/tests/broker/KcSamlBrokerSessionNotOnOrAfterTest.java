@@ -17,17 +17,17 @@ import org.keycloak.testsuite.util.SamlClientBuilder;
 
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_SAML_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_LOGIN;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_PASSWORD;
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_SAML_ALIAS;
+import static org.keycloak.tests.broker.BrokerTestConstants.REALM_CONS_NAME;
+import static org.keycloak.tests.broker.BrokerTestConstants.USER_EMAIL;
+import static org.keycloak.tests.broker.BrokerTestConstants.USER_LOGIN;
+import static org.keycloak.tests.broker.BrokerTestConstants.USER_PASSWORD;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcSamlBrokerSessionNotOnOrAfterTest extends AbstractBrokerTest {
 
     @InjectRealm

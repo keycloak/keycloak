@@ -43,7 +43,7 @@ import org.junit.jupiter.api.Assertions;
  *
  * @author rmartinc
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class SamlIdentityProviderStoreTokenV1Test implements InterfaceIdentityProviderStoreTokenV1Test, InterfaceSamlIdentityProviderStoreTokenTest {
 
     @InjectRealm(config = IdpRealmConfig.class)

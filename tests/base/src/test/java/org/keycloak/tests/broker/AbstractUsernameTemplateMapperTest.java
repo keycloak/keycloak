@@ -14,11 +14,11 @@ import org.keycloak.testsuite.util.AccountHelper;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-import static org.keycloak.testsuite.broker.KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME;
+import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.tests.broker.KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -26,7 +26,7 @@ import static org.hamcrest.Matchers.is;
 /**
  * @author <a href="mailto:external.martin.idel@bosch.io">Martin Idel</a>,
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public abstract class AbstractUsernameTemplateMapperTest extends AbstractIdentityProviderMapperTest {
 
     @InjectRealm

@@ -35,11 +35,11 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
-import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
+import static org.keycloak.tests.broker.BrokerTestTools.createIdentityProvider;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcOidcBrokerPrivateKeyJwtUnsupportedKeyTest extends AbstractBrokerTest {
 
     @InjectRealm
@@ -65,7 +65,7 @@ public class KcOidcBrokerPrivateKeyJwtUnsupportedKeyTest extends AbstractBrokerT
                 client.getAttributes().put(OIDCConfigAttributes.USE_JWKS_URL, "true");
 
                 // use a custom realm resource provider to expose a jwks with an unsupported key
-                // see org.keycloak.testsuite.broker.oidc.UnsupportedKeyJwksRestResource
+                // see org.keycloak.tests.broker.oidc.UnsupportedKeyJwksRestResource
                 client.getAttributes().put(OIDCConfigAttributes.JWKS_URL, BrokerTestTools.getConsumerRoot() +
                         "/auth/realms/" + BrokerTestConstants.REALM_CONS_NAME + "/unsupported-key-jwks/jwks");
 

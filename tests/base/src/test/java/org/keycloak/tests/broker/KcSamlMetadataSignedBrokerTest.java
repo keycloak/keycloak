@@ -42,14 +42,14 @@ import org.keycloak.testsuite.util.KeyUtils;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  *
  * @author rmartinc
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcSamlMetadataSignedBrokerTest extends AbstractKcSamlMetadataBrokerTest {
 
     @InjectRealm

@@ -67,20 +67,19 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
-import org.keycloak.testsuite.admin.AdminApiUtil;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeatures;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.broker.OIDCIdentityProviderConfigRep;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -96,7 +95,7 @@ import static org.hamcrest.Matchers.nullValue;
  * Test for identity-provider token exchange scenarios. Base for tests of token-exchange V1
  */
 @EnableFeatures({@EnableFeature(Profile.Feature.TOKEN_EXCHANGE), @EnableFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)})
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBrokerTest {
 
     @InjectRealm

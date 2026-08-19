@@ -21,6 +21,7 @@ import java.util.List;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
@@ -34,28 +35,32 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.realm.FederatedIdentityBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
-import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.testsuite.federation.PassThroughFederatedUserStorageProvider;
-import org.keycloak.testsuite.federation.PassThroughFederatedUserStorageProviderFactory;
-import org.keycloak.testsuite.federation.UserMapStorageFactory;
+import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.UpdateAccountInformationPage;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.providers.federation.PassThroughFederatedUserStorageProvider;
+import org.keycloak.tests.providers.federation.PassThroughFederatedUserStorageProviderFactory;
+import org.keycloak.tests.providers.federation.UserMapStorageFactory;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.AccountHelper;
 
-import org.keycloak.testframework.ui.annotations.InjectPage;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.Ignore;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
-import static org.keycloak.testsuite.admin.AdminApiUtil.createUserAndResetPasswordWithAdminClient;
-import static org.keycloak.testsuite.admin.AdminApiUtil.createUserWithAdminClient;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.createUserAndResetPasswordWithAdminClient;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.createUserWithAdminClient;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -66,11 +71,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class AccountLinkTest {
 
     @InjectRealm
     ManagedRealm managedRealm;
+    
+    @InjectAdminClient
+    Keycloak adminClient;
+
+    private KeycloakTestingClient testingClient;
+    private final AbstractBaseBrokerTest.CompatibilityTestContext testContext = new AbstractBaseBrokerTest.CompatibilityTestContext();
+
     public static final String CHILD_IDP = "child";
     public static final String PARENT_IDP = "parent-idp";
     public static final String PARENT_USERNAME = "parent";
@@ -81,7 +93,6 @@ public class AccountLinkTest {
     @InjectPage
     protected LoginPage loginPage;
 
-    @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realm = new RealmRepresentation();
         realm.setRealm(CHILD_IDP);
@@ -134,6 +145,25 @@ public class AccountLinkTest {
 
     public void createParentChild() {
         BrokerTestTools.createKcOidcBroker(adminClient, CHILD_IDP, PARENT_IDP);
+    }
+
+    private KeycloakTestingClient getTestingClient() {
+        if (testingClient == null) {
+            String serverUrl;
+            if (managedRealm != null && managedRealm.getBaseUrl() != null) {
+                int realmsIndex = managedRealm.getBaseUrl().indexOf("/realms/");
+                serverUrl = realmsIndex > 0 ? managedRealm.getBaseUrl().substring(0, realmsIndex) : managedRealm.getBaseUrl();
+                if (serverUrl.endsWith("/auth")) {
+                    serverUrl = serverUrl.substring(0, serverUrl.length() - "/auth".length());
+                }
+            } else if (OAuthClient.SERVER_ROOT != null && !OAuthClient.SERVER_ROOT.isBlank()) {
+                serverUrl = OAuthClient.SERVER_ROOT.replaceAll("/+$", "");
+            } else {
+                serverUrl = getAuthServerContextRoot();
+            }
+            testingClient = KeycloakTestingClient.getInstance(serverUrl);
+        }
+        return testingClient;
     }
 
     @Test

@@ -20,9 +20,6 @@ import java.util.List;
 
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Assertions;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -31,7 +28,10 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
 
 /**
  * Migrated from old testsuite.  Previous version by Pedro Igor.
@@ -39,7 +39,7 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
  * @author Stan Silvert ssilvert@redhat.com (C) 2019 Red Hat Inc.
  * @author pedroigor
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcOidcBrokerIdpHintTest extends AbstractInitializedBaseBrokerTest {
 
     @InjectRealm

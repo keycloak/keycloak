@@ -41,13 +41,13 @@ import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.UIUtils;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -56,7 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Test for scenarios where "Identity Provider Authenticator" is set with "default identity provider" directly redirecting to provider realm
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public abstract class AbstractDefaultIdpTest extends AbstractInitializedBaseBrokerTest {
 
     @InjectRealm

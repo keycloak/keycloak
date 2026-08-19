@@ -9,7 +9,7 @@ import org.keycloak.testsuite.arquillian.annotation.EnableVault;
  * @author Martin Kanis <mkanis@redhat.com>
  */
 @EnableVault
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcOidcBrokerVaultTest extends AbstractBrokerTest {
 
     @InjectRealm

@@ -27,12 +27,12 @@ import org.keycloak.testsuite.util.broker.OIDCIdentityProviderConfigRep;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.tests.broker.BrokerTestTools.getConsumerRoot;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcOidcBrokerNonceParameterTest extends AbstractBrokerTest {
 
     @InjectRealm

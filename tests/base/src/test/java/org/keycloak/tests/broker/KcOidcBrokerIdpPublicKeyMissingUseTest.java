@@ -10,13 +10,13 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
-import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
+import static org.keycloak.tests.broker.BrokerTestConstants.REALM_PROV_NAME;
+import static org.keycloak.tests.broker.BrokerTestTools.createIdentityProvider;
+import static org.keycloak.tests.broker.BrokerTestTools.getProviderRoot;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcOidcBrokerIdpPublicKeyMissingUseTest extends AbstractBrokerTest {
 
     @InjectRealm

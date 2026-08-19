@@ -34,14 +34,12 @@ import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
-import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.userprofile.UserProfileContext;
 
-import org.junit.Rule;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 
 /**
  * Simple test to check the events after a broker login using OIDC. It also
@@ -50,7 +48,7 @@ import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
  *
  * @author rmartinc
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
 
     @InjectRealm

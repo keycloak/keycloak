@@ -31,6 +31,7 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
+import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
@@ -38,40 +39,35 @@ import org.keycloak.testframework.realm.FederatedIdentityBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.federation.UserMapStorageFactory;
-import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.tests.providers.federation.UserMapStorageFactory;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testsuite.util.MailServerConfiguration;
-import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.userprofile.UserProfileContext;
 
 import com.google.common.collect.ImmutableMap;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.junit.Rule;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.PageFactory;
 
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
-import static org.keycloak.testsuite.admin.AdminApiUtil.removeUserByUsername;
-import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.assertHardCodedSessionNote;
-import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configureAutoLinkFlow;
-import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configureConfirmOverrideLinkFlow;
-import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.grantReadTokenRole;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.tests.broker.BrokerRunOnServerUtil.assertHardCodedSessionNote;
+import static org.keycloak.tests.broker.BrokerRunOnServerUtil.configureAutoLinkFlow;
+import static org.keycloak.tests.broker.BrokerRunOnServerUtil.configureConfirmOverrideLinkFlow;
+import static org.keycloak.tests.broker.BrokerRunOnServerUtil.grantReadTokenRole;
+import static org.keycloak.tests.broker.BrokerTestConstants.USER_EMAIL;
+import static org.keycloak.tests.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.removeUserByUsername;
 import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -85,7 +81,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBaseBrokerTest {
 
     @InjectRealm
@@ -109,8 +105,11 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     @InjectMailServer
     MailServer mail;
 
+    @InjectPage
+    LoginPasswordUpdatePage passwordUpdatePage;
+
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testErrorPageWhenDuplicationNotAllowed_updateProfileOn
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractFirstBrokerLoginTest#testErrorPageWhenDuplicationNotAllowed_updateProfileOn
      */
     @Test
     public void testErrorExistingUserWithUpdateProfile() {
@@ -136,7 +135,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testLinkAccountByReauthenticationWithPassword
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractFirstBrokerLoginTest#testLinkAccountByReauthenticationWithPassword
      */
     @Test
     public void testLinkAccountByReauthenticationWithPassword() {
@@ -154,7 +153,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
         idpConfirmLinkPage.clickLinkAccount();
 
-        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInstruction());
 
         try {
             this.loginPage.findSocialButton(bc.getIDPAlias());
@@ -190,7 +189,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
         idpConfirmLinkPage.clickLinkAccount();
 
-        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInstruction());
 
         try {
             this.loginPage.findSocialButton(bc.getIDPAlias());
@@ -222,7 +221,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         logInWithBroker(bc);
 
-        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInstruction());
 
         try {
             this.loginPage.findSocialButton(bc.getIDPAlias());
@@ -253,7 +252,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
             logInWithBroker(bc);
 
-            assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+            assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInstruction());
 
             try {
                 this.loginPage.findSocialButton(bc.getIDPAlias());
@@ -295,7 +294,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
         idpConfirmLinkPage.clickLinkAccount();
 
-        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInstruction());
 
         try {
             this.loginPage.findSocialButton(bc.getIDPAlias());
@@ -325,7 +324,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         logInWithBroker(bc);
 
-        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInstruction());
 
         try {
             this.loginPage.findSocialButton(bc.getIDPAlias());
@@ -341,7 +340,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     }
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testLinkAccountByReauthenticationWithPassword_browserButtons
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractFirstBrokerLoginTest#testLinkAccountByReauthenticationWithPassword_browserButtons
      */
     @Test
     public void testLinkAccountByLogInAsUserUsingBrowserButtons() {
@@ -399,7 +398,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertEquals("consumer", loginPage.getUsername());
         assertTrue(loginPage.isUsernameInputEnabled());
 
-        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), this.loginPage.getInfoMessage());
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), this.loginPage.getInstruction());
 
         try {
             loginPage.findSocialButton(bc.getIDPAlias());
@@ -464,7 +463,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     }
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testLinkAccountByReauthentication_forgetPassword
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractFirstBrokerLoginTest#testLinkAccountByReauthentication_forgetPassword
      */
     @Test
     public void testLinkAccountByLogInAsUserAfterResettingPassword() throws InterruptedException {
@@ -545,7 +544,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         logInWithBroker(bc);
 
-        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInstruction());
 
         try {
             this.loginPage.findSocialButton(bc.getIDPAlias());
@@ -578,7 +577,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testLinkAccountByReauthentication_forgetPassword_differentBrowser
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractFirstBrokerLoginTest#testLinkAccountByReauthentication_forgetPassword_differentBrowser
      */
     @Test
     public void testLinkAccountByLogInAsUserAfterResettingPasswordUsingDifferentBrowsers() throws InterruptedException {
@@ -625,7 +624,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         removeSMTPConfiguration(realm);
 
         // Need to update password now
-        LoginPasswordUpdatePage passwordUpdatePage = PageFactory.initElements(driver2, LoginPasswordUpdatePage.class);
+        LoginPasswordUpdatePage passwordUpdatePage = PageFactory.initElements(driver2.driver(), LoginPasswordUpdatePage.class);
         passwordUpdatePage.changePassword("password", "password");
 
         assertNumFederatedIdentities(existingUser, 0);
@@ -650,7 +649,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testErrorPageWhenDuplicationNotAllowed_updateProfileOff
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractFirstBrokerLoginTest#testErrorPageWhenDuplicationNotAllowed_updateProfileOff
      */
     @Test
     public void testUserExistsFirstBrokerLoginFlowUpdateProfileOff() {
@@ -674,7 +673,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testErrorPageWhenDuplicationNotAllowed_updateProfileOff
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractFirstBrokerLoginTest#testErrorPageWhenDuplicationNotAllowed_updateProfileOff
      */
     @Test
     public void testUserExistsFirstBrokerLoginFlowUpdateProfileOn() {
@@ -701,7 +700,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testRegistrationWithPasswordUpdateRequired
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractFirstBrokerLoginTest#testRegistrationWithPasswordUpdateRequired
      */
     @Test
     public void testRequiredUpdatedPassword() {
@@ -721,14 +720,14 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
 
         waitForPage(driver, "update password", false);
-        updatePasswordPage.updatePasswords("password", "password");
+        passwordUpdatePage.updatePasswords("password", "password");
 
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testFixDuplicationsByReviewProfile
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractFirstBrokerLoginTest#testFixDuplicationsByReviewProfile
      */
     @Test
     public void testFixDuplicationsByReviewProfile() {
@@ -777,7 +776,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testHardcodedUserSessionNoteIsSetAfterFristBrokerLogin()
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractFirstBrokerLoginTest#testHardcodedUserSessionNoteIsSetAfterFristBrokerLogin()
      */
     @Test
     public void testHardcodedUserSessionNoteIsSetAfterFirstBrokerLogin() {
@@ -815,8 +814,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testRegistrationWithEmailAsUsername
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractKeycloakIdentityProviderTest#testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername()
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractFirstBrokerLoginTest#testRegistrationWithEmailAsUsername
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractKeycloakIdentityProviderTest#testSuccessfulAuthenticationWithoutUpdateProfile_newUser_emailAsUsername()
      */
     @Test
     public void testRequiredRegistrationEmailAsUserName() {
@@ -938,7 +937,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         idpConfirmLinkPage.clickLinkAccount();
 
         //it should start the link using username and password as email has been changed
-        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInstruction());
 
         loginPage.login("password");
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
@@ -977,7 +976,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         idpConfirmLinkPage.clickLinkAccount();
 
         //linking the account using password as email not configured
-        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+        assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInstruction());
 
         loginPage.login("password");
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
@@ -986,7 +985,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     }
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractKeycloakIdentityProviderTest#testSuccessfulAuthenticationWithoutUpdateProfile_emailProvided_emailVerifyEnabled
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractKeycloakIdentityProviderTest#testSuccessfulAuthenticationWithoutUpdateProfile_emailProvided_emailVerifyEnabled
      */
     @Test
     public void testLinkAccountWithUntrustedEmailVerified() {
@@ -1024,7 +1023,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     }
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractKeycloakIdentityProviderTest#testSuccessfulAuthenticationWithoutUpdateProfile_emailNotProvided_emailVerifyEnabled
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractKeycloakIdentityProviderTest#testSuccessfulAuthenticationWithoutUpdateProfile_emailNotProvided_emailVerifyEnabled
      *
      */
     @Test
@@ -1058,7 +1057,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractKeycloakIdentityProviderTest#testSuccessfulAuthenticationWithoutUpdateProfile_emailProvided_emailVerifyEnabled_emailTrustEnabled
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractKeycloakIdentityProviderTest#testSuccessfulAuthenticationWithoutUpdateProfile_emailProvided_emailVerifyEnabled_emailTrustEnabled
      */
     @Test
     public void testVerifyEmailNotRequiredActionWhenEmailIsTrustedByProvider() {
@@ -1093,7 +1092,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractKeycloakIdentityProviderTest#testSuccessfulAuthentication_emailTrustEnabled_emailVerifyEnabled_emailUpdatedOnFirstLogin
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractKeycloakIdentityProviderTest#testSuccessfulAuthentication_emailTrustEnabled_emailVerifyEnabled_emailUpdatedOnFirstLogin
      */
     @Test
     public void testVerifyEmailRequiredActionWhenChangingEmailDuringFirstLogin() {
@@ -1137,7 +1136,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testLinkAccountByEmailVerificationTwice
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractFirstBrokerLoginTest#testLinkAccountByEmailVerificationTwice
      */
     @Test
     public void testLinkAccountByEmailVerificationTwice() {
@@ -1284,7 +1283,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testLinkAccountByEmailVerificationResendEmail
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractFirstBrokerLoginTest#testLinkAccountByEmailVerificationResendEmail
      */
     @Test
     public void testLinkAccountByEmailVerificationResendEmail() {
@@ -1509,7 +1508,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     }
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractKeycloakIdentityProviderTest.testSuccessfulAuthenticationUpdateProfileOnMissing_missingEmail
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractKeycloakIdentityProviderTest.testSuccessfulAuthenticationUpdateProfileOnMissing_missingEmail
      */
     @Test
     public void testUpdateProfileIfMissingInformation() {
@@ -1595,7 +1594,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     }
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractKeycloakIdentityProviderTest.testSuccessfulAuthenticationUpdateProfileOnMissing_nothingMissing
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractKeycloakIdentityProviderTest.testSuccessfulAuthenticationUpdateProfileOnMissing_nothingMissing
      */
     @Test
     public void testUpdateProfileIfNotMissingInformation() {
@@ -1623,7 +1622,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractKeycloakIdentityProviderTest.testSuccessfulAuthenticationWithoutUpdateProfile
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractKeycloakIdentityProviderTest.testSuccessfulAuthenticationWithoutUpdateProfile
      */
     @Test
     public void testWithoutUpdateProfile() {

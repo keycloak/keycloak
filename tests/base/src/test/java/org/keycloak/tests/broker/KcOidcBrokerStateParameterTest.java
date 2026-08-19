@@ -30,18 +30,16 @@ import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
-import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
-import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testframework.ui.page.LoginExpiredPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 import org.hamcrest.Matchers;
-import org.keycloak.testframework.ui.annotations.InjectPage;
-import org.junit.Rule;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -50,7 +48,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcOidcBrokerStateParameterTest extends AbstractInitializedBaseBrokerTest {
 
     @InjectRealm

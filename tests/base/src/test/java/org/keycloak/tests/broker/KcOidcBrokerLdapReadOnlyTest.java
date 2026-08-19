@@ -24,23 +24,23 @@ import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.page.IdpConfirmLinkPage;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
-import org.keycloak.testframework.ui.page.IdpConfirmLinkPage;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
-import org.keycloak.testframework.ui.annotations.InjectPage;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.ClassRule;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentationWithoutConfig;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public final class KcOidcBrokerLdapReadOnlyTest extends AbstractInitializedBaseBrokerTest {
 
     @InjectRealm

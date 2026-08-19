@@ -23,13 +23,13 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
-import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
+import static org.keycloak.tests.broker.BrokerTestConstants.REALM_CONS_NAME;
+import static org.keycloak.tests.broker.BrokerTestTools.createIdentityProvider;
+import static org.keycloak.tests.broker.BrokerTestTools.getConsumerRoot;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcOidcBrokerPrivateKeyJwtCustomSignAlgTest extends AbstractBrokerTest {
 
     @InjectRealm

@@ -2,16 +2,16 @@ package org.keycloak.tests.broker;
 
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.UserRepresentation;
-
-import org.junit.jupiter.api.BeforeEach;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 
-import static org.keycloak.testsuite.admin.AdminApiUtil.createUserWithAdminClient;
-import static org.keycloak.testsuite.admin.AdminApiUtil.resetUserPassword;
+import org.junit.jupiter.api.BeforeEach;
 
-@KeycloakIntegrationTest
+import static org.keycloak.tests.utils.admin.AdminApiUtil.createUserWithAdminClient;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.resetUserPassword;
+
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public abstract class AbstractKcOidcBrokerLogoutTest extends AbstractBaseBrokerTest {
 
     @InjectRealm

@@ -22,34 +22,33 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientScopeBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
-import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
-import org.keycloak.testsuite.broker.oidc.TestKeycloakOidcIdentityProviderFactory;
-import org.keycloak.testsuite.forms.RegisterWithUserProfileTest;
-import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testframework.ui.page.LoginUpdateProfilePage;
 import org.keycloak.testframework.ui.page.RegisterPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.tests.broker.oidc.TestKeycloakOidcIdentityProviderFactory;
+import org.keycloak.testsuite.forms.RegisterWithUserProfileTest;
+import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.MailServerConfiguration;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.util.JsonSerialization;
 
 import org.apache.commons.lang3.StringUtils;
-import org.keycloak.testframework.ui.annotations.InjectPage;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 
-import static org.keycloak.testsuite.admin.AdminApiUtil.removeUserByUsername;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
-import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.tests.broker.BrokerTestConstants.USER_EMAIL;
+import static org.keycloak.tests.broker.BrokerTestTools.createIdentityProvider;
+import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.removeUserByUsername;
 import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
 import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.ATTRIBUTE_DEPARTMENT;
 import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ADMIN_EDITABLE;
@@ -68,7 +67,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
 
     @InjectRealm
@@ -82,8 +81,6 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
 
     @InjectOAuthClient
     OAuthClient oauth;
-
-    protected ManagedRealm managedRealm = new ManagedRealm(this, bc.consumerRealmName());
 
     @InjectPage
     protected LoginUpdateProfilePage loginUpdateProfilePage;
@@ -232,7 +229,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
             assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
             idpConfirmLinkPage.clickLinkAccount();
 
-            assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+            assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInstruction());
 
             try {
                 this.loginPage.findSocialButton(bc.getIDPAlias());
@@ -291,7 +288,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
             assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
             idpConfirmLinkPage.clickLinkAccount();
 
-            assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+            assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInstruction());
 
             // There have to be two idp showed on login page
             // kc-saml-idp and kc-oidc-idp2 must be present but not kc-oidc-idp
@@ -343,7 +340,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
             assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
             idpConfirmLinkPage.clickLinkAccount();
 
-            assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+            assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInstruction());
 
             try {
                 this.loginPage.findSocialButton(bc.getIDPAlias());

@@ -16,13 +16,13 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.Test;
-import org.keycloak.testframework.annotations.InjectRealm;
-import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ManagedRealm;
 
 import static org.keycloak.models.IdentityProviderMapperSyncMode.FORCE;
 import static org.keycloak.models.IdentityProviderMapperSyncMode.IMPORT;
@@ -31,7 +31,7 @@ import static org.keycloak.models.IdentityProviderMapperSyncMode.IMPORT;
  * @author <a href="mailto:artur.baltabayev@bosch.io">Artur Baltabayev</a>,
  * <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class OidcAdvancedClaimToGroupMapperTest extends AbstractGroupBrokerMapperTest {
 
     @InjectRealm

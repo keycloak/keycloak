@@ -45,7 +45,7 @@ import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
-import org.keycloak.testsuite.saml.AbstractSamlTest;
+import org.keycloak.tests.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.SamlClient;
@@ -61,8 +61,7 @@ import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
-import static org.keycloak.testsuite.saml.RoleMapperTest.ROLE_ATTRIBUTE_NAME;
+import static org.keycloak.tests.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.util.Matchers.bodyHC;
 import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
@@ -78,7 +77,7 @@ import static org.hamcrest.Matchers.not;
 /**
  * Final class as it's not intended to be overriden. Feel free to remove "final" if you really know what you are doing.
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
 
     @InjectRealm
@@ -96,6 +95,7 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
     }
 
     private static final String EMPTY_ATTRIBUTE_NAME = "empty.attribute.name";
+    private static final String ROLE_ATTRIBUTE_NAME = "Role";
 
     @Override
     protected Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers(IdentityProviderMapperSyncMode syncMode) {

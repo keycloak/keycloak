@@ -36,23 +36,21 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
+import org.keycloak.tests.providers.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.TestAppHelper;
 import org.keycloak.testsuite.util.WaitUtils;
 
-import org.junit.Rule;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.openqa.selenium.TimeoutException;
 
-import static org.keycloak.testsuite.admin.AdminApiUtil.removeUserByUsername;
-import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configurePostBrokerLoginWithOTP;
-import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.disablePostBrokerLoginFlow;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForElementEnabled;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.tests.broker.BrokerRunOnServerUtil.configurePostBrokerLoginWithOTP;
+import static org.keycloak.tests.broker.BrokerRunOnServerUtil.disablePostBrokerLoginFlow;
+import static org.keycloak.tests.broker.BrokerTestTools.getProviderRoot;
+import static org.keycloak.tests.broker.BrokerTestTools.waitForElementEnabled;
+import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.removeUserByUsername;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
@@ -74,7 +72,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * - Disabled user
  * - etc
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
     @InjectRealm
@@ -114,7 +112,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
     protected abstract void createAdditionalMapperWithCustomSyncMode(IdentityProviderMapperSyncMode syncMode);
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractKeycloakIdentityProviderTest#testAccountManagementLinkIdentity
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractKeycloakIdentityProviderTest#testAccountManagementLinkIdentity
      */
     @Test
     public void testAccountManagementLinkIdentity() {
@@ -173,7 +171,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
     }
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractKeycloakIdentityProviderTest#testAccountManagementLinkedIdentityAlreadyExists
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractKeycloakIdentityProviderTest#testAccountManagementLinkedIdentityAlreadyExists
      */
     @Test
     public void testAccountManagementLinkedIdentityAlreadyExists() {
@@ -285,7 +283,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
     }
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractKeycloakIdentityProviderTest.testDisabledUser
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractKeycloakIdentityProviderTest.testDisabledUser
      */
     @Test
     public void testDisabledUser() {
@@ -455,7 +453,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
     }
 
     /**
-     * Refers to in old testsuite: org.keycloak.testsuite.broker.PostBrokerFlowTest#testPostBrokerLoginWithOTP()
+     * Refers to in old testsuite: org.keycloak.tests.broker.PostBrokerFlowTest#testPostBrokerLoginWithOTP()
      */
     @Test
     public void testPostBrokerLoginFlowWithOTP() {
@@ -503,7 +501,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
     }
 
     /**
-     * Refers to in old testsuite: org.keycloak.testsuite.broker.OIDCKeyCloakServerBrokerBasicTest#testLogoutWorksWithTokenTimeout()
+     * Refers to in old testsuite: org.keycloak.tests.broker.OIDCKeyCloakServerBrokerBasicTest#testLogoutWorksWithTokenTimeout()
      */
     @Test
     public void testLogoutWorksWithTokenTimeout() {
@@ -542,7 +540,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
     }
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractKeycloakIdentityProviderTest#testWithLinkedFederationProvider
+     * Refers to in old test suite: org.keycloak.tests.broker.AbstractKeycloakIdentityProviderTest#testWithLinkedFederationProvider
      */
     @Test
     public void testWithLinkedFederationProvider() {

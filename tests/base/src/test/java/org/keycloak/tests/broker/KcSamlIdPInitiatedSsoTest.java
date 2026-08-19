@@ -8,6 +8,8 @@ import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -16,6 +18,7 @@ import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.UsersResource;
@@ -41,31 +44,33 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
+import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
-import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.LoginPage;
-import org.keycloak.testframework.ui.page.PageUtils;
 import org.keycloak.testframework.ui.page.UpdateAccountInformationPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.utils.io.IOUtil;
 
-import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.jboss.logging.Logger;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
+import static org.keycloak.tests.broker.BrokerTestConstants.REALM_CONS_NAME;
+import static org.keycloak.tests.broker.BrokerTestConstants.REALM_PROV_NAME;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -84,14 +89,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author hmlnarik
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcSamlIdPInitiatedSsoTest {
+
+    private static final Logger log = Logger.getLogger(KcSamlIdPInitiatedSsoTest.class);
 
     @InjectRealm
     ManagedRealm managedRealm;
 
     @InjectWebDriver
     ManagedWebDriver driver;
+
+    @InjectAdminClient
+    Keycloak adminClient;
 
     private static final String PROVIDER_REALM_USER_NAME = "test";
     private static final String PROVIDER_REALM_USER_PASSWORD = "test";
@@ -110,9 +120,14 @@ public class KcSamlIdPInitiatedSsoTest {
     private String urlRealmConsumer2;
     private String urlRealmConsumer;
     private String urlRealmProvider;
+    private final Map<String, CleanupSupport> cleanups = new HashMap<>();
 
     protected String getAuthRoot() {
-        return suiteContext.getAuthServerInfo().getContextRoot().toString();
+        return getAuthServerContextRoot();
+    }
+
+    private CleanupSupport getCleanup(String realm) {
+        return cleanups.computeIfAbsent(realm, CleanupSupport::new);
     }
 
     private RealmRepresentation loadFromClasspath(String fileName, Properties properties) {
@@ -123,6 +138,18 @@ public class KcSamlIdPInitiatedSsoTest {
             return IOUtil.loadRealm(new ByteArrayInputStream(realmString.getBytes(StandardCharsets.UTF_8)));
         } catch (IOException ex) {
             throw new RuntimeException(ex);
+        }
+    }
+
+    private static class CleanupSupport {
+        private final List<AutoCloseable> cleanups = new ArrayList<>();
+
+        private CleanupSupport(String realm) {
+        }
+
+        CleanupSupport addCleanup(AutoCloseable cleanup) {
+            cleanups.add(cleanup);
+            return this;
         }
     }
 
@@ -152,7 +179,6 @@ public class KcSamlIdPInitiatedSsoTest {
         idp.update(rep);
     }
 
-    @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         initRealmUrls();
 
@@ -307,9 +333,11 @@ public class KcSamlIdPInitiatedSsoTest {
     }
 
     private void waitForPage(final String title, final boolean htmlTitle) {
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
+        WebDriverWait wait = new WebDriverWait(driver.driver(), Duration.ofSeconds(5));
 
-        ExpectedCondition<Boolean> condition = (WebDriver input) -> htmlTitle ? input.getTitle().toLowerCase().contains(title) : PageUtils.getPageTitle(input).toLowerCase().contains(title);
+        ExpectedCondition<Boolean> condition = (WebDriver input) -> htmlTitle
+                ? input.getTitle().toLowerCase().contains(title)
+                : input.findElement(By.id("kc-page-title")).getText().toLowerCase().contains(title);
 
         wait.until(condition);
     }

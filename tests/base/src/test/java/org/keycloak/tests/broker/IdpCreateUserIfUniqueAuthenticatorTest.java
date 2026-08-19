@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Integration tests for {@link org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticator}.
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class IdpCreateUserIfUniqueAuthenticatorTest {
 
     private static final String IDP_ALIAS = "create-user-idp";

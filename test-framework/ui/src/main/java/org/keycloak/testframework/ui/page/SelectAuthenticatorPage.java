@@ -17,6 +17,7 @@ public class SelectAuthenticatorPage extends AbstractLoginPage {
 
     // Corresponds to the PasswordForm
     public static final String PASSWORD = "Password";
+    public static final String AUTHENTICATOR_APPLICATION = "Authenticator Application";
 
     // Corresponds to the WebAuthn authenticators
     public static final String SECURITY_KEY = "Passkey";
@@ -44,6 +45,10 @@ public class SelectAuthenticatorPage extends AbstractLoginPage {
      */
     public String getLoginMethodHelpText(String loginMethodName) {
         return getLoginMethodRowByName(loginMethodName).findElement(By.className("select-auth-box-desc")).getText();
+    }
+
+    public List<String> getAvailableLoginMethods() {
+        return getLoginMethodsRows().stream().map(this::getLoginMethodNameFromRow).toList();
     }
 
 

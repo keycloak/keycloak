@@ -28,7 +28,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
  *
  * @author rmartinc
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcOidcBrokerJWEUserInfoJustEncryptedTest extends KcOidcBrokerJWETest {
 
     @InjectRealm

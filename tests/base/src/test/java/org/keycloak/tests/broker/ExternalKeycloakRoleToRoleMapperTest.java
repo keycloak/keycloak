@@ -11,13 +11,13 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
 
 import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.keycloak.testframework.annotations.InjectRealm;
-import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ManagedRealm;
 
 import static org.keycloak.models.IdentityProviderMapperSyncMode.FORCE;
 import static org.keycloak.models.IdentityProviderMapperSyncMode.IMPORT;
@@ -27,7 +27,7 @@ import static org.keycloak.models.IdentityProviderMapperSyncMode.LEGACY;
  * @author <a href="mailto:external.martin.idel@bosch.io">Martin Idel</a>,
  * <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class ExternalKeycloakRoleToRoleMapperTest extends AbstractRoleMapperTest {
 
     @InjectRealm

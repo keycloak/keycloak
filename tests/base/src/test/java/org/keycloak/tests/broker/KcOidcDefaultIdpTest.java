@@ -19,15 +19,16 @@
 
 package org.keycloak.tests.broker;
 
-import org.junit.jupiter.api.Test;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 
+import org.junit.jupiter.api.Test;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcOidcDefaultIdpTest extends AbstractDefaultIdpTest {
 
     @InjectRealm

@@ -18,25 +18,27 @@ package org.keycloak.tests.broker;
 
 import java.util.function.BiConsumer;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-
-import org.junit.jupiter.api.BeforeEach;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 
-import static org.keycloak.testsuite.admin.AdminApiUtil.createUserWithAdminClient;
-import static org.keycloak.testsuite.admin.AdminApiUtil.resetUserPassword;
+import org.junit.jupiter.api.BeforeEach;
+
+import static org.keycloak.tests.utils.admin.AdminApiUtil.createUserWithAdminClient;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.resetUserPassword;
 
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2019 Red Hat Inc.
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public abstract class AbstractInitializedBaseBrokerTest extends AbstractBaseBrokerTest {
 
     @InjectRealm
@@ -66,7 +68,17 @@ public abstract class AbstractInitializedBaseBrokerTest extends AbstractBaseBrok
 
         log.debug("adding identity provider to realm " + bc.consumerRealmName());
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
-        realm.identityProviders().create(bc.setUpIdentityProvider()).close();
+        Response response = realm.identityProviders().create(bc.setUpIdentityProvider());
+        if (response.getStatusInfo().getFamily() != Response.Status.Family.SUCCESSFUL) {
+            String error = null;
+            try {
+                error = response.readEntity(String.class);
+            } catch (Exception ignored) {
+            }
+            throw new IllegalStateException("Failed to add identity provider " + bc.getIDPAlias() + " to realm " + bc.consumerRealmName()
+                    + ": " + response.getStatus() + (error != null && !error.isBlank() ? " - " + error : ""));
+        }
+        response.close();
         identityProviderResource = realm.identityProviders().get(bc.getIDPAlias());
 
         addClientsToProviderAndConsumer();

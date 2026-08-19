@@ -10,7 +10,7 @@ import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testsuite.saml.AbstractSamlTest;
+import org.keycloak.tests.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
@@ -24,14 +24,14 @@ import org.w3c.dom.Element;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.AC_PASSWORD_PROTECTED_TRANSPORT;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.tests.broker.BrokerTestTools.getConsumerRoot;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Final class as it's not intended to be overriden.
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public final class KcSamlRequestedAuthnContextBrokerTest extends AbstractBrokerTest {
 
     @InjectRealm

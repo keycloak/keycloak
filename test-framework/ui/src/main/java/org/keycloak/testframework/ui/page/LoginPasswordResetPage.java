@@ -30,6 +30,14 @@ public class LoginPasswordResetPage extends AbstractLoginPage {
         submitButton.click();
     }
 
+    public void changePassword() {
+        submitButton.click();
+    }
+
+    public String getUsername() {
+        return usernameInput.getAttribute("value");
+    }
+
     public void backToLogin() {
         backToLogin.click();
     }

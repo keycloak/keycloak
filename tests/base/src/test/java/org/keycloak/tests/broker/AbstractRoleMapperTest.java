@@ -44,7 +44,7 @@ import static org.hamcrest.Matchers.not;
  * <a href="mailto:external.martin.idel@bosch.io">Martin Idel</a>,
  * <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public abstract class AbstractRoleMapperTest extends AbstractIdentityProviderMapperTest {
 
     @InjectRealm

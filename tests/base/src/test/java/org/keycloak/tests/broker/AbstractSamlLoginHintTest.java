@@ -1,9 +1,6 @@
 package org.keycloak.tests.broker;
 
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Assertions;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -11,17 +8,20 @@ import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
 
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test of various scenarios related to the use of login hint
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public abstract class AbstractSamlLoginHintTest extends AbstractInitializedBaseBrokerTest {
 
     @InjectRealm

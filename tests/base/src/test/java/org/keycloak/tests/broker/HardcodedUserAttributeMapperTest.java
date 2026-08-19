@@ -27,7 +27,7 @@ import static org.hamcrest.Matchers.not;
 /**
  * <a href="mailto:external.martin.idel@bosch.io">Martin Idel</a>,
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class HardcodedUserAttributeMapperTest extends AbstractIdentityProviderMapperTest {
 
     @InjectRealm

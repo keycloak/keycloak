@@ -46,8 +46,7 @@ import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.saml.AbstractSamlTest;
+import org.keycloak.tests.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import org.keycloak.testsuite.util.KeyUtils;
@@ -56,16 +55,15 @@ import org.keycloak.testsuite.util.SamlClientBuilder;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Rule;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 
 /**
  *
  * @author rmartinc
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcSamlMetadataSignedAndEncryptedBrokerTest extends AbstractKcSamlMetadataBrokerTest {
 
     @InjectRealm
