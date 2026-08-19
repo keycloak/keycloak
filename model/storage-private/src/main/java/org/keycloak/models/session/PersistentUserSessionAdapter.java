@@ -33,6 +33,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.light.LightweightUserAdapter;
+import org.keycloak.models.utils.RealmExpiration;
+import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -70,6 +72,7 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
             private String userSessionId;
             private int started;
             private int lastSessionRefresh;
+            private int lastRefreshEpoch;
             private boolean offline;
             private String data;
             private boolean rememberMe;
@@ -102,6 +105,16 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
             @Override
             public void setLastSessionRefresh(int lastSessionRefresh) {
                 this.lastSessionRefresh = lastSessionRefresh;
+            }
+
+            @Override
+            public int getLastRefreshEpoch() {
+                return lastRefreshEpoch;
+            }
+
+            @Override
+            public void setLastRefreshEpoch(int lastRefreshEpoch) {
+                this.lastRefreshEpoch = lastRefreshEpoch;
             }
 
             @Override
@@ -273,6 +286,11 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
             return;
         }
         model.setLastSessionRefresh(seconds);
+        if (realm != null) {
+            RealmExpiration exp = RealmExpiration.fromRealm(realm);
+            int maxIdle = model.isOffline() ? exp.offlineMaxIdle() : exp.getMaxIdle(isRememberMe());
+            model.setLastRefreshEpoch(SessionExpirationUtils.computeEpoch(seconds, maxIdle));
+        }
     }
 
     @Override

@@ -87,10 +87,9 @@ This changes the behavior of identity provider account linking by email, of admi
 and of the verifiable credential offer emails of the experimental OID4VCI feature.
 The *Trust Email* setting of identity providers and LDAP federation is not affected, as it is an explicit decision of the administrator to trust the email from the external source.
 
-=== Offline session expiration indexes rebuilt with session bucket column
+=== Offline session expiration indexes rebuilt with session bucket column and refresh epoch
 
-The `OFFLINE_USER_SESSION` table now has updated indexes `IDX_USER_SESSION_EXPIRATION_CREATED` and `IDX_USER_SESSION_EXPIRATION_LAST_REFRESH`. On PostgreSQL and Microsoft SQL Server, `IDX_OFFLINE_USS_BY_BROKER_SESSION_ID` is also rebuilt as a filtered index.
-
+The `OFFLINE_USER_SESSION` table has a new `LAST_REFRESH_EPOCH` column and updated indexes `IDX_USER_SESSION_EXPIRATION_CREATED` and `IDX_USER_SESSION_EXPIRATION_LAST_REFRESH`. On PostgreSQL and Microsoft SQL Server, `IDX_OFFLINE_USS_BY_BROKER_SESSION_ID` is also rebuilt as a filtered index.
 If the table contains more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
 See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
 

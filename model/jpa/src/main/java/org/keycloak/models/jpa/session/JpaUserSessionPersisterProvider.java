@@ -95,6 +95,10 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         String offlineStr = offlineToString(offline);
         entity.setOffline(offlineStr);
         entity.setLastSessionRefresh(model.getLastSessionRefresh());
+        RealmModel realm = adapter.getRealm();
+        int maxIdle = offline ? SessionExpirationUtils.getOfflineSessionIdleTimeout(realm)
+                              : SessionExpirationUtils.getSsoSessionIdleTimeout(realm);
+        entity.setLastRefreshEpoch(SessionExpirationUtils.computeEpoch(model.getLastSessionRefresh(), maxIdle));
         entity.setData(model.getData());
         entity.setBrokerSessionId(userSession.getBrokerSessionId());
         entity.setRememberMe(userSession.isRememberMe());
@@ -247,9 +251,13 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     @Override
     public void updateLastSessionRefreshes(RealmModel realm, int lastSessionRefresh, Collection<String> userSessionIds, boolean offline) {
         String offlineStr = offlineToString(offline);
+        int maxIdle = offline ? SessionExpirationUtils.getOfflineSessionIdleTimeout(realm)
+                              : SessionExpirationUtils.getSsoSessionIdleTimeout(realm);
+        int epoch = SessionExpirationUtils.computeEpoch(lastSessionRefresh, maxIdle);
 
         int us = em.createNamedQuery("updateUserSessionLastSessionRefresh")
                 .setParameter("lastSessionRefresh", lastSessionRefresh)
+                .setParameter("lastRefreshEpoch", epoch)
                 .setParameter("realmId", realm.getId())
                 .setParameter("offline", offlineStr)
                 .setParameter("userSessionIds", userSessionIds)
@@ -715,6 +723,16 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
             @Override
             public void setLastSessionRefresh(int lastSessionRefresh) {
                 entity.setLastSessionRefresh(lastSessionRefresh);
+            }
+
+            @Override
+            public int getLastRefreshEpoch() {
+                return entity.getLastRefreshEpoch();
+            }
+
+            @Override
+            public void setLastRefreshEpoch(int lastRefreshEpoch) {
+                entity.setLastRefreshEpoch(lastRefreshEpoch);
             }
 
             @Override

@@ -186,6 +186,14 @@ public class SessionExpirationUtils {
         return idle;
     }
 
+    /**
+     * Rounds {@code lastSessionRefresh} down to a coarse-grained epoch boundary of {@code maxIdle / 2} seconds.
+     */
+    public static int computeEpoch(int lastSessionRefresh, int maxIdle) {
+        int granularity = Math.max(maxIdle / 2, 1);
+        return (lastSessionRefresh / granularity) * granularity;
+    }
+
     private static long getClientAttributeTimeout(ClientModel client, String attr) {
         if (client != null) {
             final String value = client.getAttribute(attr);
