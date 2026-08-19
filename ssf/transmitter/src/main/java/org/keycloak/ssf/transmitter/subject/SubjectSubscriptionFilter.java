@@ -5,8 +5,6 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.organization.OrganizationProvider;
-import org.keycloak.organization.utils.Organizations;
 import org.keycloak.ssf.event.stream.SsfStreamUpdatedEvent;
 import org.keycloak.ssf.event.stream.SsfStreamVerificationEvent;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
@@ -218,19 +216,12 @@ public class SubjectSubscriptionFilter {
         if (userTombstone != null && now - userTombstone < graceSeconds) {
             return true;
         }
-        if (user instanceof PurgedUserSnapshot snapshot) {
-            Long orgTombstone = snapshot.getOrganizationRemovedAt(receiverClientId);
-            return orgTombstone != null && now - orgTombstone < graceSeconds;
-        }
-        if (Organizations.isEnabled(session)) {
-            return session.getProvider(OrganizationProvider.class).getByMember(user)
-                    .anyMatch(org -> {
-                        Long orgTombstone = SsfNotifyAttributes.getRemovedAtForOrganization(org, receiverClientId);
-                        return orgTombstone != null
-                                && now - orgTombstone < graceSeconds;
-                    });
-        }
-        return false;
+        return PurgedUserSnapshot.organizationsOf(session, user).stream()
+                .anyMatch(org -> {
+                    Long orgTombstone = SsfNotifyAttributes.getRemovedAtForOrganization(org, receiverClientId);
+                    return orgTombstone != null
+                            && now - orgTombstone < graceSeconds;
+                });
     }
 
     /**
@@ -282,7 +273,7 @@ public class SubjectSubscriptionFilter {
         // above can never succeed for one. Falling back to this request's snapshot
         // keeps the gate meaningful: without it every purge would be evaluated as an
         // unresolvable subject and dropped under the default default_subjects=NONE.
-        return PurgedUserSnapshot.lookupBySubject(session, userSubject);
+        return PurgedUserSnapshot.lookupBySubject(session, realm, userSubject);
     }
 
     /**
@@ -294,17 +285,7 @@ public class SubjectSubscriptionFilter {
      * "is the user excluded *via* one of their orgs" question.
      */
     protected boolean isOrganizationExcluded(UserModel user, String receiverClientId, KeycloakSession session) {
-        // A purged user cannot be resolved back to its memberships — getByMember is
-        // an id-keyed query, not an attribute read — so the verdict comes from the
-        // organization attributes captured before the deletion. This is the one place
-        // the snapshot cannot pose transparently as a live user.
-        if (user instanceof PurgedUserSnapshot snapshot) {
-            return snapshot.isAnyOrganizationExcluded(receiverClientId);
-        }
-        if (!Organizations.isEnabled(session)) {
-            return false;
-        }
-        return session.getProvider(OrganizationProvider.class).getByMember(user)
+        return PurgedUserSnapshot.organizationsOf(session, user).stream()
                 .anyMatch(org -> subjectInclusionResolver.isOrganizationExcluded(session, org, receiverClientId));
     }
 
@@ -313,14 +294,7 @@ public class SubjectSubscriptionFilter {
      * per the {@link #subjectInclusionResolver}.
      */
     protected boolean isOrganizationNotified(UserModel user, String receiverClientId, KeycloakSession session) {
-        // See isOrganizationExcluded — same reason the snapshot answers this itself.
-        if (user instanceof PurgedUserSnapshot snapshot) {
-            return snapshot.isAnyOrganizationNotified(receiverClientId);
-        }
-        if (!Organizations.isEnabled(session)) {
-            return false;
-        }
-        return session.getProvider(OrganizationProvider.class).getByMember(user)
+        return PurgedUserSnapshot.organizationsOf(session, user).stream()
                 .anyMatch(org -> subjectInclusionResolver.isOrganizationNotified(session, org, receiverClientId));
     }
 }

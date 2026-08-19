@@ -18,6 +18,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * account ceasing to exist — most notably a partial import under the OVERWRITE policy,
  * which deletes and immediately recreates the user — and those deliberately do not emit.
  *
+ * <p><b>Known gap.</b> Emission is driven by the admin / user event that follows a
+ * deletion, so deletion paths that fire neither produce no event. The significant one is
+ * the workflow delete step ({@code DeleteUserStepProvider}): the workflow engine raises no
+ * Keycloak events at all, so scheduled data-retention deletions are currently silent —
+ * exactly the case receivers would most expect to hear about. Deleting an organization's
+ * managed members is silent for the same reason. Both are tracked separately from the
+ * initial account-purged support.
+ *
  * See: https://openid.net/specs/openid-risc-1_0-final.html
  */
 public class RiscAccountPurged extends RiscEvent implements InitiatingEntityAware {
