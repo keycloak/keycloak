@@ -1,8 +1,10 @@
 package org.keycloak.tests.broker;
 
+import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -38,9 +40,8 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 
 import com.google.common.collect.ImmutableMap;
-import org.apache.tools.ant.filters.StringInputStream;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.testsuite.util.KeyUtils.generateNewRealmKey;
 
@@ -52,7 +53,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
 
     @InjectRealm
@@ -310,7 +311,7 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
     private SPSSODescriptorType getExportedSamlProvider() throws ParsingException {
         String spDescriptorString = identityProviderResource.export(null).readEntity(String.class);
         SAMLParser parser = SAMLParser.getInstance();
-        EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
+        EntityDescriptorType o = (EntityDescriptorType) parser.parse(new ByteArrayInputStream(spDescriptorString.getBytes(StandardCharsets.UTF_8)));
         return o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
     }
 
@@ -346,7 +347,7 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
 
             String spDescriptorString = identityProviderResource.export(null).readEntity(String.class);
             SAMLParser parser = SAMLParser.getInstance();
-            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
+            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new ByteArrayInputStream(spDescriptorString.getBytes(StandardCharsets.UTF_8)));
             SPSSODescriptorType spDescriptor = o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
 
             //the SPSSODescriptor should have at least one KeyDescriptor for encryption and one for Signing
@@ -400,7 +401,7 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
 
             String spDescriptorString = identityProviderResource.export(null).readEntity(String.class);
             SAMLParser parser = SAMLParser.getInstance();
-            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
+            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new ByteArrayInputStream(spDescriptorString.getBytes(StandardCharsets.UTF_8)));
             SPSSODescriptorType spDescriptor = o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
 
             assertThat(spDescriptor.getSingleLogoutService().size(), is(2));
@@ -431,7 +432,7 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
 
             String spDescriptorString = identityProviderResource.export(null).readEntity(String.class);
             SAMLParser parser = SAMLParser.getInstance();
-            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
+            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new ByteArrayInputStream(spDescriptorString.getBytes(StandardCharsets.UTF_8)));
             SPSSODescriptorType spDescriptor = o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
 
             assertThat(spDescriptor.getSingleLogoutService().size(), is(2));
@@ -457,7 +458,7 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
 
             String spDescriptorString = identityProviderResource.export(null).readEntity(String.class);
             SAMLParser parser = SAMLParser.getInstance();
-            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
+            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new ByteArrayInputStream(spDescriptorString.getBytes(StandardCharsets.UTF_8)));
             SPSSODescriptorType spDescriptor = o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
 
             assertThat(spDescriptor.getSingleLogoutService().size(), is(2));

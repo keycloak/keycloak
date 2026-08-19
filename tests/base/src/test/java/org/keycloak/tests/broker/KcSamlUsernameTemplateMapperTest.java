@@ -17,15 +17,15 @@ import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.WaitUtils;
 
 import com.google.common.collect.ImmutableMap;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.broker.saml.mappers.UsernameTemplateMapper.PROVIDER_ID;
 
 /**
  * @author <a href="mailto:external.martin.idel@bosch.io">Martin Idel</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcSamlUsernameTemplateMapperTest extends AbstractUsernameTemplateMapperTest {
 
     @InjectRealm

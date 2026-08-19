@@ -1,6 +1,7 @@
 package org.keycloak.tests.broker;
 
 import java.io.FileInputStream;
+import java.net.URI;
 import java.util.List;
 import java.util.Properties;
 
@@ -12,6 +13,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
@@ -33,6 +35,7 @@ import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -42,63 +45,64 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.login.UpdateAccount;
-import org.keycloak.testframework.ui.page.LoginPage;
-import org.keycloak.testframework.ui.page.social.AbstractSocialLoginPage;
-import org.keycloak.testframework.ui.page.social.BitbucketLoginPage;
-import org.keycloak.testframework.ui.page.social.FacebookLoginPage;
-import org.keycloak.testframework.ui.page.social.GitHubLoginPage;
-import org.keycloak.testframework.ui.page.social.GitLabLoginPage;
-import org.keycloak.testframework.ui.page.social.GoogleLoginPage;
-import org.keycloak.testframework.ui.page.social.InstagramLoginPage;
-import org.keycloak.testframework.ui.page.social.LinkedInLoginPage;
-import org.keycloak.testframework.ui.page.social.MicrosoftLoginPage;
-import org.keycloak.testframework.ui.page.social.OpenShiftLoginPage;
-import org.keycloak.testframework.ui.page.social.PayPalLoginPage;
-import org.keycloak.testframework.ui.page.social.StackOverflowLoginPage;
-import org.keycloak.testframework.ui.page.social.TwitterConsentLoginPage;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
+import org.keycloak.testsuite.pages.social.AbstractSocialLoginPage;
+import org.keycloak.testsuite.pages.social.BitbucketLoginPage;
+import org.keycloak.testsuite.pages.social.FacebookLoginPage;
+import org.keycloak.testsuite.pages.social.GitHubLoginPage;
+import org.keycloak.testsuite.pages.social.GitLabLoginPage;
+import org.keycloak.testsuite.pages.social.GoogleLoginPage;
+import org.keycloak.testsuite.pages.social.InstagramLoginPage;
+import org.keycloak.testsuite.pages.social.LinkedInLoginPage;
+import org.keycloak.testsuite.pages.social.MicrosoftLoginPage;
+import org.keycloak.testsuite.pages.social.OpenShiftLoginPage;
+import org.keycloak.testsuite.pages.social.PayPalLoginPage;
+import org.keycloak.testsuite.pages.social.StackOverflowLoginPage;
+import org.keycloak.testsuite.pages.social.TwitterConsentLoginPage;
 import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.WaitUtils;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
 
 import com.google.common.collect.ImmutableMap;
-import org.jboss.arquillian.graphene.Graphene;
-import org.keycloak.testframework.ui.annotations.InjectPage;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.jboss.logging.Logger;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.PageFactory;
 
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.BITBUCKET;
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.FACEBOOK;
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.FACEBOOK_INCLUDE_BIRTHDAY;
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB;
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB_PRIVATE_EMAIL;
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITLAB;
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE;
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE_HOSTED_DOMAIN;
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE_NON_MATCHING_HOSTED_DOMAIN;
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.INSTAGRAM;
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.LINKEDIN;
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.MICROSOFT;
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.MICROSOFT_SINGLE_TENANT;
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT4;
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT4_KUBE_ADMIN;
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.PAYPAL;
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.STACKOVERFLOW;
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.TWITTER;
+import static org.keycloak.tests.broker.SocialLoginTest.Provider.BITBUCKET;
+import static org.keycloak.tests.broker.SocialLoginTest.Provider.FACEBOOK;
+import static org.keycloak.tests.broker.SocialLoginTest.Provider.FACEBOOK_INCLUDE_BIRTHDAY;
+import static org.keycloak.tests.broker.SocialLoginTest.Provider.GITHUB;
+import static org.keycloak.tests.broker.SocialLoginTest.Provider.GITHUB_PRIVATE_EMAIL;
+import static org.keycloak.tests.broker.SocialLoginTest.Provider.GITLAB;
+import static org.keycloak.tests.broker.SocialLoginTest.Provider.GOOGLE;
+import static org.keycloak.tests.broker.SocialLoginTest.Provider.GOOGLE_HOSTED_DOMAIN;
+import static org.keycloak.tests.broker.SocialLoginTest.Provider.GOOGLE_NON_MATCHING_HOSTED_DOMAIN;
+import static org.keycloak.tests.broker.SocialLoginTest.Provider.INSTAGRAM;
+import static org.keycloak.tests.broker.SocialLoginTest.Provider.LINKEDIN;
+import static org.keycloak.tests.broker.SocialLoginTest.Provider.MICROSOFT;
+import static org.keycloak.tests.broker.SocialLoginTest.Provider.MICROSOFT_SINGLE_TENANT;
+import static org.keycloak.tests.broker.SocialLoginTest.Provider.OPENSHIFT4;
+import static org.keycloak.tests.broker.SocialLoginTest.Provider.OPENSHIFT4_KUBE_ADMIN;
+import static org.keycloak.tests.broker.SocialLoginTest.Provider.PAYPAL;
+import static org.keycloak.tests.broker.SocialLoginTest.Provider.STACKOVERFLOW;
+import static org.keycloak.tests.broker.SocialLoginTest.Provider.TWITTER;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 import static org.junit.Assume.assumeTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -110,8 +114,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 @EnableFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class SocialLoginTest {
+
+    private static final Logger log = Logger.getLogger(SocialLoginTest.class);
 
     @InjectRealm
     ManagedRealm managedRealm;
@@ -124,6 +130,11 @@ public class SocialLoginTest {
 
     @InjectOAuthClient
     OAuthClient oauth;
+
+    @InjectAdminClient
+    Keycloak adminClient;
+
+    private KeycloakTestingClient testingClient;
 
     public static final String SOCIAL_CONFIG = "social.config";
     public static final String REALM = "social";
@@ -204,6 +215,10 @@ public class SocialLoginTest {
     public void afterSocialLoginTest() {
         currentTestProvider = null;
         oauth.realm("test");
+        if (testingClient != null) {
+            testingClient.close();
+            testingClient = null;
+        }
     }
 
     private void removeUser() {
@@ -220,22 +235,66 @@ public class SocialLoginTest {
         adminClient.realm(REALM).identityProviders().create(buildIdp(provider));
         log.infof("added '%s' identity provider", provider.id());
         currentTestProvider = provider;
-        currentSocialLoginPage = Graphene.createPageFragment(currentTestProvider.pageObjectClazz(), driver.findElement(By.tagName("html")));
+        try {
+            currentSocialLoginPage = currentTestProvider.pageObjectClazz().getDeclaredConstructor().newInstance();
+            currentSocialLoginPage.setDriver(driver.driver());
+            PageFactory.initElements(driver.driver(), currentSocialLoginPage);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to initialize social page object", e);
+        }
 
         if(provider == OPENSHIFT4 || provider == OPENSHIFT4_KUBE_ADMIN) {
             ((OpenShiftLoginPage) currentSocialLoginPage).setUserLoginLinkTitle(getConfig(currentTestProvider, "loginBtnTitle"));
         }
     }
 
-    @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation rep = RealmBuilder.create().name(REALM).build();
         testRealms.add(rep);
     }
 
-    @Override
     protected boolean isImportAfterEachMethod() {
         return true;
+    }
+
+    private void createAppClientInRealm(String realm) {
+        org.keycloak.representations.idm.ClientRepresentation client = new org.keycloak.representations.idm.ClientRepresentation();
+        client.setClientId("test-app");
+        client.setName("test-app");
+        client.setSecret("password");
+        client.setEnabled(true);
+        client.setDirectAccessGrantsEnabled(true);
+        client.setRedirectUris(java.util.Collections.singletonList(OAuthClient.SERVER_ROOT + "/auth/*"));
+        client.setBaseUrl(OAuthClient.SERVER_ROOT + "/auth/realms/" + realm + "/app");
+        try {
+            adminClient.realm(realm).clients().create(client).close();
+        } catch (Exception ignored) {
+        }
+    }
+
+    private URI getAuthServerRoot() {
+        return URI.create(resolveAuthServerRoot() + "/auth/");
+    }
+
+    private KeycloakTestingClient getTestingClient() {
+        if (testingClient == null) {
+            testingClient = KeycloakTestingClient.getInstance(resolveAuthServerRoot());
+        }
+        return testingClient;
+    }
+
+    private String resolveAuthServerRoot() {
+        if (managedRealm != null && managedRealm.getBaseUrl() != null) {
+            int realmsIndex = managedRealm.getBaseUrl().indexOf("/realms/");
+            if (realmsIndex > 0) {
+                String root = managedRealm.getBaseUrl().substring(0, realmsIndex);
+                return root.endsWith("/auth") ? root.substring(0, root.length() - "/auth".length()) : root;
+            }
+        }
+        if (OAuthClient.SERVER_ROOT != null && !OAuthClient.SERVER_ROOT.isBlank()) {
+            return OAuthClient.SERVER_ROOT.replaceAll("/+$", "");
+        }
+        return getAuthServerContextRoot();
     }
 
     public static void setupClientExchangePermissions(KeycloakSession session) {
@@ -299,7 +358,7 @@ public class SocialLoginTest {
     public void googleLogin() throws InterruptedException {
         setTestProvider(GOOGLE);
         performLogin();
-        DroneUtils.getCurrentDriver().findElement(By.xpath("//button//span[contains(.,'Continue')]")).click();
+        driver.findElement(By.xpath("//button//span[contains(.,'Continue')]")).click();
         WaitUtils.pause(3000);
         WaitUtils.waitForPageToLoad();
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
@@ -638,7 +697,7 @@ public class SocialLoginTest {
         String username = users.get(0).getUsername();
         checkFeature(400, username);
 
-        testingClient.enableFeature(Profile.Feature.TOKEN_EXCHANGE);
+        getTestingClient().enableFeature(Profile.Feature.TOKEN_EXCHANGE);
 
         Client httpClient = AdminClientUtil.createResteasyClient();
 
@@ -722,7 +781,7 @@ public class SocialLoginTest {
             adminClient.realm(REALM).identityProviders().get(idp.getAlias()).update(idp);
         } finally {
             httpClient.close();
-            testingClient.disableFeature(Profile.Feature.TOKEN_EXCHANGE);
+            getTestingClient().disableFeature(Profile.Feature.TOKEN_EXCHANGE);
             checkFeature(400, username);
         }
     }

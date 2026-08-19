@@ -30,22 +30,22 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.FederatedIdentityBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.broker.oidc.LegacyIdIdentityProviderFactory;
+import org.keycloak.tests.broker.oidc.LegacyIdIdentityProviderFactory;
 import org.keycloak.testsuite.util.AccountHelper;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.admin.AdminApiUtil.createUserWithAdminClient;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.oidc.LegacyIdIdentityProvider.LEGACY_ID;
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.tests.broker.oidc.LegacyIdIdentityProvider.LEGACY_ID;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.createUserWithAdminClient;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class BrokerWithLegacyIdTest extends AbstractInitializedBaseBrokerTest {
 
     @InjectRealm

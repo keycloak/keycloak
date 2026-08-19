@@ -10,11 +10,11 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-
-import com.google.common.collect.ImmutableMap;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
+
+import com.google.common.collect.ImmutableMap;
 
 /**
  * @author <a href="mailto:dmartino@redhat.com">DanieleMartinoli</a>
@@ -25,7 +25,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
  * Since this mapper does not cause leaving the group when the claims do not match, an <code>isHardcodedGroup</code>
  * method is introduced to customize the behavior in the super class.
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class OidcHardcodedGroupMapperTest extends OidcAdvancedClaimToGroupMapperTest {
 
     @InjectRealm

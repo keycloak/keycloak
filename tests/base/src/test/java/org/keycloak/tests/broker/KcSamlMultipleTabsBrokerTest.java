@@ -34,20 +34,18 @@ import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
-import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import org.hamcrest.Matchers;
 import org.junit.Rule;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assume.assumeTrue;
@@ -56,7 +54,7 @@ import static org.junit.Assume.assumeTrue;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerTest {
 
     @InjectRealm
@@ -88,8 +86,8 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
     // Similar to MultipleTabsLoginTest.multipleTabsParallelLogin but with IDP brokering test involved
     @Test
     public void testAuthenticationExpiredWithMoreBrowserTabs_loginExpiredInBothConsumerAndProvider() {
-        assumeTrue("Since the JS engine in real browser does check the expiration regularly in all tabs, this test only works with HtmlUnit", driver instanceof HtmlUnitDriver);
-        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+        assumeTrue("Since the JS engine in real browser does check the expiration regularly in all tabs, this test only works with HtmlUnit", driver.driver() instanceof HtmlUnitDriver);
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver.driver())) {
             // Open login page in tab1 and click "login with IDP"
             oauth.client("broker-app");
             oauth.realm(bc.consumerRealmName());
@@ -149,10 +147,10 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
 
     @Test
     public void testAuthenticationExpiredWithMoreBrowserTabs_loginExpiredInProvider() throws Exception {
-        assumeTrue("Since the JS engine in real browser does check the expiration regularly in all tabs, this test only works with HtmlUnit", driver instanceof HtmlUnitDriver);
+        assumeTrue("Since the JS engine in real browser does check the expiration regularly in all tabs, this test only works with HtmlUnit", driver.driver() instanceof HtmlUnitDriver);
         // Testing the scenario when authenticationSession expired only in "provider" realm and "consumer" is able to handle it  at IDP.
         // So need to increase authSession timeout on "consumer"
-        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver);
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver.driver());
              AutoCloseable realmUpdater = new RealmAttributeUpdater(adminClient.realm(bc.consumerRealmName()))
                      .setAccessCodeLifespanLogin(7200)
                      .update()

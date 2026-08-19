@@ -38,22 +38,22 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.AuthenticationExecutionBuilder;
 import org.keycloak.testframework.realm.AuthenticationFlowBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testsuite.broker.oidc.ClientIdRequiredJWTClientAuthenticator;
+import org.keycloak.tests.broker.oidc.ClientIdRequiredJWTClientAuthenticator;
 import org.keycloak.testsuite.util.KeyUtils;
 
 import org.junit.jupiter.api.BeforeEach;
 
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
+import static org.keycloak.tests.broker.BrokerTestTools.createIdentityProvider;
 import static org.keycloak.testsuite.AbstractAuthenticationTest.findFlowByAlias;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
-import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
 
 /**
  * Test that the broker will send the client_id parameter.
  *
  * @author Justin Tay
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcOidcBrokerPrivateKeyJwtClientIdRequiredTest extends AbstractBrokerTest {
 
     @InjectRealm

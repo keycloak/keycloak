@@ -47,12 +47,12 @@ import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-
-import com.google.common.collect.ImmutableMap;
-import org.junit.jupiter.api.Test;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
+
+import com.google.common.collect.ImmutableMap;
+import org.junit.jupiter.api.Test;
 
 import static java.util.Optional.ofNullable;
 
@@ -67,7 +67,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  *
  * @author rmartinc
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcOidcBrokerJWETest extends AbstractBrokerTest {
 
     @InjectRealm

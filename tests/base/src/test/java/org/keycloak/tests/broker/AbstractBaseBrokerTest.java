@@ -18,14 +18,24 @@
 package org.keycloak.tests.broker;
 
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriBuilderException;
 
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.Retry;
 import org.keycloak.models.utils.TimeBasedOTP;
@@ -34,14 +44,15 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
-import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.IdpConfirmLinkPage;
 import org.keycloak.testframework.ui.page.IdpConfirmOverrideLinkPage;
@@ -57,27 +68,29 @@ import org.keycloak.testframework.ui.page.OAuthGrantPage;
 import org.keycloak.testframework.ui.page.ProceedPage;
 import org.keycloak.testframework.ui.page.UpdateAccountInformationPage;
 import org.keycloak.testframework.ui.page.VerifyEmailPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.LogoutUrlBuilder;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
 import org.hamcrest.Matchers;
-import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.jboss.logging.Logger;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.openqa.selenium.By;
 import org.openqa.selenium.TimeoutException;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
-import static org.keycloak.testsuite.admin.AdminApiUtil.createUserWithAdminClient;
-import static org.keycloak.testsuite.admin.AdminApiUtil.resetUserPassword;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
-import static org.keycloak.testsuite.broker.BrokerTestTools.encodeUrl;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.tests.broker.BrokerTestConstants.USER_EMAIL;
+import static org.keycloak.tests.broker.BrokerTestTools.encodeUrl;
+import static org.keycloak.tests.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.tests.broker.BrokerTestTools.getProviderRoot;
+import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.createUserWithAdminClient;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.resetUserPassword;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
 
@@ -87,17 +100,28 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * No test methods there. Just some useful common functionality
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public abstract class AbstractBaseBrokerTest {
+
+    protected final Logger log = Logger.getLogger(getClass());
 
     @InjectRealm
     ManagedRealm managedRealm;
+
+    @InjectAdminClient
+    Keycloak adminClient;
 
     @InjectWebDriver
     ManagedWebDriver driver;
 
     @InjectOAuthClient
     OAuthClient oauth;
+
+    protected KeycloakTestingClient testingClient;
+    protected final CompatibilitySuiteContext suiteContext = new CompatibilitySuiteContext();
+    protected final CompatibilityTestContext testContext = new CompatibilityTestContext();
+    protected final AtomicInteger timeOffSet = new AtomicInteger();
+    private final Map<String, TestCleanupSupport> cleanups = new HashMap<>();
 
     protected static final String ATTRIBUTE_VALUE = "attribute.value";
 
@@ -158,9 +182,21 @@ public abstract class AbstractBaseBrokerTest {
      */
     protected abstract BrokerConfiguration getBrokerConfiguration();
 
-    @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
 
+    }
+
+    protected void importRealm(RealmRepresentation realmRepresentation) {
+        try {
+            adminClient.realm(realmRepresentation.getRealm()).remove();
+        } catch (NotFoundException ignored) {
+            // expected if realm does not exist yet
+        }
+        adminClient.realms().create(realmRepresentation);
+    }
+
+    protected void deleteAllCookiesForRealm(String realm) {
+        driver.driver().manage().deleteAllCookies();
     }
 
     protected void configureSMTPServer() {
@@ -200,6 +236,14 @@ public abstract class AbstractBaseBrokerTest {
 
     @BeforeEach
     public void beforeBrokerTest() {
+        if (testingClient != null) {
+            testingClient.close();
+        }
+        String authServerRoot = resolveAuthServerContextRoot();
+        testingClient = KeycloakTestingClient.getInstance(authServerRoot);
+        OAuthClient.updateURLs(authServerRoot);
+        oauth.init();
+
         RealmRepresentation consumerRealm = bc.createConsumerRealm();
         RealmRepresentation providerRealm = bc.createProviderRealm();
         importRealm(consumerRealm);
@@ -211,6 +255,12 @@ public abstract class AbstractBaseBrokerTest {
 
     @AfterEach
     public void cleanupUsers() {
+        cleanups.values().forEach(cleanup -> cleanup.execute(adminClient));
+        cleanups.clear();
+        if (testingClient != null) {
+            testingClient.close();
+            testingClient = null;
+        }
         deleteAllCookiesForRealm(bc.consumerRealmName());
         adminClient.realm(bc.consumerRealmName()).remove();
         adminClient.realm(bc.providerRealmName()).remove();
@@ -225,6 +275,50 @@ public abstract class AbstractBaseBrokerTest {
 
     protected String createUser(String username) {
         return createUser(username, USER_EMAIL);
+    }
+
+    public String createUser(String realm, String username, String password, String... requiredActions) {
+        UserRepresentation user = UserBuilder.create().username(username).enabled(true).build();
+        user.setRequiredActions(Arrays.asList(requiredActions));
+        String createdUserId = createUserWithAdminClient(adminClient.realm(realm), user);
+        resetUserPassword(adminClient.realm(realm).users().get(createdUserId), password, false);
+        return createdUserId;
+    }
+
+    public String createUser(String realm, String username, String password, String firstName) {
+        return createUser(realm, username, password, firstName, null, null);
+    }
+
+    public String createUser(String realm, String username, String password, String firstName, String lastName) {
+        return createUser(realm, username, password, firstName, lastName, null);
+    }
+
+    protected String createUser(String realm, String username, String password, String firstName, String lastName, String email) {
+        UserRepresentation newUser = UserBuilder.create()
+                .username(username)
+                .email(email)
+                .firstName(firstName)
+                .lastName(lastName)
+                .enabled(true)
+                .build();
+        String createdUserId = createUserWithAdminClient(adminClient.realm(realm), newUser);
+        resetUserPassword(adminClient.realm(realm).users().get(createdUserId), password, false);
+        return createdUserId;
+    }
+
+    public String createUser(String realm, String username, String password, String firstName, String lastName, String email,
+            Consumer<UserRepresentation> customizer) {
+        UserRepresentation newUser = UserBuilder.create()
+                .username(username)
+                .email(email)
+                .firstName(firstName)
+                .lastName(lastName)
+                .enabled(true)
+                .build();
+        customizer.accept(newUser);
+        String createdUserId = createUserWithAdminClient(adminClient.realm(realm), newUser);
+        resetUserPassword(adminClient.realm(realm).users().get(createdUserId), password, false);
+        return createdUserId;
     }
 
 
@@ -268,9 +362,20 @@ public abstract class AbstractBaseBrokerTest {
         waitForPage(driver, "sign in to", true);
         log.debug("Clicking social " + idpAlias);
         loginPage.clickSocial(idpAlias);
-        waitForPage(driver, "sign in to", true);
-        log.debug("Logging in");
-        loginPage.login(username, password);
+        new WebDriverWait(driver.driver(), Duration.ofSeconds(10)).until(webDriver ->
+                !webDriver.findElements(By.id("username")).isEmpty()
+                        || !webDriver.findElements(By.id("password")).isEmpty()
+                        || webDriver.getCurrentUrl().contains("/broker/" + idpAlias + "/endpoint")
+                        || webDriver.getCurrentUrl().contains("/login-actions/first-broker-login"));
+        if (loginPage.isUsernameInputPresent()) {
+            log.debug("Logging in with username and password");
+            loginPage.login(username, password);
+        } else if (loginPage.isPasswordInputPresent()) {
+            log.debug("Logging in with password-only form");
+            loginPage.login(password);
+        } else {
+            log.debugf("No login form present after social redirect (URL: %s). Continuing.", driver.getCurrentUrl());
+        }
     }
 
     protected AuthorizationEndpointResponse doLoginSocial(OAuthClient oauth, String brokerId, String username, String password) {
@@ -461,5 +566,133 @@ public abstract class AbstractBaseBrokerTest {
         return RealmsResource
                 .protocolUrl(UriBuilder.fromUri(fromUri).path("auth"))
                 .build(realm, SamlProtocol.LOGIN_PROTOCOL);
+    }
+
+    public org.keycloak.admin.client.resource.RealmsResource realmsResouce() {
+        return adminClient.realms();
+    }
+
+    public URI getAuthServerRoot() {
+        return URI.create(resolveAuthServerContextRoot() + "/auth/");
+    }
+
+    protected TestCleanupSupport getCleanup(String realmName) {
+        return cleanups.computeIfAbsent(realmName, TestCleanupSupport::new);
+    }
+
+    protected TestCleanupSupport getCleanup() {
+        return getCleanup("test");
+    }
+
+    protected void setOtpTimeOffset(int offsetSeconds, TimeBasedOTP otp) {
+        timeOffSet.set(offsetSeconds);
+        java.util.Calendar calendar = java.util.Calendar.getInstance();
+        calendar.add(java.util.Calendar.SECOND, offsetSeconds);
+        otp.setCalendar(calendar);
+    }
+
+    public Logger getLogger() {
+        return log;
+    }
+
+    protected String resolveAuthServerContextRoot() {
+        if (managedRealm != null && managedRealm.getBaseUrl() != null) {
+            int realmsIndex = managedRealm.getBaseUrl().indexOf("/realms/");
+            if (realmsIndex > 0) {
+                String root = managedRealm.getBaseUrl().substring(0, realmsIndex);
+                return root.endsWith("/auth") ? root.substring(0, root.length() - "/auth".length()) : root;
+            }
+        }
+        if (OAuthClient.SERVER_ROOT != null && !OAuthClient.SERVER_ROOT.isBlank()) {
+            return OAuthClient.SERVER_ROOT.replaceAll("/+$", "");
+        }
+        return getAuthServerContextRoot();
+    }
+
+    protected static class CompatibilityTestContext {
+
+        private boolean initialized;
+
+        public boolean isInitialized() {
+            return initialized;
+        }
+
+        public void setInitialized(boolean initialized) {
+            this.initialized = initialized;
+        }
+    }
+
+    protected class CompatibilitySuiteContext {
+
+        private final AuthServerInfo authServerInfo = new AuthServerInfo();
+
+        public Map<String, String> getSmtpServer() {
+            Map<String, String> smtp = new HashMap<>();
+            smtp.put("host", "localhost");
+            smtp.put("port", "3025");
+            smtp.put("from", "auto@keycloak.org");
+            return smtp;
+        }
+
+        public AuthServerInfo getAuthServerInfo() {
+            return authServerInfo;
+        }
+    }
+
+    protected class AuthServerInfo {
+        public URI getContextRoot() {
+            try {
+                return new URI(resolveAuthServerContextRoot());
+            } catch (URISyntaxException e) {
+                throw new IllegalStateException("Invalid auth server context root", e);
+            }
+        }
+    }
+
+    protected static class TestCleanupSupport {
+
+        private final String realmName;
+        private final List<Runnable> cleanups = new ArrayList<>();
+        private final List<String> userIds = new ArrayList<>();
+        private final List<String> componentIds = new ArrayList<>();
+
+        private TestCleanupSupport(String realmName) {
+            this.realmName = realmName;
+        }
+
+        public TestCleanupSupport addCleanup(AutoCloseable closeable) {
+            cleanups.add(() -> {
+                try {
+                    closeable.close();
+                } catch (Exception ignored) {
+                }
+            });
+            return this;
+        }
+
+        public void addUserId(String userId) {
+            userIds.add(userId);
+        }
+
+        public void addComponentId(String componentId) {
+            componentIds.add(componentId);
+        }
+
+        private void execute(Keycloak adminClient) {
+            RealmResource realm = adminClient.realm(realmName);
+            cleanups.forEach(Runnable::run);
+            for (String userId : userIds) {
+                try {
+                    realm.users().get(userId).remove();
+                } catch (Exception ignored) {
+                }
+            }
+            for (String componentId : componentIds) {
+                try {
+                    realm.components().component(componentId).remove();
+                } catch (Exception ignored) {
+                }
+            }
+        }
     }
 }

@@ -12,12 +12,12 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_SAML_SIGN_CERT;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_SAML_SIGN_KEY;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PRIVATE_KEY;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PUBLIC_KEY;
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_SAML_SIGN_CERT;
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_SAML_SIGN_KEY;
+import static org.keycloak.tests.broker.BrokerTestConstants.REALM_PRIVATE_KEY;
+import static org.keycloak.tests.broker.BrokerTestConstants.REALM_PUBLIC_KEY;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcSamlSignedDocumentOnlyBrokerTest extends AbstractBrokerTest {
 
     @InjectRealm

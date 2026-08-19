@@ -14,26 +14,24 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 
-import org.junit.Rule;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_SAML_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_LOGIN;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_PASSWORD;
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_SAML_ALIAS;
+import static org.keycloak.tests.broker.BrokerTestConstants.REALM_CONS_NAME;
+import static org.keycloak.tests.broker.BrokerTestConstants.REALM_PROV_NAME;
+import static org.keycloak.tests.broker.BrokerTestConstants.USER_LOGIN;
+import static org.keycloak.tests.broker.BrokerTestConstants.USER_PASSWORD;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcSamlBrokerDestinationTest extends AbstractBrokerTest {
 
     @InjectRealm

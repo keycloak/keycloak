@@ -69,19 +69,18 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
+import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
-import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testframework.ui.page.UpdateAccountInformationPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.tests.broker.util.SimpleHttpDefault;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.util.TokenUtil;
 
@@ -92,19 +91,17 @@ import com.google.common.collect.Lists;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.hamcrest.Matchers;
-import org.keycloak.testframework.ui.annotations.InjectPage;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.Rule;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-import static org.keycloak.testsuite.broker.KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_CLIENT_ID;
-import static org.keycloak.testsuite.broker.KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET;
+import static org.keycloak.tests.broker.BrokerTestConstants.REALM_CONS_NAME;
+import static org.keycloak.tests.broker.BrokerTestConstants.REALM_PROV_NAME;
+import static org.keycloak.tests.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.tests.broker.BrokerTestTools.getProviderRoot;
+import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.tests.broker.KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_CLIENT_ID;
+import static org.keycloak.tests.broker.KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -125,7 +122,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Final class as it's not intended to be overriden. Feel free to remove "final" if you really know what you are doing.
  */
 @EnableFeature(value = Profile.Feature.TRANSIENT_USERS, skipRestart = true)
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBrokerTest {
 
     @InjectRealm
@@ -313,7 +310,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
     }
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.OIDCBrokerUserPropertyTest
+     * Refers to in old test suite: org.keycloak.tests.broker.OIDCBrokerUserPropertyTest
      */
     @Test
     public void loginFetchingUserFromUserEndpointWithClaimMapper() {

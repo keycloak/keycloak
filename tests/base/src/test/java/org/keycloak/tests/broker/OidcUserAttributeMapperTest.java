@@ -4,14 +4,14 @@ import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
-
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 
-@KeycloakIntegrationTest
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class OidcUserAttributeMapperTest extends AbstractUserAttributeMapperTest {
 
     @InjectRealm

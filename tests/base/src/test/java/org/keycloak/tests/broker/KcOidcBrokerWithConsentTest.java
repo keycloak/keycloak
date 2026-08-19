@@ -19,15 +19,15 @@ import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 
 import org.junit.Rule;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.removeBrokerExpiredSessions;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.tests.broker.BrokerRunOnServerUtil.removeBrokerExpiredSessions;
+import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTest {
 
     @InjectRealm
@@ -75,7 +75,7 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
     }
 
     /**
-     * Referes to in old testsuite: org.keycloak.testsuite.broker.OIDCKeycloakServerBrokerWithConsentTest#testConsentDeniedWithExpiredClientSession
+     * Referes to in old testsuite: org.keycloak.tests.broker.OIDCKeycloakServerBrokerWithConsentTest#testConsentDeniedWithExpiredClientSession
      */
     @Test
     public void testConsentDeniedWithExpiredClientSession() {
@@ -105,7 +105,7 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
     }
 
     /**
-     * Referes to in old testsuite: org.keycloak.testsuite.broker.OIDCKeycloakServerBrokerWithConsentTest#testConsentDeniedWithExpiredAndClearedClientSession
+     * Referes to in old testsuite: org.keycloak.tests.broker.OIDCKeycloakServerBrokerWithConsentTest#testConsentDeniedWithExpiredAndClearedClientSession
      */
     @Test
     public void testConsentDeniedWithExpiredAndClearedClientSession() {
@@ -132,7 +132,7 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
     }
 
     /**
-     * Referes to in old testsuite: org.keycloak.testsuite.broker.OIDCKeycloakServerBrokerWithConsentTest#testLoginCancelConsent
+     * Referes to in old testsuite: org.keycloak.tests.broker.OIDCKeycloakServerBrokerWithConsentTest#testLoginCancelConsent
      */
     @Test
     public void testLoginCancelConsent() {

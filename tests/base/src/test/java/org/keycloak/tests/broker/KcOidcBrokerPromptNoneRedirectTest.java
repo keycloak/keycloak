@@ -36,16 +36,16 @@ import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.AccountHelper;
 
 import org.junit.Ignore;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.admin.AdminApiUtil.createUserWithAdminClient;
-import static org.keycloak.testsuite.admin.AdminApiUtil.resetUserPassword;
-import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configurePostBrokerLoginWithOTP;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.CLIENT_ID;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.tests.broker.BrokerRunOnServerUtil.configurePostBrokerLoginWithOTP;
+import static org.keycloak.tests.broker.BrokerTestConstants.CLIENT_ID;
+import static org.keycloak.tests.broker.BrokerTestConstants.USER_EMAIL;
+import static org.keycloak.tests.broker.BrokerTestTools.getProviderRoot;
+import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.createUserWithAdminClient;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.resetUserPassword;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 // Remove @Ignore when closing Github issue 20642
 @Ignore
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcOidcBrokerPromptNoneRedirectTest extends AbstractInitializedBaseBrokerTest {
 
     @InjectRealm

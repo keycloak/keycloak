@@ -17,7 +17,7 @@ import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testsuite.saml.AbstractSamlTest;
+import org.keycloak.tests.saml.AbstractSamlTest;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 
@@ -25,8 +25,8 @@ import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_SAML_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_SAML_ALIAS;
+import static org.keycloak.tests.broker.BrokerTestTools.getConsumerRoot;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -40,7 +40,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * This contains only the happy path. Have a look at <code>org.keycloak.test.broker.saml.XPathAttributeMapperTest</code>
  * for unit style tests and handling parsing errors.
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcSamlXPathAttributeMapperTest extends AbstractInitializedBaseBrokerTest {
 
     @InjectRealm

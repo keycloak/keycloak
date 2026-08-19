@@ -25,9 +25,9 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.models.IdentityProviderMapperSyncMode.FORCE;
 import static org.keycloak.models.IdentityProviderMapperSyncMode.IMPORT;
 import static org.keycloak.models.IdentityProviderMapperSyncMode.LEGACY;
-import static org.keycloak.testsuite.broker.KcOidcBrokerConfiguration.HARDOCDED_CLAIM;
-import static org.keycloak.testsuite.broker.KcOidcBrokerConfiguration.HARDOCDED_VALUE;
-import static org.keycloak.testsuite.broker.KcOidcBrokerConfiguration.USER_INFO_CLAIM;
+import static org.keycloak.tests.broker.KcOidcBrokerConfiguration.HARDOCDED_CLAIM;
+import static org.keycloak.tests.broker.KcOidcBrokerConfiguration.HARDOCDED_VALUE;
+import static org.keycloak.tests.broker.KcOidcBrokerConfiguration.USER_INFO_CLAIM;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -37,7 +37,7 @@ import static org.hamcrest.Matchers.nullValue;
 /**
  * @author <a href="mailto:external.martin.idel@bosch.io">Martin Idel</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class JsonUserAttributeMapperTest extends AbstractIdentityProviderMapperTest {
 
     @InjectRealm

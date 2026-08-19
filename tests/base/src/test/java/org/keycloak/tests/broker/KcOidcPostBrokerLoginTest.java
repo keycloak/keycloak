@@ -43,27 +43,25 @@ import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
-import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.FlowUtil;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.Rule;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.models.utils.TimeBasedOTP.DEFAULT_INTERVAL_SECONDS;
-import static org.keycloak.testsuite.admin.AdminApiUtil.removeUserByUsername;
-import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configurePostBrokerLoginWithOTP;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.tests.broker.BrokerRunOnServerUtil.configurePostBrokerLoginWithOTP;
+import static org.keycloak.tests.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.removeUserByUsername;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcOidcPostBrokerLoginTest extends AbstractInitializedBaseBrokerTest {
 
     @InjectRealm
@@ -316,7 +314,7 @@ public class KcOidcPostBrokerLoginTest extends AbstractInitializedBaseBrokerTest
     }
 
     static void configurePostBrokerLoginWithClientScopeConditionAndOTP(KeycloakTestingClient testingClient, String consumerRealmName, String idpAlias, String clientScopeName, boolean negate) {
-        runOnServer.run(session -> {
+        testingClient.server(consumerRealmName).run(session -> {
             AuthenticationFlowModel flowModel = session.getContext().getRealm().getFlowByAlias("post-broker");
             if (flowModel == null) {
                 flowModel = FlowUtil.createFlowModel("post-broker", "basic-flow", "post-broker flow with client-scope condition and OTP", true, false);

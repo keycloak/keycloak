@@ -35,7 +35,7 @@ import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 
 import org.junit.jupiter.api.Assertions;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class IdentityProviderStoreTokenV1Test implements InterfaceIdentityProviderStoreTokenV1Test, InterfaceOIDCIdentityProviderStoreTokenTest {
 
     @InjectRealm(config = IdpRealmConfig.class)

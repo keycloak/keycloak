@@ -22,7 +22,7 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcOidcBrokerJWEEcdhEsP384A192CbcHs384Test extends AbstractKcOidcBrokerJWEEcdhEsTest {
 
     @InjectRealm

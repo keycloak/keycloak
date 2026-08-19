@@ -17,7 +17,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
  * <a href="mailto:external.martin.idel@bosch.io">Martin Idel</a>,
  * <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class OidcAdvancedClaimToRoleMapperTest extends AbstractAdvancedRoleMapperTest {
 
     @InjectRealm

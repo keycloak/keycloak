@@ -41,7 +41,7 @@ import static org.keycloak.testsuite.utils.io.IOUtil.setDocElementAttributeValue
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcSamlEncryptedAssertionTest extends AbstractKcSamlEncryptedElementsTest {
 
     @InjectRealm

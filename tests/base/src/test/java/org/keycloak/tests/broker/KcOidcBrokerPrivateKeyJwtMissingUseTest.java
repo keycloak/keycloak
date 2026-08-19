@@ -35,11 +35,11 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
-import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
+import static org.keycloak.tests.broker.BrokerTestTools.createIdentityProvider;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcOidcBrokerPrivateKeyJwtMissingUseTest extends AbstractBrokerTest {
 
     @InjectRealm
@@ -67,7 +67,7 @@ public class KcOidcBrokerPrivateKeyJwtMissingUseTest extends AbstractBrokerTest 
                 // use a custom realm resource provider to expose a jwks with an empty use
                 // a custom key provider returning a null use wouldn't work due to the standard
                 // jwks defaulting the use and other portions expecting the use to be set
-                // see org.keycloak.testsuite.broker.oidc.MissingUseJwksRestResource
+                // see org.keycloak.tests.broker.oidc.MissingUseJwksRestResource
                 client.getAttributes().put(OIDCConfigAttributes.JWKS_URL, BrokerTestTools.getConsumerRoot() +
                         "/auth/realms/" + BrokerTestConstants.REALM_CONS_NAME + "/missing-use-jwks/jwks");
 

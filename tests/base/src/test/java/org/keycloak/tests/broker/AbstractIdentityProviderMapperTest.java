@@ -18,7 +18,7 @@ import org.keycloak.testframework.realm.UserBuilder;
 
 import org.junit.jupiter.api.BeforeEach;
 
-import static org.keycloak.testsuite.admin.AdminApiUtil.createUserAndResetPasswordWithAdminClient;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.createUserAndResetPasswordWithAdminClient;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -29,7 +29,7 @@ import static org.hamcrest.Matchers.hasSize;
  * <a href="mailto:external.benjamin.weimer@bosch-si.com">Benjamin Weimer</a>,
  * <a href="mailto:external.martin.idel@bosch.io">Martin Idel</a>,
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public abstract class AbstractIdentityProviderMapperTest extends AbstractBaseBrokerTest {
 
     @InjectRealm

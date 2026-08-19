@@ -79,6 +79,10 @@ public class AdminApiUtil {
         return null;
     }
 
+    public static ClientResource findClientResourceByClientId(RealmResource realm, String clientId) {
+        return findClientByClientId(realm, clientId);
+    }
+
     public static RoleResource findClientRoleByName(ClientResource client, String role) {
         return client.roles().get(role);
     }

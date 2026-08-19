@@ -35,7 +35,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testsuite.saml.AbstractSamlTest;
+import org.keycloak.tests.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -44,6 +44,7 @@ import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.saml.SamlConstants;
 import org.keycloak.testsuite.util.saml.SamlDocumentStepBuilder.Saml2DocumentTransformer;
 
 import org.apache.http.HttpResponse;
@@ -57,8 +58,8 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
+import static org.keycloak.tests.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.tests.broker.BrokerTestTools.getProviderRoot;
 import static org.keycloak.testsuite.util.Matchers.bodyHC;
 import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
 
@@ -66,7 +67,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcSamlSignedBrokerTest extends AbstractBrokerTest {
 
     @InjectRealm
@@ -123,7 +124,7 @@ public class KcSamlSignedBrokerTest extends AbstractBrokerTest {
             .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, Boolean.toString(true))
             .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_ENCRYPTED, Boolean.toString(false))
             .setAttribute(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, "true")
-            .setAttribute(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, AbstractSamlTest.SAML_CLIENT_SALES_POST_SIG_EXPIRED_CERTIFICATE)
+            .setAttribute(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, SamlConstants.SAML_CLIENT_SALES_POST_SIG_EXPIRED_CERTIFICATE)
             .update();
           Closeable clientUpdater = ClientAttributeUpdater.forClient(adminClient, bc.providerRealmName(), bc.getIDPClientIdInProviderRealm())
             .setAttribute(SamlConfigAttributes.SAML_ENCRYPT, Boolean.toString(false))
@@ -132,8 +133,8 @@ public class KcSamlSignedBrokerTest extends AbstractBrokerTest {
             .setAttribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "false")
             .update();
           Closeable realmUpdater = new RealmAttributeUpdater(adminClient.realm(bc.providerRealmName()))
-            .setPublicKey(AbstractSamlTest.SAML_CLIENT_SALES_POST_SIG_EXPIRED_PUBLIC_KEY)
-            .setPrivateKey(AbstractSamlTest.SAML_CLIENT_SALES_POST_SIG_EXPIRED_PRIVATE_KEY)
+            .setPublicKey(SamlConstants.SAML_CLIENT_SALES_POST_SIG_EXPIRED_PUBLIC_KEY)
+            .setPrivateKey(SamlConstants.SAML_CLIENT_SALES_POST_SIG_EXPIRED_PRIVATE_KEY)
             .update())
         {
             AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted", getConsumerRoot() + "/sales-post/saml", null);
@@ -468,7 +469,7 @@ public class KcSamlSignedBrokerTest extends AbstractBrokerTest {
             .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, Boolean.toString(true))
             .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_ENCRYPTED, Boolean.toString(false))
             .setAttribute(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, "true")
-            .setAttribute(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, AbstractSamlTest.SAML_CLIENT_SALES_POST_SIG_EXPIRED_CERTIFICATE)
+            .setAttribute(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, SamlConstants.SAML_CLIENT_SALES_POST_SIG_EXPIRED_CERTIFICATE)
             .update();
           Closeable clientUpdater = ClientAttributeUpdater.forClient(adminClient, bc.providerRealmName(), bc.getIDPClientIdInProviderRealm())
             .setAttribute(SamlConfigAttributes.SAML_ENCRYPT, Boolean.toString(false))

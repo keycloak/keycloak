@@ -36,12 +36,12 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.util.LDAPRule;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.ClassRule;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public final class KcOidcBrokerLdapTest extends AbstractInitializedBaseBrokerTest {
 
     @InjectRealm

@@ -56,11 +56,10 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
-import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
+import org.keycloak.tests.broker.util.SimpleHttpDefault;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.WaitUtils;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -68,15 +67,15 @@ import com.google.common.collect.Lists;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Assertions;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.tests.broker.BrokerTestConstants.REALM_PROV_NAME;
+import static org.keycloak.tests.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.tests.broker.BrokerTestTools.getProviderRoot;
+import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -91,7 +90,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 /**
  * Final class as it's not intended to be overriden. Feel free to remove "final" if you really know what you are doing.
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
     @InjectRealm
@@ -270,7 +269,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
     }
 
     /**
-     * Refers to in old test suite: org.keycloak.testsuite.broker.OIDCBrokerUserPropertyTest
+     * Refers to in old test suite: org.keycloak.tests.broker.OIDCBrokerUserPropertyTest
      */
     @Test
     public void loginFetchingUserFromUserEndpointWithClaimMapper() {

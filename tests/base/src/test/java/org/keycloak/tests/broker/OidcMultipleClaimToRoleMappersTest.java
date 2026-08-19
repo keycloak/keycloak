@@ -23,11 +23,11 @@ import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
-
-import com.google.common.collect.ImmutableMap;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
+
+import com.google.common.collect.ImmutableMap;
 
 /**
  * Runs the same tests as {@link OidcClaimToRoleMapperTest} but using multiple OIDC mappers that map different IDP claims
@@ -50,7 +50,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>,
  * <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class OidcMultipleClaimToRoleMappersTest extends OidcClaimToRoleMapperTest {
 
     @InjectRealm
