@@ -13,8 +13,6 @@ import org.keycloak.models.workflow.AbstractWorkflowEventProvider;
 import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.WorkflowEvent;
 import org.keycloak.models.workflow.WorkflowExecutionContext;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.util.JsonSerialization;
 
 public class UserUpdateProfileWorkflowEventProvider extends AbstractWorkflowEventProvider {
 

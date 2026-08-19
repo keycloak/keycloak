@@ -11,8 +11,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.workflow.AbstractWorkflowEventProvider;
 import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.WorkflowEvent;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.util.JsonSerialization;
 
 public class UserUpdateEmailWorkflowEventProvider extends AbstractWorkflowEventProvider {
 
