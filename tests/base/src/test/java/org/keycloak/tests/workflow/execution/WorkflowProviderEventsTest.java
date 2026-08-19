@@ -859,6 +859,24 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
             List<WorkflowProviderEvent.WorkflowActivatedEvent> activatedEvents = collector.getEvents(WorkflowProviderEvent.WorkflowActivatedEvent.class);
             boolean removeCredentialActivated = activatedEvents.stream().anyMatch(e -> e.getWorkflowId().equals(wRemoveCredentialId));
             assertTrue(removeCredentialActivated, "Remove credential workflow should have activated on admin credential removal");
+            collector.clear();
+        });
+
+        // 7. Verify AdminEvent with OperationType.DELETE also activates remove credential workflow
+        runOnServer.run(session -> {
+            org.keycloak.events.admin.AdminEvent adminEvent = new org.keycloak.events.admin.AdminEvent();
+            adminEvent.setOperationType(org.keycloak.events.admin.OperationType.DELETE);
+            adminEvent.setResourceType(org.keycloak.events.admin.ResourceType.USER);
+            adminEvent.setResourcePath("users/" + userId + "/credentials/dummy-cred-id");
+            adminEvent.setRealmId(session.getContext().getRealm().getId());
+            adminEvent.setDetails(java.util.Map.of(org.keycloak.events.Details.CREDENTIAL_TYPE, "otp"));
+
+            session.getProvider(org.keycloak.events.EventListenerProvider.class, "workflow-event-listener").onEvent(adminEvent, false);
+
+            WorkflowEventCollector collector = WorkflowEventCollector.getInstance();
+            List<WorkflowProviderEvent.WorkflowActivatedEvent> activatedEvents = collector.getEvents(WorkflowProviderEvent.WorkflowActivatedEvent.class);
+            boolean removeCredentialActivated = activatedEvents.stream().anyMatch(e -> e.getWorkflowId().equals(wRemoveCredentialId));
+            assertTrue(removeCredentialActivated, "Remove credential workflow should have activated on admin credential removal with OperationType.DELETE");
         });
     }
 

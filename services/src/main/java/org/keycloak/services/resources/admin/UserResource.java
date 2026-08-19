@@ -199,20 +199,20 @@ public class UserResource {
             boolean firstNameChanged = rep.getFirstName() != null && !Objects.equals(rep.getFirstName(), user.getFirstName());
             boolean lastNameChanged = rep.getLastName() != null && !Objects.equals(rep.getLastName(), user.getLastName());
 
-            Map<String, String> changedAttributes = new HashMap<>();
+            Set<String> changedAttributes = new HashSet<>();
             if (rep.getAttributes() != null) {
                 Map<String, List<String>> userAttrs = user.getAttributes();
                 for (Map.Entry<String, List<String>> entry : rep.getAttributes().entrySet()) {
                     List<String> newVal = entry.getValue();
                     List<String> oldVal = userAttrs != null ? userAttrs.get(entry.getKey()) : null;
                     if (!Objects.equals(newVal, oldVal)) {
-                        changedAttributes.put(entry.getKey(), newVal == null ? "" : String.join(",", newVal));
+                        changedAttributes.add(entry.getKey());
                     }
                 }
                 if (userAttrs != null) {
                     for (String oldKey : userAttrs.keySet()) {
                         if (!rep.getAttributes().containsKey(oldKey)) {
-                            changedAttributes.put(oldKey, "");
+                            changedAttributes.add(oldKey);
                         }
                     }
                 }
@@ -267,20 +267,20 @@ public class UserResource {
                 adminEvent.detail(Details.PREVIOUS_ENABLED, String.valueOf(wasEnabled))
                         .detail(Details.UPDATED_ENABLED, String.valueOf(rep.isEnabled()));
             }
-          adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep);
-          if (emailChanged) {
-            adminEvent.detail(org.keycloak.events.Details.UPDATED_EMAIL, rep.getEmail());
-          }
-          if (firstNameChanged) {
-            adminEvent.detail("updated_first_name", rep.getFirstName());
-          }
-          if (lastNameChanged) {
-            adminEvent.detail("updated_last_name", rep.getLastName());
-          }
-          for (Map.Entry<String, String> attrEntry : changedAttributes.entrySet()) {
-            adminEvent.detail("updated_" + attrEntry.getKey(), attrEntry.getValue());
-          }
-          adminEvent.success();
+            adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep);
+            if (emailChanged) {
+                adminEvent.detail(org.keycloak.events.Details.UPDATED_EMAIL, "true");
+            }
+            if (firstNameChanged) {
+                adminEvent.detail("updated_first_name", "true");
+            }
+            if (lastNameChanged) {
+                adminEvent.detail("updated_last_name", "true");
+            }
+            for (String attrKey : changedAttributes) {
+                adminEvent.detail("updated_" + attrKey, "true");
+            }
+            adminEvent.success();
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().commit();
             }
