@@ -383,9 +383,13 @@ The {project_name} SSF Transmitter targets conformance with:
 * https://openid.net/specs/openid-caep-interoperability-profile-1_0.html[CAEP Interoperability Profile 1.0 (draft)]
   -- `session-revoked` and `credential-change` event types.
 * https://openid.net/specs/openid-risc-1_0-final.html[RISC 1.0 (Final)]
-  -- `account-disabled` and `account-enabled` event types. Emitted when an admin toggles a
-  user's enabled state, and when brute-force protection permanently locks an account out
-  (`reason=disabled-by-bruteforce`).
+  -- `account-disabled`, `account-enabled` and `account-purged` event types.
+  `account-disabled` / `account-enabled` are emitted when an admin toggles a user's enabled
+  state, and when brute-force protection permanently locks an account out
+  (`reason=disabled-by-bruteforce`). `account-purged` is emitted when a user account is
+  deleted, either by an administrator or by the user themselves from the account console.
+  Deletions that do not remove the account -- a partial import under the `OVERWRITE` policy,
+  or the service-account user removed alongside its client -- do not emit it.
 * Legacy SSE CAEP profile for Apple Business Manager interop (gated behind the `sse-caep-enabled` SPI flag).
 
 </@tmpl.guide>
