@@ -4,6 +4,8 @@ import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.StaleElementReferenceException;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -36,6 +38,16 @@ public class LoginUsernamePage extends AbstractLoginPage {
 
     public String getUsernameAutocomplete() {
         return usernameInput.getDomAttribute("autocomplete");
+    }
+
+    public void waitUntilReloaded() {
+        driver.waiting().until((WebDriver d) -> {
+            try {
+                return usernameInput.isDisplayed();
+            } catch (StaleElementReferenceException | NoSuchElementException expected) {
+                return false;
+            }
+        });
     }
 
     public String getUsernameInputError() {
