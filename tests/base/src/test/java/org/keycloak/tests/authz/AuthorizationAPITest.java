@@ -40,8 +40,6 @@ import org.keycloak.representations.idm.authorization.ResourcePermissionRepresen
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.oauth.OAuthClient;
-import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
@@ -68,9 +66,6 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
 
     @InjectRealm
     ManagedRealm managedRealm;
-
-    @InjectOAuthClient
-    OAuthClient oauth;
 
     private static final String RESOURCE_SERVER_TEST = "resource-server-test";
     private static final String TEST_CLIENT = "test-client";

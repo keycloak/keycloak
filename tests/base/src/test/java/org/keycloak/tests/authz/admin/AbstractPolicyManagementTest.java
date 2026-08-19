@@ -34,16 +34,14 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
-import org.keycloak.testframework.annotations.InjectRealm;
-import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientBuilder;
-import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ProfileAssume;
 
+import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.jupiter.api.BeforeEach;
 
 import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 
@@ -55,11 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@KeycloakIntegrationTest
-public abstract class AbstractPolicyManagementTest {
-
-    @InjectRealm
-    ManagedRealm managedRealm;
+public abstract class AbstractPolicyManagementTest extends AbstractKeycloakTest {
 
     @BeforeClass
     public static void enabled() {
@@ -83,7 +77,7 @@ public abstract class AbstractPolicyManagementTest {
                         .directAccessGrantsEnabled());
     }
 
-    @BeforeEach
+    @Before
     public void configureAuthorization() throws Exception {
         createResourcesAndScopes();
         RealmResource realm = getRealm();
