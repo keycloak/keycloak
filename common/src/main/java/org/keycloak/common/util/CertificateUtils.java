@@ -60,7 +60,7 @@ public class CertificateUtils {
     }
 
     /**
-     * Generate version 1 self signed {@link java.security.cert.X509Certificate}..
+     * Generate version 1 self signed {@link java.security.cert.X509Certificate}.
      *
      * @param caKeyPair the CA key pair
      * @param subject the subject name
