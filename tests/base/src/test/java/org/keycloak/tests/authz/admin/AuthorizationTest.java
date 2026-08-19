@@ -16,7 +16,7 @@
 
  */
 
-package org.keycloak.testsuite.authz.admin;
+package org.keycloak.tests.authz.admin;
 
 import java.util.List;
 
@@ -30,9 +30,12 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
 
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -41,7 +44,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@KeycloakIntegrationTest
 public class AuthorizationTest extends AbstractAuthorizationTest {
+
+    @InjectRealm
+    ManagedRealm managedRealm;
 
     @Test
     public void testEnableAuthorizationServices() {
