@@ -1927,6 +1927,94 @@ public class UserTest extends AbstractScimTest {
         assertNull(actual.getExtensions());
     }
 
+    @Test
+    public void testFilterMultivaluedCustomAttributes() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
+        setupMultivaluedCustomAttributes(customSchema);
+
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+        user.addSchema(customSchema);
+        user.setExtensions(new HashMap<>());
+
+        Map<String, Object> customSchemaValues = new HashMap<>();
+        customSchemaValues.put("assurance", List.of(
+                Map.of("value", "https://refeds.org/assurance/ID/unique"),
+                Map.of("value", "https://refeds.org/assurance/IAP/low")
+        ));
+        customSchemaValues.put("affiliation", List.of("member", "faculty"));
+        user.getExtensions().put(customSchema, customSchemaValues);
+
+        user = client.users().create(user);
+
+        // filter on multivalued .value complex attribute — match one of the values
+        ListResponse<User> result = client.users().search(
+                ResourceFilter.filter().eq(customSchema + ":assurance.value", "https://refeds.org/assurance/ID/unique").build());
+        assertEquals(1, result.getTotalResults());
+        assertEquals(user.getId(), result.getResources().get(0).getId());
+
+        // filter on multivalued .value complex attribute — match the other value
+        result = client.users().search(
+                ResourceFilter.filter().eq(customSchema + ":assurance.value", "https://refeds.org/assurance/IAP/low").build());
+        assertEquals(1, result.getTotalResults());
+
+        // filter on multivalued .value complex attribute — no match
+        result = client.users().search(
+                ResourceFilter.filter().eq(customSchema + ":assurance.value", "non-existent").build());
+        assertEquals(0, result.getTotalResults());
+
+        // filter on multivalued flat attribute — match one of the values
+        result = client.users().search(
+                ResourceFilter.filter().eq(customSchema + ":affiliation", "member").build());
+        assertEquals(1, result.getTotalResults());
+        assertEquals(user.getId(), result.getResources().get(0).getId());
+
+        // filter on multivalued flat attribute — no match
+        result = client.users().search(
+                ResourceFilter.filter().eq(customSchema + ":affiliation", "non-existent").build());
+        assertEquals(0, result.getTotalResults());
+    }
+
+    @Test
+    public void testIncompatibleMultivaluedSiblingMapping() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+
+        UPAttribute valueAttr = new UPAttribute("assurance", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, customSchema + ":assurance.value"));
+        valueAttr.setMultivalued(true);
+        valueAttr.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(valueAttr);
+
+        UPAttribute siblingAttr = new UPAttribute("assuranceType", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, customSchema + ":assurance.type"));
+        siblingAttr.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(siblingAttr);
+
+        realm.admin().users().userProfile().update(upConfig);
+
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+
+        try {
+            user = client.users().create(user);
+            fail("should fail because multivalued '.value' cannot be combined with sibling sub-attributes");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("invalidSyntax", error.getScimType());
+            assertTrue(error.getDetail().contains("Incompatible SCIM extension mappings for complex attribute urn:my:params:scim:schemas:extension:custom-multi:1.0:User:assurance: multivalued .value cannot be combined with sibling sub-attributes [type]"));
+        } finally {
+            if (user.getId() != null) {
+                client.users().delete(user.getId());
+            }
+            upConfig.removeAttribute("assurance");
+            upConfig.removeAttribute("assuranceType");
+            realm.admin().users().userProfile().update(upConfig);
+        }
+    }
+
     private void setupMultivaluedCustomAttributes(String customSchema) {
         UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
 
