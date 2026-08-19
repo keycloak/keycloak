@@ -6,9 +6,7 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
-import org.keycloak.testframework.annotations.InjectRealm;
-import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ProfileAssume;
 
 import org.junit.BeforeClass;
@@ -18,11 +16,7 @@ import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 /**
  * @author mhajas
  */
-@KeycloakIntegrationTest
-public abstract class AbstractAuthzTest {
-
-    @InjectRealm
-    ManagedRealm managedRealm;
+public abstract class AbstractAuthzTest extends AbstractKeycloakTest {
 
     @BeforeClass
     public static void enabled() {
