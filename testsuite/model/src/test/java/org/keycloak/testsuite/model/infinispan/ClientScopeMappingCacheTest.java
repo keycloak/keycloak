@@ -19,9 +19,12 @@ package org.keycloak.testsuite.model.infinispan;
 import java.util.List;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.RoleProvider;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
@@ -31,12 +34,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-/**
- * Regression test for GH-51589: a cached client's scope mapping must not surface
- * a null RoleModel when a mapped role can no longer be resolved (e.g. it was removed
- * on another node before this node's cache invalidation event was processed).
- */
-@RequireProvider(RealmModel.class)
+@RequireProvider(RealmProvider.class)
+@RequireProvider(ClientProvider.class)
+@RequireProvider(RoleProvider.class)
 public class ClientScopeMappingCacheTest extends KeycloakModelTest {
 
     private String realmId;
@@ -69,8 +69,7 @@ public class ClientScopeMappingCacheTest extends KeycloakModelTest {
 
     @Test
     public void getScopeMappingsStreamFiltersUnresolvableRoleIds() {
-        // Warm the cache: first read populates the Infinispan-backed CachedClient
-        // with both role IDs currently in scope.
+        // Warm the cache with both currently resolvable role IDs.
         withRealm(realmId, (session, realm) -> {
             ClientModel client = session.clients().getClientById(realm, clientDbId);
             List<RoleModel> warm = client.getScopeMappingsStream().toList();
@@ -78,19 +77,18 @@ public class ClientScopeMappingCacheTest extends KeycloakModelTest {
             return null;
         });
 
-        // Remove the role through the role store so the cached client's scope
-        // mapping can retain the stale role ID and exercise the unresolved-role path.
+        // Remove the role through the role store so the cached scope mapping
+        // retains a stale role ID that can no longer be resolved.
         withRealm(realmId, (session, realm) -> {
             RoleModel stale = session.roles().getRoleById(realm, staleRoleId);
             session.roles().removeRole(stale);
             return null;
         });
 
-        // Re-fetch through the cache layer: must silently drop the unresolved
-        // mapping instead of throwing NPE or returning a null entry.
+        // The cache layer must drop the unresolved mapping rather than return
+        // a null RoleModel or throw an NPE.
         withRealm(realmId, (session, realm) -> {
             ClientModel client = session.clients().getClientById(realm, clientDbId);
-
             List<RoleModel> result = client.getScopeMappingsStream().toList();
 
             assertFalse("scope mappings must not contain null entries",
