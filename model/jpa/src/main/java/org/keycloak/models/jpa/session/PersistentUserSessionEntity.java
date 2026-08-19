@@ -26,6 +26,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
@@ -80,19 +81,19 @@ import org.hibernate.annotations.DynamicUpdate;
         @NamedQuery(name = "findExpiredOfflineUserSessionsLastRefresh",
                 query = "SELECT sess.userSessionId, sess.userId" +
                         " FROM PersistentUserSessionEntity sess" +
-                        " WHERE sess.realmId = :realmId AND sess.offline = '1' AND sess.lastSessionRefresh < :lastSessionRefresh"),
+                        " WHERE sess.realmId = :realmId AND sess.offline = '1' AND sess.sessionBucket = :sessionBucket AND sess.lastSessionRefresh < :lastSessionRefresh"),
         @NamedQuery(name = "findExpiredOfflineUserSessionsCreatedOn",
                 query = "SELECT sess.userSessionId, sess.userId" +
                         " FROM PersistentUserSessionEntity sess" +
-                        " WHERE sess.realmId = :realmId AND sess.offline = '1' AND sess.createdOn < :createdOn"),
+                        " WHERE sess.realmId = :realmId AND sess.offline = '1' AND sess.sessionBucket = :sessionBucket AND sess.createdOn < :createdOn"),
         @NamedQuery(name = "findExpiredRegularUserSessionsLastRefresh",
                 query = "SELECT sess.userSessionId, sess.userId" +
                         " FROM PersistentUserSessionEntity sess" +
-                        " WHERE sess.realmId = :realmId AND sess.offline = '0' AND sess.rememberMe = :rememberMe AND sess.lastSessionRefresh < :lastSessionRefresh"),
+                        " WHERE sess.realmId = :realmId AND sess.offline = '0' AND sess.rememberMe = :rememberMe AND sess.sessionBucket = :sessionBucket AND sess.lastSessionRefresh < :lastSessionRefresh"),
         @NamedQuery(name = "findExpiredRegularUserSessionsCreatedOn",
                 query = "SELECT sess.userSessionId, sess.userId" +
                         " FROM PersistentUserSessionEntity sess" +
-                        " WHERE sess.realmId = :realmId AND sess.offline = '0' AND sess.rememberMe = :rememberMe AND sess.createdOn < :createdOn"),
+                        " WHERE sess.realmId = :realmId AND sess.offline = '0' AND sess.rememberMe = :rememberMe AND sess.sessionBucket = :sessionBucket AND sess.createdOn < :createdOn"),
         @NamedQuery(name = "findInvalidRegularUserSessions",
                 query = "SELECT sess.userSessionId, sess.userId" +
                         " FROM PersistentUserSessionEntity sess" +
@@ -121,6 +122,12 @@ import org.hibernate.annotations.DynamicUpdate;
 @DynamicUpdate
 @IdClass(PersistentUserSessionEntity.Key.class)
 public class PersistentUserSessionEntity implements AsynchronousCommitAllowed {
+
+    // Session bucket spreads expiration index inserts across multiple leaf pages instead of one,
+    // avoiding page-level latch contention (PAGELATCH_EX on MSSQL, buffer busy waits on Oracle)
+    // that occurs because the expiration indexes' leading columns (REALM_ID, OFFLINE_FLAG, REMEMBER_ME)
+    // are typically single-valued, funneling all inserts into the same B-tree leaf page.
+    static final int SESSION_BUCKET_COUNT = 64;
 
     @Override
     public boolean isAsyncCommitAllowed(EntityOperationType operationType) {
@@ -161,6 +168,16 @@ public class PersistentUserSessionEntity implements AsynchronousCommitAllowed {
 
     @Column(name="REMEMBER_ME")
     protected Boolean rememberMe;
+
+    @Column(name="SESSION_BUCKET")
+    protected Integer sessionBucket;
+
+    @PrePersist
+    void computeSessionBucket() {
+        if (sessionBucket == null && userSessionId != null) {
+            sessionBucket = Math.floorMod(userSessionId.hashCode(), SESSION_BUCKET_COUNT);
+        }
+    }
 
     public String getUserSessionId() {
         return userSessionId;
@@ -233,6 +250,14 @@ public class PersistentUserSessionEntity implements AsynchronousCommitAllowed {
 
     public void setRememberMe(boolean rememberMe) {
         this.rememberMe = rememberMe;
+    }
+
+    public Integer getSessionBucket() {
+        return sessionBucket;
+    }
+
+    public void setSessionBucket(Integer sessionBucket) {
+        this.sessionBucket = sessionBucket;
     }
 
     public int getVersion() {
