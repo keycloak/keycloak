@@ -26,12 +26,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.keycloak.Config;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.testframework.annotations.InjectEvents;
@@ -48,6 +50,8 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ErrorPage;
@@ -65,6 +69,8 @@ import org.keycloak.tests.webauthn.authenticators.VirtualAuthenticatorManager;
 import org.keycloak.tests.webauthn.page.WebAuthnErrorPage;
 import org.keycloak.tests.webauthn.page.WebAuthnLoginPage;
 import org.keycloak.tests.webauthn.page.WebAuthnRegisterPage;
+import org.keycloak.truststore.FileTruststoreProviderFactory;
+import org.keycloak.truststore.TruststoreProvider;
 
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -96,6 +102,9 @@ public abstract class AbstractWebAuthnVirtualTest implements UseVirtualAuthentic
 
     @InjectOAuthClient(realmRef = "webauthn")
     protected OAuthClient oAuthClient;
+
+    @InjectRunOnServer(realmRef = "webauthn")
+    protected RunOnServerClient runOnServer;
 
     @InjectTestApp
     protected TestApp testApp;
@@ -171,6 +180,25 @@ public abstract class AbstractWebAuthnVirtualTest implements UseVirtualAuthentic
     public void removeVirtualAuthenticator() {
         virtualAuthenticatorManager.removeAuthenticator();
         events.clear();
+    }
+
+    protected void disableTruststoreSpi() {
+        runOnServer.run(session -> {
+            ProviderFactory<TruststoreProvider> factory = session.getKeycloakSessionFactory().getProviderFactory(TruststoreProvider.class);
+            if (factory instanceof FileTruststoreProviderFactory fileFactory) {
+                fileFactory.setProvider(null);
+            }
+        });
+    }
+
+    protected void reenableTruststoreSpi() {
+        runOnServer.run(session -> {
+            ProviderFactory<TruststoreProvider> factory = session.getKeycloakSessionFactory().getProviderFactory(TruststoreProvider.class);
+            if (factory instanceof FileTruststoreProviderFactory fileFactory) {
+                fileFactory.init(Config.scope("truststore", fileFactory.getId()));
+                Assertions.assertNotNull(fileFactory.create(session), "Truststore provider was not re-initialized");
+            }
+        });
     }
 
     public UserResource userResource() {
@@ -429,6 +457,15 @@ public abstract class AbstractWebAuthnVirtualTest implements UseVirtualAuthentic
                             .authenticationExecutions(AuthenticationExecutionExportBuilder.authenticator("auth-username-password-form", "REQUIRED", 10, false),
                                 AuthenticationExecutionExportBuilder.authenticator("webauthn-authenticator", "REQUIRED", 20, false),
                                 AuthenticationExecutionExportBuilder.authenticator("webauthn-authenticator-passwordless", "REQUIRED", 30, false)),
+
+                    // Passwordless login flow without a two-factor webauthn step, used by PwdLessOtherSettingsTest
+                    AuthenticationFlowBuilder.create("passwordless-only", "passwordless login without a two-factor step", "basic-flow", true, false)
+                            .authenticationExecutions(AuthenticationExecutionExportBuilder.authenticator("auth-cookie", "ALTERNATIVE", 10, false),
+                                AuthenticationExecutionExportBuilder.alias("passwordless-only-forms", "ALTERNATIVE", 30, false)),
+
+                    AuthenticationFlowBuilder.create("passwordless-only-forms", "Username, password and passwordless webauthn.", "basic-flow", false, false)
+                            .authenticationExecutions(AuthenticationExecutionExportBuilder.authenticator("auth-username-password-form", "REQUIRED", 10, false),
+                                AuthenticationExecutionExportBuilder.authenticator("webauthn-authenticator-passwordless", "REQUIRED", 20, false)),
 
                     AuthenticationFlowBuilder.create("passkeys-username-forms", "Username, password, otp and other auth forms.", "basic-flow", false,false)
                             .authenticationExecutions(AuthenticationExecutionExportBuilder.authenticator("auth-username-form", "REQUIRED", 10, false),
