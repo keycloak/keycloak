@@ -212,6 +212,18 @@ public class UserSessionUtil {
     }
 
     private static UserSessionModel createTransientSessionForClient(KeycloakSession session, UserSessionModel userSession, ClientModel client) {
+        String persistentSessionStarted = userSession.getNote(Constants.CREATED_FROM_PERSISTENT_STARTED);
+        if (persistentSessionStarted != null) {
+            int sessionStarted = Integer.parseInt(persistentSessionStarted);
+            return new UserSessionModelDelegate(userSession) {
+
+                @Override
+                public int getStarted() {
+                    return sessionStarted;
+                }
+            };
+        }
+
         UserSessionModel transientSession = createTransientUserSession(session, userSession);
         attachAuthenticationSession(session, transientSession, client);
         return transientSession;

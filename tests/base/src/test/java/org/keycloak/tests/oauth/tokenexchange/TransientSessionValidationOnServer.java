@@ -44,7 +44,9 @@ final class TransientSessionValidationOnServer implements FetchOnServer {
                 session, realm, token, requester, ignored -> {});
         UserSessionUtil.UserSessionValidationResult second = UserSessionUtil.findValidSessionForAccessToken(
                 session, realm, token, requester, ignored -> {});
+        UserSessionUtil.UserSessionValidationResult third = UserSessionUtil.findValidSessionForAccessToken(
+                session, realm, token, requester, ignored -> {});
 
-        return first.getError() == null && second.getError() == null;
+        return first.getError() == null && second.getError() == null && third.getError() == null;
     }
 }
