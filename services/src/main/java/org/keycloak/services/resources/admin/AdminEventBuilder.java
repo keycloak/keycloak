@@ -51,7 +51,8 @@ public class AdminEventBuilder {
     protected final AdminAuth auth;
     protected final String ipAddress;
     /**
-     * Realm associated with the event lifecycle.
+     * Realm associated with emitting the admin event.
+     * Not necessarily the affected realm or auth realm.
      */
     protected final RealmModel realm;
     protected final AdminEvent adminEvent;
