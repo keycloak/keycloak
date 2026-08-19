@@ -77,7 +77,6 @@ public class AdminEventBuilder {
             this.adminEvent = new AdminEvent();
             // Assumption: the following methods write information to the adminEvent only
             realm(realm);
-            targetRealm(realm);
             authRealm(auth.getRealm());
             authClient(auth.getClient());
             authUser(auth.getUser());
@@ -110,12 +109,6 @@ public class AdminEventBuilder {
     public AdminEventBuilder realm(RealmModel realm) {
         adminEvent.setRealmId(realm.getId());
         adminEvent.setRealmName(realm.getName());
-        return this;
-    }
-
-    public AdminEventBuilder targetRealm(RealmModel realm) {
-        adminEvent.setTargetRealmId(realm.getId());
-        adminEvent.setTargetRealmName(realm.getName());
         return this;
     }
 
