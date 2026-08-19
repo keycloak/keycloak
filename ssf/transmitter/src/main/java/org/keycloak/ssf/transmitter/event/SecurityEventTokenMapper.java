@@ -690,7 +690,7 @@ public class SecurityEventTokenMapper {
             // membership is an id-keyed query rather than an attribute read, so the
             // snapshot cannot answer getByMember — it carries the alias that was
             // resolved while the membership still existed instead.
-            PurgedUserSnapshot snapshot = PurgedUserSnapshot.lookup(session, userId);
+            PurgedUserSnapshot snapshot = PurgedUserSnapshot.lookup(session, realm, userId);
             if (snapshot != null) {
                 return buildTenantSubjectFromSnapshot(snapshot, orgProvider, stream);
             }
@@ -807,10 +807,14 @@ public class SecurityEventTokenMapper {
      * {@link #toSecurityEventToken(AdminEvent, StreamConfig)} would produce a
      * non-null SET for {@code adminEvent} — the admin paths mapped are
      * "log out all user sessions" ({@code users/{userId}/logout}),
-     * admin-initiated password reset / credential management, and an
+     * admin-initiated password reset / credential management, an
      * enable/disable transition on the generic user update endpoint (see
-     * {@link #isEnabledStateChangeAdminEvent}); everything else returns
+     * {@link #isEnabledStateChangeAdminEvent}), and deletion of the user
+     * itself (see {@link #isUserPurgeAdminEvent}); everything else returns
      * null and should short-circuit before any stream lookup happens.
+     *
+     * <p>The last two share the bare {@code users/{id}} resource path and are
+     * told apart by operation type, so both gates check it explicitly.
      */
     public boolean canConvert(AdminEvent adminEvent) {
         if (adminEvent == null) {
