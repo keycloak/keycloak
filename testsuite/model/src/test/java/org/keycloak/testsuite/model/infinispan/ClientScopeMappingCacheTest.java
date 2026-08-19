@@ -29,6 +29,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Regression test for GH-51589: a cached client's scope mapping must not surface
@@ -77,14 +78,11 @@ public class ClientScopeMappingCacheTest extends KeycloakModelTest {
             return null;
         });
 
-        // Remove the "stale" role directly at the store level so the cached
-        // client's scope set still references an ID that can no longer be resolved,
-        // reproducing the same shape of inconsistency the original NPE relied on
-        // (a cached scope entry whose role lookup returns null).
+        // Remove the role through the role store so the cached client's scope
+        // mapping can retain the stale role ID and exercise the unresolved-role path.
         withRealm(realmId, (session, realm) -> {
-            ClientModel client = session.clients().getClientById(realm, clientDbId);
-            RoleModel stale = client.getRole("stale-role");
-            client.removeRole(stale);
+            RoleModel stale = session.roles().getRoleById(realm, staleRoleId);
+            session.roles().removeRole(stale);
             return null;
         });
 
@@ -98,7 +96,7 @@ public class ClientScopeMappingCacheTest extends KeycloakModelTest {
             assertFalse("scope mappings must not contain null entries",
                     result.stream().anyMatch(r -> r == null));
             assertEquals(1, result.size());
-            assertEquals(liveRoleId, result.get(0).getId());
+            assertTrue(result.stream().anyMatch(r -> liveRoleId.equals(r.getId())));
             return null;
         });
     }
