@@ -14,12 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.account.custom;
+package org.keycloak.tests.account.custom;
 
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -28,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
+@KeycloakIntegrationTest
 public class CustomAuthFlowCookieTest extends AbstractCustomAccountManagementTest {
 
     @Test
@@ -40,7 +42,7 @@ public class CustomAuthFlowCookieTest extends AbstractCustomAccountManagementTes
         //check SSO is working
         //navigate to different client of the same realm and verify user is logged in
         oauth.openLoginForm();
-        assertEquals("AUTH_RESPONSE", driver.getTitle());
+        assertEquals("AUTH_RESPONSE", driver.driver().getTitle());
     }
     
     @Test
@@ -55,6 +57,6 @@ public class CustomAuthFlowCookieTest extends AbstractCustomAccountManagementTes
         //SSO shouldn't work
         //navigate to different client of the same realm and verify user is not logged in
         oauth.openLoginForm();
-        assertEquals("Sign in to test", driver.getTitle());
+        assertEquals("Sign in to test", driver.driver().getTitle());
     }
 }
