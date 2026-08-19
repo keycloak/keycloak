@@ -1089,18 +1089,6 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
 
-      - id: weekly-cache-key
-        name: Key for weekly rotation of cache
-        shell: bash
-        run: echo "key=ipa-data-`date -u "+%Y-%U"`" >> $GITHUB_OUTPUT
-
-      - id: cache-maven-repository
-        name: ipa-data cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ~/ipa-data.tar
-          key: ${{ steps.weekly-cache-key.outputs.key }}
-
       - name: Run tests
         run: .github/scripts/run-ipa.sh "${{ github.workspace }}"
 
