@@ -14,31 +14,90 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.tests.account.custom;
 
-package org.keycloak.testsuite.account.custom;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectUser;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.realm.UserConfig;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
-import org.keycloak.testsuite.AbstractAuthTest;
+import org.junit.jupiter.api.BeforeEach;
 
-import org.junit.Before;
-
-import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 
 /**
- *
- * @author tkyjovsk
+ * Shared base class for custom account management tests.
  */
-public abstract class AbstractAccountManagementTest extends AbstractAuthTest {
+public abstract class AbstractAccountManagementTest {
 
-    @Override
-    public void setDefaultPageUriParameters() {
-        super.setDefaultPageUriParameters();
-        testRealmPage.setAuthRealm(TEST);
-    }
+    @InjectRealm(config = AccountRealmConfig.class)
+    protected ManagedRealm managedRealm;
 
-    @Before
+    @InjectWebDriver
+    protected ManagedWebDriver driver;
+
+    @InjectOAuthClient
+    protected OAuthClient oauth;
+
+    @InjectPage
+    protected AccountLoginPage testRealmLoginPage;
+
+    @InjectUser(config = AccountTestUserConfig.class, lifecycle = LifeCycle.METHOD)
+    protected ManagedUser managedTestUser;
+
+    protected UserRepresentation testUser;
+
+    @BeforeEach
     public void beforeAbstractAccountTest() {
-        // make user test user exists in test realm
-        createTestUserWithAdminClient();
+        oauth.realm("test");
+        testUser = managedTestUser.admin().toRepresentation();
     }
 
+    protected RealmResource testRealmResource() {
+        return managedRealm.admin();
+    }
+
+    protected static class AccountLoginPage extends LoginPage {
+
+        public AccountLoginPage(ManagedWebDriver driver) {
+            super(driver);
+        }
+
+        public void login(String username, String password) {
+            fillLogin(username, password);
+            submit();
+        }
+    }
+
+    public static class AccountRealmConfig implements RealmConfig {
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return realm.name("test");
+        }
+    }
+
+    public static class AccountTestUserConfig implements UserConfig {
+        @Override
+        public UserBuilder configure(UserBuilder user) {
+            return user
+                    .username("test")
+                    .email("test@email.test")
+                    .name("test", "user")
+                    .password(PASSWORD)
+                    .clientRoles("realm-management", "view-realm");
+        }
+    }
 }
