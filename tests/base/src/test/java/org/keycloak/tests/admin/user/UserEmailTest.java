@@ -50,7 +50,6 @@ import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.InfoPage;
 import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
-import org.keycloak.testframework.ui.page.ProceedPage;
 import org.keycloak.testframework.ui.page.TermsAndConditionsPage;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.MailUtils;
@@ -95,9 +94,6 @@ public class UserEmailTest extends AbstractUserTest {
 
     @InjectPage
     InfoPage infoPage;
-
-    @InjectPage
-    ProceedPage proceedPage;
 
     @InjectPage
     ErrorPage errorPage;
@@ -196,9 +192,6 @@ public class UserEmailTest extends AbstractUserTest {
 
         driver.open(link);
 
-        proceedPage.assertCurrent();
-        assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
-        proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
@@ -248,9 +241,6 @@ public class UserEmailTest extends AbstractUserTest {
 
         driver.open(link);
 
-        proceedPage.assertCurrent();
-        assertThat(proceedPage.getInfo(), Matchers.containsString("Terms and Conditions"));
-        proceedPage.clickProceedLink();
         termsPage.assertCurrent();
 
         termsPage.acceptTerms();
@@ -293,9 +283,6 @@ public class UserEmailTest extends AbstractUserTest {
 
         driver.open(link);
 
-        proceedPage.assertCurrent();
-        assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
-        proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
@@ -376,9 +363,6 @@ public class UserEmailTest extends AbstractUserTest {
 
         driver.open(link);
 
-        proceedPage.assertCurrent();
-        assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
-        proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
@@ -413,9 +397,6 @@ public class UserEmailTest extends AbstractUserTest {
 
             driver.open(link);
 
-            proceedPage.assertCurrent();
-            assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
-            proceedPage.clickProceedLink();
             passwordUpdatePage.assertCurrent();
 
             passwordUpdatePage.changePassword("new-pass" + i, "new-pass" + i);
@@ -456,9 +437,6 @@ public class UserEmailTest extends AbstractUserTest {
 
             driver.open(link);
 
-            proceedPage.assertCurrent();
-            assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
-            proceedPage.clickProceedLink();
             passwordUpdatePage.assertCurrent();
 
             passwordUpdatePage.changePassword("new-pass" + i, "new-pass" + i);
@@ -495,9 +473,6 @@ public class UserEmailTest extends AbstractUserTest {
 
         driver.open(link);
 
-        proceedPage.assertCurrent();
-        assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
-        proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
         driver.cookies().deleteAll();
@@ -505,9 +480,6 @@ public class UserEmailTest extends AbstractUserTest {
 
         driver.open(link);
 
-        proceedPage.assertCurrent();
-        assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
-        proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
@@ -603,9 +575,6 @@ public class UserEmailTest extends AbstractUserTest {
 
         driver.open(link);
 
-        proceedPage.assertCurrent();
-        assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
-        proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
@@ -663,9 +632,6 @@ public class UserEmailTest extends AbstractUserTest {
 
         driver.open(link);
 
-        proceedPage.assertCurrent();
-        assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
-        proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
@@ -745,9 +711,6 @@ public class UserEmailTest extends AbstractUserTest {
 
         driver.open(link);
 
-        proceedPage.assertCurrent();
-        assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
-        proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
@@ -820,9 +783,6 @@ public class UserEmailTest extends AbstractUserTest {
 
         driver.open(link);
 
-        proceedPage.assertCurrent();
-        assertThat(proceedPage.getInfo(), Matchers.containsString("Confirm validity of e-mail address"));
-        proceedPage.clickProceedLink();
 
         Assertions.assertEquals("Your account has been updated.", infoPage.getInfo());
         driver.open("about:blank");
@@ -866,9 +826,6 @@ public class UserEmailTest extends AbstractUserTest {
 
         driver.open(link);
 
-        proceedPage.assertCurrent();
-        assertThat(proceedPage.getInfo(), Matchers.containsString("Confirm validity of e-mail address"));
-        proceedPage.clickProceedLink();
 
         assertEquals("Your account has been updated.", infoPage.getInfo());
 
@@ -921,9 +878,6 @@ public class UserEmailTest extends AbstractUserTest {
 
         driver.open(link);
 
-        proceedPage.assertCurrent();
-        assertThat(proceedPage.getInfo(), Matchers.containsString("Confirm validity of e-mail address"));
-        proceedPage.clickProceedLink();
 
         assertEquals("Your account has been updated.", infoPage.getInfo());
 

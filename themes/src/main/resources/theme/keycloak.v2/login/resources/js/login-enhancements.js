@@ -328,36 +328,10 @@ function credentialSuffix() {
   return Math.random().toString(16).slice(2, 10);
 }
 
-/**
- * Skip the required-action interstitial for Quantum Pass enrolment.
- *
- * template.ftl emits data-skip-to-action only when an outstanding required
- * action is webauthn-register or webauthn-register-passwordless, so the
- * attribute's presence *is* the condition — nothing is inferred from the page
- * text here, unlike the Keycloakify build this replaces.
- *
- * replace() rather than assign() keeps the interstitial out of session history,
- * so a Back press does not drop the user right back onto it.
- */
-function setupRequiredActionSkip() {
-  const target = document.body.dataset.skipToAction;
-
-  if (!target) {
-    return;
-  }
-
-  window.location.replace(target);
-  return true;
-}
-
-// Runs first: if we are leaving the page anyway, the decorative setup below is
-// wasted work and can briefly paint a screen the user should never see.
-if (!setupRequiredActionSkip()) {
-  setupCapsLockWarning();
-  setupRipple();
-  setupSubmitState();
-  setupThemeToggle();
-  setupRealmLogo();
-  setupDeviceCallback();
-  setupWebAuthnLabel();
-}
+setupCapsLockWarning();
+setupRipple();
+setupSubmitState();
+setupThemeToggle();
+setupRealmLogo();
+setupDeviceCallback();
+setupWebAuthnLabel();

@@ -168,21 +168,7 @@
     </script>
 </head>
 
-<#-- Fidar: info.ftl renders a "click here to proceed" interstitial while a
-     required action is outstanding. For Quantum Pass enrolment that page only
-     asks the user to confirm something they already chose, so hand the target
-     to login-enhancements.js and let it go straight there. -->
-<#assign fidarSkipActionUri = "">
-<#if actionUri?? && actionUri?has_content && requiredActions??>
-    <#list requiredActions as fidarReqAction>
-        <#if fidarReqAction == "webauthn-register" || fidarReqAction == "webauthn-register-passwordless">
-            <#assign fidarSkipActionUri = actionUri>
-            <#break>
-        </#if>
-    </#list>
-</#if>
-
-<body id="keycloak-bg" class="${properties.kcBodyClass!}" data-page-id="login-${pageId}" data-capslock-text="${msg('capsLockOn')}" data-dark-class="${properties.kcDarkModeClass!}" data-realm="${realm.name!}"<#if fidarSkipActionUri?has_content> data-skip-to-action="${fidarSkipActionUri}"</#if>>
+<body id="keycloak-bg" class="${properties.kcBodyClass!}" data-page-id="login-${pageId}" data-capslock-text="${msg('capsLockOn')}" data-dark-class="${properties.kcDarkModeClass!}" data-realm="${realm.name!}">
 <#if darkMode>
   <button type="button" id="kc-theme-toggle" class="kc-theme-toggle"
           aria-label="${msg('toggleColorScheme')}" title="${msg('toggleColorScheme')}">

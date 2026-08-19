@@ -19,12 +19,9 @@ package org.keycloak.authentication.actiontoken.execactions;
 import java.util.Objects;
 
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.TokenVerifier.Predicate;
-import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;
@@ -33,16 +30,12 @@ import org.keycloak.authentication.actiontoken.TokenUtils;
 import org.keycloak.authentication.requiredactions.util.RequiredActionsValidator;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
-import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
-import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
@@ -86,24 +79,13 @@ public class ExecuteActionsActionTokenHandler extends AbstractActionTokenHandler
     @Override
     public Response handleToken(ExecuteActionsActionToken token, ActionTokenContext<ExecuteActionsActionToken> tokenContext) {
         AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
-        final UriInfo uriInfo = tokenContext.getUriInfo();
-        final RealmModel realm = tokenContext.getRealm();
-        final KeycloakSession session = tokenContext.getSession();
         if (tokenContext.isAuthenticationSessionFresh()) {
-            // Update the authentication session in the token
+            // Bind the freshly created authentication session to the token so the required
+            // actions below run against it. This used to render a confirmation info page
+            // ("Perform the following action(s)") that cost the user an extra click; the
+            // actions now execute straight away so the link lands directly on the first one.
             String authSessionEncodedId = AuthenticationSessionCompoundId.fromAuthSession(authSession).getEncodedId();
             token.setCompoundAuthenticationSessionId(authSessionEncodedId);
-            UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo),
-                    authSession.getClient().getClientId(), authSession.getTabId(), AuthenticationProcessor.getClientData(session, authSession));
-            String confirmUri = builder.build(realm.getName()).toString();
-
-            return session.getProvider(LoginFormsProvider.class)
-                    .setAuthenticationSession(authSession)
-                    .setUser(authSession.getAuthenticatedUser())
-                    .setSuccess(Messages.CONFIRM_EXECUTION_OF_ACTIONS)
-                    .setAttribute(Constants.TEMPLATE_ATTR_ACTION_URI, confirmUri)
-                    .setAttribute(Constants.TEMPLATE_ATTR_REQUIRED_ACTIONS, token.getRequiredActions())
-                    .createInfoPage();
         }
 
         String redirectUri = RedirectUtils.verifyRedirectUri(tokenContext.getSession(), token.getRedirectUri(), authSession.getClient());
