@@ -87,6 +87,12 @@ This changes the behavior of identity provider account linking by email, of admi
 and of the verifiable credential offer emails of the experimental OID4VCI feature.
 The *Trust Email* setting of identity providers and LDAP federation is not affected, as it is an explicit decision of the administrator to trust the email from the external source.
 
+=== Certificate Common Name truncated to 64 characters
+
+When {project_name} generates self-signed certificates (for example, during SAML client creation), the Common Name (CN) is now truncated to 64 characters to comply with the https://datatracker.ietf.org/doc/html/rfc5280[RFC 5280] `ub-common-name` upper bound. Previously, values longer than 64 characters, such as long client IDs, were used as-is. With the BouncyCastle 1.85 update, this caused certificate generation to fail.
+
+If you have tooling that inspects the CN of {project_name}-generated certificates and expects it to match a value longer than 64 characters, be aware that the CN may now be shorter.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
