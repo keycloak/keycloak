@@ -82,8 +82,6 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
-import org.keycloak.testframework.oauth.OAuthClient;
-import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
@@ -130,9 +128,6 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     @InjectTimeOffSet
     TimeOffSet timeOffSet;
-
-    @InjectOAuthClient
-    OAuthClient oauth;
 
     private static final String RESOURCE_SERVER_TEST = "resource-server-test";
     private static final String TEST_CLIENT = "test-client";
