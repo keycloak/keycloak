@@ -146,6 +146,39 @@ class SecurityEventTokenMapperTest {
         assertEquals(InitiatingEntity.ADMIN, ((RiscAccountEnabled) payload).getInitiatingEntity());
     }
 
+    @Test
+    void logoutWithoutDetails_isNotIgnored() {
+        Event event = new Event();
+        event.setType(EventType.LOGOUT);
+        // details intentionally left null, which is the RP-initiated logout path
+        // without post_logout_redirect_uri never calls detail()
+
+        assertFalse(mapper.shouldIgnoreLogout(event),
+                "a real user logout without details must be propagated, not dropped or NPE");
+        assertTrue(mapper.canConvert(event),
+                "canConvert must survive a LOGOUT event with null details");
+    }
+
+    @Test
+    void logoutWithExpiredSessionReason_isIgnored() {
+        Event event = new Event();
+        event.setType(EventType.LOGOUT);
+        event.setDetails(Map.of(Details.REASON, Details.USER_SESSION_EXPIRED_REASON));
+
+        assertTrue(mapper.shouldIgnoreLogout(event),
+                "expired session cleanup is not a real logout and must not emit a SET");
+    }
+
+    @Test
+    void logoutWithUnrelatedDetails_isNotIgnored() {
+        Event event = new Event();
+        event.setType(EventType.LOGOUT);
+        event.setDetails(Map.of(Details.REDIRECT_URI, "https://rp.example.com/logged-out"));
+
+        assertFalse(mapper.shouldIgnoreLogout(event),
+                "details without a REASON entry must be treated like a real logout");
+    }
+
     private StreamConfig streamConfig() {
         return new StreamConfig();
     }
