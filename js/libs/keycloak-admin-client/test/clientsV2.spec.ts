@@ -128,11 +128,7 @@ describe("Clients V2 API", () => {
     expect(sortedClients).to.be.ok;
     expect(sortedClients).to.be.an("array");
     const clientIds = sortedClients!.map((c) => c.clientId!);
-    expect(
-      [...clientIds].sort((a, b) =>
-        b.localeCompare(a, undefined, { sensitivity: "base" }),
-      ),
-    ).to.deep.equal(clientIds);
+    expect([...clientIds].sort().reverse()).to.deep.equal(clientIds);
 
     const sortedClient1 = sortedClients!.find((c) => c.clientId === clientId1);
     expect(sortedClient1).to.be.ok;
