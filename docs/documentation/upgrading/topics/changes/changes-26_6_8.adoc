@@ -34,3 +34,12 @@ If you plan to enable this executor, audit the `registeredNodes` map for any aff
 . *Register* each replacement hostname through `POST /admin/realms/{realm}/clients/{id}/nodes` so that the new entry is validated against the active policy.
 
 Re-registering a replacement hostname without first deleting the old entry leaves the old key in the map, which {project_name} continues using for management callbacks regardless of the active policy.
+
+=== Certificate Common Name truncated to 64 characters
+// https://github.com/keycloak/keycloak/issues/51778
+
+When {project_name} generates self-signed certificates (for example, during SAML client creation), the Common Name (CN) is now truncated to 64 characters to comply with the https://datatracker.ietf.org/doc/html/rfc5280[RFC 5280] `ub-common-name` upper bound.
+Previously, values longer than 64 characters, such as long client IDs, were used as-is.
+With the BouncyCastle 1.85 update, this caused certificate generation to fail.
+
+If you have tooling that inspects the CN of {project_name}-generated certificates and expects it to match a value longer than 64 characters, be aware that the CN may now be shorter.
