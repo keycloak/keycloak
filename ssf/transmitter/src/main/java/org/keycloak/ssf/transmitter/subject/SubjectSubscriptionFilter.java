@@ -218,6 +218,10 @@ public class SubjectSubscriptionFilter {
         if (userTombstone != null && now - userTombstone < graceSeconds) {
             return true;
         }
+        if (user instanceof PurgedUserSnapshot snapshot) {
+            Long orgTombstone = snapshot.getOrganizationRemovedAt(receiverClientId);
+            return orgTombstone != null && now - orgTombstone < graceSeconds;
+        }
         if (Organizations.isEnabled(session)) {
             return session.getProvider(OrganizationProvider.class).getByMember(user)
                     .anyMatch(org -> {
@@ -270,7 +274,15 @@ public class SubjectSubscriptionFilter {
     }
 
     protected UserModel lookupUserBySubject(KeycloakSession session, RealmModel realm, SubjectId userSubject) {
-        return SubjectUserLookup.lookupUser(session, realm, userSubject);
+        UserModel user = SubjectUserLookup.lookupUser(session, realm, userSubject);
+        if (user != null) {
+            return user;
+        }
+        // An account-purged SET names a user that no longer exists, so the lookup
+        // above can never succeed for one. Falling back to this request's snapshot
+        // keeps the gate meaningful: without it every purge would be evaluated as an
+        // unresolvable subject and dropped under the default default_subjects=NONE.
+        return PurgedUserSnapshot.lookupBySubject(session, userSubject);
     }
 
     /**
@@ -282,6 +294,13 @@ public class SubjectSubscriptionFilter {
      * "is the user excluded *via* one of their orgs" question.
      */
     protected boolean isOrganizationExcluded(UserModel user, String receiverClientId, KeycloakSession session) {
+        // A purged user cannot be resolved back to its memberships — getByMember is
+        // an id-keyed query, not an attribute read — so the verdict comes from the
+        // organization attributes captured before the deletion. This is the one place
+        // the snapshot cannot pose transparently as a live user.
+        if (user instanceof PurgedUserSnapshot snapshot) {
+            return snapshot.isAnyOrganizationExcluded(receiverClientId);
+        }
         if (!Organizations.isEnabled(session)) {
             return false;
         }
@@ -294,6 +313,10 @@ public class SubjectSubscriptionFilter {
      * per the {@link #subjectInclusionResolver}.
      */
     protected boolean isOrganizationNotified(UserModel user, String receiverClientId, KeycloakSession session) {
+        // See isOrganizationExcluded — same reason the snapshot answers this itself.
+        if (user instanceof PurgedUserSnapshot snapshot) {
+            return snapshot.isAnyOrganizationNotified(receiverClientId);
+        }
         if (!Organizations.isEnabled(session)) {
             return false;
         }

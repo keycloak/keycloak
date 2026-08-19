@@ -14,6 +14,7 @@ import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.ssf.event.risc.RiscAccountDisabled;
 import org.keycloak.ssf.event.risc.RiscAccountEnabled;
+import org.keycloak.ssf.event.risc.RiscAccountPurged;
 import org.keycloak.ssf.event.stream.SsfStreamUpdatedEvent;
 import org.keycloak.ssf.event.stream.SsfStreamVerificationEvent;
 
@@ -55,6 +56,7 @@ public class DefaultSsfEventProviderFactory implements SsfEventProviderFactory, 
         // RISC events
         events.put(RiscAccountDisabled.TYPE, RiscAccountDisabled::new);
         events.put(RiscAccountEnabled.TYPE, RiscAccountEnabled::new);
+        events.put(RiscAccountPurged.TYPE, RiscAccountPurged::new);
 
         STANDARD_EVENT_FACTORIES = Map.copyOf(events);
     }
@@ -70,9 +72,9 @@ public class DefaultSsfEventProviderFactory implements SsfEventProviderFactory, 
      * use-cases enumerated by the OpenID CAEP Interoperability Profile 1.0.
      * The profile is opt-in per use-case ("Implementations MAY choose to
      * support one or more …"), so supporting any one of them is enough to
-     * count as interoperable. {@code account-disabled} and
-     * {@code account-enabled} are RISC 1.0 events, not part of that CAEP
-     * profile, added alongside it.
+     * count as interoperable. {@code account-disabled},
+     * {@code account-enabled} and {@code account-purged} are RISC 1.0
+     * events, not part of that CAEP profile, added alongside it.
      *
      * @see <a href="https://openid.github.io/sharedsignals/openid-caep-interoperability-profile-1_0.html">OpenID CAEP Interoperability Profile 1.0</a>
      * @see <a href="https://openid.net/specs/openid-risc-1_0-final.html">OpenID RISC 1.0 (Final)</a>
@@ -81,7 +83,8 @@ public class DefaultSsfEventProviderFactory implements SsfEventProviderFactory, 
             CaepCredentialChange.TYPE,
             CaepSessionRevoked.TYPE,
             RiscAccountDisabled.TYPE,
-            RiscAccountEnabled.TYPE);
+            RiscAccountEnabled.TYPE,
+            RiscAccountPurged.TYPE);
 
     /**
      * Subset of {@link #EMITTABLE_EVENT_TYPES} that {@code SecurityEventTokenMapper}
@@ -92,7 +95,8 @@ public class DefaultSsfEventProviderFactory implements SsfEventProviderFactory, 
             CaepCredentialChange.TYPE,
             CaepSessionRevoked.TYPE,
             RiscAccountDisabled.TYPE,
-            RiscAccountEnabled.TYPE);
+            RiscAccountEnabled.TYPE,
+            RiscAccountPurged.TYPE);
 
     private volatile SsfEventRegistry registry;
 
