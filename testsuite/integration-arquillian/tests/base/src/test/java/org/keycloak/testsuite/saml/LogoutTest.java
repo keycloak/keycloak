@@ -47,6 +47,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.SAML2LoginResponseBuilder;
 import org.keycloak.saml.SAML2LogoutResponseBuilder;
+import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
@@ -548,6 +549,7 @@ public class LogoutTest extends AbstractSamlTest {
                                         SAML_CLIENT_ID_SALES_POST_SIG,
                                         SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY_PK,
                                         SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY_PK)
+                                .signatureAlgorithm(SignatureAlgorithm.RSA_SHA256)
                                 .signDocument(responseDoc);
 
                         return responseDoc;
