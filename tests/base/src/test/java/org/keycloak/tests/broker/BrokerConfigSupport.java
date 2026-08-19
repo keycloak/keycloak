@@ -107,6 +107,16 @@ public interface BrokerConfigSupport {
         AccountHelper.logout(getConsumerRealm().admin(), getUserLogin());
     }
 
+    default void assertUserCreatedInConsumerRealm() {
+        ManagedRealm consumerRealm = getConsumerRealm();
+        int userCount = consumerRealm.admin().users().count();
+        Assertions.assertTrue(userCount > 0, "There must be at least one user");
+        boolean isUserFound = consumerRealm.admin().users().list().stream()
+                .anyMatch(user -> user.getUsername().equals(getUserLogin()) && user.getEmail().equals(getUserEmail()));
+        Assertions.assertTrue(isUserFound,
+                "There must be user " + getUserLogin() + " in consumer realm");
+    }
+
     default void assertNumFederatedIdentities(String username, int expected) {
         ManagedRealm consumerRealm = getConsumerRealm();
         List<UserRepresentation> users = consumerRealm.admin().users().search(username, true);

@@ -1,6 +1,5 @@
 package org.keycloak.tests.broker;
 
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.ui.page.LoginPage;
@@ -18,27 +17,9 @@ public interface BrokerLoginTest extends BrokerConfigSupport {
     }
 
     default void loginUser() {
-        OAuthClient oauth = getOAuthClient();
-
         logInAsUserInIDP();
-
         updateAccountInformation();
-
-        ManagedRealm consumerRealm = getConsumerRealm();
-        UserRepresentation userRep = AccountHelper.getUserRepresentation(
-                consumerRealm.admin(), getUserLogin());
-        Assertions.assertNotNull(userRep, "There must be user " + getUserLogin() + " in consumer realm");
-        userRep.setFirstName("Firstname");
-        userRep.setLastName("Lastname");
-        AccountHelper.updateUser(consumerRealm.admin(), getUserLogin(), userRep);
-
-        int userCount = consumerRealm.admin().users().count();
-        Assertions.assertTrue(userCount > 0, "There must be at least one user");
-
-        boolean isUserFound = consumerRealm.admin().users().list().stream()
-                .anyMatch(user -> user.getUsername().equals(getUserLogin()) && user.getEmail().equals(getUserEmail()));
-        Assertions.assertTrue(isUserFound,
-                "There must be user " + getUserLogin() + " in consumer realm");
+        assertUserCreatedInConsumerRealm();
     }
 
     default void testSingleLogout() {
