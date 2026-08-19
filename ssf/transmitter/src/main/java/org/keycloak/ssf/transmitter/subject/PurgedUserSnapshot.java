@@ -1,7 +1,6 @@
 package org.keycloak.ssf.transmitter.subject;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -10,6 +9,7 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.ssf.subject.ComplexSubjectId;
@@ -18,6 +18,8 @@ import org.keycloak.ssf.subject.IssuerSubjectId;
 import org.keycloak.ssf.subject.OpaqueSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
 import org.keycloak.storage.adapter.AbstractInMemoryUserAdapter;
+
+import org.jboss.logging.Logger;
 
 /**
  * A detached, read-only stand-in for a user that is about to be deleted.
@@ -37,11 +39,14 @@ import org.keycloak.storage.adapter.AbstractInMemoryUserAdapter;
  * {@code getEmail()}, which is itself an attribute read. Copying the attribute map
  * into an in-memory adapter therefore makes those call sites work unmodified.
  *
- * <p><b>Organizations are the exception.</b> {@code OrganizationProvider.getByMember(user)}
- * is an id-keyed database query, not an attribute read, so a detached user cannot
- * answer it. The organization-derived facts the pipeline needs — the tenant alias for
- * {@code +tenant} subject formats, and the org-level notify / tombstone verdicts —
- * are resolved eagerly at capture time and served from the fields below.
+ * <p><b>Organization membership is the single exception.</b>
+ * {@code OrganizationProvider.getByMember(user)} is an id-keyed database query, not
+ * an attribute read, so a detached user cannot answer it. Only that one fact is
+ * captured here, as a list of aliases: the organizations themselves outlive the
+ * user, so callers re-resolve live {@link OrganizationModel}s through
+ * {@code getByAlias} and then run exactly the same logic they run for a live user.
+ * Nothing about the organizations' own state is copied, which keeps the pluggable
+ * {@link SsfSubjectInclusionResolver} authoritative for purged users as well.
  *
  * <p>The snapshot lives only as long as the request. Everything that reads it
  * (token construction, the subject gates, narrowing and signing) runs inline on the
@@ -49,6 +54,8 @@ import org.keycloak.storage.adapter.AbstractInMemoryUserAdapter;
  * SET and never resolves a user again.
  */
 public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
+
+    private static final Logger log = Logger.getLogger(PurgedUserSnapshot.class);
 
     private static final String SESSION_ATTRIBUTE_PREFIX = "ssf.purgedUser.";
 
@@ -61,6 +68,25 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
      */
     private static final String SESSION_ATTRIBUTE_EMAIL_PREFIX = "ssf.purgedUserByEmail.";
 
+    private static final String SESSION_ATTRIBUTE_COUNT = "ssf.purgedUser.count";
+
+    /**
+     * Upper bound on snapshots retained per session.
+     *
+     * <p>A snapshot is only ever read by the admin / user event that follows the
+     * deletion in the same request, so in the paths that emit there is exactly one
+     * live at a time. Bulk paths are the problem: the workflow delete step
+     * ({@code DeleteUserStepProvider}) removes every due user on a single session and
+     * fires no admin or user event at all, and deleting an organization removes each
+     * managed member in one request. Those snapshots would never be read, so without a
+     * bound a retention run purging tens of thousands of accounts would hold every
+     * one of them for the life of the session.
+     *
+     * <p>The cap is deliberately far above what any emitting request needs, so hitting
+     * it means the caller is a bulk path whose snapshots are dead weight anyway.
+     */
+    private static final int MAX_SNAPSHOTS_PER_SESSION = 64;
+
     /**
      * The user's primary organization alias, resolved managed-preferred to mirror
      * {@code SecurityEventTokenMapper.buildTenantSubject}. {@code null} when the
@@ -69,24 +95,40 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
     private final String tenantAlias;
 
     /**
-     * The {@code ssf.*} attributes of every organization the user belonged to, in
-     * membership order. Backs the org legs of the subject filter, which ask
-     * "is <em>any</em> of the user's organizations notified / excluded".
+     * Aliases of every organization the user belonged to, in membership order. The
+     * stand-in for {@code getByMember} — see the class javadoc.
      */
-    private final List<Map<String, List<String>>> organizationSsfAttributes;
+    private final List<String> organizationAliases;
 
     protected PurgedUserSnapshot(KeycloakSession session,
                                  RealmModel realm,
                                  String id,
                                  String tenantAlias,
-                                 List<Map<String, List<String>>> organizationSsfAttributes) {
+                                 List<String> organizationAliases) {
         super(session, realm, id);
         this.tenantAlias = tenantAlias;
-        this.organizationSsfAttributes = organizationSsfAttributes;
+        this.organizationAliases = organizationAliases;
     }
 
     public String getTenantAlias() {
         return tenantAlias;
+    }
+
+    /**
+     * Aliases of the organizations this user belonged to at deletion time. Callers
+     * resolve them to live {@link OrganizationModel}s rather than reading captured
+     * organization state.
+     */
+    public List<String> getOrganizationAliases() {
+        return organizationAliases;
+    }
+
+    /**
+     * The realm the user was deleted from. Snapshots are keyed by user id alone, so
+     * callers use this to reject a snapshot from a different realm.
+     */
+    public RealmModel getRealm() {
+        return realm;
     }
 
     /**
@@ -106,7 +148,8 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
      * Captures {@code user} and stashes it on the session under its user id.
      * No-op when the user is a service account — those are not human subjects and
      * never produce a purge SET, so capturing one would only cost an organization
-     * query on every client deletion.
+     * query on every client deletion — and no-op once
+     * {@link #MAX_SNAPSHOTS_PER_SESSION} snapshots are already held.
      *
      * <p>Callers invoke this from the pre-remove hook, which fires before Keycloak
      * knows whether the removal will succeed. Capturing is therefore deliberately
@@ -121,14 +164,24 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
             return;
         }
 
+        Integer held = session.getAttribute(SESSION_ATTRIBUTE_COUNT, Integer.class);
+        int count = held == null ? 0 : held;
+        if (count >= MAX_SNAPSHOTS_PER_SESSION) {
+            if (count == MAX_SNAPSHOTS_PER_SESSION) {
+                log.debugf("SSF: reached %d purge snapshots on this session; not capturing further deletions. "
+                                + "This is expected for bulk deletion paths, which emit no purge events.",
+                        MAX_SNAPSHOTS_PER_SESSION);
+                session.setAttribute(SESSION_ATTRIBUTE_COUNT, count + 1);
+            }
+            return;
+        }
+
         String tenantAlias = null;
-        List<Map<String, List<String>>> orgAttributes = new ArrayList<>();
+        List<String> organizationAliases = List.of();
         if (Organizations.isEnabled(session)) {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
             List<OrganizationModel> organizations = orgProvider.getByMember(user).toList();
-            for (OrganizationModel org : organizations) {
-                orgAttributes.add(copySsfAttributes(org.getAttributes()));
-            }
+            organizationAliases = organizations.stream().map(OrganizationModel::getAlias).toList();
             // Managed-preferred, matching the mapper's multi-org resolution policy:
             // the organization that provisioned the user wins, otherwise the first
             // membership. Keeps the purge event's tenant subject identical to the
@@ -143,7 +196,7 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
         }
 
         PurgedUserSnapshot snapshot = new PurgedUserSnapshot(session, realm, user.getId(),
-                tenantAlias, List.copyOf(orgAttributes));
+                tenantAlias, organizationAliases);
 
         // Copy the whole attribute map first — it carries username, email and every
         // ssf.notify.* / ssf.notifyRemovedAt.* entry the subject gates read.
@@ -172,17 +225,19 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
         if (snapshot.getEmail() != null) {
             session.setAttribute(sessionEmailAttributeKey(snapshot.getEmail()), snapshot);
         }
+        session.setAttribute(SESSION_ATTRIBUTE_COUNT, count + 1);
     }
 
     /**
      * Returns the snapshot captured for {@code userId} in this session, or
      * {@code null} when the user was not deleted on this request.
      */
-    public static PurgedUserSnapshot lookup(KeycloakSession session, String userId) {
+    public static PurgedUserSnapshot lookup(KeycloakSession session, RealmModel realm, String userId) {
         if (session == null || userId == null) {
             return null;
         }
-        return session.getAttribute(sessionAttributeKey(userId), PurgedUserSnapshot.class);
+        PurgedUserSnapshot snapshot = session.getAttribute(sessionAttributeKey(userId), PurgedUserSnapshot.class);
+        return matchesRealm(snapshot, realm) ? snapshot : null;
     }
 
     /**
@@ -194,25 +249,27 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
      * <p>Complex subjects are drilled into their {@code user} member, matching how
      * the filter unwraps them for live users.
      */
-    public static PurgedUserSnapshot lookupBySubject(KeycloakSession session, SubjectId subjectId) {
+    public static PurgedUserSnapshot lookupBySubject(KeycloakSession session, RealmModel realm, SubjectId subjectId) {
         if (session == null || subjectId == null) {
             return null;
         }
         if (subjectId instanceof ComplexSubjectId complex) {
-            return lookupBySubject(session, complex.getUser());
+            return lookupBySubject(session, realm, complex.getUser());
         }
         if (subjectId instanceof IssuerSubjectId issuerSubject) {
-            return lookup(session, issuerSubject.getSub());
+            return lookup(session, realm, issuerSubject.getSub());
         }
         if (subjectId instanceof OpaqueSubjectId opaqueSubject) {
-            return lookup(session, opaqueSubject.getId());
+            return lookup(session, realm, opaqueSubject.getId());
         }
         if (subjectId instanceof EmailSubjectId emailSubject) {
             String email = emailSubject.getEmail();
             if (email == null || email.isBlank()) {
                 return null;
             }
-            return session.getAttribute(sessionEmailAttributeKey(email), PurgedUserSnapshot.class);
+            PurgedUserSnapshot snapshot =
+                    session.getAttribute(sessionEmailAttributeKey(email), PurgedUserSnapshot.class);
+            return matchesRealm(snapshot, realm) ? snapshot : null;
         }
         return null;
     }
@@ -223,87 +280,48 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
      * the emission path uses in place of a bare {@code getUserById}.
      */
     public static UserModel resolveUserOrSnapshot(KeycloakSession session, RealmModel realm, String userId) {
-        if (session == null || userId == null) {
+        if (session == null || realm == null || userId == null) {
             return null;
         }
-        UserModel user = realm != null ? session.users().getUserById(realm, userId) : null;
-        return user != null ? user : lookup(session, userId);
-    }
-
-    public boolean isAnyOrganizationNotified(String clientId) {
-        return anyOrganizationHasValue(SsfNotifyAttributes.attributeKey(clientId),
-                SsfNotifyAttributes.ATTRIBUTE_VALUE_TRUE);
-    }
-
-    public boolean isAnyOrganizationExcluded(String clientId) {
-        return anyOrganizationHasValue(SsfNotifyAttributes.attributeKey(clientId),
-                SsfNotifyAttributes.ATTRIBUTE_VALUE_FALSE);
+        UserModel user = session.users().getUserById(realm, userId);
+        return user != null ? user : lookup(session, realm, userId);
     }
 
     /**
-     * The most recent org-level removal tombstone across the user's organizations,
-     * or {@code null} when none carry one. Most-recent mirrors the live filter's
-     * {@code anyMatch} over memberships — if any organization is still inside the
-     * grace window, the event is delivered.
+     * Resolves the organizations a user belonged to, whether live or purged.
+     *
+     * <p>For a live user this is {@code getByMember}. For a snapshot the captured
+     * aliases are resolved back to live {@link OrganizationModel}s — the organizations
+     * outlive the user, so callers get real models and can apply the same logic in
+     * both cases. Aliases that no longer resolve (the organization was deleted in the
+     * same request) are dropped.
      */
-    public Long getOrganizationRemovedAt(String clientId) {
-        String key = SsfNotifyAttributes.removedAtKey(clientId);
-        Long latest = null;
-        for (Map<String, List<String>> attributes : organizationSsfAttributes) {
-            List<String> values = attributes.get(key);
-            if (values == null || values.isEmpty()) {
-                continue;
-            }
-            Long parsed = parseEpochSeconds(values.get(0));
-            if (parsed != null && (latest == null || parsed > latest)) {
-                latest = parsed;
-            }
+    public static List<OrganizationModel> organizationsOf(KeycloakSession session, UserModel user) {
+        if (session == null || user == null || !Organizations.isEnabled(session)) {
+            return List.of();
         }
-        return latest;
+        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+        if (user instanceof PurgedUserSnapshot snapshot) {
+            List<OrganizationModel> resolved = new ArrayList<>();
+            for (String alias : snapshot.getOrganizationAliases()) {
+                OrganizationModel org = orgProvider.getByAlias(alias);
+                if (org != null) {
+                    resolved.add(org);
+                }
+            }
+            return resolved;
+        }
+        return orgProvider.getByMember(user).toList();
     }
 
-    private boolean anyOrganizationHasValue(String key, String value) {
-        for (Map<String, List<String>> attributes : organizationSsfAttributes) {
-            List<String> values = attributes.get(key);
-            if (values != null && values.contains(value)) {
-                return true;
-            }
+    private static boolean matchesRealm(PurgedUserSnapshot snapshot, RealmModel realm) {
+        if (snapshot == null) {
+            return false;
         }
-        return false;
-    }
-
-    private static Long parseEpochSeconds(String raw) {
-        if (raw == null || raw.isBlank()) {
-            return null;
+        if (realm == null || snapshot.getRealm() == null) {
+            return true;
         }
-        try {
-            return Long.parseLong(raw.trim());
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    /**
-     * Narrows an organization's attribute map to the {@code ssf.*} keys. Organization
-     * attributes are operator-defined and unbounded; only the SSF ones are ever read
-     * back, so the snapshot does not retain the rest.
-     */
-    private static Map<String, List<String>> copySsfAttributes(Map<String, List<String>> attributes) {
-        Map<String, List<String>> copy = new LinkedHashMap<>();
-        if (attributes == null) {
-            return copy;
-        }
-        for (Map.Entry<String, List<String>> entry : attributes.entrySet()) {
-            String key = entry.getKey();
-            if (key == null || entry.getValue() == null) {
-                continue;
-            }
-            if (key.startsWith(SsfNotifyAttributes.ATTRIBUTE_PREFIX)
-                    || key.startsWith(SsfNotifyAttributes.REMOVED_AT_PREFIX)) {
-                copy.put(key, List.copyOf(entry.getValue()));
-            }
-        }
-        return copy;
+        return realm.getId().equals(snapshot.getRealm().getId());
     }
 
     private static String sessionAttributeKey(String userId) {
@@ -311,6 +329,8 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
     }
 
     private static String sessionEmailAttributeKey(String email) {
-        return SESSION_ATTRIBUTE_EMAIL_PREFIX + email.toLowerCase();
+        // Same normalization AbstractInMemoryUserAdapter applies when storing the
+        // email, so the index key matches what getEmail() returns.
+        return SESSION_ATTRIBUTE_EMAIL_PREFIX + KeycloakModelUtils.toLowerCaseSafe(email);
     }
 }

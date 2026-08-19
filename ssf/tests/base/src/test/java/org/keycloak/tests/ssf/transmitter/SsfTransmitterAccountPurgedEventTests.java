@@ -288,6 +288,26 @@ public class SsfTransmitterAccountPurgedEventTests {
                 "delivered purge should be for the org-notified user");
     }
 
+    @Test
+    public void orgExcludedUser_purgeSuppressed() throws Exception {
+        // The exclusion leg of the org branch, under default_subjects=ALL where the
+        // user would otherwise be delivered. Proves the snapshot's captured aliases
+        // resolve back to live organizations and are evaluated by the same
+        // SsfSubjectInclusionResolver the live path uses -- an extension overriding
+        // that resolver must get the same verdict for purges as for every other event.
+        String orgAlias = createOrgExcluded();
+        setReceiverAttributes(Map.of(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL"));
+
+        String userId = createUser("purge-org-excluded", "purge-org-excluded@" + orgAlias + ".local.test");
+        addUserToOrg(orgAlias, userId);
+
+        deleteUser(userId);
+
+        Assertions.assertNull(pushes.poll(NO_PUSH_WAIT_SECONDS, TimeUnit.SECONDS),
+                "a user excluded via their organization must not have their purge delivered, "
+                        + "even under default_subjects=ALL");
+    }
+
     // --- deletions that are not purges --------------------------------------
 
     @Test
@@ -377,13 +397,22 @@ public class SsfTransmitterAccountPurgedEventTests {
      * {@code ssf.notify.<RECEIVER>=true}, and returns its alias.
      */
     protected String createOrg(boolean notify) {
+        return createOrg(notify ? "true" : null);
+    }
+
+    /** Creates an organization carrying {@code ssf.notify.<RECEIVER>=false}. */
+    protected String createOrgExcluded() {
+        return createOrg("false");
+    }
+
+    protected String createOrg(String notifyValue) {
         String orgAlias = "purge-org-" + System.nanoTime();
         OrganizationRepresentation rep = new OrganizationRepresentation();
         rep.setName(orgAlias);
         rep.setAlias(orgAlias);
         rep.addDomain(new OrganizationDomainRepresentation(orgAlias + ".local.test"));
-        if (notify) {
-            rep.singleAttribute("ssf.notify." + RECEIVER, "true");
+        if (notifyValue != null) {
+            rep.singleAttribute("ssf.notify." + RECEIVER, notifyValue);
         }
         try (Response response = realm.admin().organizations().create(rep)) {
             Assertions.assertEquals(201, response.getStatus(),

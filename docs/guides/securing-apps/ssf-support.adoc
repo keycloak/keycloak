@@ -390,6 +390,10 @@ The {project_name} SSF Transmitter targets conformance with:
   deleted, either by an administrator or by the user themselves from the account console.
   Deletions that do not remove the account -- a partial import under the `OVERWRITE` policy,
   or the service-account user removed alongside its client -- do not emit it.
++
+NOTE: `account-purged` is currently emitted only for deletions performed through the admin
+API or the account console. Deletions performed by a workflow's delete-user step, or by
+removing an organization that owns managed members, do not yet emit it.
 * Legacy SSE CAEP profile for Apple Business Manager interop (gated behind the `sse-caep-enabled` SPI flag).
 
 </@tmpl.guide>
