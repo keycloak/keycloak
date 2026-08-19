@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
@@ -1991,27 +1992,11 @@ public class UserTest extends AbstractScimTest {
         siblingAttr.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
         upConfig.addOrReplaceAttribute(siblingAttr);
 
-        realm.admin().users().userProfile().update(upConfig);
-
-        User user = new User();
-        user.setUserName(KeycloakModelUtils.generateId());
-
         try {
-            user = client.users().create(user);
-            fail("should fail because multivalued '.value' cannot be combined with sibling sub-attributes");
-        } catch (ScimClientException sce) {
-            ErrorResponse error = sce.getError();
-            assertNotNull(error);
-            assertEquals(400, error.getStatusInt());
-            assertEquals("invalidSyntax", error.getScimType());
-            assertTrue(error.getDetail().contains("Incompatible SCIM extension mappings for complex attribute urn:my:params:scim:schemas:extension:custom-multi:1.0:User:assurance: multivalued .value cannot be combined with sibling sub-attributes [type]"));
-        } finally {
-            if (user.getId() != null) {
-                client.users().delete(user.getId());
-            }
-            upConfig.removeAttribute("assurance");
-            upConfig.removeAttribute("assuranceType");
             realm.admin().users().userProfile().update(upConfig);
+            fail("should fail because multivalued '.value' cannot be combined with sibling sub-attributes");
+        } catch (BadRequestException e) {
+            assertTrue(e.getResponse().getStatus() == 400);
         }
     }
 

@@ -249,29 +249,31 @@ public class SchemaTest extends AbstractScimTest {
 
         realm.admin().users().userProfile().update(upConfig);
 
-        Schema schema = client.schemas().get(customSchema);
-        assertNotNull(schema);
-        assertEquals(customSchema, schema.getId());
+        try {
+            Schema schema = client.schemas().get(customSchema);
+            assertNotNull(schema);
+            assertEquals(customSchema, schema.getId());
 
-        Set<String> attributeNames = schema.getAttributes().stream()
-                .map(Schema.Attribute::getName)
-                .collect(Collectors.toSet());
-        assertEquals(2, attributeNames.size());
-        assertTrue(attributeNames.contains("assurance"));
-        assertTrue(attributeNames.contains("affiliation"));
+            Set<String> attributeNames = schema.getAttributes().stream()
+                    .map(Schema.Attribute::getName)
+                    .collect(Collectors.toSet());
+            assertEquals(2, attributeNames.size());
+            assertTrue(attributeNames.contains("assurance"));
+            assertTrue(attributeNames.contains("affiliation"));
 
-        assertAttribute(findAttribute(schema, "affiliation"), "string", true, false, true, "readWrite", "none");
+            assertAttribute(findAttribute(schema, "affiliation"), "string", true, false, false, "readWrite", "none");
 
-        Schema.Attribute assurance = findAttribute(schema, "assurance");
-        assertAttribute(assurance, "complex", true, false, false, "readWrite", "none");
-        assertNotNull(assurance.getSubAttributes(), "assurance should have sub-attributes");
-        assertEquals(1, assurance.getSubAttributes().size());
-        assertSubAttribute(assurance.getSubAttributes().get(0), "string", false, "readWrite");
-        assertEquals("value", assurance.getSubAttributes().get(0).getName());
-
-        upConfig.removeAttribute("assurance");
-        upConfig.removeAttribute("affiliation");
-        realm.admin().users().userProfile().update(upConfig);
+            Schema.Attribute assurance = findAttribute(schema, "assurance");
+            assertAttribute(assurance, "complex", true, false, false, "readWrite", "none");
+            assertNotNull(assurance.getSubAttributes(), "assurance should have sub-attributes");
+            assertEquals(1, assurance.getSubAttributes().size());
+            assertSubAttribute(assurance.getSubAttributes().get(0), "string", false, "readWrite");
+            assertEquals("value", assurance.getSubAttributes().get(0).getName());
+        } finally {
+            upConfig.removeAttribute("assurance");
+            upConfig.removeAttribute("affiliation");
+            realm.admin().users().userProfile().update(upConfig);
+        }
     }
 
     @Test

@@ -1,6 +1,5 @@
 package org.keycloak.scim.model.user;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
@@ -100,83 +98,6 @@ public class UserExtensionModelSchema extends AbstractUserModelSchema {
         }
 
         return names;
-    }
-
-    @Override
-    protected Map<String, Attribute<UserModel, User>> getAttributeMappers() {
-        validateExtensionAttributeMappings();
-        return super.getAttributeMappers();
-    }
-
-    /**
-     * Multivalued {@code <parent>.value} mappings emit the parent as an array of {@code { "value": "..." }}
-     * objects. Sibling sub-attributes under the same parent (e.g. {@code <parent>.type}) require a single
-     * complex object instead and cannot be combined with the multivalued shape.
-     */
-    private void validateExtensionAttributeMappings() {
-        Map<String, List<ExtensionSubAttributeMapping>> mappingsByParent = new HashMap<>();
-        UserProfile profile = getUserProfile();
-
-        for (String modelAttributeName : profile.getAttributes().getReadable().keySet()) {
-            if (isRootAttribute(modelAttributeName)) {
-                continue;
-            }
-
-            AttributeMetadata metadata = profile.getAttributes().getMetadata(modelAttributeName);
-
-            if (metadata == null) {
-                continue;
-            }
-
-            Map<String, Object> annotations = metadata.getAnnotations();
-
-            if (annotations == null) {
-                continue;
-            }
-
-            String scimName = (String) annotations.get(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE);
-
-            if (scimName == null || !scimName.contains(":") || !hasSchema(scimName)) {
-                continue;
-            }
-
-            String schema = Attribute.getSchema(scimName);
-            String simpleName = Attribute.getSimpleName(scimName);
-            int subAttributeSeparator = simpleName.indexOf('.');
-
-            if (subAttributeSeparator == -1) {
-                continue;
-            }
-
-            String parentAttributeName = simpleName.substring(0, subAttributeSeparator);
-            String subAttributeName = simpleName.substring(subAttributeSeparator + 1);
-            String parentKey = schema + ":" + parentAttributeName;
-
-            mappingsByParent.computeIfAbsent(parentKey, key -> new ArrayList<>())
-                    .add(new ExtensionSubAttributeMapping(modelAttributeName, subAttributeName, metadata.isMultivalued()));
-        }
-
-        for (Map.Entry<String, List<ExtensionSubAttributeMapping>> entry : mappingsByParent.entrySet()) {
-            List<ExtensionSubAttributeMapping> mappings = entry.getValue();
-            boolean hasMultivaluedValue = mappings.stream()
-                    .anyMatch(mapping -> "value".equals(mapping.subAttributeName()) && mapping.multivalued());
-            List<ExtensionSubAttributeMapping> siblings = mappings.stream()
-                    .filter(mapping -> !("value".equals(mapping.subAttributeName()) && mapping.multivalued()))
-                    .toList();
-
-            if (hasMultivaluedValue && !siblings.isEmpty()) {
-                String siblingNames = siblings.stream()
-                        .map(ExtensionSubAttributeMapping::subAttributeName)
-                        .collect(Collectors.joining(", "));
-                throw new ModelValidationException(
-                        "Incompatible SCIM extension mappings for complex attribute '" + entry.getKey()
-                                + "': multivalued '.value' cannot be combined with sibling sub-attributes ["
-                                + siblingNames + "]");
-            }
-        }
-    }
-
-    private record ExtensionSubAttributeMapping(String modelAttributeName, String subAttributeName, boolean multivalued) {
     }
 
     @Override
