@@ -65,6 +65,94 @@ public interface OidcBrokerConfigSupport extends BrokerConfigSupport {
                 .attribute("defaultScope", "email profile");
     }
 
+    static ClientBuilder createDefaultProviderClient() {
+        return ClientBuilder.create(CLIENT_ID)
+                .secret(CLIENT_SECRET)
+                .redirectUris("*")
+                .protocolMappers(
+                        ProtocolMapperBuilder.create().name("email")
+                                .protocolMapper(UserAttributeMapper.PROVIDER_ID)
+                                .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                                .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "email")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true")
+                                .config(OIDCAttributeMapperHelper.JSON_TYPE, "String")
+                                .config("user.attribute", "email")
+                                .build(),
+                        ProtocolMapperBuilder.create().name("nested.email")
+                                .protocolMapper(UserAttributeMapper.PROVIDER_ID)
+                                .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                                .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "nested.email")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true")
+                                .config(OIDCAttributeMapperHelper.JSON_TYPE, "String")
+                                .config("user.attribute", "nested.email")
+                                .build(),
+                        ProtocolMapperBuilder.create().name("dotted.email")
+                                .protocolMapper(UserAttributeMapper.PROVIDER_ID)
+                                .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                                .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "dotted\\.email")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true")
+                                .config(OIDCAttributeMapperHelper.JSON_TYPE, "String")
+                                .config("user.attribute", "dotted.email")
+                                .build(),
+                        ProtocolMapperBuilder.create().name(ATTRIBUTE_TO_MAP_NAME)
+                                .protocolMapper(UserAttributeMapper.PROVIDER_ID)
+                                .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                                .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, ATTRIBUTE_TO_MAP_NAME)
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true")
+                                .config(OIDCAttributeMapperHelper.JSON_TYPE, "String")
+                                .config("user.attribute", ATTRIBUTE_TO_MAP_NAME)
+                                .build(),
+                        ProtocolMapperBuilder.create().name(ATTRIBUTE_TO_MAP_NAME_2)
+                                .protocolMapper(UserAttributeMapper.PROVIDER_ID)
+                                .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                                .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, ATTRIBUTE_TO_MAP_NAME_2)
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true")
+                                .config(OIDCAttributeMapperHelper.JSON_TYPE, "String")
+                                .config("user.attribute", ATTRIBUTE_TO_MAP_NAME_2)
+                                .build(),
+                        ProtocolMapperBuilder.create().name("hardcoded-attribute")
+                                .protocolMapper(HardcodedClaim.PROVIDER_ID)
+                                .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                                .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "hardcoded-attribute")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true")
+                                .config(OIDCAttributeMapperHelper.JSON_TYPE, "String")
+                                .config("claim.value", "hardcoded-value")
+                                .build(),
+                        ProtocolMapperBuilder.create().name("audience")
+                                .protocolMapper(AudienceProtocolMapper.PROVIDER_ID)
+                                .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                                .config("included.custom.audience", CLIENT_ID)
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
+                                .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
+                                .build());
+    }
+
+    static RealmBuilder configureProviderRealm(RealmBuilder realm, ClientBuilder providerClient) {
+        UserBuilder user = UserBuilder.create(USER_LOGIN)
+                .email(USER_EMAIL)
+                .emailVerified(true)
+                .password(USER_PASSWORD)
+                .enabled(true)
+                .firstName("First")
+                .lastName("Last");
+        return realm.name(PROVIDER_REALM)
+                .eventsListeners("jboss-logging")
+                .users(user)
+                .clients(providerClient);
+    }
+
     static RealmBuilder configureConsumerRealm(RealmBuilder realm, IdentityProviderBuilder idpBuilder) {
         return realm.name(CONSUMER_REALM)
                 .eventsListeners("jboss-logging")
@@ -80,86 +168,7 @@ public interface OidcBrokerConfigSupport extends BrokerConfigSupport {
     class OidcProviderRealmConfig implements RealmConfig {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            return realm.name(PROVIDER_REALM)
-                    .eventsListeners("jboss-logging")
-                    .users(UserBuilder.create(USER_LOGIN)
-                            .email(USER_EMAIL)
-                            .emailVerified(true)
-                            .password(USER_PASSWORD)
-                            .enabled(true)
-                            .firstName("First")
-                            .lastName("Last"))
-                    .clients(ClientBuilder.create(CLIENT_ID)
-                            .secret(CLIENT_SECRET)
-                            .redirectUris("*")
-                            .protocolMappers(
-                                    ProtocolMapperBuilder.create().name("email")
-                                            .protocolMapper(UserAttributeMapper.PROVIDER_ID)
-                                            .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
-                                            .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "email")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true")
-                                            .config(OIDCAttributeMapperHelper.JSON_TYPE, "String")
-                                            .config("user.attribute", "email")
-                                            .build(),
-                                    ProtocolMapperBuilder.create().name("nested.email")
-                                            .protocolMapper(UserAttributeMapper.PROVIDER_ID)
-                                            .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
-                                            .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "nested.email")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true")
-                                            .config(OIDCAttributeMapperHelper.JSON_TYPE, "String")
-                                            .config("user.attribute", "nested.email")
-                                            .build(),
-                                    ProtocolMapperBuilder.create().name("dotted.email")
-                                            .protocolMapper(UserAttributeMapper.PROVIDER_ID)
-                                            .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
-                                            .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "dotted\\.email")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true")
-                                            .config(OIDCAttributeMapperHelper.JSON_TYPE, "String")
-                                            .config("user.attribute", "dotted.email")
-                                            .build(),
-                                    ProtocolMapperBuilder.create().name(ATTRIBUTE_TO_MAP_NAME)
-                                            .protocolMapper(UserAttributeMapper.PROVIDER_ID)
-                                            .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
-                                            .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, ATTRIBUTE_TO_MAP_NAME)
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true")
-                                            .config(OIDCAttributeMapperHelper.JSON_TYPE, "String")
-                                            .config("user.attribute", ATTRIBUTE_TO_MAP_NAME)
-                                            .build(),
-                                    ProtocolMapperBuilder.create().name(ATTRIBUTE_TO_MAP_NAME_2)
-                                            .protocolMapper(UserAttributeMapper.PROVIDER_ID)
-                                            .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
-                                            .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, ATTRIBUTE_TO_MAP_NAME_2)
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true")
-                                            .config(OIDCAttributeMapperHelper.JSON_TYPE, "String")
-                                            .config("user.attribute", ATTRIBUTE_TO_MAP_NAME_2)
-                                            .build(),
-                                    ProtocolMapperBuilder.create().name("hardcoded-attribute")
-                                            .protocolMapper(HardcodedClaim.PROVIDER_ID)
-                                            .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
-                                            .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "hardcoded-attribute")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true")
-                                            .config(OIDCAttributeMapperHelper.JSON_TYPE, "String")
-                                            .config("claim.value", "hardcoded-value")
-                                            .build(),
-                                    ProtocolMapperBuilder.create().name("audience")
-                                            .protocolMapper(AudienceProtocolMapper.PROVIDER_ID)
-                                            .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
-                                            .config("included.custom.audience", CLIENT_ID)
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true")
-                                            .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true")
-                                            .build()));
+            return configureProviderRealm(realm, createDefaultProviderClient());
         }
     }
 
