@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
@@ -1666,6 +1667,106 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testPatchAndUpdateRespectEditPermissionsMultivalued() {
+        String attributeName = "scim.protectedMultiAttribute";
+        String scimAttributePath = KEYCLOAK_USER_SCHEMA + ":protectedMultiAttribute";
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+        UPAttribute upAttribute = new UPAttribute(attributeName, Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, scimAttributePath));
+        upAttribute.setMultivalued(true);
+        upAttribute.setPermissions(
+                new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of()));
+        upConfig.addOrReplaceAttribute(upAttribute);
+        realm.admin().users().userProfile().update(upConfig);
+
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+        try {
+            user = client.users().create(user);
+
+            // PATCH replace should not be able to write a view-only attribute (using JSON array)
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .replace(scimAttributePath, "[\"scim-patch\"]")
+                    .build());
+            Map<String, List<String>> attributes = realm.admin().users().get(user.getId())
+                    .toRepresentation().getAttributes();
+            assertTrue(attributes == null || !attributes.containsKey(attributeName));
+
+            // PATCH add should not be able to write a view-only attribute (using JSON array)
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .add(scimAttributePath, "[\"scim-add\"]")
+                    .build());
+            attributes = realm.admin().users().get(user.getId())
+                    .toRepresentation().getAttributes();
+            assertTrue(attributes == null || !attributes.containsKey(attributeName));
+
+            // temporarily allow admin edits so we can set the attribute values
+            upAttribute.setPermissions(
+                    new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+            upConfig.addOrReplaceAttribute(upAttribute);
+            realm.admin().users().userProfile().update(upConfig);
+
+            UserRepresentation rep = realm.admin().users().get(user.getId()).toRepresentation();
+            if (rep.getAttributes() == null) {
+                rep.setAttributes(new HashMap<>());
+            }
+            // Set multiple values
+            rep.getAttributes().put(attributeName, List.of("admin-set-value-1", "admin-set-value-2"));
+            realm.admin().users().get(user.getId()).update(rep);
+
+            // restore view-only permissions
+            upAttribute.setPermissions(
+                    new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of()));
+            upConfig.addOrReplaceAttribute(upAttribute);
+            realm.admin().users().userProfile().update(upConfig);
+
+            attributes = realm.admin().users().get(user.getId()).toRepresentation().getAttributes();
+            assertNotNull(attributes);
+            assertEquals(List.of("admin-set-value-1", "admin-set-value-2"), attributes.get(attributeName));
+
+            // PATCH remove should not be able to remove a view-only attribute
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .remove(scimAttributePath)
+                    .build());
+            attributes = realm.admin().users().get(user.getId())
+                    .toRepresentation().getAttributes();
+            assertNotNull(attributes);
+            assertEquals(List.of("admin-set-value-1", "admin-set-value-2"), attributes.get(attributeName));
+
+            // PUT should not be able to write a view-only attribute
+            user.addSchema(KEYCLOAK_USER_SCHEMA);
+            user.setExtensions(new HashMap<>());
+            Map<Object, Object> extensionValues = new HashMap<>();
+            // Provide a list for the multivalued extension update attempt
+            extensionValues.put("protectedMultiAttribute", List.of("scim-update"));
+            user.getExtensions().put(KEYCLOAK_USER_SCHEMA, extensionValues);
+
+            User updated = client.users().update(user.getId(), user);
+            attributes = realm.admin().users().get(user.getId())
+                    .toRepresentation().getAttributes();
+            assertNotNull(attributes);
+            assertEquals(List.of("admin-set-value-1", "admin-set-value-2"), attributes.get(attributeName));
+
+            // verify the SCIM response reflects the actual stored values, not the sent values
+            Map<String, Object> responseExtensions = updated.getExtensions();
+            if (responseExtensions != null && responseExtensions.containsKey(KEYCLOAK_USER_SCHEMA)) {
+                Map<String, Object> schemaValues = (Map<String, Object>) responseExtensions.get(KEYCLOAK_USER_SCHEMA);
+                Object returnedValue = schemaValues.get("protectedMultiAttribute");
+                if (returnedValue instanceof List<?> scimList) {
+                    assertFalse(scimList.contains("scim-update"),
+                            "PUT response should not echo back the value that was not persisted");
+                    assertTrue(scimList.containsAll(List.of("admin-set-value-1", "admin-set-value-2")),
+                            "PUT response should reflect the persisted read-only values");
+                }
+            }
+        } finally {
+            if (user.getId() != null) {
+                client.users().delete(user.getId());
+            }
+        }
+    }
+
+    @Test
     public void testCreateDuplicate() {
         User user = new User();
         user.setUserName(KeycloakModelUtils.generateId());
@@ -1681,5 +1782,239 @@ public class UserTest extends AbstractScimTest {
             assertEquals("uniqueness", error.getScimType());
             assertNotNull(error.getDetail());
         }
+    }
+
+    @Test
+    public void testGetMultivaluedCustomAttributesWithAndWithoutValueSubAttribute() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
+        setupMultivaluedCustomAttributes(customSchema);
+
+        UserRepresentation existing = UserBuilder.create()
+                .username(KeycloakModelUtils.generateId())
+                .email(KeycloakModelUtils.generateId() + "@keycloak.org")
+                .firstName("f")
+                .lastName("l")
+                .enabled(true)
+                .build();
+        Map<String, List<String>> attributes = new HashMap<>();
+        List<String> expectedAssuranceValues = List.of(
+                "https://refeds.org/assurance/ID/unique",
+                "https://refeds.org/assurance/IAP/low",
+                "https://aarc-project.eu/policy/authn-assurance/assam");
+        List<String> expectedAffiliationValues = List.of("member", "faculty");
+        attributes.put("assurance", expectedAssuranceValues);
+        attributes.put("affiliation", expectedAffiliationValues);
+        existing.setAttributes(attributes);
+        try (Response response = realm.admin().users().create(existing)) {
+            String id = ApiUtil.getCreatedId(response);
+            existing.setId(id);
+        }
+
+        User user = client.users().get(existing.getId());
+        Object extension = ofNullable(user.getExtensions()).orElse(Map.of()).get(customSchema);
+        assertInstanceOf(Map.class, extension);
+        assertTrue(user.getSchemas().contains(customSchema));
+
+        Object assurance = ((Map<?, ?>) extension).get("assurance");
+        assertInstanceOf(List.class, assurance);
+        assertEquals(expectedAssuranceValues.size(), ((List<?>) assurance).size());
+        for (int i = 0; i < expectedAssuranceValues.size(); i++) {
+            Object valueNode = ((List<?>) assurance).get(i);
+            assertInstanceOf(Map.class, valueNode);
+            assertEquals(expectedAssuranceValues.get(i), ((Map<?, ?>) valueNode).get("value"));
+        }
+
+        Object affiliation = ((Map<?, ?>) extension).get("affiliation");
+        assertInstanceOf(List.class, affiliation);
+        assertEquals(expectedAffiliationValues, affiliation);
+    }
+
+    @Test
+    public void testCreateAndPutMultivaluedCustomAttributes() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
+        setupMultivaluedCustomAttributes(customSchema);
+
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+        user.addSchema(customSchema);
+
+        Map<String, Object> customSchemaValues = new HashMap<>();
+        customSchemaValues.put("assurance", List.of(
+                Map.of("value", "https://refeds.org/assurance/ID/unique"),
+                Map.of("value", "https://refeds.org/assurance/IAP/low")
+        ));
+        customSchemaValues.put("affiliation", List.of("member", "faculty"));
+
+        user.setExtensions(new HashMap<>());
+        user.getExtensions().put(customSchema, customSchemaValues);
+
+        user = client.users().create(user);
+        User actual = client.users().get(user.getId());
+
+        Map<?, ?> extension = (Map<?, ?>) actual.getExtensions().get(customSchema);
+        List<?> assurance = (List<?>) extension.get("assurance");
+        assertEquals(2, assurance.size());
+        List<String> expectedAssuranceValues = List.of("https://refeds.org/assurance/ID/unique", "https://refeds.org/assurance/IAP/low");
+        List<String> actualAssuranceValues = assurance.stream().map(valueNode -> assertInstanceOf(Map.class, valueNode)).map(map -> (String) map.get("value")).toList();
+        assertTrue(actualAssuranceValues.containsAll(expectedAssuranceValues));
+
+        List<?> affiliation = (List<?>) extension.get("affiliation");
+        assertEquals(2, affiliation.size());
+        assertTrue(affiliation.containsAll(List.of("member", "faculty")));
+
+        customSchemaValues.put("assurance", List.of(Map.of("value", "https://refeds.org/assurance/IAP/low-updated")));
+        customSchemaValues.put("affiliation", List.of("staff"));
+        actual.getExtensions().put(customSchema, customSchemaValues);
+
+        actual = client.users().update(actual);
+
+        extension = (Map<?, ?>) actual.getExtensions().get(customSchema);
+        assurance = (List<?>) extension.get("assurance");
+        assertEquals(1, assurance.size());
+        assertEquals("https://refeds.org/assurance/IAP/low-updated", ((Map<?, ?>) assurance.get(0)).get("value"));
+
+        affiliation = (List<?>) extension.get("affiliation");
+        assertEquals(1, affiliation.size());
+        assertEquals("staff", affiliation.get(0));
+    }
+
+    @Test
+    public void testPatchMultivaluedCustomAttributes() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
+        setupMultivaluedCustomAttributes(customSchema);
+
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+        user = client.users().create(user);
+
+        client.users().patch(user.getId(), PatchRequest.create()
+                .add(customSchema + ":assurance", "[{\"value\": \"https://refeds.org/assurance/ID/unique\"}]")
+                .add(customSchema + ":affiliation", "[\"member\"]")
+                .build());
+
+        User actual = client.users().get(user.getId());
+        Map<?, ?> extension = (Map<?, ?>) actual.getExtensions().get(customSchema);
+        List<?> assurance = (List<?>) extension.get("assurance");
+        assertEquals(1, assurance.size());
+        assertEquals("https://refeds.org/assurance/ID/unique", ((Map<?, ?>) assurance.get(0)).get("value"));
+
+        List<?> affiliation = (List<?>) extension.get("affiliation");
+        assertEquals(1, affiliation.size());
+        assertEquals("member", affiliation.get(0));
+
+        client.users().patch(user.getId(), PatchRequest.create()
+                .replace(customSchema + ":assurance", "[{\"value\": \"https://refeds.org/assurance/IAP/low\"}, {\"value\": \"https://refeds.org/assurance/IAP/low-updated\"}]")
+                .replace(customSchema + ":affiliation", "[\"faculty\", \"staff\"]")
+                .build());
+
+        actual = client.users().get(user.getId());
+        extension = (Map<?, ?>) actual.getExtensions().get(customSchema);
+        assurance = (List<?>) extension.get("assurance");
+        assertEquals(2, assurance.size());
+        List<String> expectedAssuranceValues = List.of("https://refeds.org/assurance/IAP/low", "https://refeds.org/assurance/IAP/low-updated");
+        List<String> actualAssuranceValues = assurance.stream().map(valueNode -> assertInstanceOf(Map.class, valueNode)).map(map -> (String) map.get("value")).toList();
+        assertTrue(actualAssuranceValues.containsAll(expectedAssuranceValues));
+
+        affiliation = (List<?>) extension.get("affiliation");
+        assertEquals(2, affiliation.size());
+        assertTrue(affiliation.containsAll(List.of("faculty", "staff")));
+
+        client.users().patch(user.getId(), PatchRequest.create()
+                .remove(customSchema + ":assurance")
+                .remove(customSchema + ":affiliation")
+                .build());
+
+        actual = client.users().get(user.getId());
+        assertNull(actual.getExtensions());
+    }
+
+    @Test
+    public void testFilterMultivaluedCustomAttributes() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
+        setupMultivaluedCustomAttributes(customSchema);
+
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+        user.addSchema(customSchema);
+        user.setExtensions(new HashMap<>());
+
+        Map<String, Object> customSchemaValues = new HashMap<>();
+        customSchemaValues.put("assurance", List.of(
+                Map.of("value", "https://refeds.org/assurance/ID/unique"),
+                Map.of("value", "https://refeds.org/assurance/IAP/low")
+        ));
+        customSchemaValues.put("affiliation", List.of("member", "faculty"));
+        user.getExtensions().put(customSchema, customSchemaValues);
+
+        user = client.users().create(user);
+
+        // filter on multivalued .value complex attribute — match one of the values
+        ListResponse<User> result = client.users().search(
+                ResourceFilter.filter().eq(customSchema + ":assurance.value", "https://refeds.org/assurance/ID/unique").build());
+        assertEquals(1, result.getTotalResults());
+        assertEquals(user.getId(), result.getResources().get(0).getId());
+
+        // filter on multivalued .value complex attribute — match the other value
+        result = client.users().search(
+                ResourceFilter.filter().eq(customSchema + ":assurance.value", "https://refeds.org/assurance/IAP/low").build());
+        assertEquals(1, result.getTotalResults());
+
+        // filter on multivalued .value complex attribute — no match
+        result = client.users().search(
+                ResourceFilter.filter().eq(customSchema + ":assurance.value", "non-existent").build());
+        assertEquals(0, result.getTotalResults());
+
+        // filter on multivalued flat attribute — match one of the values
+        result = client.users().search(
+                ResourceFilter.filter().eq(customSchema + ":affiliation", "member").build());
+        assertEquals(1, result.getTotalResults());
+        assertEquals(user.getId(), result.getResources().get(0).getId());
+
+        // filter on multivalued flat attribute — no match
+        result = client.users().search(
+                ResourceFilter.filter().eq(customSchema + ":affiliation", "non-existent").build());
+        assertEquals(0, result.getTotalResults());
+    }
+
+    @Test
+    public void testIncompatibleMultivaluedSiblingMapping() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+
+        UPAttribute valueAttr = new UPAttribute("assurance", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, customSchema + ":assurance.value"));
+        valueAttr.setMultivalued(true);
+        valueAttr.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(valueAttr);
+
+        UPAttribute siblingAttr = new UPAttribute("assuranceType", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, customSchema + ":assurance.type"));
+        siblingAttr.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(siblingAttr);
+
+        try {
+            realm.admin().users().userProfile().update(upConfig);
+            fail("should fail because multivalued '.value' cannot be combined with sibling sub-attributes");
+        } catch (BadRequestException e) {
+            assertTrue(e.getResponse().getStatus() == 400);
+        }
+    }
+
+    private void setupMultivaluedCustomAttributes(String customSchema) {
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+
+        UPAttribute assuranceAttribute = new UPAttribute("assurance", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, customSchema + ":assurance.value"));
+        assuranceAttribute.setMultivalued(true);
+        assuranceAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(assuranceAttribute);
+
+        UPAttribute affiliationAttribute = new UPAttribute("affiliation", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, customSchema + ":affiliation"));
+        affiliationAttribute.setMultivalued(true);
+        affiliationAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(affiliationAttribute);
+
+        realm.admin().users().userProfile().update(upConfig);
     }
 }
