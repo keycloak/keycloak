@@ -714,7 +714,7 @@ public class SAMLEndpoint {
                         event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                         event.error(Errors.INVALID_SAML_RESPONSE);
                         return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST,
-                                Messages.IDENTITY_PROVIDER_INVALID_SIGNATURE);
+                                Messages.IDENTITY_PROVIDER_INVALID_RESPONSE);
                     }
                 }
 
@@ -1136,10 +1136,13 @@ public class SAMLEndpoint {
      * Calculates the maximum idle time (in seconds) for a OneTimeUse assertion ID.
      * Uses the assertion's notOnOrAfter time if available, otherwise uses a longer default
      * to cover the entire acceptance window when NotOnOrAfter is absent.
+     * Includes configured clock skew to match ConditionsValidator's acceptance window.
      */
     private long calculateOneTimeUseMaxIdleSeconds(org.keycloak.dom.saml.v2.assertion.ConditionsType conditions) {
         if (conditions != null && conditions.getNotOnOrAfter() != null) {
             long maxIdle = conditions.getNotOnOrAfter().toGregorianCalendar().getTimeInMillis() / 1000 - System.currentTimeMillis() / 1000;
+            // Add configured clock skew to match the ConditionsValidator acceptance window
+            maxIdle += config.getAllowedClockSkew();
             // Use the calculated value if positive, otherwise use the default
             if (maxIdle > 0) {
                 return maxIdle;
