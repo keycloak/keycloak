@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.GenericType;
@@ -47,6 +48,7 @@ import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectClient;
@@ -75,6 +77,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -197,6 +200,240 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
         assertFalse(search.isEmpty());
         assertEquals(1, search.size());
+    }
+
+    @Test
+    public void testNegativeAggregateWithUnsupportedChildDeniesWithCompetingAllow() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowAll = createUserPolicy(
+                realm, adminPermissionsClient, "Allow All Users Policy", myadmin.getId());
+        createAllPermission(adminPermissionsClient, usersType, allowAll, Set.of(VIEW));
+
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName())
+                .users().search(null, 0, 50);
+        assertThat(search, hasSize(50));
+
+        TimePolicyRepresentation timePolicy = new TimePolicyRepresentation();
+        timePolicy.setName("Always Matching Time Policy");
+        try (Response response = adminPermissionsClient.authorization().policies().time()
+                .create(timePolicy)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
+
+        AggregatePolicyRepresentation aggregatePolicy = createAggregatedPolicy(
+                adminPermissionsClient, "Negative Aggregate With Time Child Policy",
+                Logic.NEGATIVE, DecisionStrategy.AFFIRMATIVE, timePolicy.getName());
+
+        UserRepresentation deniedUser = realm.admin().users().search("user-15").get(0);
+        createPermission(adminPermissionsClient, deniedUser.getId(), USERS_RESOURCE_TYPE, Set.of(VIEW), aggregatePolicy);
+
+        assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName())
+                .users().get(deniedUser.getId()).toRepresentation());
+
+        search = realmAdminClient.realm(realm.getName())
+                .users().search(deniedUser.getUsername(), 0, 10);
+        assertThat(search, is(empty()));
+        assertThat(realmAdminClient.realm(realm.getName()).users()
+                .count(null, null, null, deniedUser.getUsername()), is(0));
+
+        search = realmAdminClient.realm(realm.getName())
+                .users().search(null, -1, -1);
+        assertThat(search.stream().map(UserRepresentation::getId).toList(),
+                not(hasItems(deniedUser.getId())));
+    }
+
+    @Test
+    public void testAggregatePolicyWithNegativeChildDenyOverridesTypeWideAllow() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowAll = createUserPolicy(
+                realm, adminPermissionsClient, "Allow All Users Policy", myadmin.getId());
+        createAllPermission(adminPermissionsClient, usersType, allowAll, Set.of(VIEW));
+
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName())
+                .users().search(null, 0, 50);
+        assertThat(search, hasSize(50));
+
+        UserPolicyRepresentation denyMyAdmin = createUserPolicy(
+                Logic.NEGATIVE, realm, adminPermissionsClient, "Not My Admin User Policy", myadmin.getId());
+        AggregatePolicyRepresentation aggregatePolicy = createAggregatedPolicy(
+                adminPermissionsClient, "Positive Aggregate With Negative Child Policy",
+                Logic.POSITIVE, DecisionStrategy.AFFIRMATIVE, denyMyAdmin.getName());
+        Set<String> deniedUsers = Set.of("user-0", "user-15", "user-30");
+
+        createPermission(adminPermissionsClient, deniedUsers, usersType, Set.of(VIEW), aggregatePolicy);
+
+        search = realmAdminClient.realm(realm.getName())
+                .users().search(null, -1, -1);
+        assertThat(search.stream().map(UserRepresentation::getUsername).toList(),
+                not(hasItems("user-0", "user-15", "user-30")));
+
+        UserRepresentation deniedUser = realm.admin().users().search("user-15").get(0);
+        assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName())
+                .users().get(deniedUser.getId()).toRepresentation());
+        assertThat(realmAdminClient.realm(realm.getName()).users()
+                .count(null, null, null, deniedUser.getUsername()), is(0));
+    }
+
+    @Test
+    public void testNestedAggregateDenyOverridesTypeWideAllow() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowAll = createUserPolicy(
+                realm, adminPermissionsClient, "Allow All Users Policy", myadmin.getId());
+        createAllPermission(adminPermissionsClient, usersType, allowAll, Set.of(VIEW));
+
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName())
+                .users().search(null, 0, 50);
+        assertThat(search, hasSize(50));
+
+        UserPolicyRepresentation denyMyAdmin = createUserPolicy(
+                Logic.NEGATIVE, realm, adminPermissionsClient, "Not My Admin User Policy", myadmin.getId());
+        AggregatePolicyRepresentation innerAggregate = createAggregatedPolicy(
+                adminPermissionsClient, "Inner Aggregate With Negative Child",
+                Logic.POSITIVE, DecisionStrategy.AFFIRMATIVE, denyMyAdmin.getName());
+        AggregatePolicyRepresentation outerAggregate = createAggregatedPolicy(
+                adminPermissionsClient, "Outer Aggregate Wrapping Inner",
+                Logic.POSITIVE, DecisionStrategy.AFFIRMATIVE, innerAggregate.getName());
+
+        UserRepresentation deniedUser = realm.admin().users().search("user-15").get(0);
+        createPermission(adminPermissionsClient, deniedUser.getId(), USERS_RESOURCE_TYPE, Set.of(VIEW), outerAggregate);
+
+        assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName())
+                .users().get(deniedUser.getId()).toRepresentation());
+
+        search = realmAdminClient.realm(realm.getName())
+                .users().search(deniedUser.getUsername(), 0, 10);
+        assertThat(search, is(empty()));
+        assertThat(realmAdminClient.realm(realm.getName()).users()
+                .count(null, null, null, deniedUser.getUsername()), is(0));
+
+        search = realmAdminClient.realm(realm.getName())
+                .users().search(null, -1, -1);
+        assertThat(search.stream().map(UserRepresentation::getId).toList(),
+                not(hasItems(deniedUser.getId())));
+    }
+
+    @Test
+    public void testGroupPolicyExtendChildrenInsideAggregateDenyOverridesTypeWideAllow() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowAll = createUserPolicy(
+                realm, adminPermissionsClient, "Allow All Users Policy", myadmin.getId());
+        createAllPermission(adminPermissionsClient, usersType, allowAll, Set.of(VIEW));
+
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName())
+                .users().search(null, 0, 50);
+        assertThat(search, hasSize(50));
+
+        GroupRepresentation parentGroup = createGroup("fgap-parent-" + KeycloakModelUtils.generateId());
+        GroupRepresentation childGroup = new GroupRepresentation();
+        childGroup.setName("fgap-child-" + KeycloakModelUtils.generateId());
+        try (Response response = realm.admin().groups().group(parentGroup.getId()).subGroup(childGroup)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+            childGroup.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.admin().users().get(myadmin.getId()).joinGroup(childGroup.getId());
+
+        GroupPolicyRepresentation denyParentSubtree = new GroupPolicyRepresentation();
+        denyParentSubtree.setName("Deny Parent Subtree Policy");
+        denyParentSubtree.setLogic(Logic.NEGATIVE);
+        denyParentSubtree.addGroup(parentGroup.getId(), true);
+        try (Response response = adminPermissionsClient.authorization().policies().group()
+                .create(denyParentSubtree)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
+
+        AggregatePolicyRepresentation aggregatePolicy = createAggregatedPolicy(
+                adminPermissionsClient, "Aggregate Wrapping Group Deny Policy",
+                Logic.POSITIVE, DecisionStrategy.AFFIRMATIVE, denyParentSubtree.getName());
+
+        UserRepresentation deniedUser = realm.admin().users().search("user-15").get(0);
+        createPermission(adminPermissionsClient, deniedUser.getId(), USERS_RESOURCE_TYPE, Set.of(VIEW), aggregatePolicy);
+
+        assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName())
+                .users().get(deniedUser.getId()).toRepresentation());
+
+        search = realmAdminClient.realm(realm.getName())
+                .users().search(deniedUser.getUsername(), 0, 10);
+        assertThat(search, is(empty()));
+        assertThat(realmAdminClient.realm(realm.getName()).users()
+                .count(null, null, null, deniedUser.getUsername()), is(0));
+
+        search = realmAdminClient.realm(realm.getName())
+                .users().search(null, -1, -1);
+        assertThat(search.stream().map(UserRepresentation::getId).toList(),
+                not(hasItems(deniedUser.getId())));
+    }
+
+    @Test
+    public void testAggregatePolicyUnanimousWithMixedChildren() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdmin = createUserPolicy(
+                Logic.POSITIVE, realm, adminPermissionsClient, "Allow My Admin User Policy", myadmin.getId());
+        UserPolicyRepresentation denyMyAdmin = createUserPolicy(
+                Logic.NEGATIVE, realm, adminPermissionsClient, "Deny My Admin User Policy", myadmin.getId());
+        AggregatePolicyRepresentation aggregatePolicy = createAggregatedPolicy(
+                adminPermissionsClient, "Unanimous Aggregate With Mixed Children",
+                Logic.POSITIVE, DecisionStrategy.UNANIMOUS, allowMyAdmin.getName(), denyMyAdmin.getName());
+
+        UserRepresentation deniedUser = realm.admin().users().search("user-15").get(0);
+        createPermission(adminPermissionsClient, deniedUser.getId(), USERS_RESOURCE_TYPE, Set.of(VIEW), aggregatePolicy);
+
+        assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName())
+                .users().get(deniedUser.getId()).toRepresentation());
+
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName())
+                .users().search(deniedUser.getUsername(), 0, 10);
+        assertThat(search, is(empty()));
+        assertThat(realmAdminClient.realm(realm.getName()).users()
+                .count(null, null, null, deniedUser.getUsername()), is(0));
+    }
+
+    @Test
+    public void testAggregateWithSupportedAndUnsupportedChildren() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdmin = createUserPolicy(
+                Logic.POSITIVE, realm, adminPermissionsClient, "Allow My Admin User Policy", myadmin.getId());
+
+        TimePolicyRepresentation timePolicy = new TimePolicyRepresentation();
+        timePolicy.setName("Always Matching Time Policy");
+        try (Response response = adminPermissionsClient.authorization().policies().time()
+                .create(timePolicy)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
+
+        AggregatePolicyRepresentation aggregatePolicy = createAggregatedPolicy(
+                adminPermissionsClient, "Aggregate With Supported And Unsupported Children",
+                Logic.POSITIVE, DecisionStrategy.AFFIRMATIVE, allowMyAdmin.getName(), timePolicy.getName());
+
+        createPermission(adminPermissionsClient, "user-15", usersType, Set.of(VIEW), aggregatePolicy);
+
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName())
+                .users().search("user-15", 0, 10);
+        assertThat(search, hasSize(1));
+        assertThat(search.get(0).getUsername(), is("user-15"));
+    }
+
+    @Test
+    public void testNestedNegativeAggregateWithUnsupportedGrandchildDenies() {
+        TimePolicyRepresentation timePolicy = new TimePolicyRepresentation();
+        timePolicy.setName("Always Matching Time Policy");
+        try (Response response = adminPermissionsClient.authorization().policies().time()
+                .create(timePolicy)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
+
+        AggregatePolicyRepresentation innerAggregate = createAggregatedPolicy(
+                adminPermissionsClient, "Inner Aggregate With Unsupported Child",
+                Logic.POSITIVE, DecisionStrategy.AFFIRMATIVE, timePolicy.getName());
+        AggregatePolicyRepresentation outerAggregate = createAggregatedPolicy(
+                adminPermissionsClient, "Outer Negative Aggregate Wrapping Inner",
+                Logic.NEGATIVE, DecisionStrategy.AFFIRMATIVE, innerAggregate.getName());
+
+        UserRepresentation targetUser = realm.admin().users().search("user-15").get(0);
+        createPermission(adminPermissionsClient, targetUser.getId(), USERS_RESOURCE_TYPE, Set.of(VIEW), outerAggregate);
+
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName())
+                .users().search(targetUser.getUsername(), 0, 10);
+        assertThat(search, is(empty()));
     }
 
     @Test
@@ -460,6 +697,154 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
         assertFalse(search.isEmpty());
         assertEquals(1, search.size());
+    }
+
+    @Test
+    public void testExtendChildrenGroupDenyExcludesDeniedUserFromSearch() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdmin = createUserPolicy(
+                realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createAllPermission(adminPermissionsClient, usersType, allowMyAdmin, Set.of(VIEW));
+
+        GroupRepresentation parentGroup = createGroup("fgap-parent-" + KeycloakModelUtils.generateId());
+        GroupRepresentation childGroup = new GroupRepresentation();
+        childGroup.setName("fgap-child-" + KeycloakModelUtils.generateId());
+        try (Response response = realm.admin().groups().group(parentGroup.getId()).subGroup(childGroup)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+            childGroup.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.admin().users().get(myadmin.getId()).joinGroup(childGroup.getId());
+
+        GroupPolicyRepresentation denyParentSubtree = new GroupPolicyRepresentation();
+        denyParentSubtree.setName("Deny Parent Subtree Policy");
+        denyParentSubtree.setLogic(Logic.NEGATIVE);
+        denyParentSubtree.addGroup(parentGroup.getId(), true);
+        try (Response response = adminPermissionsClient.authorization().policies().group()
+                .create(denyParentSubtree)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
+
+        UserRepresentation deniedUser = realm.admin().users().search("user-15").get(0);
+        createPermission(adminPermissionsClient, deniedUser.getId(), USERS_RESOURCE_TYPE, Set.of(VIEW), denyParentSubtree);
+
+        assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName())
+                .users().get(deniedUser.getId()).toRepresentation());
+
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName())
+                .users().search(deniedUser.getUsername(), 0, 10);
+        assertThat(search.stream().map(UserRepresentation::getId).toList(),
+                not(hasItems(deniedUser.getId())));
+        assertThat(realmAdminClient.realm(realm.getName()).users()
+                .count(null, null, null, deniedUser.getUsername()), is(0));
+    }
+
+    @Test
+    public void testExtendChildrenGroupDenyThreeLevelHierarchy() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdmin = createUserPolicy(
+                realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createAllPermission(adminPermissionsClient, usersType, allowMyAdmin, Set.of(VIEW));
+
+        GroupRepresentation grandparentGroup = createGroup("fgap-grandparent-" + KeycloakModelUtils.generateId());
+        GroupRepresentation parentGroup = new GroupRepresentation();
+        parentGroup.setName("fgap-parent-" + KeycloakModelUtils.generateId());
+        try (Response response = realm.admin().groups().group(grandparentGroup.getId()).subGroup(parentGroup)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+            parentGroup.setId(ApiUtil.getCreatedId(response));
+        }
+        GroupRepresentation childGroup = new GroupRepresentation();
+        childGroup.setName("fgap-child-" + KeycloakModelUtils.generateId());
+        try (Response response = realm.admin().groups().group(parentGroup.getId()).subGroup(childGroup)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+            childGroup.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.admin().users().get(myadmin.getId()).joinGroup(childGroup.getId());
+
+        GroupPolicyRepresentation denyGrandparentSubtree = new GroupPolicyRepresentation();
+        denyGrandparentSubtree.setName("Deny Grandparent Subtree Policy");
+        denyGrandparentSubtree.setLogic(Logic.NEGATIVE);
+        denyGrandparentSubtree.addGroup(grandparentGroup.getId(), true);
+        try (Response response = adminPermissionsClient.authorization().policies().group()
+                .create(denyGrandparentSubtree)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
+
+        UserRepresentation deniedUser = realm.admin().users().search("user-15").get(0);
+        createPermission(adminPermissionsClient, deniedUser.getId(), USERS_RESOURCE_TYPE, Set.of(VIEW), denyGrandparentSubtree);
+
+        assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName())
+                .users().get(deniedUser.getId()).toRepresentation());
+
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName())
+                .users().search(deniedUser.getUsername(), 0, 10);
+        assertThat(search.stream().map(UserRepresentation::getId).toList(),
+                not(hasItems(deniedUser.getId())));
+        assertThat(realmAdminClient.realm(realm.getName()).users()
+                .count(null, null, null, deniedUser.getUsername()), is(0));
+    }
+
+    @Test
+    public void testExactGroupPolicyOnParentDoesNotDenyChildMember() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+
+        GroupRepresentation parentGroup = createGroup("fgap-exact-parent-" + KeycloakModelUtils.generateId());
+        GroupRepresentation childGroup = new GroupRepresentation();
+        childGroup.setName("fgap-exact-child-" + KeycloakModelUtils.generateId());
+        try (Response response = realm.admin().groups().group(parentGroup.getId()).subGroup(childGroup)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+            childGroup.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.admin().users().get(myadmin.getId()).joinGroup(childGroup.getId());
+
+        GroupPolicyRepresentation exactParentPolicy = new GroupPolicyRepresentation();
+        exactParentPolicy.setName("Exact Parent Group Policy");
+        exactParentPolicy.setLogic(Logic.POSITIVE);
+        exactParentPolicy.addGroup(parentGroup.getId(), false);
+        try (Response response = adminPermissionsClient.authorization().policies().group()
+                .create(exactParentPolicy)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
+
+        UserPolicyRepresentation allowMyAdmin = createUserPolicy(
+                realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createAllPermission(adminPermissionsClient, usersType, allowMyAdmin, Set.of(VIEW));
+
+        UserRepresentation targetUser = realm.admin().users().search("user-15").get(0);
+        createPermission(adminPermissionsClient, targetUser.getId(), USERS_RESOURCE_TYPE, Set.of(VIEW), exactParentPolicy);
+
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName())
+                .users().search(targetUser.getUsername(), 0, 10);
+        assertThat(search.stream().map(UserRepresentation::getId).toList(),
+                hasItems(targetUser.getId()));
+        assertThat(realmAdminClient.realm(realm.getName()).users()
+                .count(null, null, null, targetUser.getUsername()), is(1));
+    }
+
+    @Test
+    public void testMultiDefinitionGroupPolicyGrantsWhenOneDefinitionMatches() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+
+        GroupRepresentation unrelatedGroup = createGroup("fgap-unrelated-" + KeycloakModelUtils.generateId());
+        GroupRepresentation adminGroup = createGroup("fgap-admin-direct-" + KeycloakModelUtils.generateId());
+        realm.admin().users().get(myadmin.getId()).joinGroup(adminGroup.getId());
+
+        GroupPolicyRepresentation multiGroupPolicy = new GroupPolicyRepresentation();
+        multiGroupPolicy.setName("Multi Group Policy");
+        multiGroupPolicy.setLogic(Logic.POSITIVE);
+        multiGroupPolicy.addGroup(unrelatedGroup.getId(), false);
+        multiGroupPolicy.addGroup(adminGroup.getId(), false);
+        try (Response response = adminPermissionsClient.authorization().policies().group()
+                .create(multiGroupPolicy)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
+
+        UserRepresentation targetUser = realm.admin().users().search("user-15").get(0);
+        createPermission(adminPermissionsClient, targetUser.getId(), USERS_RESOURCE_TYPE, Set.of(VIEW), multiGroupPolicy);
+
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName())
+                .users().search(targetUser.getUsername(), 0, 10);
+        assertThat(search.stream().map(UserRepresentation::getId).toList(),
+                hasItems(targetUser.getId()));
     }
 
     @Test
