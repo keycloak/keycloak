@@ -71,10 +71,7 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void defaultValues() {
-        UserRepresentation defaultUser = AdminApiUtil.findUserByUsername(managedRealm.admin(), USERNAME);
-        if (defaultUser != null) {
-            managedRealm.admin().users().delete(defaultUser.getId());
-        }
+        removeDefaultUser();
 
         registerDefaultUser("webauthn");
 
@@ -138,10 +135,7 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
         final int timeout = 3; // seconds
 
 
-        UserRepresentation defaultUser = AdminApiUtil.findUserByUsername(managedRealm.admin(), USERNAME);
-        if (defaultUser != null) {
-            managedRealm.admin().users().delete(defaultUser.getId());
-        }
+        removeDefaultUser();
 
         getVirtualAuthManager().removeAuthenticator();
         setWebAuthnPolicyCreateTimeout(timeout);
@@ -175,43 +169,54 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void excludeCredentials() {
-        UserRepresentation defaultUser = AdminApiUtil.findUserByUsername(managedRealm.admin(), USERNAME);
-        if (defaultUser != null) {
-            managedRealm.admin().users().delete(defaultUser.getId());
-        }
+        removeDefaultUser();
 
         setAcceptableAaguidsWithDirectAttestation(List.of(ALL_ZERO_AAGUID));
 
         disableTruststoreSpi();
+        try {
+            assertThat(getAcceptableAaguids(), Matchers.contains(ALL_ZERO_AAGUID));
+
+            registerDefaultUser();
+
+            webAuthnErrorPage.assertCurrent();
+            assertThat(webAuthnErrorPage.getError(), containsString("This security key model is not allowed (AAGUID " + CHROME_AAGUID + "). Please use a different security key."));
+        } finally {
+            reenableTruststoreSpi();
+        }
+    }
+
+    @Test
+    public void excludeCredentialsSuccess() {
+        removeDefaultUser();
+
+        setAcceptableAaguidsWithDirectAttestation(List.of(CHROME_AAGUID));
+
+        disableTruststoreSpi();
+        try {
+            assertThat(getAcceptableAaguids(), Matchers.contains(CHROME_AAGUID));
+
+            registerDefaultUser();
+
+            Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
+        } finally {
+            reenableTruststoreSpi();
+        }
+    }
+
+    @Test
+    public void excludeCredentialsUsingNone() {
+        removeDefaultUser();
+
+        // Acceptable AAGUIDs restricted, but attestation left at the default (none): registration must be rejected
+        setAcceptableAaguids(List.of(ALL_ZERO_AAGUID));
 
         assertThat(getAcceptableAaguids(), Matchers.contains(ALL_ZERO_AAGUID));
 
         registerDefaultUser();
 
         webAuthnErrorPage.assertCurrent();
-        assertThat(webAuthnErrorPage.getError(), containsString("This security key model is not allowed (AAGUID " + CHROME_AAGUID + "). Please use a different security key."));
-
-        reenableTruststoreSpi();
-    }
-
-    @Test
-    public void excludeCredentialsSuccess() {
-        UserRepresentation defaultUser = AdminApiUtil.findUserByUsername(managedRealm.admin(), USERNAME);
-        if (defaultUser != null) {
-            managedRealm.admin().users().delete(defaultUser.getId());
-        }
-
-        setAcceptableAaguidsWithDirectAttestation(List.of(CHROME_AAGUID));
-
-        disableTruststoreSpi();
-
-        assertThat(getAcceptableAaguids(), Matchers.contains(CHROME_AAGUID));
-
-        registerDefaultUser();
-
-        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
-
-        reenableTruststoreSpi();
+        assertThat(webAuthnErrorPage.getError(), containsString("Your organization requires verified security keys. Attestation format 'none' is not accepted; please use a key that provides attestation."));
     }
 
     @Test
@@ -224,10 +229,7 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
     @Test
     public void apiInvalidStateErrorMessage() {
 
-        UserRepresentation defaultUser = AdminApiUtil.findUserByUsername(managedRealm.admin(), USERNAME);
-        if (defaultUser != null) {
-            managedRealm.admin().users().delete(defaultUser.getId());
-        }
+        removeDefaultUser();
 
         registerDefaultUser();
         UserRepresentation user = userResource().toRepresentation();
@@ -254,10 +256,7 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
     @Test
     public void apiSecurityErrorMessage() {
 
-        UserRepresentation defaultUser = AdminApiUtil.findUserByUsername(managedRealm.admin(), USERNAME);
-        if (defaultUser != null) {
-            managedRealm.admin().users().delete(defaultUser.getId());
-        }
+        removeDefaultUser();
 
         setWebAuthnPolicyRpId("invalid.example.com");
 
@@ -274,10 +273,7 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
 
     private void assertBrowserApiErrorMessage(Consumer<VirtualAuthenticatorOptions> optionsConsumer, String expectedMessage) {
         // remove the pre-created default user to register it fresh
-        UserRepresentation defaultUser = AdminApiUtil.findUserByUsername(managedRealm.admin(), USERNAME);
-        if (defaultUser != null) {
-            managedRealm.admin().users().delete(defaultUser.getId());
-        }
+        removeDefaultUser();
 
         getVirtualAuthManager().removeAuthenticator();
         VirtualAuthenticatorOptions options = getDefaultAuthenticatorOptions();
@@ -298,6 +294,19 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
 
     private String registerProviderId() {
         return isPasswordless() ? WebAuthnPasswordlessRegisterFactory.PROVIDER_ID : WebAuthnRegisterFactory.PROVIDER_ID;
+    }
+
+    private void removeDefaultUser() {
+        UserRepresentation defaultUser = AdminApiUtil.findUserByUsername(managedRealm.admin(), USERNAME);
+        if (defaultUser != null) {
+            managedRealm.admin().users().delete(defaultUser.getId());
+        }
+    }
+
+    private void setAcceptableAaguids(List<String> aaguids) {
+        managedRealm.updateWithCleanup(r -> isPasswordless()
+                ? r.webAuthnPolicyPasswordlessAcceptableAaguids(aaguids)
+                : r.webAuthnPolicyAcceptableAaguids(aaguids));
     }
 
     private List<String> getAcceptableAaguids() {
