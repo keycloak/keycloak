@@ -54,6 +54,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.StripSecretsUtils;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
@@ -196,6 +197,9 @@ public class IdentityProviderResource {
         if (!identityProviderModel.getInternalId().equals(providerRep.getInternalId())) {
             providerRep.setInternalId(identityProviderModel.getInternalId());
         }
+
+        // organization-related information should not be processed by non-organization API
+        Organizations.stripOrganizationId(providerRep);
 
         IdentityProviderModel updated = RepresentationToModel.toModel(realm, providerRep, session);
 
