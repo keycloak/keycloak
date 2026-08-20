@@ -82,6 +82,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
@@ -671,23 +672,47 @@ public class SAMLEndpoint {
                     identity.setToken(samlResponse);
                 }
 
-                ConditionsValidator.Builder cvb = new ConditionsValidator.Builder(assertion.getID(), assertion.getConditions(), destinationValidator)
-                        .clockSkewInMillis(1000 * config.getAllowedClockSkew());
+                ConditionsValidator validator;
                 try {
+                    ConditionsValidator.Builder cvb = new ConditionsValidator.Builder(assertion.getID(), assertion.getConditions(), destinationValidator)
+                            .clockSkewInMillis(1000 * config.getAllowedClockSkew());
                     String issuerURL = getEntityId(session.getContext().getUri(), realm);
                     cvb.addAllowedAudience(URI.create(issuerURL));
                     // getDestination has been validated to match request URL already so it matches SAML endpoint
                     if (responseType.getDestination() != null) {
                         cvb.addAllowedAudience(URI.create(responseType.getDestination()));
                     }
+                    validator = cvb.build();
                 } catch (IllegalArgumentException ex) {
                     // warning has been already emitted in DeploymentBuilder
+                    validator = new ConditionsValidator.Builder(assertion.getID(), assertion.getConditions(), destinationValidator)
+                            .clockSkewInMillis(1000 * config.getAllowedClockSkew())
+                            .build();
                 }
-                if (! cvb.build().isValid()) {
+
+                // Validate expiration
+                if (! validator.isValid()) {
                     logger.error("Assertion expired.");
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SAML_RESPONSE);
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.EXPIRED_CODE);
+                }
+
+                // CVE-2026-18967: Prevent OneTimeUse assertion replay attacks
+                if (validator.isOneTimeUse()) {
+                    String assertionId = assertion.getID();
+                    SingleUseObjectProvider singleUseObjects = session.singleUseObjects();
+                    // Calculate lifespan: use notOnOrAfter minus current time, with a reasonable maximum
+                    long maxIdleSeconds = calculateOneTimeUseMaxIdleSeconds(assertion.getConditions());
+                    // Atomically check-and-insert: returns true only if the assertion ID was not already present
+                    if (! singleUseObjects.putIfAbsent(assertionId, maxIdleSeconds)) {
+                        logger.warnf("Assertion %s contains OneTimeUse but was already used (potential replay attack).",
+                                assertionId);
+                        event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                        event.error(Errors.INVALID_SAML_RESPONSE);
+                        return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST,
+                                Messages.IDENTITY_PROVIDER_INVALID_SIGNATURE);
+                    }
                 }
 
                 AuthnStatementType authn = null;
@@ -1102,5 +1127,21 @@ public class SAMLEndpoint {
         }
 
         return true;
+    }
+
+    /**
+     * Calculates the maximum idle time (in seconds) for a OneTimeUse assertion ID.
+     * Uses the assertion's notOnOrAfter time if available, otherwise falls back to a default.
+     */
+    private long calculateOneTimeUseMaxIdleSeconds(org.keycloak.dom.saml.v2.assertion.ConditionsType conditions) {
+        if (conditions != null && conditions.getNotOnOrAfter() != null) {
+            long maxIdle = conditions.getNotOnOrAfter().toGregorianCalendar().getTimeInMillis() / 1000 - System.currentTimeMillis() / 1000;
+            // Use the calculated value if positive, otherwise use the default
+            if (maxIdle > 0) {
+                return maxIdle;
+            }
+        }
+        // Default to 1 hour as a safe upper bound for OneTimeUse assertion replay window
+        return 3600;
     }
 }
