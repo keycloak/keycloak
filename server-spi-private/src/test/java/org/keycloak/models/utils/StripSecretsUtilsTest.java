@@ -22,10 +22,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -94,10 +96,10 @@ public class StripSecretsUtilsTest {
 
         StripSecretsUtils.stripClient(rep);
         assertEquals("clientId", rep.getId());
-        assertEquals("**********", rep.getSecret());
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getSecret());
         assertEquals(2, rep.getAttributes().size());
         assertEquals("clientAttr1Value", rep.getAttributes().get("clientAttr1"));
-        assertEquals("**********", rep.getAttributes().get("client.secret.rotated"));
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getAttributes().get("client.secret.rotated"));
     }
     @Test
     public void stripClientSecretsFromVault() {
@@ -127,7 +129,7 @@ public class StripSecretsUtilsTest {
         StripSecretsUtils.stripBroker(rep);
         assertEquals("brokerId", rep.getInternalId());
         assertEquals(2, rep.getConfig().size());
-        assertEquals("**********", rep.getConfig().get("clientSecret"));
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getConfig().get("clientSecret"));
         assertEquals("configValue1", rep.getConfig().get("configParam1"));
     }
 
@@ -138,7 +140,7 @@ public class StripSecretsUtilsTest {
         rep.setValue("secretValue");
         StripSecretsUtils.stripCredentials(rep);
         assertEquals("test", rep.getId());
-        assertEquals("**********", rep.getValue());
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getValue());
     }
 
     @Test
@@ -167,10 +169,10 @@ public class StripSecretsUtilsTest {
         assertEquals("componentId", rep.getId());
         assertEquals("componentName", rep.getName());
         assertEquals(2, rep.getConfig().get("secret").size());
-        assertEquals("**********", rep.getConfig().get("secret").get(0));
-        assertEquals("**********", rep.getConfig().get("secret").get(1));
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getConfig().get("secret").get(0));
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getConfig().get("secret").get(1));
         assertEquals(1, rep.getConfig().get("secretWithoutValues").size());
-        assertEquals("**********", rep.getConfig().get("secretWithoutValues").get(0));
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getConfig().get("secretWithoutValues").get(0));
         assertEquals(2, rep.getConfig().get("nonSecret").size());
         assertEquals("nonSecretValue1", rep.getConfig().get("nonSecret").get(0));
         assertEquals("nonSecretValue2", rep.getConfig().get("nonSecret").get(1));
@@ -243,20 +245,20 @@ public class StripSecretsUtilsTest {
         assertEquals("Master", rep.getRealm());
         assertEquals("realmId", rep.getId());
         assertEquals(2, rep.getSmtpServer().size());
-        assertEquals("**********", rep.getSmtpServer().get("password"));
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getSmtpServer().get("password"));
         assertEquals("smtpUser", rep.getSmtpServer().get("user"));
 
         assertEquals(1, rep.getClients().size());
         assertEquals("clientId", rep.getClients().get(0).getId());
-        assertEquals("**********", rep.getClients().get(0).getSecret());
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getClients().get(0).getSecret());
         assertEquals(2, rep.getClients().get(0).getAttributes().size());
         assertEquals("clientAttr1Value", rep.getClients().get(0).getAttributes().get("clientAttr1"));
-        assertEquals("**********", rep.getClients().get(0).getAttributes().get("client.secret.rotated"));
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getClients().get(0).getAttributes().get("client.secret.rotated"));
 
         assertEquals(1, rep.getIdentityProviders().size());
         assertEquals(2, rep.getIdentityProviders().get(0).getConfig().size());
         assertEquals("idpConfig1Value", rep.getIdentityProviders().get(0).getConfig().get("idpConfig1"));
-        assertEquals("**********", rep.getIdentityProviders().get(0).getConfig().get("clientSecret"));
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getIdentityProviders().get(0).getConfig().get("clientSecret"));
 
 
         assertEquals(1, rep.getUsers().size());
@@ -272,13 +274,78 @@ public class StripSecretsUtilsTest {
         MultivaluedHashMap<String, String> componentExportConfig = rep.getComponents().get("componentExport").get(0).getConfig();
         assertNotNull(componentExportConfig);
         assertEquals(2, componentExportConfig.get("secret").size());
-        assertEquals("**********", componentExportConfig.get("secret").get(0));
-        assertEquals("**********", componentExportConfig.get("secret").get(1));
+        assertEquals(ComponentRepresentation.SECRET_VALUE, componentExportConfig.get("secret").get(0));
+        assertEquals(ComponentRepresentation.SECRET_VALUE, componentExportConfig.get("secret").get(1));
         assertEquals(1, componentExportConfig.get("secretWithoutValues").size());
-        assertEquals("**********", componentExportConfig.get("secretWithoutValues").get(0));
+        assertEquals(ComponentRepresentation.SECRET_VALUE, componentExportConfig.get("secretWithoutValues").get(0));
         assertEquals(2, componentExportConfig.get("nonSecret").size());
         assertEquals("nonSecret1", componentExportConfig.get("nonSecret").get(0));
         assertEquals("nonSecret2", componentExportConfig.get("nonSecret").get(1));
+    }
+
+    @Test
+    public void stripAuthenticatorConfig() {
+        AuthenticatorConfigRepresentation rep = new AuthenticatorConfigRepresentation();
+        rep.setId("configId");
+        rep.setAlias("configAlias");
+        Map<String, String> config = new HashMap<>();
+        config.put("secret.key", "raw-secret-value");
+        config.put("site.key", "non-secret-value");
+        rep.setConfig(config);
+
+        Set<String> nonSecretNames = Set.of("site.key");
+
+        StripSecretsUtils.stripAuthenticatorConfig(nonSecretNames, rep);
+
+        assertEquals("configId", rep.getId());
+        assertEquals("configAlias", rep.getAlias());
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getConfig().get("secret.key"));
+        assertEquals("non-secret-value", rep.getConfig().get("site.key"));
+    }
+
+    @Test
+    public void stripAuthenticatorConfigUnknownKeysMasked() {
+        AuthenticatorConfigRepresentation rep = new AuthenticatorConfigRepresentation();
+        rep.setId("configId");
+        Map<String, String> config = new HashMap<>();
+        config.put("secret.key", "raw-secret-value");
+        config.put("secret", "legacy-secret-value");
+        config.put("site.key", "non-secret-value");
+        rep.setConfig(config);
+
+        Set<String> nonSecretNames = Set.of("site.key");
+
+        StripSecretsUtils.stripAuthenticatorConfig(nonSecretNames, rep);
+
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getConfig().get("secret.key"));
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getConfig().get("secret"));
+        assertEquals("non-secret-value", rep.getConfig().get("site.key"));
+    }
+
+    @Test
+    public void stripAuthenticatorConfigVaultUnaffected() {
+        AuthenticatorConfigRepresentation rep = new AuthenticatorConfigRepresentation();
+        rep.setId("configId");
+        Map<String, String> config = new HashMap<>();
+        config.put("secret.key", "${vault.recaptcha-secret}");
+        rep.setConfig(config);
+
+        Set<String> nonSecretNames = Set.of("site.key");
+
+        StripSecretsUtils.stripAuthenticatorConfig(nonSecretNames, rep);
+
+        assertEquals("${vault.recaptcha-secret}", rep.getConfig().get("secret.key"));
+    }
+
+    @Test
+    public void stripAuthenticatorConfigNullConfig() {
+        AuthenticatorConfigRepresentation rep = new AuthenticatorConfigRepresentation();
+        rep.setId("configId");
+        rep.setConfig(null);
+
+        StripSecretsUtils.stripAuthenticatorConfig(Set.of("site.key"), rep);
+
+        assertNull(rep.getConfig());
     }
 
 }
