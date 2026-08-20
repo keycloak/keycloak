@@ -3,7 +3,13 @@ package org.keycloak.tests.broker;
 import java.util.List;
 import java.util.Set;
 
+import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
+import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
@@ -115,6 +121,22 @@ public interface BrokerConfigSupport {
                 .anyMatch(user -> user.getUsername().equals(getUserLogin()) && user.getEmail().equals(getUserEmail()));
         Assertions.assertTrue(isUserFound,
                 "There must be user " + getUserLogin() + " in consumer realm");
+    }
+
+    default void disableUpdateProfileOnFirstLogin() {
+        var flows = getConsumerRealm().admin().flows();
+        for (AuthenticationExecutionInfoRepresentation execution :
+                flows.getExecutions(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW)) {
+            if (IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID.equals(execution.getProviderId())) {
+                execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE.name());
+                flows.updateExecutions(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW, execution);
+            } else if (execution.getAlias() != null
+                    && execution.getAlias().equals(DefaultAuthenticationFlows.IDP_REVIEW_PROFILE_CONFIG_ALIAS)) {
+                AuthenticatorConfigRepresentation config = flows.getAuthenticatorConfig(execution.getAuthenticationConfig());
+                config.getConfig().put("update.profile.on.first.login", IdentityProviderRepresentation.UPFLM_OFF);
+                flows.updateAuthenticatorConfig(config.getId(), config);
+            }
+        }
     }
 
     default void assertNumFederatedIdentities(String username, int expected) {
