@@ -200,6 +200,17 @@ public class ConditionsValidator {
         return false;
     }
 
+    /**
+     * Returns true if the conditions contain a NotOnOrAfter element.
+     * @return true if NotOnOrAfter is present
+     */
+    public boolean hasNotOnOrAfter() {
+        if (conditions instanceof ConditionsType) {
+            return ((ConditionsType) conditions).getNotOnOrAfter() != null;
+        }
+        return false;
+    }
+
     private boolean hasOneTimeUseCondition(ConditionsType conditionsType) {
         if (conditionsType.getConditions() == null) {
             return false;

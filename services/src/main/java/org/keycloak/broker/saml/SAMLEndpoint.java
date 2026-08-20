@@ -702,6 +702,17 @@ public class SAMLEndpoint {
 
                 // CVE-2026-18967: Prevent OneTimeUse assertion replay attacks
                 if (validator.isOneTimeUse()) {
+                    // Reject OneTimeUse assertions without a finite validity window.
+                    // Without NotOnOrAfter the assertion is valid indefinitely per SAML spec,
+                    // so we cannot provide meaningful replay protection.
+                    if (! validator.hasNotOnOrAfter()) {
+                        logger.warnf("Assertion contains OneTimeUse but no NotOnOrAfter condition (cannot enforce replay protection). AssertionId=%s, realm=%s, idp=%s",
+                                assertion.getID(), realm.getName(), config.getAlias());
+                        event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                        event.error(Errors.INVALID_SAML_RESPONSE);
+                        return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST,
+                                Messages.IDENTITY_PROVIDER_INVALID_RESPONSE);
+                    }
                     SingleUseObjectProvider singleUseObjects = session.singleUseObjects();
                     // Calculate lifespan: use notOnOrAfter minus current time, with a reasonable maximum
                     long maxIdleSeconds = calculateOneTimeUseMaxIdleSeconds(assertion.getConditions());
