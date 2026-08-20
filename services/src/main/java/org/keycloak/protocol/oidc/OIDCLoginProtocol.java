@@ -582,8 +582,16 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
     @Override
     public void authenticationComplete(AuthenticationSessionModel authSession) {
-        // Authorization servers that enforce one-time use of request_uri values do so at the point of authorization,
-        // not at the point of visiting the authorization endpoint
+        // Authorization servers that enforce one-time use of request_uri values do so at the point of
+        // authorization, not at the point of visiting the authorization endpoint.
+        //
+        // This is an existence-only check: removing the entry consumes the request_uri and, when
+        // several flows started from the same request_uri before completion, acts as the "first flow
+        // to complete wins" arbiter (later flows get null and are rejected). It must stay
+        // existence-only: do NOT additionally re-check PAR_CREATED_TIME / requestUriLifespan here. A
+        // valid but slow login legitimately runs past that redemption window, and re-checking it at
+        // completion would turn the request_uri lifetime back into a cap on the maximum login
+        // duration. The redemption window is already enforced at /auth (AuthzEndpointParParser).
         String requestUri = authSession.getAuthNote(Constants.AUTHORIZATION_REQUEST_URI);
         RequestUriType requestUriType = Optional.ofNullable(requestUri)
                 .map(AuthorizationEndpointRequestParserProcessor::getRequestUriType)

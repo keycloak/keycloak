@@ -40,6 +40,7 @@ import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseObjectProvider;
+import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
@@ -183,7 +184,25 @@ public class ParEndpoint extends AbstractParEndpoint {
         }
 
         SingleUseObjectProvider singleUseStore = session.singleUseObjects();
-        singleUseStore.put(CACHE_KEY_PREFIX + key, expiresIn, params);
+        // The PAR entry is subject to three independent concerns that must be kept separate:
+        //
+        //  1. Redemption window (RFC 9126, sections 2.2 and 4): how long the client may present the
+        //     request_uri at the authorization endpoint. This is 'expiresIn' (parRequestUriLifespan),
+        //     returned to the client as 'expires_in' below and enforced on every /auth call by the
+        //     explicit PAR_CREATED_TIME value check in AuthzEndpointParParser - not by the store TTL.
+        //  2. One-time use: the entry is consumed only at authorization completion
+        //     (OIDCLoginProtocol.authenticationComplete), which also acts as the "first flow to
+        //     complete wins" arbiter. Reuse of the request_uri before completion (page reload,
+        //     back/forward, the FAPI2 CT 'reused-request-uri-prior-to-auth-completion') must still
+        //     succeed, so the entry has to stay readable for the whole interactive login.
+        //  3. Storage lifetime (this value): a pure garbage-collection bound. It must outlive the
+        //     interactive login; otherwise a login longer than the (short, default 60s) redemption
+        //     window finds the entry already evicted at completion and fails with "PAR not found ...".
+        //     It must therefore NOT be sized to the redemption window. The login is bounded by the
+        //     authentication session lifespan, so bind the storage lifetime to that, plus the
+        //     redemption window since the request_uri may be redeemed at the very end of it.
+        int storeLifespan = expiresIn + SessionExpiration.getAuthSessionLifespan(realm);
+        singleUseStore.put(CACHE_KEY_PREFIX + key, storeLifespan, params);
 
         ParResponse parResponse = new ParResponse(requestUri, expiresIn);
 
