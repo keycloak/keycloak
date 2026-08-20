@@ -1500,10 +1500,8 @@ public class TokenManager {
                 int notBeforeClient = clientModel.getNotBefore();
                 int notBeforeRealm = clientModel.getRealm().getNotBefore();
 
-                int notBefore = (notBeforeClient == 0 ? notBeforeRealm : (notBeforeRealm == 0 ? notBeforeClient :
-                        Math.min(notBeforeClient, notBeforeRealm)));
-
-                return new NotBeforeCheck(notBefore);
+                // A token must be issued after both the realm and the client notBefore revocation timestamps, 0 means "not set".
+                return new NotBeforeCheck(Math.max(notBeforeClient, notBeforeRealm));
             }
 
             return new NotBeforeCheck(0);
