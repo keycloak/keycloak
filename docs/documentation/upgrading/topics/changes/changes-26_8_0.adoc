@@ -82,6 +82,14 @@ If you were previously using delegation with the `impersonation` role, you need 
 
 FGAP V1 does not support delegation permissions.
 
+=== Token exchange delegation scope renamed from `delegation` to `delegation:user`
+
+The parameterized client scope used by the experimental token exchange delegation feature has been renamed from `delegation` to `delegation:user` to better reflect that this scope targets delegation to a specific user (administrator).
+
+The full scope format in token requests changes from `delegation:<administrator>` to `delegation:user:<administrator>`. For example, a scope value that was previously `delegation:admin1` is now `delegation:user:admin1`.
+
+If you have clients or automation that request the `delegation` scope, update them to use `delegation:user` instead.
+
 === Email is no longer marked as verified by other flows
 
 Previously, some flows marked the email of a user as verified even though their purpose was not email verification.
