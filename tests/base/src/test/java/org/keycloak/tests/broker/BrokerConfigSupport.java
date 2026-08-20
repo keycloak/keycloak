@@ -17,8 +17,10 @@ import org.keycloak.testframework.ui.page.IdpReviewUserProfilePage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.AccountHelper;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.openqa.selenium.TimeoutException;
 
 public interface BrokerConfigSupport {
@@ -39,6 +41,12 @@ public interface BrokerConfigSupport {
     IdpReviewUserProfilePage getUpdateProfilePage();
 
     String getIdpAlias();
+
+    @BeforeEach
+    default void enableUnmanagedAttributes() {
+        UserProfileUtil.enableUnmanagedAttributes(getConsumerRealm().admin().users().userProfile());
+        UserProfileUtil.enableUnmanagedAttributes(getProviderRealm().admin().users().userProfile());
+    }
 
     default String getUserLogin() {
         return USER_LOGIN;
