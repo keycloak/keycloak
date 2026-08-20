@@ -119,7 +119,8 @@ public class SamlIdentityProviderStoreTokenV2Test implements InterfaceIdentityPr
     static class IdentityBrokeringAPIV2ServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.IDENTITY_BROKERING_API_V2);
+            return config.features(Profile.Feature.IDENTITY_BROKERING_API_V2)
+                    .dependency("org.keycloak.tests", "keycloak-tests-custom-providers");
         }
     }
 }

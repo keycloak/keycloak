@@ -2,6 +2,7 @@ package org.keycloak.testframework.ui.page;
 
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -44,6 +45,11 @@ public class PasswordPage extends AbstractLoginPage {
         submitButton.click();
     }
 
+    public void login(String password) {
+        fillPassword(password);
+        submit();
+    }
+
     public String getPassword() {
         return passwordInput.getAttribute("value");
     }
@@ -66,6 +72,14 @@ public class PasswordPage extends AbstractLoginPage {
 
     public void clickTryAnotherWayLink() {
         tryAnotherWayLink.click();
+    }
+
+    public void assertTryAnotherWayLinkAvailability(boolean expectedAvailability) {
+        try {
+            Assertions.assertEquals(expectedAvailability, tryAnotherWayLink.isDisplayed());
+        } catch (NoSuchElementException e) {
+            Assertions.assertFalse(expectedAvailability);
+        }
     }
 
     @Override

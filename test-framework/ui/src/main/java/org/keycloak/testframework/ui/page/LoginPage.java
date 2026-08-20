@@ -54,6 +54,16 @@ public class LoginPage extends AbstractLoginPage {
         passwordInput.sendKeys(password);
     }
 
+    public void login(String username, String password) {
+        fillLogin(username, password);
+        submit();
+    }
+
+    public void login(String password) {
+        fillPassword(password);
+        submit();
+    }
+
     public void submit() {
         submitButton.click();
     }
@@ -143,6 +153,30 @@ public class LoginPage extends AbstractLoginPage {
         } catch (NoSuchElementException e) {
             return false;
         }
+    }
+
+    public boolean isRegisterLinkPresent() {
+        return !driver.driver().findElements(By.linkText("Register")).isEmpty();
+    }
+
+    public boolean isUsernameInputEnabled() {
+        return isUsernameInputPresent() && usernameInput.isEnabled();
+    }
+
+    public String getInputError() {
+        String usernameError = getUsernameInputError();
+        if (usernameError != null && !usernameError.isBlank()) {
+            return usernameError;
+        }
+        return getPasswordInputError().orElse(null);
+    }
+
+    public String getError() {
+        return getErrorMessage().orElse(null);
+    }
+
+    public String getInstruction() {
+        return getInfoMessage().orElse(null);
     }
 
     public boolean isSwitchOrganizationPresent() {

@@ -14,6 +14,18 @@ public class NavigateUtils {
         driver.driver().navigate().refresh();
     }
 
+    public static void to(String url) {
+        ManagedWebDriver.currentDriver().navigate().to(url);
+    }
+
+    public static void back() {
+        ManagedWebDriver.currentDriver().navigate().back();
+    }
+
+    public static void forward() {
+        ManagedWebDriver.currentDriver().navigate().forward();
+    }
+
     public void backWithRefresh(AbstractPage expectedPage) {
         driver.driver().navigate().back();
 

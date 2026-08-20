@@ -55,6 +55,10 @@ public class LoginPasswordUpdatePage extends AbstractLoginPage {
         submitButton.click();
     }
 
+    public void updatePasswords(String newPassword, String passwordConfirm) {
+        changePassword(newPassword, passwordConfirm);
+    }
+
     public void cancel() {
         cancelAIAButton.click();
     }

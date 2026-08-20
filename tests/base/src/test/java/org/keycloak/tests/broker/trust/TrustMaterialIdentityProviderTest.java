@@ -327,7 +327,8 @@ public class TrustMaterialIdentityProviderTest {
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.CLIENT_AUTH_ABCA);
+            return config.features(Profile.Feature.CLIENT_AUTH_ABCA)
+                    .dependency("org.keycloak.tests", "keycloak-tests-custom-providers");
         }
     }
 }
