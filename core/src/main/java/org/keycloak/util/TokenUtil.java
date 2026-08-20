@@ -32,6 +32,7 @@ import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.json.KeycloakJsonMapper;
 import org.keycloak.json.KeycloakJsonMapperFactory;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
@@ -292,8 +293,9 @@ public class TokenUtil {
     }
 
     private static AccessToken.Access convertToAccess(Object accessClaim, String claimName) {
+        KeycloakJsonMapper jsonMapper = KeycloakJsonMapperFactory.mapper();
         try {
-            return JsonSerialization.readValue(JsonSerialization.writeValueAsString(accessClaim), AccessToken.Access.class);
+            return jsonMapper.readValue(jsonMapper.writeValueAsString(accessClaim), AccessToken.Access.class);
         } catch (IOException ioe) {
             logger.warnf( "Failed to convert roles from claim %s. Ignoring", claimName);
             return null;
