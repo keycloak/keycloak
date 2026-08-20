@@ -31,7 +31,7 @@ import org.keycloak.services.resources.admin.fgap.AdminPermissions;
  */
 public class DelegationScopeType extends UsernameScopeType {
 
-    public static final String TYPE = "delegation";
+    public static final String TYPE = "delegation:user";
 
     public DelegationScopeType() {
     }
