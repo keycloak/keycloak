@@ -214,7 +214,7 @@ public class ClientApiV2ClientSecretRotationTest extends AbstractClientApiV2Test
     public static class TestServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.CLIENT_ADMIN_API_V2, Profile.Feature.CLIENT_SECRET_ROTATION);
+            return config.features(Profile.Feature.CLIENT_ADMIN_API_V2);
         }
     }
 
