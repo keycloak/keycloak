@@ -19,7 +19,9 @@ package org.keycloak.broker.saml;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.security.MessageDigest;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
@@ -700,14 +702,15 @@ public class SAMLEndpoint {
 
                 // CVE-2026-18967: Prevent OneTimeUse assertion replay attacks
                 if (validator.isOneTimeUse()) {
-                    String assertionId = assertion.getID();
                     SingleUseObjectProvider singleUseObjects = session.singleUseObjects();
                     // Calculate lifespan: use notOnOrAfter minus current time, with a reasonable maximum
                     long maxIdleSeconds = calculateOneTimeUseMaxIdleSeconds(assertion.getConditions());
+                    // Derive a namespaced, fixed-length key to avoid DB length limits and cross-realm collisions
+                    String singleUseKey = buildSingleUseKey(assertion.getID());
                     // Atomically check-and-insert: returns true only if the assertion ID was not already present
-                    if (! singleUseObjects.putIfAbsent(assertionId, maxIdleSeconds)) {
-                        logger.warnf("Assertion %s contains OneTimeUse but was already used (potential replay attack).",
-                                assertionId);
+                    if (! singleUseObjects.putIfAbsent(singleUseKey, maxIdleSeconds)) {
+                        logger.warnf("Assertion contains OneTimeUse but was already used (potential replay attack). AssertionId=%s, realm=%s, idp=%s",
+                                assertion.getID(), realm.getName(), config.getAlias());
                         event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                         event.error(Errors.INVALID_SAML_RESPONSE);
                         return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST,
@@ -1131,7 +1134,8 @@ public class SAMLEndpoint {
 
     /**
      * Calculates the maximum idle time (in seconds) for a OneTimeUse assertion ID.
-     * Uses the assertion's notOnOrAfter time if available, otherwise falls back to a default.
+     * Uses the assertion's notOnOrAfter time if available, otherwise uses a longer default
+     * to cover the entire acceptance window when NotOnOrAfter is absent.
      */
     private long calculateOneTimeUseMaxIdleSeconds(org.keycloak.dom.saml.v2.assertion.ConditionsType conditions) {
         if (conditions != null && conditions.getNotOnOrAfter() != null) {
@@ -1141,7 +1145,32 @@ public class SAMLEndpoint {
                 return maxIdle;
             }
         }
-        // Default to 1 hour as a safe upper bound for OneTimeUse assertion replay window
-        return 3600;
+        // If NotOnOrAfter is absent, use a longer default to cover the entire acceptance window.
+        // Without NotOnOrAfter the assertion is considered valid indefinitely, so use 24 hours
+        // as a practical upper bound for replay protection.
+        return 86400;
+    }
+
+    /**
+     * Builds a namespaced, fixed-length key for single-use assertion tracking.
+     * Combines realm name, IdP alias, and a SHA-256 hash of the assertion ID to:
+     * 1. Prevent database column length violations (key is always 64 hex chars)
+     * 2. Prevent cross-realm/cross-IdP assertion ID collisions
+     */
+    private String buildSingleUseKey(String assertionId) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            String input = realm.getName() + ":" + config.getAlias() + ":" + assertionId;
+            byte[] hash = md.digest(input.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(hash.length * 2);
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (java.security.NoSuchAlgorithmException e) {
+            // SHA-256 is guaranteed to be available in all JVMs; this should never happen
+            logger.errorv("SHA-256 algorithm not available, falling back to assertion ID: {0}", assertionId);
+            return assertionId;
+        }
     }
 }
