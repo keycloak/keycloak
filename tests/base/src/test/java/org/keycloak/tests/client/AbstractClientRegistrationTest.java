@@ -90,6 +90,7 @@ public abstract class AbstractClientRegistrationTest {
     Keycloak adminClient;
 
     ClientRegistration reg;
+    private ResteasyClient testsuiteProvidersClient;
 
     @BeforeEach
     public void before() throws Exception {
@@ -102,6 +103,10 @@ public abstract class AbstractClientRegistrationTest {
     public void after() throws Exception {
         if (reg != null) {
             reg.close();
+        }
+        if (testsuiteProvidersClient != null) {
+            testsuiteProvidersClient.close();
+            testsuiteProvidersClient = null;
         }
     }
 
@@ -281,8 +286,10 @@ public abstract class AbstractClientRegistrationTest {
     protected final class TestAppCompat {
 
         public TestOIDCEndpointsApplicationResource oidcClientEndpoints() {
-            ResteasyClient client = (ResteasyClient) ResteasyClientBuilder.newBuilder().build();
-            return client.target(getAuthServerRoot()).proxy(TestApplicationResource.class).oidcClientEndpoints();
+            if (testsuiteProvidersClient == null) {
+                testsuiteProvidersClient = (ResteasyClient) ResteasyClientBuilder.newBuilder().build();
+            }
+            return testsuiteProvidersClient.target(getAuthServerRoot()).proxy(TestApplicationResource.class).oidcClientEndpoints();
         }
     }
 }

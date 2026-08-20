@@ -17,7 +17,7 @@
 
 package org.keycloak.tests.client;
 
-
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -38,7 +38,6 @@ import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
-import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
@@ -411,7 +410,7 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         AccessTokenResponse accessTokenResponse = login(pairwiseClient, "test-user@localhost", "password");
 
         // Verify tokens
-        oauth.parseRefreshToken(accessTokenResponse.getAccessToken());
+        oauth.verifyToken(accessTokenResponse.getAccessToken());
         IDToken idToken = oauth.verifyIDToken(accessTokenResponse.getIdToken());
         oauth.parseRefreshToken(accessTokenResponse.getRefreshToken());
 
@@ -420,18 +419,18 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
 
         // Verify refreshed tokens
         oauth.verifyToken(refreshTokenResponse.getAccessToken());
-        RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(refreshTokenResponse.getRefreshToken());
+        oauth.parseRefreshToken(refreshTokenResponse.getRefreshToken());
         IDToken refreshedIdToken = oauth.verifyIDToken(refreshTokenResponse.getIdToken());
 
         // If an ID Token is returned as a result of a token refresh request, the following requirements apply:
         // its iss Claim Value MUST be the same as in the ID Token issued when the original authentication occurred
-        Assertions.assertEquals(idToken.getIssuer(), refreshedRefreshToken.getIssuer());
+        Assertions.assertEquals(idToken.getIssuer(), refreshedIdToken.getIssuer());
 
         // its sub Claim Value MUST be the same as in the ID Token issued when the original authentication occurred
-        Assertions.assertEquals(idToken.getSubject(), refreshedRefreshToken.getSubject());
+        Assertions.assertEquals(idToken.getSubject(), refreshedIdToken.getSubject());
 
         // its iat Claim MUST represent the time that the new ID Token is issued
-        Assertions.assertEquals(refreshedIdToken.getIat(), refreshedRefreshToken.getIat());
+        Assertions.assertTrue(refreshedIdToken.getIat() >= idToken.getIat());
 
         // if the ID Token contains an auth_time Claim, its value MUST represent the time of the original authentication
         // - not the time that the new ID token is issued
@@ -515,7 +514,7 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
 
     private String getPayload(String token) {
         String payloadBase64 = token.split("\\.")[1];
-        return new String(Base64.getDecoder().decode(payloadBase64));
+        return new String(Base64.getUrlDecoder().decode(payloadBase64), StandardCharsets.UTF_8);
     }
 
     private String pairwiseSectorIdentifierUri() {

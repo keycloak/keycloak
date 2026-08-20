@@ -371,7 +371,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
                 UserAttributeMapper.PROVIDER_ID,
                 UserPropertyAttributeStatementMapper.PROVIDER_ID,
                 UserPropertyMapper.PROVIDER_ID, HardcodedRole.PROVIDER_ID);
-        availableMappers.containsAll(someExpectedMappers);
+        Assertions.assertTrue(availableMappers.containsAll(someExpectedMappers));
 
         // test that clientScope provider contains just the default client scopes
         ComponentTypeRepresentation clientScopeRep = providersMap.get(ClientScopesClientRegistrationPolicyFactory.PROVIDER_ID);
