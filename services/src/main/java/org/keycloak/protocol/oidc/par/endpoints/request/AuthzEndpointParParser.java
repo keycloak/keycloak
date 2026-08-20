@@ -18,6 +18,7 @@
 
 package org.keycloak.protocol.oidc.par.endpoints.request;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,7 +33,7 @@ import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
 
 import org.jboss.logging.Logger;
 
-import static org.keycloak.protocol.oidc.par.endpoints.ParEndpoint.CACHE_KEY_PREFIX;
+import static org.keycloak.protocol.oidc.par.endpoints.ParEndpoint.PAR_CLIENT_ID;
 import static org.keycloak.protocol.oidc.par.endpoints.ParEndpoint.PAR_CREATED_TIME;
 import static org.keycloak.protocol.oidc.par.endpoints.ParEndpoint.PAR_DPOP_PROOF_JKT;
 
@@ -55,6 +56,13 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
         Map<String, String> retrievedRequest = getRequestObject(session, requestUri);
         if (retrievedRequest == null) {
             throw new RuntimeException("PAR not found, not issued or used multiple times.");
+        }
+
+        // Verify that the PAR was issued for the same client that is now using it at the authorization endpoint. It is removed as it is internal parameter
+        retrievedRequest = new HashMap<>(retrievedRequest);
+        String parClientId = retrievedRequest.remove(PAR_CLIENT_ID);
+        if (parClientId != null && !parClientId.equals(client.getClientId())) {
+            throw new RuntimeException("PAR was issued for a different client.");
         }
 
         RealmModel realm = session.getContext().getRealm();
@@ -104,7 +112,8 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
     public static Map<String, String> getRequestObject(KeycloakSession session, String requestUri) {
         String key = getRequestObjectKey(requestUri);
         SingleUseObjectProvider singleUseStore = session.singleUseObjects();
-        Map<String, String> retrievedRequest = singleUseStore.get(CACHE_KEY_PREFIX + key);
+        RealmModel realm = session.getContext().getRealm();
+        Map<String, String> retrievedRequest = singleUseStore.get(ParEndpoint.buildCacheKey(realm.getId(), key));
         return retrievedRequest;
     }
 
@@ -115,7 +124,8 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
      */
     public static Map<String, String> removeRequestObject(KeycloakSession session, String requestUri) {
         String key = getRequestObjectKey(requestUri);
-        return session.singleUseObjects().remove(CACHE_KEY_PREFIX + key);
+        RealmModel realm = session.getContext().getRealm();
+        return session.singleUseObjects().remove(ParEndpoint.buildCacheKey(realm.getId(), key));
     }
 
     private static String getRequestObjectKey(String requestUri) {
