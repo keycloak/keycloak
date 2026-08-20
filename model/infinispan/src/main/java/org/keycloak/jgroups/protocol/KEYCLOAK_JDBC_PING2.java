@@ -21,6 +21,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,6 +53,12 @@ import static java.sql.ResultSet.CONCUR_UPDATABLE;
 import static java.sql.ResultSet.TYPE_FORWARD_ONLY;
 
 public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
+
+    private static final Executor NETWORK_TIMEOUT_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "jdbc-ping-network-timeout");
+        t.setDaemon(true);
+        return t;
+    });
 
     private JpaConnectionProviderFactory factory;
 
@@ -165,37 +173,39 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     }
 
     protected List<PingData> readFromDB(String cluster) throws Exception {
-        try(Connection conn=getConnection();
-            PreparedStatement ps=prepare(conn, select_all_pingdata_sql, TYPE_FORWARD_ONLY, CONCUR_UPDATABLE)) {
-            ps.setString(1, cluster);
-            if(log.isTraceEnabled())
-                log.trace("%s: SQL for reading: %s", local_addr, ps);
-            try(ResultSet resultSet=ps.executeQuery()) {
-                reads++;
-                List<PingData> retval=new LinkedList<>();
-                Map<Address, Set<Address>> members = new HashMap<>();
-                while(resultSet.next()) {
-                    String uuid=resultSet.getString(1);
-                    String name=resultSet.getString(2);
-                    String ip=resultSet.getString(3);
-                    boolean coord=resultSet.getBoolean(4);
-                    String coordinated_by=resultSet.getString(5);
-                    long last_update=resultSet.getLong(6);
-                    if (last_update < getStalenessCutoff()) {
-                        continue;
+        try(Connection conn=getConnection()) {
+            conn.setNetworkTimeout(NETWORK_TIMEOUT_EXECUTOR, (int) (staleness_timeout / 3));
+            try(PreparedStatement ps=prepare(conn, select_all_pingdata_sql, TYPE_FORWARD_ONLY, CONCUR_UPDATABLE)) {
+                ps.setString(1, cluster);
+                if(log.isTraceEnabled())
+                    log.trace("%s: SQL for reading: %s", local_addr, ps);
+                try(ResultSet resultSet=ps.executeQuery()) {
+                    reads++;
+                    List<PingData> retval=new LinkedList<>();
+                    Map<Address, Set<Address>> members = new HashMap<>();
+                    while(resultSet.next()) {
+                        String uuid=resultSet.getString(1);
+                        String name=resultSet.getString(2);
+                        String ip=resultSet.getString(3);
+                        boolean coord=resultSet.getBoolean(4);
+                        String coordinated_by=resultSet.getString(5);
+                        long last_update=resultSet.getLong(6);
+                        if (last_update < getStalenessCutoff()) {
+                            continue;
+                        }
+                        Address addr=Util.addressFromString(uuid);
+                        IpAddress ip_addr=new IpAddress(ip);
+                        PingData data=new PingData(addr, true, name, ip_addr).coord(coord);
+                        retval.add(data);
+                        if (coordinated_by != null) {
+                            Address coordinate_by_address = Util.addressFromString(coordinated_by);
+                            members.computeIfAbsent(coordinate_by_address, address -> new HashSet<>())
+                                    .add(addr);
+                        }
                     }
-                    Address addr=Util.addressFromString(uuid);
-                    IpAddress ip_addr=new IpAddress(ip);
-                    PingData data=new PingData(addr, true, name, ip_addr).coord(coord);
-                    retval.add(data);
-                    if (coordinated_by != null) {
-                        Address coordinate_by_address = Util.addressFromString(coordinated_by);
-                        members.computeIfAbsent(coordinate_by_address, address -> new HashSet<>())
-                                .add(addr);
-                    }
+                    retval.forEach(a -> a.mbrs(members.get(a.getAddress())));
+                    return retval;
                 }
-                retval.forEach(a -> a.mbrs(members.get(a.getAddress())));
-                return retval;
             }
         }
     }
