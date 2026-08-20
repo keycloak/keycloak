@@ -1044,6 +1044,124 @@ public class RefreshTokenTest {
         conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS512, Algorithm.PS256);
     }
 
+    @Test
+    public void refreshTokenWithRealmNotBeforeAndClientNotBefore() {
+        //Test that refresh token respects realm notBefore even when client notBefore is set
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.assertSuccess(loginEvent)
+                .userId(user.getId())
+                .clientId("test-app")
+                .hasSessionId()
+                .type(EventType.LOGIN);
+
+        String sessionId = loginEvent.getSessionId();
+
+        String code = oauth.parseLoginResponse().getCode();
+
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        String refreshToken = tokenResponse.getRefreshToken();
+
+        EventAssertion.assertSuccess(events.poll())
+                .userId(user.getId())
+                .sessionId(sessionId)
+                .clientId("test-app")
+                .type(EventType.CODE_TO_TOKEN);
+
+        int currentTime = (int) (System.currentTimeMillis() / 1000);
+
+        ClientRepresentation clientRep = oauth.clientResource().toRepresentation();
+        int originalClientNotBefore = clientRep.getNotBefore() != null ? clientRep.getNotBefore() : 0;
+
+        try {
+            //Test realm notBefore with client notBefore both set
+            // Set client notBefore to past
+            clientRep.setNotBefore(currentTime - 100);
+            oauth.clientResource().update(clientRep);
+
+            tokenResponse = oauth.doRefreshTokenRequest(refreshToken);
+            assertEquals(200, tokenResponse.getStatusCode());
+
+            // Set realm notBefore to future
+            RealmRepresentation realmRep = realm.admin().toRepresentation();
+            int originalRealmNotBefore = realmRep.getNotBefore() != null ? realmRep.getNotBefore() : 0;
+            try {
+                realmRep.setNotBefore(currentTime + 100);
+                realm.admin().update(realmRep);
+
+                tokenResponse = oauth.doRefreshTokenRequest(refreshToken);
+                assertEquals(400, tokenResponse.getStatusCode());
+                assertEquals(OAuthErrorException.INVALID_GRANT, tokenResponse.getError());
+            } finally {
+                realmRep.setNotBefore(originalRealmNotBefore);
+                realm.admin().update(realmRep);
+            }
+
+        } finally {
+            clientRep.setNotBefore(originalClientNotBefore);
+            oauth.clientResource().update(clientRep);
+        }
+    }
+
+    @Test
+    public void refreshTokenClientNotBeforeNotBypassedByOlderRealmNotBefore() {
+        // Obtain a refresh token
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.assertSuccess(loginEvent)
+                .userId(user.getId())
+                .clientId("test-app")
+                .hasSessionId()
+                .type(EventType.LOGIN);
+
+        String sessionId = loginEvent.getSessionId();
+        String code = oauth.parseLoginResponse().getCode();
+
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        String refreshToken = tokenResponse.getRefreshToken();
+
+        EventAssertion.assertSuccess(events.poll())
+                .userId(user.getId())
+                .sessionId(sessionId)
+                .clientId("test-app")
+                .type(EventType.CODE_TO_TOKEN);
+
+        int currentTime = (int) (System.currentTimeMillis() / 1000);
+
+        RealmRepresentation realmRep = realm.admin().toRepresentation();
+        int originalRealmNotBefore = realmRep.getNotBefore() != null ? realmRep.getNotBefore() : 0;
+
+        ClientRepresentation clientRep = oauth.clientResource().toRepresentation();
+        int originalClientNotBefore = clientRep.getNotBefore() != null ? clientRep.getNotBefore() : 0;
+
+        try {
+            // Set realm notBefore to the past
+            realmRep.setNotBefore(currentTime - 200);
+            realm.admin().update(realmRep);
+
+            tokenResponse = oauth.doRefreshTokenRequest(refreshToken);
+            assertEquals(200, tokenResponse.getStatusCode(), "Token should be valid when only an older realm notBefore is set");
+
+            //set the client nbf
+            clientRep.setNotBefore(currentTime + 100);
+            oauth.clientResource().update(clientRep);
+
+            // The token was issued before clientNotBefore, must be rejected
+            tokenResponse = oauth.doRefreshTokenRequest(refreshToken);
+            assertEquals(400, tokenResponse.getStatusCode());
+            assertEquals(OAuthErrorException.INVALID_GRANT, tokenResponse.getError());
+
+        } finally {
+            realmRep.setNotBefore(originalRealmNotBefore);
+            realm.admin().update(realmRep);
+
+            clientRep.setNotBefore(originalClientNotBefore);
+            oauth.clientResource().update(clientRep);
+        }
+    }
+
     private void conductTokenRefreshRequest(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
         try {
             // Realm setting is used for ID Token signature algorithm
