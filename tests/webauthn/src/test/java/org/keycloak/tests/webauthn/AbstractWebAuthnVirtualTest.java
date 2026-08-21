@@ -430,6 +430,15 @@ public abstract class AbstractWebAuthnVirtualTest implements UseVirtualAuthentic
                                 AuthenticationExecutionExportBuilder.authenticator("webauthn-authenticator", "REQUIRED", 20, false),
                                 AuthenticationExecutionExportBuilder.authenticator("webauthn-authenticator-passwordless", "REQUIRED", 30, false)),
 
+                    // Passwordless login flow without a two-factor webauthn step, used by PwdLessOtherSettingsTest
+                    AuthenticationFlowBuilder.create("passwordless-only", "passwordless login without a two-factor step", "basic-flow", true, false)
+                            .authenticationExecutions(AuthenticationExecutionExportBuilder.authenticator("auth-cookie", "ALTERNATIVE", 10, false),
+                                AuthenticationExecutionExportBuilder.alias("passwordless-only-forms", "ALTERNATIVE", 30, false)),
+
+                    AuthenticationFlowBuilder.create("passwordless-only-forms", "Username, password and passwordless webauthn.", "basic-flow", false, false)
+                            .authenticationExecutions(AuthenticationExecutionExportBuilder.authenticator("auth-username-password-form", "REQUIRED", 10, false),
+                                AuthenticationExecutionExportBuilder.authenticator("webauthn-authenticator-passwordless", "REQUIRED", 20, false)),
+
                     AuthenticationFlowBuilder.create("passkeys-username-forms", "Username, password, otp and other auth forms.", "basic-flow", false,false)
                             .authenticationExecutions(AuthenticationExecutionExportBuilder.authenticator("auth-username-form", "REQUIRED", 10, false),
                                 AuthenticationExecutionExportBuilder.authenticator("auth-password-form", "REQUIRED" , 20, false)),
