@@ -15,4 +15,5 @@ export default interface AuthenticationExecutionInfoRepresentation {
   flowId?: string;
   level?: number;
   index?: number;
+  providerUnavailable?: boolean;
 }
