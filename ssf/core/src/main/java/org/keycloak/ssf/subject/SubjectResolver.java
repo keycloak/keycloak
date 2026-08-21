@@ -73,11 +73,11 @@ public class SubjectResolver {
 
     /**
      * Resolves a tenant subject to an organization. This is the shared
-     * contract for tenant facets — {@code opaque} (org id or alias),
+     * contract for tenant subject members — {@code opaque} (org id or alias),
      * {@code iss_sub} (sub as org id), {@code email} (org domain or
      * alias) and {@code uri} ({@code urn:keycloak:org:<alias>} or last
      * path segment) are all understood. Callers that gate on "the
-     * supplied tenant facet must resolve" (e.g. the synthetic event
+     * supplied tenant subject member must resolve" (e.g. the synthetic event
      * emitter) must use this rather than a narrower lookup so a tenant
      * format accepted elsewhere is not rejected there.
      */

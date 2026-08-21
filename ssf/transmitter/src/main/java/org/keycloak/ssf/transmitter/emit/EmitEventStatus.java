@@ -23,7 +23,7 @@ public enum EmitEventStatus {
     SUBJECT_NOT_FOUND("subject_not_found"),
 
     /**
-     * Complex subject carries both a user and a tenant facet, but the
+     * Complex subject carries both a user and a tenant subject member, but the
      * resolved user is not a member of the resolved organization. Such
      * a subject is internally inconsistent — accepting it would let an
      * emitter attach any subscribed tenant to any user and ride the

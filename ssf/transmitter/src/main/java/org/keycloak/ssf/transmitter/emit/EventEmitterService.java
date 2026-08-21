@@ -169,23 +169,31 @@ public class EventEmitterService {
 
         // 5. Subject resolution + subscription filter. ComplexSubjectId
         //    can carry a user, an org (via the tenant slot), or both.
-        //    Every facet the emitter names must resolve — the sub_id
-        //    travels verbatim in the SET, so a user or tenant facet that
-        //    doesn't match anything is a subject error, not a facet to
-        //    silently ignore: otherwise a forged facet would reach the
-        //    receiver while only the other facet was actually gated.
+        //    Every subject member the emitter names must resolve — the sub_id
+        //    travels verbatim in the SET, so a user or tenant subject member that
+        //    doesn't match anything is a subject error, not a subject member to
+        //    silently ignore: otherwise a forged subject member would reach the
+        //    receiver while only the other subject member was actually gated.
         EmitSubjectResolution resolved = resolveSubject(subjectId);
         if (resolved.user() == null && resolved.organization() == null) {
             return EmitEventResult.dropped(EmitEventStatus.SUBJECT_NOT_FOUND);
         }
         if (subjectId instanceof ComplexSubjectId complex) {
+            // params.subjectMember discriminates the two subject-member-resolution
+            // failures machine-readably — both reuse the
+            // subject_not_found wire code, so without it a client
+            // wanting to localize (or react to) "user subject member didn't
+            // resolve" vs "tenant subject member didn't resolve" would have to
+            // parse the English description.
             if (complex.getUser() != null && resolved.user() == null) {
                 return EmitEventResult.dropped(EmitEventStatus.SUBJECT_NOT_FOUND,
-                        "User facet of the complex sub_id could not be resolved");
+                        "User subject member of the complex sub_id could not be resolved",
+                        Map.of("subjectMember", "user"));
             }
             if (complex.getTenant() != null && resolved.organization() == null) {
                 return EmitEventResult.dropped(EmitEventStatus.SUBJECT_NOT_FOUND,
-                        "Tenant facet of the complex sub_id could not be resolved to an organization");
+                        "Tenant subject member of the complex sub_id could not be resolved to an organization",
+                        Map.of("subjectMember", "tenant"));
             }
             // A user+tenant subject must be internally consistent: the
             // user has to be a member of the named organization.
@@ -196,8 +204,14 @@ public class EventEmitterService {
             // handed a user↔tenant association Keycloak knows is false.
             if (resolved.user() != null && resolved.organization() != null
                     && !isUserMemberOfOrganization(resolved.user(), resolved.organization())) {
+                // params names the resolved pairing that failed the
+                // membership check so the admin UI can render a
+                // translated message with the concrete user/tenant
+                // instead of interpolating the English description.
                 return EmitEventResult.dropped(EmitEventStatus.SUBJECT_MISMATCH,
-                        "User subject is not a member of the tenant organization");
+                        "User subject is not a member of the tenant organization",
+                        Map.of("user", resolved.user().getUsername(),
+                                "tenant", resolved.organization().getAlias()));
             }
         }
         // Drop early so the emitter sees a clean status without
@@ -265,15 +279,15 @@ public class EventEmitterService {
      * Resolves the entities referenced by the emitter's {@code sub_id}.
      * For a {@link ComplexSubjectId} we drill into both
      * {@link ComplexSubjectId#getUser()} and {@link ComplexSubjectId#getTenant()}
-     * — the user facet drives the per-user notify subscription and the
-     * tenant facet drives the org-level notify subscription. For a
+     * — the user subject member drives the per-user notify subscription and the
+     * tenant subject member drives the org-level notify subscription. For a
      * non-complex {@link SubjectId} only the user is resolved.
      *
      * <p>Org resolution delegates to
      * {@link SubjectResolver#resolveOrganization} so the emit path
      * understands the same tenant formats (opaque, iss_sub,
      * email/domain, uri) as the subject-management endpoints —
-     * mandatory since a supplied-but-unresolved tenant facet fails the
+     * mandatory since a supplied-but-unresolved tenant subject member fails the
      * whole subject.
      */
     protected EmitSubjectResolution resolveSubject(SubjectId subjectId) {
@@ -291,11 +305,11 @@ public class EventEmitterService {
         return new EmitSubjectResolution(user, null);
     }
 
-    protected OrganizationModel resolveOrganization(SubjectId tenantFacet) {
-        if (tenantFacet == null) {
+    protected OrganizationModel resolveOrganization(SubjectId tenantSubjectMember) {
+        if (tenantSubjectMember == null) {
             return null;
         }
-        if (SubjectResolver.resolveOrganization(session, tenantFacet)
+        if (SubjectResolver.resolveOrganization(session, tenantSubjectMember)
                 instanceof SubjectResolution.Organization org) {
             return org.organization();
         }
@@ -304,7 +318,7 @@ public class EventEmitterService {
 
     /**
      * Membership consistency check for user+tenant complex subjects.
-     * Only called when both facets resolved, which implies the
+     * Only called when both subject members resolved, which implies the
      * Organizations feature is enabled (org resolution short-circuits
      * to {@code null} otherwise).
      */
@@ -333,7 +347,7 @@ public class EventEmitterService {
      * bypass, a dropped grace window); delegation keeps them in lockstep.
      *
      * <p>Only the org-as-subject case — a tenant-only complex subject
-     * with no user facet, which the native dispatcher never produces —
+     * with no user subject member, which the native dispatcher never produces —
      * is handled locally, gating directly on the org's own notify
      * attribute:
      * <ul>
@@ -343,7 +357,7 @@ public class EventEmitterService {
      *         is explicitly notified.</li>
      * </ul>
      *
-     * <p>A user+tenant subject reaches the user branch; its tenant facet
+     * <p>A user+tenant subject reaches the user branch; its tenant subject member
      * needs no separate allow check because {@link #emit} has already
      * rejected the subject unless the user is a member of that org
      * (keycloak/keycloak#50812), so the org is covered by the

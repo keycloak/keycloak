@@ -414,7 +414,7 @@ public class SubjectManagementService {
      * via {@link org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper#buildSubjectForReceiver
      * buildSubjectForReceiver} so it honors the receiver's configured
      * {@code ssf.userSubjectFormat}. For {@code org-alias} the result
-     * is a {@link ComplexSubjectId} with only a {@code tenant} facet
+     * is a {@link ComplexSubjectId} with only a {@code tenant} subject member
      * (so the emitter routes it as an org-scoped event).
      *
      * <p>Throws {@link SsfException} with an operator-friendly message

@@ -223,6 +223,18 @@ export const EmitEventsTab = ({
       (error instanceof Error ? error.message : String(error));
     switch (body?.error) {
       case "subject_not_found":
+        // A complex sub_id whose user or tenant subject member (SSF
+        // §3.3) failed to resolve ships a machine-readable
+        // params.subjectMember discriminator — render the
+        // member-specific message instead of the generic (type, value)
+        // one, which only fits the single-member shorthand this form
+        // sends today.
+        if (body.params?.subjectMember === "user") {
+          return t("ssfEmitErrorUserSubjectMemberNotFound");
+        }
+        if (body.params?.subjectMember === "tenant") {
+          return t("ssfEmitErrorTenantSubjectMemberNotFound");
+        }
         // Prefer server-supplied params so the message reflects the
         // values that actually failed validation, not whatever the user
         // may have typed into the form while the request was in flight.
@@ -230,6 +242,18 @@ export const EmitEventsTab = ({
           type: body.params?.subjectType ?? values.emitSubjectType,
           value: body.params?.subjectValue ?? values.emitSubjectValue.trim(),
         });
+      case "subject_mismatch":
+        // Complex user+tenant subject whose user is not a member of
+        // the tenant organization. Not reachable from this form yet
+        // (it only sends the single-member shorthand), but wired up so
+        // complex-subject support added later inherits a translated
+        // message. params carries the resolved pairing that failed.
+        return body.params?.user && body.params.tenant
+          ? t("ssfEmitErrorSubjectMismatch", {
+              user: body.params.user,
+              tenant: body.params.tenant,
+            })
+          : t("ssfEmitErrorSubjectMismatchGeneric");
       case "invalid_request":
         return t("ssfEmitErrorInvalidRequest", { detail });
       case "no_delivery_config":

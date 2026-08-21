@@ -436,7 +436,7 @@ public class SsfTransmitterEventEmitterTests {
                 .asResponse()) {
             Assertions.assertEquals(200, res.getStatus());
             Assertions.assertEquals("dispatched", res.asJson().get("status").asText(),
-                    "complex sub_id should resolve via the user facet and dispatch");
+                    "complex sub_id should resolve via the user subject member and dispatch");
         }
 
         String push = pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS);
@@ -448,13 +448,13 @@ public class SsfTransmitterEventEmitterTests {
         Assertions.assertEquals("iss_sub", subId.path("user").path("format").asText());
         Assertions.assertEquals(userUuid, subId.path("user").path("sub").asText());
         Assertions.assertEquals("fake-session-id-123", subId.path("session").path("id").asText(),
-                "session facet must round-trip through the dispatch + sign + push pipeline");
+                "session subject member must round-trip through the dispatch + sign + push pipeline");
     }
 
     @Test
     public void emit_orgSubjectViaTenant_dispatches() throws Exception {
         // Org-only emission: the sub_id is a complex subject whose only
-        // facet is the tenant (org alias). The user facet is omitted, so
+        // subject member is the tenant (org alias). The user subject member is omitted, so
         // resolution lands on the org and the receiver's per-org notify
         // attribute drives the subscription gate.
         String orgAlias = createOrgWithNotify();
@@ -479,7 +479,7 @@ public class SsfTransmitterEventEmitterTests {
         JsonNode set = decodeSet(push);
         Assertions.assertEquals("complex", set.path("sub_id").path("format").asText());
         Assertions.assertEquals(orgAlias, set.path("sub_id").path("tenant").path("id").asText(),
-                "tenant facet must be forwarded verbatim");
+                "tenant subject member must be forwarded verbatim");
     }
 
     @Test
@@ -510,7 +510,7 @@ public class SsfTransmitterEventEmitterTests {
     public void emit_complexUserTenantMismatch_returnsSubjectMismatch() throws Exception {
         // Regression guard for keycloak/keycloak#50812: an unsubscribed
         // user combined with a subscribed-but-unrelated tenant org must
-        // not dispatch. Before the fix, the tenant facet alone counted
+        // not dispatch. Before the fix, the tenant subject member alone counted
         // as an allow signal, so the org's subscription carried the
         // user subject past the per-user filter and the receiver got a
         // SET asserting a user↔tenant association that doesn't exist.
@@ -535,8 +535,16 @@ public class SsfTransmitterEventEmitterTests {
                 .asResponse()) {
             Assertions.assertEquals(400, res.getStatus(),
                     "user+tenant subject whose user is not a member of the tenant must be rejected");
-            Assertions.assertEquals("subject_mismatch", res.asJson().get("error").asText(),
+            JsonNode mismatchBody = res.asJson();
+            Assertions.assertEquals("subject_mismatch", mismatchBody.get("error").asText(),
                     "error code should name the user/tenant membership mismatch");
+            // params names the resolved pairing machine-readably so the
+            // admin UI can render a translated message with the concrete
+            // user/tenant instead of parsing the English description.
+            Assertions.assertEquals(TEST_USER, mismatchBody.path("params").path("user").asText(),
+                    "params.user should carry the resolved username behind the mismatch");
+            Assertions.assertEquals(orgAlias, mismatchBody.path("params").path("tenant").asText(),
+                    "params.tenant should carry the resolved organization alias behind the mismatch");
         }
         Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
                 "mismatched user+tenant subject must not reach the receiver");
@@ -579,15 +587,15 @@ public class SsfTransmitterEventEmitterTests {
         JsonNode set = decodeSet(push);
         Assertions.assertEquals(userUuid, set.path("sub_id").path("user").path("sub").asText());
         Assertions.assertEquals(orgAlias, set.path("sub_id").path("tenant").path("id").asText(),
-                "both facets must be forwarded verbatim");
+                "both subject members must be forwarded verbatim");
     }
 
     @Test
     public void emit_complexUnresolvableUserWithSubscribedTenant_returnsSubjectNotFound() throws Exception {
-        // Sibling of the mismatch case: a user facet that resolves to
+        // Sibling of the mismatch case: a user subject member that resolves to
         // nothing must not silently degrade the subject to tenant-only —
         // the sub_id is forwarded verbatim, so the receiver would see a
-        // user facet Keycloak never validated, gated only by the org's
+        // user subject member Keycloak never validated, gated only by the org's
         // subscription.
         String orgAlias = createOrgWithNotify();
         String issuer = realm.getBaseUrl();
@@ -605,20 +613,25 @@ public class SsfTransmitterEventEmitterTests {
                         "event", Map.of("credential_type", "password", "change_type", "update")))
                 .asResponse()) {
             Assertions.assertEquals(400, res.getStatus(),
-                    "unresolvable user facet must fail the whole subject, not fall back to tenant-only");
-            Assertions.assertEquals("subject_not_found", res.asJson().get("error").asText());
+                    "unresolvable user subject member must fail the whole subject, not fall back to tenant-only");
+            JsonNode body = res.asJson();
+            Assertions.assertEquals("subject_not_found", body.get("error").asText());
+            // Both subject member failures share the subject_not_found wire code —
+            // params.subjectMember is the machine-readable discriminator.
+            Assertions.assertEquals("user", body.path("params").path("subjectMember").asText(),
+                    "params.subjectMember should identify the user subject member as the one that failed to resolve");
         }
         Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
-                "subject with an unresolvable user facet must not reach the receiver");
+                "subject with an unresolvable user subject member must not reach the receiver");
     }
 
     @Test
     public void emit_complexSubscribedUserUnknownTenant_returnsSubjectNotFound() throws Exception {
-        // Inverse of the unresolvable-user case: a tenant facet that
+        // Inverse of the unresolvable-user case: a tenant subject member that
         // resolves to no organization must fail the whole subject even
-        // when the user facet is valid and subscribed — the sub_id is
+        // when the user subject member is valid and subscribed — the sub_id is
         // forwarded verbatim, so the receiver would otherwise see a
-        // tenant facet Keycloak never validated. TEST_USER is
+        // tenant subject member Keycloak never validated. TEST_USER is
         // pre-subscribed in setup(), so only the tenant is at fault.
         String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
         String issuer = realm.getBaseUrl();
@@ -635,11 +648,16 @@ public class SsfTransmitterEventEmitterTests {
                         "event", Map.of("credential_type", "password", "change_type", "update")))
                 .asResponse()) {
             Assertions.assertEquals(400, res.getStatus(),
-                    "unresolvable tenant facet must fail the whole subject, not fall back to user-only");
-            Assertions.assertEquals("subject_not_found", res.asJson().get("error").asText());
+                    "unresolvable tenant subject member must fail the whole subject, not fall back to user-only");
+            JsonNode body = res.asJson();
+            Assertions.assertEquals("subject_not_found", body.get("error").asText());
+            // Both subject member failures share the subject_not_found wire code —
+            // params.subjectMember is the machine-readable discriminator.
+            Assertions.assertEquals("tenant", body.path("params").path("subjectMember").asText(),
+                    "params.subjectMember should identify the tenant subject member as the one that failed to resolve");
         }
         Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
-                "subject with an unresolvable tenant facet must not reach the receiver");
+                "subject with an unresolvable tenant subject member must not reach the receiver");
     }
 
     @Test
@@ -729,9 +747,9 @@ public class SsfTransmitterEventEmitterTests {
 
     @Test
     public void emit_issSubTenantFormat_resolvesAndDispatches() throws Exception {
-        // Tenant facets follow the shared SubjectResolver contract, so
+        // Tenant subject members follow the shared SubjectResolver contract, so
         // formats beyond opaque (iss_sub, email/domain, uri) must
-        // resolve too — the mandatory facet-resolution gate would
+        // resolve too — the mandatory subject-member-resolution gate would
         // otherwise reject requests the subject-management endpoints
         // consider valid. iss_sub carries the org UUID in `sub`.
         String orgAlias = createOrgWithNotify();
@@ -753,7 +771,7 @@ public class SsfTransmitterEventEmitterTests {
                 .asResponse()) {
             Assertions.assertEquals(200, res.getStatus());
             Assertions.assertEquals("dispatched", res.asJson().get("status").asText(),
-                    "iss_sub tenant facet naming an existing org must resolve, not subject_not_found");
+                    "iss_sub tenant subject member naming an existing org must resolve, not subject_not_found");
         }
         Assertions.assertNotNull(pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS),
                 "iss_sub-tenant event should reach the mock receiver");
