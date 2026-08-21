@@ -6,10 +6,12 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeCondition;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientProtocolCondition;
 import org.keycloak.services.clientpolicy.condition.ClientProtocolConditionFactory;
+import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutor;
 import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutorFactory;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -18,8 +20,10 @@ import org.keycloak.testframework.realm.ManagedRealm;
 
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.tests.utils.ClientPoliciesUtil.createAnyClientConditionConfig;
 import static org.keycloak.tests.utils.ClientPoliciesUtil.createClientAccessTypeConditionConfig;
 import static org.keycloak.tests.utils.ClientPoliciesUtil.createClientProtocolConditionConfig;
+import static org.keycloak.tests.utils.ClientPoliciesUtil.createFullScopeDisabledExecutorConfig;
 import static org.keycloak.tests.utils.ClientPoliciesUtil.createRejectisResourceOwnerPasswordCredentialsGrantExecutorConfig;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -87,7 +91,7 @@ public class ClientPoliciesClientCRUDTest extends AbstractClientPoliciesTest {
         // Try to create OIDC client without directGrants - should be success
         createClientByAdmin(realm, "example-client-oidc", OIDCLoginProtocol.LOGIN_PROTOCOL, clientRep -> {});
     }
-
+    
     @Test
     public void testClientAccessTypeConditionClientCRUD() throws Exception {
         // Setup policy: condition = confidential client access type, executor = reject resource owner password credentials grant
@@ -148,5 +152,59 @@ public class ClientPoliciesClientCRUDTest extends AbstractClientPoliciesTest {
         // Verify client is now confidential
         foundRep = realm.admin().clients().get(publicClientUUID).toRepresentation();
         assertFalse(foundRep.isPublicClient());
+    }
+
+    @Test
+    public void testFullScopeDisabledExecutorClientCRUD() throws Exception {
+        // Setup policy: any client condition + FullScopeDisabled executor (validate mode, not auto-configure)
+        setupPolicy(realm, FullScopeDisabledExecutorFactory.PROVIDER_ID, createFullScopeDisabledExecutorConfig(Boolean.FALSE),
+                AnyClientConditionFactory.PROVIDER_ID, createAnyClientConditionConfig());
+
+        // Register client without setting fullScopeAllowed (null → defaults to true). Should fail (bug #51382).
+        try {
+            createClientByAdmin(realm, "client-null-full-scope", OIDCLoginProtocol.LOGIN_PROTOCOL, clientRep -> {
+                clientRep.setFullScopeAllowed(null);
+            });
+            fail("Registration should have failed because fullScopeAllowed defaults to true");
+        } catch (ClientPolicyException cpe) {
+            assertEquals("Not permitted to enable fullScopeAllowed", cpe.getErrorDetail());
+        }
+
+        // Register client with fullScopeAllowed=true. Should also fail.
+        try {
+            createClientByAdmin(realm, "client-full-scope-true", OIDCLoginProtocol.LOGIN_PROTOCOL, clientRep -> {
+                clientRep.setFullScopeAllowed(Boolean.TRUE);
+            });
+            fail("Registration should have failed because fullScopeAllowed is explicitly true");
+        } catch (ClientPolicyException cpe) {
+            assertEquals("Not permitted to enable fullScopeAllowed", cpe.getErrorDetail());
+        }
+
+        // Register client with fullScopeAllowed=false. Should succeed.
+        String clientUUID = createClientByAdmin(realm, "client-full-scope-false", OIDCLoginProtocol.LOGIN_PROTOCOL, clientRep -> {
+            clientRep.setFullScopeAllowed(Boolean.FALSE);
+        });
+        ClientRepresentation foundRep = realm.admin().clients().get(clientUUID).toRepresentation();
+        assertFalse(foundRep.isFullScopeAllowed());
+
+        // Update the client without touching fullScopeAllowed (null in the update rep). Should succeed
+        // because the existing client already has fullScopeAllowed=false.
+        updateClientByAdmin(realm, clientUUID, clientRep -> {
+            clientRep.setFullScopeAllowed(null);
+        });
+
+        // Update the client and explicitly set fullScopeAllowed=true. Should fail.
+        try {
+            updateClientByAdmin(realm, clientUUID, clientRep -> {
+                clientRep.setFullScopeAllowed(Boolean.TRUE);
+            });
+            fail("Update should have failed because fullScopeAllowed is being set to true");
+        } catch (ClientPolicyException cpe) {
+            assertEquals("Not permitted to enable fullScopeAllowed", cpe.getErrorDetail());
+        }
+
+        // Verify fullScopeAllowed is still false on the client (update was rolled back)
+        foundRep = realm.admin().clients().get(clientUUID).toRepresentation();
+        assertFalse(foundRep.isFullScopeAllowed());
     }
 }
