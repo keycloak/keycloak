@@ -28,6 +28,9 @@ import java.util.logging.Logger;
 import javax.crypto.SecretKey;
 
 import org.keycloak.common.VerificationException;
+import org.keycloak.crypto.AsymmetricSignatureVerifierContext;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.exceptions.TokenNotActiveException;
 import org.keycloak.exceptions.TokenSignatureInvalidException;
@@ -458,6 +461,19 @@ public class TokenVerifier<T extends JsonWebToken> {
                         throw new VerificationException("Public key not set");
                     }
                     if (!ECDSAProvider.verify(jws, publicKey)) {
+                        throw new TokenSignatureInvalidException(token, "Invalid token signature");
+                    }
+                    break;
+                case MLDSA:
+                    if (publicKey == null) {
+                        throw new VerificationException("Public key not set");
+                    }
+                    KeyWrapper key = new KeyWrapper();
+                    key.setType(KeyType.AKP);
+                    key.setAlgorithm(jws.getHeader().getRawAlgorithm());
+                    key.setPublicKey(publicKey);
+                    if (!new AsymmetricSignatureVerifierContext(key).verify(
+                            jws.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8), jws.getSignature())) {
                         throw new TokenSignatureInvalidException(token, "Invalid token signature");
                     }
                     break;
