@@ -71,7 +71,7 @@
         </#if>
     </form>
 
-    <script>
+    <script nonce="${nonce.value}">
         <#outputformat "JavaScript">
         /* copy recovery codes  */
         function copyRecoveryCodes() {
