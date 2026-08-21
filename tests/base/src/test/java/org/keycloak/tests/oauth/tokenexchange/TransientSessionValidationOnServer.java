@@ -17,6 +17,7 @@
 
 package org.keycloak.tests.oauth.tokenexchange;
 
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -42,11 +43,22 @@ final class TransientSessionValidationOnServer implements FetchOnServer {
 
         UserSessionUtil.UserSessionValidationResult first = UserSessionUtil.findValidSessionForAccessToken(
                 session, realm, token, requester, ignored -> {});
+        if (first.getError() != null) {
+            return false;
+        }
+        AuthenticatedClientSessionModel clientSession = first.getUserSession().getAuthenticatedClientSessionByClient(requester.getId());
+        if (clientSession == null) {
+            return false;
+        }
+        clientSession.detachFromUserSession();
+
         UserSessionUtil.UserSessionValidationResult second = UserSessionUtil.findValidSessionForAccessToken(
                 session, realm, token, requester, ignored -> {});
         UserSessionUtil.UserSessionValidationResult third = UserSessionUtil.findValidSessionForAccessToken(
                 session, realm, token, requester, ignored -> {});
 
-        return first.getError() == null && second.getError() == null && third.getError() == null;
+        return second.getError() == null && third.getError() == null
+                && second.getUserSession().getAuthenticatedClientSessionByClient(requester.getId()) != null
+                && third.getUserSession().getAuthenticatedClientSessionByClient(requester.getId()) != null;
     }
 }

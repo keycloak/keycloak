@@ -215,6 +215,9 @@ public class UserSessionUtil {
         String persistentSessionStarted = userSession.getNote(Constants.CREATED_FROM_PERSISTENT_STARTED);
         if (persistentSessionStarted != null) {
             int sessionStarted = Integer.parseInt(persistentSessionStarted);
+            if (userSession.getAuthenticatedClientSessionByClient(client.getId()) == null) {
+                attachAuthenticationSession(session, userSession, client);
+            }
             return new UserSessionModelDelegate(userSession) {
 
                 @Override
