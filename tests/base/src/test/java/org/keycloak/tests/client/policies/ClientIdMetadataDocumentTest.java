@@ -904,6 +904,11 @@ public class ClientIdMetadataDocumentTest {
         cimd.getRepresentation().setPolicyUri("https://localhost:8443/policy");
         cimd.getRepresentation().setJwksUri("https://10.255.255.1:443/mcp");
         assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
+
+        // post_logout_redirect_uris : not allowed domain
+        cimd.getRepresentation().setJwksUri("https://localhost:8443/idp/jwks");
+        cimd.getRepresentation().setPostLogoutRedirectUris(List.of("https://10.255.255.1:443/logout"));
+        assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
     }
 
     @Test
@@ -961,6 +966,13 @@ public class ClientIdMetadataDocumentTest {
         cimd.getRepresentation().setClientUri("https://www.example.com");
         cimd.getRepresentation().setTosUri("https://www.example.co.jp/mcp");
         cimd.getRepresentation().setPolicyUri("https://localhost/mcp");
+        assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+
+        // post_logout_redirect_uris not under the same domain of permitted domains
+        cimd.getRepresentation().setClientUri("https://localhost/client");
+        cimd.getRepresentation().setTosUri("https://localhost/tos");
+        cimd.getRepresentation().setPolicyUri("https://localhost/policy");
+        cimd.getRepresentation().setPostLogoutRedirectUris(List.of("https://www.example.com/logout"));
         assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
     }
 
