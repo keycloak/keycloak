@@ -254,7 +254,13 @@ public abstract class AbstractClientRegistrationTest {
         }
 
         public void addClientUuid(String clientUuid) {
-            realm.cleanup().add(r -> r.clients().delete(clientUuid));
+            realm.cleanup().add(r -> {
+                try {
+                    r.clients().get(clientUuid).remove();
+                } catch (NotFoundException ignored) {
+                    // Client can already be removed by the test itself.
+                }
+            });
         }
     }
 

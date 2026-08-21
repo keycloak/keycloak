@@ -17,6 +17,7 @@
 
 package org.keycloak.tests.client;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -493,16 +494,28 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
         // Update the policy to allow the "foo" scope
         ComponentRepresentation clientScopesPolicyRep = findPolicyByProviderAndAuth(ClientScopesClientRegistrationPolicyFactory.PROVIDER_ID, getPolicyAnon());
-        clientScopesPolicyRep.getConfig().putSingle(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES, "foo");
-        managedRealm.admin().components().component(clientScopesPolicyRep.getId()).update(clientScopesPolicyRep);
+        List<String> originalAllowedScopes = clientScopesPolicyRep.getConfig().get(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES);
+        originalAllowedScopes = originalAllowedScopes == null ? null : new ArrayList<>(originalAllowedScopes);
 
-        // Check that I can register client now
-        ClientRepresentation registeredClient = reg.create(clientRep);
-        Assertions.assertNotNull(registeredClient.getRegistrationAccessToken());
+        try {
+            clientScopesPolicyRep.getConfig().putSingle(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES, "foo");
+            managedRealm.admin().components().component(clientScopesPolicyRep.getId()).update(clientScopesPolicyRep);
 
-        // Revert client scope
-        AdminApiUtil.findClientResourceByClientId(managedRealm.admin(), clientId).remove();
-        managedRealm.admin().clientScopes().get(clientScopeId).remove();
+            // Check that I can register client now
+            ClientRepresentation registeredClient = reg.create(clientRep);
+            Assertions.assertNotNull(registeredClient.getRegistrationAccessToken());
+        } finally {
+            if (originalAllowedScopes == null) {
+                clientScopesPolicyRep.getConfig().remove(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES);
+            } else {
+                clientScopesPolicyRep.getConfig().put(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES, originalAllowedScopes);
+            }
+            managedRealm.admin().components().component(clientScopesPolicyRep.getId()).update(clientScopesPolicyRep);
+
+            managedRealm.admin().clients().findByClientId(clientId).stream().findFirst()
+                    .ifPresent(c -> managedRealm.admin().clients().get(c.getId()).remove());
+            managedRealm.admin().clientScopes().get(clientScopeId).remove();
+        }
     }
 
 
