@@ -48,7 +48,7 @@ import org.hibernate.annotations.DynamicUpdate;
         // The query "findExpiredUserSessions" is deprecated (since 26.5) and may be removed in the future.
         @NamedQuery(name="findExpiredUserSessions", query="select sess.userSessionId, sess.userId from PersistentUserSessionEntity sess where sess.realmId = :realmId AND sess.offline = :offline AND sess.lastSessionRefresh < :lastSessionRefresh"),
         @NamedQuery(name="updateUserSessionLastSessionRefresh", query="update PersistentUserSessionEntity sess set lastSessionRefresh = :lastSessionRefresh," +
-                " lastSessionRefreshCoarse = ((:lastSessionRefresh - MOD(sess.createdOn, :granularity)) / :granularity) * :granularity + MOD(sess.createdOn, :granularity)" +
+                " lastSessionRefreshCoarse = FLOOR((:lastSessionRefresh - MOD(sess.createdOn, :granularity)) / :granularity) * :granularity + MOD(sess.createdOn, :granularity)" +
                 " where sess.realmId = :realmId AND sess.offline = :offline AND sess.userSessionId IN (:userSessionIds)"),
         @NamedQuery(name="findUserSessionsCount", query="select count(sess) from PersistentUserSessionEntity sess where sess.offline = :offline"),
         @NamedQuery(name="findUserSessionsOrderedById", query="select sess from PersistentUserSessionEntity sess, RealmEntity realm where realm.id = sess.realmId AND sess.offline = :offline" +
