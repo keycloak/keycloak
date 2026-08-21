@@ -123,8 +123,15 @@ public final class ShowConfig extends AbstractCommand {
     private void printProperty(String property, PropertyMapper<?> mapper, ConfigValue configValue) {
         String sourceName = configValue.getConfigSourceName();
         String value = configValue.getValue();
-
-        value = maskValue(value, sourceName, mapper);
+        
+        if (property.startsWith(MicroProfileConfigProvider.SPI_PREFIX)) {
+            // could be marked as ProviderConfigProperty.isSecret, so the simplest option for now
+            // is to just mask all direct usage of spi options.
+            // the most straight-forward alternative is to move show-config to be run after the quarkus start
+            value = PropertyMappers.VALUE_MASK; 
+        } else {
+            value = maskValue(value, sourceName, mapper);
+        }
 
         spec.commandLine().getOut().printf("\t%s =  %s (%s)%n", property, value, KeycloakConfigSourceProvider.getConfigSourceDisplayName(sourceName));
     }
