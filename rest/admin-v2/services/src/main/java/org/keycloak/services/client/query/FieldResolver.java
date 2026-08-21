@@ -16,20 +16,11 @@ public class FieldResolver {
             SAMLClientRepresentation.PROTOCOL, SAMLClientModelSchema.INSTANCE);
 
     public static boolean isKnownField(String fieldPath) {
-        if ("auth.method".equals(fieldPath)) {
-            return true;
-        }
-        return SCHEMAS.values().stream().anyMatch(schema -> schema.getAttributes().containsKey(fieldPath));
+        return SCHEMAS.values().stream().anyMatch(schema -> schema.getAttributeByPath(fieldPath) != null);
     }
 
     @SuppressWarnings("unchecked")
     public static Object resolve(String fieldPath, BaseClientRepresentation client) {
-        if ("auth.method".equals(fieldPath)) {
-            if (client instanceof OIDCClientRepresentation oidc && oidc.getAuth() != null) {
-                return oidc.getAuth().getMethod();
-            }
-            return null;
-        }
         String protocol = client.getProtocol();
         BaseClientModelSchema schema = protocol != null ? SCHEMAS.get(protocol) : null;
         if (schema != null) {

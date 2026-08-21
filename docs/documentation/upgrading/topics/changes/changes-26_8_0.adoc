@@ -11,6 +11,14 @@ The listing endpoints for default and optional client scopes now return an empty
 
 If you have delegated administrators that assign client scopes using Fine-Grained Admin Permissions, ensure they also have the `manage-clients` realm admin role or a type-level `manage` permission on the Clients resource type.
 
+=== Client secret no longer returned for view-only client permissions
+
+The Admin REST API endpoints for retrieving client representations (`GET /admin/realms/\{realm}/clients` and `GET /admin/realms/\{realm}/clients/\{id}`) no longer include the client secret in the response when the caller only has `view-clients` permission. To view the client secret, the caller must have `manage-clients` permission.
+
+Previously, any caller with the `view-clients` role could read client secrets from the API response, which posed a security risk as it allowed read-only administrators to access sensitive credentials. After upgrading, callers with only `view-clients` permission will see a masked placeholder (`**********`) instead of the actual secret value.
+
+If you have delegated administrators or automation that reads client secrets using the `view-clients` role, ensure they are granted the `manage-clients` realm admin role or equivalent `manage` permission on the Clients resource type.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
@@ -59,6 +67,17 @@ Two changes affect how claims are handled in the authorization services token en
 
 * When both a UMA permission ticket and a `claim_token` contain claims with the same key, ticket claims now take precedence. Previously, `claim_token` claims would silently override ticket claims on collision. This change ensures that claims set by the resource server when creating the permission ticket cannot be overridden by the requesting party.
 
+=== Token exchange delegation now requires FGAP V2 permissions
+
+The experimental token exchange delegation feature no longer uses the `impersonation` role from the `realm-management` client to authorize delegation. Instead, delegation is controlled exclusively through link:{adminguide_link}#_fine_grained_permissions[Fine-grained admin permissions version 2] (FGAP V2) using the new `delegate` scope on the Users resource type and the `delegate-members` scope on the Groups resource type.
+
+If you were previously using delegation with the `impersonation` role, you need to:
+
+. Enable Admin Permissions (FGAP V2) on your realm.
+. Create a User permission with the `delegate` scope and assign a policy targeting the administrators or service accounts that should be allowed to delegate. Alternatively, create a Group permission with the `delegate-members` scope to grant delegation for members of a specific group.
+
+FGAP V1 does not support delegation permissions.
+
 === Email is no longer marked as verified by other flows
 
 Previously, some flows marked the email of a user as verified even though their purpose was not email verification.
@@ -67,6 +86,19 @@ An email is now marked as verified only when the user completes an email verific
 This changes the behavior of identity provider account linking by email, of admin-initiated action emails that do not include the *Verify Email* action,
 and of the verifiable credential offer emails of the experimental OID4VCI feature.
 The *Trust Email* setting of identity providers and LDAP federation is not affected, as it is an explicit decision of the administrator to trust the email from the external source.
+
+=== Offline session expiration indexes rebuilt with session bucket column
+
+The `OFFLINE_USER_SESSION` table now has updated indexes `IDX_USER_SESSION_EXPIRATION_CREATED` and `IDX_USER_SESSION_EXPIRATION_LAST_REFRESH`. On PostgreSQL and Microsoft SQL Server, `IDX_OFFLINE_USS_BY_BROKER_SESSION_ID` is also rebuilt as a filtered index.
+
+If the table contains more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
+=== Certificate Common Name truncated to 64 characters
+
+When {project_name} generates self-signed certificates (for example, during SAML client creation), the Common Name (CN) is now truncated to 64 characters to comply with the https://datatracker.ietf.org/doc/html/rfc5280[RFC 5280] `ub-common-name` upper bound. Previously, values longer than 64 characters, such as long client IDs, were used as-is. With the BouncyCastle 1.85 update, this caused certificate generation to fail.
+
+If you have tooling that inspects the CN of {project_name}-generated certificates and expects it to match a value longer than 64 characters, be aware that the CN may now be shorter.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features

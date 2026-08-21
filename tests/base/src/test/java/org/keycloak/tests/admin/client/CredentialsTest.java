@@ -62,6 +62,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import static org.keycloak.representations.idm.ComponentRepresentation.SECRET_VALUE;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -125,12 +127,13 @@ public class CredentialsTest {
         String newToken = accountClient.regenerateRegistrationAccessToken().getRegistrationAccessToken();
         assertNull(oldToken); // registration access token not saved in ClientRep
         assertNotNull(newToken); // it's only available via regenerateRegistrationAccessToken()
+        assertNotEquals(SECRET_VALUE, newToken); // New token is not masked in the update-response
         assertNull(accountClient.toRepresentation().getRegistrationAccessToken());
 
-        // Test event
+        // Test event - registration access token should be masked in the event
         ClientRepresentation testedRep = new ClientRepresentation();
         testedRep.setClientId(rep.getClientId());
-        testedRep.setRegistrationAccessToken(newToken);
+        testedRep.setRegistrationAccessToken(SECRET_VALUE);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.ACTION, AdminEventPaths.clientRegenerateRegistrationAccessTokenPath(accountClient.toRepresentation().getId()), testedRep, ResourceType.CLIENT);
     }
 

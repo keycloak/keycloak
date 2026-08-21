@@ -141,6 +141,17 @@ class SsfTransmitterEventListenerTest {
         throw new IllegalArgumentException("Test fixture only covers CAEP session-revoked / credential-change. Add a branch when extending.");
     }
 
+    @Test
+    void userSessionDeletedWithoutDetails_isNotExpiration() {
+        Event event = new Event();
+        event.setType(org.keycloak.events.EventType.USER_SESSION_DELETED);
+        // details intentionally left null — EventBuilder creates the map
+        // lazily, so events without any detail() call carry null here
+
+        assertFalse(listener.isUserSessionExpiration(event),
+                "a USER_SESSION_DELETED event without details must not NPE and not count as expiration");
+    }
+
     // ----- auto-notify-on-login read-only handling -----
 
     private static final String RECEIVER_CLIENT_ID = "receiver";

@@ -352,14 +352,36 @@ bin/kc.[sh|bat] start --features=token-exchange-delegation,parameterized-scopes
 
 === Admin delegation
 
-Admin delegation allows a user (subject) to delegate their token to an administrator. The client requests the `delegation` scope with the administrator's identifier as a parameter using the https://datatracker.ietf.org/doc/html/rfc9396[parameterized scopes] syntax.
+Admin delegation allows a user (subject) to delegate their token to an administrator (actor). The client requests the `delegation` scope with the administrator's identifier as a parameter using the https://datatracker.ietf.org/doc/html/rfc9396[parameterized scopes] syntax.
 
 When the feature is enabled, a `delegation` client scope is automatically created in new realms. Clients that want to use delegation must add the `delegation` scope to their optional client scopes in the Admin Console.
+
+==== Granting delegation permission
+
+Delegation permissions are managed through link:{adminguide_link}#_fine_grained_permissions[Fine-grained admin permissions version 2] (FGAP V2). Unlike impersonation, delegation does not use admin roles. Instead, you configure FGAP permissions to control which administrators can be delegated to and for which users.
+
+===== Granting delegation to all users
+
+. Go to *Realm Settings* -> *Admin Permissions* and enable Admin Permissions.
+. Navigate to *Admin Permissions* -> *Users*.
+. Create a new permission on the *Users* resource type.
+. Add the *delegate* scope.
+. Assign a policy that grants this permission.
+
+NOTE: To restrict delegation to specific users, select individual users when creating the permission. To restrict which administrators or service accounts can delegate, use a more specific policy (for example, a *User* or *Client* policy).
+
+===== Granting delegation to members of a specific group
+
+. Navigate to *Admin Permissions* -> *Groups*.
+. Select the target group.
+. Create a new permission on the group.
+. Add the *delegate-members* scope.
+. Assign a policy targeting the administrator or service account allowed to delegate.
 
 ==== How it works
 
 . The client requests the `delegation` scope with the administrator's (actor) identifier as a parameter, for example `scope=openid delegation:admin`.
-. {project_name} validates that the specified administrator (actor) exists and has the `impersonation` role from the `realm-management` client.
+. {project_name} validates that the specified administrator (actor) exists and has the `delegate` permission for the user (subject) through FGAP V2.
 . The user (subject) is presented with a consent screen to approve the delegation.
 . If the user consents and validation passes, the issued token includes the `may_act` claim with the actor's user ID as the `sub`:
 +
@@ -377,7 +399,9 @@ When the feature is enabled, a `delegation` client scope is automatically create
 
 The `may_act` claim declares that the specified administrator (actor) is authorized to act on behalf of the user (subject). The `sub` inside `may_act` contains the actor's user ID, consistent with {project_name}'s standard `sub` claim semantics. An external Security Token Service (STS) receiving this token can verify the delegation authorization directly from the claim without querying back to {project_name}.
 
-If the administrator (actor) does not have impersonation permission, the delegation scope is silently dropped and the `may_act` claim is not included in the token. The consent for delegation is always required and is not stored permanently - the user must approve delegation each login session.
+If the administrator (actor) does not have the delegation permission, the delegation scope is silently dropped and the `may_act` claim is not included in the token. The consent for delegation is always required and is not stored permanently - the user must approve delegation each login session.
+
+NOTE: Delegation permissions require FGAP V2. FGAP V1 does not support delegation.
 
 ==== Adding additional claims to `may_act`
 

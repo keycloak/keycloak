@@ -1,0 +1,69 @@
+[id="workflow-security-considerations_{context}"]
+
+[[_workflow_security_considerations_]]
+= Security considerations
+
+When designing workflows, it is important to understand the trust boundaries between the event that triggers a workflow, the conditions that control
+whether it runs, and the steps it executes. A misconfigured workflow can allow users to trigger privileged actions on themselves without
+administrator involvement.
+
+This section is particularly relevant when self-registration is enabled in the realm.
+
+== Attribute-based conditions and privileged steps
+
+Conditions such as `has-user-attribute` evaluate attributes stored on the user. Steps such as `grant-role` and `join-group` perform privileged
+actions on the same user. When these are combined, the security of the workflow depends entirely on *who can write* the attribute
+that the condition checks.
+
+Consider the following workflow:
+
+```yaml
+name: Onboarding gold members
+on: user-created
+if: has-user-attribute(membership=gold)
+steps:
+  - uses: grant-role
+    with:
+      role: gold-member
+```
+
+If the `membership` attribute is writable by end users - for example, through a registration form - then a self-registering user
+can set `membership=gold`, satisfy the condition, and receive the `gold-member` role without any administrator review.
+
+To use this workflow safely, the `membership` attribute must be configured so that only administrators can write to it. There are two aspects
+to consider: managed vs. unmanaged attributes, and attribute write permissions.
+
+=== Unmanaged attributes
+
+When the `Unmanaged Attributes` policy in the realm settings is set to `Enabled`, {project_name} persists any attribute submitted during
+registration, even if the attribute is not defined in the user profile configuration. This means a self-registering user can supply
+arbitrary attribute names and values that may satisfy a workflow condition.
+
+To prevent this, avoid setting the `Unmanaged Attributes` policy to `Enabled`. Prefer `Disabled` (the default) or `Admin can edit`, which
+restrict unmanaged attribute handling to the administrative context.
+
+=== Managed attribute write permissions
+
+Even when unmanaged attributes are disabled, a managed attribute can still be writable by end users if its `Who can edit` permission includes
+`User`. For attributes used in workflow conditions that trigger privileged steps, the `Who can edit` permission should be restricted to `Admin`
+only.
+
+You can configure this in the Admin Console under `Realm Settings` > `User Profile` > `Attributes`. Select the attribute and set the
+`Who can edit` permission to `Admin`.
+
+See the link:{adminguide_link}#_understanding-managed-and-unmanaged-attributes[Understanding managed and unmanaged attributes] section
+for more details on attribute policies and permissions.
+
+== Event source and step target
+
+Workflows triggered by user-initiated events such as `user-created` execute with the triggering user as the target of every step. There is
+no separation between the user who caused the event and the user who receives the action - the user who registers is the same user who gets
+the role granted.
+
+When self-registration is enabled, any attribute set by the user at registration time is already present when the `user-created` event fires
+and the workflow condition is evaluated. The user controls the input that the condition checks, which is why the attributes referenced in
+conditions with privileged steps must not be writable by end users, as described in the previous section.
+
+NOTE: When self-registration is disabled and users are created exclusively through the Admin Console or the Admin API, the `user-created`
+event is only triggered by administrator actions. In that case, the administrator controls the attribute values and the risk described
+above does not apply.

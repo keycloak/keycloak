@@ -160,7 +160,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 		// assert that form holds submitted values during validation error
 		Assertions.assertEquals("test-user@localhost", updateEmailPage.getEmail());
 
-		Assertions.assertEquals("Email already exists.", updateEmailPage.getEmailInputError());
+		Assertions.assertEquals("This email is already associated with an existing account.", updateEmailPage.getEmailInputError());
 
 		Assertions.assertNull(events.poll());
 	}

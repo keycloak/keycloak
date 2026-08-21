@@ -54,6 +54,8 @@ public interface Details {
     String UPDATED_FIRST_NAME = PREF_UPDATED + "first_name";
     String PREVIOUS_LAST_NAME = PREF_PREVIOUS + "last_name";
     String UPDATED_LAST_NAME = PREF_UPDATED + "last_name";
+    String PREVIOUS_ENABLED = PREF_PREVIOUS + "enabled";
+    String UPDATED_ENABLED = PREF_UPDATED + "enabled";
     String REMEMBER_ME = "remember_me";
     String TOKEN_ID = "token_id";
     String TOKEN_TYPE = "token_type";

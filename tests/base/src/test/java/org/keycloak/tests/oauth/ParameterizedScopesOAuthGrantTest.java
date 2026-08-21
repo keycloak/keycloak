@@ -2,16 +2,17 @@ package org.keycloak.tests.oauth;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
-import org.keycloak.models.AdminRoles;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
@@ -26,7 +27,8 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -51,6 +53,7 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.OAuthGrantPage;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.admin.authz.fgap.PermissionTestUtils;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.AccountHelper;
@@ -686,7 +689,10 @@ public class ParameterizedScopesOAuthGrantTest {
 
     @Test
     public void delegationScopeWithImplicitFlow() {
-        // create impersonation parameterized role with a hardcoded claim
+        // enable FGAP V2 admin permissions (delegation requires it)
+        realm.updateWithCleanup(r -> r.adminPermissionsEnabled(true));
+
+        // create delegation parameterized scope with a hardcoded claim
         createAndAssignOptionalScope(ParameterizedScopeBuilder.create("delegated-act")
                 .parameterizedScopeType("delegation")
                 .mappers(ProtocolMapperBuilder.create().name("Hardcoded Claim")
@@ -709,12 +715,11 @@ public class ParameterizedScopesOAuthGrantTest {
             r.clients().get(thirdParty.getId()).update(rep);
         });
 
-        // add impersonation to the admin user
-        final ClientResource realmManagement = AdminApiUtil.findClientByClientId(realm.admin(), Constants.REALM_MANAGEMENT_CLIENT_ID);
-        final String clientUUID = realmManagement.toRepresentation().getId();
-        final RoleRepresentation impersonation = realmManagement.roles().get(AdminRoles.IMPERSONATION).toRepresentation();
-        AdminApiUtil.findUserByUsernameId(realm.admin(), DEFAULT_ADMIN_USERNAME).roles()
-                .clientLevel(clientUUID).add(List.of(impersonation));
+        // grant delegation permission to the admin user via FGAP V2
+        final ClientResource adminPerms = AdminApiUtil.findClientByClientId(realm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
+        final String adminUserId = AdminApiUtil.findUserByUsernameId(realm.admin(), DEFAULT_ADMIN_USERNAME).toRepresentation().getId();
+        UserPolicyRepresentation policy = PermissionTestUtils.createUserPolicy(realm, adminPerms, "Delegation Policy", adminUserId);
+        ScopePermissionRepresentation permission = PermissionTestUtils.createAllPermission(adminPerms, AdminPermissionsSchema.USERS_RESOURCE_TYPE, policy, Set.of(AdminPermissionsSchema.DELEGATE));
 
         // implicit flow login with the delegation scope granted
         String requestedScope = "delegated-act:" + DEFAULT_ADMIN_USERNAME;
@@ -733,10 +738,9 @@ public class ParameterizedScopesOAuthGrantTest {
         MatcherAssert.assertThat(List.of(token.getScope().split(" ")), Matchers.hasItem(requestedScope));
         Assertions.assertEquals("implicit-delegation", token.getOtherClaims().get("matched_scope"));
 
-        // logout and remove the permission
+        // logout and remove the delegation permission
         AccountHelper.logout(realm.admin(), DEFAULT_USERNAME);
-        AdminApiUtil.findUserByUsernameId(realm.admin(), DEFAULT_ADMIN_USERNAME).roles()
-                .clientLevel(clientUUID).remove(List.of(impersonation));
+        adminPerms.authorization().permissions().scope().findById(permission.getId()).remove();
 
         // implicit flow login with the delegation scope not granted
         oauth.client(THIRD_PARTY_APP)
@@ -784,7 +788,7 @@ public class ParameterizedScopesOAuthGrantTest {
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.PARAMETERIZED_SCOPES)
+            return config.features(Profile.Feature.PARAMETERIZED_SCOPES, Profile.Feature.TOKEN_EXCHANGE_DELEGATION)
                     .option("spi-ciba-auth-channel-ciba-http-auth-channel-http-authentication-channel-uri",
                             "http://localhost:8500/ciba/request-authentication-channel");
         }

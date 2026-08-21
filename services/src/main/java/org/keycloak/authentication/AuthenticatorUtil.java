@@ -215,6 +215,8 @@ public class AuthenticatorUtil {
                     });
         }
 
+        session.authenticationSessions().removeRootAuthenticationSessionsByAuthenticatedUser(realm, user,
+                authSession.getParentSession().getId());
     }
 
     private static void backchannelLogout(KeycloakSession session, RealmModel realm, ClientConnection conn, HttpRequest req, EventBuilder event, UserSessionModel s) {

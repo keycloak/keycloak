@@ -51,8 +51,10 @@ public final class ClientJpaQueryExecutor {
         predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(
                 session, AdminPermissionsSchema.CLIENTS, realm, cb, query, root));
 
+        ClientResourceTypeProvider provider = new ClientResourceTypeProvider();
+        
         ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(
-                null, SCHEMAS, cb, root);
+                provider, SCHEMAS, cb, root);
         if (filterContext != null) {
             predicates.add(evaluator.visit(filterContext).predicate());
         }

@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ * Copyright 2025 Red Hat, Inc. and/or its affiliates
+  ~ * and other contributors as indicated by the @author tags.
+  ~ *
+  ~ * Licensed under the Apache License, Version 2.0 (the "License");
+  ~ * you may not use this file except in compliance with the License.
+  ~ * You may obtain a copy of the License at
+  ~ *
+  ~ * http://www.apache.org/licenses/LICENSE-2.0
+  ~ *
+  ~ * Unless required by applicable law or agreed to in writing, software
+  ~ * distributed under the License is distributed on an "AS IS" BASIS,
+  ~ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ * See the License for the specific language governing permissions and
+  ~ * limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet author="keycloak" id="26.8.0-auth-session-auth-user-id-index">
+        <!-- Index used when invalidating a user's in-progress authentication sessions on credential reset
+             with "sign out of other devices" (findRootAuthSessionIdsByUser filters on AUTH_USER_ID). -->
+        <createIndex tableName="AUTH_SESSION" indexName="IDX_AUTH_SESSION_AUTH_USER_ID">
+            <column name="AUTH_USER_ID"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Add SESSION_BUCKET column to OFFLINE_USER_SESSION for distributing expiration index inserts
+         across multiple B-tree leaf pages, reducing PAGELATCH_EX contention on MSSQL and similar
+         page-level latch contention on other databases. -->
+
+    <changeSet id="26.8.0-51851-add-session-bucket" author="keycloak">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <columnExists tableName="OFFLINE_USER_SESSION" columnName="SESSION_BUCKET"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="OFFLINE_USER_SESSION">
+            <column name="SESSION_BUCKET" type="SMALLINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="26.8.0-51851-drop-old-expiration-idx-created" author="keycloak">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <indexExists tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_CREATED"/>
+        </preConditions>
+        <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_CREATED"/>
+    </changeSet>
+
+    <changeSet id="26.8.0-51851-drop-old-expiration-idx-last-refresh" author="keycloak">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <indexExists tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_LAST_REFRESH"/>
+        </preConditions>
+        <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_LAST_REFRESH"/>
+    </changeSet>
+
+    <changeSet id="26.8.0-51851-add-bucketed-expiration-idx-created" author="keycloak">
+        <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_CREATED">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+            <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
+            <column name="REMEMBER_ME" type="BOOLEAN"/>
+            <column name="SESSION_BUCKET" type="SMALLINT"/>
+            <column name="CREATED_ON" type="INT"/>
+            <column name="USER_SESSION_ID" type="VARCHAR(36)"/>
+            <column name="USER_ID" type="VARCHAR(255)"/>
+        </createIndex>
+        <!-- On databases that support INCLUDE, move USER_SESSION_ID and USER_ID out of the
+             B-tree key into leaf-only storage, reducing key size and page contention. -->
+        <modifySql dbms="postgresql">
+            <replace replace=", USER_SESSION_ID, USER_ID)" with=") INCLUDE (USER_SESSION_ID, USER_ID)"/>
+        </modifySql>
+        <modifySql dbms="mssql">
+            <replace replace=", USER_SESSION_ID, USER_ID)" with=") INCLUDE (USER_SESSION_ID, USER_ID) WITH (OPTIMIZE_FOR_SEQUENTIAL_KEY = ON)"/>
+        </modifySql>
+    </changeSet>
+
+    <changeSet id="26.8.0-51851-add-bucketed-expiration-idx-last-refresh" author="keycloak">
+        <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_LAST_REFRESH">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+            <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
+            <column name="REMEMBER_ME" type="BOOLEAN"/>
+            <column name="SESSION_BUCKET" type="SMALLINT"/>
+            <column name="LAST_SESSION_REFRESH" type="INT"/>
+            <column name="USER_SESSION_ID" type="VARCHAR(36)"/>
+            <column name="USER_ID" type="VARCHAR(255)"/>
+        </createIndex>
+        <modifySql dbms="postgresql">
+            <replace replace=", USER_SESSION_ID, USER_ID)" with=") INCLUDE (USER_SESSION_ID, USER_ID)"/>
+        </modifySql>
+        <modifySql dbms="mssql">
+            <replace replace=", USER_SESSION_ID, USER_ID)" with=") INCLUDE (USER_SESSION_ID, USER_ID) WITH (OPTIMIZE_FOR_SEQUENTIAL_KEY = ON)"/>
+        </modifySql>
+    </changeSet>
+
+    <!-- Issue 51854: Drop redundant client session index and add filtered broker session index
+         on databases that support it. -->
+
+    <changeSet id="26.8.0-51854-drop-css-user-session-offline-idx" author="keycloak">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <indexExists tableName="OFFLINE_CLIENT_SESSION" indexName="IDX_OFFLINE_CSS_BY_USER_SESSION_AND_OFFLINE"/>
+        </preConditions>
+        <dropIndex tableName="OFFLINE_CLIENT_SESSION" indexName="IDX_OFFLINE_CSS_BY_USER_SESSION_AND_OFFLINE"/>
+    </changeSet>
+
+    <changeSet id="26.8.0-51854-drop-broker-session-idx" author="keycloak">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <and>
+                <or>
+                    <dbms type="postgresql"/>
+                    <dbms type="mssql"/>
+                </or>
+                <indexExists tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_BROKER_SESSION_ID"/>
+            </and>
+        </preConditions>
+        <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_BROKER_SESSION_ID"/>
+    </changeSet>
+
+    <changeSet id="26.8.0-51854-add-filtered-broker-session-idx" author="keycloak">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <and>
+                <or>
+                    <dbms type="postgresql"/>
+                    <dbms type="mssql"/>
+                </or>
+                <not>
+                    <indexExists tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_BROKER_SESSION_ID"/>
+                </not>
+            </and>
+        </preConditions>
+        <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_BROKER_SESSION_ID">
+            <column name="BROKER_SESSION_ID"/>
+            <column name="REALM_ID"/>
+        </createIndex>
+        <modifySql dbms="postgresql">
+            <append value=" WHERE BROKER_SESSION_ID IS NOT NULL"/>
+        </modifySql>
+        <modifySql dbms="mssql">
+            <append value=" WHERE BROKER_SESSION_ID IS NOT NULL"/>
+        </modifySql>
+    </changeSet>
+
+</databaseChangeLog>

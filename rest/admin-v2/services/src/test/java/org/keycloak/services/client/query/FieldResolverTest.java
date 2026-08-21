@@ -7,7 +7,6 @@ import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FieldResolverTest {
@@ -37,21 +36,6 @@ class FieldResolverTest {
         client.setRedirectUris(Set.of("https://example.com"));
         var result = FieldResolver.resolve("redirectUris", client);
         assertTrue(result instanceof Set);
-    }
-
-    @Test
-    void resolveAuthMethod() {
-        var client = new OIDCClientRepresentation("test");
-        var auth = new OIDCClientRepresentation.Auth();
-        auth.setMethod("client-secret");
-        client.setAuth(auth);
-        assertEquals("client-secret", FieldResolver.resolve("auth.method", client));
-    }
-
-    @Test
-    void resolveAuthMethodNullAuth() {
-        var client = new OIDCClientRepresentation("test");
-        assertNull(FieldResolver.resolve("auth.method", client));
     }
 
     @Test
