@@ -212,14 +212,16 @@ public class EventEmitterService {
             // handed a user↔tenant association Keycloak knows is false.
             if (resolved.user() != null && resolved.organization() != null
                     && !isUserMemberOfOrganization(resolved.user(), resolved.organization())) {
-                // params names the resolved pairing that failed the
-                // membership check so the admin UI can render a
-                // translated message with the concrete user/tenant
-                // instead of interpolating the English description.
+                // Deliberately NO params naming the resolved pairing:
+                // this endpoint is also callable by service accounts
+                // holding only the receiver-configured emit role, and
+                // echoing the resolved username / org alias would
+                // disclose realm metadata to a caller that may only
+                // hold opaque ids. The stable error code is enough for
+                // callers and the admin UI to render a translated
+                // (generic) mismatch message.
                 return EmitEventResult.dropped(EmitEventStatus.SUBJECT_MISMATCH,
-                        "User subject is not a member of the tenant organization",
-                        Map.of("user", resolved.user().getUsername(),
-                                "tenant", resolved.organization().getAlias()));
+                        "User subject is not a member of the tenant organization");
             }
         }
         // Drop early so the emitter sees a clean status without

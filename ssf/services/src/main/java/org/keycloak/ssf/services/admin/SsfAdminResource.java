@@ -1138,9 +1138,8 @@ public class SsfAdminResource {
         // so callers can distinguish categories (unknown_event_type,
         // subject_not_found, ...) from the wire response without having
         // to parse a free-form description. Any structured params the
-        // emitter attached (e.g. the failing complex-subject member, or
-        // the user/tenant pairing behind a subject_mismatch) are
-        // forwarded verbatim so the admin UI can parameterize a
+        // emitter attached (e.g. the failing complex-subject member)
+        // are forwarded verbatim so the admin UI can parameterize a
         // translated message without parsing error_description.
         String emitMessage = emitResult.message();
         String emitErrorCode = emitResult.status().wireValue();

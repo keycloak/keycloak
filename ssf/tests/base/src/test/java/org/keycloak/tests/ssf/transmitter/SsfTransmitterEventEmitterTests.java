@@ -577,13 +577,15 @@ public class SsfTransmitterEventEmitterTests {
             JsonNode mismatchBody = res.asJson();
             Assertions.assertEquals("subject_mismatch", mismatchBody.get("error").asText(),
                     "error code should name the user/tenant membership mismatch");
-            // params names the resolved pairing machine-readably so the
-            // admin UI can render a translated message with the concrete
-            // user/tenant instead of parsing the English description.
-            Assertions.assertEquals(TEST_USER, mismatchBody.path("params").path("user").asText(),
-                    "params.user should carry the resolved username behind the mismatch");
-            Assertions.assertEquals(orgAlias, mismatchBody.path("params").path("tenant").asText(),
-                    "params.tenant should carry the resolved organization alias behind the mismatch");
+            // Disclosure guard: emit is callable by service accounts
+            // holding only the configured emit role, so the response
+            // must not echo resolved entity data (username, org alias)
+            // for the otherwise-opaque ids the caller submitted.
+            String rawBody = mismatchBody.toString();
+            Assertions.assertFalse(rawBody.contains(TEST_USER),
+                    "mismatch response must not disclose the resolved username");
+            Assertions.assertFalse(rawBody.contains(orgAlias),
+                    "mismatch response must not disclose the resolved organization alias");
         }
         Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
                 "mismatched user+tenant subject must not reach the receiver");

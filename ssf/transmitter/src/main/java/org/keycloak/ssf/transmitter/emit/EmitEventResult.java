@@ -12,10 +12,12 @@ import org.keycloak.ssf.event.SsfEvent;
  * failures (e.g. payload-shape mismatch against the registered event
  * class) so the admin endpoint can return a 400 with a useful body.
  * The optional {@code params} map carries machine-readable fields tied
- * to the specific failure (e.g. which subject member of a complex subject failed
- * to resolve, or the user/tenant pairing behind a membership mismatch)
- * so REST callers can localize or react programmatically without
- * parsing the English {@code message}.
+ * to the specific failure (e.g. which subject member of a complex
+ * subject failed to resolve) so REST callers can localize or react
+ * programmatically without parsing the English {@code message}. Params
+ * must never carry resolved entity data (usernames, aliases) — emit is
+ * callable by role-scoped service accounts, so echoing resolved
+ * identifiers would disclose realm metadata.
  */
 public record EmitEventResult(EmitEventStatus status, String jti, String message, SsfEvent event,
                               Map<String, String> params) {

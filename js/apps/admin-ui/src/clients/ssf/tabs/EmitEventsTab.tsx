@@ -247,13 +247,10 @@ export const EmitEventsTab = ({
         // the tenant organization. Not reachable from this form yet
         // (it only sends the single-member shorthand), but wired up so
         // complex-subject support added later inherits a translated
-        // message. params carries the resolved pairing that failed.
-        return body.params?.user && body.params.tenant
-          ? t("ssfEmitErrorSubjectMismatch", {
-              user: body.params.user,
-              tenant: body.params.tenant,
-            })
-          : t("ssfEmitErrorSubjectMismatchGeneric");
+        // message. Deliberately generic: the server omits the resolved
+        // user/tenant identifiers so the role-scoped emit endpoint
+        // cannot be used to disclose realm metadata.
+        return t("ssfEmitErrorSubjectMismatch");
       case "invalid_request":
         return t("ssfEmitErrorInvalidRequest", { detail });
       case "no_delivery_config":
