@@ -107,7 +107,7 @@ public class ClientRegistrationTokenUtils {
                 new TokenVerifierProviderManager().additionalAccessTokenVerifications(ctx);
             }
 
-            SignatureVerifierContext verifierContext = CryptoUtils.getSignatureProvider(session, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
+            SignatureVerifierContext verifierContext = CryptoUtils.getSignatureProvider(session, verifier.getHeader().getRawAlgorithm()).verifier(verifier.getHeader().getKeyId());
             verifier.verifierContext(verifierContext);
 
             kid = verifierContext.getKid();
