@@ -319,6 +319,42 @@ public class TokenManager {
     }
 
 
+    /**
+     * Resolves whether refresh tokens are revoked (rotated) for the given client. The client-level override
+     * ({@link OIDCConfigAttributes#REVOKE_REFRESH_TOKEN}) takes precedence over the realm setting.
+     *
+     * @param realm the realm
+     * @param client the client, may be {@code null} in which case the realm setting is returned
+     * @return {@code true} if refresh token revocation is effective for the client
+     */
+    public static boolean isRevokeRefreshToken(RealmModel realm, ClientModel client) {
+        if (client != null) {
+            Boolean clientOverride = OIDCAdvancedConfigWrapper.fromClientModel(client).getRevokeRefreshToken();
+            if (clientOverride != null) {
+                return clientOverride;
+            }
+        }
+        return realm.isRevokeRefreshToken();
+    }
+
+    /**
+     * Resolves the maximum allowed refresh token reuse for the given client. The client-level override
+     * ({@link OIDCConfigAttributes#REFRESH_TOKEN_MAX_REUSE}) takes precedence over the realm setting.
+     *
+     * @param realm the realm
+     * @param client the client, may be {@code null} in which case the realm setting is returned
+     * @return the effective maximum refresh token reuse count for the client
+     */
+    public static int getRefreshTokenMaxReuse(RealmModel realm, ClientModel client) {
+        if (client != null) {
+            Integer clientOverride = OIDCAdvancedConfigWrapper.fromClientModel(client).getRefreshTokenMaxReuse();
+            if (clientOverride != null) {
+                return clientOverride;
+            }
+        }
+        return realm.getRefreshTokenMaxReuse();
+    }
+
     // Will throw OAuthErrorException if validation fails
     public void validateTokenReuse(KeycloakSession session, RealmModel realm, AccessToken refreshToken, AuthenticatedClientSessionModel clientSession, boolean refreshFlag) throws OAuthErrorException {
         String key = getReuseIdKey(refreshToken);
@@ -340,7 +376,7 @@ public class TokenManager {
         }
 
         int currentCount = clientSession.getRefreshTokenUseCount(key);
-        if (currentCount > realm.getRefreshTokenMaxReuse()) {
+        if (currentCount > getRefreshTokenMaxReuse(realm, clientSession.getClient())) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Maximum allowed refresh token reuse exceeded",
                 "Maximum allowed refresh token reuse exceeded");
         }
@@ -1281,7 +1317,7 @@ public class TokenManager {
             boolean offlineTokenRequested = clientSessionCtx.isOfflineTokenRequested();
             generateRefreshToken(offlineTokenRequested);
             refreshToken.setScope(clientSessionCtx.getScopeString(true));
-            if (realm.isRevokeRefreshToken()) {
+            if (isRevokeRefreshToken(realm, client)) {
                 refreshToken.getOtherClaims().put(Constants.REUSE_ID, KeycloakModelUtils.generateId());
             }
             return this;
@@ -1302,7 +1338,7 @@ public class TokenManager {
                 }
             }
             generateRefreshToken(offlineTokenRequested);
-            if (realm.isRevokeRefreshToken()) {
+            if (isRevokeRefreshToken(realm, client)) {
                 refreshToken.getOtherClaims().put(Constants.REUSE_ID, reuseId);
                 clientSession.setRefreshTokenLastRefresh(tokenManager.getReuseIdKey(oldRefreshToken), refreshToken.getIat().intValue());
             }

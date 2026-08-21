@@ -51,6 +51,7 @@ import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.utils.StringUtil;
+import org.keycloak.validate.ValidationError;
 
 import org.jboss.logging.Logger;
 
@@ -235,9 +236,35 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         validateDefaultAcrValues(context);
         validateMinimumAcrValue(context);
         validateClientSessionTimeout(context);
+        validateRefreshTokenRevocation(context);
         validateX509Credentials(context);
 
         return context.toResult();
+    }
+
+    private void validateRefreshTokenRevocation(ValidationContext<ClientModel> context) {
+        ClientModel client = context.getObjectToValidate();
+        if (client == null) return;
+
+        String revokeRefreshToken = client.getAttribute(OIDCConfigAttributes.REVOKE_REFRESH_TOKEN);
+        if (revokeRefreshToken != null && !revokeRefreshToken.trim().isEmpty()) {
+            String value = revokeRefreshToken.trim();
+            if (!"true".equalsIgnoreCase(value) && !"false".equalsIgnoreCase(value)) {
+                context.addError(OIDCConfigAttributes.REVOKE_REFRESH_TOKEN,
+                        "Revoke refresh token must be either 'true' or 'false'.",
+                        ValidationError.MESSAGE_INVALID_VALUE);
+            }
+        }
+
+        String maxReuse = client.getAttribute(OIDCConfigAttributes.REFRESH_TOKEN_MAX_REUSE);
+        if (maxReuse != null && !maxReuse.trim().isEmpty()) {
+            Integer value = parseIntAttribute(maxReuse.trim());
+            if (value == null || value < 0) {
+                context.addError(OIDCConfigAttributes.REFRESH_TOKEN_MAX_REUSE,
+                        "Refresh token max reuse must be a non-negative integer.",
+                        Messages.REFRESH_TOKEN_MAX_REUSE_INVALID);
+            }
+        }
     }
 
     @Override
