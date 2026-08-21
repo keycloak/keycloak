@@ -1,13 +1,20 @@
-package org.keycloak.testsuite.client;
+package org.keycloak.tests.client;
 
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.validation.DefaultClientValidationProvider;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@KeycloakIntegrationTest
 public class DefaultClientValidationTest {
+
+    @InjectRealm
+    ManagedRealm managedRealm;
     @Test
     public void that_checkCurlyBracketsBalanced_worksCorrectly() {
         String urlWithCurlyBrackets1="http://{test}/prova123";
