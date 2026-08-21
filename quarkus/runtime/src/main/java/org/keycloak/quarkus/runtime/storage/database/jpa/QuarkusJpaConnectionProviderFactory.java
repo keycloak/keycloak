@@ -164,8 +164,7 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
                 .property()
                 .name("initializeEmpty")
                 .type("boolean")
-                .helpText("Initialize database if empty. If set to false the database has to be manually initialized. If you want to manually initialize the database set migrationStrategy to manual which will create a file with SQL commands to initialize the database.")
-                .defaultValue(true)
+                .helpText("Initialize database if empty. Defaults to true, unless migrationStrategy is set to manual or validate. If set to false the database has to be manually initialized. If you want to manually initialize the database set migrationStrategy to manual which will create a file with SQL commands to initialize the database.")
                 .add()
                 .property()
                 .name("migrationStrategy")
@@ -264,7 +263,9 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
 
     private boolean createOrUpdateSchema(String schema, String version, Connection connection, KeycloakSession session) {
         MigrationStrategy strategy = getMigrationStrategy();
-        boolean initializeEmpty = config.getBoolean("initializeEmpty", true);
+        // An explicit migration strategy wins over the implicit initialization of an empty database, so the
+        // default of initializeEmpty depends on the strategy. An explicitly configured value always wins.
+        boolean initializeEmpty = config.getBoolean("initializeEmpty", strategy == MigrationStrategy.UPDATE);
         File databaseUpdateFile = getDatabaseUpdateFile();
 
         JpaUpdaterProvider updater = session.getProvider(JpaUpdaterProvider.class);
