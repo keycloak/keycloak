@@ -38,6 +38,10 @@ When calling {project_name}'s experimental AuthZEN endpoints, the caller now nee
 
 The Admin REST API endpoints for listing client sessions (`GET /admin/realms/\{realm}/clients/\{id}/user-sessions` and `GET /admin/realms/\{realm}/clients/\{id}/offline-sessions`) now filter out sessions belonging to users that the caller does not have permission to view. Previously, any caller with the `view-clients` role could see all user sessions for a client, potentially exposing user identities to callers without the `view-users` role. After upgrading, callers without `view-users` permission will see fewer results from these endpoints.
 
+=== Client Secret Rotation is now enabled by default
+
+The `client-secret-rotation` feature has been promoted from preview to supported and is now enabled by default. If you previously enabled this feature explicitly with `--features=client-secret-rotation` or `--features=preview`, that configuration is no longer required.
+
 === HTTP optimized serializers enabled by default
 
 The `http-optimized-serializers` feature is now enabled by default.

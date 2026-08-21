@@ -103,7 +103,7 @@ public class Profile {
 
         PAR("OAuth 2.0 Pushed Authorization Requests (PAR)", Type.DEFAULT),
 
-        CLIENT_SECRET_ROTATION("Client Secret Rotation", Type.PREVIEW),
+        CLIENT_SECRET_ROTATION("Client Secret Rotation", Type.DEFAULT),
 
         STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT),
         STEP_UP_AUTHENTICATION_SAML("Step-up Authentication Saml", Type.DEFAULT, Feature.STEP_UP_AUTHENTICATION),
