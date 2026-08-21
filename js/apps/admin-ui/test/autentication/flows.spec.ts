@@ -23,6 +23,7 @@ import {
   addExecution,
   addPolicy,
   addSubFlow,
+  assertFlowRowExpanded,
   assertDefaultSwitchPolicyEnabled,
   assertExecutionLevel,
   assertExecutionRequirement,
@@ -41,6 +42,9 @@ import {
   goToOTPPolicyTab,
   goToPoliciesTab,
   goToRequiredActions,
+  hoverExecutionDuringDrag,
+  releaseExecutionDrag,
+  startExecutionDrag,
   goToWebAuthnTab,
 } from "./flow.ts";
 
@@ -236,6 +240,108 @@ test.describe("Authentication flow details", () => {
     await expandFlowRow(page, `${flowName} forms`);
     await assertExecutionLevel(page, /\bCookie\b/, 1);
     await assertExecutionRequirement(page, /\bCookie\b/, "Alternative");
+  });
+
+  test("keeps same-level hovered subflows open while dragging", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed();
+
+    await adminClient.copyFlow("browser", flowName, testBed.realm);
+    await login(page, { to: toAuthentication({ realm: testBed.realm }) });
+
+    await clickTableRowItem(page, flowName);
+
+    const parentSubflow = `${flowName} forms`;
+    const subflowA = "DnD Hover A";
+    const subflowB = "DnD Hover B";
+
+    await addSubFlow(page, parentSubflow, subflowA);
+    await assertNotificationMessage(page, "Flow successfully updated");
+    await addExecution(page, subflowA, "reset-credentials-choose-user");
+    await assertNotificationMessage(page, "Flow successfully updated");
+
+    await addSubFlow(page, parentSubflow, subflowB);
+    await assertNotificationMessage(page, "Flow successfully updated");
+    await addExecution(page, subflowB, "reset-credentials-choose-user");
+    await assertNotificationMessage(page, "Flow successfully updated");
+
+    const sourceRow = page.getByRole("row", { name: /\bCookie\b/ }).first();
+    const subflowARow = page
+      .getByRole("row")
+      .filter({ has: page.getByTestId(subflowA) })
+      .first();
+    const subflowBRow = page
+      .getByRole("row")
+      .filter({ has: page.getByTestId(subflowB) })
+      .first();
+
+    await assertExecutionLevel(page, parentSubflow, 0);
+    await assertExecutionLevel(page, subflowA, 1);
+    await assertExecutionLevel(page, subflowB, 1);
+
+    await startExecutionDrag(page, sourceRow);
+    await assertFlowRowExpanded(page, parentSubflow, true);
+
+    await hoverExecutionDuringDrag(page, subflowARow, { yRatio: 0.5 });
+    await assertFlowRowExpanded(page, subflowA, true);
+
+    await hoverExecutionDuringDrag(page, subflowBRow, { yRatio: 0.5 });
+    await assertFlowRowExpanded(page, subflowB, true);
+    await assertFlowRowExpanded(page, subflowA, true);
+
+    await releaseExecutionDrag(page);
+  });
+
+  test("keeps parent open when leaving nested flow and closes initial branch when moving to another flow", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed();
+
+    await adminClient.copyFlow("browser", flowName, testBed.realm);
+    await login(page, { to: toAuthentication({ realm: testBed.realm }) });
+
+    await clickTableRowItem(page, flowName);
+
+    const parentSubflow = `${flowName} forms`;
+    const nestedParent = "DnD Nested Parent";
+    const nestedChild = "DnD Nested Child";
+
+    await addSubFlow(page, parentSubflow, nestedParent);
+    await assertNotificationMessage(page, "Flow successfully updated");
+    await addSubFlow(page, nestedParent, nestedChild);
+    await assertNotificationMessage(page, "Flow successfully updated");
+    await addExecution(page, nestedChild, "reset-credentials-choose-user");
+    await assertNotificationMessage(page, "Flow successfully updated");
+
+    const cookieRow = page.getByRole("row", { name: /\bCookie\b/ }).first();
+    const nestedParentRow = page
+      .getByRole("row")
+      .filter({ has: page.getByTestId(nestedParent) })
+      .first();
+    const nestedChildRow = page
+      .getByRole("row")
+      .filter({ has: page.getByTestId(nestedChild) })
+      .first();
+    const differentFlowRow = page
+      .getByRole("row")
+      .filter({
+        has: page.getByTestId(`${flowName} Browser - Conditional 2FA`),
+      })
+      .first();
+
+    await startExecutionDrag(page, cookieRow);
+    await hoverExecutionDuringDrag(page, nestedChildRow, { yRatio: 0.5 });
+    await assertFlowRowExpanded(page, nestedChild, true);
+    await hoverExecutionDuringDrag(page, nestedParentRow, { yRatio: 0.5 });
+    await assertFlowRowExpanded(page, nestedParent, true);
+    await releaseExecutionDrag(page);
+
+    await startExecutionDrag(page, nestedChildRow);
+    await assertFlowRowExpanded(page, nestedParent, true);
+    await hoverExecutionDuringDrag(page, differentFlowRow, { yRatio: 0.5 });
+    await assertFlowRowExpanded(page, nestedParent, false);
+    await releaseExecutionDrag(page);
   });
 
   test("edits flow details", async ({ page }) => {

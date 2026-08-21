@@ -74,15 +74,35 @@ type DragTargetPosition = {
   minYOffset?: number;
 };
 
-/** Drags a flow row grip handle onto another row. Re-measures the drop target after drag
- *  activation because drag start collapses expanded subflows and shifts row positions. */
-export async function dragExecutionToRow(
+const getFlowRow = (page: Page, displayName: string) =>
+  page
+    .getByRole("row")
+    .filter({ has: page.getByTestId(displayName) })
+    .first();
+
+const moveDragPointerToRow = async (
   page: Page,
-  sourceRow: Locator,
   targetRow: Locator,
   targetPosition: DragTargetPosition = {},
-) {
+) => {
   const { xRatio = 0.5, yRatio = 0.5, minYOffset } = targetPosition;
+  const targetBox = await targetRow.boundingBox();
+  expect(targetBox).not.toBeNull();
+
+  const targetY =
+    minYOffset !== undefined
+      ? Math.max(minYOffset, targetBox!.height * yRatio)
+      : targetBox!.height * yRatio;
+
+  await page.mouse.move(
+    targetBox!.x + targetBox!.width * xRatio,
+    targetBox!.y + targetY,
+    { steps: 25 },
+  );
+};
+
+/** Starts dragging a flow row from its grip handle. */
+export async function startExecutionDrag(page: Page, sourceRow: Locator) {
   const sourceHandle = sourceRow.locator(
     ".keycloak__authentication__drag-handle",
   );
@@ -98,27 +118,53 @@ export async function dragExecutionToRow(
   await page.mouse.move(startX + 10, startY, { steps: 5 });
   // Drag start collapses expanded subflows asynchronously; wait for layout to settle.
   await page.waitForTimeout(200);
+}
 
-  const targetBox = await targetRow.boundingBox();
-  expect(targetBox).not.toBeNull();
+/** Moves the active drag pointer over a target row without dropping. */
+export async function hoverExecutionDuringDrag(
+  page: Page,
+  targetRow: Locator,
+  targetPosition: DragTargetPosition = {},
+) {
+  await moveDragPointerToRow(page, targetRow, targetPosition);
+}
 
-  const targetY =
-    minYOffset !== undefined
-      ? Math.max(minYOffset, targetBox!.height * yRatio)
-      : targetBox!.height * yRatio;
+/** Moves the active drag pointer away from execution rows. */
+export async function hoverExecutionOutsideRows(page: Page) {
+  await page.mouse.move(5, 5, { steps: 20 });
+}
 
-  await page.mouse.move(
-    targetBox!.x + targetBox!.width * xRatio,
-    targetBox!.y + targetY,
-    { steps: 25 },
-  );
+/** Releases the pointer to finish/cancel the active drag. */
+export async function releaseExecutionDrag(page: Page) {
   await page.mouse.up();
 }
 
+export async function assertFlowRowExpanded(
+  page: Page,
+  displayName: string,
+  expanded: boolean,
+) {
+  await expect(getFlowRow(page, displayName)).toHaveAttribute(
+    "aria-expanded",
+    expanded ? "true" : "false",
+  );
+}
+
+/** Drags a flow row grip handle onto another row. Re-measures the drop target after drag
+ *  activation because drag start collapses expanded subflows and shifts row positions. */
+export async function dragExecutionToRow(
+  page: Page,
+  sourceRow: Locator,
+  targetRow: Locator,
+  targetPosition: DragTargetPosition = {},
+) {
+  await startExecutionDrag(page, sourceRow);
+  await hoverExecutionDuringDrag(page, targetRow, targetPosition);
+  await releaseExecutionDrag(page);
+}
+
 export async function expandFlowRow(page: Page, displayName: string) {
-  const row = page.getByRole("row").filter({
-    has: page.getByTestId(displayName),
-  });
+  const row = getFlowRow(page, displayName);
   if ((await row.getAttribute("aria-expanded")) === "false") {
     await row.locator(".pf-v5-c-table__toggle button").click();
   }
