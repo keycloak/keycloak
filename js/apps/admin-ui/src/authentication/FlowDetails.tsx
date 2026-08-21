@@ -62,6 +62,7 @@ import {
   IndexChange,
   LevelChange,
 } from "./execution-model";
+import { nextHoverLevel, shouldPruneExpandedFlows } from "./drag-hover";
 import { toAuthentication } from "./routes/Authentication";
 import { toFlow, type FlowParams } from "./routes/Flow";
 
@@ -82,6 +83,11 @@ type HoveredRow = {
 type ExecutionMoveSnapshot = {
   config: AuthenticatorConfigRepresentation;
   children: ExecutionMoveSnapshot[];
+};
+
+type AutoExpandOptions = {
+  expandTarget: boolean;
+  pruneOthers: boolean;
 };
 
 const executionLabel = (
@@ -257,6 +263,8 @@ export default function FlowDetails() {
   const collapseRafRef = useRef<number | null>(null);
   const dropInfoRef = useRef<DropInfo>(emptyDropInfo());
   const dragRowsRef = useRef<Element[]>([]);
+  const hoverLevelRef = useRef<number | null>(null);
+  const draggedFlowContextIdRef = useRef<string | null>(null);
 
   const refreshDragRows = useCallback(() => {
     dragRowsRef.current = Array.from(
@@ -268,6 +276,16 @@ export default function FlowDetails() {
     dropInfoRef.current = info;
     setDropInfo(info);
   }, []);
+
+  const commitDragTreeChanges = useCallback(() => {
+    if (!executionList) {
+      return;
+    }
+    setExecutionList(executionList.clone());
+    requestAnimationFrame(() => {
+      refreshDragRows();
+    });
+  }, [executionList, refreshDragRows]);
 
   const visualIndexById = useMemo(() => {
     const map = new Map<string, number>();
@@ -392,14 +410,54 @@ export default function FlowDetails() {
       collapseRafRef.current = null;
     }
     autoExpandedIdsRef.current.clear();
+    hoverLevelRef.current = null;
+    draggedFlowContextIdRef.current = null;
     if (executionList) {
       executionList.restoreCollapseState(collapseSnapshotRef.current);
       setExecutionList(executionList.clone());
     }
   }, [clearExpandTimer, executionList]);
 
+  const pruneAutoExpandedFlows = useCallback(
+    (keepExpanded: Set<string>): boolean => {
+      if (!executionList) {
+        return false;
+      }
+
+      let changed: boolean = false;
+      const collapseSubflows = (list: ExpandableExecution[]) => {
+        for (const ex of list) {
+          if (!ex.executionList?.length || !ex.id) {
+            continue;
+          }
+
+          if (!keepExpanded.has(ex.id)) {
+            if (!ex.isCollapsed) {
+              ex.isCollapsed = true;
+              changed = true;
+            }
+            autoExpandedIdsRef.current.delete(ex.id);
+          }
+
+          collapseSubflows(ex.executionList);
+        }
+      };
+
+      collapseSubflows(executionList.expandableList);
+
+      for (const id of [...autoExpandedIdsRef.current]) {
+        if (keepExpanded.has(id)) {
+          continue;
+        }
+        autoExpandedIdsRef.current.delete(id);
+      }
+      return changed;
+    },
+    [executionList],
+  );
+
   const syncAutoExpandedPath = useCallback(
-    (subflowId: string, expandTarget: boolean) => {
+    (subflowId: string, { expandTarget, pruneOthers }: AutoExpandOptions) => {
       if (!executionList) {
         return;
       }
@@ -410,20 +468,12 @@ export default function FlowDetails() {
       }
 
       const ancestorIds = executionList.ancestorPathIds(subflowId);
+      const keepExpanded = new Set([...ancestorIds, subflowId]);
+
       let changed = false;
 
-      for (const id of [...autoExpandedIdsRef.current]) {
-        const keepExpanded =
-          ancestorIds.has(id) || (expandTarget && id === subflowId);
-        if (keepExpanded) {
-          continue;
-        }
-        const node = findExecutionById(id);
-        if (node?.executionList?.length && !node.isCollapsed) {
-          node.isCollapsed = true;
-          changed = true;
-        }
-        autoExpandedIdsRef.current.delete(id);
+      if (pruneOthers) {
+        changed = pruneAutoExpandedFlows(keepExpanded);
       }
 
       for (const ancestorId of ancestorIds) {
@@ -446,23 +496,28 @@ export default function FlowDetails() {
       }
 
       if (changed) {
-        setExecutionList(executionList.clone());
-        requestAnimationFrame(() => {
-          refreshDragRows();
-        });
+        commitDragTreeChanges();
       }
     },
-    [executionList, findExecutionById, refreshDragRows],
+    [
+      commitDragTreeChanges,
+      executionList,
+      findExecutionById,
+      pruneAutoExpandedFlows,
+    ],
   );
 
   const scheduleSubflowExpand = useCallback(
-    (subflowId: string) => {
+    (subflowId: string, pruneOthers: boolean) => {
       if (pendingExpandIdRef.current === subflowId) {
         return;
       }
 
       clearExpandTimer();
-      syncAutoExpandedPath(subflowId, false);
+      syncAutoExpandedPath(subflowId, {
+        expandTarget: false,
+        pruneOthers,
+      });
       pendingExpandIdRef.current = subflowId;
       setPendingExpandId(subflowId);
 
@@ -470,16 +525,92 @@ export default function FlowDetails() {
         expandTimerRef.current = null;
         pendingExpandIdRef.current = null;
         setPendingExpandId(null);
-        syncAutoExpandedPath(subflowId, true);
+        syncAutoExpandedPath(subflowId, {
+          expandTarget: true,
+          pruneOthers,
+        });
       }, SUBFLOW_EXPAND_DELAY_MS);
     },
     [clearExpandTimer, syncAutoExpandedPath],
+  );
+
+  const keepExpandedForHoveredRow = useCallback(
+    (hoveredRow: HoveredRow | null): Set<string> => {
+      if (!executionList || !hoveredRow) {
+        return new Set();
+      }
+
+      const keepExpanded = executionList.ancestorPathIds(hoveredRow.hoverId);
+      if (hoveredRow.isSubflow) {
+        keepExpanded.add(hoveredRow.hoverId);
+      }
+      return keepExpanded;
+    },
+    [executionList],
+  );
+
+  const flowContextIdForHoveredRow = useCallback(
+    (hoveredRow: HoveredRow | null): string | null => {
+      if (!executionList || !hoveredRow) {
+        return null;
+      }
+
+      if (hoveredRow.isSubflow) {
+        return hoveredRow.hoverId;
+      }
+
+      return executionList.findParentOf(hoveredRow.hoverId)?.id ?? null;
+    },
+    [executionList],
+  );
+
+  const switchedToDifferentFlow = useCallback(
+    (hoveredFlowContextId: string | null): boolean => {
+      const draggedFlowContextId = draggedFlowContextIdRef.current;
+      if (
+        !executionList ||
+        !draggedFlowContextId ||
+        !hoveredFlowContextId ||
+        draggedFlowContextId === hoveredFlowContextId
+      ) {
+        return false;
+      }
+
+      const hoveredAncestors =
+        executionList.ancestorPathIds(hoveredFlowContextId);
+      if (hoveredAncestors.has(draggedFlowContextId)) {
+        return false;
+      }
+
+      const draggedAncestors =
+        executionList.ancestorPathIds(draggedFlowContextId);
+      return !draggedAncestors.has(hoveredFlowContextId);
+    },
+    [executionList],
+  );
+
+  const initialHoverLevel = useCallback(
+    (execution: ExpandableExecution): number => {
+      if (execution.level !== undefined) {
+        return execution.level;
+      }
+
+      const rowLevel = Number.parseInt(
+        document
+          .querySelector(`tr[data-execution-id="${execution.id}"]`)
+          ?.getAttribute("data-level") || "0",
+        10,
+      );
+      return Number.isNaN(rowLevel) ? 0 : rowLevel;
+    },
+    [],
   );
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     const draggedId = active.id as string;
     setActiveId(draggedId);
+    hoverLevelRef.current = null;
 
     if (!executionList) {
       return;
@@ -489,6 +620,10 @@ export default function FlowDetails() {
     if (!item) {
       return;
     }
+    hoverLevelRef.current = initialHoverLevel(item);
+    draggedFlowContextIdRef.current = item.authenticationFlow
+      ? (item.id ?? null)
+      : (executionList.findParentOf(draggedId)?.id ?? null);
 
     setLiveText(t("onDragStart", { item: item.displayName }));
     collapseSnapshotRef.current = executionList.snapshotCollapseState();
@@ -499,11 +634,8 @@ export default function FlowDetails() {
     }
     collapseRafRef.current = requestAnimationFrame(() => {
       collapseRafRef.current = null;
-      executionList.collapseAllSubflows();
-      setExecutionList(executionList.clone());
-      requestAnimationFrame(() => {
-        refreshDragRows();
-      });
+      executionList.collapseAllExceptAncestorPath(draggedId);
+      commitDragTreeChanges();
     });
   };
 
@@ -521,6 +653,28 @@ export default function FlowDetails() {
       pointerX,
       pointerY,
     );
+    const hoveredLevel = hoveredRow?.level;
+    const movedUp = shouldPruneExpandedFlows(
+      hoverLevelRef.current,
+      hoveredLevel,
+    );
+    hoverLevelRef.current = nextHoverLevel(hoverLevelRef.current, hoveredLevel);
+    const pruneForDifferentFlow = switchedToDifferentFlow(
+      flowContextIdForHoveredRow(hoveredRow),
+    );
+    const shouldPrune = movedUp || pruneForDifferentFlow;
+
+    const collapseExpandedOnMoveUp = () => {
+      if (!shouldPrune) {
+        return;
+      }
+      const changed = pruneAutoExpandedFlows(
+        keepExpandedForHoveredRow(hoveredRow),
+      );
+      if (changed) {
+        commitDragTreeChanges();
+      }
+    };
 
     let hoverId: string | null = null;
     let vertical: DropVertical = "after";
@@ -535,24 +689,31 @@ export default function FlowDetails() {
       if (relativeY < edgeZone) {
         vertical = "before";
         clearExpandTimer();
+        collapseExpandedOnMoveUp();
       } else if (relativeY > rowHeight - edgeZone) {
         vertical = "after";
         clearExpandTimer();
+        collapseExpandedOnMoveUp();
       } else if (isSubflow) {
         vertical = "into";
         const subflow = findExecutionById(hoveredRow.hoverId);
         if (subflow?.isCollapsed) {
-          scheduleSubflowExpand(hoveredRow.hoverId);
+          scheduleSubflowExpand(hoveredRow.hoverId, shouldPrune);
         } else {
           clearExpandTimer();
-          syncAutoExpandedPath(hoveredRow.hoverId, true);
+          syncAutoExpandedPath(hoveredRow.hoverId, {
+            expandTarget: true,
+            pruneOthers: shouldPrune,
+          });
         }
       } else {
         vertical = "after";
         clearExpandTimer();
+        collapseExpandedOnMoveUp();
       }
     } else {
       clearExpandTimer();
+      collapseExpandedOnMoveUp();
     }
 
     const dragged = findExecutionById(active.id as string);

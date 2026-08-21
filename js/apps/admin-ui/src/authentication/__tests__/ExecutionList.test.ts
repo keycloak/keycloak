@@ -550,6 +550,105 @@ describe("ExecutionList", () => {
       list.restoreCollapseState(snapshot);
       expect(subflow2.isCollapsed).toBe(false);
     });
+
+    const listWithNestedSubflows = [
+      { id: "1", index: 0, level: 0 },
+      {
+        id: "2",
+        index: 1,
+        level: 0,
+        authenticationFlow: true,
+        displayName: "Subflow 2",
+      },
+      {
+        id: "3",
+        index: 0,
+        level: 1,
+        authenticationFlow: true,
+        displayName: "Subflow 3",
+      },
+      { id: "4", index: 0, level: 2 },
+      { id: "5", index: 1, level: 1 },
+      {
+        id: "6",
+        index: 2,
+        level: 0,
+        authenticationFlow: true,
+        displayName: "Subflow 6",
+      },
+      { id: "7", index: 0, level: 1 },
+    ];
+
+    const findInTree = (
+      nodes: ExecutionList["expandableList"],
+      id: string,
+    ): (typeof nodes)[number] | undefined => {
+      for (const node of nodes) {
+        if (node.id === id) {
+          return node;
+        }
+        if (node.executionList) {
+          const found = findInTree(node.executionList, id);
+          if (found) {
+            return found;
+          }
+        }
+      }
+      return undefined;
+    };
+
+    it("keeps ancestor path expanded for the dragged execution", () => {
+      const list = new ExecutionList(listWithNestedSubflows);
+      const subflow2 = findInTree(list.expandableList, "2")!;
+      const subflow3 = findInTree(list.expandableList, "3")!;
+      const subflow6 = findInTree(list.expandableList, "6")!;
+
+      subflow2.isCollapsed = true;
+      subflow3.isCollapsed = true;
+      subflow6.isCollapsed = false;
+
+      list.collapseAllExceptAncestorPath("4");
+
+      expect(subflow2.isCollapsed).toBe(false);
+      expect(subflow3.isCollapsed).toBe(false);
+      expect(subflow6.isCollapsed).toBe(true);
+    });
+
+    it("collapses all subflows when dragging a root execution", () => {
+      const list = new ExecutionList(listWithNestedSubflows);
+      const subflow2 = findInTree(list.expandableList, "2")!;
+      const subflow3 = findInTree(list.expandableList, "3")!;
+      const subflow6 = findInTree(list.expandableList, "6")!;
+
+      subflow2.isCollapsed = false;
+      subflow3.isCollapsed = false;
+      subflow6.isCollapsed = false;
+
+      list.collapseAllExceptAncestorPath("1");
+
+      expect(subflow2.isCollapsed).toBe(true);
+      expect(subflow3.isCollapsed).toBe(true);
+      expect(subflow6.isCollapsed).toBe(true);
+    });
+
+    it("restores collapse snapshot after path-preserving collapse", () => {
+      const list = new ExecutionList(listWithNestedSubflows);
+      const subflow2 = findInTree(list.expandableList, "2")!;
+      const subflow3 = findInTree(list.expandableList, "3")!;
+      const subflow6 = findInTree(list.expandableList, "6")!;
+
+      subflow2.isCollapsed = false;
+      subflow3.isCollapsed = true;
+      subflow6.isCollapsed = false;
+      const snapshot = list.snapshotCollapseState();
+
+      list.collapseAllExceptAncestorPath("4");
+      list.restoreCollapseState(snapshot);
+
+      expect(subflow2.isCollapsed).toBe(false);
+      expect(subflow3.isCollapsed).toBe(true);
+      expect(subflow6.isCollapsed).toBe(false);
+    });
   });
 
   it("find item by index", () => {
