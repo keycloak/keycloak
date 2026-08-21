@@ -53,7 +53,7 @@ public class SamlDescriptorIDPKeysExtractor {
     private static final NamespaceContext NS_CONTEXT = new NamespaceContext();
     static {
         NS_CONTEXT.addNsUriPair("m", JBossSAMLURIConstants.METADATA_NSURI.get());
-        NS_CONTEXT.addNsUriPair("dsig", JBossSAMLURIConstants.XMLDSIG_NSURI.get());
+        NS_CONTEXT.addNsUriPair("ds", JBossSAMLURIConstants.XMLDSIG_NSURI.get());
     }
 
     private final KeyInfoFactory kif = KeyInfoFactory.getInstance();
