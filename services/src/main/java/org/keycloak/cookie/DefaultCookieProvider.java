@@ -24,19 +24,26 @@ public class DefaultCookieProvider implements CookieProvider {
 
     private final Map<String, Cookie> cookies;
 
-    public DefaultCookieProvider(KeycloakSession session) {
+    private final String cookiePrefix;
+
+    public DefaultCookieProvider(KeycloakSession session, String cookiePrefix) {
         KeycloakContext context = session.getContext();
 
         this.session = session;
         this.cookies = context.getRequestHeaders().getCookies();
         this.pathResolver = new CookiePathResolver(context);
         this.secure = SecureContextResolver.isSecureContext(session);
+        this.cookiePrefix = cookiePrefix;
 
         if (logger.isTraceEnabled()) {
             logger.tracef("Received cookies: %s, path: %s", String.join(", ", this.cookies.keySet()), context.getUri().getRequestUri().getRawPath());
         }
 
         expireOldUnusedCookies();
+    }
+
+    private String prefixedName(CookieType cookieType) {
+        return cookiePrefix + cookieType.getName();
     }
 
     @Override
@@ -50,7 +57,7 @@ public class DefaultCookieProvider implements CookieProvider {
 
     @Override
     public void set(CookieType cookieType, String value, int maxAge) {
-        String name = cookieType.getName();
+        String name = prefixedName(cookieType);
         NewCookie.SameSite sameSite = cookieType.getScope().getSameSite();
         if (NewCookie.SameSite.NONE.equals(sameSite) && !secure) {
             sameSite = NewCookie.SameSite.LAX;
@@ -102,13 +109,13 @@ public class DefaultCookieProvider implements CookieProvider {
 
     @Override
     public String get(CookieType cookieType) {
-        Cookie cookie = cookies.get(cookieType.getName());
+        Cookie cookie = cookies.get(prefixedName(cookieType));
         return cookie != null ? cookie.getValue() : null;
     }
 
     @Override
     public void expire(CookieType cookieType) {
-        String cookieName = cookieType.getName();
+        String cookieName = prefixedName(cookieType);
         Cookie cookie = cookies.get(cookieName);
         if (cookie != null) {
             String path = pathResolver.resolvePath(cookieType);
