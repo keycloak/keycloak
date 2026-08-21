@@ -38,6 +38,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 public interface LoginFormsProvider extends Provider {
 
     String UPDATE_PROFILE_CONTEXT_ATTR = "updateProfileCtx";
+    String TERMS_ACCEPTANCE_REQUIRED = "termsAcceptanceRequired";
 
     String IDENTITY_PROVIDER_BROKER_CONTEXT = "identityProviderBrokerCtx";
 
