@@ -40,8 +40,8 @@
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
-        <quarkus.version>3.38.1</quarkus.version>
-        <quarkus.build.version>3.38.1</quarkus.build.version>
+        <quarkus.version>3.39.0.CR1</quarkus.version>
+        <quarkus.build.version>3.39.0.CR1</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
@@ -157,7 +157,7 @@
         <postgresql-jdbc.version>42.7.13</postgresql-jdbc.version>
         <mariadb.version>11.8</mariadb.version>
         <mariadb.container>mirror.gcr.io/mariadb:${mariadb.version}</mariadb.container>
-        <mariadb-jdbc.version>3.5.9</mariadb-jdbc.version>
+        <mariadb-jdbc.version>3.5.10</mariadb-jdbc.version>
         <mssql.version>2022</mssql.version>
         <mssql.container>mcr.microsoft.com/mssql/server:${mssql.version}-latest</mssql.container>
         <mssql.collation>Latin1_General_100_CI_AS_SC_UTF8</mssql.collation>
