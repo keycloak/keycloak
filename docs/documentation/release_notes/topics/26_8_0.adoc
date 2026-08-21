@@ -13,7 +13,7 @@ Additionally, tokens issued from impersonation sessions now include the `act` (a
 
 == Client Secret Rotation (supported)
 
-Client Secret Rotation enables confidential clients to rotate their secrets through client policies, allowing up to two concurrently active secrets for seamless rotation without downtime.
+Client Secret Rotation enables confidential clients to rotate their secrets through client policies, allowing up to two concurrently active secrets for seamless rotation without downtime. The policy allows administrators to plan and anticipate the configuration of the new secrets in the applications. The feature alleviates secret leakage issues and increases the security for this type of clients.
 
 In this release, Client Secret Rotation is promoted from preview to supported. For more details, see the link:{adminguide_link}#_secret_rotation[{adminguide_name}].
 
