@@ -4,6 +4,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+
+import com.icegreen.greenmail.util.GreenMail;
+import com.icegreen.greenmail.util.ServerSetupTest;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -81,5 +87,36 @@ class DefaultEmailSenderProviderTest {
 
         // then
         assertThat(exception.getMessage(), containsString("Invalid reply-to address"));
+    }
+
+    @Test
+    void testCustomizeMessageCanAddHeaders() throws Exception {
+        // given
+        GreenMail greenMail = new GreenMail(ServerSetupTest.SMTP.dynamicPort());
+        greenMail.start();
+        try {
+            DefaultEmailSenderProvider provider = new DefaultEmailSenderProvider(null,
+                    Map.of(EmailAuthenticator.AuthenticatorType.NONE, new DefaultEmailAuthenticator())) {
+                @Override
+                protected void customizeMessage(Message message, Map<String, String> config) throws MessagingException {
+                    message.setHeader("X-Custom-Header", "custom-value");
+                }
+            };
+
+            Map<String, String> config = new HashMap<>();
+            config.put("from", "test@keycloak.com");
+            config.put("host", "localhost");
+            config.put("port", String.valueOf(greenMail.getSmtp().getPort()));
+
+            // when
+            provider.send(config, "user@keycloak.com", "subject", "text body", null);
+
+            // then
+            assertThat(greenMail.waitForIncomingEmail(1), is(true));
+            MimeMessage received = greenMail.getReceivedMessages()[0];
+            assertThat(received.getHeader("X-Custom-Header", null), is("custom-value"));
+        } finally {
+            greenMail.stop();
+        }
     }
 }
