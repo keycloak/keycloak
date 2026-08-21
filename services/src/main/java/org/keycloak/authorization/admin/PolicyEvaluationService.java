@@ -45,6 +45,7 @@ import org.keycloak.authorization.admin.representation.PolicyEvaluationResponseB
 import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
 import org.keycloak.authorization.common.KeycloakIdentity;
+import org.keycloak.authorization.common.TokenIdentityEnricher;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -380,15 +381,7 @@ public class PolicyEvaluationService {
             UserModel user = keycloakSession.users().getUserById(realm, representation.getUserId());
 
             if (user != null) {
-                AccessToken finalAccessToken = accessToken;
-                user.getRoleMappingsStream().forEach(roleModel -> {
-                    if (roleModel.isClientRole()) {
-                        ClientModel client = (ClientModel) roleModel.getContainer();
-                        finalAccessToken.addAccess(client.getClientId()).addRole(roleModel.getName());
-                    } else {
-                        realmAccess.addRole(roleModel.getName());
-                    }
-                });
+                TokenIdentityEnricher.addAllUserRoles(accessToken, user);
             }
         }
 
