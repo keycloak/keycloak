@@ -43,6 +43,13 @@ class ScimFilterToJsonNodeConverter extends ScimFilterParserBaseVisitor<JsonNode
     @Override
     public JsonNode visitAndExpression(ScimFilterParser.AndExpressionContext ctx) {
         if (ctx.AND() != null) {
+            if (attribute.getComplexType() == null) {
+                // Only the "value" sub-attribute exists here, so a conjunction can never be
+                // satisfied by a single scalar and merging the operands would drop a value.
+                throw new IllegalArgumentException(
+                        "'and' operator is not supported for multivalued attributes without a complex type");
+            }
+
             JsonNode left = visit(ctx.andExpression());
             JsonNode right = visit(ctx.notExpression());
             ObjectNode merged = JsonNodeFactory.instance.objectNode();
@@ -91,14 +98,22 @@ class ScimFilterToJsonNodeConverter extends ScimFilterParserBaseVisitor<JsonNode
         }
 
         Class<?> complexType = attribute.getComplexType();
-
-        if (complexType == null) {
-            return null;
-        }
-
         String attrName = ctx.ATTRPATH().getText();
 
-        if (!isComplexTypeAttribute(complexType, attrName)) {
+        if (complexType == null) {
+            if (!attribute.isMultivalued()) {
+                return null;
+            }
+
+            // multivalued attributes without a complex type only expose the "value" sub-attribute.
+            // SCIM attribute names are case-insensitive, so canonicalize it to the lower case name
+            // that AttributeMapper unwraps.
+            if (!"value".equalsIgnoreCase(attrName)) {
+                throw new ModelValidationException("Unknown attribute " + attrName);
+            }
+
+            attrName = "value";
+        } else if (!isComplexTypeAttribute(complexType, attrName)) {
             throw new ModelValidationException("Unknown attribute " + attrName);
         }
 
