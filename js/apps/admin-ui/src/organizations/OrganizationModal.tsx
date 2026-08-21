@@ -1,6 +1,9 @@
 import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
 import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
+import {
+  KeycloakDataTable,
+  ListEmptyState,
+} from "@keycloak/keycloak-ui-shared";
 import { Button, Modal, ModalVariant } from "@patternfly/react-core";
 import { TableText } from "@patternfly/react-table";
 import { differenceBy } from "lodash-es";
@@ -9,22 +12,34 @@ import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 
 type OrganizationModalProps = {
-  isJoin?: boolean;
+  mode?: "join" | "send" | "add";
   existingOrgs: OrganizationRepresentation[];
   onAdd: (orgs: OrganizationRepresentation[]) => Promise<void>;
   onClose: () => void;
+  isRadio?: boolean;
+};
+
+const TITLES = {
+  join: "Join organization",
+  send: "Send invitation",
+  add: "Select Organization",
 };
 
 export const OrganizationModal = ({
-  isJoin = true,
+  mode = "join",
   existingOrgs,
   onAdd,
   onClose,
+  isRadio = false,
 }: OrganizationModalProps) => {
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
 
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
+  const [organizations, setOrganizations] = useState<
+    OrganizationRepresentation[]
+  >([]);
+  const [search, setSearch] = useState("");
 
   const loader = async (first?: number, max?: number, search?: string) => {
     const params = {
@@ -34,26 +49,30 @@ export const OrganizationModal = ({
     };
 
     const orgs = await adminClient.organizations.find(params);
-    return differenceBy(orgs, existingOrgs, "id");
+    const diff = differenceBy(orgs, existingOrgs, "id");
+    setSearch(search || "");
+    setOrganizations(diff);
+    return diff;
   };
 
   return (
     <Modal
       variant={ModalVariant.small}
-      title={isJoin ? t("joinOrganization") : t("sendInvitation")}
+      title={TITLES[mode]}
       isOpen
       onClose={onClose}
       actions={[
         <Button
-          data-testid="join"
+          data-testid={mode === "add" ? "add" : "join"}
           key="confirm"
           variant="primary"
           onClick={async () => {
             await onAdd(selectedRows);
             onClose();
           }}
+          isDisabled={selectedRows.length === 0}
         >
-          {isJoin ? t("join") : t("send")}
+          {t(mode)}
         </Button>,
         <Button
           data-testid="cancel"
@@ -70,7 +89,7 @@ export const OrganizationModal = ({
         isPaginated
         ariaLabelKey="organizationsList"
         searchPlaceholderKey="searchOrganization"
-        canSelectAll
+        canSelectAll={!isRadio}
         onSelect={(rows) => setSelectedRows([...rows])}
         columns={[
           {
@@ -84,7 +103,19 @@ export const OrganizationModal = ({
             ),
           },
         ]}
+        isRadio={isRadio}
       />
+      {
+        organizations.length === 0 && search === "" && (
+          <ListEmptyState
+            hasIcon={false}
+            message={t("emptyOrganizations")}
+            instructions={t("emptyOrganizationsInstructions")}
+          />
+        ) /* This component doesn't ever get rendered on the user join org screen if there are
+        no organizations so this doesn't actually change any functionality there.
+        Empty message when searching already handled within KeycloakDataTable. */
+      }
     </Modal>
   );
 };
