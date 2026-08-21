@@ -242,6 +242,12 @@
             <groupId>org.apache.kerby</groupId>
             <artifactId>ldap-backend</artifactId>
             <version>${kerby.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
