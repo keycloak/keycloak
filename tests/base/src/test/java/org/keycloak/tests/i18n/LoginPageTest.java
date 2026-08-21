@@ -413,10 +413,12 @@ public class LoginPageTest {
 
         saveLocalizationText(locale, realmLocalizationMessageKey, realmLocalizationMessageValue);
         oauth.openLoginForm();
+        loginPage.assertCurrent();
         assertThat(driver.page().getPageSource(), containsString(realmLocalizationMessageValue));
 
         realm.admin().localization().deleteRealmLocalizationText(locale, realmLocalizationMessageKey);
         oauth.openLoginForm();
+        loginPage.assertCurrent();
         assertThat(driver.page().getPageSource(), not(containsString(realmLocalizationMessageValue)));
     }
 
