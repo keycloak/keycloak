@@ -778,6 +778,112 @@ public class SsfTransmitterEventEmitterTests {
     }
 
     @Test
+    public void emit_issSubTenantForeignIssuer_returnsSubjectNotFound() throws Exception {
+        // Adversarial counterpart of the iss_sub happy path: the sub_id
+        // travels verbatim in the SET, so an iss_sub tenant whose iss
+        // is not this realm's issuer must not resolve even when its
+        // sub names an existing local org, because otherwise an emitter could
+        // have Keycloak sign a tenant assertion tying a local
+        // organization to a foreign issuer the server never validated.
+        // Unlike user iss_sub lookups there is no IdP fallback for
+        // organizations, so only the realm's own issuer is accepted.
+        String orgAlias = createOrgWithNotify();
+        String orgId = findOrganizationIdByAlias(orgAlias);
+        String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
+        addUserToOrganization(orgAlias, userUuid);
+        String issuer = realm.getBaseUrl();
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "sub_id", Map.of(
+                                "format", "complex",
+                                "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
+                                "tenant", Map.of("format", "iss_sub",
+                                        "iss", "https://foreign.example/realms/other", "sub", orgId)),
+                        "event", Map.of("credential_type", "password", "change_type", "update")))
+                .asResponse()) {
+            Assertions.assertEquals(400, res.getStatus(),
+                    "iss_sub tenant with a foreign issuer must be rejected even when sub names a local org");
+            JsonNode body = res.asJson();
+            Assertions.assertEquals("subject_not_found", body.get("error").asText());
+            Assertions.assertEquals("tenant", body.path("params").path("subjectMember").asText(),
+                    "params.subjectMember should identify the tenant subject member as the one that failed to resolve");
+        }
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "foreign-issuer tenant subject must not reach the receiver");
+    }
+
+    @Test
+    public void emit_uriTenantKeycloakUrn_resolvesAndDispatches() throws Exception {
+        // The uri tenant format accepts the Keycloak-scoped URN form
+        // urn:keycloak:org:<alias>, becase this is the one URI shape this server can
+        // authoritatively interpret as one of its own organizations.
+        String orgAlias = createOrgWithNotify();
+        String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
+        addUserToOrganization(orgAlias, userUuid);
+        String issuer = realm.getBaseUrl();
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "sub_id", Map.of(
+                                "format", "complex",
+                                "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
+                                "tenant", Map.of("format", "uri",
+                                        "uri", "urn:keycloak:org:" + orgAlias)),
+                        "event", Map.of("credential_type", "password", "change_type", "update")))
+                .asResponse()) {
+            Assertions.assertEquals(200, res.getStatus());
+            Assertions.assertEquals("dispatched", res.asJson().get("status").asText(),
+                    "urn:keycloak:org URN naming an existing org must resolve and dispatch");
+        }
+        Assertions.assertNotNull(pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS),
+                "URN-tenant event should reach the mock receiver");
+    }
+
+    @Test
+    public void emit_uriTenantForeignUri_returnsSubjectNotFound() throws Exception {
+        // Sibling of the foreign-iss_sub case for the uri format: an
+        // earlier resolver revision took any https URI and resolved its
+        // last path segment as an org alias, so a caller could pair
+        // "https://evil.example/orgs/<alias>" with a subscribed local
+        // org and have the SET assert a URI namespace Keycloak never
+        // validated (the sub_id is forwarded verbatim). Only the
+        // urn:keycloak:org:<alias> URN form may resolve.
+        String orgAlias = createOrgWithNotify();
+        String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
+        addUserToOrganization(orgAlias, userUuid);
+        String issuer = realm.getBaseUrl();
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "sub_id", Map.of(
+                                "format", "complex",
+                                "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
+                                "tenant", Map.of("format", "uri",
+                                        "uri", "https://evil.example/orgs/" + orgAlias)),
+                        "event", Map.of("credential_type", "password", "change_type", "update")))
+                .asResponse()) {
+            Assertions.assertEquals(400, res.getStatus(),
+                    "non-URN tenant URI must be rejected even when its last path segment names a local org");
+            JsonNode body = res.asJson();
+            Assertions.assertEquals("subject_not_found", body.get("error").asText());
+            Assertions.assertEquals("tenant", body.path("params").path("subjectMember").asText(),
+                    "params.subjectMember should identify the tenant subject member as the one that failed to resolve");
+        }
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "foreign-URI tenant subject must not reach the receiver");
+    }
+
+    @Test
     public void emit_userInRemovalGraceWindow_dispatches() throws Exception {
         // The emit path delegates its user gate to the dispatcher's
         // config-aware SubjectSubscriptionFilter, so the SSF §9.3
