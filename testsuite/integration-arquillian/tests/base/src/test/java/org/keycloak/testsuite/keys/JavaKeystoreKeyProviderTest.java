@@ -274,6 +274,16 @@ public class JavaKeystoreKeyProviderTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void invalidKeystoreOutsideKeystoreDirectoriesRelative() throws Exception {
+        generateKeystore(KeystoreUtils.getPreferredKeystoreType(), AlgorithmType.RSA, Algorithm.RS256);
+        ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
+        rep.getConfig().putSingle("keystore", "../invalid");
+
+        Response response = adminClient.realm("test").components().add(rep);
+        assertError(response, "is not under the realm directory");
+    }
+
+    @Test
     public void invalidKeystorePassword() throws Exception {
         generateKeystore(KeystoreUtils.getPreferredKeystoreType(), AlgorithmType.RSA, Algorithm.RS256);
         ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
