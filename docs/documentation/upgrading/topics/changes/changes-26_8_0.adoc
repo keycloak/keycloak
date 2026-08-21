@@ -128,6 +128,18 @@ Proprietary {project_name} extension to invoke introspection endpoint with the H
 deprecated now. In case you have lightweight access token, which you want to exchange for the proper access token, it is instead recommended to use the
 link:{securing_apps_token_exchange_link}[Token Exchange].
 
+=== Client switches in the 'OpenID Connect Compatibility Modes'
+
+There are few client switches in the client settings in the admin console in the section **OpenID Connect Compatibility Modes**. Those were created longer time ago
+for the backwards compatibility with the older OIDC/OAuth2 client adapters. Those switches are officially deprecated now and would be removed in future version.
+Some of the switches were deprecated already in previous versions. In addition to those, the newly deprecated switches are:
+
+* Exclude Session State From Authentication Response
+* Exclude Issuer From Authentication Response
+* Use lower-case bearer type in token responses
+
+Please update your client applications if you still rely on these switches as they will be removed in the future version.
+
 === `HttpResponse#getStatus()` and `setStatus(int)` in server SPI
 
 `org.keycloak.http.HttpResponse#getStatus()` and `org.keycloak.http.HttpResponse#setStatus(int)` are now deprecated.
