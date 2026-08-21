@@ -2180,6 +2180,84 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testPatchRemoveFilteredMultivaluedScalarAttributeWithAndOperator() {
+        // Reproducer for issue #51525: AND operator on multivalued scalar attributes
+        // AND is not supported because a scalar value cannot satisfy two conditions simultaneously.
+        String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
+        setupMultivaluedCustomAttributes(customSchema);
+
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+        user = client.users().create(user);
+
+        // Add multiple values to the simple scalar multivalued attribute (no .value subattribute)
+        client.users().patch(user.getId(), PatchRequest.create()
+                .add(customSchema + ":affiliation", "[\"value-a\", \"value-b\", \"value-c\"]")
+                .build());
+
+        user = client.users().get(user.getId());
+        Map<?, ?> extension = (Map<?, ?>) user.getExtensions().get(customSchema);
+        List<?> values = (List<?>) extension.get("affiliation");
+        assertNotNull(values, "affiliation attribute should exist");
+        assertEquals(3, values.size());
+
+        // PATCH remove with AND filter - should fail with ModelValidationException (400)
+        try {
+            client.users().patch(user.getId(), PatchRequest.create()
+                    .remove(customSchema + ":affiliation[value eq \"value-a\" and value eq \"value-b\"]")
+                    .build());
+            fail("AND operator should not be supported for multivalued scalar attributes");
+        } catch (ScimClientException sce) {
+            // Expected: 400 (bad request) because AND is unsupported
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt(),
+                    "AND on multivalued attributes should return 400, got " + error.getStatusInt());
+            assertTrue(error.getDetail().contains("and operator is not supported for multivalued or non-complex attributes"),
+                    "Error should mention AND operator not supported, got: " + error.getDetail());
+        }
+    }
+
+    @Test
+    public void testPatchRemoveFilteredMultivaluedScalarAttributeWithOrOperator() {
+        // Reproducer for issue #51525: OR operator on multivalued scalar attributes
+        // OR should remove only the matched values, leaving others intact
+        String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
+        setupMultivaluedCustomAttributes(customSchema);
+
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+        user = client.users().create(user);
+
+        // Add multiple values to the simple scalar multivalued attribute (no .value subattribute)
+        client.users().patch(user.getId(), PatchRequest.create()
+                .add(customSchema + ":affiliation", "[\"value-a\", \"value-b\", \"value-c\"]")
+                .build());
+
+        user = client.users().get(user.getId());
+        Map<?, ?> extension = (Map<?, ?>) user.getExtensions().get(customSchema);
+        List<?> values = (List<?>) extension.get("affiliation");
+        assertNotNull(values, "affiliation attribute should exist");
+        assertEquals(3, values.size());
+
+        // PATCH remove with OR filter - should remove only matched values
+        client.users().patch(user.getId(), PatchRequest.create()
+                .remove(customSchema + ":affiliation[value eq \"value-a\" or value eq \"value-b\"]")
+                .build());
+
+        user = client.users().get(user.getId());
+        extension = (Map<?, ?>) user.getExtensions().get(customSchema);
+        values = (List<?>) extension.get("affiliation");
+        assertNotNull(values, "affiliation attribute should still exist after filtered remove");
+
+        // Only "value-c" should remain
+        assertEquals(1, values.size(),
+                "After removing 'value-a' and 'value-b', only 1 value should remain");
+        assertTrue(values.contains("value-c"),
+                "Only 'value-c' should remain after removing 'value-a' and 'value-b', got: " + values);
+    }
+
+    @Test
     public void testOrganizationGroupsNotExposedOnUser() {
         realm.updateWithCleanup(realm -> realm.organizationsEnabled(true));
 
@@ -2797,6 +2875,54 @@ public class UserTest extends AbstractScimTest {
 
         actual = client.users().get(user.getId());
         assertNull(actual.getExtensions());
+    }
+
+    @Test
+    public void testPatchRemoveFilteredMultivaluedCustomAttributes() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
+        setupMultivaluedCustomAttributes(customSchema);
+
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+        user = client.users().create(user);
+
+        client.users().patch(user.getId(), PatchRequest.create()
+                .add(customSchema + ":assurance", "[{\"value\": \"https://refeds.org/assurance/ID/unique\"}, {\"value\": \"https://refeds.org/assurance/IAP/low\"}]")
+                .add(customSchema + ":affiliation", "[\"member\", \"faculty\"]")
+                .build());
+
+        client.users().patch(user.getId(), PatchRequest.create()
+                .remove(customSchema + ":assurance[value eq \"https://refeds.org/assurance/IAP/low\"]")
+                .build());
+
+        User actual = client.users().get(user.getId());
+        Map<?, ?> extension = (Map<?, ?>) actual.getExtensions().get(customSchema);
+        List<?> assurance = (List<?>) extension.get("assurance");
+        assertNotNull(assurance, "all values were removed instead of only the filtered one");
+        assertEquals(1, assurance.size());
+        assertEquals("https://refeds.org/assurance/ID/unique", ((Map<?, ?>) assurance.get(0)).get("value"));
+
+        // a multivalued attribute without the ".value" annotation is filtered the same way
+        client.users().patch(user.getId(), PatchRequest.create()
+                .remove(customSchema + ":affiliation[value eq \"member\"]")
+                .build());
+
+        actual = client.users().get(user.getId());
+        extension = (Map<?, ?>) actual.getExtensions().get(customSchema);
+        List<?> affiliation = (List<?>) extension.get("affiliation");
+        assertNotNull(affiliation, "all values were removed instead of only the filtered one");
+        assertEquals(1, affiliation.size());
+        assertEquals("faculty", affiliation.get(0));
+
+        // SCIM attribute names are case-insensitive
+        client.users().patch(user.getId(), PatchRequest.create()
+                .remove(customSchema + ":affiliation[VALUE eq \"faculty\"]")
+                .build());
+
+        actual = client.users().get(user.getId());
+        extension = (Map<?, ?>) actual.getExtensions().get(customSchema);
+        assertNull(extension.get("affiliation"));
+        assertEquals(1, ((List<?>) extension.get("assurance")).size());
     }
 
     @Test
