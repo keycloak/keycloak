@@ -11,6 +11,7 @@ import { TableToolbar } from "./TableToolbar";
 type KeycloakPaginationProps = {
   id?: string;
   count: number;
+  totalCount?: number;
   first: number;
   max: number;
   onNextClick: (page: number) => void;
@@ -32,6 +33,7 @@ const KeycloakPagination = ({
   id,
   variant = "top",
   count,
+  totalCount,
   first,
   max,
   onNextClick,
@@ -40,6 +42,7 @@ const KeycloakPagination = ({
 }: KeycloakPaginationProps) => {
   const { t } = useTranslation();
   const page = Math.round(first / max);
+  const hasTotal = typeof totalCount === "number";
   return (
     <Pagination
       widgetId={id}
@@ -47,15 +50,16 @@ const KeycloakPagination = ({
         paginationAriaLabel: `${t("pagination")} ${variant} `,
       }}
       isCompact
-      toggleTemplate={({
-        firstIndex,
-        lastIndex,
-      }: PaginationToggleTemplateProps) => (
-        <b>
-          {firstIndex} - {lastIndex}
-        </b>
-      )}
-      itemCount={count + page * max}
+      toggleTemplate={
+        hasTotal
+          ? undefined
+          : ({ firstIndex, lastIndex }: PaginationToggleTemplateProps) => (
+              <b>
+                {firstIndex} - {lastIndex}
+              </b>
+            )
+      }
+      itemCount={hasTotal ? totalCount : count + page * max}
       page={page + 1}
       perPage={max}
       onNextClick={(_, p) => onNextClick((p - 1) * max)}
@@ -68,6 +72,7 @@ const KeycloakPagination = ({
 
 export const PaginatingTableToolbar = ({
   count,
+  totalCount,
   searchTypeComponent,
   toolbarItem,
   subToolbar,
@@ -84,7 +89,11 @@ export const PaginatingTableToolbar = ({
         <>
           {toolbarItem}
           <ToolbarItem variant="pagination">
-            <KeycloakPagination count={count} {...rest} />
+            <KeycloakPagination
+              count={count}
+              totalCount={totalCount}
+              {...rest}
+            />
           </ToolbarItem>
         </>
       }
@@ -92,7 +101,12 @@ export const PaginatingTableToolbar = ({
       toolbarItemFooter={
         count !== 0 ? (
           <ToolbarItem variant="pagination">
-            <KeycloakPagination count={count} variant="bottom" {...rest} />
+            <KeycloakPagination
+              count={count}
+              totalCount={totalCount}
+              variant="bottom"
+              {...rest}
+            />
           </ToolbarItem>
         ) : null
       }
