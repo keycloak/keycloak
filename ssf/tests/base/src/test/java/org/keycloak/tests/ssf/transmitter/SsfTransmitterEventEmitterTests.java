@@ -454,10 +454,12 @@ public class SsfTransmitterEventEmitterTests {
     @Test
     public void emit_orgSubjectViaTenant_dispatches() throws Exception {
         // Org-only emission: the sub_id is a complex subject whose only
-        // subject member is the tenant (org alias). The user subject member is omitted, so
-        // resolution lands on the org and the receiver's per-org notify
-        // attribute drives the subscription gate.
+        // subject member is the tenant (opaque = internal org id). The
+        // user subject member is omitted, so resolution lands on the
+        // org and the receiver's per-org notify attribute drives the
+        // subscription gate.
         String orgAlias = createOrgWithNotify();
+        String orgId = findOrganizationIdByAlias(orgAlias);
 
         String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
         try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
@@ -466,7 +468,7 @@ public class SsfTransmitterEventEmitterTests {
                         "eventType", "CaepCredentialChange",
                         "sub_id", Map.of(
                                 "format", "complex",
-                                "tenant", Map.of("format", "opaque", "id", orgAlias)),
+                                "tenant", Map.of("format", "opaque", "id", orgId)),
                         "event", Map.of("credential_type", "password", "change_type", "update")))
                 .asResponse()) {
             Assertions.assertEquals(200, res.getStatus());
@@ -478,16 +480,23 @@ public class SsfTransmitterEventEmitterTests {
         Assertions.assertNotNull(push, "org-subject event should reach the mock receiver");
         JsonNode set = decodeSet(push);
         Assertions.assertEquals("complex", set.path("sub_id").path("format").asText());
-        Assertions.assertEquals(orgAlias, set.path("sub_id").path("tenant").path("id").asText(),
+        Assertions.assertEquals(orgId, set.path("sub_id").path("tenant").path("id").asText(),
                 "tenant subject member must be forwarded verbatim");
     }
 
     @Test
-    public void emit_orgSubjectNotSubscribed_returnsDroppedUnsubscribed() throws Exception {
-        // Org exists but has no ssf.notify attribute set for the receiver;
-        // default_subjects=NONE on the receiver means the dispatch is
-        // refused.
-        String orgAlias = createOrgWithoutNotify();
+    public void emit_opaqueTenantAlias_returnsSubjectNotFound() throws Exception {
+        // Opaque tenant values resolve strictly by internal org id —
+        // never by alias, which is addressed via the explicit
+        // urn:keycloak:org:alias: URN form instead. An alias fallback
+        // here would reintroduce alias/id shadowing (an alias equal to
+        // another organization's UUID routing the subject to the wrong
+        // org, or vice versa). The valid user member pins the failure
+        // to the tenant via params.subjectMember.
+        String orgAlias = createOrgWithNotify();
+        String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
+        addUserToOrganization(orgAlias, userUuid);
+        String issuer = realm.getBaseUrl();
 
         String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
         try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
@@ -496,7 +505,36 @@ public class SsfTransmitterEventEmitterTests {
                         "eventType", "CaepCredentialChange",
                         "sub_id", Map.of(
                                 "format", "complex",
+                                "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
                                 "tenant", Map.of("format", "opaque", "id", orgAlias)),
+                        "event", Map.of("credential_type", "password", "change_type", "update")))
+                .asResponse()) {
+            Assertions.assertEquals(400, res.getStatus(),
+                    "opaque tenant carrying an alias must not resolve via alias fallback");
+            JsonNode body = res.asJson();
+            Assertions.assertEquals("subject_not_found", body.get("error").asText());
+            Assertions.assertEquals("tenant", body.path("params").path("subjectMember").asText());
+        }
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "alias-as-opaque tenant subject must not reach the receiver");
+    }
+
+    @Test
+    public void emit_orgSubjectNotSubscribed_returnsDroppedUnsubscribed() throws Exception {
+        // Org exists but has no ssf.notify attribute set for the receiver;
+        // default_subjects=NONE on the receiver means the dispatch is
+        // refused.
+        String orgAlias = createOrgWithoutNotify();
+        String orgId = findOrganizationIdByAlias(orgAlias);
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "sub_id", Map.of(
+                                "format", "complex",
+                                "tenant", Map.of("format", "opaque", "id", orgId)),
                         "event", Map.of("credential_type", "password")))
                 .asResponse()) {
             Assertions.assertEquals(200, res.getStatus());
@@ -519,6 +557,7 @@ public class SsfTransmitterEventEmitterTests {
         // with the assertions inverted to pin the fixed behaviour.
         removeNotifySubscription();
         String orgAlias = createOrgWithNotify();
+        String orgId = findOrganizationIdByAlias(orgAlias);
         String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
         String issuer = realm.getBaseUrl();
 
@@ -530,7 +569,7 @@ public class SsfTransmitterEventEmitterTests {
                         "sub_id", Map.of(
                                 "format", "complex",
                                 "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
-                                "tenant", Map.of("format", "opaque", "id", orgAlias)),
+                                "tenant", Map.of("format", "opaque", "id", orgId)),
                         "event", Map.of("credential_type", "password", "change_type", "update")))
                 .asResponse()) {
             Assertions.assertEquals(400, res.getStatus(),
@@ -562,6 +601,7 @@ public class SsfTransmitterEventEmitterTests {
         // exercising the org membership path at all.
         removeNotifySubscription();
         String orgAlias = createOrgWithNotify();
+        String orgId = findOrganizationIdByAlias(orgAlias);
         String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
         addUserToOrganization(orgAlias, userUuid);
         String issuer = realm.getBaseUrl();
@@ -574,7 +614,7 @@ public class SsfTransmitterEventEmitterTests {
                         "sub_id", Map.of(
                                 "format", "complex",
                                 "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
-                                "tenant", Map.of("format", "opaque", "id", orgAlias)),
+                                "tenant", Map.of("format", "opaque", "id", orgId)),
                         "event", Map.of("credential_type", "password", "change_type", "update")))
                 .asResponse()) {
             Assertions.assertEquals(200, res.getStatus());
@@ -586,7 +626,7 @@ public class SsfTransmitterEventEmitterTests {
         Assertions.assertNotNull(push, "member user+tenant event should reach the mock receiver");
         JsonNode set = decodeSet(push);
         Assertions.assertEquals(userUuid, set.path("sub_id").path("user").path("sub").asText());
-        Assertions.assertEquals(orgAlias, set.path("sub_id").path("tenant").path("id").asText(),
+        Assertions.assertEquals(orgId, set.path("sub_id").path("tenant").path("id").asText(),
                 "both subject members must be forwarded verbatim");
     }
 
@@ -598,6 +638,7 @@ public class SsfTransmitterEventEmitterTests {
         // user subject member Keycloak never validated, gated only by the org's
         // subscription.
         String orgAlias = createOrgWithNotify();
+        String orgId = findOrganizationIdByAlias(orgAlias);
         String issuer = realm.getBaseUrl();
 
         String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
@@ -609,7 +650,7 @@ public class SsfTransmitterEventEmitterTests {
                                 "format", "complex",
                                 "user", Map.of("format", "iss_sub", "iss", issuer,
                                         "sub", "00000000-0000-0000-0000-000000000000"),
-                                "tenant", Map.of("format", "opaque", "id", orgAlias)),
+                                "tenant", Map.of("format", "opaque", "id", orgId)),
                         "event", Map.of("credential_type", "password", "change_type", "update")))
                 .asResponse()) {
             Assertions.assertEquals(400, res.getStatus(),
@@ -668,6 +709,7 @@ public class SsfTransmitterEventEmitterTests {
         // ssf.notify.<clientId>=false who IS a member of a notified org
         // must not be dispatched through the org's subscription.
         String orgAlias = createOrgWithNotify();
+        String orgId = findOrganizationIdByAlias(orgAlias);
         String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
         addUserToOrganization(orgAlias, userUuid);
         ignoreTestUser();
@@ -681,7 +723,7 @@ public class SsfTransmitterEventEmitterTests {
                         "sub_id", Map.of(
                                 "format", "complex",
                                 "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
-                                "tenant", Map.of("format", "opaque", "id", orgAlias)),
+                                "tenant", Map.of("format", "opaque", "id", orgId)),
                         "event", Map.of("credential_type", "password", "change_type", "update")))
                 .asResponse()) {
             Assertions.assertEquals(200, res.getStatus());
@@ -703,6 +745,7 @@ public class SsfTransmitterEventEmitterTests {
         try {
             removeNotifySubscription();
             String plainOrgAlias = createOrgWithoutNotify();
+            String plainOrgId = findOrganizationIdByAlias(plainOrgAlias);
             String excludedOrgAlias = createOrgWithExcludeNotify();
             String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
             addUserToOrganization(plainOrgAlias, userUuid);
@@ -714,7 +757,7 @@ public class SsfTransmitterEventEmitterTests {
                     "sub_id", Map.of(
                             "format", "complex",
                             "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
-                            "tenant", Map.of("format", "opaque", "id", plainOrgAlias)),
+                            "tenant", Map.of("format", "opaque", "id", plainOrgId)),
                     "event", Map.of("credential_type", "password", "change_type", "update"));
 
             // Control: with no exclusion anywhere, ALL mode delivers —
@@ -817,10 +860,106 @@ public class SsfTransmitterEventEmitterTests {
     }
 
     @Test
-    public void emit_uriTenantKeycloakUrn_resolvesAndDispatches() throws Exception {
-        // The uri tenant format accepts the Keycloak-scoped URN form
-        // urn:keycloak:org:<alias>, becase this is the one URI shape this server can
-        // authoritatively interpret as one of its own organizations.
+    public void emit_uriTenantAliasUrn_resolvesAndDispatches() throws Exception {
+        // The uri tenant format accepts only the explicit Keycloak URN
+        // forms; urn:keycloak:org:alias:<alias> resolves strictly by
+        // organization alias — the URN itself names the lookup, so no
+        // alias/id heuristic is involved.
+        String orgAlias = createOrgWithNotify();
+        String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
+        addUserToOrganization(orgAlias, userUuid);
+        String issuer = realm.getBaseUrl();
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "sub_id", Map.of(
+                                "format", "complex",
+                                "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
+                                "tenant", Map.of("format", "uri",
+                                        "uri", "urn:keycloak:org:alias:" + orgAlias)),
+                        "event", Map.of("credential_type", "password", "change_type", "update")))
+                .asResponse()) {
+            Assertions.assertEquals(200, res.getStatus());
+            Assertions.assertEquals("dispatched", res.asJson().get("status").asText(),
+                    "alias URN naming an existing org must resolve and dispatch");
+        }
+        Assertions.assertNotNull(pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS),
+                "alias-URN tenant event should reach the mock receiver");
+    }
+
+    @Test
+    public void emit_uriTenantIdUrn_resolvesAndDispatches() throws Exception {
+        // Sibling of the alias-URN test: urn:keycloak:org:id:<id>
+        // resolves strictly by the internal organization id — the
+        // stable identifier that survives alias renames.
+        String orgAlias = createOrgWithNotify();
+        String orgId = findOrganizationIdByAlias(orgAlias);
+        String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
+        addUserToOrganization(orgAlias, userUuid);
+        String issuer = realm.getBaseUrl();
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "sub_id", Map.of(
+                                "format", "complex",
+                                "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
+                                "tenant", Map.of("format", "uri",
+                                        "uri", "urn:keycloak:org:id:" + orgId)),
+                        "event", Map.of("credential_type", "password", "change_type", "update")))
+                .asResponse()) {
+            Assertions.assertEquals(200, res.getStatus());
+            Assertions.assertEquals("dispatched", res.asJson().get("status").asText(),
+                    "id URN naming an existing org must resolve and dispatch");
+        }
+        Assertions.assertNotNull(pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS),
+                "id-URN tenant event should reach the mock receiver");
+    }
+
+    @Test
+    public void emit_uriTenantIdUrnWithAlias_returnsSubjectNotFound() throws Exception {
+        // Strictness guard: the explicit URN segments must not fall
+        // back to the other identifier kind — an id URN carrying an
+        // alias value stays unresolved. Cross-fallback would reintroduce
+        // exactly the alias/id ambiguity the explicit grammar removes.
+        String orgAlias = createOrgWithNotify();
+        String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
+        addUserToOrganization(orgAlias, userUuid);
+        String issuer = realm.getBaseUrl();
+
+        String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(mgmtToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "sub_id", Map.of(
+                                "format", "complex",
+                                "user", Map.of("format", "iss_sub", "iss", issuer, "sub", userUuid),
+                                "tenant", Map.of("format", "uri",
+                                        "uri", "urn:keycloak:org:id:" + orgAlias)),
+                        "event", Map.of("credential_type", "password", "change_type", "update")))
+                .asResponse()) {
+            Assertions.assertEquals(400, res.getStatus(),
+                    "id URN carrying an alias must not resolve via alias fallback");
+            JsonNode body = res.asJson();
+            Assertions.assertEquals("subject_not_found", body.get("error").asText());
+            Assertions.assertEquals("tenant", body.path("params").path("subjectMember").asText());
+        }
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "unresolved id-URN tenant subject must not reach the receiver");
+    }
+
+    @Test
+    public void emit_uriTenantBareUrn_returnsSubjectNotFound() throws Exception {
+        // The bare urn:keycloak:org:<value> shorthand from earlier
+        // revisions is gone — the feature is experimental, so the URN
+        // grammar requires an explicit alias:/id: segment instead of a
+        // heuristic lookup.
         String orgAlias = createOrgWithNotify();
         String userUuid = realm.admin().users().searchByEmail(TEST_EMAIL, true).get(0).getId();
         addUserToOrganization(orgAlias, userUuid);
@@ -838,12 +977,14 @@ public class SsfTransmitterEventEmitterTests {
                                         "uri", "urn:keycloak:org:" + orgAlias)),
                         "event", Map.of("credential_type", "password", "change_type", "update")))
                 .asResponse()) {
-            Assertions.assertEquals(200, res.getStatus());
-            Assertions.assertEquals("dispatched", res.asJson().get("status").asText(),
-                    "urn:keycloak:org URN naming an existing org must resolve and dispatch");
+            Assertions.assertEquals(400, res.getStatus(),
+                    "bare urn:keycloak:org URN without alias:/id: segment must be rejected");
+            JsonNode body = res.asJson();
+            Assertions.assertEquals("subject_not_found", body.get("error").asText());
+            Assertions.assertEquals("tenant", body.path("params").path("subjectMember").asText());
         }
-        Assertions.assertNotNull(pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS),
-                "URN-tenant event should reach the mock receiver");
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "bare-URN tenant subject must not reach the receiver");
     }
 
     @Test
