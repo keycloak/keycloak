@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.Response.Status;
 
@@ -42,6 +44,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessToken.Access;
@@ -69,6 +72,7 @@ public class KeycloakIdentity implements Identity {
     private final boolean resourceServer;
     private final String id;
     private UserModel user;
+    private Set<String> effectiveUserRoleIds;
 
     public KeycloakIdentity(KeycloakSession keycloakSession) {
         this(Tokens.getAccessToken(keycloakSession), keycloakSession);
@@ -294,13 +298,7 @@ public class KeycloakIdentity implements Identity {
             return Identity.super.hasClientRole(clientId, roleName);
         }
 
-        RoleModel role = KeycloakModelUtils.getRoleByName(realm, clientId, roleName);
-
-        if (role == null) {
-            return false;
-        }
-
-        return user.hasRole(role);
+        return hasEffectiveUserRole(KeycloakModelUtils.getRoleByName(realm, clientId, roleName));
     }
 
     @Override
@@ -309,13 +307,21 @@ public class KeycloakIdentity implements Identity {
             return Identity.super.hasRealmRole(roleName);
         }
 
-        RoleModel role = KeycloakModelUtils.getRoleByName(realm, null, roleName);
+        return hasEffectiveUserRole(KeycloakModelUtils.getRoleByName(realm, null, roleName));
+    }
 
+    private boolean hasEffectiveUserRole(RoleModel role) {
         if (role == null) {
             return false;
         }
 
-        return user.hasRole(role);
+        if (effectiveUserRoleIds == null) {
+            effectiveUserRoleIds = RoleUtils.getDeepUserRoleMappings(user).stream()
+                    .map(RoleModel::getId)
+                    .collect(Collectors.toSet());
+        }
+
+        return effectiveUserRoleIds.contains(role.getId());
     }
 
     public AccessToken getAccessToken() {

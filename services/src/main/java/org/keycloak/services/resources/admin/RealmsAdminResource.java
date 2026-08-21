@@ -56,6 +56,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.services.resources.admin.fgap.RealmsPermissionEvaluator;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.ExportImportManager;
 
@@ -120,14 +121,15 @@ public class RealmsAdminResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<RealmRepresentation> getRealms(@DefaultValue("false") @QueryParam("briefRepresentation") boolean briefRepresentation) {
+        RealmsPermissionEvaluator realmsAuth = AdminPermissions.realms(session, auth);
         Stream<RealmRepresentation> realms = session.realms().getRealmsStream()
-                .map(realm -> toRealmRep(realm, briefRepresentation))
+                .map(realm -> toRealmRep(realmsAuth, realm, briefRepresentation))
                 .filter(Objects::nonNull);
         return throwIfEmpty(realms, new ForbiddenException());
     }
 
-    protected RealmRepresentation toRealmRep(RealmModel realm, boolean briefRep) {
-        if (AdminPermissions.realms(session, auth).canView(realm)) {
+    protected RealmRepresentation toRealmRep(RealmsPermissionEvaluator realmsAuth, RealmModel realm, boolean briefRep) {
+        if (realmsAuth.canView(realm)) {
             if (briefRep) {
                 return ModelToRepresentation.toBriefRepresentation(realm);
             }
@@ -139,7 +141,7 @@ public class RealmsAdminResource {
                     .toList();
             rep.setDefaultGroups(filteredDefaultGroups.isEmpty() ? null : filteredDefaultGroups);
             return rep;
-        } else if (AdminPermissions.realms(session, auth).isAdmin(realm)) {
+        } else if (realmsAuth.isAdmin(realm)) {
             RealmRepresentation rep = new RealmRepresentation();
             rep.setRealm(realm.getName());
             return rep;
