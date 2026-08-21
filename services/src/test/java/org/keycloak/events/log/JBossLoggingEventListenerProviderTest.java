@@ -242,9 +242,11 @@ public class JBossLoggingEventListenerProviderTest {
         AdminEvent adminEvent = new AdminEvent();
         adminEvent.setId("id");
         adminEvent.setOperationType(OperationType.UPDATE);
+        adminEvent.setRealmId("event-realm-id");
+        adminEvent.setRealmName("event-realm-name");
         AuthDetails authDetails = new AuthDetails();
-        authDetails.setRealmId("realm-id");
-        authDetails.setRealmName("realm-name");
+        authDetails.setRealmId("auth-realm-id");
+        authDetails.setRealmName("auth-realm-name");
         authDetails.setClientId("client-id");
         authDetails.setUserId("user-id");
         authDetails.setIpAddress("localhost");
@@ -261,8 +263,10 @@ public class JBossLoggingEventListenerProviderTest {
 
     private static void assertAdminEvent(AdminEvent adminEvent, String message, String quote) {
         assertAdminEventKey(message, "operationType", adminEvent.getOperationType().name(), quote);
-        assertAdminEventKey(message, "realmId", adminEvent.getAuthDetails().getRealmId(), quote);
-        assertAdminEventKey(message, "realmName", adminEvent.getAuthDetails().getRealmName(), quote);
+        assertAdminEventKey(message, "realmId", adminEvent.getRealmId(), quote);
+        assertAdminEventKey(message, "realmName", adminEvent.getRealmName(), quote);
+        assertAdminEventKey(message, "authRealmId", adminEvent.getAuthDetails().getRealmId(), quote);
+        assertAdminEventKey(message, "authRealmName", adminEvent.getAuthDetails().getRealmName(), quote);
         assertAdminEventKey(message, "clientId", adminEvent.getAuthDetails().getClientId(), quote);
         assertAdminEventKey(message, "userId", adminEvent.getAuthDetails().getUserId(), quote);
         assertAdminEventKey(message, "ipAddress", adminEvent.getAuthDetails().getIpAddress(), quote);
