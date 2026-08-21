@@ -570,7 +570,7 @@ public class SAMLEndpoint {
                 if (assertionIsEncrypted) {
                     try {
                         XMLEncryptionUtil.DecryptionKeyLocator decryptionKeyLocator = new SAMLDecryptionKeysLocator(session, realm, config.getEncryptionAlgorithm());
-                        assertionElement = AssertionUtil.decryptAssertion(responseType, decryptionKeyLocator);
+                        assertionElement = AssertionUtil.decryptAssertion(responseType, decryptionKeyLocator, session);
                     } catch (ProcessingException ex) {
                         logger.warnf(ex, "Not possible to decrypt SAML assertion. Please check realm keys of usage ENC in the realm '%s' and make sure there is a key able to decrypt the assertion encrypted by identity provider '%s'", realm.getName(), config.getAlias());
                         throw new WebApplicationException(ex, Response.Status.BAD_REQUEST);
@@ -616,7 +616,7 @@ public class SAMLEndpoint {
                 if (AssertionUtil.isIdEncrypted(responseType)) {
                     try {
                         XMLEncryptionUtil.DecryptionKeyLocator decryptionKeyLocator = new SAMLDecryptionKeysLocator(session, realm, config.getEncryptionAlgorithm());
-                        AssertionUtil.decryptId(responseType, decryptionKeyLocator);
+                        AssertionUtil.decryptId(responseType, decryptionKeyLocator, session);
                     } catch (ProcessingException ex) {
                         logger.warnf(ex, "Not possible to decrypt SAML encryptedId. Please check realm keys of usage ENC in the realm '%s' and make sure there is a key able to decrypt the encryptedId encrypted by identity provider '%s'", realm.getName(), config.getAlias());
                         throw new WebApplicationException(ex, Response.Status.BAD_REQUEST);
