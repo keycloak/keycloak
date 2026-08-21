@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.client;
+package org.keycloak.tests.client;
 
 import org.keycloak.admin.client.resource.ClientInitialAccessResource;
 import org.keycloak.client.registration.Auth;
@@ -29,22 +29,29 @@ import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@KeycloakIntegrationTest
 public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
+
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
 
     private ClientInitialAccessResource resource;
 
-    @Before
+    @BeforeEach
     public void before() throws Exception {
         super.before();
 

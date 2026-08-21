@@ -17,7 +17,7 @@
  *
  */
 
-package org.keycloak.testsuite.client;
+package org.keycloak.tests.client;
 
 import java.util.Collections;
 import java.util.List;
@@ -34,13 +34,14 @@ import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.util.JsonSerialization;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_CODE;
 import static org.keycloak.OAuth2Constants.CLIENT_CREDENTIALS;
@@ -61,9 +62,10 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@KeycloakIntegrationTest
 public class OIDCClientRegistrationResponseTypesAndGrantsTest extends AbstractClientRegistrationTest {
 
-    @Before
+    @BeforeEach
     public void before() throws Exception {
         super.before();
 

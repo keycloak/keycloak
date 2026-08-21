@@ -15,31 +15,39 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.client;
+package org.keycloak.tests.client;
 
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@KeycloakIntegrationTest
 public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest {
+
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
 
     private ClientRepresentation client;
 
-    @Before
+    @BeforeEach
     public void before() throws Exception {
         super.before();
 
@@ -97,21 +105,15 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
     }
 
     @Test
-    public void getClientWrongClient() throws ClientRegistrationException {
-        try {
-            reg.get("SomeOtherClient");
-        } catch (ClientRegistrationException e) {
-            assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
-        }
+    public void getClientWrongClient() {
+        ClientRegistrationException e = assertThrows(ClientRegistrationException.class, () -> reg.get("SomeOtherClient"));
+        assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
     }
 
     @Test
-    public void getClientMissingClient() throws ClientRegistrationException {
-        try {
-            reg.get("nosuch");
-        } catch (ClientRegistrationException e) {
-            assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
-        }
+    public void getClientMissingClient() {
+        ClientRegistrationException e = assertThrows(ClientRegistrationException.class, () -> reg.get("nosuch"));
+        assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
     }
 
     @Test
