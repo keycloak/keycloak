@@ -167,13 +167,21 @@ public class EventEmitterService {
             return EmitEventResult.dropped(EmitEventStatus.DROPPED_FILTERED);
         }
 
-        // 5. Subject resolution + subscription filter. ComplexSubjectId
-        //    can carry a user, an org (via the tenant slot), or both.
-        //    Every subject member the emitter names must resolve — the sub_id
-        //    travels verbatim in the SET, so a user or tenant subject member that
-        //    doesn't match anything is a subject error, not a subject member to
-        //    silently ignore: otherwise a forged subject member would reach the
-        //    receiver while only the other subject member was actually gated.
+        // 5. Subject resolution + subscription filter. Of the members a
+        //    ComplexSubjectId can carry, only user and tenant map to
+        //    Keycloak entities, so exactly those two are resolved and
+        //    gated: when the emitter names one it must resolve — the
+        //    sub_id travels verbatim in the SET, so a user or tenant
+        //    subject member that doesn't match anything is a subject
+        //    error, not a subject member to silently ignore; otherwise
+        //    a forged subject member would reach the receiver while
+        //    only the other subject member was actually gated. The
+        //    remaining members are currently not mapped to Keycloak
+        //    entities and are forwarded UNVALIDATED alongside the gated
+        //    ones: session and group do have Keycloak-side counterparts
+        //    and may gain resolution/gating in the future, while
+        //    device, application, and org_unit have nothing to resolve
+        //    against.
         EmitSubjectResolution resolved = resolveSubject(subjectId);
         if (resolved.user() == null && resolved.organization() == null) {
             return EmitEventResult.dropped(EmitEventStatus.SUBJECT_NOT_FOUND);
