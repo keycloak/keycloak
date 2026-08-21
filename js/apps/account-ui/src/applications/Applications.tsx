@@ -207,7 +207,7 @@ export const Applications = () => {
                       {t("description")}
                     </DescriptionListTerm>
                     <DescriptionListDescription>
-                      {application.description}
+                      {label(t, application.description)}
                     </DescriptionListDescription>
                   </DescriptionListGroup>
                 )}
