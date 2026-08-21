@@ -4,6 +4,17 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Empty database and an explicit migration strategy
+
+An explicitly configured `migration-strategy` now wins over the implicit initialization of an empty database.
+Previously the default `initialize-empty=true` initialized the schema in place even when `manual` or `validate`
+was configured, so no export script was written and `validate` created the schema instead of failing.
+Now, on an empty database, the `manual` strategy writes the export script and exits, and the `validate`
+strategy fails startup. To restore the previous behavior, explicitly set the `initialize-empty` property of the
+`connections-jpa` provider to `true`.
+The `initialize-empty` property only affects the `manual` and `validate` strategies. With the `update` strategy an empty
+database is always initialized, regardless of this property.
+
 === Client secret no longer returned for view-only client permissions
 // https://github.com/keycloak/keycloak/issues/49220
 
