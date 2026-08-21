@@ -17,7 +17,8 @@ endif::[]
 
 ==== JavaScript (client-side)
 * https://www.keycloak.org/securing-apps/javascript-adapter[Keycloak JS adapter]
-
+* https://www.oidc-spa.dev/[OIDC SPA]
+ 
 ==== Node.js (server-side)
 * https://www.keycloak.org/securing-apps/nodejs-adapter[Keycloak Node.js adapter]
 
