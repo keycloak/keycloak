@@ -19,8 +19,6 @@ import org.keycloak.ssf.subject.OpaqueSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
 import org.keycloak.storage.adapter.AbstractInMemoryUserAdapter;
 
-import org.jboss.logging.Logger;
-
 /**
  * A detached, read-only stand-in for a user that is about to be deleted.
  *
@@ -55,8 +53,6 @@ import org.jboss.logging.Logger;
  */
 public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
 
-    private static final Logger log = Logger.getLogger(PurgedUserSnapshot.class);
-
     private static final String SESSION_ATTRIBUTE_PREFIX = "ssf.purgedUser.";
 
     /**
@@ -67,25 +63,6 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
      * it without the filter having to know how the subject was built.
      */
     private static final String SESSION_ATTRIBUTE_EMAIL_PREFIX = "ssf.purgedUserByEmail.";
-
-    private static final String SESSION_ATTRIBUTE_COUNT = "ssf.purgedUser.count";
-
-    /**
-     * Upper bound on snapshots retained per session.
-     *
-     * <p>A snapshot is only ever read by the admin / user event that follows the
-     * deletion in the same request, so in the paths that emit there is exactly one
-     * live at a time. Bulk paths are the problem: the workflow delete step
-     * ({@code DeleteUserStepProvider}) removes every due user on a single session and
-     * fires no admin or user event at all, and deleting an organization removes each
-     * managed member in one request. Those snapshots would never be read, so without a
-     * bound a retention run purging tens of thousands of accounts would hold every
-     * one of them for the life of the session.
-     *
-     * <p>The cap is deliberately far above what any emitting request needs, so hitting
-     * it means the caller is a bulk path whose snapshots are dead weight anyway.
-     */
-    private static final int MAX_SNAPSHOTS_PER_SESSION = 64;
 
     /**
      * The user's primary organization alias, resolved managed-preferred to mirror
@@ -148,8 +125,8 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
      * Captures {@code user} and stashes it on the session under its user id.
      * No-op when the user is a service account — those are not human subjects and
      * never produce a purge SET, so capturing one would only cost an organization
-     * query on every client deletion — and no-op once
-     * {@link #MAX_SNAPSHOTS_PER_SESSION} snapshots are already held.
+     * query on every client deletion — and no-op when the deletion is not bound to
+     * an HTTP request (see {@link #isRequestBound}).
      *
      * <p>Callers invoke this from the pre-remove hook, which fires before Keycloak
      * knows whether the removal will succeed. Capturing is therefore deliberately
@@ -163,16 +140,7 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
         if (user.getServiceAccountClientLink() != null) {
             return;
         }
-
-        Integer held = session.getAttribute(SESSION_ATTRIBUTE_COUNT, Integer.class);
-        int count = held == null ? 0 : held;
-        if (count >= MAX_SNAPSHOTS_PER_SESSION) {
-            if (count == MAX_SNAPSHOTS_PER_SESSION) {
-                log.debugf("SSF: reached %d purge snapshots on this session; not capturing further deletions. "
-                                + "This is expected for bulk deletion paths, which emit no purge events.",
-                        MAX_SNAPSHOTS_PER_SESSION);
-                session.setAttribute(SESSION_ATTRIBUTE_COUNT, count + 1);
-            }
+        if (!isRequestBound(session)) {
             return;
         }
 
@@ -225,7 +193,36 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
         if (snapshot.getEmail() != null) {
             session.setAttribute(sessionEmailAttributeKey(snapshot.getEmail()), snapshot);
         }
-        session.setAttribute(SESSION_ATTRIBUTE_COUNT, count + 1);
+    }
+
+    /**
+     * True when this deletion is happening inside an HTTP request.
+     *
+     * <p>A snapshot exists solely to serve the admin or user event fired later in the
+     * same request, so a deletion with no request behind it can never produce one and
+     * capturing would retain data nothing will ever read. That is not hypothetical:
+     * {@code DefaultWorkflowProvider.runScheduledSteps} drives every due step for every
+     * enabled workflow on a single session, and its delete step removes one user per
+     * iteration — so a retention run purging tens of thousands of accounts would
+     * otherwise hold a snapshot for each, for the life of that session.
+     *
+     * <p>Deliberately a gate rather than a cap on retained snapshots. A cap would
+     * silently stop capturing partway through a bulk run, which becomes silently
+     * dropped events the day those paths do emit; this stays correct either way,
+     * because emission for them cannot use the request-bound listener path anyway.
+     *
+     * <p>{@code getHttpRequest()} throws {@link RuntimeException}
+     * ({@code ContextNotActiveException}) rather than returning null when no request
+     * context is active, so absence has to be detected by catching. Any failure is
+     * treated as "no request": the cost is a purge event not emitted on a path that
+     * has none to emit, which is strictly better than unbounded retention.
+     */
+    private static boolean isRequestBound(KeycloakSession session) {
+        try {
+            return session.getContext() != null && session.getContext().getHttpRequest() != null;
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 
     /**
