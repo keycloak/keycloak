@@ -61,12 +61,6 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-util-embedded-ldap</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.bouncycastle</groupId>
-                    <artifactId>bcprov-jdk15on</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
