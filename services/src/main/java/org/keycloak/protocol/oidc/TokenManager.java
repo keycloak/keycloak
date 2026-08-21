@@ -1538,6 +1538,7 @@ public class TokenManager {
         final String tokenType = Optional.ofNullable(accessToken).map(AccessToken::getType)
                                                                  .orElse(TokenUtil.TOKEN_TYPE_BEARER);
         if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseLowerCaseInTokenResponse()) {
+            logger.warnf("Using deprecated switch 'Use lower-case bearer type in token responses'. The switch might be removed in future Keycloak versions. Please update your application to handle correctly type 'Bearer' instead of 'bearer'.");
             return tokenType.toLowerCase();
         }
         return tokenType;

@@ -246,9 +246,13 @@ public class OIDCLoginProtocol implements LoginProtocol {
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(clientSession.getClient());
         if (!clientConfig.isExcludeSessionStateFromAuthResponse()) {
             redirectUri.addParam(OAuth2Constants.SESSION_STATE, userSession.getId());
+        } else {
+            logger.warn("Using deprecated switch 'Exclude session state from authentication response'. The switch might be removed in future Keycloak versions. Please update your application to handle session_state parameter correctly");
         }
         if (!clientConfig.isExcludeIssuerFromAuthResponse()) {
             redirectUri.addParam(OAuth2Constants.ISSUER, clientSession.getNote(OIDCLoginProtocol.ISSUER));
+        } else {
+            logMessageForDeprecatedExcludeIssuerSwitch();
         }
 
         String nonce = authSession.getClientNote(OIDCLoginProtocol.NONCE_PARAM);
@@ -316,6 +320,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 redirectUri.addParam(OAuth2Constants.ERROR_DESCRIPTION, cpe.getError());
                 if (!clientConfig.isExcludeIssuerFromAuthResponse()) {
                     redirectUri.addParam(OAuth2Constants.ISSUER, clientSession.getNote(OIDCLoginProtocol.ISSUER));
+                } else {
+                    logMessageForDeprecatedExcludeIssuerSwitch();
                 }
                 return buildRedirectUri(redirectUri, authSession, userSession, clientSessionCtx, cpe, null);
             }
@@ -414,9 +420,15 @@ public class OIDCLoginProtocol implements LoginProtocol {
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(session.getContext().getClient());
         if (!clientConfig.isExcludeIssuerFromAuthResponse()) {
             redirectUri.addParam(OAuth2Constants.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+        } else {
+            logMessageForDeprecatedExcludeIssuerSwitch();
         }
 
         return redirectUri;
+    }
+
+    public static void logMessageForDeprecatedExcludeIssuerSwitch() {
+        logger.warn("Using deprecated switch 'Exclude issuer from authentication response'. The switch might be removed in future Keycloak versions. Please update your application to handle iss parameter correctly");
     }
 
     @Override
