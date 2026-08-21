@@ -84,10 +84,10 @@ final class UserSessionExpirationLogic {
         final List<String> nearMissSessions = new ArrayList<>(batchSize);
 
         for (int bucket = 0; bucket < PersistentUserSessionEntity.SESSION_BUCKET_COUNT; bucket++) {
-            Consumer<TypedQuery<Object[]>> lsrParams = UserSessionExpirationLogic.<Object[]>setLastRefreshEpoch(oldestLastSessionRefresh)
+            Consumer<TypedQuery<Object[]>> lsrParams = UserSessionExpirationLogic.<Object[]>setLastSessionRefreshCoarse(oldestLastSessionRefresh)
                     .andThen(setSessionBucket(bucket));
             runInBatches(sessionFactory,
-                    s -> findAndExpireSessionsByEpoch(s, realmId, batchSize, true, oldestLastSessionRefresh, "findExpiredOfflineUserSessionsLastRefresh", lsrParams, expiredSessions, nearMissSessions),
+                    s -> findAndExpireSessionsByCoarseRefresh(s, realmId, batchSize, true, oldestLastSessionRefresh, "findExpiredOfflineUserSessionsLastRefresh", lsrParams, expiredSessions, nearMissSessions),
                     () -> { expiredSessions.clear(); nearMissSessions.clear(); });
 
             Consumer<TypedQuery<Object[]>> coParams = UserSessionExpirationLogic.<Object[]>setCreatedOn(oldestCreatedOn)
@@ -125,10 +125,10 @@ final class UserSessionExpirationLogic {
         final List<String> nearMissSessions = new ArrayList<>(batchSize);
 
         for (int bucket = 0; bucket < PersistentUserSessionEntity.SESSION_BUCKET_COUNT; bucket++) {
-            Consumer<TypedQuery<Object[]>> lsrParams = UserSessionExpirationLogic.<Object[]>setLastRefreshEpoch(oldestLastSessionRefresh)
+            Consumer<TypedQuery<Object[]>> lsrParams = UserSessionExpirationLogic.<Object[]>setLastSessionRefreshCoarse(oldestLastSessionRefresh)
                     .andThen(setRememberMe).andThen(setSessionBucket(bucket));
             runInBatches(sessionFactory,
-                    s -> findAndExpireSessionsByEpoch(s, realmId, batchSize, false, oldestLastSessionRefresh, "findExpiredRegularUserSessionsLastRefresh", lsrParams, expiredSessions, nearMissSessions),
+                    s -> findAndExpireSessionsByCoarseRefresh(s, realmId, batchSize, false, oldestLastSessionRefresh, "findExpiredRegularUserSessionsLastRefresh", lsrParams, expiredSessions, nearMissSessions),
                     () -> { expiredSessions.clear(); nearMissSessions.clear(); });
 
             Consumer<TypedQuery<Object[]>> coParams = UserSessionExpirationLogic.<Object[]>setCreatedOn(oldestCreatedOn)
@@ -250,7 +250,7 @@ final class UserSessionExpirationLogic {
                 .success();
     }
 
-    private static boolean findAndExpireSessionsByEpoch(KeycloakSession session, String realmId, int batchSize, boolean offline, int exactThreshold, String queryName, Consumer<TypedQuery<Object[]>> queryParameters, List<UserSessionAndUser> expiredSessions, List<String> nearMissSessions) {
+    private static boolean findAndExpireSessionsByCoarseRefresh(KeycloakSession session, String realmId, int batchSize, boolean offline, int exactThreshold, String queryName, Consumer<TypedQuery<Object[]>> queryParameters, List<UserSessionAndUser> expiredSessions, List<String> nearMissSessions) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
 
         TypedQuery<Object[]> query = em.createNamedQuery(queryName, Object[].class);
@@ -271,15 +271,15 @@ final class UserSessionExpirationLogic {
             }
         }
 
-        handleResultsToRemove(session, em, realmId, offline, Details.USER_SESSION_EXPIRED_REASON, "(by last refresh epoch)", expiredSessions);
+        handleResultsToRemove(session, em, realmId, offline, Details.USER_SESSION_EXPIRED_REASON, "(by coarse last refresh)", expiredSessions);
 
         if (!nearMissSessions.isEmpty()) {
             String offlineStr = offlineToString(offline);
-            int updated = em.createNamedQuery("setExactEpochForSessions")
+            int updated = em.createNamedQuery("setLastSessionRefreshCoarseToExact")
                     .setParameter("offline", offlineStr)
                     .setParameter("userSessionIds", nearMissSessions)
                     .executeUpdate();
-            logger.debugf("Set exact epoch for %d near-miss sessions in realm query '%s'", updated, realmId);
+            logger.debugf("Set coarse to exact for %d near-miss sessions in realm query '%s'", updated, realmId);
         }
 
         return candidateCount >= batchSize;
@@ -356,8 +356,8 @@ final class UserSessionExpirationLogic {
         return query -> query.setParameter("lastSessionRefresh", value);
     }
 
-    private static <T> Consumer<TypedQuery<T>> setLastRefreshEpoch(int value) {
-        return query -> query.setParameter("lastRefreshEpoch", value);
+    private static <T> Consumer<TypedQuery<T>> setLastSessionRefreshCoarse(int value) {
+        return query -> query.setParameter("lastSessionRefreshCoarse", value);
     }
 
     private static <T> Consumer<TypedQuery<T>> setCreatedOn(int value) {

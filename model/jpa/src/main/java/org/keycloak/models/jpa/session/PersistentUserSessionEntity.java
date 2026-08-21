@@ -47,8 +47,9 @@ import org.hibernate.annotations.DynamicUpdate;
         @NamedQuery(name="deleteUserSessions", query="delete from PersistentUserSessionEntity sess where sess.offline = :offline AND sess.userSessionId IN (:userSessionIds)"),
         // The query "findExpiredUserSessions" is deprecated (since 26.5) and may be removed in the future.
         @NamedQuery(name="findExpiredUserSessions", query="select sess.userSessionId, sess.userId from PersistentUserSessionEntity sess where sess.realmId = :realmId AND sess.offline = :offline AND sess.lastSessionRefresh < :lastSessionRefresh"),
-        @NamedQuery(name="updateUserSessionLastSessionRefresh", query="update PersistentUserSessionEntity sess set lastSessionRefresh = :lastSessionRefresh, lastRefreshEpoch = :lastRefreshEpoch where sess.realmId = :realmId" +
-                " AND sess.offline = :offline AND sess.userSessionId IN (:userSessionIds)"),
+        @NamedQuery(name="updateUserSessionLastSessionRefresh", query="update PersistentUserSessionEntity sess set lastSessionRefresh = :lastSessionRefresh," +
+                " lastSessionRefreshCoarse = ((:lastSessionRefresh - MOD(sess.createdOn, :granularity)) / :granularity) * :granularity + MOD(sess.createdOn, :granularity)" +
+                " where sess.realmId = :realmId AND sess.offline = :offline AND sess.userSessionId IN (:userSessionIds)"),
         @NamedQuery(name="findUserSessionsCount", query="select count(sess) from PersistentUserSessionEntity sess where sess.offline = :offline"),
         @NamedQuery(name="findUserSessionsOrderedById", query="select sess from PersistentUserSessionEntity sess, RealmEntity realm where realm.id = sess.realmId AND sess.offline = :offline" +
                 " AND sess.userSessionId > :lastSessionId" +
@@ -81,19 +82,19 @@ import org.hibernate.annotations.DynamicUpdate;
         @NamedQuery(name = "findExpiredOfflineUserSessionsLastRefresh",
                 query = "SELECT sess.userSessionId, sess.userId, sess.lastSessionRefresh" +
                         " FROM PersistentUserSessionEntity sess" +
-                        " WHERE sess.realmId = :realmId AND sess.offline = '1' AND sess.sessionBucket = :sessionBucket AND sess.lastRefreshEpoch < :lastRefreshEpoch"),
+                        " WHERE sess.realmId = :realmId AND sess.offline = '1' AND sess.sessionBucket = :sessionBucket AND sess.lastSessionRefreshCoarse < :lastSessionRefreshCoarse"),
         @NamedQuery(name = "findExpiredOfflineUserSessionsCreatedOn",
                 query = "SELECT sess.userSessionId, sess.userId" +
                         " FROM PersistentUserSessionEntity sess" +
                         " WHERE sess.realmId = :realmId AND sess.offline = '1' AND sess.sessionBucket = :sessionBucket AND sess.createdOn < :createdOn"),
-        @NamedQuery(name = "setExactEpochForSessions",
+        @NamedQuery(name = "setLastSessionRefreshCoarseToExact",
                 query = "UPDATE PersistentUserSessionEntity sess" +
-                        " SET sess.lastRefreshEpoch = sess.lastSessionRefresh" +
+                        " SET sess.lastSessionRefreshCoarse = sess.lastSessionRefresh" +
                         " WHERE sess.offline = :offline AND sess.userSessionId IN (:userSessionIds)"),
         @NamedQuery(name = "findExpiredRegularUserSessionsLastRefresh",
                 query = "SELECT sess.userSessionId, sess.userId, sess.lastSessionRefresh" +
                         " FROM PersistentUserSessionEntity sess" +
-                        " WHERE sess.realmId = :realmId AND sess.offline = '0' AND sess.rememberMe = :rememberMe AND sess.sessionBucket = :sessionBucket AND sess.lastRefreshEpoch < :lastRefreshEpoch"),
+                        " WHERE sess.realmId = :realmId AND sess.offline = '0' AND sess.rememberMe = :rememberMe AND sess.sessionBucket = :sessionBucket AND sess.lastSessionRefreshCoarse < :lastSessionRefreshCoarse"),
         @NamedQuery(name = "findExpiredRegularUserSessionsCreatedOn",
                 query = "SELECT sess.userSessionId, sess.userId" +
                         " FROM PersistentUserSessionEntity sess" +
@@ -176,8 +177,8 @@ public class PersistentUserSessionEntity implements AsynchronousCommitAllowed {
     @Column(name="SESSION_BUCKET")
     protected Integer sessionBucket;
 
-    @Column(name="LAST_REFRESH_EPOCH")
-    protected int lastRefreshEpoch;
+    @Column(name="LAST_SESSION_REFRESH_COARSE")
+    protected int lastSessionRefreshCoarse;
 
     @PrePersist
     void computeSessionBucket() {
@@ -267,12 +268,12 @@ public class PersistentUserSessionEntity implements AsynchronousCommitAllowed {
         this.sessionBucket = sessionBucket;
     }
 
-    public int getLastRefreshEpoch() {
-        return lastRefreshEpoch;
+    public int getLastSessionRefreshCoarse() {
+        return lastSessionRefreshCoarse;
     }
 
-    public void setLastRefreshEpoch(int lastRefreshEpoch) {
-        this.lastRefreshEpoch = lastRefreshEpoch;
+    public void setLastSessionRefreshCoarse(int lastSessionRefreshCoarse) {
+        this.lastSessionRefreshCoarse = lastSessionRefreshCoarse;
     }
 
     public int getVersion() {

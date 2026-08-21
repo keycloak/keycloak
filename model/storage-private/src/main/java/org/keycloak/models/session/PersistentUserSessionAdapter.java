@@ -72,7 +72,7 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
             private String userSessionId;
             private int started;
             private int lastSessionRefresh;
-            private int lastRefreshEpoch;
+            private int lastSessionRefreshCoarse;
             private boolean offline;
             private String data;
             private boolean rememberMe;
@@ -108,13 +108,13 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
             }
 
             @Override
-            public int getLastRefreshEpoch() {
-                return lastRefreshEpoch;
+            public int getLastSessionRefreshCoarse() {
+                return lastSessionRefreshCoarse;
             }
 
             @Override
-            public void setLastRefreshEpoch(int lastRefreshEpoch) {
-                this.lastRefreshEpoch = lastRefreshEpoch;
+            public void setLastSessionRefreshCoarse(int lastSessionRefreshCoarse) {
+                this.lastSessionRefreshCoarse = lastSessionRefreshCoarse;
             }
 
             @Override
@@ -289,7 +289,7 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
         if (realm != null) {
             RealmExpiration exp = RealmExpiration.fromRealm(realm);
             int maxIdle = model.isOffline() ? exp.offlineMaxIdle() : exp.getMaxIdle(isRememberMe());
-            model.setLastRefreshEpoch(SessionExpirationUtils.computeEpoch(seconds, maxIdle));
+            model.setLastSessionRefreshCoarse(SessionExpirationUtils.computeLastSessionRefreshCoarse(seconds, maxIdle, model.getStarted()));
         }
     }
 

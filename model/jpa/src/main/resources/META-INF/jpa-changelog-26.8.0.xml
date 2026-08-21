@@ -25,11 +25,11 @@
         </createIndex>
     </changeSet>
 
-    <!-- Add SESSION_BUCKET and LAST_REFRESH_EPOCH columns to OFFLINE_USER_SESSION, then rebuild
+    <!-- Add SESSION_BUCKET and LAST_SESSION_REFRESH_COARSE columns to OFFLINE_USER_SESSION, then rebuild
          expiration indexes. SESSION_BUCKET distributes inserts across multiple B-tree leaf pages,
-         reducing PAGELATCH_EX contention. LAST_REFRESH_EPOCH is a coarse-grained version of
+         reducing PAGELATCH_EX contention. LAST_SESSION_REFRESH_COARSE is a coarse-grained version of
          LAST_SESSION_REFRESH (rounded to maxIdle/2 boundaries), reducing index repositions by ~83%
-         since the epoch only changes every maxIdle/2 seconds instead of on every refresh. -->
+         since the coarse value only changes every maxIdle/2 seconds instead of on every refresh. -->
 
     <changeSet id="26.8.0-51851-add-session-bucket" author="keycloak">
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
@@ -44,14 +44,14 @@
         </addColumn>
     </changeSet>
 
-    <changeSet id="26.8.0-51900-add-last-refresh-epoch" author="keycloak">
+    <changeSet id="26.8.0-51900-add-last-session-refresh-coarse" author="keycloak">
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <not>
-                <columnExists tableName="OFFLINE_USER_SESSION" columnName="LAST_REFRESH_EPOCH"/>
+                <columnExists tableName="OFFLINE_USER_SESSION" columnName="LAST_SESSION_REFRESH_COARSE"/>
             </not>
         </preConditions>
         <addColumn tableName="OFFLINE_USER_SESSION">
-            <column name="LAST_REFRESH_EPOCH" type="BIGINT" defaultValueNumeric="0">
+            <column name="LAST_SESSION_REFRESH_COARSE" type="BIGINT" defaultValueNumeric="0">
                 <constraints nullable="false"/>
             </column>
         </addColumn>
@@ -94,13 +94,13 @@
         </modifySql>
     </changeSet>
 
-    <changeSet id="26.8.0-51900-51851-add-bucketed-and-epoch-expiration-idx-last-refresh" author="keycloak">
+    <changeSet id="26.8.0-51900-51851-add-bucketed-and-coarse-expiration-idx-last-refresh" author="keycloak">
         <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_LAST_REFRESH">
             <column name="REALM_ID" type="VARCHAR(36)"/>
             <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
             <column name="REMEMBER_ME" type="BOOLEAN"/>
             <column name="SESSION_BUCKET" type="SMALLINT"/>
-            <column name="LAST_REFRESH_EPOCH" type="BIGINT"/>
+            <column name="LAST_SESSION_REFRESH_COARSE" type="BIGINT"/>
             <column name="USER_SESSION_ID" type="VARCHAR(36)"/>
             <column name="USER_ID" type="VARCHAR(255)"/>
         </createIndex>

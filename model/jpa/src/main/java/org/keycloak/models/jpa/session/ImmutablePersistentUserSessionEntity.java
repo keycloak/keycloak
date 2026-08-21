@@ -64,12 +64,12 @@ public record ImmutablePersistentUserSessionEntity(
     }
 
     @Override
-    public int getLastRefreshEpoch() {
+    public int getLastSessionRefreshCoarse() {
         return 0;
     }
 
     @Override
-    public void setLastRefreshEpoch(int lastRefreshEpoch) {
+    public void setLastSessionRefreshCoarse(int lastSessionRefreshCoarse) {
         readOnly();
     }
 

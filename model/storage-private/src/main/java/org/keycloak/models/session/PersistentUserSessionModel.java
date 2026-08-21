@@ -42,9 +42,9 @@ public interface PersistentUserSessionModel {
 
     void setData(String data);
 
-    int getLastRefreshEpoch();
+    int getLastSessionRefreshCoarse();
 
-    void setLastRefreshEpoch(int lastRefreshEpoch);
+    void setLastSessionRefreshCoarse(int lastSessionRefreshCoarse);
 
     void setRealmId(String realmId);
 

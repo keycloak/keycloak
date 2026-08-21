@@ -187,11 +187,15 @@ public class SessionExpirationUtils {
     }
 
     /**
-     * Rounds {@code lastSessionRefresh} down to a coarse-grained epoch boundary of {@code maxIdle / 2} seconds.
+     * Rounds {@code lastSessionRefresh} down to a coarse-grained boundary of {@code maxIdle / 2} seconds,
+     * offset by {@code createdOn % granularity} so that sessions created at different times have staggered
+     * boundaries and don't all become cleanup candidates at the same instant.
      */
-    public static int computeEpoch(int lastSessionRefresh, int maxIdle) {
+    public static int computeLastSessionRefreshCoarse(int lastSessionRefresh, int maxIdle, int createdOn) {
         int granularity = Math.max(maxIdle / 2, 1);
-        return (lastSessionRefresh / granularity) * granularity;
+        int offset = Math.floorMod(createdOn, granularity);
+        int aligned = lastSessionRefresh - offset;
+        return (aligned / granularity) * granularity + offset;
     }
 
     private static long getClientAttributeTimeout(ClientModel client, String attr) {
