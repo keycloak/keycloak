@@ -41,7 +41,7 @@ public class DefaultTrustIdentityProviderConfig extends IdentityProviderModel {
     public static final String TRUSTED_JWKS_KEY_ID = PUBLIC_KEY_SIGNATURE_VERIFIER_KEY_ID;
     public static final String USE_X509 = "useX509";
     public static final String TRUSTED_CERTIFICATES = "trustedCertificates";
-    public static final String ATTESTATION_EXTENDED_KEY_USAGES = "attestationExtendedKeyUsages";
+    public static final String REQUIRED_EXTENDED_KEY_USAGES = "requiredExtendedKeyUsages";
 
     public DefaultTrustIdentityProviderConfig() {
     }
@@ -65,16 +65,13 @@ public class DefaultTrustIdentityProviderConfig extends IdentityProviderModel {
             if (!hasTrustedCertificates) {
                 throw new IllegalArgumentException("Trusted X.509 certificates are required when X.509 trust is enabled");
             }
-            if (getAttestationExtendedKeyUsages().isEmpty()) {
-                throw new IllegalArgumentException("At least one attestation extended key usage OID is required for X.509 trust");
-            }
             try {
                 X509Certificate[] certificates = PemUtils.decodeCertificates(getTrustedCertificates());
                 if (certificates.length == 0) {
                     throw new IllegalArgumentException("At least one trusted X.509 certificate is required");
                 }
                 new X509TrustMaterial(new LinkedHashSet<>(Arrays.asList(certificates)),
-                        getAttestationExtendedKeyUsages());
+                        getRequiredExtendedKeyUsages());
             } catch (RuntimeException e) {
                 throw new IllegalArgumentException(
                         "Trusted X.509 certificates must be a valid PEM bundle of self-signed CA roots", e);
@@ -147,8 +144,8 @@ public class DefaultTrustIdentityProviderConfig extends IdentityProviderModel {
         }
     }
 
-    public List<String> getAttestationExtendedKeyUsages() {
-        String configured = getConfig().get(ATTESTATION_EXTENDED_KEY_USAGES);
+    public List<String> getRequiredExtendedKeyUsages() {
+        String configured = getConfig().get(REQUIRED_EXTENDED_KEY_USAGES);
         if (Strings.isEmpty(configured)) {
             return List.of();
         }

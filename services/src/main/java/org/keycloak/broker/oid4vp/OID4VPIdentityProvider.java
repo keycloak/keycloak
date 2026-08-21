@@ -34,7 +34,9 @@ import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.TrustMaterialIdentityProvider;
 import org.keycloak.broker.provider.TrustMaterialRequest;
+import org.keycloak.broker.provider.TrustMaterialResolver;
 import org.keycloak.broker.provider.TrustMaterialSdJwtIssuerResolver;
+import org.keycloak.broker.provider.X509TrustMaterial;
 import org.keycloak.broker.trust.TrustKeyUtil;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
@@ -150,9 +152,12 @@ public class OID4VPIdentityProvider extends AbstractIdentityProvider<OID4VPIdent
         return new OID4VPIdentityProviderEndpoint(session, realm, this, callback, event);
     }
 
-    // TODO support delegating to an external trust material identity provider by alias.
     @Override
     public Stream<JWK> resolveKeys(TrustMaterialRequest request) {
+        String trustMaterialIdps = getConfig().getTrustMaterialIdps();
+        if (StringUtil.isNotBlank(trustMaterialIdps)) {
+            return new TrustMaterialResolver().resolveKeys(session, trustMaterialIdps, request);
+        }
         String jwksJson = getConfig().getTrustedIssuerJwks();
         if (StringUtil.isBlank(jwksJson)) {
             return Stream.empty();
@@ -166,8 +171,14 @@ public class OID4VPIdentityProvider extends AbstractIdentityProvider<OID4VPIdent
         }
     }
 
-    // How trusted issuer keys are resolved for a presented credential. The default pins the inline
-    // trusted issuer JWKS through this provider's own trust material.
+    @Override
+    public Stream<X509TrustMaterial> resolveX509Trust(TrustMaterialRequest request) {
+        return new TrustMaterialResolver().resolveX509Trust(session, getConfig().getTrustMaterialIdps(), request);
+    }
+
+    // How trusted issuer material is resolved for a presented credential. The provider acts as its
+    // own trust material, either delegating to the configured trust material identity providers or
+    // serving the inline trusted issuer JWKS.
     // TODO add a trust list backed resolver (e.g. ETSI), selected from configuration.
     protected TrustedSdJwtIssuerResolver trustedIssuerResolver() {
         return new TrustMaterialSdJwtIssuerResolver(this);
