@@ -424,6 +424,7 @@ public class OrganizationInvitationResource {
 
         OrganizationInvitationModel invitation = verifyInvitationById(invitationManager, id);
         String clientId = resolveClientIdFromInviteLink(invitation.getInviteLink());
+        resolveInvitationTarget(clientId);
         invitationManager.remove(id);
         return inviteUser(invitation.getEmail(), invitation.getFirstName(), invitation.getLastName(), clientId);
     }

@@ -516,6 +516,33 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
     }
 
     @Test
+    public void testResendInvitationPreservesOriginalWhenClientDisabled() throws Exception {
+        try (
+                ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, "broker-app")
+                        .setBaseUrl("http://localhost:8180").update()
+        ) {
+            try (Response response = organization.members().inviteUser("user@test-org.com", "John", "Doe", "broker-app")) {
+                assertThat(response.getStatus(), equalTo(204));
+            }
+
+            List<OrganizationInvitationRepresentation> invitations = organization.invitations().list();
+            assertThat(invitations, hasSize(1));
+            String invitationId = invitations.get(0).getId();
+
+            try (ClientAttributeUpdater disabler = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, "broker-app")
+                    .setEnabled(false).update()) {
+                try (Response resendResponse = organization.invitations().resend(invitationId)) {
+                    assertThat(resendResponse.getStatus(), equalTo(400));
+                    assertThat(resendResponse.readEntity(String.class), containsString("Client is not enabled"));
+                }
+
+                List<OrganizationInvitationRepresentation> remaining = organization.invitations().list();
+                assertThat("Original invitation must survive a failed resend", remaining, hasSize(1));
+            }
+        }
+    }
+
+    @Test
     public void testResendInvitationToDisabledOrganization() throws Exception {
         sendInvitation("user@test-org.com", "John", "Doe");
 
