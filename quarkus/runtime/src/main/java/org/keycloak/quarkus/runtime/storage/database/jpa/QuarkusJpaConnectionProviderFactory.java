@@ -447,7 +447,7 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
 
     private void checkMissingIndexes(KeycloakSessionFactory factory) {
         boolean autoCreate = getMigrationStrategy() == MigrationStrategy.UPDATE;
-        var thread = new Thread(new DatabaseIndexChecker(this::getConnection, factory, getSchema(), autoCreate), "db-index-checker");
+        var thread = new Thread(new DatabaseIndexChecker(this::getConnection, factory, getSchema(), autoCreate, getMigrationTransactionTimeout()), "db-index-checker");
         thread.setDaemon(true);
         thread.start();
     }

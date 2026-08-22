@@ -37,6 +37,7 @@ import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionPr
 import org.keycloak.connections.jpa.updater.liquibase.custom.CustomCreateIndexChange;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import liquibase.change.core.CreateIndexChange;
 import liquibase.change.core.CreateTableChange;
@@ -80,16 +81,27 @@ public class DatabaseIndexChecker implements Runnable {
     private final KeycloakSessionFactory factory;
     private final String dbSchema;
     private final boolean autoCreate;
+    private final int migrationTimeoutSeconds;
 
-    public DatabaseIndexChecker(Supplier<Connection> connectionSupplier, KeycloakSessionFactory factory, String dbSchema, boolean autoCreate) {
+    public DatabaseIndexChecker(Supplier<Connection> connectionSupplier, KeycloakSessionFactory factory, String dbSchema, boolean autoCreate, int migrationTimeoutSeconds) {
         this.connectionSupplier = Objects.requireNonNull(connectionSupplier);
         this.factory = Objects.requireNonNull(factory);
         this.dbSchema = dbSchema;
         this.autoCreate = autoCreate;
+        this.migrationTimeoutSeconds = migrationTimeoutSeconds;
     }
 
     @Override
     public void run() {
+        KeycloakModelUtils.setTransactionLimit(factory, migrationTimeoutSeconds);
+        try {
+            runInternal();
+        } finally {
+            KeycloakModelUtils.setTransactionLimit(factory, 0);
+        }
+    }
+
+    private void runInternal() {
         logger.info("Running database index checker");
         var missing = getMissingIndexes();
         if (missing.isEmpty()) {

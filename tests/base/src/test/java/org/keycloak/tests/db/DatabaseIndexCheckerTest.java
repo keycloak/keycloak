@@ -33,7 +33,7 @@ public class DatabaseIndexCheckerTest {
         var factory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory()
                 .getProviderFactory(JpaConnectionProvider.class);
         var schema = factory.getSchema();
-        var checker = new DatabaseIndexChecker(factory::getConnection, session.getKeycloakSessionFactory(), schema, false);
+        var checker = new DatabaseIndexChecker(factory::getConnection, session.getKeycloakSessionFactory(), schema, false, 0);
 
         assertThat(checker.getMissingIndexesName(), is(empty()));
 
@@ -74,13 +74,13 @@ public class DatabaseIndexCheckerTest {
         boolean recreated = false;
 
         try {
-            var detectOnly = new DatabaseIndexChecker(factory::getConnection, session.getKeycloakSessionFactory(), schema, false);
+            var detectOnly = new DatabaseIndexChecker(factory::getConnection, session.getKeycloakSessionFactory(), schema, false, 0);
             assertThat(detectOnly.getMissingIndexesName(), not(empty()));
 
-            var autoCreate = new DatabaseIndexChecker(factory::getConnection, session.getKeycloakSessionFactory(), schema, true);
+            var autoCreate = new DatabaseIndexChecker(factory::getConnection, session.getKeycloakSessionFactory(), schema, true, 0);
             autoCreate.run();
 
-            var afterRun = new DatabaseIndexChecker(factory::getConnection, session.getKeycloakSessionFactory(), schema, false);
+            var afterRun = new DatabaseIndexChecker(factory::getConnection, session.getKeycloakSessionFactory(), schema, false, 0);
             if (onlineSupported) {
                 assertThat(afterRun.getMissingIndexesName(), is(empty()));
                 recreated = true;
@@ -125,7 +125,7 @@ public class DatabaseIndexCheckerTest {
     }
 
     private static void recreateIndex(JpaConnectionProviderFactory factory, KeycloakSession session, String schema) {
-        var checker = new DatabaseIndexChecker(factory::getConnection, session.getKeycloakSessionFactory(), schema, false);
+        var checker = new DatabaseIndexChecker(factory::getConnection, session.getKeycloakSessionFactory(), schema, false, 0);
         String sql = checker.getMissingIndexesSql().get(INDEX_NAME);
         if (sql == null) {
             return;
