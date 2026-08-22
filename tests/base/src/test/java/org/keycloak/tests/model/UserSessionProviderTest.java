@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 import jakarta.persistence.EntityManager;
 
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -1035,6 +1036,11 @@ public class UserSessionProviderTest {
      */
     @TestOnServer
     public void testNearMissSessionSurvivesCoarseExpiration(KeycloakSession session) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+            // Assume doesn't work here, yet.
+            // https://github.com/keycloak/keycloak/issues/51968
+            return;
+        }
         InfinispanTimeUtil.enableTestingTimeService(session);
         try {
             RealmModel realm = session.realms().getRealmByName("test");
