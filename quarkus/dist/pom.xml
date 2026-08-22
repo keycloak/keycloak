@@ -107,6 +107,13 @@
                         </configuration>
                     </execution>
                 </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>dev.cyberstamp.maven.assembly.sbom</groupId>
+                        <artifactId>assembly-sbom-handler</artifactId>
+                        <version>0.1.2</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>
