@@ -158,6 +158,12 @@
     <main class="${properties.kcLoginMain!}">
       <div class="${properties.kcLoginMainHeader!}">
         <h1 class="${properties.kcLoginMainTitle!}" id="kc-page-title"><#nested "header"></h1>
+        <p class="${properties.kcLoginMainHeaderDesc!}">
+            <#nested "subheader">
+            <#if displayRequiredFields>
+                <span class="${properties.kcInputRequiredClass!}">*</span> ${msg("requiredFields")}
+            </#if>
+        </p>
         <#if realm.internationalizationEnabled  && locale.supported?size gt 1>
         <div class="${properties.kcLoginMainHeaderUtilities!}">
           <div class="${properties.kcInputClass!}">
@@ -198,35 +204,11 @@
         </#if>
       </div>
       <div class="${properties.kcLoginMainBody!}">
-        <#if !(auth?has_content && auth.showUsername() && !auth.showResetCredentials())>
-            <#if displayRequiredFields>
-                <div class="${properties.kcContentWrapperClass!}">
-                    <div class="${properties.kcLabelWrapperClass!} subtitle">
-                        <span class="${properties.kcInputHelperTextItemTextClass!}">
-                          <span class="${properties.kcInputRequiredClass!}">*</span> ${msg("requiredFields")}
-                        </span>
-                    </div>
-                </div>
-            </#if>
-        <#else>
-            <#if displayRequiredFields>
-                <div class="${properties.kcContentWrapperClass!}">
-                    <div class="${properties.kcLabelWrapperClass!} subtitle">
-                        <span class="${properties.kcInputHelperTextItemTextClass!}">
-                          <span class="${properties.kcInputRequiredClass!}">*</span> ${msg("requiredFields")}
-                        </span>
-                    </div>
-                    <div class="${properties.kcFormClass} ${properties.kcContentWrapperClass}">
-                        <#nested "show-username">
-                        <@username />
-                    </div>
-                </div>
-            <#else>
-                <div class="${properties.kcFormClass} ${properties.kcContentWrapperClass}">
-                  <#nested "show-username">
-                  <@username />
-                </div>
-            </#if>
+        <#if auth?has_content && auth.showUsername() && !auth.showResetCredentials()>
+            <div class="${properties.kcFormClass} ${properties.kcContentWrapperClass}">
+                <#nested "show-username">
+                <@username />
+            </div>
         </#if>
 
         <#-- App-initiated actions should not see warning messages about the need to complete the action -->

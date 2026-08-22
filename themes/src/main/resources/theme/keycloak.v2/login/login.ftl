@@ -8,6 +8,10 @@
 
     <#if section = "header">
         ${msg("loginAccountTitle")}
+    <#elseif section = "subheader">
+        <#if client?? && client.name?has_content>
+            ${kcSanitize(msg("loginSubtitle", advancedMsg(client.name)))?no_esc}
+        </#if>
     <#elseif section = "form">
         <div id="kc-form">
           <div id="kc-form-wrapper">
