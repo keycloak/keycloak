@@ -1,7 +1,10 @@
 package org.keycloak.tests.oauth;
 
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Profile;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
@@ -26,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.OAuthErrorException.INVALID_TARGET;
 import static org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants.ERROR_INVALID_RESOURCE;
 import static org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants.ERROR_NOT_MATCHING;
+import static org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants.ERROR_RESOURCE_INDICATORS_DISABLED;
 
 @KeycloakIntegrationTest(config = ResourceIndicatorsTest.ResourceIndicatorServerConfig.class)
 public class ResourceIndicatorsTest {
@@ -134,6 +138,41 @@ public class ResourceIndicatorsTest {
         assertErrorResponse(refreshResponse,  INVALID_TARGET, ERROR_NOT_MATCHING);
     }
 
+    @Test
+    public void testResourceIndicatorsDisabledByDefaultForClient() {
+        AccessTokenResponse tokenResponse = oauth.passwordGrantRequest("user", "pass")
+                .client("clientWithoutResourceIndicators", "clientWithoutResourceIndicators-secret")
+                .resource("urn:client:theservice").send();
+        assertErrorResponse(tokenResponse, INVALID_TARGET, ERROR_RESOURCE_INDICATORS_DISABLED);
+    }
+
+    @Test
+    public void testNoResourceParamStillWorksWhenResourceIndicatorsDisabled() {
+        AccessTokenResponse tokenResponse = oauth.passwordGrantRequest("user", "pass")
+                .client("clientWithoutResourceIndicators", "clientWithoutResourceIndicators-secret")
+                .send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+    }
+
+    @Test
+    public void testAuthzResourceIndicatorsDisabledForClient() {
+        ClientResource clientResource = realm.admin().clients()
+                .get(realm.admin().clients().findByClientId("test-app").get(0).getId());
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        clientRep.getAttributes().put(OIDCConfigAttributes.RESOURCE_INDICATORS_ENABLED, "false");
+        clientResource.update(clientRep);
+
+        try {
+            AuthorizationEndpointResponse authorizationEndpointResponse = oauth.loginForm().resource("urn:client:theservice").doLoginWithCookie();
+            Assertions.assertTrue(authorizationEndpointResponse.isRedirected());
+            Assertions.assertEquals(INVALID_TARGET, authorizationEndpointResponse.getError());
+            Assertions.assertEquals(ERROR_RESOURCE_INDICATORS_DISABLED, authorizationEndpointResponse.getErrorDescription());
+        } finally {
+            clientRep.getAttributes().put(OIDCConfigAttributes.RESOURCE_INDICATORS_ENABLED, "true");
+            clientResource.update(clientRep);
+        }
+    }
+
     private static final class ResourceIndicatorsRealm implements RealmConfig {
 
         @Override
@@ -146,6 +185,11 @@ public class ResourceIndicatorsTest {
 
             realm.clients(ClientBuilder.create("serviceWithoutResource"));
             realm.clientRoles("serviceWithoutResource", "myrole");
+
+            realm.clients(ClientBuilder.create("clientWithoutResourceIndicators")
+                    .secret("clientWithoutResourceIndicators-secret")
+                    .directAccessGrantsEnabled(true)
+                    .fullScopeEnabled(true));
 
             realm.users(UserBuilder.create("user").firstName("user").lastName("user").password("pass").email("the@email.localhost")
                     .clientRoles("theservice", "myrole")
@@ -160,7 +204,8 @@ public class ResourceIndicatorsTest {
 
         @Override
         public ClientBuilder configure(ClientBuilder client) {
-            return super.configure(client).fullScopeEnabled(true);
+            return super.configure(client).fullScopeEnabled(true)
+                    .attribute(OIDCConfigAttributes.RESOURCE_INDICATORS_ENABLED, "true");
         }
     }
 
