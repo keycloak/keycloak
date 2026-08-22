@@ -21,6 +21,7 @@ import org.keycloak.broker.oidc.IssuerValidation;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderType;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
 /**
@@ -70,7 +71,7 @@ public class GoogleIdentityProviderConfig extends OIDCIdentityProviderConfig imp
     }
 
     @Override
-    public void validate(RealmModel realm) {
+    public void validate(KeycloakSession session, RealmModel realm) {
         if (!GoogleIdentityProvider.ISSUER_URL.equals(getConfig().get(ISSUER))) {
            throw new IllegalArgumentException("The issuer url [" + getConfig().get(ISSUER) + "] is invalid");
         }
