@@ -28,6 +28,7 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.attribute.Attributes.Entry;
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider;
+import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
@@ -39,7 +40,11 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceType;
 
@@ -50,6 +55,7 @@ import static org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluati
 import static org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider.Outcome.SKIP;
 import static org.keycloak.models.utils.ModelToRepresentation.buildGroupPath;
 import static org.keycloak.models.utils.RoleUtils.isDirectMember;
+import static org.keycloak.models.utils.RoleUtils.isMember;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -68,14 +74,22 @@ public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPol
         AuthorizationProvider authorizationProvider = evaluation.getAuthorizationProvider();
         GroupPolicyRepresentation policy = representationFunction.apply(evaluation.getPolicy(), authorizationProvider);
         RealmModel realm = authorizationProvider.getRealm();
-        Attributes.Entry groupsClaim = evaluation.getContext().getIdentity().getAttributes().getValue(policy.getGroupsClaim());
+        Identity identity = evaluation.getContext().getIdentity();
+        UserModel subject = getSubject(identity, realm, authorizationProvider);
+
+        if (subject == null) {
+            logger.debugf("Groups policy %s denied because identity %s could not be resolved to a realm user", policy.getName(), identity.getId());
+            return;
+        }
+
+        Attributes.Entry groupsClaim = identity.getAttributes().getValue(policy.getGroupsClaim());
 
         if (groupsClaim == null || groupsClaim.isEmpty()) {
-            List<String> userGroups = evaluation.getRealm().getUserGroups(evaluation.getContext().getIdentity().getId());
+            List<String> userGroups = subject.getGroupsStream().map(ModelToRepresentation::buildGroupPath).toList();
             groupsClaim = new Entry(policy.getGroupsClaim(), userGroups);
         }
 
-        Outcome outcome = isGranted(realm, null, policy, groupsClaim);
+        Outcome outcome = isGranted(realm, subject, policy, groupsClaim);
 
         if (GRANT.equals(outcome)) {
             evaluation.grant();
@@ -87,6 +101,12 @@ public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPol
     private Outcome isGranted(RealmModel realm, UserModel subject, GroupPolicyRepresentation policy, Entry groupsClaim) {
         boolean skipped = false;
 
+        if (subject == null) {
+            return DENY;
+        }
+
+        List<GroupModel> subjectGroups = subject.getGroupsStream().toList();
+
         for (GroupPolicyRepresentation.GroupDefinition definition : policy.getGroups()) {
             GroupModel allowedGroup = realm.getGroupById(definition.getId());
 
@@ -94,8 +114,12 @@ public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPol
                 continue;
             }
 
-            if (subject != null && !definition.isExtendChildren() && !isDirectMember(subject.getGroupsStream(), allowedGroup)) {
+            if (!definition.isExtendChildren() && !isDirectMember(subjectGroups.stream(), allowedGroup)) {
                 skipped = true;
+                continue;
+            }
+
+            if (definition.isExtendChildren() && !isMember(subjectGroups.stream(), allowedGroup)) {
                 continue;
             }
 
@@ -114,7 +138,6 @@ public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPol
                     }
                 }
 
-                // in case the group from the claim does not represent a path, we just check an exact name match
                 if (group.equals(allowedGroup.getName())) {
                     return GRANT;
                 }
@@ -126,6 +149,65 @@ public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPol
         }
 
         return DENY;
+    }
+
+    private UserModel getSubject(Identity identity, RealmModel realm, AuthorizationProvider authorizationProvider) {
+        KeycloakSession session = authorizationProvider.getKeycloakSession();
+        UserProvider users = session.users();
+        String identityId = identity.getId();
+        UserModel subject = null;
+
+        UserSessionModel contextUserSession = session.getContext().getUserSession();
+        UserModel contextUser = contextUserSession == null ? null : contextUserSession.getUser();
+
+        if (contextUser != null && identityId != null && identityId.equals(contextUser.getId())) {
+            subject = contextUser;
+        }
+
+        if (subject == null && LightweightUserAdapter.isLightweightUser(identityId)) {
+            String userSessionId = LightweightUserAdapter.getLightweightUserId(identityId);
+            UserSessionModel userSession = session.sessions().getUserSession(realm, userSessionId);
+
+            if (userSession == null) {
+                userSession = session.sessions().getOfflineUserSession(realm, userSessionId);
+            }
+
+            UserModel transientUser = userSession == null ? null : userSession.getUser();
+
+            if (transientUser != null && identityId.equals(transientUser.getId())) {
+                subject = transientUser;
+            }
+        }
+
+        if (subject == null && identityId != null) {
+            subject = users.getUserById(realm, identityId);
+        }
+
+        if (subject == null && identityId != null) {
+            ClientModel client = realm.getClientById(identityId);
+
+            if (client != null) {
+                subject = users.getServiceAccount(client);
+            }
+        }
+
+        if (subject == null) {
+            Entry sub = identity.getAttributes().getValue(JsonWebToken.SUBJECT);
+
+            if (sub != null && !sub.isEmpty()) {
+                subject = users.getUserById(realm, sub.asString(0));
+            }
+        }
+
+        if (subject == null && identityId != null) {
+            subject = users.getUserByUsername(realm, identityId);
+
+            if (subject == null) {
+                subject = users.getUserByEmail(realm, identityId);
+            }
+        }
+
+        return subject;
     }
 
     @Override

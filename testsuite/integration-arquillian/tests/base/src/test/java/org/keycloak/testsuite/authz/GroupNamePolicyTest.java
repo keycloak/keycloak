@@ -67,6 +67,7 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
         config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "groups");
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+        config.put("full.path", "false");
         groupProtocolMapper.setConfig(config);
 
         testRealms.add(RealmBuilder.create().name("authz-test")
@@ -74,9 +75,11 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
                 .groups(GroupBuilder.create().name("Group A")
                     .subGroups(GroupBuilder.create("Group B").subGroups("Group C", "Group E"), GroupBuilder.create("Group D")))
                 .groups(GroupBuilder.create().name("Group E"))
+                .groups(GroupBuilder.create().name("/Group A/Group B/Group E"))
                 .users(UserBuilder.create().username("marta").password("password").realmRoles("uma_authorization").groups("Group A"))
                 .users(UserBuilder.create().username("alice").password("password").realmRoles("uma_authorization"))
                 .users(UserBuilder.create().username("kolo").password("password").realmRoles("uma_authorization"))
+                .users(UserBuilder.create().username("eve").password("password").realmRoles("uma_authorization"))
                 .clients(ClientBuilder.create().clientId("resource-server-test")
                     .secret("secret")
                     .authorizationServicesEnabled(true)
@@ -93,14 +96,20 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
         createResource("Resource A");
         createResource("Resource B");
         createResource("Resource C");
+        createResource("Resource D");
+        createResource("Resource E");
 
         createGroupPolicy("Only Group A Policy", "/Group A", true);
         createGroupPolicy("Only Group B Policy", "/Group A/Group B", false);
         createGroupPolicy("Only Group C Policy", "/Group A/Group B/Group C", false);
+        createGroupPolicy("Only Nested Group E Policy", "/Group A/Group B/Group E", false);
+        createGroupPolicy("Only Root Group E Policy", "/Group E", false);
 
         createResourcePermission("Resource A Permission", "Resource A", "Only Group A Policy");
         createResourcePermission("Resource B Permission", "Resource B", "Only Group B Policy");
         createResourcePermission("Resource C Permission", "Resource C", "Only Group C Policy");
+        createResourcePermission("Resource D Permission", "Resource D", "Only Nested Group E Policy");
+        createResourcePermission("Resource E Permission", "Resource E", "Only Root Group E Policy");
 
         RealmResource realm = getRealm();
         GroupRepresentation group = getGroup("/Group A/Group B/Group C");
@@ -143,6 +152,17 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
         } catch (AuthorizationDeniedException ignore) {
 
         }
+
+        RealmResource realm = getRealm();
+        UserRepresentation serviceAccount = getClient().getServiceAccountUser();
+        GroupRepresentation rootGroup = realm.groups().groups().stream()
+                .filter(group -> "Group A".equals(group.getName()))
+                .findFirst()
+                .orElseThrow();
+        realm.users().get(serviceAccount.getId()).joinGroup(rootGroup.getId());
+        ticket = authzClient.protection().permission().create(request).getTicket();
+        response = authzClient.authorization(authzClient.obtainAccessToken().getToken()).authorize(new AuthorizationRequest(ticket));
+        assertNotNull(response.getToken());
     }
 
     @Test
@@ -174,6 +194,53 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
         ticket = authzClient.protection().permission().create(request).getTicket();
         response = authzClient.authorization("kolo", "password").authorize(new AuthorizationRequest(ticket));
         assertNotNull(response.getToken());
+    }
+
+    @Test
+    public void testSameNameGroupMustMatchConfiguredPath() {
+        RealmResource realm = getRealm();
+        UserRepresentation nestedGroupUser = realm.users().search("kolo").get(0);
+        UserRepresentation rootGroupUser = realm.users().search("alice").get(0);
+        UserRepresentation pathLikeNameUser = realm.users().search("eve").get(0);
+
+        realm.users().get(nestedGroupUser.getId()).joinGroup(getGroup("/Group A/Group B/Group E").getId());
+        GroupRepresentation rootGroup = realm.groups().groups().stream()
+                .filter(group -> "Group E".equals(group.getName()))
+                .findFirst()
+                .orElseThrow();
+        realm.users().get(rootGroupUser.getId()).joinGroup(rootGroup.getId());
+        GroupRepresentation pathLikeNameGroup = realm.groups().groups().stream()
+                .filter(group -> "/Group A/Group B/Group E".equals(group.getName()))
+                .findFirst()
+                .orElseThrow();
+        realm.users().get(pathLikeNameUser.getId()).joinGroup(pathLikeNameGroup.getId());
+
+        assertGroupPolicyDecision("Resource D", "kolo", true);
+        assertGroupPolicyDecision("Resource D", "alice", false);
+        assertGroupPolicyDecision("Resource D", "eve", false);
+        assertGroupPolicyDecision("Resource E", "alice", true);
+        assertGroupPolicyDecision("Resource E", "kolo", false);
+        assertGroupPolicyDecision("Resource A", "eve", false);
+    }
+
+    private void assertGroupPolicyDecision(String resource, String username, boolean granted) {
+        AuthzClient authzClient = getAuthzClient();
+        PermissionRequest request = new PermissionRequest(resource);
+        String ticket = authzClient.protection().permission().create(request).getTicket();
+
+        try {
+            AuthorizationResponse response = authzClient.authorization(username, "password").authorize(new AuthorizationRequest(ticket));
+
+            if (!granted) {
+                fail("Should fail because user is not a member of the group configured by the policy");
+            }
+
+            assertNotNull(response.getToken());
+        } catch (AuthorizationDeniedException cause) {
+            if (granted) {
+                fail("Should grant access to a member of the group configured by the policy", cause);
+            }
+        }
     }
 
     private void createGroupPolicy(String name, String groupPath, boolean extendChildren) {
