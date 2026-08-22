@@ -69,7 +69,9 @@ public class DatabaseIndexCheckerTest {
         var schema = factory.getSchema();
         boolean onlineSupported = supportsOnlineIndexCreation(factory);
 
-        renameIndex(factory, INDEX_NAME, TEMP_INDEX_NAME);
+        // Drop instead of rename — Oracle rejects creating a second index on the same column list (ORA-01408)
+        dropIndex(factory, INDEX_NAME);
+        boolean recreated = false;
 
         try {
             var detectOnly = new DatabaseIndexChecker(factory::getConnection, session.getKeycloakSessionFactory(), schema, false);
@@ -81,14 +83,13 @@ public class DatabaseIndexCheckerTest {
             var afterRun = new DatabaseIndexChecker(factory::getConnection, session.getKeycloakSessionFactory(), schema, false);
             if (onlineSupported) {
                 assertThat(afterRun.getMissingIndexesName(), is(empty()));
+                recreated = true;
             } else {
                 assertThat(afterRun.getMissingIndexesName(), not(empty()));
             }
         } finally {
-            if (onlineSupported) {
-                dropIndex(factory, TEMP_INDEX_NAME);
-            } else {
-                renameIndex(factory, TEMP_INDEX_NAME, INDEX_NAME);
+            if (!recreated) {
+                recreateIndex(factory, session, schema);
             }
         }
     }
@@ -123,6 +124,20 @@ public class DatabaseIndexCheckerTest {
         }
     }
 
+    private static void recreateIndex(JpaConnectionProviderFactory factory, KeycloakSession session, String schema) {
+        var checker = new DatabaseIndexChecker(factory::getConnection, session.getKeycloakSessionFactory(), schema, false);
+        String sql = checker.getMissingIndexesSql().get(INDEX_NAME);
+        if (sql == null) {
+            return;
+        }
+        try (Connection connection = factory.getConnection();
+             Statement stmt = connection.createStatement()) {
+            stmt.executeUpdate(sql);
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to recreate index " + INDEX_NAME, e);
+        }
+    }
+
     private static void dropIndex(JpaConnectionProviderFactory factory, String indexName) {
         try (Connection connection = factory.getConnection();
              Statement stmt = connection.createStatement()) {
@@ -138,6 +153,8 @@ public class DatabaseIndexCheckerTest {
             } else if (dbProduct.contains("microsoft")) {
                 String schemaPrefix = connection.getSchema() != null ? connection.getSchema() + "." : "";
                 stmt.executeUpdate(String.format("DROP INDEX %s ON %s%s", indexId, schemaPrefix, tableId));
+            } else if (dbProduct.contains("oracle")) {
+                stmt.executeUpdate(String.format("DROP INDEX %s", indexId));
             } else {
                 String schemaName = connection.getSchema();
                 String qualifiedIndexId = schemaName != null ? schemaName + "." + indexId : indexId;
