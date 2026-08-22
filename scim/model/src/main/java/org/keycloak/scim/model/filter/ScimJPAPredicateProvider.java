@@ -5,6 +5,7 @@ import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 
@@ -157,7 +158,13 @@ public class ScimJPAPredicateProvider {
 
         if (expression == null) {
             if (resourceTypeProvider instanceof ScimAttributeJpaExpressionResolver mapper) {
-                expression = mapper.getAttributeExpression(attrInfo, cb, root, (aClass, joinSupplier) -> getOrCreateAttributeJoin(aClass.getName(), joinSupplier));
+                BiFunction<Class<?>, Supplier<Join<?, ?>>, Join<?, ?>> joinResolver =
+                        (aClass, joinSupplier) -> getOrCreateAttributeJoin(aClass.getName(), joinSupplier);
+                Predicate customPredicate = mapper.createAttributePredicate(attrInfo, operation, value, cb, root, joinResolver, operatorMap.get(operation));
+                if (customPredicate != null) {
+                    return customPredicate;
+                }
+                expression = mapper.getAttributeExpression(attrInfo, cb, root, joinResolver);
             }
         }
 
