@@ -332,6 +332,7 @@ public class ModelToRepresentation {
         rep.setFederationLink(user.getFederationLink());
         rep.setNotBefore(isLightweightUser(user) ? ((LightweightUserAdapter) user).getCreatedTimestamp().intValue() : session.users().getNotBeforeOfUser(realm, user));
         rep.setRequiredActions(user.getRequiredActionsStream().collect(Collectors.toList()));
+        rep.setServiceAccount(user.getServiceAccountClientLink() != null);
 
         if (setUserAttributes) {
             Map<String, List<String>> attributes = user.getAttributes();

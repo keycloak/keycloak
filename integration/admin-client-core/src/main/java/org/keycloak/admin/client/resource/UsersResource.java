@@ -160,6 +160,10 @@ public interface UsersResource {
     @Produces(MediaType.APPLICATION_JSON)
     List<UserRepresentation> searchByLastName(@QueryParam("lastName") String email, @QueryParam("exact") Boolean exact);
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> searchIncludeServiceAccounts(@QueryParam("includeServiceAccounts") Boolean includeServiceAccounts);
+
     /**
      * Search for users based on the given filters.
      *
@@ -515,6 +519,11 @@ public interface UsersResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     Integer countEmailVerified(@QueryParam("emailVerified") Boolean emailVerified);
+
+    @Path("count")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    Integer countIncludeServiceAccounts(@QueryParam("includeServiceAccounts") Boolean includeServiceAccounts);
 
     @Path("{id}")
     UserResource get(@PathParam("id") String id);

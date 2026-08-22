@@ -955,6 +955,35 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    public void countAndSearchIncludingServiceAccounts() {
+        createUser("user1", "user1@example.com");
+
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId("test-client");
+        client.setPublicClient(false);
+        client.setSecret("secret");
+        client.setServiceAccountsEnabled(true);
+        client.setEnabled(true);
+        client.setRedirectUris(Arrays.asList("http://url"));
+        String clientId = ApiUtil.getCreatedId(managedRealm.admin().clients().create(client));
+
+        assertEquals(1, managedRealm.admin().users().countIncludeServiceAccounts(false).intValue());
+        assertEquals(2, managedRealm.admin().users().countIncludeServiceAccounts(true).intValue());
+
+        List<UserRepresentation> users = managedRealm.admin().users().searchIncludeServiceAccounts(false);
+        assertEquals(1, users.size());
+        Assertions.assertFalse(users.get(0).isServiceAccount(), "Should not be a service account");
+
+        List<UserRepresentation> usersWithServiceAccounts = managedRealm.admin().users().searchIncludeServiceAccounts(true);
+        List<Boolean> serviceAccountFlags = usersWithServiceAccounts.stream().map(UserRepresentation::isServiceAccount).collect(Collectors.toList());
+        assertTrue(serviceAccountFlags.contains(true), "Should contain service user");
+        assertTrue(serviceAccountFlags.contains(false), "Should contain normal user");
+
+        // client cleanup
+        managedRealm.admin().clients().get(clientId).remove();
+    }
+
+    @Test
     public void searchByCreatedAfter() {
         long beforeCreation = System.currentTimeMillis();
         createUser("timestampuser1", "timestampuser1@localhost");
