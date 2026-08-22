@@ -49,6 +49,7 @@ fi
 
 QUARKUS_BOM_URL="https://raw.githubusercontent.com/quarkusio/quarkus/$QUARKUS_BRANCH/bom/application/pom.xml"
 QUARKUS_PARENT_POM_URL="https://raw.githubusercontent.com/quarkusio/quarkus/$QUARKUS_BRANCH/independent-projects/parent/pom.xml"
+QUARKUS_PLATFORM_POM_URL="https://raw.githubusercontent.com/quarkusio/quarkus-platform/$QUARKUS_BRANCH/pom.xml"
 
 VERSIONS_FROM_QUARKUS_PARENT=(
     "version.surefire.plugin"
@@ -65,6 +66,10 @@ if ! $(curl --output /dev/null --silent --head --fail "$QUARKUS_PARENT_POM_URL")
 fi
 
 QUARKUS_BOM=$(curl -f -s "$QUARKUS_BOM_URL")
+QUARKUS_PLATFORM_POM=$(curl -f -s "$QUARKUS_PLATFORM_POM_URL")
+if [ -n "$QUARKUS_PLATFORM_POM" ]; then
+    QUARKUS_BOM="${QUARKUS_BOM}$(grep '<quarkus-operator-sdk.version>' <<< "$QUARKUS_PLATFORM_POM")"
+fi
 QUARKUS_PARENT_POM=$(curl -f -s "$QUARKUS_PARENT_POM_URL")
 
 echo "Setting Quarkus version: $QUARKUS_VERSION"
