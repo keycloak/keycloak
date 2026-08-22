@@ -380,7 +380,7 @@ NOTE: To restrict delegation to specific users, select individual users when cre
 
 ==== How it works
 
-. The client requests the `delegation` scope with the administrator's (actor) identifier as a parameter, for example `scope=openid delegation:admin`.
+. The client requests the `delegation:user` scope with the administrator's (actor) identifier as a parameter, for example `scope=openid delegation:user:admin`.
 . {project_name} validates that the specified administrator (actor) exists and has the `delegate` permission for the user (subject) through FGAP V2.
 . The user (subject) is presented with a consent screen to approve the delegation.
 . If the user consents and validation passes, the issued token includes the `may_act` claim with the actor's user ID as the `sub`:
@@ -392,7 +392,7 @@ NOTE: To restrict delegation to specific users, select individual users when cre
   "may_act": {
     "sub": "f1234567-89ab-cdef-0123-456789abcdef"
   },
-  "scope": "openid delegation:admin",
+  "scope": "openid delegation:user:admin",
   ...
 }
 ----

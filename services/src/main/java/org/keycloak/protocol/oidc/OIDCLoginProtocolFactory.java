@@ -122,7 +122,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String MICROPROFILE_JWT_SCOPE = "microprofile-jwt";
     public static final String ACR_SCOPE = "acr";
     public static final String BASIC_SCOPE = "basic";
-    public static final String DELEGATION_SCOPE = "delegation";
+    public static final String USER_DELEGATION_SCOPE = "delegation:user";
 
     public static final String PROFILE_SCOPE_CONSENT_TEXT = "${profileScopeConsentText}";
     public static final String EMAIL_SCOPE_CONSENT_TEXT = "${emailScopeConsentText}";
@@ -392,7 +392,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         }
 
         if (Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE_DELEGATION)) {
-            ClientScopeModel delegationScope = newRealm.addClientScope(DELEGATION_SCOPE);
+            ClientScopeModel delegationScope = newRealm.addClientScope(USER_DELEGATION_SCOPE);
             delegationScope.setDescription("OpenID Connect scope for token exchange delegation");
             delegationScope.setIsParameterizedScope(true);
             delegationScope.setDisplayOnConsentScreen(true);
@@ -400,7 +400,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             delegationScope.setAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, DelegationScopeType.TYPE);
             delegationScope.setIncludeInTokenScope(true);
             delegationScope.setProtocol(getId());
-            delegationScope.setConsentScreenText("${delegationScopeConsentText}");
+            delegationScope.setConsentScreenText("${userDelegationScopeConsentText}");
             delegationScope.addProtocolMapper(builtins.get(DELEGATION_MAY_ACT_SUB));
         }
     }

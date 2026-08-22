@@ -694,7 +694,7 @@ public class ParameterizedScopesOAuthGrantTest {
 
         // create delegation parameterized scope with a hardcoded claim
         createAndAssignOptionalScope(ParameterizedScopeBuilder.create("delegated-act")
-                .parameterizedScopeType("delegation")
+                .parameterizedScopeType("delegation:user")
                 .mappers(ProtocolMapperBuilder.create().name("Hardcoded Claim")
                         .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
                         .protocolMapper(HardcodedClaim.PROVIDER_ID)
