@@ -92,6 +92,14 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                 .anyMatch(configuredScopes::contains);
     }
 
+    private static boolean shouldEvaluateScopeSelector(UserProfileContext context) {
+        if (UserProfileContext.ACCOUNT.equals(context)) {
+            return false;
+        }
+
+        return context.canBeAuthFlowContext();
+    }
+
     private final KeycloakSession session;
     private final String providerId;
     private final Map<UserProfileContext, UserProfileMetadata> contextualMetadataRegistry;
@@ -341,7 +349,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
             Predicate<AttributeContext> selector = AttributeMetadata.ALWAYS_TRUE;
             UPAttributeSelector sc = attrConfig.getSelector();
-            if (sc != null && !isBuiltInAttribute(context, attributeName) && context.canBeAuthFlowContext() && sc.getScopes() != null && !sc.getScopes().isEmpty()) {
+            if (sc != null && !isBuiltInAttribute(context, attributeName) && shouldEvaluateScopeSelector(context) && sc.getScopes() != null && !sc.getScopes().isEmpty()) {
                 // for contexts executed from auth flow and with configured scopes selector
                 // we have to create correct predicate
                 selector = (c) -> requestedScopePredicate(c, sc.getScopes());
