@@ -72,11 +72,18 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
             return;
         }
 
-        var streamTokens = generateSecurityTokensForUserEvent(event, transmitter);
-        if (streamTokens == null || streamTokens.isEmpty()) {
-            return;
+        try {
+            var streamTokens = generateSecurityTokensForUserEvent(event, transmitter);
+            if (streamTokens == null || streamTokens.isEmpty()) {
+                return;
+            }
+            dispatchSecurityEventTokens(streamTokens, transmitter);
+        } finally {
+            // Release any purge snapshot now that this event has been emitted. Keeps
+            // a request that deletes many users and emits for each from ever
+            // approaching the retention bound — see PurgedUserSnapshot.discard.
+            PurgedUserSnapshot.discard(session, session.getContext().getRealm(), event.getUserId());
         }
-        dispatchSecurityEventTokens(streamTokens, transmitter);
     }
 
     protected List<Map.Entry<SsfSecurityEventToken, StreamConfig>> generateSecurityTokensForUserEvent(Event event, SsfTransmitterProvider transmitter) {
@@ -323,11 +330,16 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
             return;
         }
 
-        var streamTokens = generateSecurityEventTokensForAdminEvent(adminEvent, transmitter);
-        if (streamTokens == null || streamTokens.isEmpty()) {
-            return;
+        try {
+            var streamTokens = generateSecurityEventTokensForAdminEvent(adminEvent, transmitter);
+            if (streamTokens == null || streamTokens.isEmpty()) {
+                return;
+            }
+            dispatchSecurityEventTokens(streamTokens, transmitter);
+        } finally {
+            PurgedUserSnapshot.discard(session, session.realms().getRealm(adminEvent.getRealmId()),
+                    SsfUtil.userIdFromAdminEventPath(adminEvent));
         }
-        dispatchSecurityEventTokens(streamTokens, transmitter);
     }
 
     protected boolean shouldIgnoreEvent(AdminEvent adminEvent) {

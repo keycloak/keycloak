@@ -19,6 +19,8 @@ import org.keycloak.ssf.subject.OpaqueSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
 import org.keycloak.storage.adapter.AbstractInMemoryUserAdapter;
 
+import org.jboss.logging.Logger;
+
 /**
  * A detached, read-only stand-in for a user that is about to be deleted.
  *
@@ -53,7 +55,29 @@ import org.keycloak.storage.adapter.AbstractInMemoryUserAdapter;
  */
 public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
 
+    private static final Logger log = Logger.getLogger(PurgedUserSnapshot.class);
+
     private static final String SESSION_ATTRIBUTE_PREFIX = "ssf.purgedUser.";
+
+    private static final String SESSION_ATTRIBUTE_COUNT = "ssf.purgedUser.count";
+
+    /**
+     * Upper bound on snapshots retained per session, complementing
+     * {@link #isRequestBound}.
+     *
+     * <p>The request gate excludes deletions with no request behind them, but bulk
+     * deletion still happens <em>inside</em> a request: a partial import under the
+     * {@code OVERWRITE} policy replaces many users in one call, and deleting an
+     * organization removes each of its managed members. Neither emits a purge event,
+     * so their snapshots are never read — and without a bound, one such request would
+     * retain a copied attribute map per account until it finishes.
+     *
+     * <p>An emitting request needs exactly one snapshot live at a time, so this bound
+     * is unreachable on the paths that matter. Being truncated is logged at WARN
+     * rather than DEBUG: dropping a snapshot can only ever cost an event, and that
+     * must never happen quietly.
+     */
+    private static final int MAX_SNAPSHOTS_PER_SESSION = 64;
 
     /**
      * Secondary index. The dispatcher's subject gate re-resolves the user from the
@@ -125,8 +149,9 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
      * Captures {@code user} and stashes it on the session under its user id.
      * No-op when the user is a service account — those are not human subjects and
      * never produce a purge SET, so capturing one would only cost an organization
-     * query on every client deletion — and no-op when the deletion is not bound to
-     * an HTTP request (see {@link #isRequestBound}).
+     * query on every client deletion; when the deletion is not bound to an HTTP
+     * request (see {@link #isRequestBound}); and once
+     * {@link #MAX_SNAPSHOTS_PER_SESSION} snapshots are already held for this request.
      *
      * <p>Callers invoke this from the pre-remove hook, which fires before Keycloak
      * knows whether the removal will succeed. Capturing is therefore deliberately
@@ -141,6 +166,22 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
             return;
         }
         if (!isRequestBound(session)) {
+            return;
+        }
+
+        Integer held = session.getAttribute(SESSION_ATTRIBUTE_COUNT, Integer.class);
+        int count = held == null ? 0 : held;
+        if (count >= MAX_SNAPSHOTS_PER_SESSION) {
+            if (count == MAX_SNAPSHOTS_PER_SESSION) {
+                // Warn exactly once per session rather than per deletion, so a bulk
+                // request leaves one line instead of thousands.
+                log.warnf("SSF: reached %d purge snapshots in a single request; no further deletions in it "
+                                + "will be captured, and any purge events they would have produced are lost. "
+                                + "Expected for bulk deletion (partial import OVERWRITE, organization removal), "
+                                + "which do not emit purge events.",
+                        MAX_SNAPSHOTS_PER_SESSION);
+                session.setAttribute(SESSION_ATTRIBUTE_COUNT, count + 1);
+            }
             return;
         }
 
@@ -193,6 +234,7 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
         if (snapshot.getEmail() != null) {
             session.setAttribute(sessionEmailAttributeKey(snapshot.getEmail()), snapshot);
         }
+        session.setAttribute(SESSION_ATTRIBUTE_COUNT, count + 1);
     }
 
     /**
@@ -235,6 +277,40 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
         }
         PurgedUserSnapshot snapshot = session.getAttribute(sessionAttributeKey(userId), PurgedUserSnapshot.class);
         return matchesRealm(snapshot, realm) ? snapshot : null;
+    }
+
+    /**
+     * Drops the snapshot for {@code userId}, called by the event listener once it has
+     * finished emitting for that deletion.
+     *
+     * <p>This is what keeps {@link #MAX_SNAPSHOTS_PER_SESSION} out of the way of the
+     * paths that matter. A request that deletes users <em>and</em> emits for them
+     * returns to zero retained snapshots after each one, so it can delete any number
+     * without approaching the bound. Only snapshots that are never consumed accumulate
+     * — which is precisely the bulk deletion case (partial import {@code OVERWRITE},
+     * organization removal), where no purge event is produced and the snapshot was
+     * dead weight from the moment it was taken.
+     *
+     * <p>Deliberately not conditional on the event being a purge: a user can only be
+     * deleted once per request, so discarding after any event for that user is safe,
+     * and a miss here costs nothing beyond retention.
+     */
+    public static void discard(KeycloakSession session, RealmModel realm, String userId) {
+        if (session == null || userId == null) {
+            return;
+        }
+        PurgedUserSnapshot snapshot = lookup(session, realm, userId);
+        if (snapshot == null) {
+            return;
+        }
+        session.removeAttribute(sessionAttributeKey(userId));
+        if (snapshot.getEmail() != null) {
+            session.removeAttribute(sessionEmailAttributeKey(snapshot.getEmail()));
+        }
+        Integer held = session.getAttribute(SESSION_ATTRIBUTE_COUNT, Integer.class);
+        if (held != null && held > 0) {
+            session.setAttribute(SESSION_ATTRIBUTE_COUNT, held - 1);
+        }
     }
 
     /**
