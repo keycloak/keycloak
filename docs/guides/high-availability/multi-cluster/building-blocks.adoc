@@ -1,5 +1,6 @@
 <#import "/templates/guide.adoc" as tmpl>
 <#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
 title="Building blocks multi-cluster deployments"
@@ -57,10 +58,20 @@ A clustered deployment of {project_name} in each site, connected to an external 
 
 *Blueprint:* <@links.ha id="multi-cluster-deploy-keycloak-kubernetes" /> that includes connecting to the Aurora database and the {jdgserver_name} server.
 
-</@tmpl.guide>
-
 == Load balancer
 
 A load balancer which checks the `/lb-check` URL of the {project_name} deployment in each site, plus an automation to detect {jdgserver_name} connectivity problems between the two sites.
 
-*Blueprint:* <@links.ha id="multi-cluster-deploy-aws-accelerator-loadbalancer"/> together with  <@links.ha id="multi-cluster-deploy-aws-accelerator-fencing-lambda"/>.
+*Blueprint:* <@links.ha id="multi-cluster-deploy-aws-accelerator-loadbalancer"/> together with <@links.ha id="multi-cluster-deploy-aws-accelerator-fencing-lambda"/>.
+
+<@profile.ifCommunity>
+
+[NOTE]
+====
+The AWS Lambda is no longer required because {project_name} has a built-in split-brain algorithm, which manipulates the `/lb-check` health endpoint to control traffic routing.
+It still requires the load balancer to check the `/lb-check` URL of the {project_name} deployment in each site.
+====
+
+</@profile.ifCommunity>
+
+</@tmpl.guide>

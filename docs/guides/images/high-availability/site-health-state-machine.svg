@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 520" font-family="Arial, Helvetica, sans-serif" font-size="13">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555"/>
+    </marker>
+    <marker id="arrow-red" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#c0392b"/>
+    </marker>
+  </defs>
+
+  <!-- HEALTHY box -->
+  <rect x="260" y="30" width="180" height="54" rx="10" fill="#27ae60" stroke="#1e8449" stroke-width="2"/>
+  <text x="350" y="55" text-anchor="middle" fill="white" font-weight="bold" font-size="15">HEALTHY</text>
+  <text x="350" y="72" text-anchor="middle" fill="white" font-size="11">both sites serve traffic</text>
+
+  <!-- SUSPECTING box -->
+  <rect x="260" y="180" width="180" height="54" rx="10" fill="#f39c12" stroke="#d68910" stroke-width="2"/>
+  <text x="350" y="205" text-anchor="middle" fill="white" font-weight="bold" font-size="15">SUSPECTING</text>
+  <text x="350" y="222" text-anchor="middle" fill="white" font-size="11">both sites serve traffic</text>
+
+  <!-- UNHEALTHY box -->
+  <rect x="260" y="340" width="180" height="54" rx="10" fill="#c0392b" stroke="#a93226" stroke-width="2"/>
+  <text x="350" y="365" text-anchor="middle" fill="white" font-weight="bold" font-size="15">UNHEALTHY</text>
+  <text x="350" y="382" text-anchor="middle" fill="white" font-size="11">only active site serves</text>
+
+  <!-- RECOVERING box -->
+  <rect x="530" y="340" width="180" height="54" rx="10" fill="#2980b9" stroke="#2471a3" stroke-width="2"/>
+  <text x="620" y="365" text-anchor="middle" fill="white" font-weight="bold" font-size="15">RECOVERING</text>
+  <text x="620" y="382" text-anchor="middle" fill="white" font-size="11">only active site serves</text>
+
+  <!-- HEALTHY -> SUSPECTING -->
+  <line x1="350" y1="84" x2="350" y2="175" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="355" y="108" width="155" height="36" rx="4" fill="white" stroke="#ccc" stroke-width="1"/>
+  <text x="432" y="122" text-anchor="middle" fill="#333" font-size="11">site(s) unreachable</text>
+  <text x="432" y="137" text-anchor="middle" fill="#888" font-size="10">CAS to SUSPECTING</text>
+
+  <!-- SUSPECTING -> HEALTHY (recovered quickly) -->
+  <line x1="260" y1="195" x2="165" y2="195" stroke="#555" stroke-width="1.5" stroke-dasharray="none"/>
+  <line x1="165" y1="195" x2="165" y2="57" stroke="#555" stroke-width="1.5"/>
+  <line x1="165" y1="57" x2="255" y2="57" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="40" y="103" width="120" height="36" rx="4" fill="white" stroke="#ccc" stroke-width="1"/>
+  <text x="100" y="117" text-anchor="middle" fill="#333" font-size="11">sites recovered</text>
+  <text x="100" y="132" text-anchor="middle" fill="#888" font-size="10">CAS to HEALTHY</text>
+
+  <!-- SUSPECTING -> UNHEALTHY -->
+  <line x1="350" y1="234" x2="350" y2="335" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="355" y="263" width="175" height="36" rx="4" fill="white" stroke="#ccc" stroke-width="1"/>
+  <text x="442" y="277" text-anchor="middle" fill="#333" font-size="11">still unreachable (1 round)</text>
+  <text x="442" y="292" text-anchor="middle" fill="#888" font-size="10">CAS to UNHEALTHY + disconnect</text>
+
+  <!-- UNHEALTHY -> RECOVERING -->
+  <line x1="440" y1="367" x2="525" y2="367" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="442" y="405" width="138" height="36" rx="4" fill="white" stroke="#ccc" stroke-width="1"/>
+  <text x="511" y="419" text-anchor="middle" fill="#333" font-size="11">sites back online</text>
+  <text x="511" y="434" text-anchor="middle" fill="#888" font-size="10">CAS to RECOVERING</text>
+
+  <!-- RECOVERING -> HEALTHY -->
+  <line x1="620" y1="340" x2="620" y2="57" stroke="#555" stroke-width="1.5"/>
+  <line x1="620" y1="57" x2="445" y2="57" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="625" y="170" width="90" height="36" rx="4" fill="white" stroke="#ccc" stroke-width="1"/>
+  <text x="670" y="184" text-anchor="middle" fill="#333" font-size="11">all online</text>
+  <text x="670" y="199" text-anchor="middle" fill="#888" font-size="10">CAS to HEALTHY</text>
+
+  <!-- RECOVERING -> UNHEALTHY (failure during recovery) -->
+  <line x1="530" y1="382" x2="445" y2="382" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow-red)"/>
+  <rect x="442" y="450" width="138" height="36" rx="4" fill="white" stroke="#e6b0aa" stroke-width="1"/>
+  <text x="511" y="464" text-anchor="middle" fill="#c0392b" font-size="11">sites lost again</text>
+  <text x="511" y="479" text-anchor="middle" fill="#c0392b" font-size="10">CAS to UNHEALTHY</text>
+
+  <!-- Steal annotation -->
+  <rect x="10" y="230" width="220" height="52" rx="6" fill="#fef9e7" stroke="#f39c12" stroke-width="1.5"/>
+  <text x="120" y="249" text-anchor="middle" fill="#7d6608" font-size="11" font-weight="bold">Non-active site can steal</text>
+  <text x="120" y="266" text-anchor="middle" fill="#7d6608" font-size="11">if active site stops progressing</text>
+  <line x1="230" y1="256" x2="258" y2="220" stroke="#f39c12" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+</svg>
