@@ -31,6 +31,7 @@ import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
@@ -324,11 +325,18 @@ public class AdminConsole {
     @GET
     @NoCache
     public Response getMainPage() throws IOException, FreeMarkerException {
+        return getMainPageForPath("");
+    }
+
+    @GET
+    @NoCache
+    @Path("{path:.*}")
+    public Response getMainPageForPath(@PathParam("path") String path) throws IOException, FreeMarkerException {
         final var baseUriInfo = session.getContext().getUri(UrlType.FRONTEND);
         final var adminUriInfo = session.getContext().getUri(UrlType.ADMIN);
 
-        // Redirect to a URL with a trailing slash if the current URL doesn't have one.
-        if (!adminUriInfo.getRequestUri().getPath().endsWith("/")) {
+        // Redirect root URL to one with a trailing slash.
+        if ((path == null || path.isBlank()) && !adminUriInfo.getRequestUri().getPath().endsWith("/")) {
             return Response.status(302).location(adminUriInfo.getRequestUriBuilder().path("/").build()).build();
         } else {
             // Get the base URLs of the server and admin console.
