@@ -111,7 +111,6 @@ public class SAMLResponseWriter extends BaseWriter {
 
         StaxUtil.writeNameSpace(writer, PROTOCOL_PREFIX, JBossSAMLURIConstants.PROTOCOL_NSURI.get());
         StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, JBossSAMLURIConstants.ASSERTION_NSURI.get());
-        StaxUtil.writeDefaultNameSpace(writer, JBossSAMLURIConstants.ASSERTION_NSURI.get());
 
         writeBaseAttributes(response);
 
@@ -173,7 +172,6 @@ public class SAMLResponseWriter extends BaseWriter {
 
         StaxUtil.writeNameSpace(writer, PROTOCOL_PREFIX, JBossSAMLURIConstants.PROTOCOL_NSURI.get());
         StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, JBossSAMLURIConstants.ASSERTION_NSURI.get());
-        StaxUtil.writeDefaultNameSpace(writer, JBossSAMLURIConstants.ASSERTION_NSURI.get());
 
         writeBaseAttributes(response);
 
