@@ -399,7 +399,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
                     }
                     mergeUserSession(session, entry, userSessionModel, realm, sessionUpdates, userSessionPersister, entity);
                 } else {
-                    createUserSession(userSessionPersister, entity);
+                    createUserSession(userSessionPersister, entity, realm);
                 }
             }
             case REPLACE -> {
@@ -413,7 +413,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
         }
     }
 
-    private static void createUserSession(UserSessionPersisterProvider userSessionPersister, UserSessionEntity entity) {
+    private static void createUserSession(UserSessionPersisterProvider userSessionPersister, UserSessionEntity entity, RealmModel realm) {
         userSessionPersister.createUserSession(new UserSessionModel() {
             @Override
             public String getId() {
@@ -422,7 +422,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
 
             @Override
             public RealmModel getRealm() {
-                return new RealmModelDelegate(null) {
+                return new RealmModelDelegate(realm) {
                     @Override
                     public String getId() {
                         return entity.getRealmId();

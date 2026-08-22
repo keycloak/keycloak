@@ -12,8 +12,10 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
+import org.opentest4j.TestAbortedException;
 
 @KeycloakIntegrationTest
 public class RunOnServerTest {
@@ -86,6 +88,13 @@ public class RunOnServerTest {
             Assertions.assertTrue(e.getCause() instanceof ModelException);
             Assertions.assertEquals("Something went wrong", e.getCause().getMessage());
         }
+    }
+
+    @Test
+    public void runOnServerAssumptionOnServer() {
+        Assertions.assertThrows(TestAbortedException.class, () ->
+            runOnServer.run(session -> Assumptions.assumeTrue(false, "skip this test"))
+        );
     }
 
 }
