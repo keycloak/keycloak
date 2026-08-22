@@ -38,6 +38,10 @@ When calling {project_name}'s experimental AuthZEN endpoints, the caller now nee
 
 The Admin REST API endpoints for listing client sessions (`GET /admin/realms/\{realm}/clients/\{id}/user-sessions` and `GET /admin/realms/\{realm}/clients/\{id}/offline-sessions`) now filter out sessions belonging to users that the caller does not have permission to view. Previously, any caller with the `view-clients` role could see all user sessions for a client, potentially exposing user identities to callers without the `view-users` role. After upgrading, callers without `view-users` permission will see fewer results from these endpoints.
 
+=== Client Secret Rotation is now enabled by default
+
+The `client-secret-rotation` feature has been promoted from preview to supported and is now enabled by default. If you previously enabled this feature explicitly with `--features=client-secret-rotation` or `--features=preview`, that configuration is no longer required.
+
 === HTTP optimized serializers enabled by default
 
 The `http-optimized-serializers` feature is now enabled by default.
@@ -87,6 +91,13 @@ This changes the behavior of identity provider account linking by email, of admi
 and of the verifiable credential offer emails of the experimental OID4VCI feature.
 The *Trust Email* setting of identity providers and LDAP federation is not affected, as it is an explicit decision of the administrator to trust the email from the external source.
 
+=== Offline session expiration indexes rebuilt with session bucket column
+
+The `OFFLINE_USER_SESSION` table now has updated indexes `IDX_USER_SESSION_EXPIRATION_CREATED` and `IDX_USER_SESSION_EXPIRATION_LAST_REFRESH`. On PostgreSQL and Microsoft SQL Server, `IDX_OFFLINE_USS_BY_BROKER_SESSION_ID` is also rebuilt as a filtered index.
+
+If the table contains more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
 === Certificate Common Name truncated to 64 characters
 
 When {project_name} generates self-signed certificates (for example, during SAML client creation), the Common Name (CN) is now truncated to 64 characters to comply with the https://datatracker.ietf.org/doc/html/rfc5280[RFC 5280] `ub-common-name` upper bound. Previously, values longer than 64 characters, such as long client IDs, were used as-is. With the BouncyCastle 1.85 update, this caused certificate generation to fail.
@@ -116,6 +127,18 @@ Use the `POST .../upload-certificate` endpoint to upload a public certificate or
 Proprietary {project_name} extension to invoke introspection endpoint with the HTTP header `Accept: application/jwt` instead of `Accept: application/json` is
 deprecated now. In case you have lightweight access token, which you want to exchange for the proper access token, it is instead recommended to use the
 link:{securing_apps_token_exchange_link}[Token Exchange].
+
+=== Client switches in the 'OpenID Connect Compatibility Modes'
+
+There are few client switches in the client settings in the admin console in the section **OpenID Connect Compatibility Modes**. Those were created longer time ago
+for the backwards compatibility with the older OIDC/OAuth2 client adapters. Those switches are officially deprecated now and would be removed in future version.
+Some of the switches were deprecated already in previous versions. In addition to those, the newly deprecated switches are:
+
+* Exclude Session State From Authentication Response
+* Exclude Issuer From Authentication Response
+* Use lower-case bearer type in token responses
+
+Please update your client applications if you still rely on these switches as they will be removed in the future version.
 
 === `HttpResponse#getStatus()` and `setStatus(int)` in server SPI
 

@@ -76,22 +76,24 @@ final class UserSessionExpirationLogic {
         final int oldestCreatedOn = realm.isOfflineSessionMaxLifespanEnabled() ?
                 currentTime - expiration.offlineLifespan() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS :
                 0;
-        Consumer<TypedQuery<Object[]>> setCreatedOn = setCreatedOn(oldestCreatedOn);
-
         final int oldestLastSessionRefresh = currentTime - expiration.offlineMaxIdle() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
-        Consumer<TypedQuery<Object[]>> setLastSessionRefresh = setLastSessionRefresh(oldestLastSessionRefresh);
 
         String realmId = realm.getId();
         final List<UserSessionAndUser> expiredSessions = new ArrayList<>(batchSize);
 
-        runInBatches(sessionFactory,
-                s -> findAndRemoveSessions(s, realmId, batchSize, true, Details.USER_SESSION_EXPIRED_REASON, "(by last refresh)", "findExpiredOfflineUserSessionsLastRefresh", setLastSessionRefresh, expiredSessions),
-                expiredSessions::clear);
+        for (int bucket = 0; bucket < PersistentUserSessionEntity.SESSION_BUCKET_COUNT; bucket++) {
+            Consumer<TypedQuery<Object[]>> lsrParams = UserSessionExpirationLogic.<Object[]>setLastSessionRefresh(oldestLastSessionRefresh)
+                    .andThen(setSessionBucket(bucket));
+            runInBatches(sessionFactory,
+                    s -> findAndRemoveSessions(s, realmId, batchSize, true, Details.USER_SESSION_EXPIRED_REASON, "(by last refresh)", "findExpiredOfflineUserSessionsLastRefresh", lsrParams, expiredSessions),
+                    expiredSessions::clear);
 
-        runInBatches(sessionFactory,
-                s -> findAndRemoveSessions(s, realmId, batchSize, true, Details.USER_SESSION_EXPIRED_REASON, "(by created on)", "findExpiredOfflineUserSessionsCreatedOn", setCreatedOn, expiredSessions),
-                expiredSessions::clear);
-
+            Consumer<TypedQuery<Object[]>> coParams = UserSessionExpirationLogic.<Object[]>setCreatedOn(oldestCreatedOn)
+                    .andThen(setSessionBucket(bucket));
+            runInBatches(sessionFactory,
+                    s -> findAndRemoveSessions(s, realmId, batchSize, true, Details.USER_SESSION_EXPIRED_REASON, "(by created on)", "findExpiredOfflineUserSessionsCreatedOn", coParams, expiredSessions),
+                    expiredSessions::clear);
+        }
 
         long duration = System.nanoTime() - start;
         logger.debugf("Offline user session expiration task completed for realm '%s'. Took %dms", realm.getName(), TimeUnit.NANOSECONDS.toMillis(duration));
@@ -113,24 +115,25 @@ final class UserSessionExpirationLogic {
         logger.tracef("Removing expired regular user sessions for realm '%s'", realm.getName());
 
         int oldestCreatedOn = currentTime - expiration.getLifespan(rememberMe) - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
-        Consumer<TypedQuery<Object[]>> setRememberMe = setRememberMe(rememberMe);
-        Consumer<TypedQuery<Object[]>> setCreatedOn = UserSessionExpirationLogic.<Object[]>setCreatedOn(oldestCreatedOn)
-                .andThen(setRememberMe);
-
         int oldestLastSessionRefresh = currentTime - expiration.getMaxIdle(rememberMe) - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
-        var setLastSessionRefresh = UserSessionExpirationLogic.<Object[]>setLastSessionRefresh(oldestLastSessionRefresh)
-                .andThen(setRememberMe);
+        Consumer<TypedQuery<Object[]>> setRememberMe = setRememberMe(rememberMe);
 
         String realmId = realm.getId();
         final List<UserSessionAndUser> expiredSessions = new ArrayList<>(batchSize);
 
-        runInBatches(sessionFactory,
-                s -> findAndRemoveSessions(s, realmId, batchSize, false, Details.USER_SESSION_EXPIRED_REASON, "(by last refresh)", "findExpiredRegularUserSessionsLastRefresh", setLastSessionRefresh, expiredSessions),
-                expiredSessions::clear);
+        for (int bucket = 0; bucket < PersistentUserSessionEntity.SESSION_BUCKET_COUNT; bucket++) {
+            Consumer<TypedQuery<Object[]>> lsrParams = UserSessionExpirationLogic.<Object[]>setLastSessionRefresh(oldestLastSessionRefresh)
+                    .andThen(setRememberMe).andThen(setSessionBucket(bucket));
+            runInBatches(sessionFactory,
+                    s -> findAndRemoveSessions(s, realmId, batchSize, false, Details.USER_SESSION_EXPIRED_REASON, "(by last refresh)", "findExpiredRegularUserSessionsLastRefresh", lsrParams, expiredSessions),
+                    expiredSessions::clear);
 
-        runInBatches(sessionFactory,
-                s -> findAndRemoveSessions(s, realmId, batchSize, false, Details.USER_SESSION_EXPIRED_REASON, "(by created on)", "findExpiredRegularUserSessionsCreatedOn", setCreatedOn, expiredSessions),
-                expiredSessions::clear);
+            Consumer<TypedQuery<Object[]>> coParams = UserSessionExpirationLogic.<Object[]>setCreatedOn(oldestCreatedOn)
+                    .andThen(setRememberMe).andThen(setSessionBucket(bucket));
+            runInBatches(sessionFactory,
+                    s -> findAndRemoveSessions(s, realmId, batchSize, false, Details.USER_SESSION_EXPIRED_REASON, "(by created on)", "findExpiredRegularUserSessionsCreatedOn", coParams, expiredSessions),
+                    expiredSessions::clear);
+        }
 
         long duration = System.nanoTime() - start;
         logger.debugf("Regular user session expiration task completed for realm '%s'. Took %dms", realm.getName(), TimeUnit.NANOSECONDS.toMillis(duration));
@@ -321,5 +324,9 @@ final class UserSessionExpirationLogic {
 
     private static <T> Consumer<TypedQuery<T>> setRememberMe(boolean value) {
         return query -> query.setParameter("rememberMe", value);
+    }
+
+    private static <T> Consumer<TypedQuery<T>> setSessionBucket(int value) {
+        return query -> query.setParameter("sessionBucket", value);
     }
 }
