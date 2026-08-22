@@ -92,6 +92,10 @@ public class RedirectUtils {
     }
 
     public static String verifyRedirectUri(KeycloakSession session, String rootUrl, String redirectUri, Set<String> validRedirects, boolean requireRedirectUri) {
+        return verifyRedirectUri(session, rootUrl, redirectUri, validRedirects, requireRedirectUri, FORBIDDEN_OIDC_PARAMS);
+    }
+
+    public static String verifyRedirectUri(KeycloakSession session, String rootUrl, String redirectUri, Set<String> validRedirects, boolean requireRedirectUri, Set<String> forbiddenParams) {
         KeycloakUriInfo uriInfo = session.getContext().getUri();
         RealmModel realm = session.getContext().getRealm();
 
@@ -115,7 +119,7 @@ public class RedirectUtils {
             }
 
             // Check for HTTP Parameter Pollution - forbidden OIDC response parameters in redirect URI
-            if (containsForbiddenOidcParameters(originalRedirect)){
+            if (containsForbiddenOidcParameters(originalRedirect, forbiddenParams)) {
                 return null;
             }
 
@@ -159,12 +163,17 @@ public class RedirectUtils {
         }
     }
 
-    private static boolean containsForbiddenOidcParameters(URI originalRedirect) {
+    private static boolean containsForbiddenOidcParameters(URI originalRedirect, Set<String> forbiddenParams) {
+        if (forbiddenParams == null || forbiddenParams.isEmpty()) {
+            return false;
+        }
+
         String query = originalRedirect.getRawQuery();
         if (query != null && !query.isEmpty()) {
             MultivaluedHashMap<String, String> params =UriUtils.decodeQueryString(query);
             for (String paramName : params.keySet()) {
-                if (FORBIDDEN_OIDC_PARAMS.contains(paramName.toLowerCase(Locale.ROOT))) {
+                if (forbiddenParams.stream().map(param -> param.toLowerCase(Locale.ROOT))
+                        .anyMatch(paramName.toLowerCase(Locale.ROOT)::equals)) {
                     logger.warnf("Redirect URI rejected: contains forbidden OIDC parameter '%s' in query string: scheme=%s, host=%s, path=%s",
                             paramName,
                             originalRedirect.getScheme(),

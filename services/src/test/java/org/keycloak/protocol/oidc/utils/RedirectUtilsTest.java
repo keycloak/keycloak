@@ -17,6 +17,7 @@
 package org.keycloak.protocol.oidc.utils;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -338,5 +339,35 @@ public class RedirectUtilsTest {
         Assert.assertNull("Should reject URL-encoded 'session_state' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?session%5Fstate=attack", set, false));
         Assert.assertNull("Should reject mixed-case 'RESPONSE' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?RESPONSE=attack", set, false));
         Assert.assertEquals("Should allow legitimate query parameters that do not conflict with OIDC protocol variables", "https://example.com/callback?legit_param=123", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?legit_param=123", set, false));
+    }
+
+    @Test
+    public void testVerifyPostLogoutRedirectUriAndCustomParameters() {
+        Set<String> validWildcardRedirects = Collections.singleton("https://myhost/auth/realms/uka/protocol/openid-connect/auth*");
+        Set<String> validAppRedirects = Collections.singleton("https://example.com/callback*");
+
+        // 1. Post-logout redirect URI with full auth URL containing state parameter
+        String postLogoutWithState = "https://myhost/auth/realms/uka/protocol/openid-connect/auth"
+                + "?response_type=code&client_id=client&redirect_uri=urn:ietf:wg:oauth:2.0:oob"
+                + "&state=de43a890-30ae-4a76-bb7f-d4d090164d5a&login=true&scope=openid&kc_idp_hint=nosso";
+        Assert.assertEquals(postLogoutWithState, RedirectUtils.verifyRedirectUri(session, null, postLogoutWithState, validWildcardRedirects, false, Collections.emptySet()));
+
+        // 2. Post-logout redirect URI with auth URL without state parameter
+        String postLogoutWithoutState = "https://myhost/auth/realms/uka/protocol/openid-connect/auth"
+                + "?response_type=code&client_id=client&redirect_uri=urn:ietf:wg:oauth:2.0:oob&scope=openid";
+        Assert.assertEquals(postLogoutWithoutState, RedirectUtils.verifyRedirectUri(session, null, postLogoutWithoutState, validWildcardRedirects, false, Collections.emptySet()));
+
+        // 3. Plain post-logout redirect URI with no query parameters
+        String plainPostLogout = "https://myhost/auth/realms/uka/protocol/openid-connect/auth";
+        Assert.assertEquals(plainPostLogout, RedirectUtils.verifyRedirectUri(session, null, plainPostLogout, validWildcardRedirects, false, Collections.emptySet()));
+
+        // 4. Default verification allowing legitimate application query parameters
+        String customParamsUri = "https://example.com/callback?tab=profile&locale=en&app_param=123";
+        Assert.assertEquals(customParamsUri, RedirectUtils.verifyRedirectUri(session, null, customParamsUri, validAppRedirects, false));
+
+        // 5. Custom forbidden parameter set enforcement
+        String testParamUri = "https://example.com/callback?code=abc&custom=123";
+        Assert.assertEquals(testParamUri, RedirectUtils.verifyRedirectUri(session, null, testParamUri, validAppRedirects, false, Collections.emptySet()));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, testParamUri, validAppRedirects, false, Set.of("custom")));
     }
 }
