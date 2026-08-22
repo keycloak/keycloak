@@ -1929,6 +1929,54 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testPatchRemoveFilteredMultivaluedCustomAttributes() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
+        setupMultivaluedCustomAttributes(customSchema);
+
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+        user = client.users().create(user);
+
+        client.users().patch(user.getId(), PatchRequest.create()
+                .add(customSchema + ":assurance", "[{\"value\": \"https://refeds.org/assurance/ID/unique\"}, {\"value\": \"https://refeds.org/assurance/IAP/low\"}]")
+                .add(customSchema + ":affiliation", "[\"member\", \"faculty\"]")
+                .build());
+
+        client.users().patch(user.getId(), PatchRequest.create()
+                .remove(customSchema + ":assurance[value eq \"https://refeds.org/assurance/IAP/low\"]")
+                .build());
+
+        User actual = client.users().get(user.getId());
+        Map<?, ?> extension = (Map<?, ?>) actual.getExtensions().get(customSchema);
+        List<?> assurance = (List<?>) extension.get("assurance");
+        assertNotNull(assurance, "all values were removed instead of only the filtered one");
+        assertEquals(1, assurance.size());
+        assertEquals("https://refeds.org/assurance/ID/unique", ((Map<?, ?>) assurance.get(0)).get("value"));
+
+        // a multivalued attribute without the ".value" annotation is filtered the same way
+        client.users().patch(user.getId(), PatchRequest.create()
+                .remove(customSchema + ":affiliation[value eq \"member\"]")
+                .build());
+
+        actual = client.users().get(user.getId());
+        extension = (Map<?, ?>) actual.getExtensions().get(customSchema);
+        List<?> affiliation = (List<?>) extension.get("affiliation");
+        assertNotNull(affiliation, "all values were removed instead of only the filtered one");
+        assertEquals(1, affiliation.size());
+        assertEquals("faculty", affiliation.get(0));
+
+        // SCIM attribute names are case-insensitive
+        client.users().patch(user.getId(), PatchRequest.create()
+                .remove(customSchema + ":affiliation[VALUE eq \"faculty\"]")
+                .build());
+
+        actual = client.users().get(user.getId());
+        extension = (Map<?, ?>) actual.getExtensions().get(customSchema);
+        assertNull(extension.get("affiliation"));
+        assertEquals(1, ((List<?>) extension.get("assurance")).size());
+    }
+
+    @Test
     public void testFilterMultivaluedCustomAttributes() {
         String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
         setupMultivaluedCustomAttributes(customSchema);
