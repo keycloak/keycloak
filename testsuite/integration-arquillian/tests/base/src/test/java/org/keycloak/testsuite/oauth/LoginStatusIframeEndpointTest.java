@@ -69,6 +69,11 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
 
+    private static final String WILDCARD_WEB_ORIGIN = "http://*.localtest.me:8180";
+    private static final String MATCHING_WILDCARD_WEB_ORIGIN = "http://preview.localtest.me:8180";
+    private static final String CROSS_LABEL_WILDCARD_WEB_ORIGIN = "http://foo.bar.localtest.me:8180";
+    private static final String OTHER_WILDCARD_WEB_ORIGIN = "http://preview.other.me:8180";
+
     @Test
     public void checkIframe() throws IOException {
         CookieStore cookieStore = new BasicCookieStore();
@@ -193,6 +198,25 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void checkIframeWildcardSubdomainOrigin() throws IOException {
+        String id = adminClient.realm("master").clients().findByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).get(0).getId();
+        ClientResource master = adminClient.realm("master").clients().get(id);
+        ClientRepresentation rep = master.toRepresentation();
+        List<String> org = rep.getWebOrigins();
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            rep.setWebOrigins(Collections.singletonList(WILDCARD_WEB_ORIGIN));
+            master.update(rep);
+
+            assertIframeInitStatus(client, MATCHING_WILDCARD_WEB_ORIGIN, 204);
+            assertIframeInitStatus(client, CROSS_LABEL_WILDCARD_WEB_ORIGIN, 403);
+            assertIframeInitStatus(client, OTHER_WILDCARD_WEB_ORIGIN, 403);
+        } finally {
+            rep.setWebOrigins(org);
+            master.update(rep);
+        }
+    }
+
+    @Test
     public void checkIframeCache() throws IOException {
         String version = testingClient.server().fetch(s -> Version.RESOURCES_VERSION, String.class);
 
@@ -242,6 +266,16 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(RealmBuilder.create().name("test").build());
+    }
+
+    private void assertIframeInitStatus(CloseableHttpClient client, String origin, int expectedStatus) throws IOException {
+        HttpGet get = new HttpGet(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/protocol/openid-connect/login-status-iframe.html/init?"
+                + "client_id=" + Constants.ADMIN_CONSOLE_CLIENT_ID
+                + "&origin=" + origin
+        );
+        try (CloseableHttpResponse response = client.execute(get)) {
+            assertEquals(expectedStatus, response.getStatusLine().getStatusCode());
+        }
     }
 
 }
