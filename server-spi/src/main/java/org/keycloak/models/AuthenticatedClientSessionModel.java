@@ -34,6 +34,7 @@ public interface AuthenticatedClientSessionModel extends CommonClientSessionMode
     final String REFRESH_TOKEN_PREFIX = "refreshTokenPrefix";
     final String REFRESH_TOKEN_USE_PREFIX = "refreshTokenUsePrefix";
     final String REFRESH_TOKEN_LAST_REFRESH_PREFIX = "refreshTokenLastRefreshPrefix";
+    final String REFRESH_TOKEN_LATEST_PREFIX = "refreshTokenLatestPrefix";
 
     String getId();
 
@@ -127,6 +128,12 @@ public interface AuthenticatedClientSessionModel extends CommonClientSessionMode
     }
     default void setRefreshTokenLastRefresh(String reuseId, int refreshTokenLastRefresh) {
         setNote(REFRESH_TOKEN_LAST_REFRESH_PREFIX + reuseId, String.valueOf(refreshTokenLastRefresh));
+    }
+    default String getLatestRefreshToken(String reuseId) {
+        return getNote(REFRESH_TOKEN_LATEST_PREFIX + reuseId);
+    }
+    default void setLatestRefreshToken(String reuseId, String refreshTokenId) {
+        setNote(REFRESH_TOKEN_LATEST_PREFIX + reuseId, refreshTokenId);
     }
 
     String getNote(String name);

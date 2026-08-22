@@ -323,11 +323,20 @@ public class TokenManager {
     public void validateTokenReuse(KeycloakSession session, RealmModel realm, AccessToken refreshToken, AuthenticatedClientSessionModel clientSession, boolean refreshFlag) throws OAuthErrorException {
         String key = getReuseIdKey(refreshToken);
         String refreshTokenId = clientSession.getRefreshToken(key);
+        String latestRefreshTokenId = clientSession.getLatestRefreshToken(key);
         int lastRefresh = clientSession.getRefreshTokenLastRefresh(key);
 
         //check if a more recent refresh token is already used on this tab, if yes the refresh token is invalid
-        if (refreshTokenId != null && !refreshToken.getId().equals(refreshTokenId) && refreshToken.getIat() < lastRefresh) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
+        if (refreshTokenId != null && !refreshToken.getId().equals(refreshTokenId)) {
+            // When latestRefreshTokenId tracking is present, use <= to catch same-second replays.
+            // When absent (pre-upgrade sessions), fall back to strict < to avoid rejecting valid tokens.
+            if (latestRefreshTokenId != null) {
+                if (!refreshToken.getId().equals(latestRefreshTokenId) && refreshToken.getIat() <= lastRefresh) {
+                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
+                }
+            } else if (refreshToken.getIat() < lastRefresh) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
+            }
         }
 
         if (!refreshToken.getId().equals(refreshTokenId)) {
@@ -1304,7 +1313,9 @@ public class TokenManager {
             generateRefreshToken(offlineTokenRequested);
             if (realm.isRevokeRefreshToken()) {
                 refreshToken.getOtherClaims().put(Constants.REUSE_ID, reuseId);
-                clientSession.setRefreshTokenLastRefresh(tokenManager.getReuseIdKey(oldRefreshToken), refreshToken.getIat().intValue());
+                String key = tokenManager.getReuseIdKey(oldRefreshToken);
+                clientSession.setRefreshTokenLastRefresh(key, refreshToken.getIat().intValue());
+                clientSession.setLatestRefreshToken(key, refreshToken.getId());
             }
             refreshToken.setScope(scope);
             return this;
