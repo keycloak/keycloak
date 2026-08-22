@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.SignatureException;
@@ -389,7 +390,11 @@ public class CertificateValidator {
             try {
                 String configDir = System.getProperty("jboss.server.config.dir");
                 if (configDir != null) {
-                    File f = new File(configDir + File.separator + relativePath);
+                    File f = resolveCRLPath(configDir, relativePath);
+                    if (f == null) {
+                        logger.warnf("CRL path \"%s\" resolves outside of the configuration directory and will not be loaded", relativePath);
+                        return null;
+                    }
                     if (f.isFile()) {
                         logger.debugf("Loading CRL from %s", f.getAbsolutePath());
 
@@ -406,6 +411,20 @@ public class CertificateValidator {
                 logger.errorf(ex.getMessage());
             }
             return null;
+        }
+
+        /**
+         * Resolves a CRL file path against the configuration directory, returning {@code null} when the
+         * resolved path escapes that directory. CRL distribution point values are taken verbatim from the
+         * presented client certificate, so the untrusted path segment must stay contained in the base dir.
+         */
+        static File resolveCRLPath(String baseDir, String relativePath) {
+            Path basePath = Path.of(baseDir).toAbsolutePath().normalize();
+            Path resolved = Path.of(baseDir, relativePath).toAbsolutePath().normalize();
+            if (!resolved.startsWith(basePath)) {
+                return null;
+            }
+            return resolved.toFile();
         }
 
         private X509CRL loadFromStream(CertificateFactory cf, InputStream is) throws IOException, CRLException {
