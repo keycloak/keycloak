@@ -16,29 +16,31 @@ import org.keycloak.admin.api.client.ClientApi;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
+import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.services.PatchType;
 import org.keycloak.services.ServiceException;
 import org.keycloak.services.client.ClientService;
-import org.keycloak.services.client.ClientServiceFactory;
-import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.services.client.DefaultClientService;
+import org.keycloak.services.client.scim.ClientResourceTypeProvider;
 
 
 public class DefaultClientApi implements ClientApi {
     private final KeycloakSession session;
     private final String clientId;
     private final RealmModel realm;
-    private final AdminPermissionEvaluator permissions;
     private final ClientService clientService;
+    private final ClientResourceTypeProvider typeProvider;
 
     public DefaultClientApi(@Nonnull KeycloakSession session,
                             @Nonnull RealmModel realm,
                             @Nonnull String clientId,
-                            @Nonnull AdminPermissionEvaluator permissions) {
+                            @Nonnull DefaultClientService clientService,
+                            @Nonnull ClientResourceTypeProvider typeProvider) {
         this.session = session;
         this.clientId = clientId;
         this.realm = realm;
-        this.permissions = permissions;
-        this.clientService = ClientServiceFactory.create(session, realm, permissions);
+        this.clientService = clientService;
+        this.typeProvider = typeProvider;
     }
 
     @GET
@@ -72,7 +74,12 @@ public class DefaultClientApi implements ClientApi {
     @DELETE
     @Override
     public Response deleteClient() {
-        clientService.deleteClient(realm, clientId);
+        try {
+            typeProvider.delete(clientId); // TODO: not currently using the boolean return
+        } catch (ForbiddenException e) {
+            // TODO: a common error handler should be considered 
+            throw new jakarta.ws.rs.ForbiddenException();
+        }
         return Response.noContent().build();
     }
 }
