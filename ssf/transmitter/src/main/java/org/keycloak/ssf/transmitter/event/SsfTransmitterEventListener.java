@@ -23,6 +23,7 @@ import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.subject.PurgedUserSnapshot;
 import org.keycloak.ssf.transmitter.subject.SsfNotifyAttributes;
 import org.keycloak.ssf.transmitter.support.SsfUtil;
 import org.keycloak.storage.ReadOnlyException;
@@ -71,11 +72,18 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
             return;
         }
 
-        var streamTokens = generateSecurityTokensForUserEvent(event, transmitter);
-        if (streamTokens == null || streamTokens.isEmpty()) {
-            return;
+        try {
+            var streamTokens = generateSecurityTokensForUserEvent(event, transmitter);
+            if (streamTokens == null || streamTokens.isEmpty()) {
+                return;
+            }
+            dispatchSecurityEventTokens(streamTokens, transmitter);
+        } finally {
+            // Release any purge snapshot now that this event has been emitted. Keeps
+            // a request that deletes many users and emits for each from ever
+            // approaching the retention bound — see PurgedUserSnapshot.discard.
+            PurgedUserSnapshot.discard(session, session.getContext().getRealm(), event.getUserId());
         }
-        dispatchSecurityEventTokens(streamTokens, transmitter);
     }
 
     protected List<Map.Entry<SsfSecurityEventToken, StreamConfig>> generateSecurityTokensForUserEvent(Event event, SsfTransmitterProvider transmitter) {
@@ -138,7 +146,11 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
         if (realm == null) {
             return null;
         }
-        return session.users().getUserById(realm, userId);
+        // Falls back to this request's purge snapshot for DELETE_ACCOUNT, where the
+        // user row is already gone by the time the event fires. Without it the
+        // subject gate below would see an unresolvable user and — under the default
+        // default_subjects=NONE — silently drop every self-service deletion.
+        return PurgedUserSnapshot.resolveUserOrSnapshot(session, realm, userId);
     }
 
     /**
@@ -318,11 +330,16 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
             return;
         }
 
-        var streamTokens = generateSecurityEventTokensForAdminEvent(adminEvent, transmitter);
-        if (streamTokens == null || streamTokens.isEmpty()) {
-            return;
+        try {
+            var streamTokens = generateSecurityEventTokensForAdminEvent(adminEvent, transmitter);
+            if (streamTokens == null || streamTokens.isEmpty()) {
+                return;
+            }
+            dispatchSecurityEventTokens(streamTokens, transmitter);
+        } finally {
+            PurgedUserSnapshot.discard(session, session.realms().getRealm(adminEvent.getRealmId()),
+                    SsfUtil.userIdFromAdminEventPath(adminEvent));
         }
-        dispatchSecurityEventTokens(streamTokens, transmitter);
     }
 
     protected boolean shouldIgnoreEvent(AdminEvent adminEvent) {
@@ -354,7 +371,11 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
         }
 
         RealmModel realm = session.realms().getRealm(adminEvent.getRealmId());
-        UserModel eventUser = session.users().getUserById(realm, SsfUtil.userIdFromAdminEventPath(adminEvent));
+        // Resolve through the purge snapshot so an admin user deletion — where the
+        // row is gone before this event fires — still produces a subject. Bailing
+        // here was previously the hard stop that made account-purged impossible.
+        UserModel eventUser = PurgedUserSnapshot.resolveUserOrSnapshot(
+                session, realm, SsfUtil.userIdFromAdminEventPath(adminEvent));
         if (eventUser == null) {
             return List.of();
         }

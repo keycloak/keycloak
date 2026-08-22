@@ -33,6 +33,7 @@ import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.ssf.event.risc.RiscAccountDisabled;
 import org.keycloak.ssf.event.risc.RiscAccountEnabled;
+import org.keycloak.ssf.event.risc.RiscAccountPurged;
 import org.keycloak.ssf.event.stream.SsfStreamUpdatedEvent;
 import org.keycloak.ssf.event.stream.SsfStreamVerificationEvent;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
@@ -44,6 +45,7 @@ import org.keycloak.ssf.subject.OpaqueSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
+import org.keycloak.ssf.transmitter.subject.PurgedUserSnapshot;
 import org.keycloak.ssf.transmitter.support.SsfUtil;
 
 import org.jboss.logging.Logger;
@@ -72,6 +74,13 @@ public class SecurityEventTokenMapper {
     // requires the previous/updated "enabled" details UserResource attaches
     // when that specific field changed.
     protected static final Pattern USER_UPDATED_BY_ADMIN_PATH_PATTERN = Pattern.compile("^users/([^/]+)$");
+
+    // Same "users/{id}" shape as above — the admin user resource is one endpoint —
+    // but reached with OperationType.DELETE rather than UPDATE. Kept as its own
+    // constant so neither the enable/disable gate nor the purge gate has to be
+    // read as "the other one, but with a different verb". The operation type is
+    // what separates them; see isUserPurgeAdminEvent.
+    protected static final Pattern USER_DELETED_BY_ADMIN_PATH_PATTERN = Pattern.compile("^users/([^/]+)$");
 
     public static final String KC_CREDENTIAL_ID = "kc_credential_id";
 
@@ -389,6 +398,53 @@ public class SecurityEventTokenMapper {
         }
     }
 
+    /**
+     * Generates a RISC account-purged event.
+     *
+     * <p>RISC defines no {@code reason} claim for a purge, so unlike
+     * {@link #generateAccountDisabledEvent} this takes no reason argument — the
+     * subject, the timestamp and the initiating entity are the whole payload.
+     *
+     * <p>This is the one generator whose subject can never be resolved from live
+     * storage: the user row is deleted before either triggering event fires. The
+     * lookups inside {@link #composeUserSubject} therefore fall back to the
+     * {@link PurgedUserSnapshot} captured on {@code UserPreRemovedEvent}. When no
+     * snapshot exists — a deletion path that does not publish that provider event —
+     * subject construction throws and the event is dropped with a log line rather
+     * than shipping a SET with an unidentifiable subject.
+     *
+     * @param userEvent the {@code DELETE_ACCOUNT} event, or the synthetic equivalent
+     *                  built by {@link #generateAccountPurgedEventForAdminAction}
+     * @param adminEvent the admin event that triggered the deletion, or {@code null}
+     *                   for self-service deletion from the account console. Unlike the
+     *                   disable path, "not admin-initiated" genuinely does mean
+     *                   "user-initiated" here, so the standard two-argument
+     *                   {@link #applyInitiatingEntity} is correct.
+     * @param stream the receiving stream
+     */
+    public SsfSecurityEventToken generateAccountPurgedEvent(Event userEvent, AdminEvent adminEvent, StreamConfig stream) {
+        try {
+            String userId = userEvent.getUserId();
+
+            SsfSecurityEventToken eventToken = newSecurityEventToken(stream);
+            eventToken.setTxn(UUID.randomUUID().toString());
+            eventToken.setSubjectId(composeUserSubject(eventToken, userId, stream));
+
+            RiscAccountPurged accountPurgedEvent = new RiscAccountPurged();
+            accountPurgedEvent.setEventTimestamp(Time.currentTime());
+            applyInitiatingEntity(userEvent, adminEvent, accountPurgedEvent);
+
+            Map<String, Object> events = new HashMap<>();
+            events.put(RiscAccountPurged.TYPE, accountPurgedEvent);
+            eventToken.setEvents(events);
+
+            return eventToken;
+        } catch (Exception e) {
+            log.error("Error generating account purged event", e);
+            return null;
+        }
+    }
+
     protected void applyCustomAttributes(Event userEvent, AdminEvent adminEvent, CaepCredentialChange credentialChangeEvent) {
         // Keycloak user events aren't required to carry a details map —
         // RESET_PASSWORD in particular doesn't populate it. Skip the
@@ -630,6 +686,14 @@ public class SecurityEventTokenMapper {
         OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
         UserModel user = session.users().getUserById(realm, userId);
         if (user == null) {
+            // The user may have been purged on this very request. Organization
+            // membership is an id-keyed query rather than an attribute read, so the
+            // snapshot cannot answer getByMember — it carries the alias that was
+            // resolved while the membership still existed instead.
+            PurgedUserSnapshot snapshot = PurgedUserSnapshot.lookup(session, realm, userId);
+            if (snapshot != null) {
+                return buildTenantSubjectFromSnapshot(snapshot, orgProvider, stream);
+            }
             throw new SsfException("Cannot build tenant subject: user " + userId + " not found (stream "
                     + (stream != null ? stream.getStreamId() : null) + ")");
         }
@@ -647,6 +711,34 @@ public class SecurityEventTokenMapper {
         // this resolves on round-trip without requiring receivers to
         // know the transmitter's internal UUIDs.
         return createTenantSubjectId(org, user);
+    }
+
+    /**
+     * Tenant-subject variant for a user that no longer exists, used by the
+     * account-purged path. The organization itself outlives the user, so the alias
+     * captured at snapshot time is resolved back to a live {@link OrganizationModel}
+     * — which keeps the {@link #createTenantSubjectId} extension point working
+     * exactly as it does for live users.
+     *
+     * <p>Fails loud for the same reason the live path does: a SET shaped differently
+     * from what the receiver negotiated is worse than no SET at all.
+     */
+    protected SubjectId buildTenantSubjectFromSnapshot(PurgedUserSnapshot snapshot,
+                                                       OrganizationProvider orgProvider,
+                                                       StreamConfig stream) {
+        String alias = snapshot.getTenantAlias();
+        if (alias == null) {
+            throw new SsfException("Configured user subject format includes '+tenant' but purged user "
+                    + snapshot.getId() + " belonged to no organization (stream "
+                    + (stream != null ? stream.getStreamId() : null) + ")");
+        }
+        OrganizationModel org = orgProvider.getByAlias(alias);
+        if (org == null) {
+            throw new SsfException("Cannot build tenant subject for purged user " + snapshot.getId()
+                    + ": organization '" + alias + "' no longer exists (stream "
+                    + (stream != null ? stream.getStreamId() : null) + ")");
+        }
+        return createTenantSubjectId(org, snapshot);
     }
 
     protected OpaqueSubjectId createTenantSubjectId(OrganizationModel org, UserModel user) {
@@ -669,7 +761,9 @@ public class SecurityEventTokenMapper {
         if (realm == null) {
             return null;
         }
-        UserModel user = session.users().getUserById(realm, userId);
+        // Falls back to this request's purge snapshot when the row is already gone,
+        // so account-purged events can still carry an `email` subject.
+        UserModel user = PurgedUserSnapshot.resolveUserOrSnapshot(session, realm, userId);
         if (user == null) {
             return null;
         }
@@ -700,6 +794,10 @@ public class SecurityEventTokenMapper {
                  REMOVE_CREDENTIAL,
                  RESET_PASSWORD -> !shouldIgnoreCredentialChange(event);
             case USER_DISABLED_BY_PERMANENT_LOCKOUT -> true;
+            // Self-service account deletion from the account console. The account
+            // is genuinely purged, so unlike the admin path this needs no operation
+            // -type discriminator — DELETE_ACCOUNT has exactly one meaning.
+            case DELETE_ACCOUNT -> true;
             default -> false;
         };
     }
@@ -709,10 +807,14 @@ public class SecurityEventTokenMapper {
      * {@link #toSecurityEventToken(AdminEvent, StreamConfig)} would produce a
      * non-null SET for {@code adminEvent} — the admin paths mapped are
      * "log out all user sessions" ({@code users/{userId}/logout}),
-     * admin-initiated password reset / credential management, and an
+     * admin-initiated password reset / credential management, an
      * enable/disable transition on the generic user update endpoint (see
-     * {@link #isEnabledStateChangeAdminEvent}); everything else returns
+     * {@link #isEnabledStateChangeAdminEvent}), and deletion of the user
+     * itself (see {@link #isUserPurgeAdminEvent}); everything else returns
      * null and should short-circuit before any stream lookup happens.
+     *
+     * <p>The last two share the bare {@code users/{id}} resource path and are
+     * told apart by operation type, so both gates check it explicitly.
      */
     public boolean canConvert(AdminEvent adminEvent) {
         if (adminEvent == null) {
@@ -732,7 +834,30 @@ public class SecurityEventTokenMapper {
             }
         }
 
-        return isEnabledStateChangeAdminEvent(adminEvent);
+        return isEnabledStateChangeAdminEvent(adminEvent) || isUserPurgeAdminEvent(adminEvent);
+    }
+
+    /**
+     * True when {@code adminEvent} is an admin deletion of a user — bare
+     * {@code users/{id}} with {@link OperationType#DELETE}. Like
+     * {@link #isEnabledStateChangeAdminEvent}, the bare path is not in
+     * {@link #supportedAdminPathPatters()} because it serves several operations;
+     * the operation type is the discriminator.
+     *
+     * <p>The operation-type check is what keeps near-miss paths out. A partial
+     * import under the OVERWRITE policy also deletes a user and also fires a
+     * {@code users/{id}} admin event — but as {@link OperationType#UPDATE},
+     * because the account is recreated in the same request and was never purged.
+     * Deleting a client removes its service-account user, but reports that as
+     * {@link ResourceType#CLIENT} at {@code clients/{id}} and is filtered by the
+     * resource-type guard in {@link #canConvert(AdminEvent)}.
+     */
+    protected boolean isUserPurgeAdminEvent(AdminEvent adminEvent) {
+        if (adminEvent.getOperationType() != OperationType.DELETE) {
+            return false;
+        }
+        String path = adminEvent.getResourcePath();
+        return path != null && USER_DELETED_BY_ADMIN_PATH_PATTERN.matcher(path).matches();
     }
 
     protected List<Pattern> supportedAdminPathPatters() {
@@ -838,6 +963,11 @@ public class SecurityEventTokenMapper {
             case USER_DISABLED_BY_PERMANENT_LOCKOUT ->
                     generateAccountDisabledEvent(event, adminEvent, stream, RiscAccountDisabled.REASON_BRUTE_FORCE);
 
+            // Self-service deletion. The user row is already gone by the time this
+            // event fires, so the subject is resolved from the purge snapshot
+            // captured on UserPreRemovedEvent.
+            case DELETE_ACCOUNT -> generateAccountPurgedEvent(event, adminEvent, stream);
+
             // Add more event mappings here as needed.
             // Deliberately NOT mapped: UPDATE_PASSWORD / UPDATE_TOTP /
             // REMOVE_TOTP — these are deprecated event types Keycloak
@@ -912,7 +1042,25 @@ public class SecurityEventTokenMapper {
             return generateAccountStateChangeEventForAdminAction(userId, adminEvent, stream, nowEnabled);
         }
 
+        if (isUserPurgeAdminEvent(adminEvent)) {
+            return generateAccountPurgedEventForAdminAction(userId, adminEvent, stream);
+        }
+
         return null;
+    }
+
+    /**
+     * Builds a synthetic {@link Event} carrying just the user id so the admin
+     * deletion path can reuse {@link #generateAccountPurgedEvent}, whose signature
+     * is shared with the self-service ({@code DELETE_ACCOUNT}) path.
+     */
+    protected SsfSecurityEventToken generateAccountPurgedEventForAdminAction(String userId, AdminEvent adminEvent, StreamConfig stream) {
+
+        Event event = new Event();
+        event.setType(EventType.DELETE_ACCOUNT);
+        event.setUserId(userId);
+
+        return generateAccountPurgedEvent(event, adminEvent, stream);
     }
 
     /**

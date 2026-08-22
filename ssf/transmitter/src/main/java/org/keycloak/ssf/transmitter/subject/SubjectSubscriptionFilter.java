@@ -5,8 +5,6 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.organization.OrganizationProvider;
-import org.keycloak.organization.utils.Organizations;
 import org.keycloak.ssf.event.stream.SsfStreamUpdatedEvent;
 import org.keycloak.ssf.event.stream.SsfStreamVerificationEvent;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
@@ -218,15 +216,12 @@ public class SubjectSubscriptionFilter {
         if (userTombstone != null && now - userTombstone < graceSeconds) {
             return true;
         }
-        if (Organizations.isEnabled(session)) {
-            return session.getProvider(OrganizationProvider.class).getByMember(user)
-                    .anyMatch(org -> {
-                        Long orgTombstone = SsfNotifyAttributes.getRemovedAtForOrganization(org, receiverClientId);
-                        return orgTombstone != null
-                                && now - orgTombstone < graceSeconds;
-                    });
-        }
-        return false;
+        return PurgedUserSnapshot.organizationsOf(session, user).stream()
+                .anyMatch(org -> {
+                    Long orgTombstone = SsfNotifyAttributes.getRemovedAtForOrganization(org, receiverClientId);
+                    return orgTombstone != null
+                            && now - orgTombstone < graceSeconds;
+                });
     }
 
     /**
@@ -270,7 +265,15 @@ public class SubjectSubscriptionFilter {
     }
 
     protected UserModel lookupUserBySubject(KeycloakSession session, RealmModel realm, SubjectId userSubject) {
-        return SubjectUserLookup.lookupUser(session, realm, userSubject);
+        UserModel user = SubjectUserLookup.lookupUser(session, realm, userSubject);
+        if (user != null) {
+            return user;
+        }
+        // An account-purged SET names a user that no longer exists, so the lookup
+        // above can never succeed for one. Falling back to this request's snapshot
+        // keeps the gate meaningful: without it every purge would be evaluated as an
+        // unresolvable subject and dropped under the default default_subjects=NONE.
+        return PurgedUserSnapshot.lookupBySubject(session, realm, userSubject);
     }
 
     /**
@@ -282,10 +285,7 @@ public class SubjectSubscriptionFilter {
      * "is the user excluded *via* one of their orgs" question.
      */
     protected boolean isOrganizationExcluded(UserModel user, String receiverClientId, KeycloakSession session) {
-        if (!Organizations.isEnabled(session)) {
-            return false;
-        }
-        return session.getProvider(OrganizationProvider.class).getByMember(user)
+        return PurgedUserSnapshot.organizationsOf(session, user).stream()
                 .anyMatch(org -> subjectInclusionResolver.isOrganizationExcluded(session, org, receiverClientId));
     }
 
@@ -294,10 +294,7 @@ public class SubjectSubscriptionFilter {
      * per the {@link #subjectInclusionResolver}.
      */
     protected boolean isOrganizationNotified(UserModel user, String receiverClientId, KeycloakSession session) {
-        if (!Organizations.isEnabled(session)) {
-            return false;
-        }
-        return session.getProvider(OrganizationProvider.class).getByMember(user)
+        return PurgedUserSnapshot.organizationsOf(session, user).stream()
                 .anyMatch(org -> subjectInclusionResolver.isOrganizationNotified(session, org, receiverClientId));
     }
 }
