@@ -17,14 +17,14 @@
  *
  */
 
-package org.keycloak.examples.providersoverride;
+package org.keycloak.tests.providers.providersoverride;
 
 import org.keycloak.email.DefaultEmailSenderProviderFactory;
 import org.keycloak.email.EmailSenderProvider;
 import org.keycloak.models.KeycloakSession;
 
 /**
- * Won't be used due lower order than CustomFreemarkerAccountProviderFactory2
+ * Won't be used due lower order than CustomDefaultEmailSenderProviderFactory2
  */
 public class CustomDefaultEmailSenderProviderFactory1 extends DefaultEmailSenderProviderFactory {
 

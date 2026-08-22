@@ -17,14 +17,18 @@
  *
  */
 
-package org.keycloak.examples.providersoverride;
+package org.keycloak.tests.providers.providersoverride;
 
-import org.keycloak.authentication.authenticators.directgrant.ValidateUsername;
+import org.keycloak.authentication.authenticators.directgrant.ValidatePassword;
 
 /**
- * This has same providerID like built-in ValidateUsername provider. But it should be called in favour of ValidateUsername even
- * if it doesn't have "order" set. As it is custom provider and it worked this way in previous versions
+ * Test for order (This one is not called due CustomValidatePassword2 has bigger order)
  *
  */
-public class CustomValidateUsername extends ValidateUsername {
+public class CustomValidatePassword3 extends ValidatePassword {
+
+    @Override
+    public int order() {
+        return -1;
+    }
 }
