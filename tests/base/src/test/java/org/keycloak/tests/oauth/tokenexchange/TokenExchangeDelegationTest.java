@@ -1,7 +1,6 @@
 package org.keycloak.tests.oauth.tokenexchange;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +23,6 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantTypeFactory;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
@@ -83,10 +81,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.representations.IDToken.ACT;
 import static org.keycloak.representations.IDToken.MAY_ACT;
 import static org.keycloak.representations.IDToken.PREFERRED_USERNAME;
-import static org.keycloak.representations.JsonWebToken.SUBJECT;
+import static org.keycloak.tests.oauth.tokenexchange.DelegationAssertions.assertActPresent;
+import static org.keycloak.tests.oauth.tokenexchange.DelegationAssertions.assertMayActNotPresent;
+import static org.keycloak.tests.oauth.tokenexchange.DelegationAssertions.assertMayActPresent;
+import static org.keycloak.tests.oauth.tokenexchange.DelegationAssertions.assertScopeContains;
+import static org.keycloak.tests.oauth.tokenexchange.DelegationAssertions.assertScopeNotContains;
 
 /**
  *
@@ -763,63 +764,12 @@ public class TokenExchangeDelegationTest {
         return actorToken;
     }
 
-    private static void assertMayActPresent(AccessToken token, String expectedActorId) {
-        assertMayActPresent(token, expectedActorId, null, null);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void assertMayActPresent(AccessToken token, String expectedActorId, String expectedIss, String expectedUsername) {
-        Map<String, Object> mayAct = (Map<String, Object>) token.getOtherClaims().get(MAY_ACT);
-        Assertions.assertNotNull(mayAct, "may_act claim should be present");
-        Assertions.assertEquals(expectedActorId, mayAct.get(SUBJECT), "may_act.sub should contain the actor user ID");
-        if (expectedIss != null) {
-            Assertions.assertEquals(expectedIss, mayAct.get(OIDCLoginProtocol.ISSUER), "may_act.iss is not correct");
-        } else {
-            Assertions.assertNull(mayAct.get(OIDCLoginProtocol.ISSUER), "may_act.iss is not null");
-        }
-        if (expectedUsername != null) {
-            Assertions.assertEquals(expectedUsername, mayAct.get(PREFERRED_USERNAME), "may_act.preferred_username is not correct");
-        } else {
-            Assertions.assertNull(mayAct.get(PREFERRED_USERNAME), "may_act.preferred_username is not null");
-        }
-    }
-
-    private static void assertActPresent(AccessToken token, String expectedActorId, String expectedIss, String expectedUsername) {
-        Map<String, Object> act = (Map<String, Object>) token.getOtherClaims().get(ACT);
-        Assertions.assertNotNull(act, "act claim should be present");
-        Assertions.assertEquals(expectedActorId, act.get(SUBJECT), "act.sub should contain the actor user ID");
-        if (expectedIss != null) {
-            Assertions.assertEquals(expectedIss, act.get(OIDCLoginProtocol.ISSUER), "act.iss is not correct");
-        } else {
-            Assertions.assertNull(act.get(OIDCLoginProtocol.ISSUER), "act.iss is not null");
-        }
-        if (expectedUsername != null) {
-            Assertions.assertEquals(expectedUsername, act.get(PREFERRED_USERNAME), "act.preferred_username is not correct");
-        } else {
-            Assertions.assertNull(act.get(PREFERRED_USERNAME), "act.preferred_username is not null");
-        }
-    }
-
-    private static void assertMayActNotPresent(AccessToken token) {
-        Assertions.assertNull(token.getOtherClaims().get(MAY_ACT), "may_act claim should not be present");
-    }
-
     private String findDelegationScopeId() {
         return realm.admin().clientScopes().findAll().stream()
                 .filter(cs -> OIDCLoginProtocolFactory.DELEGATION_SCOPE.equals(cs.getName()))
                 .map(ClientScopeRepresentation::getId)
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("delegation client scope not found"));
-    }
-
-    private static void assertScopeContains(String scopeString, String expectedScope) {
-        Assertions.assertNotNull(scopeString, "Scope string should not be null");
-        MatcherAssert.assertThat(Arrays.asList(scopeString.split(" ")), Matchers.hasItem(expectedScope));
-    }
-
-    private static void assertScopeNotContains(String scopeString, String expectedScope) {
-        Assertions.assertNotNull(scopeString, "Scope string should not be null");
-        MatcherAssert.assertThat(Arrays.asList(scopeString.split(" ")), Matchers.not(Matchers.hasItem(expectedScope)));
     }
 
     static class TokenExchangeDelegationServerConfig implements KeycloakServerConfig {

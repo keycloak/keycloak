@@ -16,10 +16,13 @@
  */
 package org.keycloak.services.resources.admin.fgap;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.common.DefaultEvaluationContext;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -28,10 +31,12 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.resources.admin.fgap.ModelRecord.ClientModelRecord;
 
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE;
+import static org.keycloak.authorization.policy.evaluation.EvaluationContext.CLIENT_ID_ATTRIBUTE;
 
 class ClientPermissionsV2 extends ClientPermissions {
 
@@ -134,6 +139,17 @@ class ClientPermissionsV2 extends ClientPermissions {
         }
 
         return eval.hasPermission(new ClientModelRecord(null), null, AdminPermissionsSchema.VIEW);
+    }
+
+    @Override
+    public boolean canDelegate(ClientModel client) {
+        DefaultEvaluationContext context = Optional.ofNullable(root.admin())
+                .map(UserModel::getServiceAccountClientLink)
+                .map(root.realm::getClientById)
+                .map(c -> new DefaultEvaluationContext(root.identity(), Map.of(CLIENT_ID_ATTRIBUTE, List.of(c.getClientId())), session))
+                .orElse(null);
+
+        return eval.hasPermission(new ClientModelRecord(client), context, AdminPermissionsSchema.DELEGATE);
     }
 
     @Override

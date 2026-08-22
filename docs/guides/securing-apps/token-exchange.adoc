@@ -368,7 +368,7 @@ Delegation permissions are managed through link:{adminguide_link}#_fine_grained_
 . Add the *delegate* scope.
 . Assign a policy that grants this permission.
 
-NOTE: To restrict delegation to specific users, select individual users when creating the permission. To restrict which administrators or service accounts can delegate, use a more specific policy (for example, a *User* or *Client* policy).
+NOTE: To restrict delegation to specific users, select individual users when creating the permission. To restrict which administrators can delegate, use a more specific policy (for example, a *User* policy).
 
 ===== Granting delegation to members of a specific group
 
