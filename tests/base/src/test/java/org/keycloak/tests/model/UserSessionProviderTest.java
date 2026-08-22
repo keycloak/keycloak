@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 import jakarta.persistence.EntityManager;
 
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -65,6 +66,7 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.models.jpa.session.JpaSessionUtil.offlineToString;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assume.assumeTrue;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -1035,6 +1037,8 @@ public class UserSessionProviderTest {
      */
     @TestOnServer
     public void testNearMissSessionSurvivesCoarseExpiration(KeycloakSession session) {
+        assumeTrue(Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS));
+        assumeTrue(!Profile.isFeatureEnabled(Profile.Feature.CLUSTERLESS));
         InfinispanTimeUtil.enableTestingTimeService(session);
         try {
             RealmModel realm = session.realms().getRealmByName("test");
