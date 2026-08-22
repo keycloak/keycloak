@@ -677,6 +677,38 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder maxSecondaryAuthFailures(int maxSecondaryAuthFailures) {
+        rep.setMaxSecondaryAuthFailures(maxSecondaryAuthFailures);
+        return this;
+    }
+
+    public RealmBuilder bruteForceStrategy(RealmRepresentation.BruteForceStrategy bruteForceStrategy) {
+        rep.setBruteForceStrategy(bruteForceStrategy);
+        return this;
+    }
+
+    public RealmBuilder waitIncrementSeconds(int waitIncrementSeconds) {
+        rep.setWaitIncrementSeconds(waitIncrementSeconds);
+        return this;
+    }
+
+    public RealmBuilder maxFailureWaitSeconds(int maxFailureWaitSeconds) {
+        rep.setMaxFailureWaitSeconds(maxFailureWaitSeconds);
+        return this;
+    }
+
+    public RealmBuilder quickLoginCheckMilliSeconds(long quickLoginCheckMilliSeconds) {
+        rep.setQuickLoginCheckMilliSeconds(quickLoginCheckMilliSeconds);
+        return this;
+    }
+
+    public RealmBuilder minimumQuickLoginWaitSeconds(int minimumQuickLoginWaitSeconds) {
+        rep.setMinimumQuickLoginWaitSeconds(minimumQuickLoginWaitSeconds);
+        return this;
+    }
+
+
+
     /**
      * Best practice is to use other convenience methods when configuring a realm, but while the framework is under
      * active development there may not be a way to perform all updates required. In these cases this method allows
