@@ -114,7 +114,7 @@ public class LoginPage extends AbstractLoginPage {
     }
 
     public String getUsernameAutocomplete() {
-        return usernameInput.getDomAttribute("autocomplete");
+        return driver.driver().findElement(By.id("username")).getDomAttribute("autocomplete");
     }
 
     public void clearUsernameInput() {

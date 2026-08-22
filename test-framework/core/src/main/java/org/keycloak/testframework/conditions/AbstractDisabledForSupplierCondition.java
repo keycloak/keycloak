@@ -11,7 +11,7 @@ import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-abstract class AbstractDisabledForSupplierCondition implements ExecutionCondition {
+public abstract class AbstractDisabledForSupplierCondition implements ExecutionCondition {
 
     @Override
     public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
@@ -34,9 +34,9 @@ abstract class AbstractDisabledForSupplierCondition implements ExecutionConditio
         }
     }
 
-    abstract Class<?> valueType();
+    protected abstract Class<?> valueType();
 
-    abstract Class<? extends Annotation> annotation();
+    protected abstract Class<? extends Annotation> annotation();
 
     private <T extends Annotation> T getAnnotation(ExtensionContext context, Class<T> annotationClass) {
         T[] annotations = context.getElement().get().getAnnotationsByType(annotationClass);

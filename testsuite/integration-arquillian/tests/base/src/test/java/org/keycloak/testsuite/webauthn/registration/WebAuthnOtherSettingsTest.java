@@ -264,6 +264,8 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
         webAuthnRegisterPage.assertCurrent();
         webAuthnRegisterPage.clickRegister();
 
+        waitForPageToLoad();
+
         webAuthnErrorPage.assertCurrent();
         assertThat(webAuthnErrorPage.getError(), containsString("This Passkey is already registered."));
     }

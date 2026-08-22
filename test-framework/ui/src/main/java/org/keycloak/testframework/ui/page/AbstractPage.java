@@ -1,5 +1,7 @@
 package org.keycloak.testframework.ui.page;
 
+import java.time.Duration;
+
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 public abstract class AbstractPage {
@@ -14,5 +16,9 @@ public abstract class AbstractPage {
 
     public void assertCurrent() {
         driver.waiting().waitForPage(this);
+    }
+
+    public void assertCurrent(Duration timeout) {
+        driver.waiting().waitForPage(this, timeout);
     }
 }

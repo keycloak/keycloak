@@ -94,6 +94,14 @@ public class WebAuthnRegisterPage extends AbstractLoginPage {
     }
 
 
+    public String getFormTitle() {
+        try {
+            return formTitle.getText();
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+    }
+
     public boolean isAIA() {
         try {
             cancelAIAButton.getText();
