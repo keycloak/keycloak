@@ -134,6 +134,36 @@ public class ResourceIndicatorsTest {
         assertErrorResponse(refreshResponse,  INVALID_TARGET, ERROR_NOT_MATCHING);
     }
 
+    @Test
+    public void testTokenExchangeWithResourceByClientUrn() {
+        AccessTokenResponse subjectResponse = oauth.passwordGrantRequest("user", "pass").send();
+        Assertions.assertTrue(subjectResponse.isSuccess());
+
+        AccessTokenResponse tokenResponse = oauth.tokenExchangeRequest(subjectResponse.getAccessToken())
+                .audience("theservice").resource("urn:client:theservice").send();
+        assertValidResponse(tokenResponse, "theservice");
+    }
+
+    @Test
+    public void testTokenExchangeWithResourceByUrl() {
+        AccessTokenResponse subjectResponse = oauth.passwordGrantRequest("user", "pass").send();
+        Assertions.assertTrue(subjectResponse.isSuccess());
+
+        AccessTokenResponse tokenResponse = oauth.tokenExchangeRequest(subjectResponse.getAccessToken())
+                .audience("theservice").resource("https://theservice").send();
+        assertValidResponse(tokenResponse, "https://theservice");
+    }
+
+    @Test
+    public void testTokenExchangeWithInvalidResource() {
+        AccessTokenResponse subjectResponse = oauth.passwordGrantRequest("user", "pass").send();
+        Assertions.assertTrue(subjectResponse.isSuccess());
+
+        AccessTokenResponse tokenResponse = oauth.tokenExchangeRequest(subjectResponse.getAccessToken())
+                .audience("theservice").resource("urn:client:otherservice").send();
+        assertErrorResponse(tokenResponse, INVALID_TARGET, ERROR_INVALID_RESOURCE);
+    }
+
     private static final class ResourceIndicatorsRealm implements RealmConfig {
 
         @Override
@@ -160,14 +190,14 @@ public class ResourceIndicatorsTest {
 
         @Override
         public ClientBuilder configure(ClientBuilder client) {
-            return super.configure(client).fullScopeEnabled(true);
+            return super.configure(client).fullScopeEnabled(true).attribute("standard.token.exchange.enabled", "true");
         }
     }
 
     protected static final class ResourceIndicatorServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.RESOURCE_INDICATORS);
+            return config.features(Profile.Feature.RESOURCE_INDICATORS, Profile.Feature.TOKEN_EXCHANGE_STANDARD_V2);
         }
     }
 

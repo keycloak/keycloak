@@ -289,6 +289,7 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
             validateConsents(targetUser, scope);
             clientSessionCtx.setAttribute(Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
+            clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, formParams.getFirst(OAuth2Constants.RESOURCE));
 
             TokenContextEncoderProvider encoder = session.getProvider(TokenContextEncoderProvider.class);
 

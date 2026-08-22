@@ -18,6 +18,7 @@ public class TokenExchangeRequest extends AbstractHttpPostRequest<TokenExchangeR
     private String requestedTokenType;
     private String requestedSubject;
     private List<String> audience;
+    private String resource;
 
     TokenExchangeRequest(String subjectToken, String subjectTokenType, AbstractOAuthClient<?> client) {
         super(client);
@@ -47,6 +48,11 @@ public class TokenExchangeRequest extends AbstractHttpPostRequest<TokenExchangeR
 
     public TokenExchangeRequest audience(String... audience) {
         this.audience = Arrays.stream(audience).toList();
+        return this;
+    }
+
+    public TokenExchangeRequest resource(String resource) {
+        this.resource = resource;
         return this;
     }
 
@@ -89,6 +95,10 @@ public class TokenExchangeRequest extends AbstractHttpPostRequest<TokenExchangeR
 
         if (audience != null) {
             audience.forEach(a -> parameter(OAuth2Constants.AUDIENCE, a));
+        }
+
+        if (resource != null) {
+            parameter(OAuth2Constants.RESOURCE, resource);
         }
 
         parameter(OAuth2Constants.SCOPE, client.config().getScope(false));
