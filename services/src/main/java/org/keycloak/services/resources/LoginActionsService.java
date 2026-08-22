@@ -625,7 +625,7 @@ public class LoginActionsService {
                     );
 
             String kid = verifier.getHeader().getKeyId();
-            String algorithm = verifier.getHeader().getAlgorithm().name();
+            String algorithm = verifier.getHeader().getRawAlgorithm();
 
             SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, algorithm);
             if (signatureProvider == null) {
