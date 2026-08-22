@@ -65,7 +65,6 @@ import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.providers.runonserver.FetchOnServer;
 import org.keycloak.testframework.remote.providers.runonserver.FetchOnServerWrapper;
-import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.tests.utils.Assert;
@@ -383,7 +382,7 @@ public class ExportImportTest {
 
             runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_IMPORT));
 
-            RunOnServerException e = Assertions.assertThrows(RunOnServerException.class, () -> {
+            IllegalStateException e = Assertions.assertThrows(IllegalStateException.class, () -> {
                 runOnServerMaster.run(ExportImportHelper.runImport());
             });
             assertThat(e.getMessage(), Matchers.containsString("File name / realm name mismatch."));
