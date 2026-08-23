@@ -294,7 +294,7 @@ jobs:
           start args: --memory=${{ env.MINIKUBE_MEMORY }} --addons=registry --insecure-registry=192.168.49.0/24
 
       - name: Install OPM / OC
-        uses: redhat-actions/openshift-tools-installer@144527c7d98999f2652264c048c7a9bd103f8a82 # v1.13.1
+        uses: redhat-actions/openshift-tools-installer@e3b32c2ab7b064b2ce189121c4a49f509a99a7b4 # v3.0
         with:
           # openshift-tools-installer is out-of-date for later opm, which started using the binary name opm-rhelX.
           # we may have to do our own installation to move past this
@@ -405,7 +405,7 @@ jobs:
           start args: --memory=${{ env.MINIKUBE_MEMORY }} --addons=registry --insecure-registry=192.168.49.0/24
 
       - name: Install OPM / OC
-        uses: redhat-actions/openshift-tools-installer@144527c7d98999f2652264c048c7a9bd103f8a82 # v1.13.1
+        uses: redhat-actions/openshift-tools-installer@e3b32c2ab7b064b2ce189121c4a49f509a99a7b4 # v3.0
         with:
           # openshift-tools-installer is out-of-date for later opm, which started using the binary name opm-rhelX.
           # we may have to do our own installation to move past this
