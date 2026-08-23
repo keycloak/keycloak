@@ -16,6 +16,7 @@
  */
 package org.keycloak.organization.admin.resource;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -60,6 +61,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
@@ -67,7 +69,10 @@ import org.keycloak.storage.adapter.InMemoryUserAdapter;
 import org.keycloak.utils.StringUtil;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -98,6 +103,10 @@ public class OrganizationInvitationResource {
     }
 
     public Response inviteUser(String email, String firstName, String lastName) {
+        return createdResponse(createInvitation(email, firstName, lastName));
+    }
+
+    private OrganizationInvitationModel createInvitation(String email, String firstName, String lastName) {
         auth.orgs().requireManage(organization);
 
         if (!organization.isEnabled()) {
@@ -170,10 +179,10 @@ public class OrganizationInvitationResource {
             throw ErrorResponse.error("User does not have an email address", Status.BAD_REQUEST);
         }
 
-        return sendInvitation(user);
+        return createdResponse(sendInvitation(user));
     }
 
-    private Response sendInvitation(UserModel user) {
+    private OrganizationInvitationModel sendInvitation(UserModel user) {
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         InvitationManager invitationManager = provider.getInvitationManager();
         // Create persistent invitation record
@@ -204,7 +213,18 @@ public class OrganizationInvitationResource {
                 .resourcePath(session.getContext().getUri())
                 .success();
 
-        return Response.noContent().build();
+        return invitation;
+    }
+
+    private Response createdResponse(OrganizationInvitationModel invitation) {
+        URI location = AdminRoot.realmsUrl(session.getContext().getUri().getBaseUriBuilder())
+                .path(realm.getName())
+                .path("organizations")
+                .path(organization.getId())
+                .path("invitations")
+                .path(invitation.getId())
+                .build();
+        return Response.created(location).build();
     }
 
     private int getActionTokenLifespan() {
@@ -343,7 +363,11 @@ public class OrganizationInvitationResource {
     @Path("/{id}/resend")
     @Operation(summary = "Resend an invitation")
     @APIResponses(value = {
-        @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "201", description = "Created", headers = @Header(
+                name = "Location",
+                description = "URI of the newly created invitation in the format /admin/realms/{realm}/organizations/{organizationId}/invitations/{invitationId}",
+                schema = @Schema(type = SchemaType.STRING, format = "uri"),
+                required = true)),
         @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found")
     })
@@ -359,7 +383,7 @@ public class OrganizationInvitationResource {
 
         OrganizationInvitationModel invitation = verifyInvitationById(invitationManager, id);
         invitationManager.remove(id);
-        return inviteUser(invitation.getEmail(), invitation.getFirstName(), invitation.getLastName());
+        return createdResponse(createInvitation(invitation.getEmail(), invitation.getFirstName(), invitation.getLastName()));
     }
 
     private OrganizationInvitationModel verifyInvitationById(InvitationManager invitationManager, String id) {
