@@ -85,31 +85,30 @@ public class OID4VPSdJwtUserSessionAttributeMapper extends AbstractOID4VPClaimMa
     @Override
     public void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm,
             IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        addSessionNote(mapperModel, context);
+        applySessionNote(mapperModel, context);
     }
 
     @Override
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user,
             IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        addSessionNote(mapperModel, context);
+        applySessionNote(mapperModel, context);
     }
 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user,
             IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        addSessionNote(mapperModel, context);
+        applySessionNote(mapperModel, context);
     }
 
-    protected void addSessionNote(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+    protected void applySessionNote(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String attribute = mapperModel.getConfig().get(ATTRIBUTE);
         if (StringUtil.isBlank(attribute)) {
             logger.warnf("No user session attribute configured for mapper %s", mapperModel.getName());
             return;
         }
         List<String> values = claimValues(mapperModel, context);
-        if (values == null || values.isEmpty()) {
-            return;
-        }
-        context.setSessionNote(attribute.trim(), String.join(",", values));
+        // A null note value means removal, so a claim that disappeared from the presentation does
+        // not leave a stale note on the session.
+        context.setSessionNote(attribute.trim(), values == null || values.isEmpty() ? null : String.join(",", values));
     }
 }

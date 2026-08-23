@@ -143,6 +143,18 @@ public class OID4VPSdJwtUserAttributeMapperTest {
     }
 
     @Test
+    public void blankClaimLeavesUserPropertiesUntouched() throws Exception {
+        BrokeredIdentityContext context = contextWithClaims("""
+                {"sub": " ", "given_name": ""}""");
+
+        preprocess(context, "sub", "username");
+        preprocess(context, "given_name", "firstName");
+
+        assertNull(context.getModelUsername());
+        assertNull(context.getFirstName());
+    }
+
+    @Test
     public void blankConfigurationMapsNothing() throws Exception {
         BrokeredIdentityContext context = contextWithClaims("""
                 {"email": "alice@email.cz"}""");

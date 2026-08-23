@@ -82,6 +82,17 @@ public class OID4VPSdJwtUserSessionAttributeMapperTest {
     }
 
     @Test
+    public void missingClaimClearsAPreviouslySetNote() throws Exception {
+        BrokeredIdentityContext context = contextWithClaims("""
+                {"vct": "identity"}""");
+        context.setSessionNote("phone", "12345");
+
+        importNewUser(context, "phone", "phone");
+
+        assertNull(sessionNote(context, "phone"));
+    }
+
+    @Test
     public void blankConfigurationSetsNoNote() throws Exception {
         BrokeredIdentityContext context = contextWithClaims("""
                 {"vct": "identity"}""");

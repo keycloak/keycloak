@@ -17,6 +17,7 @@
 
 package org.keycloak.broker.oid4vp.mappers;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -93,15 +94,12 @@ public class OID4VPSdJwtUserAttributeMapper extends AbstractOID4VPClaimMapper {
             return;
         }
         List<String> values = claimValues(mapperModel, context);
-        if (values == null || values.isEmpty()) {
-            return;
-        }
         switch (attribute) {
-            case USERNAME -> context.setModelUsername(values.get(0));
-            case EMAIL -> context.setEmail(values.get(0));
-            case FIRST_NAME -> context.setFirstName(values.get(0));
-            case LAST_NAME -> context.setLastName(values.get(0));
-            default -> context.setUserAttribute(attribute, values);
+            case USERNAME -> setIfPresent(values, context::setModelUsername);
+            case EMAIL -> setIfPresent(values, context::setEmail);
+            case FIRST_NAME -> setIfPresent(values, context::setFirstName);
+            case LAST_NAME -> setIfPresent(values, context::setLastName);
+            default -> context.setUserAttribute(attribute, values == null ? new ArrayList<>() : values);
         }
     }
 
