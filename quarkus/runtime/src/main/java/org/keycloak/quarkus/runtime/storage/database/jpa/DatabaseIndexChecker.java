@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
 import org.keycloak.connections.jpa.updater.liquibase.custom.CustomCreateIndexChange;
 import org.keycloak.models.KeycloakSession;
@@ -101,6 +102,8 @@ public class DatabaseIndexChecker implements Runnable {
         }
     }
 
+    private static final String TASK_KEY = "db-index-checker";
+
     private void runInternal() {
         logger.info("Running database index checker");
         var missing = getMissingIndexes();
@@ -108,13 +111,25 @@ public class DatabaseIndexChecker implements Runnable {
             return;
         }
 
-        try (var connection = connectionSupplier.get()) {
-            if (autoCreate && supportsOnlineIndexCreation(connection)) {
-                createIndexes(connection, missing);
+        if (autoCreate) {
+            try (var session = factory.create()) {
+                var clusterProvider = session.getProvider(ClusterProvider.class);
+                clusterProvider.executeIfNotExecuted(TASK_KEY, migrationTimeoutSeconds, () -> {
+                    try (var connection = connectionSupplier.get()) {
+                        if (supportsOnlineIndexCreation(connection)) {
+                            createIndexes(connection, missing);
+                            return null;
+                        }
+                    } catch (SQLException e) {
+                        logger.warn("Unable to automatically create missing indexes, logging them for manual creation instead", e);
+                    }
+                    for (var info : missing) {
+                        logMissingIndex(info);
+                    }
+                    return null;
+                });
                 return;
             }
-        } catch (SQLException e) {
-            logger.warn("Unable to automatically create missing indexes, logging them for manual creation instead", e);
         }
 
         for (var info : missing) {
