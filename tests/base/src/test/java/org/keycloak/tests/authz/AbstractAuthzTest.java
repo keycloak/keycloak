@@ -1,26 +1,49 @@
 package org.keycloak.tests.authz;
 
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.ProfileAssume;
-
-import org.junit.BeforeClass;
-
-import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
 
 /**
  * @author mhajas
  */
 public abstract class AbstractAuthzTest extends AbstractKeycloakTest {
 
-    @BeforeClass
-    public static void enabled() {
-        ProfileAssume.assumeFeatureEnabled(AUTHORIZATION);
+    @InjectAdminClient
+    protected Keycloak adminClient;
+
+    @InjectOAuthClient
+    protected OAuthClient oauth;
+
+    @InjectRealm
+    protected ManagedRealm managedRealm;
+
+    @Override
+    public Keycloak getAdminClient() {
+        return adminClient;
+    }
+
+    @Override
+    public KeycloakTestingClient getTestingClient() {
+        if (testingClient == null) {
+            String realmSegment = "/realms/" + managedRealm.getName();
+            String authServerRoot = managedRealm.getBaseUrl().endsWith(realmSegment)
+                    ? managedRealm.getBaseUrl().substring(0, managedRealm.getBaseUrl().length() - realmSegment.length()) + "/auth"
+                    : managedRealm.getBaseUrl();
+            testingClient = KeycloakTestingClient.getInstance(authServerRoot);
+        }
+        return testingClient;
     }
 
     protected AccessToken toAccessToken(String rpt) {

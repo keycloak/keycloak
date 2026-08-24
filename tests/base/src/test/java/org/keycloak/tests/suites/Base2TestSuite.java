@@ -7,7 +7,8 @@ import org.junit.platform.suite.api.Suite;
 @SelectPackages({
         "org.keycloak.tests.account",
         "org.keycloak.tests.actions",
-        "org.keycloak.tests.authz",
+        "org.keycloak.tests.authz.admin.permissions",
+        "org.keycloak.tests.authz.services",
         "org.keycloak.tests.broker",
         "org.keycloak.tests.client",
         "org.keycloak.tests.common",

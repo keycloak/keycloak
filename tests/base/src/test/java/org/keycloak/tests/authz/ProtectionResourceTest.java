@@ -41,7 +41,7 @@ public class ProtectionResourceTest extends AbstractResourceServerTest {
         ResourceServerRepresentation settings = authorization.getSettings();
         settings.setAllowRemoteResourceManagement(false);
         authorization.update(settings);
-        getCleanup().addCleanup(() -> {
+        managedRealm.cleanup().add(r -> {
             settings.setAllowRemoteResourceManagement(true);
             authorization.update(settings);
         });
