@@ -27,7 +27,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
-import org.keycloak.services.clientpolicy.context.admin.ClientProtocolMapperContext;
+import org.keycloak.services.clientpolicy.context.ClientPolicyCRUDContext;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
 import org.keycloak.util.TokenUtil;
 
@@ -81,7 +81,7 @@ public class ClientUpdaterContextCondition extends AbstractClientPolicyCondition
         case REGISTER_PROTOCOL_MAPPER:
         case UPDATE_PROTOCOL_MAPPER:
         case UNREGISTER_PROTOCOL_MAPPER:
-            ClientProtocolMapperContext mapperContext = (ClientProtocolMapperContext) context;
+            ClientPolicyCRUDContext mapperContext = (ClientPolicyCRUDContext) context;
             if (isAuthMethodMatched(mapperContext.getToken(),
                     mapperContext.getAuthenticatedUser() != null || mapperContext.getAuthenticatedClient() != null)) {
                 return ClientPolicyVote.YES;

@@ -95,6 +95,31 @@ public class AdminProtocolMapperClientPolicyTest extends AbstractClientPoliciesT
     }
 
     @Test
+    public void doNotApplyClientPolicyToClientScopeProtocolMapperCrud() throws Exception {
+        ProtocolMappersResource mappers = createClientScope("scope-mapper-crud").getProtocolMappers();
+        setupRejectingPolicy();
+
+        String existingMapperId = createMapper(mappers, mapper("scope-existing-mapper", "email"));
+
+        try (Response response = mappers.createMapper(mapper("scope-created-mapper", "firstName"))) {
+            Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        }
+
+        List<ProtocolMapperRepresentation> bulk = List.of(
+                mapper("scope-bulk-one", "lastName"),
+                mapper("scope-bulk-two", "username"));
+        Assertions.assertDoesNotThrow(() -> mappers.createMapper(bulk));
+
+        ProtocolMapperRepresentation updated = mapper("scope-updated-mapper", "username");
+        updated.setId(existingMapperId);
+        Assertions.assertDoesNotThrow(() -> mappers.update(existingMapperId, updated));
+        Assertions.assertEquals("scope-updated-mapper", mappers.getMapperById(existingMapperId).getName());
+
+        Assertions.assertDoesNotThrow(() -> mappers.delete(existingMapperId));
+        assertMapperAbsent(mappers, "scope-updated-mapper");
+    }
+
+    @Test
     public void applyTargetClientProtocolConditionWithClientScopeSemantics() throws Exception {
         ProtocolMappersResource oidcMappers = createClient("target-oidc-mapper-client", OIDCLoginProtocol.LOGIN_PROTOCOL)
                 .getProtocolMappers();

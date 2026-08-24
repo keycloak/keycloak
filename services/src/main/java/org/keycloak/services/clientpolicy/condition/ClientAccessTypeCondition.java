@@ -30,7 +30,6 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.ClientModelContext;
-import org.keycloak.services.clientpolicy.context.admin.ClientProtocolMapperContext;
 
 import org.jboss.logging.Logger;
 

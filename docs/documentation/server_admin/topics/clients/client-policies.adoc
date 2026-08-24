@@ -10,6 +10,8 @@ To make it easy to secure client applications, it is beneficial to realize the f
 
 To realize these points in a unified way, _Client Policies_ concept is introduced.
 
+NOTE: Client Policies are evaluated for protocol mapper create, update, and delete operations on clients through the Admin REST API. They are not evaluated for protocol mapper operations on client scopes.
+
 == Use-cases
 
 Client Policies realize the following points mentioned as follows.

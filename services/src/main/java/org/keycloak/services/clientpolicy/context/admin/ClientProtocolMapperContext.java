@@ -24,7 +24,8 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.services.clientpolicy.ClientPolicyContext;
+import org.keycloak.services.clientpolicy.context.ClientModelContext;
+import org.keycloak.services.clientpolicy.context.ClientPolicyCRUDContext;
 
 /**
  * Context fired by {@link org.keycloak.services.resources.admin.ProtocolMappersResource} on
@@ -34,13 +35,18 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
  * {@link org.keycloak.services.clientpolicy.ClientPolicyEvent#UPDATE_PROTOCOL_MAPPER}, and
  * {@link org.keycloak.services.clientpolicy.ClientPolicyEvent#UNREGISTER_PROTOCOL_MAPPER}.
  */
-public interface ClientProtocolMapperContext extends ClientPolicyContext {
+public interface ClientProtocolMapperContext extends ClientModelContext, ClientPolicyCRUDContext {
 
     /**
      * @return the client that hosts the mapper, or {@code null} when the mapper is hosted by a client scope.
      */
     default ClientModel getTargetClient() {
         return getProtocolMapperContainer() instanceof ClientModel client ? client : null;
+    }
+
+    @Override
+    default ClientModel getClient() {
+        return getTargetClient();
     }
 
     /**

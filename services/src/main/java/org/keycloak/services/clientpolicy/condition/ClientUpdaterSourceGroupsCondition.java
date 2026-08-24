@@ -36,11 +36,11 @@ import org.keycloak.services.clientpolicy.context.AdminClientRegisteredContext;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdatedContext;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
+import org.keycloak.services.clientpolicy.context.ClientPolicyCRUDContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisteredContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdatedContext;
-import org.keycloak.services.clientpolicy.context.admin.ClientProtocolMapperContext;
 
 import org.jboss.logging.Logger;
 
@@ -102,7 +102,7 @@ public class ClientUpdaterSourceGroupsCondition extends AbstractClientPolicyCond
         case REGISTER_PROTOCOL_MAPPER:
         case UPDATE_PROTOCOL_MAPPER:
         case UNREGISTER_PROTOCOL_MAPPER:
-            return getVoteForGroupsMatched(((ClientProtocolMapperContext) context).getAuthenticatedUser());
+            return getVoteForGroupsMatched(((ClientPolicyCRUDContext) context).getAuthenticatedUser());
         default:
             return ClientPolicyVote.ABSTAIN;
         }

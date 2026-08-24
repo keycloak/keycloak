@@ -25,7 +25,6 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.ClientModelContext;
-import org.keycloak.services.clientpolicy.context.admin.ClientProtocolMapperContext;
 
 import static org.keycloak.models.Constants.DEFAULT_PROTOCOL;
 import static org.keycloak.services.clientpolicy.ClientPolicyEvent.REGISTER;
@@ -78,8 +77,6 @@ public class ClientProtocolCondition extends AbstractClientPolicyConditionProvid
                 return ClientPolicyVote.YES;
             }
             return ClientPolicyVote.NO;
-        } else if (context instanceof ClientProtocolMapperContext mapperContext) {
-            return isCorrectClientProtocol(mapperContext.getTargetClient()) ? ClientPolicyVote.YES : ClientPolicyVote.NO;
         } else if (context instanceof ClientModelContext) {
             ClientModel client = ((ClientModelContext) context).getClient();
             if (isCorrectClientProtocol(client)) {

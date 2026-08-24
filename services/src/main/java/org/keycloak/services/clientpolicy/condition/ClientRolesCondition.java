@@ -31,7 +31,6 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.ClientModelContext;
 import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext;
-import org.keycloak.services.clientpolicy.context.admin.ClientProtocolMapperContext;
 
 import org.jboss.logging.Logger;
 
@@ -78,8 +77,6 @@ public class ClientRolesCondition extends AbstractClientPolicyConditionProvider<
             ClientModel client = session.getContext().getRealm().getClientByClientId(paContext.getClientId());
             if (isRolesMatched(client)) return ClientPolicyVote.YES;
             return ClientPolicyVote.NO;
-        } else if (context instanceof ClientProtocolMapperContext mapperContext) {
-            return isRolesMatched(mapperContext.getTargetClient()) ? ClientPolicyVote.YES : ClientPolicyVote.NO;
         } else if (context instanceof ClientModelContext) {
             ClientModel client = ((ClientModelContext) context).getClient();
             if (isRolesMatched(client)) return ClientPolicyVote.YES;

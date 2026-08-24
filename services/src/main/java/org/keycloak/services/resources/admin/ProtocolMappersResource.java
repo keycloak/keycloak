@@ -36,6 +36,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ProtocolMapperContainerModel;
@@ -48,6 +49,7 @@ import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.admin.ClientProtocolMapperRegisterContext;
 import org.keycloak.services.clientpolicy.context.admin.ClientProtocolMapperRemoveContext;
@@ -143,11 +145,7 @@ public class ProtocolMappersResource {
 
         ProtocolMapperModel model = null;
         try {
-            try {
-                session.clientPolicy().triggerOnEvent(new ClientProtocolMapperRegisterContext(client, rep, auth.adminAuth()));
-            } catch (ClientPolicyException cpe) {
-                throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
-            }
+            triggerClientPolicy(new ClientProtocolMapperRegisterContext(client, rep, auth.adminAuth()));
             model = RepresentationToModel.toModel(rep);
             validateModel(model);
             model = client.addProtocolMapper(model);
@@ -174,11 +172,7 @@ public class ProtocolMappersResource {
         managePermission.require();
 
         if (!reps.isEmpty()) {
-            try {
-                session.clientPolicy().triggerOnEvent(new ClientProtocolMapperRegisterContext(client, reps, auth.adminAuth()));
-            } catch (ClientPolicyException cpe) {
-                throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
-            }
+            triggerClientPolicy(new ClientProtocolMapperRegisterContext(client, reps, auth.adminAuth()));
         }
 
         List<ProtocolMapperModel> models = reps.stream()
@@ -263,11 +257,7 @@ public class ProtocolMappersResource {
         ProtocolMapperModel existing = client.getProtocolMapperById(id);
         if (existing == null) throw new NotFoundException("Model not found");
 
-        try {
-            session.clientPolicy().triggerOnEvent(new ClientProtocolMapperUpdateContext(client, rep, existing, auth.adminAuth()));
-        } catch (ClientPolicyException cpe) {
-            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
-        }
+        triggerClientPolicy(new ClientProtocolMapperUpdateContext(client, rep, existing, auth.adminAuth()));
 
         ProtocolMapperModel model = RepresentationToModel.toModel(rep);
         validateModel(model);
@@ -291,14 +281,20 @@ public class ProtocolMappersResource {
 
         ProtocolMapperModel model = client.getProtocolMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
-        try {
-            session.clientPolicy().triggerOnEvent(new ClientProtocolMapperRemoveContext(client, model, auth.adminAuth()));
-        } catch (ClientPolicyException cpe) {
-            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
-        }
+        triggerClientPolicy(new ClientProtocolMapperRemoveContext(client, model, auth.adminAuth()));
         client.removeProtocolMapper(model);
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
 
+    }
+
+    private void triggerClientPolicy(ClientPolicyContext context) {
+        if (!(client instanceof ClientModel)) return;
+
+        try {
+            session.clientPolicy().triggerOnEvent(context);
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
     }
 
     private void validateModel(ProtocolMapperModel model) {
