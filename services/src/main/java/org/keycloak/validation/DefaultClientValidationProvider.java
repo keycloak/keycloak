@@ -49,7 +49,6 @@ import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.utils.StringUtil;
-import org.keycloak.validate.ValidationError;
 
 import org.jboss.logging.Logger;
 
@@ -89,7 +88,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
             if (!"true".equalsIgnoreCase(value) && !"false".equalsIgnoreCase(value)) {
                 context.addError(OIDCConfigAttributes.REVOKE_REFRESH_TOKEN,
                         "Revoke refresh token must be either 'true' or 'false'.",
-                        ValidationError.MESSAGE_INVALID_VALUE);
+                        Messages.REFRESH_TOKEN_REVOKE_INVALID);
             }
         }
 

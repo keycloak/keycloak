@@ -133,7 +133,7 @@ image:images/client-advanced-settings-oidc.png[Advanced Settings]
 |The value overrides the realm option <<_revoke-refresh-token,Revoke Refresh Token>> for this client. When set to *Enabled*, refresh tokens issued to this client are revoked when used, regardless of the realm setting. When set to *Disabled*, refresh tokens issued to this client can be reused, even if revocation is enabled for the realm. When not set, the realm setting is used.
 
 |Refresh Token Max Reuse
-|The value overrides the realm option with same name for this client. This option is only relevant when refresh token revocation is effective for the client, either through the *Revoke Refresh Token* client override or inherited from the realm. If not set, the realm setting is used.
+|The value overrides the realm option with the same name for this client. This option is only relevant when refresh token revocation is effective for the client, either through the *Revoke Refresh Token* client override or inherited from the realm. If not set, the realm setting is used.
 
 |===
 
