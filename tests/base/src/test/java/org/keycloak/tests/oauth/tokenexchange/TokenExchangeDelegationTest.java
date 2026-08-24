@@ -707,6 +707,7 @@ public class TokenExchangeDelegationTest {
                 .clientId("test-app")
                 .hasUserId()
                 .details(Details.USERNAME, USERNAME)
+                .details(Details.ACTOR_TYPE, Details.ACTOR_TYPE_USER)
                 .details(Details.ACTOR, administrator.getUsername())
                 .details(Details.ACTOR_ID, administrator.getId())
                 .details(Details.REQUESTED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
