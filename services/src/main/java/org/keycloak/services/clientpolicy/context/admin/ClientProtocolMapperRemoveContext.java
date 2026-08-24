@@ -22,7 +22,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.resources.admin.AdminAuth;
 
 /**
- * Fired when a protocol mapper is being removed from a client or client scope through the admin REST API.
+ * Fired when a protocol mapper is being removed from a client through the admin REST API.
  *
  * <p>Emitted from {@link org.keycloak.services.resources.admin.ProtocolMappersResource#delete}
  * before the mapper is removed.

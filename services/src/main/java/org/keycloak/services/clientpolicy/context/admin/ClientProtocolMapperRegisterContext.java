@@ -24,7 +24,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.resources.admin.AdminAuth;
 
 /**
- * Fired when protocol mappers are being created on a client or client scope through the admin REST API.
+ * Fired when protocol mappers are being created on a client through the admin REST API.
  *
  * <p>Emitted from
  * {@link org.keycloak.services.resources.admin.ProtocolMappersResource#createMapper(org.keycloak.representations.idm.ProtocolMapperRepresentation)}

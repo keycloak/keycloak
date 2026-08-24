@@ -23,7 +23,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.resources.admin.AdminAuth;
 
 /**
- * Fired when a protocol mapper is being updated on a client or client scope through the admin REST API.
+ * Fired when a protocol mapper is being updated on a client through the admin REST API.
  *
  * <p>Emitted from {@link org.keycloak.services.resources.admin.ProtocolMappersResource#update}
  * before the mapper is persisted.
