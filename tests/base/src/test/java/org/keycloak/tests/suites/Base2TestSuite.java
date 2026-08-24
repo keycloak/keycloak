@@ -9,6 +9,7 @@ import org.junit.platform.suite.api.Suite;
         "org.keycloak.tests.actions",
         "org.keycloak.tests.authz",
         "org.keycloak.tests.broker",
+        "org.keycloak.tests.cli",
         "org.keycloak.tests.client",
         "org.keycloak.tests.common",
         "org.keycloak.tests.cookies",

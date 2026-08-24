@@ -1,44 +1,38 @@
-package org.keycloak.testsuite.cli.registration;
+package org.keycloak.tests.cli.registration;
 
 import java.io.File;
 import java.io.IOException;
 
 import org.keycloak.client.cli.config.ConfigData;
 import org.keycloak.client.cli.config.FileConfigHandler;
-import org.keycloak.testsuite.cli.KcRegExec;
-import org.keycloak.testsuite.util.TempFileResource;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.cli.KcRegExec;
+import org.keycloak.tests.cli.TempFileResource;
 
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.client.cli.util.OsUtil.EOL;
 import static org.keycloak.client.registration.cli.KcRegMain.CMD;
 import static org.keycloak.client.registration.cli.KcRegMain.DEFAULT_CONFIG_FILE_PATH;
-import static org.keycloak.testsuite.cli.KcRegExec.execute;
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
+import static org.keycloak.tests.cli.KcRegExec.execute;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-public class KcRegTruststoreTest extends AbstractRegCliTest {
+@KeycloakIntegrationTest
+class KcRegTruststoreTest extends AbstractRegCliTest {
 
     @Test
-    public void testTruststore() throws IOException {
+    void testTruststore() throws IOException {
 
-        File truststore = new File("src/test/resources/keystore/keycloak.truststore");
+        File truststore = resourceFile("org/keycloak/tests/cli/keycloak.truststore");
 
         KcRegExec exe = execute("config truststore --no-config '" + truststore.getAbsolutePath() + "'");
 
         assertExitCodeAndStreamSizes(exe, 2, 0, 2);
         Assertions.assertEquals("Unsupported option: --no-config", exe.stderrLines().get(0), "stderr first line");
         Assertions.assertEquals("Try '" + CMD + " config truststore --help' for more information on the available options.", exe.stderrLines().get(1), "try help");
-
-        // only run the rest of this test if ssl protected keycloak server is available
-        if (!AUTH_SERVER_SSL_REQUIRED) {
-            System.out.println("TEST SKIPPED - This test requires HTTPS. Run with '-Pauth-server-quarkus -Dauth.server.ssl.required=true'");
-            return;
-        }
 
         initCustomConfigFile();
 
@@ -53,7 +47,7 @@ public class KcRegTruststoreTest extends AbstractRegCliTest {
 
                 // perform authentication against server - asks for password, then for truststore password
                 exe = KcRegExec.newBuilder()
-                        .argsLine("config credentials --server " + OAuthClient.AUTH_SERVER_ROOT + " --realm test --user user1" +
+                        .argsLine("config credentials --server " + keycloakUrls.getBase() + " --realm test --user user1" +
                                 " --config '" + configFile.getName() + "'")
                         .executeAsync();
 
@@ -73,7 +67,7 @@ public class KcRegTruststoreTest extends AbstractRegCliTest {
 
                 // perform authentication against server - asks for password, then for truststore password
                 exe = KcRegExec.newBuilder()
-                        .argsLine("config credentials --server " + OAuthClient.AUTH_SERVER_ROOT + " --realm test --user user1" +
+                        .argsLine("config credentials --server " + keycloakUrls.getBase() + " --realm test --user user1" +
                                 " --config '" + configFile.getName() + "'")
                         .executeAsync();
 
@@ -124,7 +118,7 @@ public class KcRegTruststoreTest extends AbstractRegCliTest {
 
 
     @Test
-    public void testUpdateTokenTruststore() {
+    void testUpdateTokenTruststore() {
         // TODO
     }
 }

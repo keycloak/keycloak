@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.cli.exec;
+package org.keycloak.tests.cli.exec;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -13,18 +13,26 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import org.keycloak.client.cli.util.OsArch;
 import org.keycloak.client.cli.util.OsUtil;
-import org.keycloak.testsuite.cli.OsArch;
-import org.keycloak.testsuite.cli.OsUtils;
+import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.testframework.config.Config;
+import org.keycloak.testframework.crypto.CryptoHelper;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 public abstract class AbstractExec {
 
+    /**
+     * System property that overrides the location of the client tools. The FIPS test suites point this at a copy of
+     * the tools that includes the BouncyCastle FIPS provider (see AbstractCliTest#useFipsClientTools).
+     */
+    public static final String CLI_TOOLS_DIR_PROPERTY = "kc.test.cli.tools.dir";
+
     public static final String WORK_DIR = System.getProperty("user.dir");
 
-    public static final OsArch OS_ARCH = OsUtils.determineOSAndArch();
+    public static final OsArch OS_ARCH = OsUtil.determineOSAndArch();
 
     private long waitTimeout = 30000;
 
@@ -254,7 +262,13 @@ public abstract class AbstractExec {
         sendToStdin(s + OsUtil.EOL);
     }
 
-
+    /**
+     * Whether the test framework is configured to run in FIPS mode. When enabled, the client tools log additional
+     * BouncyCastle FIPS provider information, which needs to be accounted for when asserting stderr output.
+     */
+    public static boolean isFips() {
+        return Config.getValueTypeConfig(CryptoHelper.class, "fips", FipsMode.DISABLED.name(), FipsMode.class) != FipsMode.DISABLED;
+    }
 
     static void copyStream(InputStream is, OutputStream os) throws IOException {
         byte [] buf = new byte[8192];

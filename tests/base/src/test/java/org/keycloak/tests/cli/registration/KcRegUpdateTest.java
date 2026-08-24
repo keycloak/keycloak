@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.cli.registration;
+package org.keycloak.tests.cli.registration;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -6,24 +6,26 @@ import java.util.Arrays;
 
 import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.testsuite.cli.KcRegExec;
-import org.keycloak.testsuite.util.TempFileResource;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.cli.KcRegExec;
+import org.keycloak.tests.cli.TempFileResource;
 import org.keycloak.util.JsonSerialization;
 
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.client.registration.cli.KcRegMain.CMD;
-import static org.keycloak.testsuite.cli.KcRegExec.execute;
+import static org.keycloak.tests.cli.KcRegExec.execute;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-public class KcRegUpdateTest extends AbstractRegCliTest {
+@KeycloakIntegrationTest
+class KcRegUpdateTest extends AbstractRegCliTest {
 
 
     @Test
-    public void testUpdateThoroughly() throws IOException {
+    void testUpdateThoroughly() throws IOException {
 
         FileConfigHandler handler = initCustomConfigFile();
 

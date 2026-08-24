@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.cli.registration;
+package org.keycloak.tests.cli.registration;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,44 +11,35 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.client.cli.config.ConfigData;
 import org.keycloak.client.cli.config.FileConfigHandler;
-import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
-import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
-import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
-import org.keycloak.testsuite.cli.KcRegExec;
-import org.keycloak.testsuite.util.TempFileResource;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.cli.KcRegExec;
+import org.keycloak.tests.cli.TempFileResource;
+import org.keycloak.tests.cli.exec.AbstractExec;
 import org.keycloak.util.JsonSerialization;
 
 import org.hamcrest.Matchers;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.cli.KcRegExec.execute;
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
+import static org.keycloak.tests.cli.KcRegExec.execute;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
+@KeycloakIntegrationTest
 public class KcRegCreateTest extends AbstractRegCliTest {
 
-    @Before
-    public void assumeTLSEnabled() {
-        Assume.assumeTrue(AUTH_SERVER_SSL_REQUIRED);
-    }
-
     @Test
-    public void testCreateWithRealmOverride() throws IOException {
+    void testCreateWithRealmOverride() throws IOException {
 
         FileConfigHandler handler = initCustomConfigFile();
 
@@ -56,13 +47,13 @@ public class KcRegCreateTest extends AbstractRegCliTest {
 
             // authenticate as a regular user against one realm
             KcRegExec exe = execute("config credentials -x --config '" + configFile.getName() +
-                    "' --insecure --server " + oauth.AUTH_SERVER_ROOT + " --realm master --user admin --password admin");
+                    "' --insecure --server " + keycloakUrls.getBase() + " --realm master --user admin --password admin");
 
             assertExitCodeAndStreamSizes(exe, 0, 0, 3);
 
             // use initial token of another realm with server, and realm override
             String token = issueInitialAccessToken("test");
-            exe = execute("create --config '" + configFile.getName() + "' --insecure --server " + oauth.AUTH_SERVER_ROOT + " --realm test -s clientId=my_first_client -t " + token);
+            exe = execute("create --config '" + configFile.getName() + "' --insecure --server " + keycloakUrls.getBase() + " --realm test -s clientId=my_first_client -t " + token);
 
             assertExitCodeAndStreamSizes(exe, 0, 0, 3);
         }
@@ -70,7 +61,7 @@ public class KcRegCreateTest extends AbstractRegCliTest {
 
 
     @Test
-    public void testCreateThoroughly() throws IOException {
+    void testCreateThoroughly() throws IOException {
 
         FileConfigHandler handler = initCustomConfigFile();
 
@@ -81,15 +72,15 @@ public class KcRegCreateTest extends AbstractRegCliTest {
             final String realm = "test";
 
             KcRegExec exe = execute("config initial-token -x --config '" + configFile.getName() +
-                    "' --insecure --server " + oauth.AUTH_SERVER_ROOT + " --realm " + realm + " " + token);
+                    "' --insecure --server " + keycloakUrls.getBase() + " --realm " + realm + " " + token);
 
             assertExitCodeAndStreamSizes(exe, 0, 0, 0);
 
             // check that current server, realm, and initial token are saved in the file
             ConfigData config = handler.loadConfig();
-            Assertions.assertEquals(oauth.AUTH_SERVER_ROOT, config.getServerUrl(), "Config serverUrl");
+            Assertions.assertEquals(keycloakUrls.getBase(), config.getServerUrl(), "Config serverUrl");
             Assertions.assertEquals(realm, config.getRealm(), "Config realm");
-            Assertions.assertEquals(token, config.ensureRealmConfigData(oauth.AUTH_SERVER_ROOT, realm).getInitialToken(), "Config initial access token");
+            Assertions.assertEquals(token, config.ensureRealmConfigData(keycloakUrls.getBase(), realm).getInitialToken(), "Config initial access token");
 
             // create configuration from file using stdin redirect ... output an object
             String content = "{\n" +
@@ -216,10 +207,10 @@ public class KcRegCreateTest extends AbstractRegCliTest {
             }
 
             // TODO: SAML is not tested with FIPS enabled as it does not work. This needs to be revisited when SAML works with FIPS
-            if (AuthServerTestEnricher.AUTH_SERVER_FIPS_MODE == FipsMode.DISABLED) {
+            if (!AbstractExec.isFips()) {
 
                 // test create saml formated xml - format autodetection
-                File samlSpMetaFile = new File(System.getProperty("user.dir") + "/src/test/resources/cli/kcreg/saml-sp-metadata.xml");
+                File samlSpMetaFile = resourceFile("org/keycloak/tests/cli/kcreg/saml-sp-metadata.xml");
                 Assertions.assertTrue(samlSpMetaFile.isFile(), "saml-sp-metadata.xml exists");
 
                 exe = execute("create --insecure --config '" + configFile.getName() + "' -o -f - < '" + samlSpMetaFile.getAbsolutePath() + "'");
@@ -245,19 +236,17 @@ public class KcRegCreateTest extends AbstractRegCliTest {
     }
 
     @Test
-    public void testCreateWithAuthorizationServices() throws IOException {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
-
+    void testCreateWithAuthorizationServices() throws IOException {
         FileConfigHandler handler = initCustomConfigFile();
 
         try (TempFileResource configFile = new TempFileResource(handler.getConfigFile())) {
 
             KcRegExec exe = execute("config credentials -x --config '" + configFile.getName() +
-                    "' --insecure --server " + oauth.AUTH_SERVER_ROOT + " --realm master --user admin --password admin");
+                    "' --insecure --server " + keycloakUrls.getBase() + " --realm master --user admin --password admin");
             assertExitCodeAndStreamSizes(exe, 0, 0, 3);
 
             String token = issueInitialAccessToken("test");
-            exe = execute("create --config '" + configFile.getName() + "' --insecure --server " + oauth.AUTH_SERVER_ROOT + " --realm test -s clientId=authz-client -s authorizationServicesEnabled=true -t " + token);
+            exe = execute("create --config '" + configFile.getName() + "' --insecure --server " + keycloakUrls.getBase() + " --realm test -s clientId=authz-client -s authorizationServicesEnabled=true -t " + token);
             assertExitCodeAndStreamSizes(exe, 0, 0, 3);
 
             RealmResource realm = adminClient.realm("test");

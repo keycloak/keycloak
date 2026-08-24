@@ -1,25 +1,27 @@
-package org.keycloak.testsuite.cli.registration;
+package org.keycloak.tests.cli.registration;
 
 import java.io.IOException;
 
 import org.keycloak.client.cli.config.FileConfigHandler;
-import org.keycloak.testsuite.cli.KcRegExec;
-import org.keycloak.testsuite.util.TempFileResource;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.cli.KcRegExec;
+import org.keycloak.tests.cli.TempFileResource;
 
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.client.cli.util.OsUtil.EOL;
 import static org.keycloak.client.registration.cli.KcRegMain.CMD;
-import static org.keycloak.testsuite.cli.KcRegExec.execute;
+import static org.keycloak.tests.cli.KcRegExec.execute;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-public class KcRegConfigTest extends AbstractRegCliTest {
+@KeycloakIntegrationTest
+class KcRegConfigTest extends AbstractRegCliTest {
 
     @Test
-    public void testRegistrationToken() throws IOException {
+    void testRegistrationToken() throws IOException {
 
         initCustomConfigFile();
 
@@ -73,7 +75,7 @@ public class KcRegConfigTest extends AbstractRegCliTest {
     }
 
     @Test
-    public void testNoConfigOption() throws IOException {
+    void testNoConfigOption() throws IOException {
 
         KcRegExec exe = execute("config registration-token --no-config --server http://localhost:8080/auth --realm test --client my_client --delete");
         assertExitCodeAndStreamSizes(exe, 2, 0, 2);

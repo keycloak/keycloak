@@ -7,10 +7,6 @@ LDAPUserLoginTest
 org.keycloak.testsuite.x509.**
 FAPI1Test
 FAPICIBATest
-KcRegTest
-KcRegCreateTest
-KcAdmTest
-KcAdmCreateTest
 SAMLServletAdapterTest
 SamlSignatureTest
 KcOidcBrokerJWEEcdhEsA128KwP256A128CbcHs256Test

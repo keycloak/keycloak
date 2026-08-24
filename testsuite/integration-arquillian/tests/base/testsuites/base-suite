@@ -3,7 +3,6 @@ actions,1
 adapter,IGNORED
 authz,3
 broker,2
-cli,4
 client,4
 cluster,IGNORED
 composites,4
