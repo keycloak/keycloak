@@ -215,11 +215,22 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
 
     /**
      * @return the client-level override of the realm setting "Revoke Refresh Token", or {@code null} if the client
-     * inherits the realm setting
+     * inherits the realm setting (also when the attribute value is neither "true" nor "false", ignoring case)
      */
     public Boolean getRevokeRefreshToken() {
         String value = getAttribute(OIDCConfigAttributes.REVOKE_REFRESH_TOKEN);
-        return StringUtil.isBlank(value) ? null : Boolean.parseBoolean(value.trim());
+        if (StringUtil.isBlank(value)) {
+            return null;
+        }
+        value = value.trim();
+        if ("true".equalsIgnoreCase(value)) {
+            return Boolean.TRUE;
+        }
+        if ("false".equalsIgnoreCase(value)) {
+            return Boolean.FALSE;
+        }
+        // Malformed values (e.g. from imports) must not silently disable revocation, so inherit the realm setting
+        return null;
     }
 
     /**
