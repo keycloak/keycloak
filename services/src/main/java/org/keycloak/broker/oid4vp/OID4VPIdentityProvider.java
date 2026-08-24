@@ -86,10 +86,13 @@ public class OID4VPIdentityProvider extends AbstractIdentityProvider<OID4VPIdent
     // object and the presentation.
     public static final String CONTEXT_PREFIX = "oid4vp.context.";
     // The deferred object is written once the presentation is verified and read when the browser
-    // returns to complete-auth. It marks that a verified identity, serialized under IDENTITY_NOTE in
-    // the authentication session, is waiting to finish the broker login.
+    // returns to complete-auth. It marks that verified credential claims, stored under
+    // VERIFIED_CLAIMS_NOTE in the authentication session, are waiting to finish the broker login.
     public static final String DEFERRED_PREFIX = "oid4vp.deferred.";
-    public static final String IDENTITY_NOTE = "OID4VP_IDENTITY";
+    public static final String VERIFIED_CLAIMS_NOTE = "OID4VP_VERIFIED_CLAIMS";
+    // Key in BrokeredIdentityContext#getContextData() holding the disclosed claims of the verified
+    // credential presentation, consumed by the OID4VP identity provider mappers.
+    public static final String CREDENTIAL_CLAIMS = "OID4VP_CREDENTIAL_CLAIMS";
     public static final String KEY_ROOT_SESSION_ID = "rootSessionId";
     public static final String KEY_TAB_ID = "tabId";
     public static final String KEY_STATE = "state";
