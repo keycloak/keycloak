@@ -36,10 +36,6 @@ export const OrganizationModal = ({
   const { t } = useTranslation();
 
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
-  const [organizations, setOrganizations] = useState<
-    OrganizationRepresentation[]
-  >([]);
-  const [search, setSearch] = useState("");
 
   const loader = async (first?: number, max?: number, search?: string) => {
     const params = {
@@ -49,10 +45,8 @@ export const OrganizationModal = ({
     };
 
     const orgs = await adminClient.organizations.find(params);
-    const diff = differenceBy(orgs, existingOrgs, "id");
-    setSearch(search || "");
-    setOrganizations(diff);
-    return diff;
+
+    return differenceBy(orgs, existingOrgs, "id");
   };
 
   return (
@@ -104,18 +98,16 @@ export const OrganizationModal = ({
           },
         ]}
         isRadio={isRadio}
-      />
-      {
-        organizations.length === 0 && search === "" && (
+        emptyState={
           <ListEmptyState
             hasIcon={false}
             message={t("emptyOrganizations")}
             instructions={t("emptyOrganizationsInstructions")}
-          />
-        ) /* This component doesn't ever get rendered on the user join org screen if there are
+          /> /* This component doesn't ever get rendered on the user join org screen if there are
         no organizations so this doesn't actually change any functionality there.
         Empty message when searching already handled within KeycloakDataTable. */
-      }
+        }
+      />
     </Modal>
   );
 };
