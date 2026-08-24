@@ -57,6 +57,7 @@ import liquibase.precondition.core.IndexExistsPrecondition;
 import liquibase.precondition.core.NotPrecondition;
 import liquibase.precondition.core.OrPrecondition;
 import liquibase.precondition.core.TableExistsPrecondition;
+import liquibase.sqlgenerator.SqlGeneratorFactory;
 import org.jboss.logging.Logger;
 
 /**
@@ -96,6 +97,11 @@ public class DatabaseIndexChecker implements Runnable {
 
     public List<String> getMissingIndexesName() {
         return getMissingIndexes().stream().map(IndexInfo::indexName).toList();
+    }
+
+    public Map<String, String> getMissingIndexesSql() {
+        return getMissingIndexes().stream()
+                .collect(Collectors.toMap(IndexInfo::indexName, IndexInfo::sql));
     }
 
     private List<IndexInfo> getMissingIndexes() {
@@ -144,8 +150,18 @@ public class DatabaseIndexChecker implements Runnable {
                         var statement = cic instanceof CustomCreateIndexChange ?
                                 ((CustomCreateIndexChange) cic).generateOriginalStatement(database) :
                                 cic.generateStatements(database);
+                        var sqlVisitors = change.getChangeSet().getSqlVisitors();
                         var sql = Arrays.stream(statement)
-                                .map(sqlStatement -> sqlStatement.getFormattedStatement(database))
+                                .flatMap(s -> Arrays.stream(SqlGeneratorFactory.getInstance().generateSql(s, database)))
+                                .map(generatedSql -> {
+                                    var sqlStr = generatedSql.toSql();
+                                    for (var visitor : sqlVisitors) {
+                                        if (DatabaseList.definitionMatches(visitor.getApplicableDbms(), database, true)) {
+                                            sqlStr = visitor.modifySql(sqlStr, database);
+                                        }
+                                    }
+                                    return sqlStr;
+                                })
                                 .collect(Collectors.joining("; "));
                         var info = new IndexInfo(cic.getTableName(), cic.getIndexName(), sql);
                         expectedIndexes.put(cic.getIndexName().toUpperCase(), info);
