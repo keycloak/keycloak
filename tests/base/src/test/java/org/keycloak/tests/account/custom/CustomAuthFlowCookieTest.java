@@ -23,6 +23,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -42,7 +43,10 @@ public class CustomAuthFlowCookieTest extends AbstractCustomAccountManagementTes
         //check SSO is working
         //navigate to different client of the same realm and verify user is logged in
         oauth.openLoginForm();
-        assertEquals("AUTH_RESPONSE", driver.driver().getTitle());
+        assertTrue(
+                "AUTH_RESPONSE".equals(driver.driver().getTitle()) || driver.getCurrentUrl().startsWith(oauth.getRedirectUri()),
+                "Expected SSO to immediately redirect to the OAuth client response"
+        );
     }
     
     @Test

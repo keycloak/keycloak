@@ -41,6 +41,8 @@ import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.NameValuePair;
@@ -63,7 +65,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author <a href="mailto:ssilvert@redhat.com">Stan Silvert</a>
  */
 @TestMethodOrder(MethodOrderer.MethodName.class)
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = LinkedAccountsRestServiceTest.LinkedAccountsServerConfig.class)
 public class LinkedAccountsRestServiceTest {
 
     @InjectRealm(config = LinkedAccountsRestServiceRealmConfig.class)
@@ -377,6 +379,15 @@ public class LinkedAccountsRestServiceTest {
             });
 
             return realm;
+        }
+    }
+
+    public static class LinkedAccountsServerConfig implements KeycloakServerConfig {
+
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder builder) {
+            // Keep legacy behavior covered for this deprecated endpoint test.
+            return builder.spiOption("login-protocol", "openid-connect", "allow-client-initiated-account-linking", Boolean.TRUE.toString());
         }
     }
 }

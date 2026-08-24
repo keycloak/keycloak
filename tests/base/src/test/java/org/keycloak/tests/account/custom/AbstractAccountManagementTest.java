@@ -96,8 +96,7 @@ public abstract class AbstractAccountManagementTest {
                     .username("test")
                     .email("test@email.test")
                     .name("test", "user")
-                    .password(PASSWORD)
-                    .clientRoles("realm-management", "view-realm");
+                    .password(PASSWORD);
         }
     }
 }
