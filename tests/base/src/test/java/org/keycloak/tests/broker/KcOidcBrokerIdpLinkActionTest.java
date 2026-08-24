@@ -588,8 +588,11 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
     }
 
     private void allowClientInitiatedAccountLinking(boolean allow) {
-        runOnServerMaster.run(RunHelpers.setSystemPropertyOnServer("oidc.allow-client-initiated-account-linking", String.valueOf(allow)));
-        runOnServerMaster.run(RunHelpers.reinitializeProviderFactoryWithSystemPropertiesScope(LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc."));
+        var runOnServerMaster = testingClient.server("master");
+        runOnServerMaster.run(RunHelpers.setSystemPropertyOnServer(
+                "oidc.allow-client-initiated-account-linking", String.valueOf(allow)));
+        runOnServerMaster.run(RunHelpers.reinitializeProviderFactoryWithSystemPropertiesScope(
+                LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc."));
     }
 
 }
