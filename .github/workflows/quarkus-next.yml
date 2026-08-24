@@ -19,7 +19,7 @@ permissions:
 
 env:
   # Quarkus branch to build snapshots from. Update when quarkus-next should track a different release stream.
-  QUARKUS_BRANCH: 3.x
+  QUARKUS_BRANCH: 3.39
 
 jobs:
   build-quarkus-snapshot:

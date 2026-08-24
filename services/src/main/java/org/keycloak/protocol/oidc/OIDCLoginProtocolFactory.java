@@ -46,6 +46,9 @@ import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.protocol.oidc.mappers.AllowedWebOriginsProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.AudienceResolveProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.FullNameMapper;
+import org.keycloak.protocol.oidc.mappers.ParameterizedScopeAudienceMapper;
+import org.keycloak.protocol.oidc.mappers.ParameterizedScopeClientSubMapper;
+import org.keycloak.protocol.oidc.mappers.ParameterizedScopeMapper;
 import org.keycloak.protocol.oidc.mappers.ParameterizedScopeUserPropertyMapper;
 import org.keycloak.protocol.oidc.mappers.SubMapper;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
@@ -53,6 +56,7 @@ import org.keycloak.protocol.oidc.mappers.UserClientRoleMappingMapper;
 import org.keycloak.protocol.oidc.mappers.UserPropertyMapper;
 import org.keycloak.protocol.oidc.mappers.UserRealmRoleMappingMapper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
+import org.keycloak.protocol.oidc.scope.ClientDelegationScopeType;
 import org.keycloak.protocol.oidc.scope.DelegationScopeType;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -112,6 +116,9 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String ALLOWED_WEB_ORIGINS = "allowed web origins";
     public static final String ACR = "acr loa level";
     public static final String DELEGATION_MAY_ACT_SUB = "may_act sub";
+    public static final String CLIENT_DELEGATION_MAY_ACT_SUB = "client may_act sub";
+    public static final String CLIENT_DELEGATION_MAY_ACT_CLIENT_ID = "client may_act client_id";
+    public static final String CLIENT_DELEGATION_AUDIENCE = "client delegation audience";
     public static final String ORGANIZATION = "organization";
     // microprofile-jwt claims
     public static final String UPN = "upn";
@@ -123,6 +130,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String ACR_SCOPE = "acr";
     public static final String BASIC_SCOPE = "basic";
     public static final String DELEGATION_SCOPE = "delegation";
+    public static final String CLIENT_DELEGATION_SCOPE = "delegation:client";
 
     public static final String PROFILE_SCOPE_CONSENT_TEXT = "${profileScopeConsentText}";
     public static final String EMAIL_SCOPE_CONSENT_TEXT = "${emailScopeConsentText}";
@@ -150,6 +158,11 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
     public static final String CONFIG_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN = "allow-userinfo-with-lightweight-access-token";
 
+    /**
+     * @deprecated To be removed in Keycloak 27
+     */
+    public static final String CONFIG_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING = "allow-client-initiated-account-linking";
+
     private OIDCProviderConfig providerConfig;
 
     @Override
@@ -172,6 +185,12 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                     "Lightweight tokens should use token introspection instead. " +
                     "Enable per-client settings and disable this option: %s=false",
                     CONFIG_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN);
+        }
+
+        if (this.providerConfig.isAllowClientInitiatedAccountLinking()) {
+            logger.warnf("Legacy client-initiated account linking endpoint is enabled. This endpoint is deprecated" +
+                    "Migrate to Application Initiated Actions (AIA) with kc_action=idp_link and disable this option: %s=false",
+                    CONFIG_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING);
         }
 
         initBuiltIns();
@@ -279,6 +298,18 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             model = ParameterizedScopeUserPropertyMapper.create(
                     DELEGATION_MAY_ACT_SUB, "id", MAY_ACT + "." + SUBJECT, "String", true, true, true);
             builtins.put(DELEGATION_MAY_ACT_SUB, model);
+
+            model = ParameterizedScopeClientSubMapper.create(
+                    CLIENT_DELEGATION_MAY_ACT_SUB, MAY_ACT + "." + SUBJECT, "String", true, true, true);
+            builtins.put(CLIENT_DELEGATION_MAY_ACT_SUB, model);
+
+            model = ParameterizedScopeMapper.create(
+                    CLIENT_DELEGATION_MAY_ACT_CLIENT_ID, MAY_ACT + ".client_id", "String", true, true, true);
+            builtins.put(CLIENT_DELEGATION_MAY_ACT_CLIENT_ID, model);
+
+            model = ParameterizedScopeAudienceMapper.createClaimMapper(
+                    CLIENT_DELEGATION_AUDIENCE, true, false, true);
+            builtins.put(CLIENT_DELEGATION_AUDIENCE, model);
         }
 
         model = UserSessionNoteMapper.createClaimMapper(IDToken.AUTH_TIME, AuthenticationManager.AUTH_TIME,
@@ -391,6 +422,20 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             delegationScope.setProtocol(getId());
             delegationScope.setConsentScreenText("${delegationScopeConsentText}");
             delegationScope.addProtocolMapper(builtins.get(DELEGATION_MAY_ACT_SUB));
+
+            ClientScopeModel clientDelegationScope = newRealm.addClientScope(CLIENT_DELEGATION_SCOPE);
+            clientDelegationScope.setDescription("OpenID Connect scope for agent/client token exchange delegation");
+            clientDelegationScope.setIsParameterizedScope(true);
+            clientDelegationScope.setDisplayOnConsentScreen(true);
+            clientDelegationScope.setAttribute(ClientScopeModel.IS_ALWAYS_CONSENT, Boolean.TRUE.toString());
+            clientDelegationScope.setAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, ClientDelegationScopeType.TYPE);
+            clientDelegationScope.setIncludeInTokenScope(true);
+            clientDelegationScope.setProtocol(getId());
+            clientDelegationScope.setConsentScreenText("${clientDelegationScopeConsentText}");
+            clientDelegationScope.addProtocolMapper(builtins.get(CLIENT_DELEGATION_MAY_ACT_SUB));
+            clientDelegationScope.addProtocolMapper(builtins.get(CLIENT_DELEGATION_MAY_ACT_CLIENT_ID));
+            clientDelegationScope.addProtocolMapper(builtins.get(CLIENT_DELEGATION_AUDIENCE));
+            newRealm.addDefaultClientScope(clientDelegationScope, false);
         }
     }
 
@@ -681,6 +726,12 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                     .type("boolean")
                     .helpText("Allows lightweight access tokens to be used with the UserInfo endpoint. This option is deprecated and will be removed in some future release.")
                     .defaultValue(OIDCProviderConfig.DEFAULT_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN)
+                    .add()
+                .property()
+                    .name(CONFIG_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING)
+                    .type("boolean")
+                    .helpText("Allows the deprecated client-initiated account linking endpoint (/broker/{provider}/link). This endpoint will be removed in a future release. Use AIA with kc_action=idp_link instead.")
+                    .defaultValue(OIDCProviderConfig.DEFAULT_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING)
                     .add()
                 .build();
     }

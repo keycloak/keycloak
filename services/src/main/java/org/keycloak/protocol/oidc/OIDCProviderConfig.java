@@ -110,6 +110,10 @@ public class OIDCProviderConfig {
 
     private final boolean allowUserinfoWithLightweightAccessToken;
 
+    public static final boolean DEFAULT_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING = false;
+
+    private final boolean allowClientInitiatedAccountLinking;
+
     public OIDCProviderConfig(Config.Scope config) {
         this.config = config;
 
@@ -124,6 +128,7 @@ public class OIDCProviderConfig {
         this.allowMultipleAudiencesForJwtClientAuthentication = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_OIDC_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION, DEFAULT_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION);
         this.allowTokenIntrospectionWithoutAudienceCheck = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK, DEFAULT_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK);
         this.allowUserinfoWithLightweightAccessToken = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, DEFAULT_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN);
+        this.allowClientInitiatedAccountLinking = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING, DEFAULT_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING);
     }
 
     public int getAdditionalReqParamsMaxNumber() {
@@ -152,6 +157,10 @@ public class OIDCProviderConfig {
 
     public boolean isAllowUserinfoWithLightweightAccessToken() {
         return allowUserinfoWithLightweightAccessToken;
+    }
+
+    public boolean isAllowClientInitiatedAccountLinking() {
+        return allowClientInitiatedAccountLinking;
     }
 
     /**

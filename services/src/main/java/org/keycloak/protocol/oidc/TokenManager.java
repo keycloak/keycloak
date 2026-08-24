@@ -1538,6 +1538,7 @@ public class TokenManager {
         final String tokenType = Optional.ofNullable(accessToken).map(AccessToken::getType)
                                                                  .orElse(TokenUtil.TOKEN_TYPE_BEARER);
         if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseLowerCaseInTokenResponse()) {
+            logger.warnf("Using deprecated switch 'Use lower-case bearer type in token responses'. The switch might be removed in future Keycloak versions. Please update your application to handle correctly type 'Bearer' instead of 'bearer'.");
             return tokenType.toLowerCase();
         }
         return tokenType;
@@ -1576,10 +1577,8 @@ public class TokenManager {
                 int notBeforeClient = clientModel.getNotBefore();
                 int notBeforeRealm = clientModel.getRealm().getNotBefore();
 
-                int notBefore = (notBeforeClient == 0 ? notBeforeRealm : (notBeforeRealm == 0 ? notBeforeClient :
-                        Math.min(notBeforeClient, notBeforeRealm)));
-
-                return new NotBeforeCheck(notBefore);
+                // A token must be issued after both the realm and the client notBefore revocation timestamps, 0 means "not set".
+                return new NotBeforeCheck(Math.max(notBeforeClient, notBeforeRealm));
             }
 
             return new NotBeforeCheck(0);

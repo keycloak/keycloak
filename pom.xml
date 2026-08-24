@@ -40,8 +40,8 @@
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
-        <quarkus.version>3.38.1</quarkus.version>
-        <quarkus.build.version>3.38.1</quarkus.build.version>
+        <quarkus.version>3.39.0.CR1</quarkus.version>
+        <quarkus.build.version>3.39.0.CR1</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
@@ -126,7 +126,7 @@
         <!-- Others -->
         <apacheds.version>2.0.0.AM27</apacheds.version>
         <apacheds.codec.version>2.1.8</apacheds.codec.version>
-        <kerby.version>2.1.0</kerby.version>
+        <kerby.version>2.1.2</kerby.version>
         <google.zxing.version>3.4.0</google.zxing.version>
         <freemarker.version>2.3.32</freemarker.version>
         <sundrio.version>0.200.0</sundrio.version>
@@ -157,7 +157,7 @@
         <postgresql-jdbc.version>42.7.13</postgresql-jdbc.version>
         <mariadb.version>11.8</mariadb.version>
         <mariadb.container>mirror.gcr.io/mariadb:${mariadb.version}</mariadb.container>
-        <mariadb-jdbc.version>3.5.9</mariadb-jdbc.version>
+        <mariadb-jdbc.version>3.5.10</mariadb-jdbc.version>
         <mssql.version>2022</mssql.version>
         <mssql.container>mcr.microsoft.com/mssql/server:${mssql.version}-latest</mssql.container>
         <mssql.collation>Latin1_General_100_CI_AS_SC_UTF8</mssql.collation>
@@ -714,6 +714,12 @@
                 <version>${apacheds.codec.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <!-- Override mina-core version from api-parent BOM to fix CVE-2026-47065 -->
+            <dependency>
+                <groupId>org.apache.mina</groupId>
+                <artifactId>mina-core</artifactId>
+                <version>2.2.9</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.jmeter</groupId>

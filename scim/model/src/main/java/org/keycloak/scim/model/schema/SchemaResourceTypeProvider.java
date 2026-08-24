@@ -72,12 +72,8 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                 continue;
             }
 
-            String parentName = attribute.getParentName();
-
-            if (!modelSchema.isCore()) {
-                // extensions attributes should be set in a top-level attribute with the schema name as the name
-                parentName = attribute.getSchema();
-            }
+            // extensions attributes should be set in a top-level attribute with the schema name as the name
+            String parentName = modelSchema.isCore() ? attribute.getParentName() : attribute.getSchema();
 
             if (parentName != null && !parentName.equals(name)) {
                 // This is a sub-attribute — strip the parent prefix to get the relative path
@@ -88,15 +84,22 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                     String topName = relativeName.substring(0, relativeName.indexOf('.'));
                     String subName = relativeName.substring(relativeName.indexOf('.') + 1);
 
-                    Attribute parent = topLevelAttributes.computeIfAbsent(topName, k -> {
+                    String cacheKey = modelSchema.isCore() ? topName : parentName + ":" + topName;
+
+                    Attribute parent = topLevelAttributes.computeIfAbsent(cacheKey, k -> {
                         Attribute p = new Attribute();
-                        p.setName(k);
+                        p.setName(topName);
                         p.setType("complex");
-                        p.setMultiValued(false);
+                        p.setMultiValued(attribute.isMultivalued());
                         p.setMutability("readWrite");
                         p.setCaseExact(false);
                         p.setRequired(false);
                         p.setUniqueness("none");
+
+                        if (!modelSchema.isCore()) {
+                            addToExtensionSchema(parentName, p);
+                        }
+
                         return p;
                     });
 
@@ -145,8 +148,12 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                     }
                     subAttributes.add(subAttr);
                 } else {
-                    // Extension schema simple sub-attribute (e.g., "enterpriseUser.employeeNumber" → "employeeNumber")
-                    topLevelAttributes.computeIfAbsent(relativeName, createExtensionAttribute(modelSchema, parentName, attribute));
+                    String cacheKey = parentName + ":" + relativeName;
+                    topLevelAttributes.computeIfAbsent(cacheKey, k -> {
+                        Attribute attr = createTopLevelAttribute(attribute, relativeName);
+                        addToExtensionSchema(parentName, attr);
+                        return attr;
+                    });
                 }
             } else {
                 // Top-level attribute — only add if not already created as a parent
@@ -163,26 +170,14 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
         }
     }
 
-    private Function<String, Attribute> createExtensionAttribute(ModelSchema<?, ?> modelSchema, String schemaName, org.keycloak.scim.resource.schema.attribute.Attribute<?, ?> attribute) {
-        return k -> {
-            Attribute attr = createTopLevelAttribute(attribute, k);
-
-            if (modelSchema.isCore()) {
-                return attr;
-            }
-
-            schemas.computeIfAbsent(schemaName, n -> {
-                Schema schema = new Schema();
-
-                schema.setName(n);
-                schema.setId(n);
-                schema.setAttributes(new ArrayList<>());
-
-                return schema;
-            }).getAttributes().add(attr);
-
-            return attr;
-        };
+    private void addToExtensionSchema(String schemaName, Attribute attr) {
+        schemas.computeIfAbsent(schemaName, n -> {
+            Schema schema = new Schema();
+            schema.setName(n);
+            schema.setId(n);
+            schema.setAttributes(new ArrayList<>());
+            return schema;
+        }).getAttributes().add(attr);
     }
 
     private Attribute createTopLevelAttribute(org.keycloak.scim.resource.schema.attribute.Attribute<?, ?> attribute, String name) {
