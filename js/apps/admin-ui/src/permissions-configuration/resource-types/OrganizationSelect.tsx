@@ -55,14 +55,16 @@ export const OrganizationSelect = ({
       if (values.length > 0) {
         return Promise.all(
           (values as string[]).map((id) =>
-            adminClient.organizations.findOne({ id }, { catchNotFound: true }),
+            adminClient.organizations.findOne({ id }),
           ),
         );
       }
       return Promise.resolve([]);
     },
     (organizations) => {
-      setOrganizations(organizations as OrganizationRepresentation[]);
+      setOrganizations(
+        organizations.filter((o) => o) as OrganizationRepresentation[],
+      );
     },
     [],
   );
