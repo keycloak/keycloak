@@ -88,7 +88,7 @@ The parameterized client scope used by the experimental token exchange delegatio
 
 The full scope format in token requests changes from `delegation:<administrator>` to `delegation:user:<administrator>`. For example, a scope value that was previously `delegation:admin1` is now `delegation:user:admin1`.
 
-If you have clients or automation that request the `delegation` scope, update them to use `delegation:user` instead.
+If you are upgrading an existing realm, rename its `delegation` client scope to `delegation:user`, change its parameterized scope type to `user-delegation`, and change its consent screen text to `${userDelegationScopeConsentText}`. Then update clients and automation to request `delegation:user:<administrator>`.
 
 === Email is no longer marked as verified by other flows
 
