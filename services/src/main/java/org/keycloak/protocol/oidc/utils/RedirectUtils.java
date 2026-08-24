@@ -168,17 +168,17 @@ public class RedirectUtils {
             return false;
         }
         //Check query string
-        String query = originalRedirect.getQuery();
-        if (hasForbiddenParams(query, forbiddenParams)) {
+        String query = originalRedirect.getRawQuery();
+        if (hasForbiddenParams(query, forbiddenParams, "query", originalRedirect)) {
             return true;
         }
 
         // Check fragment (response_mode=fragment puts OIDC params here)
         String fragment = originalRedirect.getRawFragment();
-        return hasForbiddenParams(fragment, forbiddenParams);
+        return hasForbiddenParams(fragment, forbiddenParams, "fragment", originalRedirect);
     }
 
-    private static boolean hasForbiddenParams(String paramString, Set<String> forbiddenParams) {
+    private static boolean hasForbiddenParams(String paramString, Set<String> forbiddenParams, String component, URI originalRedirect) {
         if (paramString == null || paramString.isEmpty()) {
             return false;
         }
@@ -186,6 +186,8 @@ public class RedirectUtils {
         for (String paramName : params.keySet()) {
             if (forbiddenParams.stream().map(param -> param.toLowerCase(Locale.ROOT))
                     .anyMatch(paramName.toLowerCase(Locale.ROOT)::equals)) {
+                logger.warnf("Redirect URI rejected: contains forbidden OIDC parameter '%s' in %s: scheme=%s, host=%s, path=%s",
+                        paramName, component, originalRedirect.getScheme(), originalRedirect.getHost(), originalRedirect.getPath());
                 return true;
             }
         }

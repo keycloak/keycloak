@@ -1085,26 +1085,16 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
     public void logoutWithPostLogoutRedirectUriContainingAuthUrlAndState() throws Exception {
         allowOidcParamsInRedirectUris(true);
         try {
-            String authServerUrl = oauth.getBaseUrl();
-            String targetAuthUrl = authServerUrl + "/realms/test/protocol/openid-connect/auth"
-                    + "?response_type=code"
-                    + "&client_id=test-app"
+            String baseUrl = oauth.getBaseUrl();
+            String targetAuthUrl = baseUrl + "/realms/test/protocol/openid-connect/auth"
+                    + "?response_type=code&client_id=test-app"
                     + "&redirect_uri=" + URLEncoder.encode(APP_REDIRECT_URI, StandardCharsets.UTF_8)
-                    + "&state=downstream-state-123"
-                    + "&scope=openid";
-
+                    + "&state=downstream-state-123&scope=openid";
             try (Closeable ignore = ClientAttributeUpdater.forClient(adminClient, "test", "test-app")
-                    .setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, authServerUrl + "/realms/test/protocol/openid-connect/auth*")
+                    .setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, baseUrl + "/realms/test/protocol/openid-connect/auth*")
                     .update()) {
-
                 AccessTokenResponse tokenResponse = loginUser();
-                String idTokenString = tokenResponse.getIdToken();
-
-                oauth.logoutForm()
-                        .idTokenHint(idTokenString)
-                        .postLogoutRedirectUri(targetAuthUrl)
-                        .open();
-
+                oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).postLogoutRedirectUri(targetAuthUrl).open();
                 loginPage.assertCurrent();
                 MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
             }
@@ -1117,17 +1107,10 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
     public void logoutWithPostLogoutRedirectUriAndLogoutStateDeduplication() throws Exception {
         allowOidcParamsInRedirectUris(true);
         try {
-            String targetUri = APP_REDIRECT_URI + "?existing=true&st%61te=preloaded-state";
-
             AccessTokenResponse tokenResponse = loginUser();
-            String idTokenString = tokenResponse.getIdToken();
-
-            oauth.logoutForm()
-                    .idTokenHint(idTokenString)
-                    .postLogoutRedirectUri(targetUri)
-                    .state("logout-state-456")
-                    .open();
-
+            oauth.logoutForm().idTokenHint(tokenResponse.getIdToken())
+                    .postLogoutRedirectUri(APP_REDIRECT_URI + "?existing=true&st%61te=preloaded-state")
+                    .state("logout-state-456").open();
             String currentUrl = driver.getCurrentUrl();
             assertTrue(currentUrl.contains("existing=true"), "Should contain existing parameter");
             assertTrue(currentUrl.contains("state=logout-state-456"), "Should contain new state parameter");
@@ -1139,50 +1122,28 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void testPostLogoutRedirectWithStateRejectedByDefault() {
-        AccessTokenResponse tokenResponse = loginUser();
-        String idTokenString = tokenResponse.getIdToken();
+    public void testPostLogoutRedirectWithStateForbiddenByDefaultAndAllowedWhenConfigured() {
         String redirectUri = APP_REDIRECT_URI + "?state=injected";
-
-        List<String> postLogoutRedirectUris = Collections.singletonList(redirectUri);
-        ClientManager.realm(adminClient.realm("test")).clientId("test-app")
-                .setPostLogoutRedirectUri(postLogoutRedirectUris);
-
+        List<String> uris = Collections.singletonList(redirectUri);
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app").setPostLogoutRedirectUri(uris);
         try {
+            AccessTokenResponse tokenResponse = loginUser();
+            String idTokenString = tokenResponse.getIdToken();
             oauth.logoutForm().postLogoutRedirectUri(redirectUri).idTokenHint(idTokenString).open();
-            // Should fail — redirect URI contains forbidden 'state' param
-            EventAssertion.assertError(events.poll())
-                    .type(EventType.LOGOUT_ERROR)
-                    .error(OAuthErrorException.INVALID_REDIRECT_URI)
-                    .clientId("test-app");
-        } finally {
-            postLogoutRedirectUris = Collections.singletonList("+");
-            ClientManager.realm(adminClient.realm("test")).clientId("test-app")
-                    .setPostLogoutRedirectUri(postLogoutRedirectUris);
-        }
-    }
+            EventAssertion.assertError(events.poll()).type(EventType.LOGOUT_ERROR)
+                    .error(OAuthErrorException.INVALID_REDIRECT_URI).clientId("test-app");
 
-    @Test
-    public void testPostLogoutRedirectWithStateAllowedWhenConfigured() {
-        AccessTokenResponse tokenResponse = loginUser();
-        String idTokenString = tokenResponse.getIdToken();
-        String redirectUri = APP_REDIRECT_URI + "?state=injected";
+            // Failed logout leaves the session active; clear it before the next login
+            adminClient.realm("test").logoutAll();
 
-        List<String> postLogoutRedirectUris = Collections.singletonList(redirectUri);
-        ClientManager.realm(adminClient.realm("test")).clientId("test-app")
-                .setPostLogoutRedirectUri(postLogoutRedirectUris);
-
-        try {
             allowOidcParamsInRedirectUris(true);
-            oauth.logoutForm().postLogoutRedirectUri(redirectUri).idTokenHint(idTokenString).open();
-            // Should succeed — backward compat allows state param
-            EventAssertion.expectLogoutSuccess(events.poll())
-                    .type(EventType.LOGOUT);
+            tokenResponse = loginUser();
+            oauth.logoutForm().postLogoutRedirectUri(redirectUri).idTokenHint(tokenResponse.getIdToken()).open();
+            EventAssertion.expectLogoutSuccess(events.poll()).type(EventType.LOGOUT);
         } finally {
             allowOidcParamsInRedirectUris(false);
-            postLogoutRedirectUris = Collections.singletonList("+");
             ClientManager.realm(adminClient.realm("test")).clientId("test-app")
-                    .setPostLogoutRedirectUri(postLogoutRedirectUris);
+                    .setPostLogoutRedirectUri(Collections.singletonList("+"));
         }
     }
 
