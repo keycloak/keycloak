@@ -6,7 +6,6 @@ import {
 } from "@keycloak/keycloak-ui-shared";
 import { Button, Modal, ModalVariant } from "@patternfly/react-core";
 import { TableText } from "@patternfly/react-table";
-import { differenceBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
@@ -46,7 +45,11 @@ export const OrganizationModal = ({
 
     const orgs = await adminClient.organizations.find(params);
 
-    return differenceBy(orgs, existingOrgs, "id");
+    return orgs;
+  };
+
+  const isRowDisabled = (row?: OrganizationRepresentation) => {
+    return existingOrgs.some((org) => org.id === row?.id);
   };
 
   return (
@@ -85,6 +88,7 @@ export const OrganizationModal = ({
         searchPlaceholderKey="searchOrganization"
         canSelectAll={!isRadio}
         onSelect={(rows) => setSelectedRows([...rows])}
+        isRowDisabled={isRowDisabled}
         columns={[
           {
             name: "name",
