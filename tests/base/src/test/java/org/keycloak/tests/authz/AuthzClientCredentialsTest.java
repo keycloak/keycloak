@@ -115,8 +115,9 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
     @BeforeEach
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {
-        super.beforeAbstractKeycloakTest();
-        testContext.getTestRealmReps().forEach(realmRepresentation -> {
+        List<RealmRepresentation> configuredRealms = new ArrayList<>();
+        addTestRealms(configuredRealms);
+        configuredRealms.forEach(realmRepresentation -> {
             Keycloak adminClient = getAdminClient();
             ClientsResource clients = adminClient.realm(realmRepresentation.getRealm()).clients();
             ClientRepresentation client = clients.findByClientId("resource-server-test").get(0);
