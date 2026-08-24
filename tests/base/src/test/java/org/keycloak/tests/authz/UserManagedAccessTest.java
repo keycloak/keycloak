@@ -331,7 +331,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         assertPermissions(permissions, "Resource A", "ScopeA", "ScopeB");
         assertTrue(permissions.isEmpty());
 
-        getTestContext().getTestingClient().testing().clearEventQueue();
+        getTestingClient().testing().clearEventQueue();
 
         try {
             response = authorize("kolo", "password", resource.getId(), new String[] {});
@@ -374,7 +374,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
             assertTrue(ticket.isGranted());
         }
 
-        getTestContext().getTestingClient().testing().clearEventQueue();
+        getTestingClient().testing().clearEventQueue();
 
         response = authorize("kolo", "password", resource.getId(), new String[] {"ScopeA", "ScopeB"});
         rpt = response.getToken();

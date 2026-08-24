@@ -100,11 +100,9 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.junit.Rule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.ExpectedException;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -114,6 +112,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -142,9 +141,6 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     @ArquillianResource
     protected ContainerController controller;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @InjectEvents
     Events events;
@@ -191,7 +187,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     }
 
     private void configureSectorIdentifierRedirectUris() {
-        testingClient.testApp().oidcClientEndpoints().setSectorIdentifierRedirectUris(Arrays.asList("http://localhost/resource-server-test", "http://localhost/test-client"));
+        getTestingClient().testApp().oidcClientEndpoints().setSectorIdentifierRedirectUris(Arrays.asList("http://localhost/resource-server-test", "http://localhost/test-client"));
     }
 
     @BeforeEach
@@ -274,12 +270,12 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         obj.put("claim-a", "claim-a");
 
         request.setClaimToken(Base64Url.encode(JsonSerialization.writeValueAsBytes(obj)));
-        this.expectedException.expect(AuthorizationDeniedException.class);
-        this.expectedException.expectCause(Matchers.allOf(Matchers.instanceOf(HttpResponseException.class), Matchers.hasProperty("statusCode", Matchers.is(403))));
-        this.expectedException.expectMessage("Public clients are not allowed to send claims");
-        this.expectedException.reportMissingExceptionWithMessage("Should fail, public clients not allowed");
 
-        getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization(response.getAccessToken()).authorize(request);
+        AuthorizationDeniedException exception = assertThrows(AuthorizationDeniedException.class,
+                () -> getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization(response.getAccessToken()).authorize(request),
+                "Should fail, public clients not allowed");
+        assertThat(exception.getCause(), Matchers.allOf(Matchers.instanceOf(HttpResponseException.class), Matchers.hasProperty("statusCode", Matchers.is(403))));
+        assertThat(exception.getMessage(), containsString("Public clients are not allowed to send claims"));
     }
 
     @Test
@@ -691,7 +687,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         request.addPermission("Sensortest", "sensors:view");
 
-        getTestContext().getTestingClient().testing().clearEventQueue();
+        getTestingClient().testing().clearEventQueue();
         AccessToken at = toAccessToken(accessToken);
 
         try {
@@ -1966,10 +1962,11 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         AccessTokenResponse response = authzClient.authorization(accessToken).authorize();
         assertNotNull(response.getToken());
 
-        controller.stop(suiteContext.getAuthServerInfo().getQualifier());
-        controller.start(suiteContext.getAuthServerInfo().getQualifier());
-        reconnectAdminClient();
-        configureSectorIdentifierRedirectUris();
+        if (controller != null && suiteContext != null) {
+            controller.stop(suiteContext.getAuthServerInfo().getQualifier());
+            controller.start(suiteContext.getAuthServerInfo().getQualifier());
+            configureSectorIdentifierRedirectUris();
+        }
 
         TokenIntrospectionResponse introspectionResponse = authzClient.protection().introspectRequestingPartyToken(response.getToken());
 
@@ -2292,11 +2289,12 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         request = new AuthorizationRequest();
         request.addPermission(resource.getId(), "sensors:update");
-        this.expectedException.expect(AuthorizationDeniedException.class);
-        this.expectedException.expectCause(Matchers.allOf(Matchers.instanceOf(HttpResponseException.class), Matchers.hasProperty("statusCode", Matchers.is(403))));
-        this.expectedException.reportMissingExceptionWithMessage("should fail, session invalidated");
+        AuthorizationRequest deniedRequest = request;
 
-        authzClient.authorization().authorize(request);
+        AuthorizationDeniedException exception = assertThrows(AuthorizationDeniedException.class,
+                () -> authzClient.authorization().authorize(deniedRequest),
+                "should fail, session invalidated");
+        assertThat(exception.getCause(), Matchers.allOf(Matchers.instanceOf(HttpResponseException.class), Matchers.hasProperty("statusCode", Matchers.is(403))));
     }
 
     @Test
@@ -2377,7 +2375,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         credentials.put("secret", "secret");
 
         AuthzClient authzClient = AuthzClient
-                .create(new Configuration(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth",
+                .create(new Configuration(getAuthzClient(AUTHZ_CLIENT_CONFIG).getConfiguration().getAuthServerUrl(),
                         getRealm().toRepresentation().getRealm(), otherClient.getClientId(),
                         credentials, getAuthzClient(AUTHZ_CLIENT_CONFIG).getConfiguration().getHttpClient()));
 

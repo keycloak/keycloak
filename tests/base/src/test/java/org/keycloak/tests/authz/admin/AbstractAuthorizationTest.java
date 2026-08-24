@@ -23,6 +23,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.ResourceScopeResource;
 import org.keycloak.admin.client.resource.ResourceScopesResource;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -36,12 +37,8 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractClientTest;
-import org.keycloak.testsuite.ProfileAssume;
 
-import org.junit.BeforeClass;
 import org.junit.jupiter.api.AfterEach;
-
-import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -56,17 +53,6 @@ public abstract class AbstractAuthorizationTest extends AbstractClientTest {
 
     protected static final String RESOURCE_SERVER_CLIENT_ID = "resource-server-test";
 
-    @BeforeClass
-    public static void enabled() {
-        ProfileAssume.assumeFeatureEnabled(AUTHORIZATION);
-    }
-
-    @Override
-    public void setDefaultPageUriParameters() {
-        super.setDefaultPageUriParameters();
-        testRealmPage.setAuthRealm("authz-test");
-    }
-
     @Override
     protected String getRealmId() {
         return "authz-test";
@@ -75,11 +61,10 @@ public abstract class AbstractAuthorizationTest extends AbstractClientTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(createTestRealm().build());
-        super.addTestRealms(testRealms);
     }
 
     @AfterEach
-    public void onAfterReenableAuthorization() {
+    public void resetAuthorizationServices() {
         enableAuthorizationServices(false);
         enableAuthorizationServices(true);
     }
@@ -89,7 +74,22 @@ public abstract class AbstractAuthorizationTest extends AbstractClientTest {
     }
 
     protected ClientRepresentation getResourceServer() {
-        return findClientRepresentation(RESOURCE_SERVER_CLIENT_ID);
+        return getClientResource().toRepresentation();
+    }
+
+    @Override
+    protected ClientResource findClientResource(String name) {
+        ClientsResource clients = managedRealm.admin().clients();
+        return clients.findByClientId(name).stream()
+                .map(representation -> clients.get(representation.getId()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Override
+    protected ClientRepresentation findClientRepresentation(String name) {
+        ClientResource client = findClientResource(name);
+        return client != null ? client.toRepresentation() : null;
     }
 
     protected void enableAuthorizationServices(boolean enable) {

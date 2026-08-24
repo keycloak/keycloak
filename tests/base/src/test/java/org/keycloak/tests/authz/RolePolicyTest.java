@@ -178,7 +178,7 @@ public class RolePolicyTest extends AbstractAuthzTest {
         ClientScopeRepresentation rolesScope = AdminApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE).toRepresentation();
         ClientResource clientResource = clients.get(client.getId());
         clientResource.removeDefaultClientScope(rolesScope.getId());
-        getCleanup().addCleanup(() -> clientResource.addDefaultClientScope(rolesScope.getId()));
+        managedRealm.cleanup().add(r -> clientResource.addDefaultClientScope(rolesScope.getId()));
         PermissionRequest request = new PermissionRequest("Resource B");
         String ticket = authzClient.protection().permission().create(request).getTicket();
         try {
@@ -208,7 +208,7 @@ public class RolePolicyTest extends AbstractAuthzTest {
         RolePolicyRepresentation roleRep = clientResource.authorization().policies().role().findByName("Role B Policy");
         roleRep.setFetchRoles(true);
         clientResource.authorization().policies().role().findById(roleRep.getId()).update(roleRep);
-        getCleanup().addCleanup(() -> {
+        managedRealm.cleanup().add(r -> {
             clientResource.addDefaultClientScope(rolesScope.getId());
             roleRep.setFetchRoles(false);
             clientResource.authorization().policies().role().findById(roleRep.getId()).update(roleRep);
