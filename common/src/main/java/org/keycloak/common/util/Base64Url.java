@@ -51,7 +51,7 @@ public class Base64Url {
         // input, so substring(0, 0) yields the empty string, which is correct
         // because there is no content before the padding.
         int idx = base64.indexOf('=');
-        String s = base64.replace("=", ""); // Remove any trailing '='s
+        String s = idx >= 0 ? base64.substring(0, idx) : base64;
         s = s.replace('+', '-'); // 62nd char of encoding
         s = s.replace('/', '_'); // 63rd char of encoding
         return s;
