@@ -26,6 +26,8 @@ import java.security.cert.CertificateException;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 
+import jakarta.ws.rs.ext.ContextResolver;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.models.Constants;
@@ -41,7 +43,6 @@ import org.jboss.resteasy.client.jaxrs.ClientHttpEngine;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.engines.ClientHttpEngineBuilder43;
-import org.jboss.resteasy.plugins.providers.jackson.ResteasyJackson2Provider;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
@@ -100,13 +101,10 @@ public class AdminClientUtil {
         // We need to ignore unknown JSON properties e.g. in the adapter configuration representation
         // during adapter backward compatibility testing
         if (ignoreUnknownProperties) {
-            // We need to use anonymous class to avoid the following error from RESTEasy:
-            // Provider class org.jboss.resteasy.plugins.providers.jackson.ResteasyJackson2Provider is already registered.  2nd registration is being ignored.
-            ResteasyJackson2Provider jacksonProvider = new ResteasyJackson2Provider() {};
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            jacksonProvider.setMapper(objectMapper);
-            resteasyClientBuilder.register(jacksonProvider, 100);
+            // Register only a context resolver so this utility works with both Jackson2 and Jackson3 profiles.
+            resteasyClientBuilder.register((ContextResolver<ObjectMapper>) type -> objectMapper, 100);
         }
 
         resteasyClientBuilder
