@@ -212,6 +212,9 @@ public class ClientDelegationCibaTest {
                 .clientId(AGENT_CLIENT_ID)
                 .hasUserId()
                 .details(Details.USERNAME, USERNAME)
+                .details(Details.ACTOR_TYPE, Details.ACTOR_TYPE_CLIENT)
+                .details(Details.ACTOR, AGENT_CLIENT_ID)
+                .details(Details.ACTOR_ID, expectedActorId)
                 .details(Details.REQUESTED_TOKEN_TYPE, ACCESS_TOKEN_TYPE)
                 .details(Details.SUBJECT_TOKEN_CLIENT_ID, TEST_CLIENT_ID);
 
