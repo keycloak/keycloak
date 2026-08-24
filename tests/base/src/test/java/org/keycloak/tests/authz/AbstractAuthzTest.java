@@ -1,24 +1,31 @@
 package org.keycloak.tests.authz;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
-import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * @author mhajas
  */
 public abstract class AbstractAuthzTest extends AbstractKeycloakTest {
+
+    private final List<String> importedRealmNames = new ArrayList<>();
 
     @InjectAdminClient
     protected Keycloak adminClient;
@@ -26,8 +33,25 @@ public abstract class AbstractAuthzTest extends AbstractKeycloakTest {
     @InjectOAuthClient
     protected OAuthClient oauth;
 
-    @InjectRealm
-    protected ManagedRealm managedRealm;
+    @BeforeEach
+    public void beforeAuthzTest() {
+        super.adminClient = adminClient;
+        importedRealmNames.clear();
+        testRealmReps = new ArrayList<>();
+        addTestRealms(testRealmReps);
+        for (RealmRepresentation realmRepresentation : testRealmReps) {
+            importRealm(realmRepresentation);
+            importedRealmNames.add(realmRepresentation.getRealm());
+        }
+    }
+
+    @AfterEach
+    public void afterAuthzTest() {
+        for (String realmName : importedRealmNames) {
+            removeRealm(realmName);
+        }
+        importedRealmNames.clear();
+    }
 
     @Override
     public Keycloak getAdminClient() {
@@ -37,10 +61,11 @@ public abstract class AbstractAuthzTest extends AbstractKeycloakTest {
     @Override
     public KeycloakTestingClient getTestingClient() {
         if (testingClient == null) {
-            String realmSegment = "/realms/" + managedRealm.getName();
-            String authServerRoot = managedRealm.getBaseUrl().endsWith(realmSegment)
-                    ? managedRealm.getBaseUrl().substring(0, managedRealm.getBaseUrl().length() - realmSegment.length()) + "/auth"
-                    : managedRealm.getBaseUrl();
+            String authServerRoot = oauth.getBaseUrl();
+            int realmSegmentIndex = authServerRoot.indexOf("/realms/");
+            if (realmSegmentIndex >= 0) {
+                authServerRoot = authServerRoot.substring(0, realmSegmentIndex);
+            }
             testingClient = KeycloakTestingClient.getInstance(authServerRoot);
         }
         return testingClient;
