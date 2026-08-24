@@ -324,6 +324,10 @@ public class KeycloakIdentity implements Identity {
         return effectiveUserRoleIds.contains(role.getId());
     }
 
+    public void invalidateEffectiveUserRoles() {
+        effectiveUserRoleIds = null;
+    }
+
     public AccessToken getAccessToken() {
         return this.accessToken;
     }

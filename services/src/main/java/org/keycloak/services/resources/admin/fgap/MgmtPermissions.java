@@ -196,6 +196,9 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         if (cache == null || !cache.refreshMasterAdminRole(masterAdminRole, clientId)) {
             return false;
         }
+        if (identity instanceof KeycloakIdentity keycloakIdentity) {
+            keycloakIdentity.invalidateEffectiveUserRoles();
+        }
         Set<String> roleNames = Set.of(adminRoles);
         return masterAdminRole.getCompositesStream().anyMatch(r -> (r.isClientRole()
                 && r.getContainerId().equals(clientId) && roleNames.contains(r.getName())));
