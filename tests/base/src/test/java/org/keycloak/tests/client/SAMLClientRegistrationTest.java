@@ -37,6 +37,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
@@ -59,7 +60,7 @@ import static org.hamcrest.Matchers.notNullValue;
 @KeycloakIntegrationTest
 public class SAMLClientRegistrationTest extends AbstractClientRegistrationTest {
 
-    @InjectOAuthClient
+    @InjectOAuthClient(ref = "saml-oauth", lifecycle = LifeCycle.METHOD)
     OAuthClient oauth;
 
     @Override

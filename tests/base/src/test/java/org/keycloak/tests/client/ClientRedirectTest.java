@@ -29,6 +29,7 @@ import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
@@ -37,8 +38,8 @@ import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.testsuite.util.AdminClientUtil;
 
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -62,7 +63,7 @@ public class ClientRedirectTest extends AbstractClientRegistrationTest {
     @InjectWebDriver
     ManagedWebDriver driver;
 
-    @InjectOAuthClient(realmRef = "redirect")
+    @InjectOAuthClient(ref = "redirect-oauth", realmRef = "redirect", lifecycle = LifeCycle.METHOD)
     OAuthClient oauth;
 
     @Override
@@ -99,11 +100,11 @@ public class ClientRedirectTest extends AbstractClientRegistrationTest {
         String token = oauth.doAccessTokenRequest(code).getAccessToken();
         String realmName = managedRealm.getName();
 
-        Client client = ResteasyClientBuilder.newBuilder().build();
         String redirectUrl = getAuthServerRoot().toString() + "realms/" + realmName + "/clients/launchpad-test/redirect";
-        Response response = client.target(redirectUrl).request().header(HttpHeaders.AUTHORIZATION, "Bearer " + token).get();
-        assertEquals(303, response.getStatus());
-        client.close();
+        try (Client client = AdminClientUtil.createResteasyClient();
+             Response response = client.target(redirectUrl).request().header(HttpHeaders.AUTHORIZATION, "Bearer " + token).get()) {
+            assertEquals(303, response.getStatus());
+        }
     }
 
     // KEYCLOAK-7707
