@@ -369,9 +369,10 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
             Assertions.assertEquals(config.getRequestObjectSignatureAlg(), Algorithm.ES256);
 
             // update (ES256 to PS256)
-            clientRep.setUserinfoSignedResponseAlg(Algorithm.PS256);
-            clientRep.setRequestObjectSigningAlg(Algorithm.PS256);
-            response = reg.oidc().create(clientRep);
+            reg.auth(Auth.token(response));
+            response.setUserinfoSignedResponseAlg(Algorithm.PS256);
+            response.setRequestObjectSigningAlg(Algorithm.PS256);
+            response = reg.oidc().update(response);
             Assertions.assertEquals(Algorithm.PS256, response.getUserinfoSignedResponseAlg());
             Assertions.assertEquals(Algorithm.PS256, response.getRequestObjectSigningAlg());
 
@@ -382,9 +383,12 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
             Assertions.assertEquals(config.getRequestObjectSignatureAlg(), Algorithm.PS256);
         } finally {
             // back to RS256 for other tests
-            clientRep.setUserinfoSignedResponseAlg(Algorithm.RS256);
-            clientRep.setRequestObjectSigningAlg(Algorithm.RS256);
-            response = reg.oidc().create(clientRep);
+            if (response != null) {
+                reg.auth(Auth.token(response));
+                response.setUserinfoSignedResponseAlg(Algorithm.RS256);
+                response.setRequestObjectSigningAlg(Algorithm.RS256);
+                reg.oidc().update(response);
+            }
         }
     }
 
