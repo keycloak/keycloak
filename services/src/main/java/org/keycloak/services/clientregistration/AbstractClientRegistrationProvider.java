@@ -31,6 +31,9 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.client.clienttype.ClientType;
+import org.keycloak.client.clienttype.ClientTypeManager;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -59,6 +62,8 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.ClientResource;
 import org.keycloak.validation.ValidationUtil;
 
+import org.jboss.logging.Logger;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -67,6 +72,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
     protected KeycloakSession session;
     protected EventBuilder event;
     protected ClientRegistrationAuth auth;
+    protected static final Logger logger = Logger.getLogger(AbstractClientRegistrationProvider.class);
 
     public AbstractClientRegistrationProvider(KeycloakSession session) {
         this.session = session;
@@ -102,7 +108,22 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             }
 
             if (Boolean.TRUE.equals(client.getAuthorizationServicesEnabled())) {
-                RepresentationToModel.createResourceServer(clientModel, session, true);
+                boolean typeBlocksAuthorization = false;
+                if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) && clientModel.getType() != null) {
+                    ClientType clientType = session.getProvider(ClientTypeManager.class).getClientType(realm, clientModel.getType());
+                    if (!clientType.isApplicable("authorizationServicesEnabled")) {
+                        logger.warnf("Property authorizationServicesEnabled is not-applicable to client type %s and can not be enabled.",
+                                clientType.getName());
+                        typeBlocksAuthorization = true;
+                    } else if (Boolean.FALSE.equals(clientType.getTypeValue("authorizationServicesEnabled", Boolean.class))) {
+                        logger.warnf("Property authorizationServicesEnabled is fixed to false by client type %s and can not be enabled.",
+                                clientType.getName());
+                        typeBlocksAuthorization = true;
+                    }
+                }
+                if (!typeBlocksAuthorization) {
+                    RepresentationToModel.createResourceServer(clientModel, session, true);
+                }
             }
 
             session.getContext().setClient(clientModel);

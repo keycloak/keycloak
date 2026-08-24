@@ -34,7 +34,9 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.authorization.admin.AuthorizationService;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.client.clienttype.ClientType;
 import org.keycloak.client.clienttype.ClientTypeException;
+import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Errors;
 import org.keycloak.events.admin.OperationType;
@@ -222,14 +224,29 @@ public class ClientsResource {
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), clientModel.getId()).representation(rep).success();
 
             if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION) && TRUE.equals(rep.getAuthorizationServicesEnabled())) {
-                AuthorizationService authorizationService = getAuthorizationService(clientModel);
+                boolean typeBlocksAuthorization = false;
+                if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) && clientModel.getType() != null) {
+                    ClientType clientType = session.getProvider(ClientTypeManager.class).getClientType(realm, clientModel.getType());
+                    if (!clientType.isApplicable("authorizationServicesEnabled")) {
+                        logger.warnf("Property authorizationServicesEnabled is not-applicable to client type %s and can not be enabled.",
+                                clientType.getName());
+                        typeBlocksAuthorization = true;
+                    } else if (Boolean.FALSE.equals(clientType.getTypeValue("authorizationServicesEnabled", Boolean.class))) {
+                        logger.warnf("Property authorizationServicesEnabled is fixed to false by client type %s and can not be enabled.",
+                                clientType.getName());
+                        typeBlocksAuthorization = true;
+                    }
+                }
+                if (!typeBlocksAuthorization) {
+                    AuthorizationService authorizationService = getAuthorizationService(clientModel);
 
-                authorizationService.enable(true);
+                    authorizationService.enable(true);
 
-                ResourceServerRepresentation authorizationSettings = rep.getAuthorizationSettings();
+                    ResourceServerRepresentation authorizationSettings = rep.getAuthorizationSettings();
 
-                if (authorizationSettings != null) {
-                    authorizationService.getResourceServerService().importSettings(authorizationSettings);
+                    if (authorizationSettings != null) {
+                        authorizationService.getResourceServerService().importSettings(authorizationSettings);
+                    }
                 }
             }
 

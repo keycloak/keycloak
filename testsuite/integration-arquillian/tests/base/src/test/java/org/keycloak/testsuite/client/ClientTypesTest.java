@@ -54,6 +54,7 @@ import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.in;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -87,15 +88,15 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         assertEquals("foo", clientRep.getClientId());
         assertEquals(ClientTypeManager.SERVICE_ACCOUNT, clientRep.getType());
         assertEquals(OIDCLoginProtocol.LOGIN_PROTOCOL, clientRep.getProtocol());
-        Assertions.assertFalse(clientRep.isStandardFlowEnabled());
-        Assertions.assertFalse(clientRep.isImplicitFlowEnabled());
-        Assertions.assertFalse(clientRep.isDirectAccessGrantsEnabled());
+        assertFalse(clientRep.isStandardFlowEnabled());
+        assertFalse(clientRep.isImplicitFlowEnabled());
+        assertFalse(clientRep.isDirectAccessGrantsEnabled());
         Assertions.assertTrue(clientRep.isServiceAccountsEnabled());
-        Assertions.assertFalse(clientRep.isPublicClient());
-        Assertions.assertFalse(clientRep.isBearerOnly());
+        assertFalse(clientRep.isPublicClient());
+        assertFalse(clientRep.isBearerOnly());
 
         // Check type not included as client attribute
-        Assertions.assertFalse(clientRep.getAttributes().containsKey(ClientModel.TYPE));
+        assertFalse(clientRep.getAttributes().containsKey(ClientModel.TYPE));
     }
 
     @Test
@@ -306,6 +307,67 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         assertEquals(subClient.getProtocol(), "openid-connect");
         assertEquals(subClient.isStandardFlowEnabled(), true);
         assertEquals(subClient.isConsentRequired(), true);
+    }
+
+    @Test
+    public void testCreateClientFailsWithFullScopeAllowedOverride() {
+        ClientTypesRepresentation clientTypes = managedRealm.admin().clientTypes().getClientTypes();
+
+        ClientTypeRepresentation.PropertyConfig fullScopeConfig = new ClientTypeRepresentation.PropertyConfig();
+        fullScopeConfig.setApplicable(true);
+        fullScopeConfig.setValue(false);
+
+        ClientTypeRepresentation customType = new ClientTypeRepresentation();
+        customType.setName("no-full-scope");
+        customType.setProvider(DefaultClientTypeProviderFactory.PROVIDER_ID);
+        customType.setParent("oidc");
+        customType.setConfig(Map.of("fullScopeAllowed", fullScopeConfig));
+
+        List<ClientTypeRepresentation> realmClientTypes = clientTypes.getRealmClientTypes();
+        realmClientTypes.add(customType);
+        clientTypes.setRealmClientTypes(realmClientTypes);
+
+        managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
+
+        // Attempt to create a client with fullScopeAllowed=true on a type that fixes it to false
+        ClientRepresentation clientRep = ClientBuilder.create()
+                .clientId("full-scope-override-test")
+                .type("no-full-scope")
+                .fullScopeEnabled(true)
+                .build();
+
+        Response response = managedRealm.admin().clients().create(clientRep);
+        assertErrorResponseContainsParams(response, "fullScopeAllowed");
+    }
+
+    @Test
+    public void testCreateClientFailsWithNodeReRegistrationTimeoutOverride() {
+        ClientTypesRepresentation clientTypes = managedRealm.admin().clientTypes().getClientTypes();
+
+        ClientTypeRepresentation.PropertyConfig timeoutConfig = new ClientTypeRepresentation.PropertyConfig();
+        timeoutConfig.setApplicable(true);
+        timeoutConfig.setValue(-1);
+
+        ClientTypeRepresentation customType = new ClientTypeRepresentation();
+        customType.setName("fixed-timeout");
+        customType.setProvider(DefaultClientTypeProviderFactory.PROVIDER_ID);
+        customType.setParent("oidc");
+        customType.setConfig(Map.of("nodeReRegistrationTimeout", timeoutConfig));
+
+        List<ClientTypeRepresentation> realmClientTypes = clientTypes.getRealmClientTypes();
+        realmClientTypes.add(customType);
+        clientTypes.setRealmClientTypes(realmClientTypes);
+
+        managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
+
+        ClientRepresentation clientRep = ClientBuilder.create()
+                .clientId("timeout-override-test")
+                .type("fixed-timeout")
+                .build();
+        clientRep.setNodeReRegistrationTimeout(300);
+
+        Response response = managedRealm.admin().clients().create(clientRep);
+        assertErrorResponseContainsParams(response, "nodeReRegistrationTimeout");
     }
 
     private void assertErrorResponseContainsParams(Response response, String... items) {
