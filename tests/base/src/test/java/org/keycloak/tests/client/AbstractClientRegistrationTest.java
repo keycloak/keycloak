@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmsResource;
@@ -254,7 +255,11 @@ public abstract class AbstractClientRegistrationTest {
         }
 
         public void addClientUuid(String clientUuid) {
-            realm.cleanup().add(r -> r.clients().delete(clientUuid));
+            realm.cleanup().add(r -> {
+                try (Response response = r.clients().delete(clientUuid)) {
+                    // no-op, cleanup only
+                }
+            });
         }
     }
 

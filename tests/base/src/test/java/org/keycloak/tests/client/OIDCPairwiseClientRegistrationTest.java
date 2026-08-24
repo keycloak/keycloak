@@ -239,8 +239,9 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         ProtocolMapperRepresentation pairwiseProtMapper = SHA256PairwiseSubMapper.createPairwiseMapper(sectorIdentifierUri, null);
         RealmResource realmResource = realmsResouce().realm("test");
         ClientResource clientResource = AdminApiUtil.findClientByClientId(realmsResouce().realm("test"), clientId);
-        Response resp = clientResource.getProtocolMappers().createMapper(pairwiseProtMapper);
-        Assertions.assertEquals(400, resp.getStatus());
+        try (Response resp = clientResource.getProtocolMappers().createMapper(pairwiseProtMapper)) {
+            Assertions.assertEquals(400, resp.getStatus());
+        }
 
         // Assert still public
         reg.auth(Auth.token(response));
@@ -469,7 +470,9 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         assertEquals(200, accessTokenResponse.getStatusCode());
 
         // Delete user
-        adminClient.realm(REALM_NAME).users().delete(userId);
+        try (Response response = adminClient.realm(REALM_NAME).users().delete(userId)) {
+            Assertions.assertEquals(204, response.getStatus());
+        }
 
         AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
         assertEquals(400, refreshTokenResponse.getStatusCode());
