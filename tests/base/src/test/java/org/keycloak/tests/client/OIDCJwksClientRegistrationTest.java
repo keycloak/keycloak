@@ -79,7 +79,8 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
     @InjectRealm(ref="master", attachTo="master")
     ManagedRealm managedMasterRealm;
 
-    @InjectRunOnServer(ref="master", realmRef="master")
+    @InjectRunOnServer(ref = "master", realmRef = "master",
+            permittedPackages = {"org.keycloak.tests", "org.keycloak.testsuite.util.runonserver"})
     RunOnServerClient runOnServerMaster;
 
     @Override
