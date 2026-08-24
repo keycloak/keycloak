@@ -62,11 +62,14 @@ public class DirExportProvider extends MultipleStepsExportProvider<DirExportProv
     public static boolean recursiveDeleteDir(File dirPath) {
         if (dirPath.exists()) {
             File[] files = dirPath.listFiles();
-            for (int i = 0; i < files.length; i++) {
-                if (files[i].isDirectory()) {
-                    recursiveDeleteDir(files[i]);
-                } else {
-                    files[i].delete();
+            // listFiles() returns null when path is not a directory or on I/O error
+            if (files != null) {
+                for (int i = 0; i < files.length; i++) {
+                    if (files[i].isDirectory()) {
+                        recursiveDeleteDir(files[i]);
+                    } else {
+                        files[i].delete();
+                    }
                 }
             }
         }
