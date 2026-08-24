@@ -14,24 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.migration;
+package org.keycloak.tests.migration;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.keycloak.OAuth2Constants;
-import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPConfig;
-import org.keycloak.testsuite.utils.io.IOUtil;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.userprofile.config.UPConfigUtils;
-import org.keycloak.util.JsonSerialization;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY;
 
@@ -43,40 +40,36 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * Tests that we can import json file from previous version. MigrationTest only tests DB.
  */
+@KeycloakIntegrationTest
 public class JsonFileImport1903MigrationTest extends AbstractJsonFileImportMigrationTest {
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        Map<String, RealmRepresentation> reps = null;
-        try {
-            reps = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, IOUtil.class.getResourceAsStream("/migration-test/migration-realm-19.0.3.json"));
-            masterRep = reps.remove("master");
+    @InjectRealm(ref = "migration", fromJson = "migration-realm-19.0.3-Migration.json")
+    ManagedRealm migrationManagedRealm;
 
-            RealmRepresentation upRealm = JsonSerialization.readValue(IOUtil.class.getResourceAsStream("/migration-test/migration-realm-19.0.3-user-profile.json"), RealmRepresentation.class);
-            reps.put(upRealm.getRealm(), upRealm);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        for (RealmRepresentation rep : reps.values()) {
-            testRealms.add(rep);
-        }
-    }
+    @InjectRealm(ref = "migration2", fromJson = "migration-realm-19.0.3-Migration2.json")
+    ManagedRealm migration2ManagedRealm;
+
+    @InjectRealm(ref = "master", attachTo = "master")
+    ManagedRealm masterManagedRealm;
+
+    @InjectRealm(ref = "userProfile", fromJson = "migration-realm-19.0.3-user-profile.json")
+    ManagedRealm userProfileManagedRealm;
 
     @Test
-    public void migration19_0_3Test() throws Exception {
+    void migration19_0_3Test() {
         checkRealmsImported();
         testMigrationTo20_x();
         testMigrationTo21_x();
         testMigrationTo22_x();
         testMigrationTo23_x(true);
-        testMigrationTo24_x(true, true);
+        testMigrationTo24_x_usingUserProfileMigration();
         testMigrationTo25_0_0();
         testMigrationTo26_0_0(true);
         testMigrationTo26_3_0();
     }
 
     @Test
-    public void testUserProfileMigration() throws Exception {
+    void testUserProfileMigration() throws Exception {
         List<ComponentRepresentation> userProfileComponents = adminClient.realm("migration-user-profile")
                 .components()
                 .query(null, "org.keycloak.userprofile.UserProfileProvider");
