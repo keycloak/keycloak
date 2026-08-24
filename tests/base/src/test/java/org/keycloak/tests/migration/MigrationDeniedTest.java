@@ -17,9 +17,7 @@
  *
  */
 
-package org.keycloak.testsuite.migration;
-
-import java.util.List;
+package org.keycloak.tests.migration;
 
 import org.keycloak.common.Version;
 import org.keycloak.migration.MigrationModel;
@@ -28,29 +26,22 @@ import org.keycloak.models.DeploymentStateProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.datastore.DefaultMigrationManager;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.ModelTest;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.remote.annotations.TestOnServer;
 
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class MigrationDeniedTest extends AbstractKeycloakTest {
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-
-    }
+@KeycloakIntegrationTest
+public class MigrationDeniedTest {
 
     /**
      * Tests migration should not be allowed when DB version is set to snapshot version like "999.0.0", but Keycloak server version is lower like "23.0.0"
      */
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testMigrationDeniedWithDBSnapshotAndServerNonSnapshot(KeycloakSession s) {
         KeycloakModelUtils.runJobInTransaction(s.getKeycloakSessionFactory(), (session) -> {
             MigrationModel model = session.getProvider(DeploymentStateProvider.class).getMigrationModel();
@@ -78,8 +69,7 @@ public class MigrationDeniedTest extends AbstractKeycloakTest {
     /**
      * Tests migration should not be allowed when DB version is set to non-snapshot version like "23.0.0", but Keycloak server version is snapshot version "999.0.0"
      */
-    @Test
-    @ModelTest
+    @TestOnServer
     public void testMigrationDeniedWithDBNonSnapshotAndServerSnapshot(KeycloakSession s) {
         KeycloakModelUtils.runJobInTransaction(s.getKeycloakSessionFactory(), (session) -> {
             MigrationModel model = session.getProvider(DeploymentStateProvider.class).getMigrationModel();
