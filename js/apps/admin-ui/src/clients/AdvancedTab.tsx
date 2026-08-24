@@ -53,10 +53,14 @@ const toFormValue = (name: string, value?: string) => {
     return "";
   }
   if (name === "acr.loa.map") {
-    return Object.entries(JSON.parse(value)).flatMap(([key, value]) => ({
-      key,
-      value,
-    }));
+    try {
+      return Object.entries(JSON.parse(value)).flatMap(([key, value]) => ({
+        key,
+        value,
+      }));
+    } catch {
+      return "";
+    }
   }
   return value;
 };
