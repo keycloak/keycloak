@@ -339,6 +339,22 @@ public class RedirectUtilsTest {
         Assert.assertNull("Should reject URL-encoded 'session_state' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?session%5Fstate=attack", set, false));
         Assert.assertNull("Should reject mixed-case 'RESPONSE' parameter", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?RESPONSE=attack", set, false));
         Assert.assertEquals("Should allow legitimate query parameters that do not conflict with OIDC protocol variables", "https://example.com/callback?legit_param=123", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?legit_param=123", set, false));
+
+        // Fragment-based forbidden params (CVE #51286 - response_mode=fragment)
+        Assert.assertNull("Should reject forbidden 'state' parameter in fragment", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback#state=evil", set, false));
+        Assert.assertNull("Should reject forbidden 'code' parameter in fragment", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback#code=evil", set, false));
+        Assert.assertNull("Should reject forbidden param in fragment with legitimate query params", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?legit=123#state=evil", set, false));
+        Assert.assertNull("Should reject URL-encoded forbidden param in fragment", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback#st%61te=evil", set, false));
+        Assert.assertEquals("Should allow legitimate fragment without forbidden params", "https://example.com/callback#section1", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback#section1", set, false));
+
+        // URL-encoded variants of forbidden params in query
+        Assert.assertNull("Should reject URL-encoded 'state' (st%61te)", RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?st%61te=evil", set, false));
+
+        // Backward compat: empty forbidden set allows everything (query and fragment)
+        Assert.assertEquals("Empty forbidden set should allow forbidden params in query", "https://example.com/callback?state=val",
+                RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?state=val", set, false, Collections.emptySet()));
+        Assert.assertEquals("Empty forbidden set should allow forbidden params in fragment", "https://example.com/callback#state=val",
+                RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback#state=val", set, false, Collections.emptySet()));
     }
 
     @Test

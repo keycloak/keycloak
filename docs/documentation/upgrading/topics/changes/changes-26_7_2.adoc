@@ -9,10 +9,3 @@ In minor or patch releases, {project_name} will only introduce breaking changes 
 The deprecated link:{developerguide_link}#_legacy-client-initiated-account-linking[legacy client-initiated account linking] endpoint (`/realms/{realm}/broker/{provider}/link`) is now disabled by default. Migrate to link:{adminguide_link}#con-aia_server_administration_guide[Application Initiated Actions (AIA)] with `kc_action=idp_link`. See link:{developerguide_link}#_client-initiated-account-linking[Client initiated account linking] for details.
 
 To temporarily restore the previous behavior, see link:https://www.keycloak.org/server/all-provider-config#_openid_connect[OpenID Connect provider configuration] and enable `allow-client-initiated-account-linking` server option. This option is deprecated and will be removed in a future release.
-
-'''
-=== OIDC parameters in post_logout_redirect_uri deprecated
-
-Post-logout redirect URIs containing OIDC parameters such as `state`, `code`, or `session_state` are now deprecated. These parameters conflict with the spec-defined `state` parameter that Keycloak attaches after logout, potentially causing HTTP Parameter Pollution.
-
-To temporarily allow the previous behavior, enable the `allow-oidc-params-in-post-logout-redirect-uri` server option. This option is deprecated and will be removed in Keycloak 27.

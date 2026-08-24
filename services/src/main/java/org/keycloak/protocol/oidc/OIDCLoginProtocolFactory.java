@@ -149,7 +149,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     /**
      * @deprecated To be removed in Keycloak 27
      */
-    public static final String CONFIG_ALLOW_OIDC_PARAMS_IN_POST_LOGOUT_REDIRECT_URI = "allow-oidc-params-in-post-logout-redirect-uri";
+    public static final String CONFIG_ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS = "allow-oidc-params-in-redirect-uris";
 
     public static final String CONFIG_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK = "allow-token-introspection-without-audience-check";
 
@@ -190,11 +190,11 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                     CONFIG_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING);
         }
 
-        if (this.providerConfig.isAllowOidcParamsInPostLogoutRedirectUri()) {
-            logger.warnf("OIDC parameters (e.g. 'state') are allowed in post_logout_redirect_uri. " +
+        if (this.providerConfig.isAllowOidcParamsInRedirectUris()) {
+            logger.warnf("OIDC parameters (e.g. 'state') are allowed in post_logout_redirect_uri and in redirect_uri. " +
                             "This is deprecated and will be rejected in Keycloak 27. " +
                             "Disable this option: %s=false",
-                    CONFIG_ALLOW_OIDC_PARAMS_IN_POST_LOGOUT_REDIRECT_URI);
+                    CONFIG_ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS);
         }
 
         initBuiltIns();
@@ -712,10 +712,10 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                     .defaultValue(OIDCProviderConfig.DEFAULT_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING)
                     .add()
                 .property()
-                    .name(CONFIG_ALLOW_OIDC_PARAMS_IN_POST_LOGOUT_REDIRECT_URI)
+                    .name(CONFIG_ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS)
                     .type("boolean")
-                    .helpText("Allows OIDC parameters (state, code, etc.) in post_logout_redirect_uri. Deprecated: will be removed in Keycloak 27.")
-                    .defaultValue(OIDCProviderConfig.DEFAULT_ALLOW_OIDC_PARAMS_IN_POST_LOGOUT_REDIRECT_URI)
+                    .helpText("Allows OIDC parameters (state, code, etc.) in post_logout_redirect_uri and in redirect_uri. Deprecated: will be removed in Keycloak 27.")
+                    .defaultValue(OIDCProviderConfig.DEFAULT_ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS)
                     .add()
                 .build();
     }

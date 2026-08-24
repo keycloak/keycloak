@@ -167,20 +167,26 @@ public class RedirectUtils {
         if (forbiddenParams == null || forbiddenParams.isEmpty()) {
             return false;
         }
+        //Check query string
+        String query = originalRedirect.getQuery();
+        if (hasForbiddenParams(query, forbiddenParams)) {
+            return true;
+        }
 
-        String query = originalRedirect.getRawQuery();
-        if (query != null && !query.isEmpty()) {
-            MultivaluedHashMap<String, String> params =UriUtils.decodeQueryString(query);
-            for (String paramName : params.keySet()) {
-                if (forbiddenParams.stream().map(param -> param.toLowerCase(Locale.ROOT))
-                        .anyMatch(paramName.toLowerCase(Locale.ROOT)::equals)) {
-                    logger.warnf("Redirect URI rejected: contains forbidden OIDC parameter '%s' in query string: scheme=%s, host=%s, path=%s",
-                            paramName,
-                            originalRedirect.getScheme(),
-                            originalRedirect.getHost(),
-                            originalRedirect.getPath());
-                    return true;
-                }
+        // Check fragment (response_mode=fragment puts OIDC params here)
+        String fragment = originalRedirect.getRawFragment();
+        return hasForbiddenParams(fragment, forbiddenParams);
+    }
+
+    private static boolean hasForbiddenParams(String paramString, Set<String> forbiddenParams) {
+        if (paramString == null || paramString.isEmpty()) {
+            return false;
+        }
+        MultivaluedHashMap<String, String> params = UriUtils.decodeQueryString(paramString);
+        for (String paramName : params.keySet()) {
+            if (forbiddenParams.stream().map(param -> param.toLowerCase(Locale.ROOT))
+                    .anyMatch(paramName.toLowerCase(Locale.ROOT)::equals)) {
+                return true;
             }
         }
         return false;

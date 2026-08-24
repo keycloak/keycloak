@@ -22,7 +22,6 @@ import java.net.URI;
 
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.common.util.Encode;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
@@ -67,24 +66,9 @@ public class LogoutUtil {
 
         KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(redirectUri, false);
         if (state != null) {
-            removeQueryParamByDecodedName(uriBuilder, OIDCLoginProtocol.STATE_PARAM);
+            uriBuilder.removeQueryParamByDecodedName(OIDCLoginProtocol.STATE_PARAM);
             uriBuilder.queryParam(OIDCLoginProtocol.STATE_PARAM, state);
         }
         return uriBuilder.build();
-    }
-
-    private static void removeQueryParamByDecodedName(KeycloakUriBuilder uriBuilder, String name) {
-        String query = uriBuilder.getQuery();
-        if (query == null || query.isEmpty()) return;
-
-        StringBuilder cleaned = new StringBuilder();
-        for (String param : query.split("&")) {
-            int eqPos = param.indexOf('=');
-            String rawName = eqPos >= 0 ? param.substring(0, eqPos) : param;
-            if (name.equals(Encode.decode(rawName))) continue;
-            if (!cleaned.isEmpty()) cleaned.append("&");
-            cleaned.append(param);
-        }
-        uriBuilder.replaceQuery(!cleaned.isEmpty() ? cleaned.toString() : null, false);
     }
 }

@@ -64,7 +64,6 @@ import org.keycloak.protocol.oidc.LogoutTokenValidationCode;
 import org.keycloak.protocol.oidc.LogoutTokenValidationContext;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCProviderConfig;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.protocol.oidc.utils.ContentTypeValidationUtil;
@@ -94,7 +93,6 @@ import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
-import org.jspecify.annotations.Nullable;
 
 import static org.keycloak.models.UserSessionModel.State.LOGGED_OUT;
 import static org.keycloak.models.UserSessionModel.State.LOGGING_OUT;
@@ -226,10 +224,11 @@ public class LogoutEndpoint {
             if (client != null) {
                 OIDCAdvancedConfigWrapper wrapper = OIDCAdvancedConfigWrapper.fromClientModel(client);
                 Set<String> postLogoutRedirectUris = wrapper.getPostLogoutRedirectUris() != null ? new HashSet(wrapper.getPostLogoutRedirectUris()) : new HashSet<>();
-                Set<String> postLogoutForbiddenParams = determineAndGetPostLogoutForbiddenParams();
-                if (postLogoutForbiddenParams != null) {
-                    validatedRedirectUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(), postLogoutRedirectUri, postLogoutRedirectUris, true, postLogoutForbiddenParams);
+                if (isAllowOidcParamsInRedirectUris(client)) {
+                    // Backward compat: skip forbidden params check
+                    validatedRedirectUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(), postLogoutRedirectUri, postLogoutRedirectUris, true, Collections.emptySet());
                 } else {
+                    // Default: use FORBIDDEN_OIDC_PARAMS (5-arg overload)
                     validatedRedirectUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(), postLogoutRedirectUri, postLogoutRedirectUris, true);
                 }
             }
@@ -301,11 +300,13 @@ public class LogoutEndpoint {
         }
     }
 
-    private @Nullable Set<String> determineAndGetPostLogoutForbiddenParams() {
-        OIDCLoginProtocol loginProtocol = (OIDCLoginProtocol) session.getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
-        OIDCProviderConfig oidcConfig = loginProtocol.getConfig();
-        Set<String> postLogoutForbiddenParams = oidcConfig.isAllowOidcParamsInPostLogoutRedirectUri() ? Collections.emptySet() : null; // null = use default FORBIDDEN_OIDC_PARAMS
-        return postLogoutForbiddenParams;
+    private boolean isAllowOidcParamsInRedirectUris(ClientModel client) {
+        OIDCLoginProtocol protocol = (OIDCLoginProtocol) session.getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
+        if (protocol.getConfig().isAllowOidcParamsInRedirectUris()) {
+            return true;
+        }
+        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
+        return clientConfig.isAllowOidcParamsInRedirectUris();
     }
 
     private Response displayLogoutConfirmationScreen(LoginFormsProvider loginForm, AuthenticationSessionModel authSession) {
