@@ -34,7 +34,7 @@ public interface AuthenticatedClientSessionModel extends CommonClientSessionMode
     final String REFRESH_TOKEN_PREFIX = "refreshTokenPrefix";
     final String REFRESH_TOKEN_USE_PREFIX = "refreshTokenUsePrefix";
     final String REFRESH_TOKEN_LAST_REFRESH_PREFIX = "refreshTokenLastRefreshPrefix";
-    final String REFRESH_TOKEN_LATEST_PREFIX = "refreshTokenLatestPrefix";
+    final String REFRESH_TOKEN_LATEST_GENERATED_PREFIX = "refreshTokenLatestGeneratedPrefix";
 
     String getId();
 
@@ -109,9 +109,15 @@ public interface AuthenticatedClientSessionModel extends CommonClientSessionMode
     default void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
     }
 
+    /**
+     * Returns the last refresh token that was successfully used for a token refresh.
+     */
     default String getRefreshToken(String reuseId) {
         return getNote(REFRESH_TOKEN_PREFIX + reuseId);
     }
+    /**
+     * Sets the last refresh token that was successfully used for a token refresh.
+     */
     default void setRefreshToken(String reuseId, String refreshTokenId) {
         setNote(REFRESH_TOKEN_PREFIX + reuseId, refreshTokenId);
     }
@@ -129,11 +135,18 @@ public interface AuthenticatedClientSessionModel extends CommonClientSessionMode
     default void setRefreshTokenLastRefresh(String reuseId, int refreshTokenLastRefresh) {
         setNote(REFRESH_TOKEN_LAST_REFRESH_PREFIX + reuseId, String.valueOf(refreshTokenLastRefresh));
     }
-    default String getLatestRefreshToken(String reuseId) {
-        return getNote(REFRESH_TOKEN_LATEST_PREFIX + reuseId);
+    /**
+     * Returns the latest generated refresh token, i.e. the newest token issued as a result of a token refresh.
+     */
+    default String getLatestGeneratedRefreshToken(String reuseId) {
+        return getNote(REFRESH_TOKEN_LATEST_GENERATED_PREFIX + reuseId);
     }
-    default void setLatestRefreshToken(String reuseId, String refreshTokenId) {
-        setNote(REFRESH_TOKEN_LATEST_PREFIX + reuseId, refreshTokenId);
+
+    /**
+     * Sets the latest generated refresh token, i.e. the newest token issued as a result of a token refresh.
+     */
+    default void setLatestGeneratedRefreshToken(String reuseId, String refreshTokenId) {
+        setNote(REFRESH_TOKEN_LATEST_GENERATED_PREFIX + reuseId, refreshTokenId);
     }
 
     String getNote(String name);

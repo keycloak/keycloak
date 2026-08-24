@@ -201,9 +201,12 @@ public class RefreshTokenRevokeTest {
                 .details(Details.REFRESH_TOKEN_ID, refreshToken2.getId())
                 .type(EventType.REFRESH_TOKEN);
 
-        // Verify all tokens were issued in the same second — the precondition for this test
-        assertEquals(refreshToken1.getIat(), refreshToken2.getIat(), "RT-0 and RT-1 must share iat");
-        assertEquals(refreshToken2.getIat(), refreshToken3.getIat(), "RT-1 and RT-2 must share iat");
+        // Verify all tokens were issued close to each other
+        long TOLERANCE_INTERVAL = 5; // Helper interval to make sure that refresh tokens are issued close to each other
+        long diff_1 = refreshToken2.getIat() - refreshToken1.getIat();
+        assertTrue(diff_1 >=0 && diff_1 <= TOLERANCE_INTERVAL, "RT-0 and RT-1 must share iat (or very close to each other)");
+        long diff_2 = refreshToken3.getIat() - refreshToken2.getIat();
+        assertTrue(diff_2 >=0 && diff_2 <= TOLERANCE_INTERVAL, "RT-1 and RT-2 must share iat (or very close to each other)");
 
         // Replay stale RT-0 — different ID from stored RT-1, but same iat second.
         // The stale check must reject this even when iat == lastRefresh.

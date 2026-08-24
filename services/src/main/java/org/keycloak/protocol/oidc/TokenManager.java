@@ -323,7 +323,7 @@ public class TokenManager {
     public void validateTokenReuse(KeycloakSession session, RealmModel realm, AccessToken refreshToken, AuthenticatedClientSessionModel clientSession, boolean refreshFlag) throws OAuthErrorException {
         String key = getReuseIdKey(refreshToken);
         String refreshTokenId = clientSession.getRefreshToken(key);
-        String latestRefreshTokenId = clientSession.getLatestRefreshToken(key);
+        String latestRefreshTokenId = clientSession.getLatestGeneratedRefreshToken(key);
         int lastRefresh = clientSession.getRefreshTokenLastRefresh(key);
 
         //check if a more recent refresh token is already used on this tab, if yes the refresh token is invalid
@@ -1315,7 +1315,7 @@ public class TokenManager {
                 refreshToken.getOtherClaims().put(Constants.REUSE_ID, reuseId);
                 String key = tokenManager.getReuseIdKey(oldRefreshToken);
                 clientSession.setRefreshTokenLastRefresh(key, refreshToken.getIat().intValue());
-                clientSession.setLatestRefreshToken(key, refreshToken.getId());
+                clientSession.setLatestGeneratedRefreshToken(key, refreshToken.getId());
             }
             refreshToken.setScope(scope);
             return this;
