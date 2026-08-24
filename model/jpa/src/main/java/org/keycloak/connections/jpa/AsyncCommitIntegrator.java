@@ -138,7 +138,7 @@ public class AsyncCommitIntegrator implements PreInsertEventListener, PreUpdateE
      * {@code SET LOCAL synchronous_commit TO OFF} can cause committed transactions to
      * never appear (or appear with extreme delay) in logical decoding consumers like Debezium.
      * <p>
-     * Detection: {@code to_regproc('aurora_version')} is non-null only on Aurora
+     * Detection: {@code to_regproc('pg_catalog.aurora_version')} is non-null only on Aurora
      * (standard PostgreSQL returns null without logging ERROR);
      * {@code SHOW wal_level = 'logical'} indicates a CDC consumer may be reading the WAL.
      * Fails safe (returns {@code true}) on unexpected errors to avoid silent CDC data loss.
@@ -174,7 +174,7 @@ public class AsyncCommitIntegrator implements PreInsertEventListener, PreUpdateE
      */
     static boolean auroraVersionFunctionExists(Connection connection) throws SQLException {
         try (Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT to_regproc('aurora_version') IS NOT NULL")) {
+             ResultSet rs = stmt.executeQuery("SELECT to_regproc('pg_catalog.aurora_version') IS NOT NULL")) {
             return rs.next() && rs.getBoolean(1);
         }
     }
