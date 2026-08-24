@@ -22,7 +22,8 @@ import org.junit.platform.suite.api.Suite;
         "org.keycloak.tests.infinispan",
         "org.keycloak.tests.keys",
         "org.keycloak.tests.login",
-        "org.keycloak.tests.loginfailures"
+        "org.keycloak.tests.loginfailures",
+        "org.keycloak.tests.migration"
 })
 public class Base2TestSuite {
 }
