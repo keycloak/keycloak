@@ -214,7 +214,7 @@ public class ClientPolicyManagementTest extends AbstractPolicyManagementTest {
         try (Response response = permissions.create(representation)) {
             assertResponseSuccessful(response);
             ClientPolicyRepresentation created = response.readEntity(ClientPolicyRepresentation.class);
-            getCleanup().addCleanup(() -> permissions.findById(created.getId()).remove());
+            managedRealm.cleanup().add(r -> permissions.findById(created.getId()).remove());
             ClientPolicyResource permission = permissions.findById(created.getId());
             assertRepresentation(representation, permission);
         }

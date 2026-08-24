@@ -25,6 +25,7 @@ import java.util.function.Supplier;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -34,16 +35,13 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.ProfileAssume;
 
-import org.junit.Before;
-import org.junit.BeforeClass;
-
-import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
+import org.junit.jupiter.api.BeforeEach;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -55,10 +53,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public abstract class AbstractPolicyManagementTest extends AbstractKeycloakTest {
 
-    @BeforeClass
-    public static void enabled() {
-        ProfileAssume.assumeFeatureEnabled(AUTHORIZATION);
-    }
+    @InjectAdminClient
+    protected Keycloak adminClient;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -77,7 +73,7 @@ public abstract class AbstractPolicyManagementTest extends AbstractKeycloakTest 
                         .directAccessGrantsEnabled());
     }
 
-    @Before
+    @BeforeEach
     public void configureAuthorization() throws Exception {
         createResourcesAndScopes();
         RealmResource realm = getRealm();
