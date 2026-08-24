@@ -24,11 +24,16 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.constants.ServiceUrlConstants;
+import org.keycloak.events.EventType;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
@@ -65,6 +70,9 @@ public class ClientRedirectTest extends AbstractClientRegistrationTest {
 
     @InjectOAuthClient(ref = "redirect-oauth", realmRef = "redirect", lifecycle = LifeCycle.METHOD)
     OAuthClient oauth;
+
+    @InjectEvents(realmRef = "redirect")
+    Events events;
 
     @Override
     @BeforeEach
@@ -123,9 +131,11 @@ public class ClientRedirectTest extends AbstractClientRegistrationTest {
             driver.driver().navigate().to(managedRealm.getBaseUrl());
             driver.driver().manage().deleteAllCookies();
             oauth.doLogin("test-user@localhost", "password");
+            EventAssertion.expectLoginSuccess(events.poll());
 
             String code = oauth.parseLoginResponse().getCode();
             String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.CODE_TO_TOKEN);
 
             URI logout = KeycloakUriBuilder.fromUri(getAuthServerRoot())
                     .path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
@@ -136,6 +146,10 @@ public class ClientRedirectTest extends AbstractClientRegistrationTest {
             log.debug("log out using: " + logout.toURL());
             driver.driver().navigate().to(logout.toString());
             log.debug("Current URL: " + driver.getCurrentUrl());
+            EventAssertion.assertError(events.poll())
+                    .type(EventType.LOGOUT_ERROR)
+                    .error(OAuthErrorException.INVALID_REDIRECT_URI)
+                    .clientId(oauth.getClientId());
             assertThat(driver.getCurrentUrl(), is(not(equalTo("http://example.org/redirected"))));
         } finally {
             log.debug("removing disabled-client");
