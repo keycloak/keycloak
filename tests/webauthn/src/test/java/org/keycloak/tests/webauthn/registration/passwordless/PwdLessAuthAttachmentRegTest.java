@@ -15,17 +15,15 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.webauthn.registration.passwordless;
+package org.keycloak.tests.webauthn.registration.passwordless;
 
-import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
-import org.keycloak.testsuite.webauthn.registration.AuthAttachmentRegisterTest;
 
-import org.openqa.selenium.firefox.FirefoxDriver;
+import org.keycloak.tests.webauthn.registration.AuthAttachmentRegisterTest;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
-@IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
+// This test should be ignored on Firefox: See https://github.com/keycloak/keycloak/issues/10368
 public class PwdLessAuthAttachmentRegTest extends AuthAttachmentRegisterTest {
 
     @Override

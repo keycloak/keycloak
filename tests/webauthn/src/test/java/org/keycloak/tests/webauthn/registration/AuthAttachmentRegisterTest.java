@@ -14,34 +14,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.webauthn.registration;
+package org.keycloak.tests.webauthn.registration;
 
-import java.io.Closeable;
-import java.io.IOException;
-
-import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
-import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
-import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.webauthn.AbstractWebAuthnVirtualTest;
 
 import com.webauthn4j.data.AuthenticatorAttachment;
 import com.webauthn4j.data.UserVerificationRequirement;
-import org.junit.Ignore;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
-import org.openqa.selenium.firefox.FirefoxDriver;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_BLE;
-import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_INTERNAL;
-import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_USB;
+import static org.keycloak.tests.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_BLE;
+import static org.keycloak.tests.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_INTERNAL;
+import static org.keycloak.tests.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_USB;
 
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
-@IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
+@KeycloakIntegrationTest
+// This test should be ignored on Firefox: See https://github.com/keycloak/keycloak/issues/10368
 public class AuthAttachmentRegisterTest extends AbstractWebAuthnVirtualTest {
 
     @Test
@@ -51,42 +48,54 @@ public class AuthAttachmentRegisterTest extends AbstractWebAuthnVirtualTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void authenticatorAttachmentCrossPlatformInternal() {
         getVirtualAuthManager().useAuthenticator(DEFAULT_INTERNAL.getOptions());
         assertAuthenticatorAttachment(true, AuthenticatorAttachment.CROSS_PLATFORM);
     }
 
     @Test
-    public void authenticatorAttachmentPlatform() throws IOException {
-        try (Closeable u = getWebAuthnRealmUpdater()
-                .setWebAuthnPolicyAuthenticatorAttachment(AuthenticatorAttachment.PLATFORM.getValue())
-                .setWebAuthnPolicyUserVerificationRequirement(UserVerificationRequirement.DISCOURAGED.getValue())
-                .setWebAuthnPolicyCreateTimeout(3)
-                .update()) {
+    public void authenticatorAttachmentPlatform() {
+        managedRealm.updateWithCleanup(r -> {
+                    if (isPasswordless()) {
+                        r.webAuthnPolicyPasswordlessAuthenticatorAttachment(AuthenticatorAttachment.PLATFORM.getValue());
+                        r.webAuthnPolicyPasswordlessUserVerificationRequirement(UserVerificationRequirement.DISCOURAGED.getValue());
+                        r.webAuthnPolicyPasswordlessCreateTimeout(3);
+                    } else {
+                        r.webAuthnPolicyAuthenticatorAttachment(AuthenticatorAttachment.PLATFORM.getValue());
+                        r.webAuthnPolicyUserVerificationRequirement(UserVerificationRequirement.DISCOURAGED.getValue());
+                        r.webAuthnPolicyCreateTimeout(3);
+                    }
+                    return r;
+                }
+        );
 
-            // It shouldn't be possible to register the authenticator
-            getVirtualAuthManager().useAuthenticator(DEFAULT_BLE.getOptions());
+        // It shouldn't be possible to register the authenticator
+        getVirtualAuthManager().useAuthenticator(DEFAULT_BLE.getOptions());
 
-            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
-            assertThat(realmData.getAuthenticatorAttachment(), is(AuthenticatorAttachment.PLATFORM.getValue()));
-            assertThat(realmData.getUserVerificationRequirement(), is(UserVerificationRequirement.DISCOURAGED.getValue()));
-
-            registerDefaultUser(false);
-
-            // Instead of returning an error it seems that selenium webauthn just hangs
-            // So we cannot test this correctly
-            webAuthnRegisterPage.assertCurrent();
-
-            // click authentication again does nothing
-            webAuthnRegisterPage.clickRegister();
-            webAuthnRegisterPage.clickRegister();
-            webAuthnRegisterPage.assertCurrent();
-
-            // it timeouts after create timeout
-            webAuthnErrorPage.assertCurrent();
-            assertThat(webAuthnErrorPage.getError(), containsString("The Passkey operation was not allowed or timed out."));
+        RealmRepresentation rep = managedRealm.admin().toRepresentation();
+        if (isPasswordless()) {
+            assertEquals(AuthenticatorAttachment.PLATFORM.getValue(), rep.getWebAuthnPolicyPasswordlessAuthenticatorAttachment());
+            assertEquals(UserVerificationRequirement.DISCOURAGED.getValue(), rep.getWebAuthnPolicyPasswordlessUserVerificationRequirement());
+        } else {
+            assertEquals(AuthenticatorAttachment.PLATFORM.getValue(), rep.getWebAuthnPolicyAuthenticatorAttachment());
+            assertEquals(UserVerificationRequirement.DISCOURAGED.getValue(), rep.getWebAuthnPolicyUserVerificationRequirement());
         }
+
+        registerDefaultUser(false);
+
+        // Instead of returning an error it seems that selenium webauthn just hangs
+        // So we cannot test this correctly
+        webAuthnRegisterPage.assertCurrent();
+
+        // click authentication again does nothing
+        webAuthnRegisterPage.clickRegister();
+        webAuthnRegisterPage.clickRegister();
+        webAuthnRegisterPage.assertCurrent();
+
+        // it timeouts after create timeout
+        webAuthnErrorPage.assertCurrent();
+        assertThat(webAuthnErrorPage.getError(), containsString("The Passkey operation was not allowed or timed out."));
     }
 
     @Test
@@ -96,17 +105,18 @@ public class AuthAttachmentRegisterTest extends AbstractWebAuthnVirtualTest {
     }
 
     private void assertAuthenticatorAttachment(boolean shouldSuccess, AuthenticatorAttachment attachment) {
-        try (Closeable u = getWebAuthnRealmUpdater()
-                .setWebAuthnPolicyAuthenticatorAttachment(attachment.getValue())
-                .update()) {
+        managedRealm.updateWithCleanup(r -> isPasswordless()
+                ? r.webAuthnPolicyPasswordlessAuthenticatorAttachment(attachment.getValue())
+                : r.webAuthnPolicyAuthenticatorAttachment(attachment.getValue())
+        );
+        RealmRepresentation rep = managedRealm.admin().toRepresentation();
+        assertEquals(attachment.getValue(), isPasswordless()
+                ? rep.getWebAuthnPolicyPasswordlessAuthenticatorAttachment()
+                : rep.getWebAuthnPolicyAuthenticatorAttachment()
+        );
 
-            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
-            assertThat(realmData.getAuthenticatorAttachment(), is(attachment.getValue()));
+        registerDefaultUser(shouldSuccess);
 
-            registerDefaultUser(shouldSuccess);
-            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
-        } catch (IOException e) {
-            throw new RuntimeException(e.getCause());
-        }
+        Assertions.assertTrue(oAuthClient.parseLoginResponse().isSuccess());
     }
 }
