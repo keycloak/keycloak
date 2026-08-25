@@ -19,6 +19,9 @@ export default function useSortedResourceTypes({
   const [resourceServer, setResourceServer] =
     useState<ResourceServerRepresentation>();
 
+  const orgsEnabled =
+    isFeatureEnabled(Feature.Organizations) && realm.organizationsEnabled;
+
   useFetch(
     () =>
       adminClient.clients.getResourceServer({
@@ -29,9 +32,6 @@ export default function useSortedResourceTypes({
   );
 
   const resourceTypes = useMemo(() => {
-    const orgsEnabled =
-      isFeatureEnabled(Feature.Organizations) && realm.organizationsEnabled;
-
     const allResourceTypes = resourceServer?.authorizationSchema?.resourceTypes;
 
     return allResourceTypes
@@ -39,7 +39,7 @@ export default function useSortedResourceTypes({
           ({ type }) => type !== "Organizations" || orgsEnabled,
         )
       : [];
-  }, [resourceServer, isFeatureEnabled, realm]);
+  }, [resourceServer, orgsEnabled]);
 
   return resourceTypes;
 }
