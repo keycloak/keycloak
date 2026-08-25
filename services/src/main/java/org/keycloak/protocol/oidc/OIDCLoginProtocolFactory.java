@@ -140,6 +140,11 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
      */
     public static final String CONFIG_OIDC_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION = "allow-multiple-audiences-for-jwt-client-authentication";
 
+    /**
+     * @deprecated To be removed in Keycloak 27
+     */
+    public static final String CONFIG_ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS = "allow-oidc-params-in-redirect-uris";
+
     public static final String CONFIG_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK = "allow-token-introspection-without-audience-check";
 
     public static final String CONFIG_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN = "allow-userinfo-with-lightweight-access-token";
@@ -177,6 +182,13 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             logger.warnf("Legacy client-initiated account linking endpoint is enabled. This endpoint is deprecated" +
                     "Migrate to Application Initiated Actions (AIA) with kc_action=idp_link and disable this option: %s=false",
                     CONFIG_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING);
+        }
+
+        if (this.providerConfig.isAllowOidcParamsInRedirectUris()) {
+            logger.warnf("OIDC parameters (e.g. 'state') are allowed in post_logout_redirect_uri and in redirect_uri. " +
+                            "This is deprecated and will be rejected in Keycloak 27. " +
+                            "Disable this option: %s=false",
+                    CONFIG_ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS);
         }
 
         initBuiltIns();
@@ -673,6 +685,12 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                     .type("boolean")
                     .helpText("Allows the deprecated client-initiated account linking endpoint (/broker/{provider}/link). This endpoint will be removed in a future release. Use AIA with kc_action=idp_link instead.")
                     .defaultValue(OIDCProviderConfig.DEFAULT_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING)
+                    .add()
+                .property()
+                    .name(CONFIG_ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS)
+                    .type("boolean")
+                    .helpText("Allows OIDC parameters (state, code, etc.) in post_logout_redirect_uri and in redirect_uri. Deprecated: will be removed in Keycloak 27.")
+                    .defaultValue(OIDCProviderConfig.DEFAULT_ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS)
                     .add()
                 .build();
     }

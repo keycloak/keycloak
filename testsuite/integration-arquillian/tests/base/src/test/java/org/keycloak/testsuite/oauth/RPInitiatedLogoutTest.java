@@ -19,6 +19,8 @@ package org.keycloak.testsuite.oauth;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +39,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -1085,7 +1088,77 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
-    // SUPPORT METHODS
+    @Test
+    public void logoutWithPostLogoutRedirectUriContainingAuthUrlAndState() throws Exception {
+        allowOidcParamsInRedirectUris(true);
+        try {
+            String baseUrl = oauth.getBaseUrl();
+            String targetAuthUrl = baseUrl + "/realms/test/protocol/openid-connect/auth"
+                    + "?response_type=code&client_id=test-app"
+                    + "&redirect_uri=" + URLEncoder.encode(APP_REDIRECT_URI, StandardCharsets.UTF_8)
+                    + "&state=downstream-state-123&scope=openid";
+            try (Closeable ignore = ClientAttributeUpdater.forClient(adminClient, "test", "test-app")
+                    .setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, baseUrl + "/realms/test/protocol/openid-connect/auth*")
+                    .update()) {
+                AccessTokenResponse tokenResponse = loginUser();
+                oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).postLogoutRedirectUri(targetAuthUrl).open();
+                loginPage.assertCurrent();
+                MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
+            }
+        } finally {
+            allowOidcParamsInRedirectUris(false);
+        }
+    }
+
+    @Test
+    public void logoutWithPostLogoutRedirectUriAndLogoutStateDeduplication() throws Exception {
+        allowOidcParamsInRedirectUris(true);
+        try {
+            AccessTokenResponse tokenResponse = loginUser();
+            oauth.logoutForm().idTokenHint(tokenResponse.getIdToken())
+                    .postLogoutRedirectUri(APP_REDIRECT_URI + "?existing=true&st%61te=preloaded-state")
+                    .state("logout-state-456").open();
+            String currentUrl = driver.getCurrentUrl();
+            assertTrue("Should contain existing parameter", currentUrl.contains("existing=true"));
+            assertTrue("Should contain new state parameter", currentUrl.contains("state=logout-state-456"));
+            assertFalse("Should not contain preloaded state parameter", currentUrl.contains("preloaded-state"));
+            MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
+        } finally {
+            allowOidcParamsInRedirectUris(false);
+        }
+    }
+
+    @Test
+    public void testPostLogoutRedirectWithStateForbiddenByDefaultAndAllowedWhenConfigured() {
+        String redirectUri = APP_REDIRECT_URI + "?state=injected";
+        List<String> uris = Collections.singletonList(redirectUri);
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app").setPostLogoutRedirectUri(uris);
+        try {
+            AccessTokenResponse tokenResponse = loginUser();
+            String idTokenString = tokenResponse.getIdToken();
+            oauth.logoutForm().postLogoutRedirectUri(redirectUri).idTokenHint(idTokenString).open();
+            events.expectLogoutError(OAuthErrorException.INVALID_REDIRECT_URI)
+                    .client("test-app")
+                    .assertEvent();
+
+            // Failed logout leaves the session active; clear it before the next login
+            adminClient.realm("test").logoutAll();
+
+            allowOidcParamsInRedirectUris(true);
+            tokenResponse = loginUser();
+            oauth.logoutForm().postLogoutRedirectUri(redirectUri).idTokenHint(tokenResponse.getIdToken()).open();
+            events.expectLogout(tokenResponse.getSessionState())
+                    .detail(Details.REDIRECT_URI, redirectUri)
+                    .client("test-app")
+                    .assertEvent();
+        } finally {
+            allowOidcParamsInRedirectUris(false);
+            ClientManager.realm(adminClient.realm("test")).clientId("test-app")
+                    .setPostLogoutRedirectUri(Collections.singletonList("+"));
+        }
+    }
+
+        // SUPPORT METHODS
     private AccessTokenResponse loginUser() {
         return loginUser(false);
     }
@@ -1130,5 +1203,12 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
             // We don't need to go further as the intent is that other tests will cover redirection
         }
+    }
+
+    private void allowOidcParamsInRedirectUris(boolean allow) {
+        getTestingClient().testing().setSystemPropertyOnServer(
+                "oidc.allow-oidc-params-in-redirect-uris", String.valueOf(allow));
+        getTestingClient().testing().reinitializeProviderFactoryWithSystemPropertiesScope(
+                LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc.");
     }
 }
