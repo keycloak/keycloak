@@ -242,7 +242,7 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
 
     /**
      * @return the client-level override of the realm setting "Refresh Token Max Reuse", or {@code null} if the client
-     * inherits the realm setting (also when the attribute value is not a valid integer)
+     * inherits the realm setting (also when the attribute value is not a valid non-negative integer)
      */
     public Integer getRefreshTokenMaxReuse() {
         String value = getAttribute(OIDCConfigAttributes.REFRESH_TOKEN_MAX_REUSE);
@@ -250,7 +250,9 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
             return null;
         }
         try {
-            return Integer.parseInt(value.trim());
+            int maxReuse = Integer.parseInt(value.trim());
+            // Malformed values (e.g. from imports) must not break token refresh, so inherit the realm setting
+            return maxReuse < 0 ? null : maxReuse;
         } catch (NumberFormatException e) {
             return null;
         }
