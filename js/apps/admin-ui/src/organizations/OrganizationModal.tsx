@@ -19,9 +19,9 @@ type OrganizationModalProps = {
 };
 
 const TITLES = {
-  join: "Join organization",
-  send: "Send invitation",
-  add: "Select Organization",
+  join: "joinOrganization",
+  send: "sendInvitation",
+  add: "selectOrganization",
 };
 
 export const OrganizationModal = ({
@@ -55,7 +55,7 @@ export const OrganizationModal = ({
   return (
     <Modal
       variant={ModalVariant.small}
-      title={TITLES[mode]}
+      title={t(TITLES[mode])}
       isOpen
       onClose={onClose}
       actions={[
