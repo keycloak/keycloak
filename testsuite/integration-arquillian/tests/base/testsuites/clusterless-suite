@@ -1,6 +1,3 @@
-KcSamlBrokerSessionNotOnOrAfterTest
-OidcClaimToUserSessionNoteMapperTest
-KcOidcBrokerTransientSessionsTest
 KcAdmSessionTest
 TransientSessionTest
 OAuthDanceClientSessionExtensionTest

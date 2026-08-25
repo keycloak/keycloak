@@ -38,7 +38,7 @@ public abstract class TestRewrite {
     }
 
     protected int findClassDeclaration() {
-        return findLine("public class .*");
+        return findLine("^\\s*(?:public\\s+)?(?:abstract\\s+|final\\s+)?class\\b.*");
     }
 
     public void setContent(List<String> content) {
@@ -72,7 +72,7 @@ public abstract class TestRewrite {
                     l = i;
                     break;
                 }
-            } else if (c.matches("^\\b(?:public\\s+)?class\\b.*Test\\s+\\{$")) {
+            } else if (c.matches("^\\s*(?:public\\s+)?(?:abstract\\s+|final\\s+)?class\\b.*\\{\\s*$")) {
                 l = lastImport + 1;
                 break;
             }

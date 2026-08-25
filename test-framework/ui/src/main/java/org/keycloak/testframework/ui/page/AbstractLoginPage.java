@@ -86,7 +86,18 @@ public abstract class AbstractLoginPage extends AbstractPage {
 
     public Optional<String> getInfoMessage() {
         try {
-            return Optional.of(loginInfoMessage.getText());
+            String text = loginInfoMessage.getText();
+            if (text != null && !text.isBlank()) {
+                return Optional.of(text);
+            }
+        } catch (NoSuchElementException e) {
+            // fall through to legacy/base theme selectors
+        }
+
+        try {
+            WebElement instruction = driver.driver().findElement(By.cssSelector("#instruction1, p.instruction"));
+            String text = instruction.getText();
+            return (text == null || text.isBlank()) ? Optional.empty() : Optional.of(text);
         } catch (NoSuchElementException e) {
             return Optional.empty();
         }

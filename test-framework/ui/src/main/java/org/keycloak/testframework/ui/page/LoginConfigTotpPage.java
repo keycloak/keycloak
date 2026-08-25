@@ -61,8 +61,68 @@ public class LoginConfigTotpPage extends AbstractLoginPage {
         super(driver);
     }
 
+    public void configure(String totp) {
+        totpInput.clear();
+        if (totp != null) {
+            totpInput.sendKeys(totp);
+        }
+        submit();
+    }
+
+    public void configure(String totp, String userLabel) {
+        totpInput.clear();
+        if (totp != null) {
+            totpInput.sendKeys(totp);
+        }
+        totpLabelInput.clear();
+        if (userLabel != null) {
+            totpLabelInput.sendKeys(userLabel);
+        }
+        submit();
+    }
+
+    public void submit() {
+        submitButton.click();
+    }
+
+    public void cancel() {
+        cancelAIAButton.click();
+    }
+
     public String getTotpSecret() {
         return totpSecret.getAttribute("value");
+    }
+
+    public void clickManual() {
+        manualLink.click();
+    }
+
+    public void clickBarcode() {
+        barcodeLink.click();
+    }
+
+    public String getInputCodeError() {
+        try {
+            return totpInputCodeError.getText();
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+    }
+
+    public String getInputLabelError() {
+        try {
+            return totpInputLabelError.getText();
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+    }
+
+    public String getAlertError() {
+        try {
+            return loginAlertErrorMessage.getText();
+        } catch (NoSuchElementException e) {
+            return null;
+        }
     }
 
     public boolean isCancelDisplayed() {
