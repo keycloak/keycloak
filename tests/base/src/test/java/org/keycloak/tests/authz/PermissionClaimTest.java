@@ -16,7 +16,6 @@
  */
 package org.keycloak.tests.authz;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -466,10 +465,6 @@ public class PermissionClaimTest extends AbstractAuthzTest {
     }
 
     private AuthzClient getAuthzClient() {
-        try {
-            return AuthzClient.create(httpsAwareConfigurationStream(getClass().getResourceAsStream("/authorization-test/default-keycloak.json")));
-        } catch (IOException cause) {
-            throw new RuntimeException("Failed to create authz client", cause);
-        }
+        return AuthzClient.create(authzConfigurationStream(getClass().getResourceAsStream("/authorization-test/default-keycloak.json")));
     }
 }
