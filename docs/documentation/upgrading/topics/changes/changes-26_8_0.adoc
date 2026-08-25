@@ -104,6 +104,17 @@ When {project_name} generates self-signed certificates (for example, during SAML
 
 If you have tooling that inspects the CN of {project_name}-generated certificates and expects it to match a value longer than 64 characters, be aware that the CN may now be shorter.
 
+=== Asynchronous commit on MS SQL Server and Oracle databases
+
+The asynchronous commit optimization, previously available only on PostgreSQL, now also supports MS SQL Server and Oracle databases.
+Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events will use delayed/asynchronous commit, improving throughput.
+Logouts will still force a synchronous commit.
+
+On MS SQL Server, the DBA must enable delayed durability first: `ALTER DATABASE ... SET DELAYED_DURABILITY = ALLOWED`.
+On Oracle, no database-level configuration is required.
+
+You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--async-commit=false+`
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

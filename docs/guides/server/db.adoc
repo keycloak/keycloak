@@ -300,7 +300,7 @@ Default: `10s`.
 
 === Asynchronous commits
 
-Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events will use PostgreSQL's async commit feature.
+Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events will use PostgreSQL's async commit feature (`synchronous_commit = off`).
 Logouts will still force a synchronous commit.
 
 You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--async-commit=false+`
@@ -422,6 +422,31 @@ DBCC USEROPTIONS;
 ----
 
 In the output, look for the row where the option is `isolation level`. The value should be `read committed snapshot` after the `ALTER DATABASE` command has been applied.
+
+=== Asynchronous commits
+
+Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events can use MS SQL Server's delayed durability feature.
+Logouts will still force a durable commit.
+
+To enable this optimization, set the database to allow delayed durability:
+
+[source,sql]
+----
+ALTER DATABASE <your-database-name> SET DELAYED_DURABILITY = ALLOWED;
+----
+
+{project_name} will then automatically use `COMMIT TRAN WITH (DELAYED_DURABILITY = ON)` for eligible transactions.
+
+You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--async-commit=false+`
+
+== Preparing for Oracle Database
+
+=== Asynchronous commits
+
+Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events will use Oracle's asynchronous redo log write (`COMMIT WRITE BATCH NOWAIT`).
+Logouts will still force a synchronous commit.
+
+You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--async-commit=false+`
 
 == Using Database Vendors with XA transaction support
 {project_name} uses non-XA transactions and the appropriate database drivers by default.
@@ -765,7 +790,7 @@ Therefore, use `quarkus.datasource.user-store.db-kind=h2`, instead of `quarkus.d
 === Health checks
 
 Additional datasources are included by default in the readiness health check endpoint. If the additional datasource is not critical to your usage, you may exclude it from
-the health check with `db-health-exclude-<datasource>` set to `true`. 
+the health check with `db-health-exclude-<datasource>` set to `true`.
 
 === Additional datasources options
 <@opts.includeOptions includedOptions="*-<datasource>"/>
