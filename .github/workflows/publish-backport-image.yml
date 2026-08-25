@@ -1,0 +1,79 @@
+name: Publish backport image
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag or branch to build (e.g. 26.1.5-backport)'
+        required: true
+        type: string
+      image-tag:
+        description: 'Docker image tag override (defaults to the tag input)'
+        required: false
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-publish:
+    name: Build and publish backport image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Setup Java
+        uses: ./.github/actions/java-setup
+
+      - name: Maven cache
+        uses: ./.github/actions/maven-cache
+        with:
+          create-cache-if-it-doesnt-exist: true
+
+      - name: Build Keycloak
+        run: |
+          ./mvnw install -Pdistribution -am -pl distribution/maven-plugins/licenses-processor
+          ./mvnw install dependency:resolve -V -e -DskipTests -DskipExamples \
+            -DexcludeGroupIds=org.keycloak -Dsilent=true -DcommitProtoLockChanges=true
+
+      - name: Package distribution
+        run: ./mvnw package -pl quarkus/server/,quarkus/dist/
+
+      - name: Copy distribution to container build context
+        run: cp quarkus/dist/target/keycloak-*.tar.gz quarkus/container/keycloak.tar.gz
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: quarkus/container
+          push: true
+          build-args: |
+            KEYCLOAK_VERSION=${{ inputs.image-tag || inputs.tag }}
+            KEYCLOAK_DIST=keycloak.tar.gz
+            KEYCLOAK_SOURCE=https://github.com/${{ github.repository }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.image-tag || inputs.tag }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
