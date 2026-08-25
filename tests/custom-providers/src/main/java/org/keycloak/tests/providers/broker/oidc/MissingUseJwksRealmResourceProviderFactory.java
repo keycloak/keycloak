@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.broker.oidc;
+package org.keycloak.tests.providers.broker.oidc;
 
 import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
@@ -48,5 +48,4 @@ public class MissingUseJwksRealmResourceProviderFactory implements RealmResource
     @Override
     public void close() {
     }
-
 }

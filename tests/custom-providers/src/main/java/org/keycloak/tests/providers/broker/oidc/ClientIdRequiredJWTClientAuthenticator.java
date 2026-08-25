@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.broker.oidc;
+package org.keycloak.tests.providers.broker.oidc;
 
 import java.util.Collections;
 import java.util.Set;
@@ -58,7 +58,6 @@ public class ClientIdRequiredJWTClientAuthenticator extends JWTClientAuthenticat
 
     @Override
     public Set<String> getProtocolAuthenticatorMethods(String loginProtocol) {
-        // Do not add as it will affect the well known provider test
         return Collections.emptySet();
     }
 }
