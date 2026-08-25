@@ -1,4 +1,4 @@
-package org.keycloak.tests.broker;
+package org.keycloak.tests.broker.saml;
 
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -11,6 +11,8 @@ import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.IdpReviewUserProfilePage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.tests.broker.BrokerLoginTest;
+import org.keycloak.tests.broker.SamlBrokerConfigSupport;
 
 @KeycloakIntegrationTest
 public class KcSamlBrokerTest implements BrokerLoginTest, SamlBrokerConfigSupport {
