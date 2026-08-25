@@ -432,7 +432,7 @@ private void createRegexPolicyExtended(String name, String targetClaim, String p
     }
 
     private AuthzClient getAuthzClient() {
-        return AuthzClient.create(getClass().getResourceAsStream("/authorization-test/default-keycloak.json"));
+        return AuthzClient.create(authzConfigurationStream(getClass().getResourceAsStream("/authorization-test/default-keycloak.json")));
     }
 
     private ProtocolMapperRepresentation addClaimMapper(String name, Map<String, String> claims) {

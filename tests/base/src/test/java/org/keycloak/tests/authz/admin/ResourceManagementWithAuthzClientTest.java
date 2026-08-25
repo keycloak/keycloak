@@ -17,6 +17,9 @@
 
 package org.keycloak.tests.authz.admin;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -335,9 +338,25 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
 
     private AuthzClient getAuthzClient() {
         if (authzClient == null) {
-            authzClient = AuthzClient.create(getClass().getResourceAsStream("/authorization-test/default-keycloak.json"));
+            authzClient = AuthzClient.create(authzConfigurationStream(getClass().getResourceAsStream("/authorization-test/default-keycloak.json")));
         }
 
         return authzClient;
+    }
+
+    private InputStream authzConfigurationStream(InputStream input) {
+        try {
+            String authServerRoot = managedRealm.getBaseUrl();
+            int realmSegmentIndex = authServerRoot.indexOf("/realms/");
+            if (realmSegmentIndex >= 0) {
+                authServerRoot = authServerRoot.substring(0, realmSegmentIndex);
+            }
+            String config = new String(input.readAllBytes(), StandardCharsets.UTF_8)
+                    .replace("http://localhost:8180/auth", authServerRoot)
+                    .replace("https://localhost:8543/auth", authServerRoot);
+            return new ByteArrayInputStream(config.getBytes(StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to read authz configuration", e);
+        }
     }
 }
