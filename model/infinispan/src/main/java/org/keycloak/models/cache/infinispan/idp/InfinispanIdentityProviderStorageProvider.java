@@ -66,7 +66,7 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
         return realm.getId() + IDP_COUNT_KEY_SUFFIX;
     }
 
-    private static String cacheKeyIdpAlias(RealmModel realm, String alias) {
+    public static String cacheKeyIdpAlias(RealmModel realm, String alias) {
         return realm.getId() + "." + alias + IDP_ALIAS_KEY_SUFFIX;
     }
 
