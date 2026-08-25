@@ -7,9 +7,11 @@ import java.util.Map;
 import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
+import org.keycloak.saml.SAML2LogoutRequestBuilder;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.services.resources.RealmsResource;
@@ -178,13 +180,31 @@ public class SSOLogoutTest {
         assertTrue(clients.containsValue(samlClient.getClientId()), "session should include the SAML client");
 
         // SAML Logout
-        driver.open(samlEndpoint + "/logout");
+        String logoutResponseUrl = keycloakUrls.getBase() + "/mixed-protocol-saml/slo";
+        samlClient.updateWithCleanup(client -> client.attribute(
+                        SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE,
+                        logoutResponseUrl));
+                NameIDType nameId = new NameIDType();
+
+        nameId.setValue(managedUser.getUsername());
+                String logoutRequestUri = new BaseSAML2BindingBuilder()
+                        .redirectBinding(new SAML2LogoutRequestBuilder()
+                                .destination(samlEndpoint)
+                                .issuer(samlClient.getClientId())
+                                .nameId(nameId)
+                                .buildDocument())
+                .requestURI(samlEndpoint)
+                        .toString();
+                driver.open(logoutRequestUri);
 
         new WebDriverWait(driver.driver(), Duration.ofSeconds(10))
-                .until(d -> d.getCurrentUrl() != null);
+                .until(d -> d.getCurrentUrl() != null
+                        && d.getCurrentUrl().startsWith(logoutResponseUrl)
+                        && d.getCurrentUrl().contains("SAMLResponse="));
 
         // We should be directed to the SAML logout endpoint
-        assertTrue(driver.getCurrentUrl().startsWith(samlEndpoint));
+        assertTrue(driver.getCurrentUrl().startsWith(logoutResponseUrl));
+        assertTrue(driver.getCurrentUrl().contains("SAMLResponse="));
     }
 
 
