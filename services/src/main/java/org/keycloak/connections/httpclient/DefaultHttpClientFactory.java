@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.Config;
@@ -142,6 +143,40 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
                     throw new IOException("No content returned from HTTP call");
                 }
                 return body;
+            }
+
+            @Override
+            public InputStream getInputStream(String uri, Map<String, String> headers) throws IOException {
+                HttpGet request = new HttpGet(uri);
+                if (headers != null) {
+                    headers.forEach(request::setHeader);
+                }
+                HttpResponse response = httpClient.execute(request);
+                InputStream body = inputStreamResponseHandler.handleResponse(response);
+                if (body == null) {
+                    throw new IOException("No content returned from HTTP call");
+                }
+                return body;
+            }
+
+            @Override
+            public byte[] postBinary(String uri, byte[] body, Map<String, String> headers) throws IOException {
+                HttpPost request = new HttpPost(uri);
+                if (headers != null) {
+                    headers.forEach(request::setHeader);
+                }
+                request.setEntity(EntityBuilder.create().setBinary(body).build());
+                try (CloseableHttpResponse response = httpClient.execute(request)) {
+                    try {
+                        if (response.getStatusLine().getStatusCode() < 200 || response.getStatusLine().getStatusCode() >= 300) {
+                            throw new IOException("HTTP " + response.getStatusLine().getStatusCode()
+                                    + " from " + uri);
+                        }
+                        return EntityUtils.toByteArray(response.getEntity());
+                    } finally {
+                        EntityUtils.consumeQuietly(response.getEntity());
+                    }
+                }
             }
 
             @Override
