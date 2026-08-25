@@ -96,10 +96,18 @@ for guidance on tuning cache sizes.
 
 ===== Role policies and fine-grained admin permissions
 
-When using link:{adminguide_finegrained_link}[fine-grained admin permissions], role policies always resolve roles
-directly from the user rather than from the token. The *Fetch Roles* setting on role policies has no effect in
-this context and is disabled in the administration console.
+When using link:{adminguide_finegrained_link}[fine-grained admin permissions], the effective admin roles considered
+by role policies are the intersection of the roles present in the token and the roles the user actually has. Because
+the token reflects the authenticating client's scope and protocol mapper configuration, the same user can have
+different effective roles depending on which client they authenticate with.
 
-For regular authorization services outside the admin permissions scope, the *Fetch Roles* setting controls whether
-role policies check roles from the token or fetch them from the user's role mappings.
+The *Fetch Roles* setting on role policies controls whether this intersection is applied. When *Fetch Roles* is
+disabled (the default), only roles that are both assigned to the user and present in the token are considered.
+When *Fetch Roles* is enabled, roles are resolved directly from the user's role assignments, bypassing the token
+and any client scope filtering.
+
+For deployments where multiple clients authenticate administrators with different levels of access, keep
+*Fetch Roles* disabled on role policies so that client scope constrains which admin roles are considered
+for authorization decisions. This ensures that a client with a restricted scope cannot be used to exercise
+permissions beyond what its scope allows, even if the authenticating user holds broader role assignments.
 

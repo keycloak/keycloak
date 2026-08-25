@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc.endpoints;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -57,6 +58,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.SystemClientUtil;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.BackchannelLogoutResponse;
 import org.keycloak.protocol.oidc.LogoutTokenValidationCode;
 import org.keycloak.protocol.oidc.LogoutTokenValidationContext;
@@ -222,7 +224,13 @@ public class LogoutEndpoint {
             if (client != null) {
                 OIDCAdvancedConfigWrapper wrapper = OIDCAdvancedConfigWrapper.fromClientModel(client);
                 Set<String> postLogoutRedirectUris = wrapper.getPostLogoutRedirectUris() != null ? new HashSet(wrapper.getPostLogoutRedirectUris()) : new HashSet<>();
-                validatedRedirectUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(), postLogoutRedirectUri, postLogoutRedirectUris, true);
+                if (isAllowOidcParamsInRedirectUris(client)) {
+                    // Backward compat: skip forbidden params check
+                    validatedRedirectUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(), postLogoutRedirectUri, postLogoutRedirectUris, true, Collections.emptySet());
+                } else {
+                    // Default: use FORBIDDEN_OIDC_PARAMS (5-arg overload)
+                    validatedRedirectUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(), postLogoutRedirectUri, postLogoutRedirectUris, true);
+                }
             }
 
             if (validatedRedirectUri == null) {
@@ -290,6 +298,15 @@ public class LogoutEndpoint {
         } else {
             return doBrowserLogout(logoutSession);
         }
+    }
+
+    private boolean isAllowOidcParamsInRedirectUris(ClientModel client) {
+        OIDCLoginProtocol protocol = (OIDCLoginProtocol) session.getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
+        if (protocol.getConfig().isAllowOidcParamsInRedirectUris()) {
+            return true;
+        }
+        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
+        return clientConfig.isAllowOidcParamsInRedirectUris();
     }
 
     private Response displayLogoutConfirmationScreen(LoginFormsProvider loginForm, AuthenticationSessionModel authSession) {
