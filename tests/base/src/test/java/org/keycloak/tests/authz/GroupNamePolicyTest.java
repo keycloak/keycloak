@@ -287,7 +287,7 @@ public class GroupNamePolicyTest extends AbstractAuthzTest {
     }
 
     private AuthzClient getAuthzClient() {
-        return AuthzClient.create(getClass().getResourceAsStream("/authorization-test/default-keycloak.json"));
+        return AuthzClient.create(authzConfigurationStream(getClass().getResourceAsStream("/authorization-test/default-keycloak.json")));
     }
 
     private ClientResource getClient() {

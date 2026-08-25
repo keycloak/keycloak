@@ -2981,7 +2981,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         if (authzClient == null) {
             Configuration configuration;
             try {
-                configuration = JsonSerialization.readValue(httpsAwareConfigurationStream(getClass().getResourceAsStream("/authorization-test/" + configFile)), Configuration.class);
+                configuration = JsonSerialization.readValue(authzConfigurationStream(getClass().getResourceAsStream("/authorization-test/" + configFile)), Configuration.class);
             } catch (IOException e) {
                 throw new RuntimeException("Failed to read configuration", e);
             }
