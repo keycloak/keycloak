@@ -1,51 +1,96 @@
-package org.keycloak.testsuite.broker;
-
-import java.util.List;
-import java.util.Map;
+package org.keycloak.tests.broker.oidc;
 
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
-import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.IdpReviewUserProfilePage;
+import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.tests.broker.BrokerLoginTest;
+import org.keycloak.tests.broker.KcOidcBrokerConfigSupport;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
-import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
+@KeycloakIntegrationTest
+public class KcOidcBrokerClientSecretJwtTest implements BrokerLoginTest, KcOidcBrokerConfigSupport {
 
-public class KcOidcBrokerClientSecretJwtTest extends AbstractBrokerTest {
+    // BCFIPS approved mode requires at least 112 bits (14 characters) for client-secret-jwt
+    private static final String CLIENT_SECRET_JWT = "atleast-14chars-password";
 
-    // BCFIPS approved mode requires at least 112 bits (14 characters) long SecretKey for "client-secret-jwt" authentication
-    private static final String CLIENT_SECRET = "atleast-14chars-password";
+    @InjectRealm(ref = "provider", lifecycle = LifeCycle.METHOD,
+            config = JwtSecretProviderRealmConfig.class)
+    ManagedRealm providerRealm;
+
+    @InjectRealm(ref = "consumer", lifecycle = LifeCycle.METHOD,
+            config = JwtSecretConsumerRealmConfig.class)
+    ManagedRealm consumerRealm;
+
+    @InjectOAuthClient(realmRef = "consumer")
+    OAuthClient oauth;
+
+    @InjectWebDriver
+    ManagedWebDriver webDriver;
+
+    @InjectPage
+    LoginPage loginPage;
+
+    @InjectPage
+    IdpReviewUserProfilePage updateProfilePage;
 
     @Override
-    protected BrokerConfiguration getBrokerConfiguration() {
-        return new KcOidcBrokerConfigurationWithJWTAuthentication();
+    public ManagedRealm getProviderRealm() {
+        return providerRealm;
     }
 
-    private class KcOidcBrokerConfigurationWithJWTAuthentication extends KcOidcBrokerConfiguration {
+    @Override
+    public ManagedRealm getConsumerRealm() {
+        return consumerRealm;
+    }
 
+    @Override
+    public OAuthClient getOAuthClient() {
+        return oauth;
+    }
+
+    @Override
+    public ManagedWebDriver getWebDriver() {
+        return webDriver;
+    }
+
+    @Override
+    public LoginPage getLoginPage() {
+        return loginPage;
+    }
+
+    @Override
+    public IdpReviewUserProfilePage getUpdateProfilePage() {
+        return updateProfilePage;
+    }
+
+    static class JwtSecretProviderRealmConfig implements RealmConfig {
         @Override
-        public List<ClientRepresentation> createProviderClients() {
-            List<ClientRepresentation> clientsRepList = super.createProviderClients();
-            log.info("Update provider clients to accept JWT authentication");
-            for (ClientRepresentation client: clientsRepList) {
-                client.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID);
-                client.setSecret(CLIENT_SECRET);
-            }
-            return clientsRepList;
+        public RealmBuilder configure(RealmBuilder realm) {
+            return KcOidcBrokerConfigSupport.configureProviderRealm(realm,
+                    KcOidcBrokerConfigSupport.createDefaultProviderClient()
+                            .secret(CLIENT_SECRET_JWT)
+                            .authenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID));
         }
+    }
 
+    static class JwtSecretConsumerRealmConfig implements RealmConfig {
         @Override
-        public IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode syncMode) {
-            IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
-            Map<String, String> config = idp.getConfig();
-            applyDefaultConfiguration(config, syncMode);
-            config.put("clientSecret", CLIENT_SECRET);
-            config.put("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_JWT);
-            return idp;
+        public RealmBuilder configure(RealmBuilder realm) {
+            return KcOidcBrokerConfigSupport.configureConsumerRealm(realm,
+                    KcOidcBrokerConfigSupport.createOidcIdentityProvider()
+                            .attribute("clientSecret", CLIENT_SECRET_JWT)
+                            .attribute("clientAuthMethod", OIDCLoginProtocol.CLIENT_SECRET_JWT));
         }
-        
-
     }
 }

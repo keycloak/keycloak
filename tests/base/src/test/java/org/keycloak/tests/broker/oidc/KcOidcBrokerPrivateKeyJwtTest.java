@@ -1,72 +1,96 @@
-/*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package org.keycloak.testsuite.broker;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+package org.keycloak.tests.broker.oidc;
 
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.models.IdentityProviderSyncMode;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.representations.idm.KeysMetadataRepresentation.KeyMetadataRepresentation;
-import org.keycloak.testsuite.util.KeyUtils;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.IdpReviewUserProfilePage;
+import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.tests.broker.BrokerLoginTest;
+import org.keycloak.tests.broker.KcOidcBrokerConfigSupport;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
-import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
+@KeycloakIntegrationTest
+public class KcOidcBrokerPrivateKeyJwtTest implements BrokerLoginTest, KcOidcBrokerConfigSupport {
 
-public class KcOidcBrokerPrivateKeyJwtTest extends AbstractBrokerTest {
+    @InjectRealm(ref = "provider", lifecycle = LifeCycle.METHOD,
+            config = PrivateKeyJwtProviderRealmConfig.class)
+    ManagedRealm providerRealm;
+
+    @InjectRealm(ref = "consumer", lifecycle = LifeCycle.METHOD,
+            config = PrivateKeyJwtConsumerRealmConfig.class)
+    ManagedRealm consumerRealm;
+
+    @InjectOAuthClient(realmRef = "consumer")
+    OAuthClient oauth;
+
+    @InjectWebDriver
+    ManagedWebDriver webDriver;
+
+    @InjectPage
+    LoginPage loginPage;
+
+    @InjectPage
+    IdpReviewUserProfilePage updateProfilePage;
 
     @Override
-    protected BrokerConfiguration getBrokerConfiguration() {
-        return new KcOidcBrokerConfigurationWithJWTAuthentication();
+    public ManagedRealm getProviderRealm() {
+        return providerRealm;
     }
 
-    private class KcOidcBrokerConfigurationWithJWTAuthentication extends KcOidcBrokerConfiguration {
-
-        @Override
-        public List<ClientRepresentation> createProviderClients() {
-            List<ClientRepresentation> clientsRepList = super.createProviderClients();
-            log.info("Update provider clients to accept JWT authentication");
-            KeyMetadataRepresentation keyRep = KeyUtils.findActiveSigningKey(adminClient.realm(consumerRealmName()), Algorithm.RS256);
-            for (ClientRepresentation client: clientsRepList) {
-                client.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
-                if (client.getAttributes() == null) {
-                    client.setAttributes(new HashMap<String, String>());
-                }
-                client.getAttributes().put(JWTClientAuthenticator.CERTIFICATE_ATTR, keyRep.getCertificate());
-            }
-            return clientsRepList;
-        }
-
-        @Override
-        public IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode syncMode) {
-            IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
-            Map<String, String> config = idp.getConfig();
-            applyDefaultConfiguration(config, syncMode);
-            config.put("clientSecret", null);
-            config.put("clientAuthMethod", OIDCLoginProtocol.PRIVATE_KEY_JWT);
-            return idp;
-        }
-
+    @Override
+    public ManagedRealm getConsumerRealm() {
+        return consumerRealm;
     }
 
+    @Override
+    public OAuthClient getOAuthClient() {
+        return oauth;
+    }
+
+    @Override
+    public ManagedWebDriver getWebDriver() {
+        return webDriver;
+    }
+
+    @Override
+    public LoginPage getLoginPage() {
+        return loginPage;
+    }
+
+    @Override
+    public IdpReviewUserProfilePage getUpdateProfilePage() {
+        return updateProfilePage;
+    }
+
+    static class PrivateKeyJwtProviderRealmConfig implements RealmConfig {
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return KcOidcBrokerConfigSupport.configureProviderRealm(realm,
+                    KcOidcBrokerConfigSupport.createDefaultProviderClient()
+                            .authenticatorType(JWTClientAuthenticator.PROVIDER_ID)
+                            .attribute(OIDCConfigAttributes.USE_JWKS_URL, "true")
+                            .attribute(OIDCConfigAttributes.JWKS_URL,
+                                    "http://localhost:8080/realms/" + CONSUMER_REALM + "/protocol/openid-connect/certs"));
+        }
+    }
+
+    static class PrivateKeyJwtConsumerRealmConfig implements RealmConfig {
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return KcOidcBrokerConfigSupport.configureConsumerRealm(realm,
+                    KcOidcBrokerConfigSupport.createOidcIdentityProvider()
+                            .attribute("clientSecret", "")
+                            .attribute("clientAuthMethod", OIDCLoginProtocol.PRIVATE_KEY_JWT));
+        }
+    }
 }
