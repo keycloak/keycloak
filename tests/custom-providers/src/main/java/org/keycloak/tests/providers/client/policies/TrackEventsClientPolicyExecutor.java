@@ -29,6 +29,10 @@ public class TrackEventsClientPolicyExecutor implements ClientPolicyExecutorProv
         this.events = new ArrayList<>();
     }
 
+    public static TrackEventsClientPolicyExecutor getInstance() {
+        return SINGLETON;
+    }
+
     @Override
     public void executeOnEvent(ClientPolicyContext context) {
         log.warnf("Executor with type: %s", context.getEvent());

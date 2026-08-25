@@ -34,6 +34,7 @@ import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepres
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientProtocolCondition;
 import org.keycloak.services.clientpolicy.condition.ClientProtocolConditionFactory;
@@ -144,6 +145,23 @@ public class AdminProtocolMapperClientPolicyTest extends AbstractClientPoliciesT
     }
 
     @Test
+    public void protocolMapperCrudTriggersCorrectEvents() throws Exception {
+        ProtocolMappersResource mappers = createClient("event-mapper-client").getProtocolMappers();
+        TrackEventsClientPolicyExecutor executor = setupAdjustingPolicy();
+
+        String mapperId = createMapper(mappers, mapper("event-mapper", "email"));
+        assertAndClearEvents(executor, ClientPolicyEvent.REGISTER_PROTOCOL_MAPPER);
+
+        ProtocolMapperRepresentation update = mappers.getMapperById(mapperId);
+        update.setName("updated-event-mapper");
+        mappers.update(mapperId, update);
+        assertAndClearEvents(executor, ClientPolicyEvent.UPDATE_PROTOCOL_MAPPER);
+
+        mappers.delete(mapperId);
+        assertAndClearEvents(executor, ClientPolicyEvent.UNREGISTER_PROTOCOL_MAPPER);
+    }
+
+    @Test
     public void persistPolicyAdjustedMapperRepresentations() throws Exception {
         ProtocolMappersResource mappers = createClient("adjusted-mapper-client").getProtocolMappers();
         setupAdjustingPolicy();
@@ -230,6 +248,11 @@ public class AdminProtocolMapperClientPolicyTest extends AbstractClientPoliciesT
                 mapper.getConfig().get(TrackEventsClientPolicyExecutor.POLICY_ADJUSTED));
     }
 
+    private void assertAndClearEvents(TrackEventsClientPolicyExecutor executor, ClientPolicyEvent event) {
+        Assertions.assertEquals(List.of(event), executor.getEvents());
+        executor.clearEventResult();
+    }
+
     private void setupRejectingPolicy() throws Exception {
         setupPolicy(realm, RejectRequestExecutorFactory.PROVIDER_ID, null,
                 AnyClientConditionFactory.PROVIDER_ID, new ClientPolicyConditionConfigurationRepresentation());
@@ -247,10 +270,13 @@ public class AdminProtocolMapperClientPolicyTest extends AbstractClientPoliciesT
                 ClientUpdaterContextConditionFactory.PROVIDER_ID, configuration);
     }
 
-    private void setupAdjustingPolicy() throws Exception {
+    private TrackEventsClientPolicyExecutor setupAdjustingPolicy() throws Exception {
+        TrackEventsClientPolicyExecutor executor = TrackEventsClientPolicyExecutor.getInstance();
+        executor.clearEventResult();
         setupPolicy(realm, TrackEventsClientPolicyExecutor.PROVIDER_ID,
                 new TrackEventsClientPolicyExecutor.Configuration(), AnyClientConditionFactory.PROVIDER_ID,
                 new ClientPolicyConditionConfigurationRepresentation());
+        return executor;
     }
 
     public static class CustomProvidersServerConfig implements KeycloakServerConfig {
