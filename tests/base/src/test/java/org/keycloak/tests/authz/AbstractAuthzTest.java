@@ -1,5 +1,8 @@
 package org.keycloak.tests.authz;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,6 +39,7 @@ public abstract class AbstractAuthzTest extends AbstractKeycloakTest {
     @BeforeEach
     public void beforeAuthzTest() {
         super.adminClient = adminClient;
+        getTestingClient();
         importedRealmNames.clear();
         testRealmReps = new ArrayList<>();
         addTestRealms(testRealmReps);
@@ -107,5 +111,21 @@ public abstract class AbstractAuthzTest extends AbstractKeycloakTest {
         authorization.policies().create(onlyOwnerPolicy).close();
 
         return onlyOwnerPolicy;
+    }
+
+    protected InputStream authzConfigurationStream(InputStream input) {
+        try {
+            String authServerRoot = oauth.getBaseUrl();
+            int realmSegmentIndex = authServerRoot.indexOf("/realms/");
+            if (realmSegmentIndex >= 0) {
+                authServerRoot = authServerRoot.substring(0, realmSegmentIndex);
+            }
+            String config = new String(input.readAllBytes(), StandardCharsets.UTF_8)
+                    .replace("http://localhost:8180/auth", authServerRoot)
+                    .replace("https://localhost:8543/auth", authServerRoot);
+            return new ByteArrayInputStream(config.getBytes(StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to read authz configuration", e);
+        }
     }
 }

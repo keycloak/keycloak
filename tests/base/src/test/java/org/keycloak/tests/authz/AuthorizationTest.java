@@ -211,7 +211,7 @@ public class AuthorizationTest extends AbstractAuthzTest {
 
     private AuthzClient getAuthzClient() {
         if (authzClient == null) {
-            authzClient = AuthzClient.create(getClass().getResourceAsStream("/authorization-test/default-keycloak.json"));
+            authzClient = AuthzClient.create(authzConfigurationStream(getClass().getResourceAsStream("/authorization-test/default-keycloak.json")));
         }
 
         return authzClient;

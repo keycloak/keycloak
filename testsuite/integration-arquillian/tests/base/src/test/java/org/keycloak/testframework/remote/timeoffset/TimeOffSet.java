@@ -60,7 +60,6 @@ public class TimeOffSet {
             setLegacyOffset(offset);
             return;
         }
-
         setRemoteOffset(offset);
     }
 
@@ -79,17 +78,13 @@ public class TimeOffSet {
 
     private void setLegacyOffset(int offset) {
         legacyTest.shouldResetTimeOffset(offset != 0);
-
         Time.setOffset(offset);
-
         legacyTest.getTestingClient().server().run(session -> {
             Time.setOffset(offset);
-
             if (offset == 0) {
                 session.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
             }
         });
-
         legacyTest.getAdminClient().tokenManager().grantToken();
     }
 
@@ -97,18 +92,14 @@ public class TimeOffSet {
         if (httpClient == null || serverUrl == null) {
             throw new IllegalStateException("Remote time offset is not initialized");
         }
-
         Time.setOffset(offset);
-
         var time = Map.of(KEY_OFFSET, offset, CACHES, enableForCaches);
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             String json = objectMapper.writeValueAsString(time);
-
             HttpPut request = new HttpPut(serverUrl + TIME_OFFSET_ENDPOINT);
             request.setEntity(new StringEntity(json));
             request.setHeader("Content-type", "application/json");
-
             HttpResponse response = httpClient.execute(request);
             if (response.getStatusLine().getStatusCode() != Response.Status.OK.getStatusCode()) {
                 var statusLine = response.getStatusLine();
