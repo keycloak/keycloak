@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.conformance.runner;
+package org.keycloak.testframework.conformance.runner;
 
 import java.util.List;
 
-import org.keycloak.tests.conformance.runner.BrowserFlow.BrowserTask;
+import org.keycloak.testframework.conformance.runner.BrowserFlow.BrowserTask;
 
 public interface BrowserInteraction {
 

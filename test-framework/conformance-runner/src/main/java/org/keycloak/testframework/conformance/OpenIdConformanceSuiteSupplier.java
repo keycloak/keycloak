@@ -15,32 +15,19 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.conformance.containers;
+package org.keycloak.testframework.conformance;
 
-import java.net.URI;
-import java.util.List;
-
-import org.keycloak.testframework.injection.DependenciesBuilder;
-import org.keycloak.testframework.injection.Dependency;
+import org.keycloak.testframework.conformance.annotations.InjectConformanceSuite;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
-import org.keycloak.testframework.server.KeycloakServer;
 
 
 public class OpenIdConformanceSuiteSupplier implements Supplier<OpenIdConformanceSuite, InjectConformanceSuite> {
 
     @Override
     public OpenIdConformanceSuite getValue(InstanceContext<OpenIdConformanceSuite, InjectConformanceSuite> instanceContext) {
-        // The KeycloakServer dependency ensures Keycloak is running before the suite containers connect to it
-        KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
-        URI serverUri = URI.create(server.getBaseUrl());
-        if (serverUri.getPort() != OpenIdConformanceSuite.KEYCLOAK_BASE_URI.getPort()) {
-            throw new IllegalStateException("Keycloak server port " + serverUri.getPort()
-                    + " does not match the port the conformance suite is configured to reach it at: "
-                    + OpenIdConformanceSuite.KEYCLOAK_BASE_URI);
-        }
         return OpenIdConformanceSuite.instance();
     }
 
@@ -53,11 +40,6 @@ public class OpenIdConformanceSuiteSupplier implements Supplier<OpenIdConformanc
     public boolean compatible(InstanceContext<OpenIdConformanceSuite, InjectConformanceSuite> a,
             RequestedInstance<OpenIdConformanceSuite, InjectConformanceSuite> b) {
         return true;
-    }
-
-    @Override
-    public List<Dependency> getDependencies(RequestedInstance<OpenIdConformanceSuite, InjectConformanceSuite> instanceContext) {
-        return DependenciesBuilder.create(KeycloakServer.class).build();
     }
 
     @Override

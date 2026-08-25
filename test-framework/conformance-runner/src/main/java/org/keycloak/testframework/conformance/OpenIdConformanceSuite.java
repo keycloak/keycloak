@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.conformance.containers;
+package org.keycloak.testframework.conformance;
 
 import java.net.URI;
 import java.security.KeyStore;
@@ -26,8 +26,11 @@ import java.util.List;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
-import org.keycloak.tests.conformance.runner.ConformanceApiClient;
+import org.keycloak.testframework.conformance.runner.ConformanceApiClient;
+import org.keycloak.testframework.logging.JBossContainerLogConsumer;
+import org.keycloak.testframework.util.ContainerImages;
 
+import org.jboss.logging.Logger;
 import org.testcontainers.Testcontainers;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
@@ -36,8 +39,11 @@ import org.testcontainers.utility.DockerImageName;
 
 public final class OpenIdConformanceSuite implements AutoCloseable {
 
-    public static final String IMAGE_TAG_PROPERTY = "keycloak.conformance.imageTag";
-    public static final String MONGO_IMAGE_TAG_PROPERTY = "keycloak.conformance.mongoImageTag";
+    private static final Logger LOGGER = Logger.getLogger(OpenIdConformanceSuite.class);
+
+    public static final String MONGODB_CONTAINER = "mongodb";
+    public static final String CONFORMANCE_CONTAINER = "conformance";
+    public static final String NGINX_CONTAINER = "nginx";
 
     // The suite URL within the container network, to be used by Keycloak redirect URIs and web origins
     public static final URI INTERNAL_BASE_URI = URI.create("https://nginx:8443");
@@ -45,9 +51,6 @@ public final class OpenIdConformanceSuite implements AutoCloseable {
     // The URL at which the suite containers reach Keycloak, which must be set as the Keycloak 'hostname' option
     public static final URI KEYCLOAK_BASE_URI = URI.create("https://host.testcontainers.internal:8443");
 
-    // Fallbacks for running outside Maven, where the defaults are set by the pom properties of the same name
-    private static final String DEFAULT_IMAGE_TAG = "release-v5.2.2";
-    private static final String DEFAULT_MONGO_IMAGE_TAG = "6.0.13";
     private static final String NGINX_CERTIFICATE_PATH = "/etc/ssl/certs/nginx-selfsigned.crt";
 
     private static OpenIdConformanceSuite instance;
@@ -85,18 +88,18 @@ public final class OpenIdConformanceSuite implements AutoCloseable {
     }
 
     private static OpenIdConformanceSuite start() {
-        String imageTag = System.getProperty(IMAGE_TAG_PROPERTY, DEFAULT_IMAGE_TAG);
-        String mongoImageTag = System.getProperty(MONGO_IMAGE_TAG_PROPERTY, DEFAULT_MONGO_IMAGE_TAG);
+        LOGGER.trace("Starting Conformance Suite with MongoDB (storage) and Nginx (access point)");
+
         Network network = Network.newNetwork();
 
-        GenericContainer<?> mongo = new GenericContainer<>(DockerImageName.parse("mongo:" + mongoImageTag))
+        GenericContainer<?> mongo = new GenericContainer<>(DockerImageName.parse(ContainerImages.getContainerImageName(MONGODB_CONTAINER)))
                 .withNetwork(network)
                 .withNetworkAliases("mongodb")
                 .withExposedPorts(27017)
+                .withLogConsumer(new JBossContainerLogConsumer(Logger.getLogger("managed.conformance.mongodb")))
                 .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofMinutes(2)));
 
-        GenericContainer<?> server = new GenericContainer<>(
-                DockerImageName.parse("registry.gitlab.com/openid/conformance-suite:" + imageTag))
+        GenericContainer<?> server = new GenericContainer<>(DockerImageName.parse(ContainerImages.getContainerImageName(CONFORMANCE_CONTAINER)))
                 .withNetwork(network)
                 .withNetworkAliases("server")
                 .withExposedPorts(8080)
@@ -108,14 +111,16 @@ public final class OpenIdConformanceSuite implements AutoCloseable {
                 .withEnv("OIDC_GITLAB_CLIENTID", "gitlab-client")
                 .withEnv("OIDC_GITLAB_SECRET", "gitlab-secret")
                 .dependsOn(mongo)
+                .withLogConsumer(new JBossContainerLogConsumer(Logger.getLogger("managed.conformance.suite")))
                 .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofMinutes(4)));
 
         GenericContainer<?> nginx = new GenericContainer<>(
-                DockerImageName.parse("registry.gitlab.com/openid/conformance-suite/nginx:" + imageTag))
+                DockerImageName.parse(ContainerImages.getContainerImageName(NGINX_CONTAINER)))
                 .withExposedPorts(8443)
                 .withNetwork(network)
                 .withNetworkAliases("nginx")
                 .dependsOn(server)
+                .withLogConsumer(new JBossContainerLogConsumer(Logger.getLogger("managed.conformance.nginx")))
                 .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofMinutes(2)));
 
         try {

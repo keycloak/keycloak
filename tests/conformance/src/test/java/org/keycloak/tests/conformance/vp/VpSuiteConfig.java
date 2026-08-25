@@ -19,8 +19,8 @@ package org.keycloak.tests.conformance.vp;
 
 import java.util.List;
 
-import org.keycloak.tests.conformance.runner.BrowserFlow;
-import org.keycloak.tests.conformance.runner.BrowserFlow.BrowserTask;
+import org.keycloak.testframework.conformance.runner.BrowserFlow;
+import org.keycloak.testframework.conformance.runner.BrowserFlow.BrowserTask;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonProperty;

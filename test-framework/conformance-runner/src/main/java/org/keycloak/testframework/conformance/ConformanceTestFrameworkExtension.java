@@ -15,14 +15,17 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.conformance.containers;
+package org.keycloak.testframework.conformance;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.util.List;
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.FIELD)
-public @interface InjectConformanceSuite {
+import org.keycloak.testframework.TestFrameworkExtension;
+import org.keycloak.testframework.injection.Supplier;
+
+public class ConformanceTestFrameworkExtension implements TestFrameworkExtension {
+
+    @Override
+    public List<Supplier<?, ?>> suppliers() {
+        return List.of(new OpenIdConformanceSuiteSupplier());
+    }
 }

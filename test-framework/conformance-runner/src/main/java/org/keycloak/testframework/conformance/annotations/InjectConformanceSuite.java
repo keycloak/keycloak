@@ -15,16 +15,14 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.conformance.runner;
+package org.keycloak.testframework.conformance.annotations;
 
-/**
- * Terminal results a module can finish with. Modules that capture an error page snapshot finish with REVIEW.
- */
-public enum ConformanceResult {
-    PASSED,
-    WARNING,
-    FAILED,
-    REVIEW,
-    SKIPPED,
-    UNKNOWN
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+public @interface InjectConformanceSuite {
 }

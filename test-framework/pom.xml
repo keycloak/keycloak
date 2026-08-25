@@ -115,6 +115,7 @@
         <module>remote-providers</module>
         <module>ui</module>
         <module>clustering</module>
+        <module>conformance-runner</module>
     </modules>
 
     <build>
