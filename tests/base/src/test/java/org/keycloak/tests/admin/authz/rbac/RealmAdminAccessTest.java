@@ -29,7 +29,9 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.RoleConfigBuilder;
+import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.Test;
@@ -714,7 +716,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
 
         runAs(realmName, "restricted-client", "scoped-admin", client -> {
             assertEquals(Status.FORBIDDEN.getStatusCode(), client.realm(realmName).users().create(
-                    UserBuilder.create("should-not-be-created").build()).getStatus());
+                    UserConfigBuilder.create().username("should-not-be-created").build()).getStatus());
         });
     }
 
@@ -766,7 +768,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
             // manage-users is NOT in scope — creating a user should be denied
             runAs("master", "restricted-client", masterUser.getUsername(), client -> {
                 assertEquals(Status.FORBIDDEN.getStatusCode(), client.realm(targetRealmName).users().create(
-                        UserBuilder.create("should-not-be-created-from-master").build()).getStatus());
+                        UserConfigBuilder.create().username("should-not-be-created-from-master").build()).getStatus());
             });
         } finally {
             masterRealm.admin().clients().get(restrictedClient.getId()).remove();
@@ -889,9 +891,10 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
                         testRealm.clients().get(realmMgmtUuid).roles().get(AdminRoles.VIEW_USERS).toRepresentation(),
                         testRealm.clients().get(realmMgmtUuid).roles().get(AdminRoles.QUERY_USERS).toRepresentation()));
 
-        ClientRepresentation tokenClient = ClientBuilder.create("test-client-lightweight")
-                .publicClient()
-                .directAccessGrantsEnabled()
+        ClientRepresentation tokenClient = ClientConfigBuilder.create()
+                .clientId("test-client-lightweight")
+                .publicClient(true)
+                .directAccessGrantsEnabled(true)
                 .fullScopeEnabled(false)
                 .attribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, Boolean.TRUE.toString())
                 .build();
@@ -932,9 +935,10 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
     }
 
     private ClientRepresentation createRestrictedScopeClient(RealmResource realm, String clientId) {
-        ClientRepresentation client = ClientBuilder.create(clientId)
-                .publicClient()
-                .directAccessGrantsEnabled()
+        ClientRepresentation client = ClientConfigBuilder.create().
+                clientId(clientId)
+                .publicClient(true)
+                .directAccessGrantsEnabled(true)
                 .fullScopeEnabled(false)
                 .build();
         try (Response response = realm.clients().create(client)) {

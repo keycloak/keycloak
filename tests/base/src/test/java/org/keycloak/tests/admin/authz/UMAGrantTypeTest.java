@@ -22,8 +22,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
+import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
@@ -93,6 +93,9 @@ public class UMAGrantTypeTest {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
         }
 
+        clientResource.authorization().resources().findByName("Default Resource")
+                .forEach(r -> clientResource.authorization().resources().resource(r.getId()).remove());
+
         AccessTokenResponse tokenResponse = oauth.client(clientId, clientSecret)
                 .doPasswordGrantRequest(user.getUsername(), user.getPassword());
         String idToken = tokenResponse.getIdToken();
@@ -110,9 +113,10 @@ public class UMAGrantTypeTest {
 
     public static class AuthzResourceServerConfig implements ClientConfig {
         @Override
-        public ClientBuilder configure(ClientBuilder client) {
+        public ClientConfigBuilder configure(ClientConfigBuilder client) {
             return client
                     .secret("secret")
+                    .serviceAccountsEnabled(true)
                     .authorizationServicesEnabled(true)
                     .directAccessGrantsEnabled(true);
         }
