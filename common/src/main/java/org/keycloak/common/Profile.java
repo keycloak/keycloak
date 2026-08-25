@@ -177,8 +177,8 @@ public class Profile {
 
         SSF("Shared Signals Framework", Type.EXPERIMENTAL),
 
-        HTTP_CLIENT("Internal HTTP Client", Type.DEFAULT, 1),
-        HTTP_CLIENT_V2("Internal HTTP Client version 2", Type.PREVIEW, 2),
+        HTTP_CLIENT("Apache-based outbound HTTP client", Type.DEFAULT, 1),
+        HTTP_CLIENT_V2("Vert.x-based outbound HTTP client", Type.PREVIEW, 2),
 
         HTTP_OPTIMIZED_SERIALIZERS("Optimized JSON serializers for better performance of the HTTP layer", Type.DEFAULT),
 

@@ -32,13 +32,19 @@ import org.apache.http.protocol.HttpContext;
 public class VertxHttpClientBridge extends CloseableHttpClient {
 
     private final WebClient webClient;
+    private final VertxHttpClientProvider provider;
 
-    VertxHttpClientBridge(WebClient webClient) {
+    VertxHttpClientBridge(WebClient webClient, VertxHttpClientProvider provider) {
         this.webClient = webClient;
+        this.provider = provider;
     }
 
     @Override
     protected CloseableHttpResponse doExecute(HttpHost target, HttpRequest request, HttpContext context) throws IOException {
+        return provider.executeWithRetry(() -> doExecuteInternal(target, request));
+    }
+
+    private CloseableHttpResponse doExecuteInternal(HttpHost target, HttpRequest request) throws IOException {
         URI uri = resolveUri(target, request);
         String method = request.getRequestLine().getMethod();
 
@@ -49,15 +55,24 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
             vertxRequest.putHeader(header.getName(), header.getValue());
         }
 
-        // Apply per-request timeout from Apache RequestConfig if present
+        // Vert.x timeout() covers the full request lifecycle (pool wait + connect + transfer),
+        // so use the stricter of Apache's split timeouts.
         long timeoutMs = VertxHttpClientProvider.DEFAULT_TIMEOUT_SECONDS * 1000;
         if (request instanceof HttpRequestBase) {
             RequestConfig rc = ((HttpRequestBase) request).getConfig();
             if (rc != null) {
                 int socketTimeout = rc.getSocketTimeout();
+                int connRequestTimeout = rc.getConnectionRequestTimeout();
+                int effectiveTimeout = Integer.MAX_VALUE;
                 if (socketTimeout > 0) {
-                    vertxRequest.timeout(socketTimeout);
-                    timeoutMs = socketTimeout;
+                    effectiveTimeout = socketTimeout;
+                }
+                if (connRequestTimeout > 0) {
+                    effectiveTimeout = Math.min(effectiveTimeout, connRequestTimeout);
+                }
+                if (effectiveTimeout < Integer.MAX_VALUE) {
+                    vertxRequest.timeout(effectiveTimeout);
+                    timeoutMs = effectiveTimeout;
                 }
             }
         }
@@ -66,6 +81,12 @@ public class VertxHttpClientBridge extends CloseableHttpClient {
         if (request instanceof HttpEntityEnclosingRequestBase) {
             HttpEntity entity = ((HttpEntityEnclosingRequestBase) request).getEntity();
             if (entity != null) {
+                if (entity.getContentType() != null && !request.containsHeader(entity.getContentType().getName())) {
+                    vertxRequest.putHeader(entity.getContentType().getName(), entity.getContentType().getValue());
+                }
+                if (entity.getContentEncoding() != null && !request.containsHeader(entity.getContentEncoding().getName())) {
+                    vertxRequest.putHeader(entity.getContentEncoding().getName(), entity.getContentEncoding().getValue());
+                }
                 bodyBuffer = readEntity(entity);
             }
         }
