@@ -53,7 +53,7 @@ import org.jboss.logging.Logger;
  * is session-scoped, not transaction-scoped. Setting it before commit would leave the relaxed durability
  * on the pooled connection, silently affecting subsequent unrelated transactions if the reset fails.
  * <p>
- * On unsupported databases, {@link #registerListeners(EntityManagerFactory)} is a no-op.
+ * On unsupported databases, {@link #registerListeners(EntityManagerFactory, boolean)} is a no-op.
  *
  * @author Alexander Schwartz
  */
