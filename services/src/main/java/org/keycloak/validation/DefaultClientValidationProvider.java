@@ -250,7 +250,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
             String value = revokeRefreshToken.trim();
             if (!"true".equalsIgnoreCase(value) && !"false".equalsIgnoreCase(value)) {
                 context.addError(OIDCConfigAttributes.REVOKE_REFRESH_TOKEN,
-                        "Revoke refresh token must be either 'true' or 'false'.",
+                        "Revoke refresh token must be either \"true\" or \"false\".",
                         Messages.REFRESH_TOKEN_REVOKE_INVALID);
             }
         }
