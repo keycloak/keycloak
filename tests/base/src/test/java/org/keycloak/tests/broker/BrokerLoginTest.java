@@ -1,6 +1,5 @@
 package org.keycloak.tests.broker;
 
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.ui.page.LoginPage;
@@ -19,27 +18,8 @@ public interface BrokerLoginTest extends BrokerConfigSupport {
 
     default void loginUser() {
         logInAsUserInIDP();
-
         updateAccountInformation();
-
-        ManagedRealm consumerRealm = getConsumerRealm();
-        UserRepresentation userRep = AccountHelper.getUserRepresentation(
-                consumerRealm.admin(), getUserLogin());
-        Assertions.assertNotNull(userRep, "There must be user " + getUserLogin() + " in consumer realm");
-        // The review-profile page filled in these names via the UI; assert they were actually persisted
-        // rather than overwriting them here, so a broken UI flow is caught instead of masked.
-        Assertions.assertEquals("Firstname", userRep.getFirstName(),
-                "First name should have been persisted by the review-profile page");
-        Assertions.assertEquals("Lastname", userRep.getLastName(),
-                "Last name should have been persisted by the review-profile page");
-
-        int userCount = consumerRealm.admin().users().count();
-        Assertions.assertTrue(userCount > 0, "There must be at least one user");
-
-        // userRep was fetched above via an exact username search, so assert its email directly instead of
-        // scanning the (paginated) users().list(), which could miss the user beyond the first page.
-        Assertions.assertEquals(getUserEmail(), userRep.getEmail(),
-                "There must be user " + getUserLogin() + " with the expected email in consumer realm");
+        assertUserCreatedInConsumerRealm();
     }
 
     default void testSingleLogout() {

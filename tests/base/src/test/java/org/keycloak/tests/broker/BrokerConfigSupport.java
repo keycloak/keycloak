@@ -3,8 +3,14 @@ package org.keycloak.tests.broker;
 import java.util.List;
 import java.util.Set;
 
+import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
+import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -13,6 +19,7 @@ import org.keycloak.testframework.ui.page.IdpReviewUserProfilePage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.AccountHelper;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,6 +56,12 @@ public interface BrokerConfigSupport {
                 getProviderRealm().admin().flows().updateRequiredAction(action.getAlias(), action);
             }
         }
+    }
+
+    @BeforeEach
+    default void enableUnmanagedAttributes() {
+        UserProfileUtil.enableUnmanagedAttributes(getConsumerRealm().admin().users().userProfile());
+        UserProfileUtil.enableUnmanagedAttributes(getProviderRealm().admin().users().userProfile());
     }
 
     default String getUserLogin() {
@@ -133,6 +146,53 @@ public interface BrokerConfigSupport {
     // Mid-test helper used by testSingleLogout() to verify login state after logout.
     default void logoutFromConsumerRealm() {
         AccountHelper.logout(getConsumerRealm().admin(), getUserLogin());
+    }
+
+    default void assertUserCreatedInConsumerRealm() {
+        ManagedRealm consumerRealm = getConsumerRealm();
+        UserRepresentation userRep = AccountHelper.getUserRepresentation(
+                consumerRealm.admin(), getUserLogin());
+        Assertions.assertNotNull(userRep, "There must be user " + getUserLogin() + " in consumer realm");
+        // The review-profile page filled in these names via the UI; assert they were actually persisted
+        // rather than overwriting them here, so a broken UI flow is caught instead of masked.
+        Assertions.assertEquals("Firstname", userRep.getFirstName(),
+                "First name should have been persisted by the review-profile page");
+        Assertions.assertEquals("Lastname", userRep.getLastName(),
+                "Last name should have been persisted by the review-profile page");
+
+        int userCount = consumerRealm.admin().users().count();
+        Assertions.assertTrue(userCount > 0, "There must be at least one user");
+
+        // userRep was fetched above via an exact username search, so assert its email directly instead of
+        // scanning the (paginated) users().list(), which could miss the user beyond the first page.
+        Assertions.assertEquals(getUserEmail(), userRep.getEmail(),
+                "There must be user " + getUserLogin() + " with the expected email in consumer realm");
+    }
+
+    default void disableUpdateProfileOnFirstLogin() {
+        var flows = getConsumerRealm().admin().flows();
+        for (AuthenticationExecutionInfoRepresentation execution :
+                flows.getExecutions(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW)) {
+            if (IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID.equals(execution.getProviderId())) {
+                execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE.name());
+                flows.updateExecutions(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW, execution);
+            } else if (execution.getAlias() != null
+                    && execution.getAlias().equals(DefaultAuthenticationFlows.IDP_REVIEW_PROFILE_CONFIG_ALIAS)) {
+                AuthenticatorConfigRepresentation config = flows.getAuthenticatorConfig(execution.getAuthenticationConfig());
+                config.getConfig().put("update.profile.on.first.login", IdentityProviderRepresentation.UPFLM_OFF);
+                flows.updateAuthenticatorConfig(config.getId(), config);
+            }
+        }
+        // Turning off the review-profile step is not enough: the new-testsuite consumer realm enables the
+        // VERIFY_PROFILE required action by default, which would still intercept the incomplete imported user
+        // (the provider user has no first/last name on purpose). Disable it so login reaches the callback,
+        // mirroring the legacy suite, which did not enable VERIFY_PROFILE at all.
+        for (RequiredActionProviderRepresentation action : getConsumerRealm().admin().flows().getRequiredActions()) {
+            if (UserModel.RequiredAction.VERIFY_PROFILE.name().equals(action.getAlias())) {
+                action.setEnabled(false);
+                getConsumerRealm().admin().flows().updateRequiredAction(action.getAlias(), action);
+            }
+        }
     }
 
     default void assertNumFederatedIdentities(String username, int expected) {

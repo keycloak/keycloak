@@ -1,4 +1,4 @@
-package org.keycloak.tests.broker;
+package org.keycloak.tests.broker.oidc;
 
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -14,6 +14,8 @@ import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.IdpReviewUserProfilePage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.tests.broker.BrokerLoginTest;
+import org.keycloak.tests.broker.KcOidcBrokerConfigSupport;
 
 @KeycloakIntegrationTest
 public class KcOidcBrokerClientSecretBasicAuthTest implements BrokerLoginTest, KcOidcBrokerConfigSupport {

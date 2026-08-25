@@ -1,23 +1,83 @@
-package org.keycloak.testsuite.broker;
+package org.keycloak.tests.broker.oidc;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
-import org.keycloak.models.IdentityProviderSyncMode;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.IdpReviewUserProfilePage;
+import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.tests.broker.BrokerLoginTest;
+import org.keycloak.tests.broker.KcOidcBrokerConfigSupport;
 
-public class KcOidcBrokerPkceTest extends AbstractBrokerTest {
+@KeycloakIntegrationTest
+public class KcOidcBrokerPkceTest implements BrokerLoginTest, KcOidcBrokerConfigSupport {
+
+    @InjectRealm(ref = "provider", lifecycle = LifeCycle.METHOD,
+            config = KcOidcBrokerConfigSupport.OidcProviderRealmConfig.class)
+    ManagedRealm providerRealm;
+
+    @InjectRealm(ref = "consumer", lifecycle = LifeCycle.METHOD,
+            config = PkceConsumerRealmConfig.class)
+    ManagedRealm consumerRealm;
+
+    @InjectOAuthClient(realmRef = "consumer")
+    OAuthClient oauth;
+
+    @InjectWebDriver
+    ManagedWebDriver webDriver;
+
+    @InjectPage
+    LoginPage loginPage;
+
+    @InjectPage
+    IdpReviewUserProfilePage updateProfilePage;
 
     @Override
-    protected BrokerConfiguration getBrokerConfiguration() {
-        return new KcOidcBrokerConfiguration() {
-            @Override public IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode syncMode) {
-                IdentityProviderRepresentation provider = super.setUpIdentityProvider(syncMode);
+    public ManagedRealm getProviderRealm() {
+        return providerRealm;
+    }
 
-                provider.getConfig().put(OAuth2IdentityProviderConfig.PKCE_ENABLED, "true");
-                provider.getConfig().put(OAuth2IdentityProviderConfig.PKCE_METHOD, OAuth2Constants.PKCE_METHOD_S256);
+    @Override
+    public ManagedRealm getConsumerRealm() {
+        return consumerRealm;
+    }
 
-                return provider;
-            }
-        };
+    @Override
+    public OAuthClient getOAuthClient() {
+        return oauth;
+    }
+
+    @Override
+    public ManagedWebDriver getWebDriver() {
+        return webDriver;
+    }
+
+    @Override
+    public LoginPage getLoginPage() {
+        return loginPage;
+    }
+
+    @Override
+    public IdpReviewUserProfilePage getUpdateProfilePage() {
+        return updateProfilePage;
+    }
+
+    static class PkceConsumerRealmConfig implements RealmConfig {
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return KcOidcBrokerConfigSupport.configureConsumerRealm(realm,
+                    KcOidcBrokerConfigSupport.createOidcIdentityProvider()
+                            .attribute(OAuth2IdentityProviderConfig.PKCE_ENABLED, "true")
+                            .attribute(OAuth2IdentityProviderConfig.PKCE_METHOD, OAuth2Constants.PKCE_METHOD_S256));
+        }
     }
 }
