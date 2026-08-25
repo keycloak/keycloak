@@ -99,7 +99,7 @@ public class SamlEcpProfileService extends SamlService {
                     // Do not allow ECP login when client does not support it
                     if (!new SamlClient(client).allowECPFlow()) {
                         logger.errorf("Client %s is not allowed to execute ECP flow", client.getClientId());
-                        throw new RuntimeException("Client is not allowed to use ECP profile.");
+                        return Soap.createFault().code("error").reason(AUTHN_REQUEST_CANNOT_BE_PROCESSED).build();
                     }
 
                     // force passive authentication when executing this profile
@@ -109,14 +109,8 @@ public class SamlEcpProfileService extends SamlService {
                 }
             }.execute(Soap.toSamlHttpPostMessage(soapMessage), null, null, null);
         } catch (Exception e) {
-            String reason = "Some error occurred while processing the AuthnRequest.";
-            String detail = e.getMessage();
-
-            if (detail == null) {
-                detail = reason;
-            }
-
-            return Soap.createFault().reason(reason).detail(detail).build();
+            logger.error("Some error occurred while processing the AuthnRequest.", e);
+            return Soap.createFault().code("error").reason(AUTHN_REQUEST_CANNOT_BE_PROCESSED).build();
         }
     }
 
