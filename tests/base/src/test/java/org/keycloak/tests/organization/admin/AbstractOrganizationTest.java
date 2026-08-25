@@ -31,8 +31,6 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.OrganizationModel;
-import org.keycloak.models.OrganizationModel.IdentityProviderRedirectMode;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
@@ -112,13 +110,21 @@ public abstract class AbstractOrganizationTest {
             id = ApiUtil.getCreatedId(response);
         }
 
-        if (orgDomains != null && orgDomains.length > 0) {
-            broker.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomains[0]);
-            broker.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
-        }
         managedRealm.admin().identityProviders().create(broker).close();
-
         managedRealm.admin().organizations().get(id).identityProviders().addIdentityProvider(broker.getAlias()).close();
+
+        if (orgDomains != null && orgDomains.length > 0) {
+            org = managedRealm.admin().organizations().get(id).toRepresentation();
+            org.getDomains().stream()
+                    .filter(d -> d.getName().equals(orgDomains[0]))
+                    .findFirst()
+                    .ifPresent(d -> {
+                        d.setIdentityProviderAlias(broker.getAlias());
+                        d.setAutoRedirect(true);
+                    });
+            managedRealm.admin().organizations().get(id).update(org).close();
+        }
+
         org = managedRealm.admin().organizations().get(id).toRepresentation();
 
         String orgId = id;
@@ -365,9 +371,7 @@ public abstract class AbstractOrganizationTest {
                 "tokenUrl", providerBaseUrl + "/protocol/openid-connect/token",
                 "userInfoUrl", providerBaseUrl + "/protocol/openid-connect/userinfo",
                 "defaultScope", "email profile",
-                "syncMode", "IMPORT",
-                OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomain,
-                IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString()
+                "syncMode", "IMPORT"
         ));
 
         consumerRealm.admin().identityProviders().create(idp).close();

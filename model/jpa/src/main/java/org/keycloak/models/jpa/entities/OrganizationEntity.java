@@ -28,6 +28,9 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
@@ -40,7 +43,7 @@ import org.keycloak.utils.StringUtil;
 @Entity
 @NamedQueries({
         @NamedQuery(name="getByOrgName", query="select distinct o from OrganizationEntity o where o.realmId = :realmId AND o.name = :name"),
-        @NamedQuery(name="getByDomainName", query="select distinct o from OrganizationEntity o inner join OrganizationDomainEntity d ON o.id = d.organization.id" +
+        @NamedQuery(name="getByDomainName", query="select distinct o from OrganizationEntity o inner join o.domains d" +
                 " where o.realmId = :realmId and d.name in (:names)"),
         @NamedQuery(name="getCount", query="select count(o) from OrganizationEntity o where o.realmId = :realmId"),
         @NamedQuery(name="deleteOrganizationsByRealm", query="delete from OrganizationEntity o where o.realmId = :realmId"),
@@ -77,8 +80,16 @@ public class OrganizationEntity {
     @Column(name = "GROUP_ID")
     private String groupId;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy="organization")
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "ORG_DOMAIN",
+            joinColumns = @JoinColumn(name = "ORG_ID"),
+            inverseJoinColumns = @JoinColumn(name = "DOMAIN_ID")
+    )
     protected Set<OrganizationDomainEntity> domains = new HashSet<>();
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "organization", fetch = FetchType.LAZY)
+    protected Set<OrganizationIdentityProviderEntity> identityProviders = new HashSet<>();
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy = "organization", fetch = FetchType.LAZY)
     protected Set<GroupEntity> groups = new HashSet<>();
@@ -163,6 +174,13 @@ public class OrganizationEntity {
 
     public void removeDomain(OrganizationDomainEntity domainEntity) {
         this.domains.remove(domainEntity);
+    }
+
+    public Set<OrganizationIdentityProviderEntity> getIdentityProviderLinks() {
+        if (this.identityProviders == null) {
+            this.identityProviders = new HashSet<>();
+        }
+        return this.identityProviders;
     }
 
     public Set<GroupEntity> getGroups() {
