@@ -93,7 +93,9 @@ public class CollectionUtil {
             return Collections.emptyList();
         }
         int chunkCapacity = Math.min(chunkSize, items.size());
-        List<List<T>> chunks = new ArrayList<>((items.size() + chunkSize - 1) / chunkSize);
+        // ceil(size / chunkSize) without overflowing for large chunkSize values; items is non-empty here
+        int chunkCount = 1 + (items.size() - 1) / chunkSize;
+        List<List<T>> chunks = new ArrayList<>(chunkCount);
         List<T> chunk = new ArrayList<>(chunkCapacity);
         for (T item : items) {
             chunk.add(item);

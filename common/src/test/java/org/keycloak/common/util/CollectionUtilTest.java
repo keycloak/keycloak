@@ -156,6 +156,12 @@ public class CollectionUtilTest {
         }
 
         @Test
+        void maxChunkSizeDoesNotOverflow() {
+            List<List<String>> chunks = CollectionUtil.partition(ids(3), Integer.MAX_VALUE);
+            Assertions.assertEquals(Collections.singletonList(ids(3)), chunks);
+        }
+
+        @Test
         void emptyOrNullInputYieldsNoChunks() {
             Assertions.assertTrue(CollectionUtil.partition(Collections.emptyList(), 3).isEmpty());
             Assertions.assertTrue(CollectionUtil.partition(null, 3).isEmpty());

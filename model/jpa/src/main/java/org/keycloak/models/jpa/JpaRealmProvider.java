@@ -523,15 +523,16 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         if (parentRoleIds == null || parentRoleIds.isEmpty()) {
             return Stream.empty();
         }
-        // One query fetches the child roles for every parent in the frontier, so a composite-role
-        // tree expands with a single getChildRolesFromParentIds query per breadth-first level. The
-        // query hydrates the child RoleEntity rows, so the getRoleById calls below are served from
-        // the persistence context without extra round-trips.
+        // getChildRolesFromParentIds fetches the child roles of many parents at once, so a
+        // composite-role tree expands with a bounded number of queries per breadth-first level
+        // instead of one per role. The query hydrates the child RoleEntity rows, so the getRoleById
+        // calls below are served from the persistence context without extra round-trips.
         //
-        // Databases cap the number of bind parameters per statement (e.g. MSSQL: 2100), so a large
-        // frontier is split into chunks of at most jpaInParametersLimitThreshold parent ids, each
-        // queried separately. The query is "select distinct", but a child shared by parents in
-        // different chunks would be returned once per chunk, hence the distinct() on the child ids.
+        // Databases cap the number of bind parameters per statement (e.g. MSSQL: 2100), so the
+        // frontier is split into chunks of at most jpaInParametersLimitThreshold parent ids and
+        // one query is issued per chunk (i.e. a single query for frontiers within the threshold).
+        // The query is "select distinct", but a child shared by parents in different chunks would
+        // be returned once per chunk, hence the distinct() on the child ids.
         List<List<String>> roleIdChunks = CollectionUtil.partition(parentRoleIds, jpaInParametersLimitThreshold);
         return roleIdChunks.stream()
                 .flatMap(parentRoleIdsChunk -> {
