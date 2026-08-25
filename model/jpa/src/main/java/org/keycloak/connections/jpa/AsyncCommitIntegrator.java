@@ -67,8 +67,12 @@ public abstract class AsyncCommitIntegrator implements PreInsertEventListener, P
     /**
      * Registers asynchronous commit listeners on the given {@link EntityManagerFactory}
      * if the underlying database supports it. No-op for unsupported databases.
+     *
+     * @param xaEnabled whether the datasource uses XA transactions. Implementations that issue
+     *                  a raw {@code COMMIT} (SQL Server, Oracle) are incompatible with XA because
+     *                  the XA coordinator owns the transaction boundaries.
      */
-    public static void registerListeners(EntityManagerFactory emf) {
+    public static void registerListeners(EntityManagerFactory emf, boolean xaEnabled) {
         SessionFactoryImplementor sf = emf.unwrap(SessionFactoryImplementor.class);
 
         AsyncCommitIntegrator listener;
@@ -83,6 +87,12 @@ public abstract class AsyncCommitIntegrator implements PreInsertEventListener, P
             return;
         }
 
+        if (xaEnabled && !listener.supportsXa()) {
+            logger.debugf("Asynchronous commit optimization disabled for %s: not supported with XA datasources",
+                    dialect.getClass().getSimpleName());
+            return;
+        }
+
         if (!listener.isEnabled(sf)) {
             return;
         }
@@ -93,6 +103,18 @@ public abstract class AsyncCommitIntegrator implements PreInsertEventListener, P
         registry.appendListeners(EventType.PRE_DELETE, listener);
 
         logger.debugf("Registered asynchronous commit listeners for %s", dialect.getClass().getSimpleName());
+    }
+
+    /**
+     * Whether this implementation is compatible with XA datasources.
+     * Implementations that issue a raw {@code COMMIT} inside the managed transaction must
+     * return {@code false} — XA coordinators do not allow explicit commit on enlisted connections
+     * (Oracle raises ORA-02089, SQL Server rejects commits outside the XA coordinator).
+     * <p>
+     * Defaults to {@code true} for implementations like PostgreSQL that only set session variables.
+     */
+    protected boolean supportsXa() {
+        return true;
     }
 
     /**

@@ -44,12 +44,21 @@ import org.jboss.logging.Logger;
  * <p>
  * Requires the database to have {@code DELAYED_DURABILITY = ALLOWED} set by the DBA:
  * <pre>ALTER DATABASE ... SET DELAYED_DURABILITY = ALLOWED</pre>
+ * <p>
+ * This implementation is incompatible with XA datasources ({@code --transaction-xa-enabled=true})
+ * because the XA coordinator owns the transaction boundaries and rejects explicit commits on
+ * enlisted connections. See {@link #supportsXa()}.
  *
  * @author Alexander Schwartz
  */
 class MSSQLAsyncCommitIntegrator extends AsyncCommitIntegrator {
 
     private static final Logger logger = Logger.getLogger(MSSQLAsyncCommitIntegrator.class);
+
+    @Override
+    protected boolean supportsXa() {
+        return false;
+    }
 
     @Override
     protected boolean isEnabled(SessionFactoryImplementor sf) {

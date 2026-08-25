@@ -437,6 +437,8 @@ ALTER DATABASE <your-database-name> SET DELAYED_DURABILITY = ALLOWED;
 
 {project_name} will then automatically use `COMMIT TRAN WITH (DELAYED_DURABILITY = ON)` for eligible transactions.
 
+NOTE: This optimization is not available when using XA datasources (`+--transaction-xa-enabled=true+`).
+
 You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--async-commit=false+`
 
 == Preparing for Oracle Database
@@ -445,6 +447,8 @@ You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--asy
 
 Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events will use Oracle's asynchronous redo log write (`COMMIT WRITE BATCH NOWAIT`).
 Logouts will still force a synchronous commit.
+
+NOTE: This optimization is not available when using XA datasources (`+--transaction-xa-enabled=true+`).
 
 You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--async-commit=false+`
 

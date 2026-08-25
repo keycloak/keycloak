@@ -44,12 +44,21 @@ import org.jboss.logging.Logger;
  * <p>
  * No database-level prerequisite is required — Oracle supports {@code COMMIT WRITE} options
  * without any prior configuration.
+ * <p>
+ * This implementation is incompatible with XA datasources ({@code --transaction-xa-enabled=true})
+ * because the XA coordinator owns the transaction boundaries and rejects explicit commits on
+ * enlisted connections (Oracle raises ORA-02089). See {@link #supportsXa()}.
  *
  * @author Alexander Schwartz
  */
 class OracleAsyncCommitIntegrator extends AsyncCommitIntegrator {
 
     private static final Logger logger = Logger.getLogger(OracleAsyncCommitIntegrator.class);
+
+    @Override
+    protected boolean supportsXa() {
+        return false;
+    }
 
     @Override
     protected boolean isEnabled(SessionFactoryImplementor sf) {

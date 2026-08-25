@@ -112,6 +112,7 @@ Logouts will still force a synchronous commit.
 
 On MS SQL Server, the DBA must enable delayed durability first: `ALTER DATABASE ... SET DELAYED_DURABILITY = ALLOWED`.
 On Oracle, no database-level configuration is required.
+On both databases, the optimization is automatically disabled when using XA datasources (`+--transaction-xa-enabled=true+`).
 
 You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--async-commit=false+`
 
