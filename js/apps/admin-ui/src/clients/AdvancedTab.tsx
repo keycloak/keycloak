@@ -49,20 +49,20 @@ export const parseResult = (
 
 // The ACR to LoA mapping is stored as a JSON string but edited as key/value pairs (see setupForm in ClientDetails)
 const toFormValue = (name: string, value?: string) => {
-  if (!value) {
-    return "";
-  }
   if (name === "acr.loa.map") {
+    if (!value) {
+      return [];
+    }
     try {
-      return Object.entries(JSON.parse(value)).flatMap(([key, value]) => ({
+      return Object.entries(JSON.parse(value)).map(([key, value]) => ({
         key,
         value,
       }));
     } catch {
-      return "";
+      return [];
     }
   }
-  return value;
+  return value || "";
 };
 
 export type AdvancedProps = {
