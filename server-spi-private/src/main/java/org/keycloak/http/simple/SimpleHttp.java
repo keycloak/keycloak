@@ -31,7 +31,7 @@ public class SimpleHttp {
     /**
      * @deprecated Use {@link #create(KeycloakSession)} instead. Will be removed when Apache HTTP client dependency is dropped.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(since = "27.0", forRemoval = true)
     public static SimpleHttp create(HttpClient httpClient) {
         return new SimpleHttp(httpClient, HttpClientProvider.DEFAULT_MAX_CONSUMED_RESPONSE_SIZE);
     }
@@ -39,7 +39,7 @@ public class SimpleHttp {
     /**
      * @deprecated Apache-specific configuration type. Will be removed when Apache HTTP client dependency is dropped.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(since = "27.0", forRemoval = true)
     public SimpleHttp withRequestConfig(RequestConfig requestConfig) {
         this.requestConfig = requestConfig;
         return this;
