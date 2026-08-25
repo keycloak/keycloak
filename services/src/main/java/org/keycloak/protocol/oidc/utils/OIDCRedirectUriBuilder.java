@@ -83,6 +83,7 @@ public abstract class OIDCRedirectUriBuilder {
 
         @Override
         public OIDCRedirectUriBuilder addParam(String paramName, String paramValue) {
+            uriBuilder.removeQueryParamByDecodedName(paramName);
             uriBuilder.queryParam(paramName, paramValue);
             return this;
         }
@@ -116,9 +117,22 @@ public abstract class OIDCRedirectUriBuilder {
             if (fragment == null) {
                 fragment = new StringBuilder(param);
             } else {
+                removeFragmentParamByDecodedName(paramName);
                 fragment.append("&").append(param);
             }
             return this;
+        }
+
+        private void removeFragmentParamByDecodedName(String name) {
+            StringBuilder cleaned = new StringBuilder();
+            for (String param : fragment.toString().split("&")) {
+                int eqPos = param.indexOf('=');
+                String rawName = eqPos >= 0 ? param.substring(0, eqPos) : param;
+                if (name.equals(Encode.decode(rawName))) continue;
+                if (!cleaned.isEmpty()) cleaned.append("&");
+                cleaned.append(param);
+            }
+            fragment = cleaned;
         }
 
         @Override
