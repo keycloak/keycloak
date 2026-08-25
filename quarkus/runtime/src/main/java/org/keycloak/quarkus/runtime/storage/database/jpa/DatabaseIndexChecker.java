@@ -214,6 +214,8 @@ public class DatabaseIndexChecker implements Runnable {
             for (var info : indexes) {
                 try {
                     if (info.invalid && isPostgres) {
+                        // On PostgreSQL, CREATE INDEX CONCURRENTLY can leave an invalid index if it fails mid-build (e.g. timeout, deadlock, or crash).
+                        // The invalid index occupies the name but doesn't serve queries, so it must be dropped before the index can be recreated.
                         logger.infov("Dropping invalid index {0} before recreating", info.indexName);
                         try (var stmt = connection.createStatement()) {
                             stmt.execute("DROP INDEX IF EXISTS " + info.indexName);
@@ -341,6 +343,8 @@ public class DatabaseIndexChecker implements Runnable {
         return existingIndexes;
     }
 
+    // On PostgreSQL, CREATE INDEX CONCURRENTLY can leave an invalid index if it fails mid-build (e.g. timeout, deadlock, or crash).
+    // The invalid index occupies the name but doesn't serve queries, so it must be dropped before the index can be recreated.
     private Set<String> getInvalidIndexNames(Connection connection, DatabaseMetaData metaData, Set<String> expectedIndexNames) throws SQLException {
         if (!metaData.getDatabaseProductName().toLowerCase().contains("postgres")) {
             return Set.of();
