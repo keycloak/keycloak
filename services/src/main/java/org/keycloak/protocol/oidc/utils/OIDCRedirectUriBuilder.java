@@ -175,8 +175,6 @@ public abstract class OIDCRedirectUriBuilder {
         @Override
         public Response build() {
             StringBuilder builder = new StringBuilder();
-            uriBuilder.replaceQuery(null);
-            uriBuilder.fragment(null);
             URI redirectUri = uriBuilder.build();
 
             builder.append("<HTML>");
@@ -281,8 +279,6 @@ public abstract class OIDCRedirectUriBuilder {
 
         private Response buildFormPostResponse() {
             StringBuilder builder = new StringBuilder();
-            uriBuilder.replaceQuery(null);
-            uriBuilder.fragment(null);
             URI redirectUri = uriBuilder.build();
 
             builder.append("<HTML>");

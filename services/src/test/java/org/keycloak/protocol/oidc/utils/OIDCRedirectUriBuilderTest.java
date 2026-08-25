@@ -20,8 +20,8 @@ import java.net.URI;
 
 import jakarta.ws.rs.core.Response;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for stripping of forbidden OIDC parameters in OIDCRedirectUriBuilder.
@@ -37,9 +37,9 @@ public class OIDCRedirectUriBuilderTest {
         URI location = response.getLocation();
 
         String url = location.toString();
-        Assert.assertFalse("Attacker's code param should be stripped", url.contains("code=evil"));
-        Assert.assertTrue("Legitimate code param should be present", url.contains("code=real_code"));
-        Assert.assertTrue("Non-forbidden param should survive", url.contains("legit=keep"));
+        Assertions.assertFalse(url.contains("code=evil"), "Attacker's code param should be stripped");
+        Assertions.assertTrue(url.contains("code=real_code"), "Legitimate code param should be present");
+        Assertions.assertTrue(url.contains("legit=keep"), "Non-forbidden param should survive");
     }
 
     @Test
@@ -51,8 +51,8 @@ public class OIDCRedirectUriBuilderTest {
         URI location = response.getLocation();
 
         String url = location.toString();
-        Assert.assertFalse("Attacker's state in fragment should be stripped", url.contains("state=evil"));
-        Assert.assertTrue("Legitimate state param should be present", url.contains("state=real_state"));
+        Assertions.assertFalse(url.contains("state=evil"), "Attacker's state in fragment should be stripped");
+        Assertions.assertTrue(url.contains("state=real_state"), "Legitimate state param should be present");
     }
 
     @Test
@@ -64,9 +64,9 @@ public class OIDCRedirectUriBuilderTest {
         URI location = response.getLocation();
 
         String url = location.toString();
-        Assert.assertFalse("Percent-encoded forbidden param should be stripped", url.contains("evil"));
-        Assert.assertTrue("Legitimate code param should be present", url.contains("code=real_code"));
-        Assert.assertTrue("Non-forbidden param should survive", url.contains("legit=keep"));
+        Assertions.assertFalse(url.contains("c%6Fde=evil"), "Percent-encoded forbidden param should be stripped");
+        Assertions.assertTrue(url.contains("code=real_code"), "Legitimate code param should be present");
+        Assertions.assertTrue(url.contains("legit=keep"), "Non-forbidden param should survive");
     }
 
     @Test
@@ -78,9 +78,9 @@ public class OIDCRedirectUriBuilderTest {
         URI location = response.getLocation();
 
         String url = location.toString();
-        Assert.assertFalse("Attacker's code in fragment should be stripped", url.contains("code=evil"));
-        Assert.assertTrue("Legitimate code param should be present", url.contains("code=real_code"));
-        Assert.assertTrue("Non-forbidden fragment param should survive", url.contains("custom=keep"));
+        Assertions.assertFalse(url.contains("code=evil"), "Attacker's code in fragment should be stripped");
+        Assertions.assertTrue(url.contains("code=real_code"), "Legitimate code param should be present");
+        Assertions.assertTrue(url.contains("custom=keep"), "Non-forbidden fragment param should survive");
     }
 
     @Test
@@ -92,8 +92,8 @@ public class OIDCRedirectUriBuilderTest {
         URI location = response.getLocation();
 
         String url = location.toString();
-        Assert.assertFalse("Attacker's code in query should be stripped", url.contains("code=evil"));
-        Assert.assertTrue("Legitimate code param should be present", url.contains("code=real_code"));
+        Assertions.assertFalse(url.contains("code=evil"), "Attacker's code in query should be stripped");
+        Assertions.assertTrue(url.contains("code=real_code"), "Legitimate code param should be present");
     }
 
     @Test
@@ -105,11 +105,11 @@ public class OIDCRedirectUriBuilderTest {
         Response response = builder.build();
         String html = (String) response.getEntity();
 
-        Assert.assertTrue("Form action should point to callback URL", html.contains("ACTION=\"https://client.com/callback\""));
-        Assert.assertFalse("Query params should not appear in form action", html.contains("code=evil"));
-        Assert.assertFalse("Fragment should not appear in form action", html.contains("state=evil"));
-        Assert.assertTrue("Legitimate code should be in hidden field", html.contains("VALUE=\"real_code\""));
-        Assert.assertTrue("Legitimate state should be in hidden field", html.contains("VALUE=\"real_state\""));
+        Assertions.assertTrue(html.contains("ACTION=\"https://client.com/callback\""), "Form action should point to callback URL");
+        Assertions.assertFalse(html.contains("code=evil"), "Forbidden code param should be stripped by fromUri");
+        Assertions.assertFalse(html.contains("state=evil"), "Forbidden state param should be stripped by fromUri");
+        Assertions.assertTrue(html.contains("VALUE=\"real_code\""), "Legitimate code should be in hidden field");
+        Assertions.assertTrue(html.contains("VALUE=\"real_state\""), "Legitimate state should be in hidden field");
     }
 
     @Test
@@ -120,9 +120,9 @@ public class OIDCRedirectUriBuilderTest {
         Response response = builder.build();
         String html = (String) response.getEntity();
 
-        Assert.assertFalse("Forbidden param should be stripped from action URL", html.contains("code=evil"));
-        Assert.assertFalse("Query should be fully stripped from form action", html.contains("tab=profile"));
-        Assert.assertTrue("Legitimate code should be in hidden field", html.contains("VALUE=\"real_code\""));
+        Assertions.assertFalse(html.contains("code=evil"), "Forbidden param should be stripped from action URL");
+        Assertions.assertTrue(html.contains("tab=profile"), "Non-forbidden query param should survive in form action");
+        Assertions.assertTrue(html.contains("VALUE=\"real_code\""), "Legitimate code should be in hidden field");
     }
 
     @Test
@@ -134,14 +134,14 @@ public class OIDCRedirectUriBuilderTest {
         URI location = response.getLocation();
 
         String url = location.toString();
-        Assert.assertFalse("code should be stripped", url.contains("code=a"));
-        Assert.assertFalse("state should be stripped", url.contains("state=b"));
-        Assert.assertFalse("iss should be stripped", url.contains("iss=c"));
-        Assert.assertFalse("access_token should be stripped", url.contains("access_token=d"));
-        Assert.assertFalse("id_token should be stripped", url.contains("id_token=e"));
-        Assert.assertFalse("response should be stripped", url.contains("response=f"));
-        Assert.assertFalse("session_state should be stripped", url.contains("session_state=g"));
-        Assert.assertTrue("Non-forbidden param should survive", url.contains("legit=keep"));
+        Assertions.assertFalse(url.contains("code=a"), "code should be stripped");
+        Assertions.assertFalse(url.contains("state=b"), "state should be stripped");
+        Assertions.assertFalse(url.contains("iss=c"), "iss should be stripped");
+        Assertions.assertFalse(url.contains("access_token=d"), "access_token should be stripped");
+        Assertions.assertFalse(url.contains("id_token=e"), "id_token should be stripped");
+        Assertions.assertFalse(url.contains("response=f"), "response should be stripped");
+        Assertions.assertFalse(url.contains("session_state=g"), "session_state should be stripped");
+        Assertions.assertTrue(url.contains("legit=keep"), "Non-forbidden param should survive");
     }
 
     @Test
@@ -153,7 +153,7 @@ public class OIDCRedirectUriBuilderTest {
         URI location = response.getLocation();
 
         String url = location.toString();
-        Assert.assertTrue("Non-forbidden query param should survive", url.contains("tab=profile"));
-        Assert.assertTrue("Added param should be present", url.contains("code=real_code"));
+        Assertions.assertTrue(url.contains("tab=profile"), "Non-forbidden query param should survive");
+        Assertions.assertTrue(url.contains("code=real_code"), "Added param should be present");
     }
 }

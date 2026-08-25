@@ -865,16 +865,17 @@ public class KeycloakUriBuilder {
     }
 
     private static String removeParams(String paramString, Predicate<String> nameMatches) {
-        String result = null;
+        StringBuilder result = null;
         for (String param : paramString.split("&")) {
+            if (param.isEmpty()) continue;
             int pos = param.indexOf('=');
             String rawName = pos >= 0 ? param.substring(0, pos) : param;
             if (nameMatches.test(rawName)) continue;
-            if (result == null) result = "";
-            else result += "&";
-            result += param;
+            if (result == null) result = new StringBuilder();
+            else result.append('&');
+            result.append(param);
         }
-        return result;
+        return result == null ? null : result.toString();
     }
 
     public KeycloakUriBuilder resolveTemplate(String name, Object value, boolean encodeSlashInPath) throws IllegalArgumentException {
