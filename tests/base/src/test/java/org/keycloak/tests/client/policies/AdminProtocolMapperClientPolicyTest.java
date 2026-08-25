@@ -110,8 +110,9 @@ public class AdminProtocolMapperClientPolicyTest extends AbstractClientPoliciesT
                 mapper("scope-bulk-two", "username"));
         Assertions.assertDoesNotThrow(() -> mappers.createMapper(bulk));
 
-        ProtocolMapperRepresentation updated = mapper("scope-updated-mapper", "username");
-        updated.setId(existingMapperId);
+        ProtocolMapperRepresentation updated = mappers.getMapperById(existingMapperId);
+        updated.setName("scope-updated-mapper");
+        updated.getConfig().put("user.attribute", "username");
         Assertions.assertDoesNotThrow(() -> mappers.update(existingMapperId, updated));
         Assertions.assertEquals("scope-updated-mapper", mappers.getMapperById(existingMapperId).getName());
 
