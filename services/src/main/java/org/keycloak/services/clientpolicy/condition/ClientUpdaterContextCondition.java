@@ -71,21 +71,18 @@ public class ClientUpdaterContextCondition extends AbstractClientPolicyCondition
 
     @Override
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
+        if (context instanceof ClientPolicyCRUDContext clientPolicyCRUDContext && !(context instanceof ClientCRUDContext)) {
+            return isAuthMethodMatched(clientPolicyCRUDContext.getToken(),
+                    clientPolicyCRUDContext.getAuthenticatedUser() != null || clientPolicyCRUDContext.getAuthenticatedClient() != null)
+                    ? ClientPolicyVote.YES : ClientPolicyVote.NO;
+        }
+
         switch (context.getEvent()) {
         case REGISTER:
         case UPDATE:
         case REGISTERED:
         case UPDATED:
             if (isAuthMethodMatched((ClientCRUDContext)context)) return ClientPolicyVote.YES;
-            return ClientPolicyVote.NO;
-        case REGISTER_PROTOCOL_MAPPER:
-        case UPDATE_PROTOCOL_MAPPER:
-        case UNREGISTER_PROTOCOL_MAPPER:
-            ClientPolicyCRUDContext mapperContext = (ClientPolicyCRUDContext) context;
-            if (isAuthMethodMatched(mapperContext.getToken(),
-                    mapperContext.getAuthenticatedUser() != null || mapperContext.getAuthenticatedClient() != null)) {
-                return ClientPolicyVote.YES;
-            }
             return ClientPolicyVote.NO;
         default:
             return ClientPolicyVote.ABSTAIN;

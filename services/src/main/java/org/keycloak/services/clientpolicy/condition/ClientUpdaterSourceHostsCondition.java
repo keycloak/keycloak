@@ -28,6 +28,8 @@ import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepres
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
+import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
+import org.keycloak.services.clientpolicy.context.ClientPolicyCRUDContext;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
@@ -70,14 +72,15 @@ public class ClientUpdaterSourceHostsCondition extends AbstractClientPolicyCondi
 
     @Override
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
+        if (context instanceof ClientPolicyCRUDContext && !(context instanceof ClientCRUDContext)) {
+            return isHostMatched() ? ClientPolicyVote.YES : ClientPolicyVote.NO;
+        }
+
         switch (context.getEvent()) {
         case REGISTER:
         case UPDATE:
         case REGISTERED:
         case UPDATED:
-        case REGISTER_PROTOCOL_MAPPER:
-        case UPDATE_PROTOCOL_MAPPER:
-        case UNREGISTER_PROTOCOL_MAPPER:
             if (isHostMatched()) return ClientPolicyVote.YES;
             return ClientPolicyVote.NO;
         default:

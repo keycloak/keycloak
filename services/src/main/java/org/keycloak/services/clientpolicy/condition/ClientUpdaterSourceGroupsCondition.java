@@ -80,6 +80,10 @@ public class ClientUpdaterSourceGroupsCondition extends AbstractClientPolicyCond
 
     @Override
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
+        if (context instanceof ClientPolicyCRUDContext clientPolicyCRUDContext && !(context instanceof ClientCRUDContext)) {
+            return getVoteForGroupsMatched(clientPolicyCRUDContext.getAuthenticatedUser());
+        }
+
         switch (context.getEvent()) {
         case REGISTER:
         case REGISTERED:
@@ -99,10 +103,6 @@ public class ClientUpdaterSourceGroupsCondition extends AbstractClientPolicyCond
             } else {
                 throw new ClientPolicyException(OAuthErrorException.SERVER_ERROR, "unexpected context type.");
             }
-        case REGISTER_PROTOCOL_MAPPER:
-        case UPDATE_PROTOCOL_MAPPER:
-        case UNREGISTER_PROTOCOL_MAPPER:
-            return getVoteForGroupsMatched(((ClientPolicyCRUDContext) context).getAuthenticatedUser());
         default:
             return ClientPolicyVote.ABSTAIN;
         }

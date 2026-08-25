@@ -83,6 +83,10 @@ public class ClientUpdaterSourceRolesCondition extends AbstractClientPolicyCondi
 
     @Override
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
+        if (context instanceof ClientPolicyCRUDContext clientPolicyCRUDContext && !(context instanceof ClientCRUDContext)) {
+            return getVoteForRolesMatched(clientPolicyCRUDContext.getAuthenticatedUser());
+        }
+
         switch (context.getEvent()) {
         case REGISTER:
         case REGISTERED:
@@ -103,10 +107,6 @@ public class ClientUpdaterSourceRolesCondition extends AbstractClientPolicyCondi
             } else {
                 throw new ClientPolicyException(OAuthErrorException.SERVER_ERROR, "unexpected context type.");
             }
-        case REGISTER_PROTOCOL_MAPPER:
-        case UPDATE_PROTOCOL_MAPPER:
-        case UNREGISTER_PROTOCOL_MAPPER:
-            return getVoteForRolesMatched(((ClientPolicyCRUDContext) context).getAuthenticatedUser());
         default:
             return ClientPolicyVote.ABSTAIN;
         }

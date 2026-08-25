@@ -34,7 +34,7 @@ public class TrackEventsClientPolicyExecutor implements ClientPolicyExecutorProv
     }
 
     @Override
-    public void executeOnEvent(ClientPolicyContext context) {
+    public synchronized void executeOnEvent(ClientPolicyContext context) {
         log.warnf("Executor with type: %s", context.getEvent());
         events.add(context.getEvent());
         if (context instanceof ClientProtocolMapperContext mapperContext
@@ -48,12 +48,10 @@ public class TrackEventsClientPolicyExecutor implements ClientPolicyExecutorProv
         }
     }
 
-    public List<ClientPolicyEvent> getEvents() {
-        return events;
-    }
-
-    public void clearEventResult() {
+    public synchronized List<ClientPolicyEvent> snapshotAndClear() {
+        List<ClientPolicyEvent> snapshot = List.copyOf(events);
         events.clear();
+        return snapshot;
     }
 
     @Override

@@ -17,6 +17,10 @@ Client Secret Rotation enables confidential clients to rotate their secrets thro
 
 In this release, Client Secret Rotation is promoted from preview to supported. For more details, see the link:{adminguide_link}#_secret_rotation[{adminguide_name}].
 
+== Protocol mapper allow-list for Admin REST API
+
+Client Policies now provide the `allowed-protocol-mappers` executor to restrict protocol mapper types that can be created or updated through the Admin REST API.
+
 = Configuring and Running
 
 == Support for encrypted PEM private keys

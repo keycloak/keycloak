@@ -74,8 +74,6 @@ public class ClientAccessTypeCondition extends AbstractClientPolicyConditionProv
         if (context.getEvent() == REGISTER) {
             if (isProposedClientAccessTypeMatched((ClientCRUDContext) context)) return ClientPolicyVote.YES;
             return ClientPolicyVote.NO;
-        } else if (context instanceof ClientProtocolMapperContext mapperContext) {
-            return isClientAccessTypeMatched(mapperContext.getTargetClient()) ? ClientPolicyVote.YES : ClientPolicyVote.NO;
         } else if (context instanceof ClientModelContext) {
             ClientModel client = ((ClientModelContext) context).getClient();
             if (isClientAccessTypeMatched(client)) return ClientPolicyVote.YES;

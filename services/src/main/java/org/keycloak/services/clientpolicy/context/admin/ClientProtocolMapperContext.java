@@ -65,7 +65,8 @@ public interface ClientProtocolMapperContext extends ClientModelContext, ClientP
     }
 
     /**
-     * @return immutable inbound mapper representations when the context carries proposed mapper payloads; null on UNREGISTER.
+     * @return a structurally immutable list of inbound mapper representations when the context carries proposed mapper
+     *         payloads; the representations themselves remain mutable for policy executors; null on UNREGISTER.
      */
     default List<ProtocolMapperRepresentation> getProposedProtocolMappers() {
         ProtocolMapperRepresentation proposed = getProposedProtocolMapper();
