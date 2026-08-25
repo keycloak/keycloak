@@ -60,8 +60,6 @@ A round-trip time below 5 ms is suggested, and below 10 ms is required.
 With synchronous replication, each commit includes a round-trip from the database primary to its replica to transfer the write-ahead log.
 A commit latency of less than 5 ms is suggested, and below 10 ms is required.
 
-* Between {project_name} nodes within each cluster, a network round-trip time below 5 ms is suggested, and below 10 ms is required.
-
 * An external load balancer to balance requests between the clusters.
 
 Latency and latency spikes amplify in the response time of the service and can lead to queued requests, timeouts, and failed requests.
