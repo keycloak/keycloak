@@ -56,8 +56,6 @@ type Row<T> = BaseRow<T> & {
 
 type SubRow<T> = BaseRow<T> & {
   parent: number;
-  disableSelection: boolean;
-  disableActions: boolean;
 };
 
 type DataTableProps<T> = {
@@ -148,8 +146,10 @@ function DataTable<T>({
         const checkbox = selectAllCheckbox as HTMLInputElement;
         checkbox.indeterminate =
           rowsSelectedOnPage.length <
-            rows.filter((row) => !row.disableSelection && row.data).length &&
-          rowsSelectedOnPage.length > 0;
+            rows.filter(
+              (row) =>
+                "disableSelection" in row && !row.disableSelection && row.data,
+            ).length && rowsSelectedOnPage.length > 0;
       }
     }
   }, [selectedRows, canSelectAll, rows]);
@@ -173,7 +173,12 @@ function DataTable<T>({
             ? [
                 ...selectedRows,
                 ...rows
-                  .filter((row) => !row.disableSelection && row.data)
+                  .filter(
+                    (row) =>
+                      "disableSelection" in row &&
+                      !row.disableSelection &&
+                      row.data,
+                  )
                   .map((row) => row.data),
               ]
             : selectedRows.filter(
