@@ -79,22 +79,6 @@ Afterward, verify that the external load balancer routes traffic to both cluster
 The external load balancer should probe `GET /lb-check` on each cluster and expect an HTTP `200 OK` response to determine if a site is healthy.
 When a site's {project_name} nodes are all unavailable, `/lb-check` will not return `200 OK`, and the load balancer should stop routing traffic to that site.
 
-== Disable sticky sessions
-
-With the `stateless` feature, {project_name} does not store session data in memory, so configuring sticky sessions on the external or internal load balancer is no longer recommended as it will not provide a performance benefit.
-
-When running on OpenShift and the default passthrough Ingress setup as provided by the {project_name} Operator, HAProxy uses sticky sessions based on the source IP address by default.
-
-Add the following supplementary configuration under the `spec` in the {project_name} Custom Resource to disable sticky sessions.
-
-[source,yaml,subs="attributes+"]
-----
-spec:
-  ingress:
-    enabled: true
-    annotations:
-      haproxy.router.openshift.io/balance: roundrobin
-      haproxy.router.openshift.io/disable_cookies: 'true'
-----
+<#include "/high-availability/partials/building-blocks/sticky-sessions.adoc" />
 
 </@tmpl.guide>
