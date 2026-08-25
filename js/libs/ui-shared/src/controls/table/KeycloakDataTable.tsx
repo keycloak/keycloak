@@ -148,7 +148,7 @@ function DataTable<T>({
         const checkbox = selectAllCheckbox as HTMLInputElement;
         checkbox.indeterminate =
           rowsSelectedOnPage.length <
-            rows.filter((row) => !row.disableSelection).length &&
+            rows.filter((row) => !row.disableSelection && row.data).length &&
           rowsSelectedOnPage.length > 0;
       }
     }
@@ -173,7 +173,7 @@ function DataTable<T>({
             ? [
                 ...selectedRows,
                 ...rows
-                  .filter((row) => !row.disableSelection)
+                  .filter((row) => !row.disableSelection && row.data)
                   .map((row) => row.data),
               ]
             : selectedRows.filter(
@@ -214,7 +214,8 @@ function DataTable<T>({
                       },
                       isSelected:
                         rowsSelectedOnPage.length ===
-                        rows.filter((row) => !row.disableSelection).length,
+                        rows.filter((row) => !row.disableSelection && row.data)
+                          .length,
                     }
                   : undefined
               }
