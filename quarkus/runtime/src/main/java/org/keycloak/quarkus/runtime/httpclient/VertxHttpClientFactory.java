@@ -120,12 +120,6 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
                 .defaultValue(64)
                 .add()
                 .property()
-                .name("connection-pool-size")
-                .type("int")
-                .helpText("Maximum total pooled connections.")
-                .defaultValue(128)
-                .add()
-                .property()
                 .name("max-connection-idle-time-millis")
                 .type("long")
                 .helpText("Maximum idle time for pooled connections.")
@@ -197,12 +191,6 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
 
         options.setMaxPoolSize(config.getInt("max-pooled-per-route", 64));
 
-        int connectionPoolSize = config.getInt("connection-pool-size", 128);
-        if (connectionPoolSize != 128) {
-            logger.infof("connection-pool-size=%d configured. Vert.x uses per-host pooling (max-pooled-per-route=%d); "
-                    + "global cap is advisory only.", connectionPoolSize, options.getMaxPoolSize());
-        }
-
         long connectTimeout = config.getLong("establish-connection-timeout-millis", -1L);
         if (connectTimeout > 0) {
             options.setConnectTimeout((int) connectTimeout);
@@ -213,20 +201,14 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
             options.setIdleTimeoutUnit(TimeUnit.MILLISECONDS);
         }
 
-        long connectionTTL = config.getLong("connection-ttl-millis", -1L);
-        if (connectionTTL > 0) {
-            options.setKeepAliveTimeout((int) (connectionTTL / 1000));
-        }
-
         long maxIdleTime = config.getLong("max-connection-idle-time-millis", 900000L);
-        if (maxIdleTime > 0 && maxIdleTime < socketTimeout) {
-            options.setIdleTimeout((int) maxIdleTime);
-            options.setIdleTimeoutUnit(TimeUnit.MILLISECONDS);
+        if (maxIdleTime > 0) {
+            options.setKeepAliveTimeout((int) (maxIdleTime / 1000));
         }
 
         options.setKeepAlive(config.getBoolean("reuse-connections", true));
         options.setFollowRedirects(config.getBoolean("allow-redirects", false));
-
+        options.setDecompressionSupported(true);
 
         configureTls(session, options);
         configureProxy(options);
@@ -248,9 +230,7 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
             logger.warn("TruststoreProvider is disabled");
         } else {
             HostnameVerificationPolicy policy = truststoreProvider.getPolicy();
-            if (policy != HostnameVerificationPolicy.ANY) {
-                options.setVerifyHost(true);
-            }
+            options.setVerifyHost(policy != HostnameVerificationPolicy.ANY);
             options.setTrustOptions(keystoreToJksOptions(truststoreProvider.getTruststore(), null));
             options.setSsl(true);
         }
@@ -284,6 +264,7 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
     }
 
     private void configureProxy(WebClientOptions options) {
+        String noProxy = null;
         ProxyMappings proxyMappings = ProxyMappings.valueOf(config.getArray("proxy-mappings"));
         if (proxyMappings == null || proxyMappings.isEmpty()) {
             logger.debug("Trying to use proxy mapping from env vars");
@@ -291,10 +272,9 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
             if (isBlank(httpProxy)) {
                 httpProxy = getEnvVarValue("http_proxy");
             }
-            String noProxy = getEnvVarValue("no_proxy");
+            noProxy = getEnvVarValue("no_proxy");
 
             if (!isBlank(httpProxy)) {
-                // Build ProxyMappings with exclusion rules, same as DefaultHttpClientFactory
                 proxyMappings = ProxyMappings.withFixedProxyMapping(httpProxy, noProxy);
             }
         }
@@ -320,6 +300,19 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
                     .setPassword(wildcard.getProxyCredentials().getPassword());
         }
         options.setProxyOptions(proxyOptions);
+
+        // Apply no_proxy exclusions via Vert.x addNonProxyHost (glob: * → .*)
+        if (!isBlank(noProxy)) {
+            for (String host : noProxy.split(",")) {
+                host = host.trim();
+                if (!host.isEmpty()) {
+                    // Vert.x uses glob matching; prefix with *. for suffix matching like no_proxy expects
+                    options.addNonProxyHost(host);
+                    options.addNonProxyHost("*." + host);
+                }
+            }
+        }
+
         logger.infof("Proxy configured: %s:%d", wildcard.getProxyHost().getHostName(),
                 wildcard.getProxyHost().getPort());
     }

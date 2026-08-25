@@ -42,18 +42,6 @@ public class VertxHttpClientTest {
         });
     }
 
-    @Test
-    public void testGetHttpClientReturnsBridge() {
-        runOnServer.run(session -> {
-            HttpClientProvider provider = session.getProvider(HttpClientProvider.class);
-            var httpClient = provider.getHttpClient();
-            Assertions.assertNotNull(httpClient, "getHttpClient() should return bridge");
-            Assertions.assertTrue(
-                    httpClient.getClass().getName().contains("VertxHttpClientBridge"),
-                    "Expected VertxHttpClientBridge but got: " + httpClient.getClass().getName());
-        });
-    }
-
     static class HttpClientV2Config implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {

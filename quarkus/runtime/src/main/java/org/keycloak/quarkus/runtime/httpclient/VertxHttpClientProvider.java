@@ -42,7 +42,7 @@ public class VertxHttpClientProvider implements HttpClientProvider {
         this.backoffMultiplier = backoffMultiplier;
         this.useJitter = useJitter;
         this.jitterFactor = jitterFactor;
-        this.bridge = new VertxHttpClientBridge(webClient);
+        this.bridge = new VertxHttpClientBridge(webClient, this);
     }
 
     @Override
@@ -55,8 +55,8 @@ public class VertxHttpClientProvider implements HttpClientProvider {
         return executeWithRetry(() -> {
             CompletableFuture<Integer> future = new CompletableFuture<>();
             webClient.postAbs(uri)
-                    .putHeader("Content-Type", "text/plain")
-                    .sendBuffer(Buffer.buffer(text))
+                    .putHeader("Content-Type", "text/plain; charset=ISO-8859-1")
+                    .sendBuffer(Buffer.buffer(text, "ISO-8859-1"))
                     .onComplete(ar -> {
                         if (ar.succeeded()) {
                             future.complete(ar.result().statusCode());
@@ -170,7 +170,7 @@ public class VertxHttpClientProvider implements HttpClientProvider {
     public void close() {
     }
 
-    private <T> T executeWithRetry(RetryableOperation<T> operation) throws IOException {
+    <T> T executeWithRetry(RetryableOperation<T> operation) throws IOException {
         if (maxRetries <= 0) {
             return operation.execute();
         }
@@ -225,7 +225,7 @@ public class VertxHttpClientProvider implements HttpClientProvider {
     }
 
     @FunctionalInterface
-    private interface RetryableOperation<T> {
+    interface RetryableOperation<T> {
         T execute() throws IOException;
     }
 }
