@@ -224,29 +224,22 @@ public class ClientsResource {
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), clientModel.getId()).representation(rep).success();
 
             if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION) && TRUE.equals(rep.getAuthorizationServicesEnabled())) {
-                boolean typeBlocksAuthorization = false;
                 if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) && clientModel.getType() != null) {
                     ClientType clientType = session.getProvider(ClientTypeManager.class).getClientType(realm, clientModel.getType());
-                    if (!clientType.isApplicable("authorizationServicesEnabled")) {
-                        logger.warnf("Property authorizationServicesEnabled is not-applicable to client type %s and can not be enabled.",
-                                clientType.getName());
-                        typeBlocksAuthorization = true;
-                    } else if (Boolean.FALSE.equals(clientType.getTypeValue("authorizationServicesEnabled", Boolean.class))) {
-                        logger.warnf("Property authorizationServicesEnabled is fixed to false by client type %s and can not be enabled.",
-                                clientType.getName());
-                        typeBlocksAuthorization = true;
+                    if (!clientType.isApplicable("authorizationServicesEnabled") ||
+                            Boolean.FALSE.equals(clientType.getTypeValue("authorizationServicesEnabled", Boolean.class))) {
+                        throw ClientTypeException.Message.CLIENT_UPDATE_FAILED_CLIENT_TYPE_VALIDATION.exception("authorizationServicesEnabled");
                     }
                 }
-                if (!typeBlocksAuthorization) {
-                    AuthorizationService authorizationService = getAuthorizationService(clientModel);
 
-                    authorizationService.enable(true);
+                AuthorizationService authorizationService = getAuthorizationService(clientModel);
 
-                    ResourceServerRepresentation authorizationSettings = rep.getAuthorizationSettings();
+                authorizationService.enable(true);
 
-                    if (authorizationSettings != null) {
-                        authorizationService.getResourceServerService().importSettings(authorizationSettings);
-                    }
+                ResourceServerRepresentation authorizationSettings = rep.getAuthorizationSettings();
+
+                if (authorizationSettings != null) {
+                    authorizationService.getResourceServerService().importSettings(authorizationSettings);
                 }
             }
 

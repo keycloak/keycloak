@@ -282,7 +282,7 @@ public class TypeAwareClientModelDelegate extends ClientModelLazyDelegate {
     }
 
     @Override
-    public void setNodeReRegistrationTimeout(int nodeReRegistrationTimeout){
+    public void setNodeReRegistrationTimeout(int nodeReRegistrationTimeout) {
         TypedClientSimpleAttribute.NODE_RE_REGISTRATION_TIMEOUT
                 .setClientAttribute(clientType, nodeReRegistrationTimeout, super::setNodeReRegistrationTimeout, Integer.class);
     }

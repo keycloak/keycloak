@@ -895,18 +895,12 @@ public class ClientResource {
             if (Boolean.TRUE.equals(rep.getAuthorizationServicesEnabled())) {
                 if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) && client.getType() != null) {
                     ClientType clientType = session.getProvider(ClientTypeManager.class).getClientType(realm, client.getType());
-                    if (!clientType.isApplicable("authorizationServicesEnabled")) {
-                        logger.warnf("Property authorizationServicesEnabled is not-applicable to client type %s and can not be enabled.",
-                                clientType.getName());
-                    } else if (Boolean.FALSE.equals(clientType.getTypeValue("authorizationServicesEnabled", Boolean.class))) {
-                        logger.warnf("Property authorizationServicesEnabled is fixed to false by client type %s and can not be enabled.",
-                                clientType.getName());
-                    } else {
-                        authorization().enable(false);
+                    if (!clientType.isApplicable("authorizationServicesEnabled") ||
+                            Boolean.FALSE.equals(clientType.getTypeValue("authorizationServicesEnabled", Boolean.class))) {
+                        throw ClientTypeException.Message.CLIENT_UPDATE_FAILED_CLIENT_TYPE_VALIDATION.exception("authorizationServicesEnabled");
                     }
-                } else {
-                    authorization().enable(false);
                 }
+                authorization().enable(false);
             } else {
                 authorization().disable();
             }

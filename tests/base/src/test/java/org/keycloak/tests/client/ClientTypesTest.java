@@ -16,7 +16,7 @@
  *
  */
 
-package org.keycloak.testsuite.client;
+package org.keycloak.tests.client;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,25 +29,24 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.client.clienttype.ClientTypeManager;
+import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientTypeRepresentation;
 import org.keycloak.representations.idm.ClientTypesRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.clienttype.impl.DefaultClientTypeProviderFactory;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientBuilder;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.testframework.util.ApiUtil;
 
-import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
-
-import static org.keycloak.common.Profile.Feature.CLIENT_TYPES;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.everyItem;
@@ -57,31 +56,30 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-/**
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
- */
-@EnableFeature(value = CLIENT_TYPES, skipRestart = true)
-public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
+@KeycloakIntegrationTest(config = ClientTypesTest.ClientTypesServerConfig.class)
+public class ClientTypesTest {
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
+    @InjectRealm
+    ManagedRealm managedRealm;
+
+    @BeforeEach
+    public void cleanupRealmClientTypes() {
+        ClientTypesRepresentation clientTypes = managedRealm.admin().clientTypes().getClientTypes();
+        if (!clientTypes.getRealmClientTypes().isEmpty()) {
+            clientTypes.setRealmClientTypes(new ArrayList<>());
+            managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
+        }
     }
 
     @Test
     public void testFeatureWorksWhenEnabled() {
-        checkIfFeatureWorks(true);
+        ClientTypesRepresentation clientTypes = managedRealm.admin().clientTypes().getClientTypes();
+        assertTrue(clientTypes.getRealmClientTypes().isEmpty());
     }
 
-    @Test
-    @UncaughtServerErrorExpected
-    @DisableFeature(value = CLIENT_TYPES, skipRestart = true)
-    public void testFeatureDoesntWorkWhenDisabled() {
-        checkIfFeatureWorks(false);
-    }
-
-    // Test create client with clientType filled. Check default properties are filled
     @Test
     public void testCreateClientWithClientType() {
         ClientRepresentation clientRep = createClientWithType("foo", ClientTypeManager.SERVICE_ACCOUNT);
@@ -91,11 +89,10 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         assertFalse(clientRep.isStandardFlowEnabled());
         assertFalse(clientRep.isImplicitFlowEnabled());
         assertFalse(clientRep.isDirectAccessGrantsEnabled());
-        Assertions.assertTrue(clientRep.isServiceAccountsEnabled());
+        assertTrue(clientRep.isServiceAccountsEnabled());
         assertFalse(clientRep.isPublicClient());
         assertFalse(clientRep.isBearerOnly());
 
-        // Check type not included as client attribute
         assertFalse(clientRep.getAttributes().containsKey(ClientModel.TYPE));
     }
 
@@ -106,41 +103,38 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
                 .type("DNE")
                 .build();
 
-        Response response = managedRealm.admin().clients().create(clientRep);
-        assertEquals(Response.Status.BAD_REQUEST, response.getStatusInfo());
+        try(Response response = managedRealm.admin().clients().create(clientRep)) {
+            assertEquals(Response.Status.BAD_REQUEST, response.getStatusInfo());
+        }
     }
 
     @Test
     public void testUpdateClientWithClientType() {
-        ClientRepresentation clientRep = createClientWithType("foo", ClientTypeManager.SERVICE_ACCOUNT);
+        ClientRepresentation clientRep = createClientWithType("foo-update", ClientTypeManager.SERVICE_ACCOUNT);
 
-        // Changing type should fail
         clientRep.setType(ClientTypeManager.STANDARD);
         try {
             managedRealm.admin().clients().get(clientRep.getId()).update(clientRep);
-            Assertions.fail("Not expected to update client");
+            fail("Not expected to update client");
         } catch (BadRequestException bre) {
             assertErrorContainsMessage(bre, ClientTypeException.Message.CANNOT_CHANGE_CLIENT_TYPE);
         }
 
-        // Updating read-only attribute should fail
         clientRep.setType(ClientTypeManager.SERVICE_ACCOUNT);
         clientRep.setServiceAccountsEnabled(false);
         try {
             managedRealm.admin().clients().get(clientRep.getId()).update(clientRep);
-            Assertions.fail("Not expected to update client");
+            fail("Not expected to update client");
         } catch (BadRequestException bre) {
             assertErrorResponseContainsParams(bre.getResponse(), "serviceAccountsEnabled");
         }
 
         clientRep.setServiceAccountsEnabled(true);
 
-        // Adding non-applicable attribute should not fail but not update client attribute
         clientRep.getAttributes().put(ClientModel.LOGO_URI, "https://foo");
         managedRealm.admin().clients().get(clientRep.getId()).update(clientRep);
         assertNull(managedRealm.admin().clients().get(clientRep.getId()).toRepresentation().getAttributes().get(ClientModel.LOGO_URI));
 
-        // Update of supported attribute should be successful
         clientRep.getAttributes().remove(ClientModel.LOGO_URI);
         clientRep.setRootUrl("https://foo");
         managedRealm.admin().clients().get(clientRep.getId()).update(clientRep);
@@ -175,7 +169,7 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         assertEquals("default", serviceAccountType.getProvider());
 
         ClientTypeRepresentation.PropertyConfig cfg = serviceAccountType.getConfig().get("standardFlowEnabled");
-        assertPropertyConfig("standardFlowEnabled", cfg,  false, null);
+        assertPropertyConfig("standardFlowEnabled", cfg, false, null);
 
         cfg = serviceAccountType.getConfig().get("serviceAccountsEnabled");
         assertPropertyConfig("serviceAccountsEnabled", cfg, true, true);
@@ -188,7 +182,6 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
     public void testClientTypesAdminRestAPI_realmTypes() {
         ClientTypesRepresentation clientTypes = managedRealm.admin().clientTypes().getClientTypes();
 
-        // Test invalid provider type should fail
         ClientTypeRepresentation clientType = new ClientTypeRepresentation();
         try {
             clientType.setName("sla1");
@@ -196,39 +189,35 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
             clientType.setConfig(new HashMap<>());
             clientTypes.setRealmClientTypes(List.of(clientType));
             managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
-            Assertions.fail("Not expected to update client types");
+            fail("Not expected to update client types");
         } catch (BadRequestException bre) {
             assertErrorContainsMessage(bre, ClientTypeException.Message.INVALID_CLIENT_TYPE_PROVIDER);
         }
 
-        // Test attribute without applicable should fail
         try {
             clientType.setProvider(DefaultClientTypeProviderFactory.PROVIDER_ID);
             ClientTypeRepresentation.PropertyConfig cfg = new ClientTypeRepresentation.PropertyConfig();
             clientType.getConfig().put("standardFlowEnabled", cfg);
             managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
-            Assertions.fail("Not expected to update client types");
+            fail("Not expected to update client types");
         } catch (BadRequestException bre) {
             assertErrorContainsMessage(bre, ClientTypeException.Message.CLIENT_TYPE_FIELD_NOT_APPLICABLE);
         }
 
-        // Test non-applicable attribute with default-value should fail
         try {
             ClientTypeRepresentation.PropertyConfig cfg = clientType.getConfig().get("standardFlowEnabled");
             cfg.setApplicable(false);
             cfg.setValue(true);
             managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
-            Assertions.fail("Not expected to update client types");
+            fail("Not expected to update client types");
         } catch (BadRequestException bre) {
             assertErrorContainsMessage(bre, ClientTypeException.Message.INVALID_CLIENT_TYPE_CONFIGURATION);
         }
 
-        // Update should be successful
         ClientTypeRepresentation.PropertyConfig cfg = clientType.getConfig().get("standardFlowEnabled");
         cfg.setApplicable(true);
         managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
 
-        // Test duplicate name should fail
         ClientTypeRepresentation clientType2 = new ClientTypeRepresentation();
         try {
             clientTypes = managedRealm.admin().clientTypes().getClientTypes();
@@ -238,30 +227,26 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
             clientType2.setConfig(new HashMap<>());
             clientTypes.getRealmClientTypes().add(clientType2);
             managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
-            Assertions.fail("Not expected to update client types");
+            fail("Not expected to update client types");
         } catch (BadRequestException bre) {
             assertErrorContainsMessage(bre, ClientTypeException.Message.DUPLICATE_CLIENT_TYPE);
         }
 
-        // Also test duplicated global name should fail
         try {
             clientType2.setName("service-account");
             managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
-            Assertions.fail("Not expected to update client types");
+            fail("Not expected to update client types");
         } catch (BadRequestException bre) {
             assertErrorContainsMessage(bre, ClientTypeException.Message.DUPLICATE_CLIENT_TYPE);
         }
 
-        // Different name should be fine
         clientType2.setName("different");
         managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
 
-        // Assert updated
         clientTypes = managedRealm.admin().clientTypes().getClientTypes();
         assertNames(clientTypes.getRealmClientTypes(), "sla1", "different");
         assertNames(clientTypes.getGlobalClientTypes(), "sla", "service-account");
 
-        // Test updating global won't update anything. Nothing will be added to globalTypes
         clientType2.setName("moreDifferent");
         clientTypes.getGlobalClientTypes().add(clientType2);
         managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
@@ -299,14 +284,15 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
 
         ClientRepresentation childClient = createClientWithType("child-client", childClientType.getName());
-        assertEquals(childClient.getProtocol(), "openid-connect");
-        assertEquals(childClient.isStandardFlowEnabled(), true);
-        assertEquals(childClient.isConsentRequired(), false);
-
         ClientRepresentation subClient = createClientWithType("sub-client", subClientType.getName());
-        assertEquals(subClient.getProtocol(), "openid-connect");
-        assertEquals(subClient.isStandardFlowEnabled(), true);
-        assertEquals(subClient.isConsentRequired(), true);
+
+        assertEquals( "openid-connect", childClient.getProtocol());
+        assertEquals(true, childClient.isStandardFlowEnabled());
+        assertEquals(false, childClient.isConsentRequired());
+
+        assertEquals("openid-connect", subClient.getProtocol());
+        assertEquals(true, subClient.isStandardFlowEnabled());
+        assertEquals(true, subClient.isConsentRequired());
     }
 
     @Test
@@ -329,7 +315,6 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
 
         managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
 
-        // Attempt to create a client with fullScopeAllowed=true on a type that fixes it to false
         ClientRepresentation clientRep = ClientBuilder.create()
                 .clientId("full-scope-override-test")
                 .type("no-full-scope")
@@ -370,6 +355,155 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         assertErrorResponseContainsParams(response, "nodeReRegistrationTimeout");
     }
 
+    @Test
+    public void testCreateClientSucceedsWithOmittedFullScopeAllowed() {
+        ClientTypesRepresentation clientTypes = managedRealm.admin().clientTypes().getClientTypes();
+
+        ClientTypeRepresentation.PropertyConfig fullScopeConfig = new ClientTypeRepresentation.PropertyConfig();
+        fullScopeConfig.setApplicable(true);
+        fullScopeConfig.setValue(false);
+
+        ClientTypeRepresentation customType = new ClientTypeRepresentation();
+        customType.setName("no-full-scope-omit");
+        customType.setProvider(DefaultClientTypeProviderFactory.PROVIDER_ID);
+        customType.setParent("oidc");
+        customType.setConfig(Map.of("fullScopeAllowed", fullScopeConfig));
+
+        List<ClientTypeRepresentation> realmClientTypes = clientTypes.getRealmClientTypes();
+        realmClientTypes.add(customType);
+        clientTypes.setRealmClientTypes(realmClientTypes);
+
+        managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
+
+        ClientRepresentation clientRep = createClientWithType("full-scope-omit-test", "no-full-scope-omit");
+        assertFalse(clientRep.isFullScopeAllowed());
+    }
+
+    @Test
+    public void testUpdateClientFailsWithFullScopeAllowedOverride() {
+        ClientTypesRepresentation clientTypes = managedRealm.admin().clientTypes().getClientTypes();
+
+        ClientTypeRepresentation.PropertyConfig fullScopeConfig = new ClientTypeRepresentation.PropertyConfig();
+        fullScopeConfig.setApplicable(true);
+        fullScopeConfig.setValue(false);
+
+        ClientTypeRepresentation customType = new ClientTypeRepresentation();
+        customType.setName("no-full-scope-update");
+        customType.setProvider(DefaultClientTypeProviderFactory.PROVIDER_ID);
+        customType.setParent("oidc");
+        customType.setConfig(Map.of("fullScopeAllowed", fullScopeConfig));
+
+        List<ClientTypeRepresentation> realmClientTypes = clientTypes.getRealmClientTypes();
+        realmClientTypes.add(customType);
+        clientTypes.setRealmClientTypes(realmClientTypes);
+
+        managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
+
+        ClientRepresentation clientRep = createClientWithType("full-scope-update-test", "no-full-scope-update");
+        assertFalse(clientRep.isFullScopeAllowed());
+
+        clientRep.setFullScopeAllowed(true);
+        try {
+            managedRealm.admin().clients().get(clientRep.getId()).update(clientRep);
+            fail("Not expected to update client");
+        } catch (BadRequestException bre) {
+            assertErrorResponseContainsParams(bre.getResponse(), "fullScopeAllowed");
+        }
+    }
+
+    @Test
+    public void testUpdateClientFailsWithNodeReRegistrationTimeoutOverride() {
+        ClientTypesRepresentation clientTypes = managedRealm.admin().clientTypes().getClientTypes();
+
+        ClientTypeRepresentation.PropertyConfig timeoutConfig = new ClientTypeRepresentation.PropertyConfig();
+        timeoutConfig.setApplicable(true);
+        timeoutConfig.setValue(-1);
+
+        ClientTypeRepresentation customType = new ClientTypeRepresentation();
+        customType.setName("fixed-timeout-update");
+        customType.setProvider(DefaultClientTypeProviderFactory.PROVIDER_ID);
+        customType.setParent("oidc");
+        customType.setConfig(Map.of("nodeReRegistrationTimeout", timeoutConfig));
+
+        List<ClientTypeRepresentation> realmClientTypes = clientTypes.getRealmClientTypes();
+        realmClientTypes.add(customType);
+        clientTypes.setRealmClientTypes(realmClientTypes);
+
+        managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
+
+        ClientRepresentation clientRep = createClientWithType("timeout-update-test", "fixed-timeout-update");
+        assertEquals(-1, clientRep.getNodeReRegistrationTimeout());
+
+        clientRep.setNodeReRegistrationTimeout(300);
+        try {
+            managedRealm.admin().clients().get(clientRep.getId()).update(clientRep);
+            fail("Not expected to update client");
+        } catch (BadRequestException bre) {
+            assertErrorResponseContainsParams(bre.getResponse(), "nodeReRegistrationTimeout");
+        }
+    }
+
+    @Test
+    public void testCreateClientFailsWithAuthorizationServicesEnabledOverride() {
+        ClientTypesRepresentation clientTypes = managedRealm.admin().clientTypes().getClientTypes();
+
+        ClientTypeRepresentation.PropertyConfig authzConfig = new ClientTypeRepresentation.PropertyConfig();
+        authzConfig.setApplicable(true);
+        authzConfig.setValue(false);
+
+        ClientTypeRepresentation customType = new ClientTypeRepresentation();
+        customType.setName("no-authz");
+        customType.setProvider(DefaultClientTypeProviderFactory.PROVIDER_ID);
+        customType.setParent("oidc");
+        customType.setConfig(Map.of("authorizationServicesEnabled", authzConfig));
+
+        List<ClientTypeRepresentation> realmClientTypes = clientTypes.getRealmClientTypes();
+        realmClientTypes.add(customType);
+        clientTypes.setRealmClientTypes(realmClientTypes);
+
+        managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
+
+        ClientRepresentation clientRep = ClientBuilder.create()
+                .clientId("authz-override-test")
+                .type("no-authz")
+                .authorizationServicesEnabled(true)
+                .build();
+
+        Response response = managedRealm.admin().clients().create(clientRep);
+        assertErrorResponseContainsParams(response, "authorizationServicesEnabled");
+    }
+
+    @Test
+    public void testUpdateClientFailsWithAuthorizationServicesEnabledOverride() {
+        ClientTypesRepresentation clientTypes = managedRealm.admin().clientTypes().getClientTypes();
+
+        ClientTypeRepresentation.PropertyConfig authzConfig = new ClientTypeRepresentation.PropertyConfig();
+        authzConfig.setApplicable(true);
+        authzConfig.setValue(false);
+
+        ClientTypeRepresentation customType = new ClientTypeRepresentation();
+        customType.setName("no-authz-update");
+        customType.setProvider(DefaultClientTypeProviderFactory.PROVIDER_ID);
+        customType.setParent("oidc");
+        customType.setConfig(Map.of("authorizationServicesEnabled", authzConfig));
+
+        List<ClientTypeRepresentation> realmClientTypes = clientTypes.getRealmClientTypes();
+        realmClientTypes.add(customType);
+        clientTypes.setRealmClientTypes(realmClientTypes);
+
+        managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
+
+        ClientRepresentation clientRep = createClientWithType("authz-update-test", "no-authz-update");
+
+        clientRep.setAuthorizationServicesEnabled(true);
+        try {
+            managedRealm.admin().clients().get(clientRep.getId()).update(clientRep);
+            fail("Not expected to update client");
+        } catch (BadRequestException bre) {
+            assertErrorResponseContainsParams(bre.getResponse(), "authorizationServicesEnabled");
+        }
+    }
+
     private void assertErrorResponseContainsParams(Response response, String... items) {
         assertEquals(Response.Status.BAD_REQUEST, response.getStatusInfo());
         ErrorRepresentation errorRepresentation = response.readEntity(ErrorRepresentation.class);
@@ -391,7 +525,6 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         assertThat(names, hasItems(expectedNames));
     }
 
-
     private void assertPropertyConfig(String propertyName, ClientTypeRepresentation.PropertyConfig cfg, Boolean expectedApplicable, Object expectedValue) {
         assertEquals(expectedApplicable, cfg.getApplicable(), "'applicable' for property " + propertyName + " not equal");
         assertEquals(expectedValue, cfg.getValue(), "'value' for property " + propertyName + " not equal");
@@ -404,24 +537,15 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
                 .build();
         Response response = managedRealm.admin().clients().create(clientRep);
         String clientUUID = ApiUtil.getCreatedId(response);
-        getCleanup().addClientUuid(clientUUID);
+        managedRealm.cleanup().add(r -> r.clients().get(clientUUID).remove());
 
         return managedRealm.admin().clients().get(clientUUID).toRepresentation();
     }
 
-    // Check if the feature really works
-    private void checkIfFeatureWorks(boolean shouldWork) {
-        try {
-            ClientTypesRepresentation clientTypes = managedRealm.admin().clientTypes().getClientTypes();
-            Assertions.assertTrue(clientTypes.getRealmClientTypes().isEmpty());
-            if (!shouldWork)
-                fail("Feature is available, but at this moment should be disabled");
-
-        } catch (Exception e) {
-            if (shouldWork) {
-                e.printStackTrace();
-                fail("Feature is not available");
-            }
+    public static class ClientTypesServerConfig implements KeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.features(Profile.Feature.CLIENT_TYPES);
         }
     }
 }

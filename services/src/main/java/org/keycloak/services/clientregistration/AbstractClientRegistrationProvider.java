@@ -32,6 +32,7 @@ import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.client.clienttype.ClientType;
+import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
@@ -62,8 +63,6 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.ClientResource;
 import org.keycloak.validation.ValidationUtil;
 
-import org.jboss.logging.Logger;
-
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -72,7 +71,6 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
     protected KeycloakSession session;
     protected EventBuilder event;
     protected ClientRegistrationAuth auth;
-    protected static final Logger logger = Logger.getLogger(AbstractClientRegistrationProvider.class);
 
     public AbstractClientRegistrationProvider(KeycloakSession session) {
         this.session = session;
@@ -108,22 +106,14 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             }
 
             if (Boolean.TRUE.equals(client.getAuthorizationServicesEnabled())) {
-                boolean typeBlocksAuthorization = false;
                 if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) && clientModel.getType() != null) {
                     ClientType clientType = session.getProvider(ClientTypeManager.class).getClientType(realm, clientModel.getType());
-                    if (!clientType.isApplicable("authorizationServicesEnabled")) {
-                        logger.warnf("Property authorizationServicesEnabled is not-applicable to client type %s and can not be enabled.",
-                                clientType.getName());
-                        typeBlocksAuthorization = true;
-                    } else if (Boolean.FALSE.equals(clientType.getTypeValue("authorizationServicesEnabled", Boolean.class))) {
-                        logger.warnf("Property authorizationServicesEnabled is fixed to false by client type %s and can not be enabled.",
-                                clientType.getName());
-                        typeBlocksAuthorization = true;
+                    if (!clientType.isApplicable("authorizationServicesEnabled") ||
+                            Boolean.FALSE.equals(clientType.getTypeValue("authorizationServicesEnabled", Boolean.class))) {
+                        throw ClientTypeException.Message.CLIENT_UPDATE_FAILED_CLIENT_TYPE_VALIDATION.exception("authorizationServicesEnabled");
                     }
                 }
-                if (!typeBlocksAuthorization) {
-                    RepresentationToModel.createResourceServer(clientModel, session, true);
-                }
+                RepresentationToModel.createResourceServer(clientModel, session, true);
             }
 
             session.getContext().setClient(clientModel);
@@ -159,6 +149,8 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        } catch (ClientTypeException cte) {
+            throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, cte.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 
