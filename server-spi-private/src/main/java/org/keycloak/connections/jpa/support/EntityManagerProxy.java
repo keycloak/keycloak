@@ -50,6 +50,7 @@ public class EntityManagerProxy {
 
     private Set<EntityManagerProxy> entityManagerProxies;
     private EntityManager em;
+    private final KeycloakSession session;
     private final boolean batchEnabled;
     private final int batchSize;
     private int changeCount = 0;
@@ -67,19 +68,20 @@ public class EntityManagerProxy {
         }
         boolean batchEnabled = session.getAttributeOrDefault(Constants.STORAGE_BATCH_ENABLED, false);
         int batchSize = session.getAttributeOrDefault(Constants.STORAGE_BATCH_SIZE, 100);
-        return create(em, entityManagerProxies, batchEnabled, batchSize);
+        return create(session, em, entityManagerProxies, batchEnabled, batchSize);
     }
 
-    static EntityManager create(EntityManager em, Set<EntityManagerProxy> entityManagerProxies,
+    static EntityManager create(KeycloakSession session, EntityManager em, Set<EntityManagerProxy> entityManagerProxies,
             boolean batchEnabled, int batchSize) {
-        EntityManagerProxy converter = new EntityManagerProxy(em, entityManagerProxies, batchEnabled, batchSize);
+        EntityManagerProxy converter = new EntityManagerProxy(session, em, entityManagerProxies, batchEnabled, batchSize);
         if (entityManagerProxies != null) {
             entityManagerProxies.add(converter);
         }
         return (EntityManager) Proxy.newProxyInstance(EntityManager.class.getClassLoader(), new Class[]{EntityManager.class}, converter::invoke);
     }
 
-    private EntityManagerProxy(EntityManager em, Set<EntityManagerProxy> entityManagerProxies, boolean batchEnabled, int batchSize) {
+    private EntityManagerProxy(KeycloakSession session, EntityManager em, Set<EntityManagerProxy> entityManagerProxies, boolean batchEnabled, int batchSize) {
+        this.session = session;
         this.batchEnabled = batchEnabled;
         this.batchSize = batchSize;
         this.em = em;
@@ -96,10 +98,11 @@ public class EntityManagerProxy {
 
     private Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         boolean batched = EntityManagers.isBatchMode();
+        boolean readOnly = session != null && session.isReadOnly();
         try {
             flushInBatchIfEnabled(method);
             Object result = method.invoke(em, args);
-            if (batched && result instanceof Query query) {
+            if ((batched || readOnly) && result instanceof Query query) {
                 // TODO: it would be safer if there were a way to validate
                 // if this or disabling persist/detach where correct for a given batch
                 // and types were correct
