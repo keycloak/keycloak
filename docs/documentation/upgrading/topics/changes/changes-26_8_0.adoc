@@ -19,6 +19,14 @@ Previously, any caller with the `view-clients` role could read client secrets fr
 
 If you have delegated administrators or automation that reads client secrets using the `view-clients` role, ensure they are granted the `manage-clients` realm admin role or equivalent `manage` permission on the Clients resource type.
 
+=== `initiating_idp` logout parameter ignored by default
+
+The `initiating_idp` query parameter on the OIDC RP-initiated logout endpoint is now ignored by default. This parameter suppressed the logout at the upstream identity provider for the referenced broker.
+
+After upgrading, {project_name} always performs the upstream identity provider logout during a browser logout, regardless of the `initiating_idp` parameter. To handle logout initiated by an upstream identity provider, rely on the standard OIDC link:https://openid.net/specs/openid-connect-backchannel-1_0.html[back-channel] or link:https://openid.net/specs/openid-connect-frontchannel-1_0.html[front-channel] logout mechanisms instead.
+
+To temporarily restore the previous behavior, enable the `allow-initiating-idp-logout-param` server option for the OpenID Connect provider. This option is deprecated and will be removed in a future release.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

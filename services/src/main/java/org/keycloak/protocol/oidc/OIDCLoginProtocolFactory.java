@@ -168,6 +168,11 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
      */
     public static final String CONFIG_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING = "allow-client-initiated-account-linking";
 
+    /**
+     * @deprecated To be removed in Keycloak 27
+     */
+    public static final String CONFIG_ALLOW_INITIATING_IDP_LOGOUT_PARAM = "allow-initiating-idp-logout-param";
+
     private OIDCProviderConfig providerConfig;
 
     @Override
@@ -203,6 +208,12 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                             "This is deprecated and will be rejected in Keycloak 27. " +
                             "Disable this option: %s=false",
                     CONFIG_ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS);
+        }
+
+        if (this.providerConfig.isAllowInitiatingIdpLogoutParam()) {
+            logger.warnf("Legacy 'initiating_idp' logout parameter is enabled. " +
+                    "Rely on OIDC back-channel or front-channel logout instead and disable this option: %s=false",
+                    CONFIG_ALLOW_INITIATING_IDP_LOGOUT_PARAM);
         }
 
         initBuiltIns();
@@ -750,6 +761,12 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                     .type("boolean")
                     .helpText("Allows OIDC parameters (state, code, etc.) in post_logout_redirect_uri and in redirect_uri. Deprecated: will be removed in Keycloak 27.")
                     .defaultValue(OIDCProviderConfig.DEFAULT_ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS)
+                    .add()
+                .property()
+                    .name(CONFIG_ALLOW_INITIATING_IDP_LOGOUT_PARAM)
+                    .type("boolean")
+                    .helpText("Allows the deprecated 'initiating_idp' logout parameter, which suppresses the upstream identity provider logout during RP-initiated logout. This option will be removed in a future release. Rely on OIDC back-channel or front-channel logout instead.")
+                    .defaultValue(OIDCProviderConfig.DEFAULT_ALLOW_INITIATING_IDP_LOGOUT_PARAM)
                     .add()
                 .build();
     }
