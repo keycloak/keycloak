@@ -219,8 +219,19 @@ function DataTable<T>({
                       },
                       isSelected:
                         rowsSelectedOnPage.length ===
-                        rows.filter((row) => !row.disableSelection && row.data)
-                          .length,
+                          rows.filter(
+                            (row) =>
+                              "disableSelection" in row &&
+                              !row.disableSelection &&
+                              row.data,
+                          ).length && rowsSelectedOnPage.length > 0,
+                      isDisabled:
+                        rows.filter(
+                          (row) =>
+                            "disableSelection" in row &&
+                            !row.disableSelection &&
+                            row.data,
+                        ).length === 0,
                     }
                   : undefined
               }
