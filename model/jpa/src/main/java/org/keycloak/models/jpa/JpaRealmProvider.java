@@ -45,6 +45,7 @@ import jakarta.persistence.criteria.Subquery;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.migration.MigrationModel;
@@ -96,17 +97,27 @@ import static org.keycloak.utils.StreamsUtil.closing;
  * @version $Revision: 1 $
  */
 public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientScopeProvider, GroupProvider, RoleProvider, DeploymentStateProvider {
+
+    public static final int JPA_IN_PARAMETERS_LIMIT_THRESHOLD = 1000;
+
     protected static final Logger logger = Logger.getLogger(JpaRealmProvider.class);
+
     private final KeycloakSession session;
     protected EntityManager em;
+    protected int jpaInParametersLimitThreshold;
     private Set<String> clientSearchableAttributes;
     private Set<String> groupSearchableAttributes;
 
     public JpaRealmProvider(KeycloakSession session, EntityManager em, Set<String> clientSearchableAttributes, Set<String> groupSearchableAttributes) {
+        this(session, em, clientSearchableAttributes, groupSearchableAttributes, JPA_IN_PARAMETERS_LIMIT_THRESHOLD);
+    }
+
+    public JpaRealmProvider(KeycloakSession session, EntityManager em, Set<String> clientSearchableAttributes, Set<String> groupSearchableAttributes, int jpaInParametersLimitThreshold) {
         this.session = session;
         this.em = em;
         this.clientSearchableAttributes = clientSearchableAttributes;
         this.groupSearchableAttributes = groupSearchableAttributes;
+        this.jpaInParametersLimitThreshold = jpaInParametersLimitThreshold;
     }
 
     @Override
@@ -516,10 +527,21 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         // tree expands with a single getChildRolesFromParentIds query per breadth-first level. The
         // query hydrates the child RoleEntity rows, so the getRoleById calls below are served from
         // the persistence context without extra round-trips.
-        TypedQuery<RoleEntity> query = em.createNamedQuery("getChildRolesFromParentIds", RoleEntity.class)
-                .setParameter("parentRoleIds", parentRoleIds);
-        return closing(query.getResultStream())
-                .map(roleEntity -> session.roles().getRoleById(realm, roleEntity.getId()))
+        //
+        // Databases cap the number of bind parameters per statement (e.g. MSSQL: 2100), so a large
+        // frontier is split into chunks of at most jpaInParametersLimitThreshold parent ids, each
+        // queried separately. The query is "select distinct", but a child shared by parents in
+        // different chunks would be returned once per chunk, hence the distinct() on the child ids.
+        List<List<String>> roleIdChunks = CollectionUtil.partition(parentRoleIds, jpaInParametersLimitThreshold);
+        return roleIdChunks.stream()
+                .flatMap(parentRoleIdsChunk -> {
+                    return closing(em.createNamedQuery("getChildRolesFromParentIds", RoleEntity.class)
+                            .setParameter("parentRoleIds", parentRoleIdsChunk)
+                            .getResultStream());
+                })
+                .map(RoleEntity::getId)
+                .distinct()
+                .map(roleId -> session.roles().getRoleById(realm, roleId))
                 .filter(Objects::nonNull);
     }
 

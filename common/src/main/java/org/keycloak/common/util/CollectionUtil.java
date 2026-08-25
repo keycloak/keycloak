@@ -17,9 +17,12 @@
 
 package org.keycloak.common.util;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -70,5 +73,38 @@ public class CollectionUtil {
 
     public static <T> Set<T> collectionToSet(Collection<T> collection) {
         return collection == null ? null : new HashSet<>(collection);
+    }
+
+    /**
+     * Splits the given collection into consecutive chunks of at most {@code chunkSize} elements,
+     * preserving iteration order. Every chunk except possibly the last has exactly {@code chunkSize}
+     * elements. The returned chunks are independent copies and do not reference the source collection.
+     *
+     * @param items the collection to split; may be {@code null}
+     * @param chunkSize the maximum number of elements per chunk; must be greater than 0
+     * @return list of chunks; an empty list if {@code items} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code chunkSize} is not positive
+     */
+    public static <T> List<List<T>> partition(Collection<T> items, int chunkSize) {
+        if (chunkSize <= 0) {
+            throw new IllegalArgumentException("chunkSize must be greater than 0");
+        }
+        if (isEmpty(items)) {
+            return Collections.emptyList();
+        }
+        int chunkCapacity = Math.min(chunkSize, items.size());
+        List<List<T>> chunks = new ArrayList<>((items.size() + chunkSize - 1) / chunkSize);
+        List<T> chunk = new ArrayList<>(chunkCapacity);
+        for (T item : items) {
+            chunk.add(item);
+            if (chunk.size() == chunkSize) {
+                chunks.add(chunk);
+                chunk = new ArrayList<>(chunkCapacity);
+            }
+        }
+        if (!chunk.isEmpty()) {
+            chunks.add(chunk);
+        }
+        return chunks;
     }
 }
