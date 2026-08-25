@@ -162,6 +162,20 @@ Please update your client applications if you still rely on these switches as th
 These methods are not useful for JAX-RS resource endpoints because the JAX-RS runtime usually determines the final HTTP status from the endpoint return value or exception.
 Use JAX-RS response handling for setting and observing status codes in resource endpoints.
 
+=== Route in `AUTH_SESSION_ID` cookie for sticky sessions
+
+Having the load balancer route appended to the `AUTH_SESSION_ID` cookie is now deprecated.
+
+Since the optimizations in 26.6, sticky sessions no longer bring a significant benefit given the complex setup on the proxy side to get this working.
+Authentication sessions are created on the node where the browser starts the session, and while a session may move to another node on a subsequent request, the overhead is low.
+Most interactions such as backchannel calls and token refreshes do not use cookies and are distributed across nodes regardless.
+The recommendation is to aim for an even distribution of load across {project_name} nodes instead of using sticky sessions.
+
+The options `+spi-sticky-session-encoder--infinispan--should-attach-route+` and `+spi-sticky-session-encoder--remote--should-attach-route+` will be removed in a future release.
+
+The setting is still enabled by default to avoid breaking existing setups.
+To avoid the deprecation warning at startup, set those SPI options to `false`.
+
 === Organization invitation link no longer exposed in API responses
 
 The `inviteLink` field in `OrganizationInvitationRepresentation` is deprecated and is no longer returned in Admin REST API responses from the organization invitation endpoints.
