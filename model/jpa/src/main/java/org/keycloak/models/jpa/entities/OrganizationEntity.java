@@ -40,7 +40,7 @@ import org.keycloak.utils.StringUtil;
 @Entity
 @NamedQueries({
         @NamedQuery(name="getByOrgName", query="select distinct o from OrganizationEntity o where o.realmId = :realmId AND o.name = :name"),
-        @NamedQuery(name="getByDomainName", query="select distinct o from OrganizationEntity o inner join OrganizationDomainEntity d ON o.id = d.organization.id" +
+        @NamedQuery(name="getByDomainName", query="select distinct o from OrganizationEntity o inner join o.domains d" +
                 " where o.realmId = :realmId and d.name in (:names)"),
         @NamedQuery(name="getCount", query="select count(o) from OrganizationEntity o where o.realmId = :realmId"),
         @NamedQuery(name="deleteOrganizationsByRealm", query="delete from OrganizationEntity o where o.realmId = :realmId"),
@@ -77,8 +77,11 @@ public class OrganizationEntity {
     @Column(name = "GROUP_ID")
     private String groupId;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy="organization")
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "organization", fetch = FetchType.LAZY)
     protected Set<OrganizationDomainEntity> domains = new HashSet<>();
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "organization", fetch = FetchType.LAZY)
+    protected Set<OrganizationIdentityProviderEntity> identityProviders = new HashSet<>();
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy = "organization", fetch = FetchType.LAZY)
     protected Set<GroupEntity> groups = new HashSet<>();
@@ -159,10 +162,19 @@ public class OrganizationEntity {
 
     public void addDomain(OrganizationDomainEntity domainEntity) {
         this.domains.add(domainEntity);
+        domainEntity.setOrganization(this);
     }
 
     public void removeDomain(OrganizationDomainEntity domainEntity) {
         this.domains.remove(domainEntity);
+        domainEntity.setOrganization(null);
+    }
+
+    public Set<OrganizationIdentityProviderEntity> getIdentityProviderLinks() {
+        if (this.identityProviders == null) {
+            this.identityProviders = new HashSet<>();
+        }
+        return this.identityProviders;
     }
 
     public Set<GroupEntity> getGroups() {
