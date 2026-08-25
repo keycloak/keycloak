@@ -99,4 +99,27 @@ public class KeycloakUriBuilderTest {
         Assert.assertEquals("app.immich:///oauth-callback", KeycloakUriBuilder.fromUri(
                 "app.immich:///oauth-callback").buildAsString());
     }
+
+    @Test
+    public void testRemoveQueryParamByDecodedName() {
+        Assert.assertEquals("http://localhost/path?other=keep",
+                KeycloakUriBuilder.fromUri("http://localhost/path?state=val&other=keep", false)
+                        .removeQueryParamByDecodedName("state").buildAsString());
+
+        Assert.assertEquals("http://localhost/path?other=keep",
+                KeycloakUriBuilder.fromUri("http://localhost/path?st%61te=val&other=keep", false)
+                        .removeQueryParamByDecodedName("state").buildAsString());
+
+        Assert.assertEquals("http://localhost/path?other=keep",
+                KeycloakUriBuilder.fromUri("http://localhost/path?other=keep&%73%74%61%74%65=val", false)
+                        .removeQueryParamByDecodedName("state").buildAsString());
+
+        Assert.assertEquals("http://localhost/path",
+                KeycloakUriBuilder.fromUri("http://localhost/path?state=val", false)
+                        .removeQueryParamByDecodedName("state").buildAsString());
+
+        Assert.assertEquals("http://localhost/path?state=val",
+                KeycloakUriBuilder.fromUri("http://localhost/path?state=val", false)
+                        .removeQueryParamByDecodedName("other").buildAsString());
+    }
 }
