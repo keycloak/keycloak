@@ -72,13 +72,6 @@
         <dependency>
             <groupId>io.quarkiverse.helm</groupId>
             <artifactId>quarkus-helm</artifactId>
-            <version>1.2.7</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkiverse.operatorsdk</groupId>
-            <artifactId>quarkus-operator-sdk-helm</artifactId>
-            <version>7.4.0</version>
             <optional>true</optional>
         </dependency>
 
