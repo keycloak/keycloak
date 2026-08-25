@@ -27,6 +27,14 @@ After upgrading, {project_name} always performs the upstream identity provider l
 
 To temporarily restore the previous behavior, enable the `allow-initiating-idp-logout-param` server option for the OpenID Connect provider. This option is deprecated and will be removed in a future release.
 
+=== X509 user authentication requires CA Subject DN
+
+Following the changes made to the X509 client authenticator, in this release the user counterparts also require the **Certificate Authority subject DN** option. In this case the new configuration attribute is multi-valued and identifies the trusted anchor CA (or CAs) for user certificates. The new option is now compulsory in the admin console. Besides, the option **Revalidate Client Certificate** should always be enabled in order to get the root certificate for the chain and check its subject DN, therefore it is now deprecated and not presented in the console. Previous configurations still work to maintain backwards compatibility but the new behavior will be enforced in the next major version.
+
+Note that {project_name}'s trust store (or mTLS store) is shared for all the realms, the new configuration allows to specify the correct CAs for user certificates and avoids interference with other unrelated CAs.
+
+Revalidating certificates can be problematic in certain installations (for example if a proxy is configured for TLS termination and the certificates are passed to {project_name} using headers). The trust-store or mTLS store in {project_name} should always be configured correctly to validate the client certificate chain. Please see link:https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] and link:https://www.keycloak.org/server/mutual-tls[Configuring trusted certificates for mTLS], for more information if you are using a TLS termination proxy and X509 client authentication.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
@@ -188,6 +196,10 @@ Some of the switches were deprecated already in previous versions. In addition t
 * Use lower-case bearer type in token responses
 
 Please update your client applications if you still rely on these switches as they will be removed in the future version.
+
+=== Option Revalidate Client Certificate is deprecated for the X509 user authenticators
+
+As commented in the breaking change section, the option **Revalidate Client Certificate** is deprecated for the X509 user authenticators. This option was used to revalidate the certificate chain presented by the user against the server trust store. In the future, the revalidation will always be executed and the trust store should be configured accordingly.
 
 === `HttpResponse#getStatus()` and `setStatus(int)` in server SPI
 
