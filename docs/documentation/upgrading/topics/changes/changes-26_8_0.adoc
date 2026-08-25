@@ -75,6 +75,16 @@ The token introspection endpoint previously set the `act.sub` field to the imper
 
 If you have resource servers that parse `act.sub` from introspection responses and expect a username, update them to read `act.preferred_username` instead.
 
+=== Group policy matching for bare group names
+
+Group-based policies in Authorization Services use the groups claim from the token as the first source of truth. When the claim is not defined or empty, the policy falls back to the user's actual group memberships from the realm. Bare group names in token claims are now resolved to top-level realm groups only. Previously, a bare name like `Admins` in a group claim would match any group named `Admins` regardless of its position in the group hierarchy. This allowed users who are members of one group to satisfy policies targeting a different group with the same name at a different path.
+
+If your deployment uses the Group Membership protocol mapper with *Full group path* disabled and relies on group policies targeting nested groups, enable *Full group path* in the protocol mapper configuration so that tokens include the complete group path (for example, `/Organization/Admins` instead of `Admins`).
+
+Group names that contain slashes (for example, a group named `/Organization/Admins`) are now resolved as top-level group names first, before being treated as paths. This prevents a group name from being confused with a nested group path.
+
+Group policies that use full group paths in claims are not affected unless a top-level group name is identical to a nested group path. In that ambiguous case, the top-level group name takes precedence.
+
 === Authorization services claim handling changes
 
 Two changes affect how claims are handled in the authorization services token endpoint:
