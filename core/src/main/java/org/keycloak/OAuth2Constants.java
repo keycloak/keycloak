@@ -77,6 +77,8 @@ public interface OAuth2Constants {
 
     String CLIENT_CREDENTIALS = "client_credentials";
 
+    String JWT_AUTHORIZATION_GRANT = "urn:ietf:params:oauth:grant-type:jwt-bearer";
+
     // https://tools.ietf.org/html/draft-ietf-oauth-assertions-01#page-5
     String CLIENT_ASSERTION_TYPE = "client_assertion_type";
     String CLIENT_ASSERTION = "client_assertion";

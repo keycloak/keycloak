@@ -36,6 +36,7 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
@@ -48,6 +49,7 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 
 public abstract class AbstractPermissionTest {
@@ -235,6 +237,32 @@ public abstract class AbstractPermissionTest {
         try (Response response = realm.admin().groups().add(group)) {
             group.setId(ApiUtil.getCreatedId(response));
             return group;
+        }
+    }
+
+    protected UserRepresentation createUser(String username) {
+        UserRepresentation user = UserConfigBuilder.create()
+                .username(username)
+                .build();
+
+        return createUser(user);
+    }
+
+    protected UserRepresentation createUser(String username, String password) {
+        UserRepresentation user = UserConfigBuilder.create()
+                .username(username)
+                .firstName(username)
+                .lastName(username)
+                .email(username + "@test")
+                .password(password)
+                .build();
+        return createUser(user);
+    }
+
+    private UserRepresentation createUser(UserRepresentation user) {
+        try (Response response = realm.admin().users().create(user)) {
+            user.setId(ApiUtil.getCreatedId(response));
+            return user;
         }
     }
 }

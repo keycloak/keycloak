@@ -39,7 +39,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.Permission;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminAuth;
 
@@ -101,8 +100,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
 
     private void initIdentity(KeycloakSession session, AdminAuth auth) {
         AccessToken accessToken = auth.getToken();
-        AuthenticationManager.resolveLightweightAccessTokenRoles(session, accessToken, adminsRealm);
-        this.identity = new KeycloakIdentity(accessToken, session, adminsRealm);
+        this.identity = new KeycloakIdentity(accessToken, session, adminsRealm, true);
     }
 
     MgmtPermissions(KeycloakSession session, RealmModel adminsRealm, UserModel admin) {

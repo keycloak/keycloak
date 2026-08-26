@@ -113,19 +113,12 @@ public class FineGrainedAdminMasterRealmTest extends AbstractFineGrainedAdminTes
             newClient.setProtocol("openid-connect");
             newClient.setPublicClient(false);
             newClient.setEnabled(true);
+            // FGAP resolves roles server-side, so the admin has immediate permissions on a newly created realm without needing a token refresh
             Response response = realmClient.realm("anotherRealm").clients().create(newClient);
-            Assertions.assertEquals(403, response.getStatus());
-            response.close();
-
-            realmClient.close();
-            //creating new client to refresh token
-            realmClient = adminClientFactory.create().realm("master")
-                    .username("admin").password("admin").clientId("fullScopedClient").clientSecret("618268aa-51e6-4e64-93c4-3c0bc65b8171").build();
-            assertThat(realmClient.realms().findAll().stream().map(RealmRepresentation::getRealm).collect(Collectors.toSet()),
-                    hasItem("anotherRealm"));
-            response = realmClient.realm("anotherRealm").clients().create(newClient);
             Assertions.assertEquals(201, response.getStatus());
             response.close();
+            assertThat(realmClient.realms().findAll().stream().map(RealmRepresentation::getRealm).collect(Collectors.toSet()),
+                    hasItem("anotherRealm"));
         } finally {
             adminClient.realm("anotherRealm").remove();
             realmClient.close();

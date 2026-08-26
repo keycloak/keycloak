@@ -312,4 +312,7 @@ public abstract class AbstractOAuthClient<T> {
         return (T) this;
     }
 
+    public PermissionGrantRequest permissionGrantRequest() {
+        return new PermissionGrantRequest(this);
+    }
 }
