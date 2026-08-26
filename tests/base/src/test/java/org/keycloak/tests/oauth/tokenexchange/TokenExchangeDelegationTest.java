@@ -801,8 +801,6 @@ public class TokenExchangeDelegationTest {
         @Override
         public ClientBuilder configure(ClientBuilder client) {
             return super.configure(client)
-                    .defaultClientScopes("acr", "basic", "email", "profile")
-                    .optionalClientScopes(OIDCLoginProtocolFactory.USER_DELEGATION_SCOPE)
                     .consentRequired(true)
                     .attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED, Boolean.TRUE.toString())
                     .attribute(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT, "ping")
