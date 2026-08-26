@@ -16,6 +16,7 @@ import org.keycloak.tests.suites.DatabaseTest;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -60,6 +61,39 @@ public class DatabaseIndexCheckerTest {
         }
 
         assertThat(checker.getMissingIndexesName(), is(empty()));
+    }
+
+    @TestOnServer
+    public void testDetectsAndRecreatesInvalidIndexOnPostgresql(KeycloakSession session) {
+        var factory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(JpaConnectionProvider.class);
+
+        String dbProduct = getDatabaseProduct(factory);
+        if (!dbProduct.contains("postgresql")) {
+            return;
+        }
+
+        var schema = factory.getSchema();
+
+        markIndexInvalid(factory, INDEX_NAME, schema);
+        boolean recreated = false;
+
+        try {
+            var detectOnly = new DatabaseIndexChecker(factory::getConnection, session.getKeycloakSessionFactory(), schema, false, 0);
+            assertThat(detectOnly.getMissingIndexesName(), hasItem(INDEX_NAME));
+
+            var autoCreate = new DatabaseIndexChecker(factory::getConnection, session.getKeycloakSessionFactory(), schema, true, 0);
+            autoCreate.run();
+
+            var afterRun = new DatabaseIndexChecker(factory::getConnection, session.getKeycloakSessionFactory(), schema, false, 0);
+            assertThat(afterRun.getMissingIndexesName(), is(empty()));
+            recreated = true;
+        } finally {
+            if (!recreated) {
+                dropIndex(factory, INDEX_NAME);
+                recreateIndex(factory, session, schema);
+            }
+        }
     }
 
     @TestOnServer
@@ -162,6 +196,20 @@ public class DatabaseIndexCheckerTest {
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to drop index " + indexName, e);
+        }
+    }
+
+    private static void markIndexInvalid(JpaConnectionProviderFactory factory, String indexName, String schema) {
+        try (Connection connection = factory.getConnection();
+             var ps = connection.prepareStatement(
+                     "UPDATE pg_index SET indisvalid = false WHERE indexrelid = ("
+                             + "SELECT c.oid FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                             + "WHERE c.relname = ? AND n.nspname = coalesce(?, current_schema))")) {
+            ps.setString(1, indexName.toLowerCase());
+            ps.setString(2, schema);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to mark index " + indexName + " as invalid", e);
         }
     }
 
