@@ -159,39 +159,66 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
 
         Map<String, Object> extensions = resource.getExtensions();
         if (extensions != null) {
-            for (String key : extensions.keySet()) {
+            for (Map.Entry<String, Object> entry : extensions.entrySet()) {
+                String key = entry.getKey();
                 if (!recognized.contains(key)) {
                     throw new ScimInvalidValueException(
                             "Unrecognized attribute '" + key + "'");
+                }
+
+                // the schema URI is recognized; validate the nested attributes it carries so that e.g.
+                // {"urn:custom:schema:User": {"bogus": "x"}} is rejected rather than silently ignored
+                Object value = entry.getValue();
+                if (value instanceof Map<?, ?> nested) {
+                    for (Object nestedKey : nested.keySet()) {
+                        String qualified = key + ":" + nestedKey;
+                        if (!isRecognizedPath(qualified)) {
+                            throw new ScimInvalidValueException(
+                                    "Unrecognized attribute '" + qualified + "'");
+                        }
+                    }
                 }
             }
         }
     }
 
     /**
-     * Validates that a PATCH operation path targets a recognized attribute. The path is first normalized
-     * by stripping any filter expressions (e.g. {@code emails[type eq "work"].value} becomes {@code emails.value}),
-     * then checked against recognized schema URIs and attribute paths. Throws
-     * {@link ScimNoTargetException} (HTTP 400, {@code scimType=noTarget}) if the path is not recognized.
+     * Validates that a PATCH operation path targets a recognized attribute, throwing
+     * {@link ScimNoTargetException} (HTTP 400, {@code scimType=noTarget}) if it does not.
      *
-     * <p>A sub-attribute path such as {@code emails.type} or {@code name.givenName} is only accepted when the
-     * sub-attribute actually exists: either it is individually declared (e.g. {@code name.givenName}) or it is a
-     * canonical member of the complex attribute's backing type (e.g. {@code emails.type}). An unknown descendant
-     * such as {@code emails.bogus} or {@code name.bogus} is rejected rather than accepted by a loose prefix match.
+     * @see #isRecognizedPath(String)
      */
     private void validatePatchPath(String rawPath) {
+        if (!isRecognizedPath(rawPath)) {
+            throw new ScimNoTargetException(
+                    "The path '" + rawPath + "' does not target a recognized attribute");
+        }
+    }
+
+    /**
+     * Determines whether a path targets a recognized schema URI or attribute. The path is first normalized
+     * by stripping any filter expressions (e.g. {@code emails[type eq "work"].value} becomes {@code emails.value}),
+     * then checked against recognized schema URIs and attribute paths.
+     *
+     * <p>A sub-attribute path such as {@code emails.type} or {@code name.givenName} is only recognized when the
+     * sub-attribute actually exists: either it is individually declared (e.g. {@code name.givenName}) or it is a
+     * canonical member of the complex attribute's backing type (e.g. {@code emails.type}). An unknown descendant
+     * such as {@code emails.bogus} or {@code name.bogus} is not recognized (rather than accepted by a loose
+     * prefix match).
+     */
+    private boolean isRecognizedPath(String rawPath) {
         String normalizedPath = normalizePath(rawPath);
 
         Set<String> recognized = getRecognizedSchemaUris();
         if (recognized.contains(normalizedPath)) {
-            return;
+            return true;
         }
 
         for (ModelSchema<M, R> s : schemas) {
             // resolves simple attributes, individually declared sub-attributes (e.g. name.givenName), the
             // synthesized "<attr>.value" of a multi-valued complex attribute, and all extension path forms
             if (s.getAttributeByPath(normalizedPath) != null) {
-                return;
+                return true;
             }
             for (Attribute<M, R> attr : s.getAttributes().values()) {
                 String attrName = attr.getName();
@@ -201,25 +228,24 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
                 // whose sub-attributes are individually registered (e.g. the bare "name" of "name.givenName")
                 if (normalizedPath.equalsIgnoreCase(attrName)
                         || (parentName != null && normalizedPath.equalsIgnoreCase(parentName))) {
-                    return;
+                    return true;
                 }
 
                 // a canonical sub-attribute of a complex attribute that is not individually declared, such as
                 // "emails.type"/"emails.primary" for the multi-valued "emails" (backed by Email). Only genuine
-                // canonical members are accepted; unknown descendants fall through and are rejected below.
+                // canonical members are accepted; unknown descendants are not recognized.
                 Class<?> complexType = attr.getComplexType();
                 if (complexType != null) {
                     for (String sub : getComplexSubAttributes(complexType)) {
                         if (normalizedPath.equalsIgnoreCase(attrName + "." + sub)) {
-                            return;
+                            return true;
                         }
                     }
                 }
             }
         }
 
-        throw new ScimNoTargetException(
-                "The path '" + rawPath + "' does not target a recognized attribute");
+        return false;
     }
 
     /**
@@ -244,12 +270,38 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
      * Validates a pathless PATCH operation whose {@code value} is a JSON object. Per RFC 7644 section 3.5.2,
      * {@code add} and {@code replace} operations may omit {@code path} and instead carry the attributes to
      * modify as members of the {@code value} object. Each top-level member is treated as an attribute path
-     * (or extension schema URI) and validated the same way as an explicit operation path, throwing
+     * (or extension schema URI) and validated the same way as an explicit operation path. When a member is a
+     * recognized extension schema URI whose value is itself an object, its nested members are validated as
+     * schema-qualified attributes of that URI (e.g. {@code {"urn:...:enterprise:2.0:User": {"bogus": "x"}}} is
+     * rejected because {@code urn:...:enterprise:2.0:User:bogus} is not a recognized attribute). Throws
      * {@link ScimNoTargetException} for any member that does not target a recognized attribute.
      */
     private void validatePatchValue(JsonNode value) {
-        for (Iterator<String> names = value.fieldNames(); names.hasNext(); ) {
-            validatePatchPath(names.next());
+        Set<String> recognizedUris = getRecognizedSchemaUris();
+        for (Map.Entry<String, JsonNode> member : value.properties()) {
+            String name = member.getKey();
+            JsonNode memberValue = member.getValue();
+
+            if (recognizedUris.contains(name) && memberValue != null && memberValue.isObject()) {
+                validateExtensionMembers(name, memberValue);
+            } else {
+                validatePatchPath(name);
+            }
+        }
+    }
+
+    /**
+     * Validates the members of a value object nested under a recognized extension schema URI. Each nested member
+     * is checked as the schema-qualified attribute {@code schemaUri:memberName}, throwing
+     * {@link ScimNoTargetException} for any member that does not target a recognized attribute of that schema.
+     */
+    private void validateExtensionMembers(String schemaUri, JsonNode object) {
+        for (Iterator<String> names = object.fieldNames(); names.hasNext(); ) {
+            String qualified = schemaUri + ":" + names.next();
+            if (!isRecognizedPath(qualified)) {
+                throw new ScimNoTargetException(
+                        "The path '" + qualified + "' does not target a recognized attribute");
+            }
         }
     }
 

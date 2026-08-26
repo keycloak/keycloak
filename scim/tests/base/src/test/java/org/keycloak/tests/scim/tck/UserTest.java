@@ -1884,6 +1884,50 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testPatchPathlessNestedExtensionAttribute() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
+        addOrReplaceUPAttribute(customSchema, "myattribute");
+
+        User expected = client.users().create(createUser());
+
+        // a recognized attribute nested under a recognized extension schema URI passes validation
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add("{\"" + customSchema + "\": {\"myattribute\": \"myvalue\"}}")
+                .build());
+
+        // an unrecognized attribute nested under an otherwise recognized extension schema URI must be rejected
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .add("{\"" + customSchema + "\": {\"bogus\": \"x\"}}")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains(customSchema + ":bogus"));
+    }
+
+    @Test
+    public void testCreateWithNestedUnrecognizedExtensionAttribute() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
+        addOrReplaceUPAttribute(customSchema, "myattribute");
+
+        User user = createUser();
+        user.addSchema(customSchema);
+        user.setExtensions(new HashMap<>());
+        HashMap<Object, Object> customSchemaValues = new HashMap<>();
+        customSchemaValues.put("bogus", "x");
+        user.getExtensions().put(customSchema, customSchemaValues);
+
+        // the extension schema URI is recognized, but the nested attribute is not
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().create(user));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("invalidValue", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains(customSchema + ":bogus"));
+    }
+
+    @Test
     public void testUpdateWithUnrecognizedSchema() throws Exception {
         User expected = client.users().create(createUser());
 
