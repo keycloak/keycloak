@@ -18,16 +18,15 @@
 package org.keycloak.connections.jpa;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Map;
 
 import jakarta.persistence.EntityManagerFactory;
 
 import org.hibernate.Session;
+import org.hibernate.dialect.OracleDialect;
 import org.hibernate.dialect.PostgreSQLDialect;
-import org.hibernate.engine.jdbc.connections.spi.JdbcConnectionAccess;
+import org.hibernate.dialect.SQLServerDialect;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.event.spi.EventType;
@@ -40,19 +39,25 @@ import org.hibernate.event.spi.PreUpdateEventListener;
 import org.jboss.logging.Logger;
 
 /**
- * Hibernate event listener that enables asynchronous commit for PostgreSQL transactions
+ * Hibernate event listener that enables asynchronous commit for transactions
  * that only modify entities implementing {@link AsynchronousCommitAllowed}.
  * <p>
- * On PostgreSQL, issues {@code SET LOCAL synchronous_commit TO OFF} before commit when
- * all modified entities in the transaction allow it. This skips the WAL fsync wait,
- * improving throughput for ephemeral data. The database remains crash-consistent;
- * only the last few milliseconds of such transactions may be lost on a crash.
+ * Database-specific subclasses implement the actual mechanism:
+ * <ul>
+ *   <li>{@link PostgreSQLAsyncCommitIntegrator} — {@code SET LOCAL synchronous_commit TO OFF}</li>
+ *   <li>{@link MSSQLAsyncCommitIntegrator} — {@code COMMIT TRAN WITH (DELAYED_DURABILITY = ON)}</li>
+ *   <li>{@link OracleAsyncCommitIntegrator} — {@code COMMIT WRITE BATCH NOWAIT}</li>
+ * </ul>
  * <p>
- * On non-PostgreSQL databases, {@link #registerListeners(EntityManagerFactory)} is a no-op.
+ * MySQL and MariaDB are not supported: their equivalent setting {@code innodb_flush_log_at_trx_commit}
+ * is session-scoped, not transaction-scoped. Setting it before commit would leave the relaxed durability
+ * on the pooled connection, silently affecting subsequent unrelated transactions if the reset fails.
+ * <p>
+ * On unsupported databases, {@link #registerListeners(EntityManagerFactory, boolean)} is a no-op.
  *
  * @author Alexander Schwartz
  */
-public class AsyncCommitIntegrator implements PreInsertEventListener, PreUpdateEventListener, PreDeleteEventListener {
+public abstract class AsyncCommitIntegrator implements PreInsertEventListener, PreUpdateEventListener, PreDeleteEventListener {
 
     private static final Logger logger = Logger.getLogger(AsyncCommitIntegrator.class);
 
@@ -61,28 +66,68 @@ public class AsyncCommitIntegrator implements PreInsertEventListener, PreUpdateE
 
     /**
      * Registers asynchronous commit listeners on the given {@link EntityManagerFactory}
-     * if the underlying database is PostgreSQL. No-op for other databases.
+     * if the underlying database supports it. No-op for unsupported databases.
+     *
+     * @param xaEnabled whether the datasource uses XA transactions. Implementations that issue
+     *                  a raw {@code COMMIT} (SQL Server, Oracle) are incompatible with XA because
+     *                  the XA coordinator owns the transaction boundaries.
      */
-    public static void registerListeners(EntityManagerFactory emf) {
+    public static void registerListeners(EntityManagerFactory emf, boolean xaEnabled) {
         SessionFactoryImplementor sf = emf.unwrap(SessionFactoryImplementor.class);
-        if (!(sf.getJdbcServices().getDialect() instanceof PostgreSQLDialect)) {
+
+        AsyncCommitIntegrator listener;
+        var dialect = sf.getJdbcServices().getDialect();
+        if (dialect instanceof PostgreSQLDialect) {
+            listener = new PostgreSQLAsyncCommitIntegrator();
+        } else if (dialect instanceof SQLServerDialect) {
+            listener = new MSSQLAsyncCommitIntegrator();
+        } else if (dialect instanceof OracleDialect) {
+            listener = new OracleAsyncCommitIntegrator();
+        } else {
             return;
         }
 
-        if (isAuroraWithLogicalReplication(sf)) {
-            logger.warn("Asynchronous commit optimization disabled: Aurora PostgreSQL with logical replication " +
-                    "detected. Aurora may not deliver async-committed transactions to logical decoding consumers.");
+        if (xaEnabled && !listener.supportsXa()) {
+            logger.debugf("Asynchronous commit optimization disabled for %s: not supported with XA datasources",
+                    dialect.getClass().getSimpleName());
             return;
         }
 
-        AsyncCommitIntegrator listener = new AsyncCommitIntegrator();
+        if (!listener.isEnabled(sf)) {
+            return;
+        }
+
         var registry = sf.getEventEngine().getListenerRegistry();
         registry.appendListeners(EventType.PRE_INSERT, listener);
         registry.appendListeners(EventType.PRE_UPDATE, listener);
         registry.appendListeners(EventType.PRE_DELETE, listener);
 
-        logger.debug("Registered asynchronous commit listeners for PostgreSQL");
+        logger.debugf("Registered asynchronous commit listeners for %s", dialect.getClass().getSimpleName());
     }
+
+    /**
+     * Whether this implementation is compatible with XA datasources.
+     * Implementations that issue a raw {@code COMMIT} inside the managed transaction must
+     * return {@code false} — XA coordinators do not allow explicit commit on enlisted connections
+     * (Oracle raises ORA-02089, SQL Server rejects commits outside the XA coordinator).
+     * <p>
+     * Defaults to {@code true} for implementations like PostgreSQL that only set session variables.
+     */
+    protected boolean supportsXa() {
+        return true;
+    }
+
+    /**
+     * Whether asynchronous commit should be enabled for this database.
+     * Called once at startup to perform database-specific validation.
+     */
+    protected abstract boolean isEnabled(SessionFactoryImplementor sf);
+
+    /**
+     * Apply the database-specific mechanism to make the current transaction's commit asynchronous.
+     * Called via {@code doWork} just before Hibernate issues the JDBC commit.
+     */
+    protected abstract void applyAsyncCommit(Connection connection) throws SQLException;
 
     @Override
     public boolean onPreInsert(PreInsertEvent event) {
@@ -118,7 +163,7 @@ public class AsyncCommitIntegrator implements PreInsertEventListener, PreUpdateE
             session.getTransactionCompletionCallbacks().registerCallback(
                     (SharedSessionContractImplementor sess) -> {
                         if (!Boolean.TRUE.equals(((Session) sess).getProperties().get(SYNC_REQUIRED))) {
-                            sess.doWork(AsyncCommitIntegrator::setAsyncCommit);
+                            sess.doWork(this::applyAsyncCommit);
                         }
                     }
             );
@@ -130,58 +175,6 @@ public class AsyncCommitIntegrator implements PreInsertEventListener, PreUpdateE
             }
         } else {
             s.setProperty(SYNC_REQUIRED, Boolean.TRUE);
-        }
-    }
-
-    /**
-     * Detects Aurora PostgreSQL with logical replication enabled — a combination where
-     * {@code SET LOCAL synchronous_commit TO OFF} can cause committed transactions to
-     * never appear (or appear with extreme delay) in logical decoding consumers like Debezium.
-     * <p>
-     * Detection: {@code to_regproc('pg_catalog.aurora_version')} is non-null only on Aurora
-     * (standard PostgreSQL returns null without logging ERROR);
-     * {@code SHOW wal_level = 'logical'} indicates a CDC consumer may be reading the WAL.
-     * Fails safe (returns {@code true}) on unexpected errors to avoid silent CDC data loss.
-     *
-     * @see <a href="https://repost.aws/questions/QU_4m9WIVUQ1aC-w4v2MzC7g">Aurora PostgreSQL does not perform logical decoding when synchronous_commit = off</a>
-     */
-    private static boolean isAuroraWithLogicalReplication(SessionFactoryImplementor sf) {
-        try {
-            JdbcConnectionAccess bootstrapJdbcConnectionAccess = sf.getJdbcServices().getBootstrapJdbcConnectionAccess();
-            Connection connection = bootstrapJdbcConnectionAccess.obtainConnection();
-            try {
-                if (!auroraVersionFunctionExists(connection)) {
-                    return false;
-                }
-
-                try (Statement stmt = connection.createStatement();
-                     ResultSet rs = stmt.executeQuery("SHOW wal_level")) {
-                    return rs.next() && "logical".equals(rs.getString(1));
-                }
-            } finally {
-                bootstrapJdbcConnectionAccess.releaseConnection(connection);
-            }
-        } catch (SQLException e) {
-            logger.warn("Failed to detect Aurora/logical replication status; disabling asynchronous commit optimization", e);
-            return true;
-        }
-    }
-
-    /**
-     * Returns whether the Aurora-only {@code aurora_version()} function exists.
-     * Uses {@code to_regproc} so standard PostgreSQL does not log
-     * {@code ERROR: function aurora_version() does not exist}.
-     */
-    static boolean auroraVersionFunctionExists(Connection connection) throws SQLException {
-        try (Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT to_regproc('pg_catalog.aurora_version') IS NOT NULL")) {
-            return rs.next() && rs.getBoolean(1);
-        }
-    }
-
-    private static void setAsyncCommit(Connection connection) throws SQLException {
-        try (Statement stmt = connection.createStatement()) {
-            stmt.execute("SET LOCAL synchronous_commit TO OFF");
         }
     }
 }
