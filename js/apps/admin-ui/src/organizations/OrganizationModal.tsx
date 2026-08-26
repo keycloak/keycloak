@@ -40,7 +40,7 @@ export const OrganizationModal = ({
     const params = {
       first,
       search,
-      max: max! + existingOrgs.length,
+      max: max!,
     };
 
     const orgs = await adminClient.organizations.find(params);
