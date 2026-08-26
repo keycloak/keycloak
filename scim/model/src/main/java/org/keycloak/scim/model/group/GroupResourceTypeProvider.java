@@ -166,9 +166,9 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     }
 
     @Override
-    public boolean onDelete(String id) {
+    public boolean onDelete(GroupModel model) {
         RealmModel realm = session.getContext().getRealm();
-        return session.groups().removeGroup(realm, getModel(id));
+        return session.groups().removeGroup(realm, model);
     }
 
     @Override
