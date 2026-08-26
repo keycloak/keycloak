@@ -1199,6 +1199,16 @@ public final class KeycloakModelUtils {
             return;
         }
 
+        // Resolve the user's effective role set (direct + composite + group-inherited) exactly once,
+        // instead of calling user.hasRole() per token role. user.hasRole() re-walks the whole role
+        // graph (KeycloakModelUtils.searchFor over every mapped role + every composite parent) for
+        // each token role, so a token with N roles and a user with a deep role graph costs O(N × M).
+        // getDeepUserRoleMappings() collapses that into one batched composite expansion (O(M)) plus
+        // O(1) set lookups per role — the same strategy used by AdminRoleTokenPostProcessor.
+        Set<String> effectiveRoleIds = RoleUtils.getDeepUserRoleMappings(user).stream()
+                .map(RoleModel::getId)
+                .collect(Collectors.toSet());
+
         Set<String> roles = access.getRoles();
         Iterator<String> roleIterator = roles.iterator();
 
@@ -1206,7 +1216,7 @@ public final class KeycloakModelUtils {
             String role = roleIterator.next();
             RoleModel adminRole = getRoleByName(realm, clientId, role);
 
-            if (AdminRoles.containsAdminRole(adminRole) && !user.hasRole(adminRole)) {
+            if (AdminRoles.containsAdminRole(adminRole) && !effectiveRoleIds.contains(adminRole.getId())) {
                 roleIterator.remove();
             }
         }
