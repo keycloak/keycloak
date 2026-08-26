@@ -25,7 +25,6 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.risc.RiscAccountPurged;
@@ -128,10 +127,6 @@ public class SsfTransmitterAccountPurgedEventTests {
         });
 
         assignOptionalClientScopes(RECEIVER, SsfScopes.SCOPE_SSF_READ, SsfScopes.SCOPE_SSF_MANAGE);
-
-        // Tests vary the realm's duplicate-email policy; reset it so ordering
-        // cannot leak one test's setting into the next.
-        setDuplicateEmailsAllowed(false);
 
         // Tests in this class deliberately vary the receiver's subject format and
         // default_subjects policy, so reset both to the class defaults rather than
@@ -321,7 +316,6 @@ public class SsfTransmitterAccountPurgedEventTests {
         // getUserByEmail returns the first surviving match -- so after purging the
         // subscribed user, the gate evaluated a *different* account that happens to
         // share the address, and dropped the purge under default_subjects=NONE.
-        setDuplicateEmailsAllowed(true);
         setReceiverAttributes(Map.of(
                 ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "NONE",
                 ClientStreamStore.SSF_STREAM_USER_SUBJECT_FORMAT_KEY, EmailSubjectId.TYPE));
@@ -497,17 +491,6 @@ public class SsfTransmitterAccountPurgedEventTests {
 
     // --- setup --------------------------------------------------------------
 
-    /**
-     * Toggles the realm's duplicate-email policy. Keycloak only permits duplicate
-     * emails when login-by-email is off, so the two move together.
-     */
-    protected void setDuplicateEmailsAllowed(boolean allowed) {
-        RealmRepresentation rep = realm.admin().toRepresentation();
-        rep.setLoginWithEmailAllowed(!allowed);
-        rep.setDuplicateEmailsAllowed(allowed);
-        realm.admin().update(rep);
-    }
-
     protected void setReceiverAttributes(Map<String, String> attributes) {
         ClientResource clientResource = realm.admin().clients().get(findClientByClientId(RECEIVER).getId());
         ClientRepresentation rep = clientResource.toRepresentation();
@@ -647,6 +630,12 @@ public class SsfTransmitterAccountPurgedEventTests {
             realm.name("ssf-transmitter-account-purged");
             realm.attribute(Ssf.SSF_TRANSMITTER_ENABLED_KEY, "true");
             realm.organizationsEnabled(true);
+            // Duplicate emails are enabled realm-wide for the duplicate-email regression
+            // test below; Keycloak only permits them when login-by-email is off. Set at
+            // realm creation rather than mutated per test -- a runtime realm update
+            // round-trips the whole representation and is not worth the blast radius.
+            realm.loginWithEmailAllowed(false);
+            realm.duplicateEmailsAllowed(true);
 
             realm.eventsEnabled(true);
             realm.adminEventsEnabled(true);
