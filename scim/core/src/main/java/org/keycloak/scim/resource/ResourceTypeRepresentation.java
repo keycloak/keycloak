@@ -53,6 +53,18 @@ public abstract class ResourceTypeRepresentation {
         this.schemas = schemas;
     }
 
+    /**
+     * Returns the {@code schemas} array exactly as submitted by the client, without the subclass normalization
+     * applied by {@link #getSchemas()} (e.g. {@link org.keycloak.scim.resource.group.Group} pinning the value to
+     * the core Group schema, or the User representation injecting the enterprise schema). Used for request
+     * validation so that unrecognized submitted schema URIs are rejected regardless of how {@link #getSchemas()}
+     * is overridden. Returns {@code null} when the client omitted {@code schemas}.
+     */
+    @JsonIgnore
+    public Set<String> getSubmittedSchemas() {
+        return schemas;
+    }
+
     public String getId() {
         return id;
     }

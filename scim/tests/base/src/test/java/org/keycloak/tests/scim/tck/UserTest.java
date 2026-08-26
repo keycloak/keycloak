@@ -11,7 +11,6 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.events.admin.OperationType;
@@ -20,7 +19,6 @@ import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
@@ -636,21 +634,43 @@ public class UserTest extends AbstractScimTest {
         User expected = client.users().create(createUser());
 
         SimpleHttp http = SimpleHttp.create(httpClient);
-        AccessTokenResponse tokenResponse = http.doPost(keycloakUrls.getToken(realm.getName()))
-                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS)
-                .param(OAuth2Constants.CLIENT_ID, "scim-client")
-                .param(OAuth2Constants.CLIENT_SECRET, "secret")
-                .asJson(AccessTokenResponse.class);
+        String token = getScimClientToken(http);
 
         String url = keycloakUrls.getBase() + "/realms/" + realm.getName() + "/scim/v2/Users/" + expected.getId();
         try (SimpleHttpResponse response = http.doPatch(url)
-                .header("Authorization", "Bearer " + tokenResponse.getToken())
+                .header("Authorization", "Bearer " + token)
                 .header("Content-Type", "application/scim+json")
                 .entity(new StringEntity(
                         "{\"schemas\": null, \"Operations\": [{\"op\": \"replace\", \"path\": \"active\", \"value\": false}]}",
                         ContentType.create("application/scim+json")))
                 .asResponse()) {
             assertEquals(400, response.getStatus());
+        }
+    }
+
+    @Test
+    public void testPatchWithUnrecognizedSchema() throws Exception {
+        User expected = client.users().create(createUser());
+
+        SimpleHttp http = SimpleHttp.create(httpClient);
+        String token = getScimClientToken(http);
+
+        String url = keycloakUrls.getBase() + "/realms/" + realm.getName() + "/scim/v2/Users/" + expected.getId();
+        // the PatchOp schema is present, but an additional unrecognized schema URI in the request's schemas array
+        // must be rejected rather than ignored; the scimType is invalidValue, consistent with how an unrecognized
+        // schema URI in a POST/PUT resource's schemas array is classified
+        try (SimpleHttpResponse response = http.doPatch(url)
+                .header("Authorization", "Bearer " + token)
+                .header("Content-Type", "application/scim+json")
+                .entity(new StringEntity(
+                        "{\"schemas\": [\"" + Scim.PATCH_OP_CORE_SCHEMA + "\", \"urn:bogus:Schema\"], "
+                                + "\"Operations\": [{\"op\": \"replace\", \"path\": \"active\", \"value\": false}]}",
+                        ContentType.create("application/scim+json")))
+                .asResponse()) {
+            assertEquals(400, response.getStatus());
+            ErrorResponse error = response.asJson(ErrorResponse.class);
+            assertEquals("invalidValue", error.getScimType());
+            assertTrue(error.getDetail().contains("urn:bogus:Schema"));
         }
     }
 
@@ -1587,15 +1607,11 @@ public class UserTest extends AbstractScimTest {
     @Test
     public void testCreateWithUnrecognizedSchema() throws Exception {
         SimpleHttp http = SimpleHttp.create(httpClient);
-        AccessTokenResponse tokenResponse = http.doPost(keycloakUrls.getToken(realm.getName()))
-                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS)
-                .param(OAuth2Constants.CLIENT_ID, "scim-client")
-                .param(OAuth2Constants.CLIENT_SECRET, "secret")
-                .asJson(AccessTokenResponse.class);
+        String token = getScimClientToken(http);
 
         String url = keycloakUrls.getBase() + "/realms/" + realm.getName() + "/scim/v2/Users";
         try (SimpleHttpResponse response = http.doPost(url)
-                .header("Authorization", "Bearer " + tokenResponse.getToken())
+                .header("Authorization", "Bearer " + token)
                 .header("Content-Type", "application/scim+json")
                 .entity(new StringEntity(
                         "{\"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\", \"urn:bogus:Schema\"], "
@@ -1634,6 +1650,41 @@ public class UserTest extends AbstractScimTest {
         assertNotNull(ce.getError());
         assertEquals(400, ce.getError().getStatusInt());
         assertEquals("noTarget", ce.getError().getScimType());
+    }
+
+    @Test
+    public void testPatchCommonReadOnlyAttributesAreIgnored() {
+        User expected = client.users().create(createUser());
+
+        // id, schemas and meta(.*) are common SCIM resource attributes that are not backed by any model attribute;
+        // targeting them via PATCH must be treated as a no-op rather than rejected as noTarget
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace("id", "some-other-id")
+                .build());
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace("schemas", "[\"urn:ietf:params:scim:schemas:core:2.0:User\"]")
+                .build());
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .remove("meta")
+                .build());
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace("meta.resourceType", "Group")
+                .build());
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace("meta.location", "https://bogus.example.org")
+                .build());
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace("meta.version", "W/\"123\"")
+                .build());
+
+        // the same paths must also be recognized when submitted with the optional core schema prefix
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace(Scim.USER_CORE_SCHEMA + ":id", "some-other-id")
+                .build());
+
+        User actual = client.users().get(expected.getId());
+        assertEquals(expected.getId(), actual.getId());
+        assertRootAttributes(actual, expected);
     }
 
     @Test
@@ -1707,6 +1758,37 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testPatchPathlessWithNonObjectValueRejected() {
+        User expected = client.users().create(createUser());
+
+        // a pathless add/replace must carry the attributes to modify as members of an object value; a scalar,
+        // array or empty object value provides no target and must be rejected rather than silently no-op'd
+        ScimClientException scalarCe = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .replace("someValue")
+                        .build()));
+        assertNotNull(scalarCe.getError());
+        assertEquals(400, scalarCe.getError().getStatusInt());
+        assertEquals("invalidSyntax", scalarCe.getError().getScimType());
+
+        ScimClientException arrayCe = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .replace("[]")
+                        .build()));
+        assertNotNull(arrayCe.getError());
+        assertEquals(400, arrayCe.getError().getStatusInt());
+        assertEquals("invalidSyntax", arrayCe.getError().getScimType());
+
+        ScimClientException emptyObjectCe = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .replace("{}")
+                        .build()));
+        assertNotNull(emptyObjectCe.getError());
+        assertEquals(400, emptyObjectCe.getError().getStatusInt());
+        assertEquals("invalidSyntax", emptyObjectCe.getError().getScimType());
+    }
+
+    @Test
     public void testPatchPathlessWithCustomSchema() {
         String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
         addOrReplaceUPAttribute(customSchema, "myattribute");
@@ -1727,6 +1809,25 @@ public class UserTest extends AbstractScimTest {
         assertEquals(400, ce.getError().getStatusInt());
         assertEquals("noTarget", ce.getError().getScimType());
         assertTrue(ce.getError().getDetail().contains("urn:bogus:custom:1.0:User"));
+    }
+
+    @Test
+    public void testPatchPathlessWithEmptyObjectUnderSchemaUriRejected() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
+        addOrReplaceUPAttribute(customSchema, "myattribute");
+
+        User expected = client.users().create(createUser());
+
+        // a recognized extension schema URI must carry a non-empty object of attributes; an empty object
+        // targets no attribute and must be rejected rather than silently accepted as a no-op
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .add("{\"" + customSchema + "\": {}}")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains(customSchema));
     }
 
     @Test
@@ -1765,6 +1866,22 @@ public class UserTest extends AbstractScimTest {
         assertEquals(400, ce.getError().getStatusInt());
         assertEquals("noTarget", ce.getError().getScimType());
         assertTrue(ce.getError().getDetail().contains("emails.bogus"));
+    }
+
+    @Test
+    public void testPatchEmailRefSubAttributeRejected() {
+        User expected = client.users().create(createUser());
+
+        // "$ref" is inherited from the shared MultiValuedAttribute bean but is not a defined sub-attribute of
+        // "emails" (unlike the Group "members" and User "groups" reference attributes, which do define it)
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .add("emails.$ref", "https://example.org/ref")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains("emails.$ref"));
     }
 
     @Test
@@ -1928,19 +2045,429 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testPatchAddOrReplaceWithExplicitPathAndMissingValueRejected() {
+        User expected = client.users().create(createUser());
+
+        // per RFC 7644 section 3.5.2, "add" and "replace" require a value; without an early check a missing/null
+        // value reaches the schema layer's own null check as an uncaught NPE (HTTP 500) instead of a clean 400
+        ScimClientException addCe = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .add("displayName", (String) null)
+                        .build()));
+        assertNotNull(addCe.getError());
+        assertEquals(400, addCe.getError().getStatusInt());
+        assertEquals("invalidSyntax", addCe.getError().getScimType());
+
+        ScimClientException replaceCe = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .replace("displayName", (String) null)
+                        .build()));
+        assertNotNull(replaceCe.getError());
+        assertEquals(400, replaceCe.getError().getStatusInt());
+        assertEquals("invalidSyntax", replaceCe.getError().getScimType());
+    }
+
+    @Test
+    public void testPatchFullyQualifiedCorePath() {
+        addOrReplaceUPAttribute("nickName");
+
+        User expected = client.users().create(createUser());
+
+        // a fully-qualified core attribute path is legal per RFC 7644 (the core schema prefix is optional) and
+        // must be accepted rather than rejected as noTarget, even though core attributes are stored unqualified;
+        // the value must actually be applied too - the prefix is stripped for both recognition and application
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace(Scim.USER_CORE_SCHEMA + ":nickName", "qualifiedNick")
+                .build());
+
+        assertEquals("qualifiedNick", client.users().get(expected.getId()).getNickName());
+    }
+
+    @Test
+    public void testPatchBlankPathTreatedAsPathless() {
+        addOrReplaceUPAttribute("nickName");
+
+        User expected = client.users().create(createUser());
+
+        // a blank (whitespace-only) path is not a valid attribute path and must be treated the same as an
+        // absent one, so the value object is actually applied as a pathless operation rather than silently
+        // dropped because the raw blank path was forwarded to the schema layer unchanged
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add(" ", "{\"nickName\": \"spacePathNick\"}")
+                .build());
+
+        assertEquals("spacePathNick", client.users().get(expected.getId()).getNickName());
+    }
+
+    @Test
+    public void testPatchInheritedNonSchemaSubAttribute() {
+        User expected = client.users().create(createUser());
+
+        // "emails.primary" is a genuine SCIM sub-attribute of the emails (Email) complex type and must be accepted
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace("emails.primary", "true")
+                .build());
+
+        // "groups.primary" is inherited by the GroupMembership bean but is not a SCIM sub-attribute of the User
+        // "groups" reference attribute, so it must be rejected rather than silently accepted
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .replace("groups.primary", "true")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains("groups.primary"));
+    }
+
+    @Test
+    public void testPatchPathlessNestedComplexDescendant() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
+        addOrReplaceUPAttribute(customSchema, "assurance.value");
+
+        User expected = client.users().create(createUser());
+
+        // a declared descendant of a complex extension attribute passes validation
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add("{\"" + customSchema + "\": {\"assurance\": {\"value\": \"high\"}}}")
+                .build());
+
+        // an undeclared descendant nested more than one level below the extension URI must still be rejected
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .add("{\"" + customSchema + "\": {\"assurance\": {\"bogus\": \"x\"}}}")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains(customSchema + ":assurance.bogus"));
+    }
+
+    @Test
+    public void testPatchExplicitPathObjectValueUnrecognizedSubAttribute() {
+        User expected = client.users().create(createUser());
+
+        // an object value carrying a declared sub-attribute of the explicit complex path is accepted
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace("name", "{\"givenName\": \"PatchedGivenName\"}")
+                .build());
+
+        // an object value carrying an unknown sub-attribute of the explicit complex path must be rejected rather
+        // than silently dropped when the attributes are resolved
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .replace("name", "{\"bogus\": \"x\"}")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains("name.bogus"));
+    }
+
+    @Test
+    public void testPatchPathlessObjectValueUnrecognizedSubAttribute() {
+        User expected = client.users().create(createUser());
+
+        // a pathless value object whose complex member carries an unknown sub-attribute must be rejected
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .add("{\"name\": {\"bogus\": \"x\"}}")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains("name.bogus"));
+    }
+
+    @Test
+    public void testPatchUnrecognizedFilterAttribute() {
+        User expected = client.users().create(createUser());
+
+        // the attribute referenced inside a value-path filter must be a real sub-attribute of the filtered
+        // attribute; "bogus" is not, so the operation must be rejected rather than having the filter silently
+        // stripped (which for "add" would mutate the whole "emails" attribute); per RFC 7644 Table 9, a path
+        // filter problem is classified as invalidFilter, not noTarget
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .add("emails[bogus eq \"x\"].value", "patched@keycloak.org")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("invalidFilter", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains("bogus"));
+    }
+
+    @Test
+    public void testPatchUnrecognizedNestedValuePathFilterAttribute() {
+        User expected = client.users().create(createUser());
+
+        // the filtered attribute of a nested value-path (as opposed to a plain comparison/presence operand) must
+        // also be a real sub-attribute; "bogus" is not, so it must be rejected instead of being silently ignored
+        // while only the inner "value eq \"x\"" gets checked; per RFC 7644 Table 9, a path filter problem is
+        // classified as invalidFilter, not noTarget
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .replace("emails[bogus[value eq \"x\"]].value", "patched@keycloak.org")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("invalidFilter", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains("bogus"));
+    }
+
+    @Test
+    public void testPatchNestedValuePathFilterAttributeWrongScope() {
+        User expected = client.users().create(createUser());
+
+        // "type" and "value" are both real sub-attributes of "emails", but "type" is scalar and cannot itself be
+        // filtered; the inner "value eq \"x\"" of the nested value-path must be validated against "emails.type",
+        // not against "emails" - so this must be rejected rather than accepted just because "emails.value" happens
+        // to also exist; per RFC 7644 Table 9, a path filter problem is classified as invalidFilter, not noTarget
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .replace("emails[type[value eq \"x\"]].value", "patched@keycloak.org")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("invalidFilter", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains("value"));
+    }
+
+    @Test
+    public void testCreateWithNestedComplexUnrecognizedAttribute() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
+        addOrReplaceUPAttribute(customSchema, "assurance.value");
+
+        User user = createUser();
+        user.addSchema(customSchema);
+        user.setExtensions(new HashMap<>());
+        HashMap<Object, Object> assurance = new HashMap<>();
+        assurance.put("bogus", "x");
+        HashMap<Object, Object> customSchemaValues = new HashMap<>();
+        customSchemaValues.put("assurance", assurance);
+        user.getExtensions().put(customSchema, customSchemaValues);
+
+        // the extension URI and the "assurance" complex attribute are recognized, but its nested "bogus"
+        // descendant is not - POST/PUT must reject it rather than silently ignore it
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().create(user));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("invalidValue", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains(customSchema + ":assurance.bogus"));
+    }
+
+    @Test
+    public void testPatchScalarUnderSchemaUri() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
+        addOrReplaceUPAttribute(customSchema, "myattribute");
+
+        User expected = client.users().create(createUser());
+
+        // a schema URI is a namespace, not an attribute; a scalar value under it targets no attribute and must be
+        // rejected rather than silently accepted
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .add("{\"" + customSchema + "\": \"x\"}")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains(customSchema));
+    }
+
+    @Test
+    public void testCreateScalarUnderSchemaUri() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
+        addOrReplaceUPAttribute(customSchema, "myattribute");
+
+        User user = createUser();
+        user.addSchema(customSchema);
+        user.setExtensions(new HashMap<>());
+        // the extension URI is recognized, but its value is a scalar rather than an object of attributes
+        user.getExtensions().put(customSchema, "x");
+
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().create(user));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("invalidValue", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains(customSchema));
+    }
+
+    @Test
+    public void testPatchNestedCustomComplexSubAttribute() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
+        // a nested sub-attribute declared without a "value" leaf, so the bare "assurance" parent is not synthesized
+        addOrReplaceUPAttribute(customSchema, "assurance.level");
+
+        User expected = client.users().create(createUser());
+
+        // the declared nested leaf resolves by its flattened dotted path (assurance.level); it must be accepted even
+        // though the intermediate "assurance" parent is not itself a declared attribute
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add("{\"" + customSchema + "\": {\"assurance\": {\"level\": \"high\"}}}")
+                .build());
+
+        // an undeclared leaf under the same nested parent must still be rejected
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .add("{\"" + customSchema + "\": {\"assurance\": {\"bogus\": \"x\"}}}")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains(customSchema + ":assurance.bogus"));
+    }
+
+    @Test
+    public void testPatchMalformedFilter() {
+        User expected = client.users().create(createUser());
+
+        // a syntactically broken value-path filter is not a "target does not exist" condition; it must surface as
+        // invalidFilter (consistent with how the apply path parses the same filter), not noTarget
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .replace("emails[type eq].value", "patched@keycloak.org")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("invalidFilter", ce.getError().getScimType());
+    }
+
+    @Test
+    public void testPatchUnbalancedFilterDelimiters() {
+        User expected = client.users().create(createUser());
+
+        // a value-path filter missing its closing ']' is malformed, not a "target does not exist" condition; it
+        // must surface as invalidFilter rather than being silently left unstripped and rejected as noTarget
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .replace("emails[type eq \"work\"", "patched@keycloak.org")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("invalidFilter", ce.getError().getScimType());
+    }
+
+    @Test
+    public void testPatchFilterWithMalformedSuffix() {
+        User expected = client.users().create(createUser());
+
+        // a well-formed filter followed by garbage that is not a leading '.' (e.g. not ".value") must not be
+        // silently truncated to the bare "emails" attribute; the whole path is unrecognized and must be rejected
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .replace("emails[type eq \"work\"]bogus", "patched@keycloak.org")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+    }
+
+    @Test
+    public void testPatchPathlessValueUnrecognizedFilterAttribute() {
+        User expected = client.users().create(createUser());
+
+        // the filter-attribute check applied to an explicit operation path must also apply to a member key of a
+        // pathless value object; otherwise "bogus" would be silently stripped and the key normalized to the
+        // recognized "emails.value"; per RFC 7644 Table 9, a path filter problem is classified as invalidFilter,
+        // not noTarget
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .add("{\"emails[bogus eq \\\"x\\\"].value\": \"patched@keycloak.org\"}")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("invalidFilter", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains("bogus"));
+    }
+
+    @Test
+    public void testPatchExtensionUnrecognizedAttributeWithEmptyObjectValue() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
+        addOrReplaceUPAttribute(customSchema, "myattribute");
+
+        User expected = client.users().create(createUser());
+
+        // an unrecognized attribute name must be rejected regardless of its value; an empty object has no leaves
+        // to flatten and validate, so the bare attribute name itself must be checked instead of silently accepted
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .add("{\"" + customSchema + "\": {\"bogus\": {}}}")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains(customSchema + ":bogus"));
+    }
+
+    @Test
+    public void testPatchExtensionUnrecognizedAttributeWithEmptyArrayValue() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
+        addOrReplaceUPAttribute(customSchema, "myattribute");
+
+        User expected = client.users().create(createUser());
+
+        // same as the empty-object case, but for an empty array value
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .add("{\"" + customSchema + "\": {\"bogus\": []}}")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains(customSchema + ":bogus"));
+    }
+
+    @Test
+    public void testPatchExtensionUnrecognizedAttributeWithScalarArrayValue() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
+        addOrReplaceUPAttribute(customSchema, "myattribute");
+
+        User expected = client.users().create(createUser());
+
+        // an array of scalars (no object items to descend into) must not let an unrecognized attribute name bypass
+        // validation either
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .add("{\"" + customSchema + "\": {\"bogus\": [\"a\", \"b\"]}}")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains(customSchema + ":bogus"));
+    }
+
+    @Test
+    public void testPatchExtensionUnrecognizedAttributeWithArrayOfEmptyObjectsValue() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
+        addOrReplaceUPAttribute(customSchema, "myattribute");
+
+        User expected = client.users().create(createUser());
+
+        // an array whose only items are empty objects has no leaves to descend into either; it must not let an
+        // unrecognized attribute name bypass validation
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .add("{\"" + customSchema + "\": {\"bogus\": [{}]}}")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains(customSchema + ":bogus"));
+    }
+
+    @Test
     public void testUpdateWithUnrecognizedSchema() throws Exception {
         User expected = client.users().create(createUser());
 
         SimpleHttp http = SimpleHttp.create(httpClient);
-        AccessTokenResponse tokenResponse = http.doPost(keycloakUrls.getToken(realm.getName()))
-                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS)
-                .param(OAuth2Constants.CLIENT_ID, "scim-client")
-                .param(OAuth2Constants.CLIENT_SECRET, "secret")
-                .asJson(AccessTokenResponse.class);
+        String token = getScimClientToken(http);
 
         String url = keycloakUrls.getBase() + "/realms/" + realm.getName() + "/scim/v2/Users/" + expected.getId();
         try (SimpleHttpResponse response = http.doPut(url)
-                .header("Authorization", "Bearer " + tokenResponse.getToken())
+                .header("Authorization", "Bearer " + token)
                 .header("Content-Type", "application/scim+json")
                 .entity(new StringEntity(
                         "{\"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\", \"urn:bogus:Schema\"], "
@@ -1961,15 +2488,11 @@ public class UserTest extends AbstractScimTest {
         User expected = client.users().create(createUser());
 
         SimpleHttp http = SimpleHttp.create(httpClient);
-        AccessTokenResponse tokenResponse = http.doPost(keycloakUrls.getToken(realm.getName()))
-                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS)
-                .param(OAuth2Constants.CLIENT_ID, "scim-client")
-                .param(OAuth2Constants.CLIENT_SECRET, "secret")
-                .asJson(AccessTokenResponse.class);
+        String token = getScimClientToken(http);
 
         String url = keycloakUrls.getBase() + "/realms/" + realm.getName() + "/scim/v2/Users/" + expected.getId();
         try (SimpleHttpResponse response = http.doPut(url)
-                .header("Authorization", "Bearer " + tokenResponse.getToken())
+                .header("Authorization", "Bearer " + token)
                 .header("Content-Type", "application/scim+json")
                 .entity(new StringEntity(
                         "{\"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"], "

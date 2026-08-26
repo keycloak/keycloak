@@ -230,6 +230,12 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
             return invalidSyntax("No PATCH op schema provided in request");
         }
 
+        for (String schema : request.getSchemas()) {
+            if (!Scim.PATCH_OP_CORE_SCHEMA.equals(schema)) {
+                return badRequest("invalidValue", "Unrecognized schema in PATCH request: " + schema);
+            }
+        }
+
         return onPersist(existing, Status.OK, (rScimResourceTypeProvider, r) -> {
             resourceTypeProvider.patch(existing, request.getOperations());
             R patched = getResource(id);

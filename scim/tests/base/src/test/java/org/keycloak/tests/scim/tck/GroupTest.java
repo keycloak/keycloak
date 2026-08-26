@@ -9,6 +9,8 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
@@ -18,13 +20,18 @@ import org.keycloak.scim.client.ScimClientException;
 import org.keycloak.scim.protocol.request.PatchRequest;
 import org.keycloak.scim.protocol.response.ErrorResponse;
 import org.keycloak.scim.protocol.response.ListResponse;
+import org.keycloak.scim.resource.Scim;
 import org.keycloak.scim.resource.group.Group;
 import org.keycloak.scim.resource.group.Member;
 import org.keycloak.scim.resource.user.User;
+import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.util.ApiUtil;
 
+import org.apache.http.client.HttpClient;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,11 +41,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @KeycloakIntegrationTest(config = ScimServerConfig.class)
 public class GroupTest extends AbstractScimTest {
+
+    @InjectHttpClient
+    HttpClient httpClient;
 
     @Test
     public void testCreate() {
@@ -779,18 +790,16 @@ public class GroupTest extends AbstractScimTest {
         group.setDisplayName(KeycloakModelUtils.generateId());
         group = client.groups().create(group);
 
-        try {
-            client.groups().patch(group.getId(), PatchRequest.create()
-                    .replace("bogusAttribute", "someValue")
-                    .build());
-            fail("should fail because of unrecognized attribute path");
-        } catch (ScimClientException sce) {
-            ErrorResponse error = sce.getError();
-            assertNotNull(error);
-            assertEquals(400, error.getStatusInt());
-            assertEquals("noTarget", error.getScimType());
-            assertTrue(error.getDetail().contains("bogusAttribute"));
-        }
+        Group created = group;
+        ScimClientException sce = assertThrows(ScimClientException.class,
+                () -> client.groups().patch(created.getId(), PatchRequest.create()
+                        .replace("bogusAttribute", "someValue")
+                        .build()));
+        ErrorResponse error = sce.getError();
+        assertNotNull(error);
+        assertEquals(400, error.getStatusInt());
+        assertEquals("noTarget", error.getScimType());
+        assertTrue(error.getDetail().contains("bogusAttribute"));
     }
 
     @Test
@@ -818,18 +827,16 @@ public class GroupTest extends AbstractScimTest {
         group = client.groups().create(group);
 
         // "bogus" is neither a declared nor a canonical sub-attribute of the "members" complex type
-        try {
-            client.groups().patch(group.getId(), PatchRequest.create()
-                    .add("members.bogus", "someValue")
-                    .build());
-            fail("should fail because of unrecognized sub-attribute path");
-        } catch (ScimClientException sce) {
-            ErrorResponse error = sce.getError();
-            assertNotNull(error);
-            assertEquals(400, error.getStatusInt());
-            assertEquals("noTarget", error.getScimType());
-            assertTrue(error.getDetail().contains("members.bogus"));
-        }
+        Group created = group;
+        ScimClientException sce = assertThrows(ScimClientException.class,
+                () -> client.groups().patch(created.getId(), PatchRequest.create()
+                        .add("members.bogus", "someValue")
+                        .build()));
+        ErrorResponse error = sce.getError();
+        assertNotNull(error);
+        assertEquals(400, error.getStatusInt());
+        assertEquals("noTarget", error.getScimType());
+        assertTrue(error.getDetail().contains("members.bogus"));
     }
 
     @Test
@@ -839,18 +846,16 @@ public class GroupTest extends AbstractScimTest {
         group = client.groups().create(group);
 
         // a simple attribute has no sub-attributes, so any descendant path must be rejected
-        try {
-            client.groups().patch(group.getId(), PatchRequest.create()
-                    .replace("displayName.bogus", "someValue")
-                    .build());
-            fail("should fail because a simple attribute has no sub-attributes");
-        } catch (ScimClientException sce) {
-            ErrorResponse error = sce.getError();
-            assertNotNull(error);
-            assertEquals(400, error.getStatusInt());
-            assertEquals("noTarget", error.getScimType());
-            assertTrue(error.getDetail().contains("displayName.bogus"));
-        }
+        Group created = group;
+        ScimClientException sce = assertThrows(ScimClientException.class,
+                () -> client.groups().patch(created.getId(), PatchRequest.create()
+                        .replace("displayName.bogus", "someValue")
+                        .build()));
+        ErrorResponse error = sce.getError();
+        assertNotNull(error);
+        assertEquals(400, error.getStatusInt());
+        assertEquals("noTarget", error.getScimType());
+        assertTrue(error.getDetail().contains("displayName.bogus"));
     }
 
     @Test
@@ -860,17 +865,15 @@ public class GroupTest extends AbstractScimTest {
         group = client.groups().create(group);
 
         // once the value filter is stripped the path is members.bogus, which does not target a real sub-attribute
-        try {
-            client.groups().patch(group.getId(), PatchRequest.create()
-                    .replace("members[value eq \"x\"].bogus", "someValue")
-                    .build());
-            fail("should fail because of unrecognized filtered sub-attribute path");
-        } catch (ScimClientException sce) {
-            ErrorResponse error = sce.getError();
-            assertNotNull(error);
-            assertEquals(400, error.getStatusInt());
-            assertEquals("noTarget", error.getScimType());
-        }
+        Group created = group;
+        ScimClientException sce = assertThrows(ScimClientException.class,
+                () -> client.groups().patch(created.getId(), PatchRequest.create()
+                        .replace("members[value eq \"x\"].bogus", "someValue")
+                        .build()));
+        ErrorResponse error = sce.getError();
+        assertNotNull(error);
+        assertEquals(400, error.getStatusInt());
+        assertEquals("noTarget", error.getScimType());
     }
 
     @Test
@@ -880,17 +883,124 @@ public class GroupTest extends AbstractScimTest {
         group = client.groups().create(group);
 
         // an unrecognized sub-attribute carried as a pathless value member must be rejected
-        try {
-            client.groups().patch(group.getId(), PatchRequest.create()
-                    .add("{\"members.bogus\": \"someValue\"}")
-                    .build());
-            fail("should fail because of unrecognized pathless sub-attribute");
-        } catch (ScimClientException sce) {
-            ErrorResponse error = sce.getError();
-            assertNotNull(error);
-            assertEquals(400, error.getStatusInt());
-            assertEquals("noTarget", error.getScimType());
-            assertTrue(error.getDetail().contains("members.bogus"));
+        Group created = group;
+        ScimClientException sce = assertThrows(ScimClientException.class,
+                () -> client.groups().patch(created.getId(), PatchRequest.create()
+                        .add("{\"members.bogus\": \"someValue\"}")
+                        .build()));
+        ErrorResponse error = sce.getError();
+        assertNotNull(error);
+        assertEquals(400, error.getStatusInt());
+        assertEquals("noTarget", error.getScimType());
+        assertTrue(error.getDetail().contains("members.bogus"));
+    }
+
+    @Test
+    public void testPatchInheritedNonSchemaSubAttribute() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+
+        // "primary" is inherited by the Member bean but is not a SCIM sub-attribute of the Group "members"
+        // reference attribute, so it must be rejected rather than silently accepted
+        Group created = group;
+        ScimClientException sce = assertThrows(ScimClientException.class,
+                () -> client.groups().patch(created.getId(), PatchRequest.create()
+                        .replace("members.primary", "true")
+                        .build()));
+        ErrorResponse error = sce.getError();
+        assertNotNull(error);
+        assertEquals(400, error.getStatusInt());
+        assertEquals("noTarget", error.getScimType());
+        assertTrue(error.getDetail().contains("members.primary"));
+    }
+
+    @Test
+    public void testPatchUnrecognizedFilterAttribute() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+
+        // the attribute referenced inside the value-path filter ("bogus") is not a real sub-attribute of the
+        // filtered "members" attribute, so the operation must be rejected rather than having the filter silently
+        // stripped down to "members.display"; per RFC 7644 Table 9, a path filter problem is classified as
+        // invalidFilter, not noTarget
+        Group created = group;
+        ScimClientException sce = assertThrows(ScimClientException.class,
+                () -> client.groups().patch(created.getId(), PatchRequest.create()
+                        .replace("members[bogus eq \"x\"].display", "someValue")
+                        .build()));
+        ErrorResponse error = sce.getError();
+        assertNotNull(error);
+        assertEquals(400, error.getStatusInt());
+        assertEquals("invalidFilter", error.getScimType());
+        assertTrue(error.getDetail().contains("bogus"));
+    }
+
+    @Test
+    public void testPatchCommonReadOnlyAttributesAreIgnored() {
+        Group expected = new Group();
+        expected.setDisplayName(KeycloakModelUtils.generateId());
+        expected = client.groups().create(expected);
+
+        // id, schemas and meta(.*) are common SCIM resource attributes that are not backed by any model attribute;
+        // targeting them via PATCH must be treated as a no-op rather than rejected as noTarget, whether submitted
+        // bare or with the optional core schema prefix
+        client.groups().patch(expected.getId(), PatchRequest.create()
+                .replace("id", "some-other-id")
+                .build());
+        client.groups().patch(expected.getId(), PatchRequest.create()
+                .replace("schemas", "[\"urn:ietf:params:scim:schemas:core:2.0:Group\"]")
+                .build());
+        client.groups().patch(expected.getId(), PatchRequest.create()
+                .remove("meta")
+                .build());
+        client.groups().patch(expected.getId(), PatchRequest.create()
+                .replace(Scim.GROUP_CORE_SCHEMA + ":id", "some-other-id")
+                .build());
+
+        Group actual = client.groups().get(expected.getId());
+        assertEquals(expected.getId(), actual.getId());
+        assertEquals(expected.getDisplayName(), actual.getDisplayName());
+    }
+
+    @Test
+    public void testPatchBlankPathTreatedAsPathless() {
+        Group expected = new Group();
+        expected.setDisplayName(KeycloakModelUtils.generateId());
+        expected = client.groups().create(expected);
+
+        // a blank (whitespace-only) path is not a valid attribute path and must be treated the same as an
+        // absent one, so the value object is actually applied as a pathless operation rather than silently
+        // dropped because the raw blank path was forwarded to the schema layer unchanged
+        client.groups().patch(expected.getId(), PatchRequest.create()
+                .add(" ", "{\"displayName\": \"spacePathDisplayName\"}")
+                .build());
+
+        assertEquals("spacePathDisplayName", client.groups().get(expected.getId()).getDisplayName());
+    }
+
+    @Test
+    public void testCreateWithUnrecognizedSchema() throws Exception {
+        // the Scim client cannot submit an arbitrary schemas array (Group pins it), so send the raw request; a
+        // Group create carrying an unrecognized schema URI must be rejected rather than silently accepted
+        SimpleHttp http = SimpleHttp.create(httpClient);
+        String token = getScimClientToken(http);
+
+        String url = keycloakUrls.getBase() + "/realms/" + realm.getName() + "/scim/v2/Groups";
+        try (SimpleHttpResponse response = http.doPost(url)
+                .header("Authorization", "Bearer " + token)
+                .header("Content-Type", "application/scim+json")
+                .entity(new StringEntity(
+                        "{\"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:Group\", \"urn:bogus:Schema\"], "
+                                + "\"displayName\": \"" + KeycloakModelUtils.generateId() + "\"}",
+                        ContentType.create("application/scim+json")))
+                .asResponse()) {
+            assertEquals(400, response.getStatus());
+            ErrorResponse error = response.asJson(ErrorResponse.class);
+            assertEquals("invalidValue", error.getScimType());
+            assertTrue(error.getDetail().contains("urn:bogus:Schema"));
         }
     }
+
 }
