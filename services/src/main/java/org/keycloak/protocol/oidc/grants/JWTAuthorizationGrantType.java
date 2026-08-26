@@ -153,6 +153,13 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
 
             String scopeParam = getRequestedScopes();
 
+            if (!TokenManager.verifyConsentStillAvailable(session, user, client, null, scopeParam)) {
+                String errorMessage = "Missing consents for the client " + client.getClientId();
+                event.detail(Details.REASON, errorMessage);
+                event.error(Errors.CONSENT_DENIED);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, errorMessage, Response.Status.BAD_REQUEST);
+            }
+
             try {
                 session.clientPolicy().triggerOnEvent(new JWTAuthorizationGrantContext(context.getSession(), authorizationGrantContext, identityProviderModel.getAlias()));
             } catch (ClientPolicyException cpe) {
