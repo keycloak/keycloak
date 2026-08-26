@@ -125,8 +125,8 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
     }
 
     /**
-     * The realm the user was deleted from. Snapshots are keyed by user id alone, so
-     * callers use this to reject a snapshot from a different realm.
+     * The realm the user was deleted from. Session keys are scoped by realm id, so
+     * a snapshot can only be found from the realm it was captured in.
      */
     public RealmModel getRealm() {
         return realm;
@@ -244,9 +244,9 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
 
         snapshot.setReadonly(true);
 
-        session.setAttribute(sessionAttributeKey(user.getId()), snapshot);
+        session.setAttribute(sessionAttributeKey(realm, user.getId()), snapshot);
         if (snapshot.getEmail() != null) {
-            session.setAttribute(sessionEmailAttributeKey(snapshot.getEmail()), snapshot);
+            session.setAttribute(sessionEmailAttributeKey(realm, snapshot.getEmail()), snapshot);
         }
         session.setAttribute(SESSION_ATTRIBUTE_COUNT, count + 1);
     }
@@ -286,11 +286,10 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
      * {@code null} when the user was not deleted on this request.
      */
     public static PurgedUserSnapshot lookup(KeycloakSession session, RealmModel realm, String userId) {
-        if (session == null || userId == null) {
+        if (session == null || realm == null || userId == null) {
             return null;
         }
-        PurgedUserSnapshot snapshot = session.getAttribute(sessionAttributeKey(userId), PurgedUserSnapshot.class);
-        return matchesRealm(snapshot, realm) ? snapshot : null;
+        return session.getAttribute(sessionAttributeKey(realm, userId), PurgedUserSnapshot.class);
     }
 
     /**
@@ -310,16 +309,16 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
      * and a miss here costs nothing beyond retention.
      */
     public static void discard(KeycloakSession session, RealmModel realm, String userId) {
-        if (session == null || userId == null) {
+        if (session == null || realm == null || userId == null) {
             return;
         }
         PurgedUserSnapshot snapshot = lookup(session, realm, userId);
         if (snapshot == null) {
             return;
         }
-        session.removeAttribute(sessionAttributeKey(userId));
+        session.removeAttribute(sessionAttributeKey(realm, userId));
         if (snapshot.getEmail() != null) {
-            session.removeAttribute(sessionEmailAttributeKey(snapshot.getEmail()));
+            session.removeAttribute(sessionEmailAttributeKey(realm, snapshot.getEmail()));
         }
         Integer held = session.getAttribute(SESSION_ATTRIBUTE_COUNT, Integer.class);
         if (held != null && held > 0) {
@@ -337,7 +336,7 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
      * the filter unwraps them for live users.
      */
     public static PurgedUserSnapshot lookupBySubject(KeycloakSession session, RealmModel realm, SubjectId subjectId) {
-        if (session == null || subjectId == null) {
+        if (session == null || realm == null || subjectId == null) {
             return null;
         }
         if (subjectId instanceof ComplexSubjectId complex) {
@@ -354,9 +353,7 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
             if (email == null || email.isBlank()) {
                 return null;
             }
-            PurgedUserSnapshot snapshot =
-                    session.getAttribute(sessionEmailAttributeKey(email), PurgedUserSnapshot.class);
-            return matchesRealm(snapshot, realm) ? snapshot : null;
+            return session.getAttribute(sessionEmailAttributeKey(realm, email), PurgedUserSnapshot.class);
         }
         return null;
     }
@@ -401,23 +398,21 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
         return orgProvider.getByMember(user).toList();
     }
 
-    private static boolean matchesRealm(PurgedUserSnapshot snapshot, RealmModel realm) {
-        if (snapshot == null) {
-            return false;
-        }
-        if (realm == null || snapshot.getRealm() == null) {
-            return true;
-        }
-        return realm.getId().equals(snapshot.getRealm().getId());
+    /**
+     * Session keys are scoped by realm id so a snapshot can only ever be found from
+     * the realm it was captured in. User ids are realm-unique in practice, but the
+     * external-id component of a federated id is not guaranteed to be, and a
+     * cross-realm hit would gate one realm's event on another realm's subject.
+     * Scoping is free and removes the need to compare realms after the fact.
+     */
+    private static String sessionAttributeKey(RealmModel realm, String userId) {
+        return SESSION_ATTRIBUTE_PREFIX + realm.getId() + "." + userId;
     }
 
-    private static String sessionAttributeKey(String userId) {
-        return SESSION_ATTRIBUTE_PREFIX + userId;
-    }
-
-    private static String sessionEmailAttributeKey(String email) {
+    private static String sessionEmailAttributeKey(RealmModel realm, String email) {
         // Same normalization AbstractInMemoryUserAdapter applies when storing the
         // email, so the index key matches what getEmail() returns.
-        return SESSION_ATTRIBUTE_EMAIL_PREFIX + KeycloakModelUtils.toLowerCaseSafe(email);
+        return SESSION_ATTRIBUTE_EMAIL_PREFIX + realm.getId() + "."
+                + KeycloakModelUtils.toLowerCaseSafe(email);
     }
 }
