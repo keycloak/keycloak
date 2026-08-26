@@ -22,6 +22,7 @@ import { toIdentityProvider } from "../routes/IdentityProvider";
 import type { IdentityProviderCreateParams } from "../routes/IdentityProviderCreate";
 import { toIdentityProviders } from "../routes/IdentityProviders";
 import { GeneralSettings } from "./GeneralSettings";
+import { SocialBrokerSettings } from "./SocialBrokerSettings";
 
 export default function AddIdentityProvider() {
   const { adminClient } = useAdminClient();
@@ -105,6 +106,7 @@ export default function AddIdentityProvider() {
                 properties={providerInfo.properties}
               />
             )}
+            <SocialBrokerSettings />
           </FormProvider>
           <ActionGroup>
             <Button
