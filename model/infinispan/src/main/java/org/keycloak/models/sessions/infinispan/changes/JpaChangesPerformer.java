@@ -20,12 +20,9 @@ package org.keycloak.models.sessions.infinispan.changes;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -139,14 +136,10 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
         };
         PersistentAuthenticatedClientSessionAdapter clientSessionModel = (PersistentAuthenticatedClientSessionAdapter) userSessionPersister.loadClientSession(realm, client, userSession, entity.isOffline());
         if (clientSessionModel != null) {
-            // The update tasks run against a mutable snapshot of the persisted notes, so that every Map operation
-            // (put, remove, clear, containsKey, iteration, ...) behaves as it does on the cached entity. The result is
-            // written back to the persisted model once all tasks have been applied, see writeBackNotes().
-            Map<String, String> notes = copyNotes(clientSessionModel.getNotes());
             AuthenticatedClientSessionEntity authenticatedClientSessionEntity = new AuthenticatedClientSessionEntity() {
                 @Override
                 public Map<String, String> getNotes() {
-                    return notes;
+                    return clientSessionModel.getNotes();
                 }
 
                 @Override
@@ -216,8 +209,8 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
 
                 @Override
                 public void setNotes(Map<String, String> newNotes) {
-                    notes.clear();
-                    notes.putAll(newNotes);
+                    clientSessionModel.getNotes().clear();
+                    clientSessionModel.getNotes().putAll(newNotes);
                 }
 
                 @Override
@@ -241,7 +234,6 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
                     userSessionPersister.removeClientSession(entity.getUserSessionId(), entity.getClientId(), entity.isOffline());
                 }
             });
-            writeBackNotes(notes, clientSessionModel.getNotes(), clientSessionModel::removeNote, clientSessionModel::setNote);
             clientSessionModel.getUpdatedModel();
         } else {
             LOG.debugf("No client session found for %s/%s", entity.getUserSessionId(), entity.getClientId());
@@ -534,12 +526,10 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
     }
 
     private static <K, V extends SessionEntity> void mergeUserSession(KeycloakSession innerSession, Map.Entry<K, SessionUpdatesList<V>> entry, PersistentUserSessionAdapter userSessionModel, RealmModel realm, SessionUpdatesList<V> sessionUpdates, UserSessionPersisterProvider userSessionPersister, UserSessionEntity entity) {
-        // See mergeClientSession() for the rationale of the notes snapshot.
-        Map<String, String> notes = copyNotes(userSessionModel.getNotes());
         UserSessionEntity userSessionEntity = new UserSessionEntity(userSessionModel.getId()) {
             @Override
             public Map<String, String> getNotes() {
-                return notes;
+                return userSessionModel.getNotes();
             }
 
             @Override
@@ -629,8 +619,8 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
 
             @Override
             public void setNotes(Map<String, String> newNotes) {
-                notes.clear();
-                notes.putAll(newNotes);
+                userSessionModel.getNotes().clear();
+                userSessionModel.getNotes().putAll(newNotes);
             }
 
             @Override
@@ -669,27 +659,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
                 userSessionPersister.removeUserSession(entry.getKey().toString(), entity.isOffline());
             }
         });
-        writeBackNotes(notes, userSessionModel.getNotes(), userSessionModel::removeNote, userSessionModel::setNote);
         userSessionModel.getUpdatedModel();
     }
 
-    private static Map<String, String> copyNotes(Map<String, String> persistedNotes) {
-        return persistedNotes == null ? new HashMap<>() : new HashMap<>(persistedNotes);
-    }
-
-    /**
-     * Applies the notes as modified by the update tasks to the persisted model: notes that are no longer present are
-     * removed, all remaining notes are set. The persisted key set is copied before iterating because the persisted
-     * model may expose its live notes map.
-     */
-    private static void writeBackNotes(Map<String, String> updatedNotes,
-                                       Map<String, String> persistedNotes, Consumer<String> removeNote,
-                                       BiConsumer<String, String> setNote) {
-        if (persistedNotes != null) {
-            new ArrayList<>(persistedNotes.keySet()).stream()
-                    .filter(key -> !updatedNotes.containsKey(key))
-                    .forEach(removeNote);
-        }
-        updatedNotes.forEach(setNote);
-    }
 }
