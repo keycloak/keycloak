@@ -3,6 +3,7 @@ package org.keycloak.ssf.transmitter.event;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
@@ -82,7 +83,7 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
             // Release any purge snapshot now that this event has been emitted. Keeps
             // a request that deletes many users and emits for each from ever
             // approaching the retention bound — see PurgedUserSnapshot.discard.
-            PurgedUserSnapshot.discard(session, session.getContext().getRealm(), event.getUserId());
+            discardSnapshotQuietly(() -> session.getContext().getRealm(), event.getUserId());
         }
     }
 
@@ -135,6 +136,24 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
             streamTokens.add(Map.entry(securityEventToken, stream));
         }
         return streamTokens;
+    }
+
+    /**
+     * Releases a purge snapshot without ever letting cleanup break event handling.
+     *
+     * <p>Called from a {@code finally}, by which point the event has already been
+     * emitted, so a failure here must not propagate: resolving the realm can throw
+     * on its own (an inactive context, a realm that no longer resolves), and turning
+     * that into a listener failure would discard work that had already succeeded.
+     * The cost of swallowing it is one snapshot retained until the session ends.
+     */
+    protected void discardSnapshotQuietly(Supplier<RealmModel> realmSupplier, String userId) {
+        try {
+            PurgedUserSnapshot.discard(session, realmSupplier.get(), userId);
+        } catch (RuntimeException e) {
+            log.debugf(e, "SSF: could not release the purge snapshot for user %s; "
+                    + "it will be discarded with the session", userId);
+        }
     }
 
     protected UserModel resolveEventUser(Event event) {
@@ -337,7 +356,7 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
             }
             dispatchSecurityEventTokens(streamTokens, transmitter);
         } finally {
-            PurgedUserSnapshot.discard(session, session.realms().getRealm(adminEvent.getRealmId()),
+            discardSnapshotQuietly(() -> session.realms().getRealm(adminEvent.getRealmId()),
                     SsfUtil.userIdFromAdminEventPath(adminEvent));
         }
     }
