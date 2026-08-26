@@ -583,6 +583,7 @@ describe("Clients", () => {
       expect(mapper.config!["access.token.claim"]).to.eq("true");
 
       mapper.config = { "access.token.claim": "false" };
+      mapper.name = "updated-mapper-name";
 
       await kcAdminClient.clients.updateProtocolMapper(
         { id: id!, mapperId: mapper.id! },
@@ -592,7 +593,7 @@ describe("Clients", () => {
       const updatedMapper =
         (await kcAdminClient.clients.findProtocolMapperByName({
           id: id!,
-          name: dummyMapper.name!,
+          name: "updated-mapper-name",
         }))!;
 
       expect(updatedMapper.config!["access.token.claim"]).to.eq("false");
