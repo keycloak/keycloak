@@ -143,11 +143,8 @@ public class SessionNotePersistenceTest {
 
     @Test
     public void testUserSessionNoteSetToNullIsRemovedFromDatabase() {
-        // Regression guard for the user session counterpart. UserSessionAdapter#setNote(name, null) gates the removal on
-        // entity.getNotes().containsKey(name), which is always false on the synthetic entity used by
-        // JpaChangesPerformer#mergeUserSession. It still works today only because the task runs first against the cached
-        // entity (SessionUpdatesList#addAndExecute), where the check succeeds and removeNote(name) registers a second task
-        // whose Map#remove call the user session map does implement.
+        // Regression guard: UserSessionAdapter#setNote(name, null) must remove directly from the replay entity so the
+        // removal is applied both to the cached session and to the persisted session during task replay.
         final String realmName = managedRealm.getName();
         final String noteName = "note-to-null";
         final String userSessionId = createUserSessionWithNote(realmName, noteName, "value");
