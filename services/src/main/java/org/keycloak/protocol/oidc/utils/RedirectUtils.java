@@ -49,7 +49,7 @@ public class RedirectUtils {
 
     public static final Set<String> LOOPBACK_INTERFACES = new HashSet<>(Arrays.asList("localhost", "127.0.0.1", "[::1]"));
 
-    private static final Set<String> FORBIDDEN_OIDC_PARAMS = Set.of(
+    static final Set<String> FORBIDDEN_OIDC_PARAMS = Set.of(
                                                                      OAuth2Constants.CODE,
                                                                      OAuth2Constants.ID_TOKEN,
                                                                      OAuth2Constants.ACCESS_TOKEN,
