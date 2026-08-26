@@ -62,6 +62,11 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
     }
 
     @Override
+    public boolean supportsClientAssertion() {
+        return true;
+    }
+
+    @Override
     public void postInit(KeycloakSessionFactory factory) {
         factory.getProviderFactoriesStream(IdentityProvider.class)
                 .filter(ClientAssertionIdentityProviderFactory.class::isInstance)
