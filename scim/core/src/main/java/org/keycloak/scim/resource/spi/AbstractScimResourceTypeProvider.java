@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
@@ -17,8 +18,11 @@ import org.keycloak.scim.protocol.request.PatchRequest.PatchOperation;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.schema.ModelSchema;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
+import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
 
 import static java.util.function.Predicate.not;
 
@@ -32,6 +36,12 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
      * This limit is not advertised via {@code /ServiceProviderConfig}.
      */
     public static final int MAX_PATCH_OPERATIONS = 100;
+
+    /**
+     * Cache of the canonical sub-attribute names of a complex attribute's backing Java type, keyed by that
+     * type. Populated lazily via Jackson bean introspection (see {@link #getComplexSubAttributes(Class)}).
+     */
+    private static final Map<Class<?>, Set<String>> COMPLEX_SUB_ATTRIBUTES = new ConcurrentHashMap<>();
 
     private final ModelSchema<M, R> schema;
     private final List<ModelSchema<M, R>> schemaExtensions;
@@ -161,8 +171,13 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
     /**
      * Validates that a PATCH operation path targets a recognized attribute. The path is first normalized
      * by stripping any filter expressions (e.g. {@code emails[type eq "work"].value} becomes {@code emails.value}),
-     * then checked against recognized schema URIs, attribute paths, and attribute name prefixes. Throws
+     * then checked against recognized schema URIs and attribute paths. Throws
      * {@link ScimNoTargetException} (HTTP 400, {@code scimType=noTarget}) if the path is not recognized.
+     *
+     * <p>A sub-attribute path such as {@code emails.type} or {@code name.givenName} is only accepted when the
+     * sub-attribute actually exists: either it is individually declared (e.g. {@code name.givenName}) or it is a
+     * canonical member of the complex attribute's backing type (e.g. {@code emails.type}). An unknown descendant
+     * such as {@code emails.bogus} or {@code name.bogus} is rejected rather than accepted by a loose prefix match.
      */
     private void validatePatchPath(String rawPath) {
         String normalizedPath = normalizePath(rawPath);
@@ -173,23 +188,56 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
         }
 
         for (ModelSchema<M, R> s : schemas) {
+            // resolves simple attributes, individually declared sub-attributes (e.g. name.givenName), the
+            // synthesized "<attr>.value" of a multi-valued complex attribute, and all extension path forms
             if (s.getAttributeByPath(normalizedPath) != null) {
                 return;
             }
             for (Attribute<M, R> attr : s.getAttributes().values()) {
                 String attrName = attr.getName();
                 String parentName = attr.getParentName();
+
+                // exact match on an attribute name, or on the bare parent of a declared complex attribute
+                // whose sub-attributes are individually registered (e.g. the bare "name" of "name.givenName")
                 if (normalizedPath.equalsIgnoreCase(attrName)
-                        || normalizedPath.toLowerCase().startsWith(attrName.toLowerCase() + ".")
-                        || (parentName != null && (normalizedPath.equalsIgnoreCase(parentName)
-                            || normalizedPath.toLowerCase().startsWith(parentName.toLowerCase() + ".")))) {
+                        || (parentName != null && normalizedPath.equalsIgnoreCase(parentName))) {
                     return;
+                }
+
+                // a canonical sub-attribute of a complex attribute that is not individually declared, such as
+                // "emails.type"/"emails.primary" for the multi-valued "emails" (backed by Email). Only genuine
+                // canonical members are accepted; unknown descendants fall through and are rejected below.
+                Class<?> complexType = attr.getComplexType();
+                if (complexType != null) {
+                    for (String sub : getComplexSubAttributes(complexType)) {
+                        if (normalizedPath.equalsIgnoreCase(attrName + "." + sub)) {
+                            return;
+                        }
+                    }
                 }
             }
         }
 
         throw new ScimNoTargetException(
                 "The path '" + rawPath + "' does not target a recognized attribute");
+    }
+
+    /**
+     * Returns the canonical sub-attribute names of a complex attribute's backing Java type (e.g. for the SCIM
+     * {@code emails} attribute, backed by {@code Email}, this yields {@code value}, {@code display}, {@code type},
+     * {@code primary} and {@code $ref}). Names are derived via Jackson bean introspection so that {@code @JsonProperty}
+     * overrides (such as {@code $ref}) are honored, and cached per type since the mapping is static.
+     */
+    private static Set<String> getComplexSubAttributes(Class<?> complexType) {
+        return COMPLEX_SUB_ATTRIBUTES.computeIfAbsent(complexType, type -> {
+            Set<String> subs = new HashSet<>();
+            BeanDescription description = JsonSerialization.mapper.getSerializationConfig()
+                    .introspect(JsonSerialization.mapper.constructType(type));
+            for (BeanPropertyDefinition property : description.findProperties()) {
+                subs.add(property.getName());
+            }
+            return subs;
+        });
     }
 
     /**

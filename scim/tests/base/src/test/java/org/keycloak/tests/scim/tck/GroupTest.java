@@ -792,4 +792,105 @@ public class GroupTest extends AbstractScimTest {
             assertTrue(error.getDetail().contains("bogusAttribute"));
         }
     }
+
+    @Test
+    public void testPatchRecognizedSubAttributes() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+
+        User member = createScimUser();
+
+        // canonical sub-attributes of the multi-valued "members" complex attribute (backed by Member) must pass
+        // validation, whether targeted directly or through a value filter that is normalized away first
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .add("members", member.getId())
+                .build());
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .replace("members[value eq \"" + member.getId() + "\"].display", "Member Display")
+                .build());
+    }
+
+    @Test
+    public void testPatchUnrecognizedSubAttributeOfComplex() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+
+        // "bogus" is neither a declared nor a canonical sub-attribute of the "members" complex type
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .add("members.bogus", "someValue")
+                    .build());
+            fail("should fail because of unrecognized sub-attribute path");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("noTarget", error.getScimType());
+            assertTrue(error.getDetail().contains("members.bogus"));
+        }
+    }
+
+    @Test
+    public void testPatchUnrecognizedSubAttributeOfSimple() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+
+        // a simple attribute has no sub-attributes, so any descendant path must be rejected
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .replace("displayName.bogus", "someValue")
+                    .build());
+            fail("should fail because a simple attribute has no sub-attributes");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("noTarget", error.getScimType());
+            assertTrue(error.getDetail().contains("displayName.bogus"));
+        }
+    }
+
+    @Test
+    public void testPatchUnrecognizedFilteredSubAttribute() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+
+        // once the value filter is stripped the path is members.bogus, which does not target a real sub-attribute
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .replace("members[value eq \"x\"].bogus", "someValue")
+                    .build());
+            fail("should fail because of unrecognized filtered sub-attribute path");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("noTarget", error.getScimType());
+        }
+    }
+
+    @Test
+    public void testPatchPathlessUnrecognizedSubAttribute() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+
+        // an unrecognized sub-attribute carried as a pathless value member must be rejected
+        try {
+            client.groups().patch(group.getId(), PatchRequest.create()
+                    .add("{\"members.bogus\": \"someValue\"}")
+                    .build());
+            fail("should fail because of unrecognized pathless sub-attribute");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("noTarget", error.getScimType());
+            assertTrue(error.getDetail().contains("members.bogus"));
+        }
+    }
 }

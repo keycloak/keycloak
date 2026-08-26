@@ -1730,6 +1730,160 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testPatchRecognizedSubAttributes() {
+        User expected = client.users().create(createUser());
+
+        // canonical sub-attributes of the multi-valued "emails" complex attribute (backed by Email) as well as
+        // an individually declared sub-attribute of "name" must all pass validation whether or not the value is
+        // ultimately persisted by the schema layer.
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add("emails.value", "recognized.sub@keycloak.org")
+                .add("emails.type", "home")
+                .add("emails.primary", "true")
+                .add("emails.display", "Recognized Sub")
+                .add("name.givenName", "Recognized")
+                .build());
+
+        // the same canonical sub-attributes remain recognized when reached through a value filter, which is
+        // normalized away before validation (e.g. emails[type eq "work"].primary -> emails.primary)
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace("emails[type eq \"work\"].type", "work")
+                .replace("emails[type eq \"work\"].primary", "false")
+                .build());
+    }
+
+    @Test
+    public void testPatchUnrecognizedSubAttributeOfComplex() {
+        User expected = client.users().create(createUser());
+
+        // "bogus" is neither an individually declared nor a canonical sub-attribute of the "emails" complex type
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .add("emails.bogus", "someValue")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains("emails.bogus"));
+    }
+
+    @Test
+    public void testPatchUnrecognizedSubAttributeOfDeclaredComplex() {
+        User expected = client.users().create(createUser());
+
+        // "name" only exposes the individually declared sub-attributes (givenName, familyName, ...); "bogus" is
+        // not one of them and must be rejected rather than accepted by a loose "name." prefix match
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .replace("name.bogus", "someValue")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains("name.bogus"));
+    }
+
+    @Test
+    public void testPatchUnrecognizedSubAttributeOfSimple() {
+        User expected = client.users().create(createUser());
+
+        // a simple attribute has no sub-attributes at all, so any descendant path must be rejected
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .add("userName.bogus", "someValue")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains("userName.bogus"));
+    }
+
+    @Test
+    public void testPatchUnrecognizedFilteredSubAttribute() {
+        User expected = client.users().create(createUser());
+
+        // once the value filter is stripped the path is emails.bogus, which does not target a real sub-attribute
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .replace("emails[type eq \"work\"].bogus", "someValue")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+    }
+
+    @Test
+    public void testPatchRemoveUnrecognizedSubAttribute() {
+        User expected = client.users().create(createUser());
+
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .remove("emails.bogus")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains("emails.bogus"));
+    }
+
+    @Test
+    public void testPatchPathlessRecognizedSubAttributes() {
+        User expected = client.users().create(createUser());
+
+        // pathless value members may themselves be sub-attribute paths; canonical/declared ones must pass validation
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add("{\"emails.type\": \"home\", \"name.givenName\": \"Recognized\"}")
+                .build());
+    }
+
+    @Test
+    public void testPatchPathlessUnrecognizedSubAttribute() {
+        User expected = client.users().create(createUser());
+
+        // an unrecognized sub-attribute carried as a pathless value member must be rejected
+        ScimClientException emailsCe = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .add("{\"emails.bogus\": \"someValue\"}")
+                        .build()));
+        assertNotNull(emailsCe.getError());
+        assertEquals(400, emailsCe.getError().getStatusInt());
+        assertEquals("noTarget", emailsCe.getError().getScimType());
+        assertTrue(emailsCe.getError().getDetail().contains("emails.bogus"));
+
+        ScimClientException nameCe = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .replace("{\"name.bogus\": \"someValue\"}")
+                        .build()));
+        assertNotNull(nameCe.getError());
+        assertEquals(400, nameCe.getError().getStatusInt());
+        assertEquals("noTarget", nameCe.getError().getScimType());
+        assertTrue(nameCe.getError().getDetail().contains("name.bogus"));
+    }
+
+    @Test
+    public void testPatchCustomSchemaUnrecognizedAttribute() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
+        addOrReplaceUPAttribute(customSchema, "myattribute");
+
+        User expected = client.users().create(createUser());
+
+        // the attribute declared through user profile under the custom schema is recognized
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add(customSchema + ":myattribute", "myvalue")
+                .build());
+
+        // an attribute that is not declared under the (otherwise recognized) custom schema must be rejected
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().patch(expected.getId(), PatchRequest.create()
+                        .add(customSchema + ":bogus", "someValue")
+                        .build()));
+        assertNotNull(ce.getError());
+        assertEquals(400, ce.getError().getStatusInt());
+        assertEquals("noTarget", ce.getError().getScimType());
+        assertTrue(ce.getError().getDetail().contains(customSchema + ":bogus"));
+    }
+
+    @Test
     public void testUpdateWithUnrecognizedSchema() throws Exception {
         User expected = client.users().create(createUser());
 
