@@ -105,39 +105,39 @@ public class DatabaseIndexChecker implements Runnable {
     private static final String TASK_KEY = "db-index-checker";
 
     private void runInternal() {
-        logger.info("Running database index checker");
-        var missing = getMissingIndexes();
-        if (missing.isEmpty()) {
-            return;
-        }
+        logger.debug("Running database index checker");
 
         if (autoCreate) {
             try (var session = factory.create()) {
                 var clusterProvider = session.getProvider(ClusterProvider.class);
                 clusterProvider.executeIfNotExecuted(TASK_KEY, migrationTimeoutSeconds, () -> {
-                    var currentMissing = getMissingIndexes();
-                    if (currentMissing.isEmpty()) {
+                    var missing = getMissingIndexes();
+                    if (missing.isEmpty()) {
                         return null;
                     }
                     try (var connection = connectionSupplier.get()) {
                         if (supportsOnlineIndexCreation(connection)) {
-                            createIndexes(connection, currentMissing);
+                            createIndexes(connection, missing);
                             return null;
                         }
                     } catch (SQLException e) {
                         logger.warn("Unable to automatically create missing indexes, logging them for manual creation instead", e);
                     }
-                    for (var info : currentMissing) {
+                    for (var info : missing) {
                         logMissingIndex(info);
                     }
                     return null;
                 });
+            }
+        } else {
+            var missing = getMissingIndexes();
+            if (missing.isEmpty()) {
                 return;
             }
-        }
 
-        for (var info : missing) {
-            logMissingIndex(info);
+            for (var info : missing) {
+                logMissingIndex(info);
+            }
         }
     }
 
