@@ -462,6 +462,7 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
         if (entity == null) {
             throw new ModelException("mapping with id " + mapping.getId() + " does not exist");
         }
+        entity.setName(mapping.getName());
         entity.setProtocolMapper(mapping.getProtocolMapper());
         if (entity.getConfig() == null) {
             entity.setConfig(mapping.getConfig());
