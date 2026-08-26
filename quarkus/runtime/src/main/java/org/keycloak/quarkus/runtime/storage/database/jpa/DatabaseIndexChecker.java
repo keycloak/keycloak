@@ -280,10 +280,10 @@ public class DatabaseIndexChecker implements Runnable {
         return quoted;
     }
 
-    private static void logMissingIndex(IndexInfo info) {
+    private void logMissingIndex(IndexInfo info) {
         if (info.invalid) {
             logger.warnf("Invalid database index %s on table %s (possibly from a failed concurrent creation). Drop and recreate the index: DROP INDEX IF EXISTS %s; %s",
-                    info.indexName, info.tableName, info.indexName, info.sql);
+                    info.indexName, info.tableName, qualifyPostgresIdentifier(info.indexName), info.sql);
         } else {
             logger.warnf("Missing database index %s on table %s. Create the index manually: %s",
                     info.indexName, info.tableName, info.sql);
