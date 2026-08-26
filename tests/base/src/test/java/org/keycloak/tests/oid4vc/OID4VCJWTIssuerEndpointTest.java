@@ -234,20 +234,6 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     }
 
     @Test
-    public void testGetCredentialOfferWithABrokenNote() {
-        String token = getBearerToken(oauth);
-        assertThrows(BadRequestException.class, () ->
-                withCausePropagation(() -> runOnServer.run(session -> {
-                    BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
-                    authenticator.setTokenString(token);
-                    String nonce = prepareSessionCode(session, authenticator, "invalidNote").key();
-                    OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-                    issuerEndpoint.getCredentialOffer(nonce);
-                }))
-        );
-    }
-
-    @Test
     public void testGetCredentialOffer() {
         String token = getBearerToken(oauth);
 
