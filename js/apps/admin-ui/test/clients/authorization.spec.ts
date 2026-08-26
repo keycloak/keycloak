@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import type ResourceEvaluation from "@keycloak/keycloak-admin-client/lib/defs/resourceEvaluation";
 import adminClient from "../utils/AdminClient.ts";
 import { clickSaveButton } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
@@ -472,5 +473,111 @@ test.describe.serial("Client authorization evaluate resource key", () => {
     await expect(
       page.getByText("Required field", { exact: true }),
     ).toBeVisible();
+  });
+});
+
+test.describe("Client authorization evaluate resource search", () => {
+  const clientId = `client-authz-evaluate-search-${crypto.randomUUID()}`;
+  const username = `authz-evaluate-user-${crypto.randomUUID()}`;
+  const scopeName = "test-scope-111";
+
+  test.beforeAll(async () => {
+    await adminClient.createClient({
+      protocol: "openid-connect",
+      clientId,
+      publicClient: false,
+      authorizationServicesEnabled: true,
+      serviceAccountsEnabled: true,
+      standardFlowEnabled: true,
+    });
+    await adminClient.createUser({ username, enabled: true });
+
+    await adminClient.createResources(
+      clientId,
+      Array.from({ length: 120 }, (_, index) => {
+        const resourceNumber = index + 1;
+        return {
+          name: `test-resource-${resourceNumber.toString().padStart(3, "0")}`,
+          ...(resourceNumber === 111 ? { scopes: [{ name: scopeName }] } : {}),
+        };
+      }),
+    );
+  });
+
+  test.afterAll(async () => {
+    await adminClient.deleteClient(clientId);
+    await adminClient.deleteUser(username);
+  });
+
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+    await goToClients(page);
+    await searchItem(page, "Search for client", clientId);
+    await clickTableRowItem(page, clientId);
+    await goToAuthorizationTab(page);
+    await goToEvaluateSubTab(page);
+  });
+
+  test("Should search and evaluate a resource beyond the first 100", async ({
+    page,
+  }) => {
+    const key = getEvaluateResourceKeyInput(page);
+    const options = getEvaluateResourceKeyOptions(page);
+    const firstPageNames = Array.from(
+      { length: 100 },
+      (_, index) => `test-resource-${(index + 1).toString().padStart(3, "0")}`,
+    );
+
+    // The server still lists its default page of 100, so the first 100 names
+    // are offered without a search. Resource 111 is not on that page.
+    await key.click();
+    await expect(options).toHaveText(firstPageNames);
+
+    // test-resource-111 is outside that list, so it can only be found by
+    // searching the server for it by name.
+    const search = page.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return (
+        url.pathname.endsWith("/authz/resource-server/resource") &&
+        url.searchParams.get("name") === "test-resource-111"
+      );
+    });
+    await key.pressSequentially("test-resource-111");
+    await search;
+
+    await expect(options).toHaveText(["test-resource-111"]);
+    await key.press("Enter");
+    await expect(key).toHaveValue("test-resource-111");
+
+    // Selecting clears the search, so the searched resource has to be kept
+    // around for its scopes to still resolve. The scope select is the second
+    // combobox of the row: its menu class only exists once the menu is open.
+    const scope = page
+      .getByTestId("attribute-row")
+      .first()
+      .getByRole("combobox")
+      .nth(1);
+    await scope.click();
+    await page.getByRole("option", { name: scopeName, exact: true }).click();
+
+    const user = page.getByTestId("user").getByRole("combobox");
+    await user.fill(username);
+    await page.getByRole("option", { name: username, exact: true }).click();
+
+    const evaluationRequest = page.waitForRequest(
+      (request) =>
+        request.method() === "POST" &&
+        request.url().endsWith("/authz/resource-server/policy/evaluate"),
+    );
+    await page.getByTestId("authorization-eval").click();
+
+    const evaluation = (await evaluationRequest).postDataJSON() as
+      | ResourceEvaluation
+      | undefined;
+    expect(evaluation?.resources).toHaveLength(1);
+    expect(evaluation?.resources?.[0].name).toBe("test-resource-111");
+    expect(
+      evaluation?.resources?.[0].scopes?.map((scope) => scope.name),
+    ).toEqual([scopeName]);
   });
 });

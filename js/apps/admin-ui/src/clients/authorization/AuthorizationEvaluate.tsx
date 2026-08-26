@@ -81,6 +81,8 @@ export type AttributeForm = Omit<
 
 type Props = ClientSettingsProps & EvaluationResultRepresentation;
 
+const RESOURCE_SEARCH_MAX = 10;
+
 export const AuthorizationEvaluate = (props: Props) => {
   const { hasAccess } = useAccess();
 
@@ -105,7 +107,14 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
   const realm = useRealm();
   const [isExpanded, setIsExpanded] = useState(false);
   const [applyToResourceType, setApplyToResourceType] = useState(false);
+  // Everything ever fetched, because the scope select and the evaluation both
+  // resolve a selected resource by name after its search has been cleared.
   const [resources, setResources] = useState<ResourceRepresentation[]>([]);
+  // Only what the current search returned, which is what the key select offers.
+  const [resourceOptions, setResourceOptions] = useState<
+    ResourceRepresentation[]
+  >([]);
+  const [resourceSearch, setResourceSearch] = useState("");
   const [scopes, setScopes] = useState<ScopeRepresentation[]>([]);
   const [evaluateResult, setEvaluateResult] =
     useState<PolicyEvaluationResponse>();
@@ -121,16 +130,36 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
 
   useFetch(
     () =>
-      Promise.all([
-        adminClient.clients.listResources({
-          id: client.id!,
-        }),
-        adminClient.clients.listAllScopes({
-          id: client.id!,
-        }),
-      ]),
-    ([resources, scopes]) => {
-      setResources(resources);
+      adminClient.clients.listResources({
+        id: client.id!,
+        // Without a search the server lists its default page, as before. A
+        // search has to go to the server because the resource being looked for
+        // may not be on that page.
+        ...(resourceSearch
+          ? { first: 0, max: RESOURCE_SEARCH_MAX, name: resourceSearch }
+          : {}),
+      }),
+    (fetchedResources) => {
+      setResourceOptions(fetchedResources);
+      setResources((currentResources) => {
+        const resourcesById = new Map(
+          currentResources.map((resource) => [resource._id!, resource]),
+        );
+        fetchedResources.forEach((resource) =>
+          resourcesById.set(resource._id!, resource),
+        );
+        return Array.from(resourcesById.values());
+      });
+    },
+    [resourceSearch],
+  );
+
+  useFetch(
+    () =>
+      adminClient.clients.listAllScopes({
+        id: client.id!,
+      }),
+    (scopes) => {
       setScopes(scopes);
     },
     [],
@@ -263,12 +292,15 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                   fieldId="resourcesAndScopes"
                 >
                   <KeyBasedAttributeInput
-                    selectableValues={resources.map<AttributeType>((item) => ({
-                      name: item.name!,
-                      key: item._id!,
-                    }))}
+                    selectableValues={resourceOptions.map<AttributeType>(
+                      (item) => ({
+                        name: item.name!,
+                        key: item._id!,
+                      }),
+                    )}
                     resources={resources}
                     name="resources"
+                    onFilter={setResourceSearch}
                   />
                 </FormGroup>
               ) : (

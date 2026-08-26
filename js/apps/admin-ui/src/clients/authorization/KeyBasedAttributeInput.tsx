@@ -24,6 +24,7 @@ type AttributeInputProps = {
   name: string;
   selectableValues?: AttributeType[];
   resources?: ResourceRepresentation[];
+  onFilter?: (value: string) => void;
 };
 
 type ValueInputProps = {
@@ -136,6 +137,7 @@ export const KeyBasedAttributeInput = ({
   name,
   selectableValues,
   resources,
+  onFilter,
 }: AttributeInputProps) => {
   const { t } = useTranslation();
   const { control, watch } = useFormContext();
@@ -188,6 +190,7 @@ export const KeyBasedAttributeInput = ({
                     variant={SelectVariant.typeahead}
                     typeAheadAriaLabel={t("selectOrTypeAKey")}
                     placeholderText={t("selectOrTypeAKey")}
+                    onFilter={onFilter}
                     selections={field.value}
                     onSelect={(v) => {
                       field.onChange(v.toString());
