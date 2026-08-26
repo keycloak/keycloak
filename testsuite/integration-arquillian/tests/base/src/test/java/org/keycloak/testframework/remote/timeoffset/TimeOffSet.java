@@ -36,6 +36,10 @@ public class TimeOffSet {
         this.serverUrl = null;
     }
 
+    public TimeOffSet(Object test) {
+        this((AbstractKeycloakTest) test);
+    }
+
     public TimeOffSet(HttpClient httpClient, String serverUrl, int initOffset, boolean enableForCaches) {
         this.legacyTest = null;
         this.httpClient = httpClient;
