@@ -206,6 +206,17 @@ public class CaepCredentialChange extends CaepEvent {
     }
 
     @Override
+    public Map<String, Object> createAdminDetails() {
+        var adminRepresentation = super.createAdminDetails();
+        // fromString() collapses caller-supplied free-text credential types to the
+        // closed CaepCredentialType vocabulary so free-form values can't leak into
+        // the admin event store
+        adminRepresentation.put("credential_type", CaepCredentialType.fromString(credentialType).getType());
+        adminRepresentation.put("change_type", changeType);
+        return adminRepresentation;
+    }
+
+    @Override
     protected void appendFields(Map<String, Object> fields) {
         super.appendFields(fields);
         fields.put("credentialType", credentialType);

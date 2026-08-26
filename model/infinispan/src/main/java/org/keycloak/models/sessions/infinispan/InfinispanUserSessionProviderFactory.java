@@ -27,6 +27,7 @@ import org.keycloak.Config;
 import org.keycloak.authentication.jpa.JpaAuthenticationSessionProviderFactory;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Environment;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -204,11 +205,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             // The expired events for offline sessions will be triggered by JpaUserSessionPersisterProvider
             sessionCacheHolder.cache().addListener(expirationListener);
         }
-        // we need the expiration task running because of offline sessions
-        try (var session = factory.create()) {
-            expirationTask = ExpirationTaskFactory.create(session, expirationPeriodSeconds);
-        }
-        expirationTask.start();
+        startExpirationTask(factory);
         if (factory.getProviderFactory(AuthenticationSessionProvider.class) instanceof JpaAuthenticationSessionProviderFactory) {
             // Based on our internal knowledge on the JpaAuthenticationSessionProviderFactory, we can now assume that
             // all actions on the authentication sessions are done with pessimistic locking in place. With this knowledge,
@@ -218,6 +215,20 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             // behavior to avoid reflection and internal knowledge.
             pessimisticLockingAuthenticationSession = true;
         }
+    }
+
+    /**
+     * Start the expiration task for offline sessions.
+     * Skipped in non-server mode (export, import) as session expiration is not needed for one-time commands.
+     */
+    private void startExpirationTask(KeycloakSessionFactory factory) {
+        if (Environment.isNonServerMode()) {
+            return;
+        }
+        try (var session = factory.create()) {
+            expirationTask = ExpirationTaskFactory.create(session, expirationPeriodSeconds);
+        }
+        expirationTask.start();
     }
 
     public void initializePersisterLastSessionRefreshStore(final KeycloakSessionFactory sessionFactory) {

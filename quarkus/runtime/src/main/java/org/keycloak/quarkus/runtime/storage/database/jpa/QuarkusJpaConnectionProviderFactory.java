@@ -36,6 +36,7 @@ import org.keycloak.ServerStartupError;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Environment;
 import org.keycloak.config.DatabaseOptions;
+import org.keycloak.config.TransactionOptions;
 import org.keycloak.config.database.Database;
 import org.keycloak.connections.jpa.AsyncCommitIntegrator;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
@@ -103,7 +104,8 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
     public void postInit(KeycloakSessionFactory factory) {
         super.postInit(factory);
         if (config.getBoolean("asyncCommit", true)) {
-            AsyncCommitIntegrator.registerListeners(entityManagerFactory);
+            boolean xaEnabled = Configuration.isKcPropertyTrue(TransactionOptions.TRANSACTION_XA_ENABLED.getKey());
+            AsyncCommitIntegrator.registerListeners(entityManagerFactory, xaEnabled);
         }
 
         checkMySQLWaitTimeout();

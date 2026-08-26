@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -170,7 +171,6 @@ import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
 import org.hibernate.jpa.boot.spi.PersistenceXmlParser;
 import org.infinispan.protostream.SerializationContextInitializer;
 import org.jboss.jandex.AnnotationInstance;
-import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.AnnotationTransformation;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
@@ -509,41 +509,38 @@ class KeycloakProcessor {
             List<PersistenceXmlDescriptorBuildItem> descriptors,
             List<JdbcDataSourceBuildItem> jdbcDataSources,
             BuildProducer<AdditionalJpaModelBuildItem> additionalJpaModel,
-            CombinedIndexBuildItem indexBuildItem,
             BuildProducer<HibernateOrmIntegrationRuntimeConfiguredBuildItem> runtimeConfigured,
             KeycloakRecorder recorder) {
-        ParsedPersistenceXmlDescriptor defaultUnitDescriptor = null;
-        List<String> userManagedEntities = new ArrayList<>();
+        boolean defaultUnitFound = false;
 
         for (PersistenceXmlDescriptorBuildItem item : descriptors) {
-            ParsedPersistenceXmlDescriptor descriptor = (ParsedPersistenceXmlDescriptor) item.getDescriptor();
+            if (!(item.getDescriptor() instanceof ParsedPersistenceXmlDescriptor descriptor)) {
+                continue;
+            }
 
             if (DEFAULT_PERSISTENCE_UNIT.equals(descriptor.getName())) {
-                defaultUnitDescriptor = descriptor;
-                configureDefaultPersistenceUnitProperties(defaultUnitDescriptor, config, getDefaultDataSource(jdbcDataSources));
-                runtimeConfigured.produce(new HibernateOrmIntegrationRuntimeConfiguredBuildItem("keycloak", defaultUnitDescriptor.getName())
+                defaultUnitFound = true;
+                configureDefaultPersistenceUnitProperties(descriptor, config, getDefaultDataSource(jdbcDataSources));
+                runtimeConfigured.produce(new HibernateOrmIntegrationRuntimeConfiguredBuildItem("keycloak", descriptor.getName())
                         .setInitListener(recorder.createDefaultUnitListener()));
             } else {
                 String datasourceName = getDatasourceNameFromPersistenceXml(descriptor);
                 configurePersistenceUnitProperties(datasourceName, descriptor);
-                // register a listener for customizing the unit configuration at runtime
                 runtimeConfigured.produce(new HibernateOrmIntegrationRuntimeConfiguredBuildItem("keycloak", descriptor.getName())
                         .setInitListener(recorder.createUserDefinedUnitListener(datasourceName)));
-                userManagedEntities.addAll(descriptor.getManagedClassNames());
             }
         }
 
-        if (defaultUnitDescriptor == null) {
+        if (!defaultUnitFound) {
             throw new RuntimeException("No default persistence unit found.");
         }
-
-        configureDefaultPersistenceUnitEntities(defaultUnitDescriptor, indexBuildItem, userManagedEntities);
     }
 
     @BuildStep
     @Consume(CheckJdbcBuildStep.class)
     @Consume(CheckMultipleDatasourcesBuildStep.class)
-    void produceDefaultPersistenceUnit(BuildProducer<PersistenceXmlDescriptorBuildItem> producer) {
+    void produceDefaultPersistenceUnit(CombinedIndexBuildItem indexBuildItem,
+            BuildProducer<PersistenceXmlDescriptorBuildItem> producer) {
         PersistenceXmlParser parser = PersistenceXmlParser.create();
         PersistenceUnitDescriptor descriptor = parser.parse(Collections.singletonList(parser.getClassLoaderService().locateResource("default-persistence.xml")))
                 .values()
@@ -551,7 +548,37 @@ class KeycloakProcessor {
                 .findAny()
                 .orElseThrow(() -> new NoSuchElementException("Cannot find the file 'default-persistence.xml'"));
 
+        Set<String> userManagedEntities = collectUserManagedEntities(parser);
+
+        if (descriptor instanceof ParsedPersistenceXmlDescriptor parsedDescriptor) {
+            IndexView index = indexBuildItem.getIndex();
+            Collection<AnnotationInstance> annotations = index.getAnnotations(DotName.createSimple(Entity.class.getName()));
+            List<String> additionalEntities = new ArrayList<>();
+            for (AnnotationInstance annotation : annotations) {
+                String targetName = annotation.target().asClass().name().toString();
+                if (!userManagedEntities.contains(targetName)
+                        && (!targetName.startsWith("org.keycloak") || targetName.startsWith("org.keycloak.testsuite"))) {
+                    additionalEntities.add(targetName);
+                }
+            }
+            if (!additionalEntities.isEmpty()) {
+                parsedDescriptor.addClasses(additionalEntities);
+            }
+        }
+
         producer.produce(new PersistenceXmlDescriptorBuildItem(descriptor));
+    }
+
+    // Parsed independently because this step produces PersistenceXmlDescriptorBuildItem
+    // and therefore cannot consume List<PersistenceXmlDescriptorBuildItem> (circular dependency).
+    private static Set<String> collectUserManagedEntities(PersistenceXmlParser parser) {
+        Set<String> result = new HashSet<>();
+        for (URL url : parser.getClassLoaderService().locateResources("META-INF/persistence.xml")) {
+            for (PersistenceUnitDescriptor pu : PersistenceXmlParser.create().parse(Collections.singletonList(url)).values()) {
+                result.addAll(pu.getManagedClassNames());
+            }
+        }
+        return result;
     }
 
     static void configurePersistenceUnitProperties(String datasourceName, ParsedPersistenceXmlDescriptor descriptor) {
@@ -624,22 +651,6 @@ class KeycloakProcessor {
 
         getOptionalKcValue(DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES.getKey())
                 .ifPresent(v -> unitProperties.put(AvailableSettings.LOG_SLOW_QUERY, v));
-    }
-
-    private void configureDefaultPersistenceUnitEntities(ParsedPersistenceXmlDescriptor descriptor, CombinedIndexBuildItem indexBuildItem,
-            List<String> userManagedEntities) {
-        IndexView index = indexBuildItem.getIndex();
-        Collection<AnnotationInstance> annotations = index.getAnnotations(DotName.createSimple(Entity.class.getName()));
-
-        for (AnnotationInstance annotation : annotations) {
-            AnnotationTarget target = annotation.target();
-            String targetName = target.asClass().name().toString();
-
-            if (!userManagedEntities.contains(targetName)
-                    && (!targetName.startsWith("org.keycloak") || targetName.startsWith("org.keycloak.testsuite"))) {
-                descriptor.addClasses(targetName);
-            }
-        }
     }
 
     /**

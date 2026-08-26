@@ -16,7 +16,7 @@
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
         <version.tools.jackson>3.1.5</version.tools.jackson>
-        <version.resteasy.jackson.provider>1.0.0.Alpha1</version.resteasy.jackson.provider>
+        <version.resteasy.jackson.provider>1.0.0.Beta1</version.resteasy.jackson.provider>
     </properties>
 
     <dependencies>

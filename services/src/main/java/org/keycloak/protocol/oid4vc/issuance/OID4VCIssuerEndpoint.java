@@ -77,8 +77,10 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
+import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilderException;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilderFactory;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
@@ -1764,12 +1766,13 @@ public class OID4VCIssuerEndpoint {
                     return null;
                 })
                 .filter(Objects::nonNull)
+                .filter(mapper -> mapper.supportsCredentialFormat(credentialScopeModel.getFormat()))
                 .toList();
 
         VCIssuanceContext vcIssuanceContext = getVCToSign(protocolMappers, credentialConfig, authResult, authDetail, credentialRequestVO, credentialScopeModel, eventBuilder);
 
         // Enforce key binding prior to signing if necessary
-        enforceKeyBindingIfProofProvided(vcIssuanceContext);
+        enforceKeyBindingIfProofProvided(vcIssuanceContext, eventBuilder);
 
         return vcIssuanceContext;
     }
@@ -1862,26 +1865,59 @@ public class OID4VCIssuerEndpoint {
                 .setType(credentialScopeModel.getSupportedCredentialTypes());
 
         Map<String, Object> subjectClaims = new HashMap<>();
-        protocolMappers.forEach(mapper -> mapper.setClaim(subjectClaims, authResult.session()));
-
         Map<String, Object> subjectClaimsWithMetadataPrefix = new HashMap<>();
-        protocolMappers
-                .forEach(mapper -> mapper.setClaimWithMetadataPrefix(subjectClaims, subjectClaimsWithMetadataPrefix));
+
+        if (VCFormat.MSO_MDOC.equals(credentialConfig.getFormat())) {
+            // A scope switched to mso_mdoc after its claim mappers were created is not revalidated by the admin API,
+            // so guard here against a claim mapper without a namespace that would otherwise emit a flat claim path.
+            for (OID4VCMapper mapper : protocolMappers) {
+                try {
+                    mapper.validateMdocNamespace(credentialConfig.getFormat());
+                } catch (ProtocolMapperConfigException e) {
+                    throw badRequestException(ErrorType.INVALID_CREDENTIAL_REQUEST, e.getMessage(), eventBuilder);
+                }
+            }
+
+            // mDoc data element identifiers may repeat across namespaces while sharing one raw claim key, so each
+            // mapper writes into its own scratch map. A shared map would let a mapper without a value pick up the
+            // claim of a previous mapper with the same name and copy it into the wrong namespace.
+            protocolMappers.forEach(mapper -> {
+                Map<String, Object> mapperClaims = new HashMap<>();
+                mapper.setClaim(mapperClaims, authResult.session());
+                mapper.setClaimWithMetadataPrefix(mapperClaims, subjectClaimsWithMetadataPrefix);
+            });
+        } else {
+            protocolMappers.forEach(mapper -> mapper.setClaim(subjectClaims, authResult.session()));
+            protocolMappers
+                    .forEach(mapper -> mapper.setClaimWithMetadataPrefix(subjectClaims, subjectClaimsWithMetadataPrefix));
+        }
 
         // Validate that requested claims from authorization_details are present
         String credentialConfigId = credentialConfig.getId();
         validateRequestedClaimsArePresent(subjectClaimsWithMetadataPrefix, credentialConfig, authResult.user(), authDetail, credentialConfigId, eventBuilder);
 
+        // OID4VCI 1.0 Appendix C.2 gives ISO mdoc paths namespace/data-element semantics. The metadata-prefixed
+        // claim map already has that namespace -> data element layout; JSON-based formats keep credentialSubject.
+        Map<String, Object> credentialSubjectClaims = VCFormat.MSO_MDOC.equals(credentialConfig.getFormat())
+                ? subjectClaimsWithMetadataPrefix
+                : subjectClaims;
+
         // Include all available claims
-        subjectClaims.forEach((key, value) -> vc.getCredentialSubject().setClaims(key, value));
+        credentialSubjectClaims.forEach((key, value) -> vc.getCredentialSubject().setClaims(key, value));
 
         protocolMappers.forEach(mapper -> mapper.setClaim(vc, authResult.session()));
 
         LOGGER.debugf("The credential to sign is: %s", vc);
 
         // Build format-specific credential
-        CredentialBody credentialBody = this.findCredentialBuilder(credentialConfig)
-                .buildCredentialBody(vc, credentialConfig.getCredentialBuildConfig());
+        CredentialBody credentialBody;
+        try {
+            credentialBody = this.findCredentialBuilder(credentialConfig)
+                    .buildCredentialBody(vc, credentialConfig.getCredentialBuildConfig());
+        } catch (CredentialBuilderException e) {
+            throw badRequestException(ErrorType.INVALID_CREDENTIAL_REQUEST,
+                    "Could not build credential: " + e.getMessage(), eventBuilder);
+        }
 
         return new VCIssuanceContext()
                 .setAuthResult(authResult)
@@ -1893,7 +1929,7 @@ public class OID4VCIssuerEndpoint {
     /**
      * Enforce key binding: Validate proof and bind associated key to credential in issuance context.
      */
-    private void enforceKeyBindingIfProofProvided(VCIssuanceContext vcIssuanceContext) {
+    private void enforceKeyBindingIfProofProvided(VCIssuanceContext vcIssuanceContext, EventBuilder eventBuilder) {
         Proofs proofs = vcIssuanceContext.getCredentialRequest().getProofs();
         if (proofs == null) {
             LOGGER.debugf("No proofs provided, skipping key binding");
@@ -1902,11 +1938,11 @@ public class OID4VCIssuerEndpoint {
 
         // Validate each proof type that is present
         for (String proofType : proofs.getPresentProofTypes()) {
-            validateProofs(vcIssuanceContext, proofType);
+            validateProofs(vcIssuanceContext, proofType, eventBuilder);
         }
     }
 
-    private void validateProofs(VCIssuanceContext vcIssuanceContext, String proofType) {
+    private void validateProofs(VCIssuanceContext vcIssuanceContext, String proofType, EventBuilder eventBuilder) {
         ProofValidator proofValidator = session.getProvider(ProofValidator.class, proofType);
         if (proofValidator == null) {
             throw new BadRequestException(String.format("Unable to validate proofs of type %s", proofType));
@@ -1920,6 +1956,8 @@ public class OID4VCIssuerEndpoint {
                 vcIssuanceContext.getCredentialBody().addKeyBinding(jwks.get(0));
             }
         } catch (VCIssuerException e) {
+            eventBuilder.detail(Details.REASON, e.getMessage())
+                    .error(e.getErrorType().getValue());
             switch (e.getErrorType()) {
                 case INVALID_NONCE:
                     throw new ErrorResponseException(INVALID_NONCE.getValue(), e.getMessage(), Response.Status.BAD_REQUEST);
@@ -1928,6 +1966,10 @@ public class OID4VCIssuerEndpoint {
                 default:
                     throw new BadRequestException("Could not validate provided proof", e);
             }
+        } catch (CredentialBuilderException e) {
+            // A proof key that cannot be bound to the credential, such as an mDoc COSE_Key conversion that rejects
+            // the key curve, is an invalid proof rather than a server error.
+            throw new ErrorResponseException(INVALID_PROOF.getValue(), e.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 
@@ -1957,8 +1999,10 @@ public class OID4VCIssuerEndpoint {
     private void validateRequestedClaimsArePresent(Map<String, Object> allClaims, SupportedCredentialConfiguration credentialConfig,
                                                    UserModel user, OID4VCAuthorizationDetail authzDetail, String scope, EventBuilder eventBuilder) {
         // Protocol mappers from configuration
-        Map<List<Object>, ClaimsDescription> claimsConfig = credentialConfig.getCredentialMetadata().getClaims()
+        Map<List<Object>, ClaimsDescription> claimsConfig = Optional.ofNullable(credentialConfig.getCredentialMetadata())
+                .map(metadata -> metadata.getClaims())
                 .stream()
+                .flatMap(claims -> claims.stream())
                 .map(claim -> {
                     List<Object> pathObj = new ArrayList<>(claim.getPath());
                     return new ClaimsDescription(pathObj, claim.isMandatory());

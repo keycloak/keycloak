@@ -33,8 +33,10 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.events.Details;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -151,16 +153,18 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
             return;
         }
 
-        if (!wrapper.validateSecret(context.getSession(), clientSecret)) {
-            if (!wrapper.validateRotatedSecret(context.getSession(), clientSecret)){
-                reportFailedAuth(context);
-                return;
-            }
-        }
-
         if (wrapper.isClientSecretExpired()){
             reportFailedAuth(context);
             return;
+        }
+
+        if (!wrapper.validateSecret(context.getSession(), clientSecret)) {
+            if (wrapper.validateRotatedSecret(context.getSession(), clientSecret)){
+                context.getEvent().detail(Details.CLIENT_AUTH_DETAIL, ClientSecretConstants.CLIENT_ROTATED_EVENT_DETAIL);
+            } else {
+                reportFailedAuth(context);
+                return;
+            }
         }
 
         context.success();

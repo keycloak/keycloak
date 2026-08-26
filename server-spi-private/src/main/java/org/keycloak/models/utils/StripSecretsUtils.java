@@ -49,6 +49,8 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
+import static org.keycloak.models.Constants.PRIVATE_KEY_ATTR_SUFFIX;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -225,12 +227,25 @@ public class StripSecretsUtils {
         return user;
     }
 
-    protected static ClientRepresentation stripClient(ClientRepresentation rep) {
+    public static ClientRepresentation stripClient(ClientRepresentation rep) {
         if (rep.getSecret() != null) {
             rep.setSecret(maskNonVaultValue(rep.getSecret()));
         }
+        if (rep.getRegistrationAccessToken() != null) {
+            rep.setRegistrationAccessToken(maskNonVaultValue(rep.getRegistrationAccessToken()));
+        }
 
         stripFromMap(rep.getAttributes(), ClientSecretConstants.CLIENT_ROTATED_SECRET);
+
+        if (rep.getAttributes() != null) {
+            Map<String, String> clientAttrsCopy = new HashMap<>(rep.getAttributes());
+            for (Map.Entry<String, String> entry : clientAttrsCopy.entrySet()) {
+                if (entry.getKey().endsWith(PRIVATE_KEY_ATTR_SUFFIX)) {
+                    rep.getAttributes().put(entry.getKey(), maskNonVaultValue(entry.getValue()));
+                }
+            }
+        }
+
         return rep;
     }
 

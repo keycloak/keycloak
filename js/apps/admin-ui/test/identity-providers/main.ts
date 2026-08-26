@@ -1,7 +1,7 @@
 import { type Page, expect } from "@playwright/test";
 import { assertNotificationMessage } from "../utils/masthead.ts";
+import { SERVER_URL } from "../utils/constants.ts";
 
-const SERVER_URL = "http://localhost:8080";
 const discoveryUrl = `${SERVER_URL}/realms/master/.well-known/openid-configuration`;
 const authorizationUrl = `${SERVER_URL}/realms/master/protocol/openid-connect/auth`;
 
@@ -194,7 +194,20 @@ export async function addMapper(
 }
 
 export async function clickSaveMapper(page: Page) {
-  await page.getByTestId("new-mapper-save-button").click();
+  const saveMapperButton = page.getByTestId("new-mapper-save-button");
+  await expect(saveMapperButton).toBeEnabled();
+  await saveMapperButton.click();
+  await expect(page).toHaveURL(/.*mappers(\/[^/]+)?$/);
+
+  // Some mapper forms stay on /mappers/:id after save. Navigate back to the list
+  // so callers can assert the mapper row in a single place.
+  if (/\/mappers\/[^/]+$/.test(page.url())) {
+    const cancelMapperButton = page.getByTestId("new-mapper-cancel-button");
+    if ((await cancelMapperButton.count()) > 0) {
+      await cancelMapperButton.first().click();
+      await expect(page).toHaveURL(/.*mappers$/);
+    }
+  }
 }
 
 export async function clickCancelMapper(page: Page) {

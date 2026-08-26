@@ -19,6 +19,7 @@ package org.keycloak.testsuite.authz;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.AuthorizationProvider;
@@ -78,6 +79,7 @@ public class PolicyEvaluationCompositeRoleTest extends AbstractAuthzTest {
 
         Scope scope = authz.getStoreFactory().getScopeStore().create(resourceServer, "myscope");
         Resource resource = authz.getStoreFactory().getResourceStore().create(resourceServer, "myresource", resourceServer.getClientId());
+        resource.updateScopes(Set.of(scope));
         addScopePermission(authz, resourceServer, "mypermission", resource, scope, policy);
 
         RoleModel composite = realm.addRole("composite");

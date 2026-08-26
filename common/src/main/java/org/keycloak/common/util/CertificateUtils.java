@@ -25,12 +25,21 @@ import java.util.Date;
 
 import org.keycloak.common.crypto.CryptoIntegration;
 
+import org.jboss.logging.Logger;
+
 /**
  * The Class CertificateUtils provides utility functions for generation of V1 and V3 {@link java.security.cert.X509Certificate}
  *
  */
 public class CertificateUtils {
 
+    private static final Logger logger = Logger.getLogger(CertificateUtils.class);
+
+    /**
+     * RFC 5280 {@code ub-common-name} upper bound. BouncyCastle 1.85+ enforces this limit
+     * when building X.500 names, so CN values are truncated before they reach the provider.
+     */
+    private static final int MAX_CN_LENGTH = 64;
 
     /**
      * Generates version 3 {@link java.security.cert.X509Certificate}.
@@ -39,37 +48,45 @@ public class CertificateUtils {
      * @param caPrivateKey the CA private key
      * @param caCert the CA certificate
      * @param subject the subject name
-     * 
+     *
      * @return the x509 certificate
-     * 
+     *
      * @throws Exception the exception
      */
     public static X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey,
             X509Certificate caCert, String subject) throws Exception {
         return CryptoIntegration.getProvider().getCertificateUtils().generateV3Certificate(keyPair, caPrivateKey,
-                caCert, subject);
+                caCert, truncateCN(subject));
     }
 
     /**
-     * Generate version 1 self signed {@link java.security.cert.X509Certificate}..
+     * Generate version 1 self signed {@link java.security.cert.X509Certificate}.
      *
      * @param caKeyPair the CA key pair
      * @param subject the subject name
-     * 
+     *
      * @return the x509 certificate
-     * 
+     *
      * @throws Exception the exception
      */
     public static X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject) {
-        return CryptoIntegration.getProvider().getCertificateUtils().generateV1SelfSignedCertificate(caKeyPair, subject);
-    } 
+        return CryptoIntegration.getProvider().getCertificateUtils().generateV1SelfSignedCertificate(caKeyPair, truncateCN(subject));
+    }
 
     public static X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber) {
-        return CryptoIntegration.getProvider().getCertificateUtils().generateV1SelfSignedCertificate(caKeyPair, subject, serialNumber);
+        return CryptoIntegration.getProvider().getCertificateUtils().generateV1SelfSignedCertificate(caKeyPair, truncateCN(subject), serialNumber);
     }
 
     public static X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber, Date validityEndDate) {
-        return CryptoIntegration.getProvider().getCertificateUtils().generateV1SelfSignedCertificate(caKeyPair, subject, serialNumber, validityEndDate);
+        return CryptoIntegration.getProvider().getCertificateUtils().generateV1SelfSignedCertificate(caKeyPair, truncateCN(subject), serialNumber, validityEndDate);
     }
-        
+
+    private static String truncateCN(String cn) {
+        if (cn != null && cn.length() > MAX_CN_LENGTH) {
+            logger.warnf("Certificate CN value exceeds %d characters and will be truncated: '%s'", MAX_CN_LENGTH, cn);
+            return cn.substring(0, MAX_CN_LENGTH);
+        }
+        return cn;
+    }
+
 }

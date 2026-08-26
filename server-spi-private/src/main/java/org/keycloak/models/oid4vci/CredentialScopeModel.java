@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ProtocolMapperModel;
@@ -42,7 +43,7 @@ import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
  */
 public class CredentialScopeModel implements ClientScopeModel {
 
-    public static final String CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT = "jwk";
+    public static final String CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT = OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_JWK;
 
     public static final String VC_BUILD_CONFIG_HASH_ALGORITHM_DEFAULT = "SHA-256";
     public static final String VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS_DEFAULT = "id,iat,nbf,exp,jti";
@@ -401,7 +402,11 @@ public class CredentialScopeModel implements ClientScopeModel {
 
     public List<String> getRequiredKeyAttestationKeyStorage() {
         return Optional.ofNullable(clientScope.getAttribute(VC_KEY_ATTESTATION_REQUIRED_KEY_STORAGE))
-                       .map(s -> Arrays.asList(s.split(",")))
+                       .map(s -> Arrays.stream(s.split(","))
+                                        .map(String::trim)
+                                        .filter(value -> !value.isEmpty())
+                                        .toList())
+                       .filter(values -> !values.isEmpty())
                        // it is important to return null here instead of an empty list:
                        // If both key_storage and user_authentication parameters are absent, the
                        // key_attestations_required parameter may be empty, indicating a key attestation is needed
@@ -411,12 +416,16 @@ public class CredentialScopeModel implements ClientScopeModel {
 
     public void setRequiredKeyAttestationKeyStorage(List<String> keyStorage) {
         clientScope.setAttribute(VC_KEY_ATTESTATION_REQUIRED_KEY_STORAGE, Optional.ofNullable(keyStorage)
-                .map(list -> String.join(",")).orElse(null));
+                .map(list -> String.join(",", list)).orElse(null));
     }
 
     public List<String> getRequiredKeyAttestationUserAuthentication() {
         return Optional.ofNullable(clientScope.getAttribute(VC_KEY_ATTESTATION_REQUIRED_USER_AUTH))
-                       .map(s -> Arrays.asList(s.split(",")))
+                       .map(s -> Arrays.stream(s.split(","))
+                                        .map(String::trim)
+                                        .filter(value -> !value.isEmpty())
+                                        .toList())
+                       .filter(values -> !values.isEmpty())
                        // it is important to return null here instead of an empty list:
                        // If both key_storage and user_authentication parameters are absent, the
                        // key_attestations_required parameter may be empty, indicating a key attestation is needed
@@ -426,7 +435,7 @@ public class CredentialScopeModel implements ClientScopeModel {
 
     public void setRequiredKeyAttestationUserAuthentication(List<String> userAuthentication) {
         clientScope.setAttribute(VC_KEY_ATTESTATION_REQUIRED_USER_AUTH, Optional.ofNullable(userAuthentication)
-                .map(list -> String.join(",")).orElse(null));
+                .map(list -> String.join(",", list)).orElse(null));
     }
 
     @Override

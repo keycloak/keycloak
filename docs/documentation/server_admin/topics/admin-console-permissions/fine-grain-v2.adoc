@@ -795,3 +795,28 @@ When filtering resources, the partial evaluation mechanism will eventually rely 
 to filter the results. Depending on your database, you might have limitations on the number of parameters for the `IN` clause.
 That is the case for old versions of the Oracle database, which has a hard limit to 1000 parameters. To avoid such problems,
 keep in mind the considerations above about the number of permissions that grants or deny access to a single realm administrator.
+
+===== Tuning the IN clause bind parameter threshold
+
+Some JDBC drivers impose limits on the number of bind parameters in a single prepared statement.
+For example, the PostgreSQL JDBC driver (pgjdbc) enforces a hard limit of 65,535 parameters defined by the wire protocol.
+When the cumulative number of bind parameters across all `IN` clauses in a query reaches a configured threshold,
+{project_name} renders subsequent resource IDs as SQL literals instead of bind parameters.
+The threshold is configurable and defaults to `32,000`.
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-authorization--authorization--jpa-in-parameters-limit-threshold=2000
+----
+
+Lower the value if your database has a stricter per-statement bind parameter limit.
+
+This fallback should be treated as a safety net for edge cases, not a normal operating mode.
+If you are consistently hitting this threshold, revisit your permission model to reduce the number of
+individually granted or denied resources per realm administrator.
+
+NOTE: This setting addresses per-statement bind parameter limits only.
+Oracle's `ORA-01795` limit of 1,000 expressions per `IN` list applies to both bind parameters and literal values,
+so this threshold does not help with Oracle.
+For Oracle deployments, reduce the number of individually granted or denied resources per realm administrator
+as described above.

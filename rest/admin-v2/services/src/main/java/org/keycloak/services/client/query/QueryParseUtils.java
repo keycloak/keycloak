@@ -5,6 +5,7 @@ import java.util.Set;
 import org.keycloak.scim.filter.FilterUtils;
 import org.keycloak.scim.filter.ScimFilterException;
 import org.keycloak.scim.filter.ScimFilterParser;
+import org.keycloak.services.client.scim.BaseClientModelSchema;
 
 public class QueryParseUtils {
 
@@ -62,20 +63,32 @@ public class QueryParseUtils {
     private static void validateAttributeExpression(ScimFilterParser.AttributeExpressionContext ctx) {
         if (ctx instanceof ScimFilterParser.ComparisonExpressionContext comp) {
             String fieldPath = comp.ATTRPATH().getText();
-            if (!FieldResolver.isKnownField(fieldPath)) {
-                throw new ClientQueryException("Unknown query field: " + fieldPath);
-            }
             String operator = comp.compareOp().getText().toLowerCase();
-            if (!SUPPORTED_OPERATORS.contains(operator)) {
-                throw new ClientQueryException("Unsupported operator: " + operator
-                        + ". Supported operators: " + SUPPORTED_OPERATORS);
-            }
+            validateField(fieldPath, operator);
         } else if (ctx instanceof ScimFilterParser.PresentExpressionContext pr) {
             String fieldPath = pr.ATTRPATH().getText();
-            if (!FieldResolver.isKnownField(fieldPath)) {
-                throw new ClientQueryException("Unknown query field: " + fieldPath);
-            }
+            validateField(fieldPath, null);
         }
     }
-
+    
+    /**
+     * TODO: eventually this could be proper Attribute metadata, in which case it
+     * should be handled in ScimJPAPredicateProvider
+     * 
+     * Alternatively the type provider class via a mechanism like ScimAttributeJpaExpressionResolver
+     * could provide additional attribute checks so that the QueryParseUtils class could be
+     * removed
+     */
+    public static void validateField(String fieldPath, String operator) {
+        if (!FieldResolver.isKnownField(fieldPath)) {
+            throw new ClientQueryException("Unknown query field: " + fieldPath);
+        }
+        if (operator != null && !SUPPORTED_OPERATORS.contains(operator)) {
+            throw new ClientQueryException("Unsupported operator: " + operator
+                    + ". Supported operators: " + SUPPORTED_OPERATORS);
+        }
+        if (!BaseClientModelSchema.QUERYABLE_FIELDS.contains(fieldPath)) {
+            throw new ClientQueryException("Unsearchable query field: " + fieldPath);
+        }
+    }
 }

@@ -24,7 +24,9 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.tests.conformance.runner.BrowserInteraction;
 import org.keycloak.tests.conformance.runner.ConformanceModuleVariant;
+import org.keycloak.tests.conformance.runner.ConformanceResult;
 
 /**
  * The verifier accepts a valid same device SD-JWT VC presentation.
@@ -45,6 +47,7 @@ public class VerifierSameDeviceHappyFlowTest extends AbstractVpConformanceTest {
                         "client_id_prefix", "x509_hash",
                         "request_method", "request_uri_signed",
                         "response_mode", "direct_post"),
-                "oid4vp-1final-verifier-happy-flow");
+                "oid4vp-1final-verifier-happy-flow",
+                ConformanceResult.REVIEW, BrowserInteraction.NONE);
     }
 }

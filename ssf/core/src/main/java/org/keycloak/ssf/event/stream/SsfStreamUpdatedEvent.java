@@ -48,6 +48,16 @@ public class SsfStreamUpdatedEvent extends SsfStreamEvent {
     }
 
     @Override
+    public Map<String, Object> createAdminDetails() {
+        var adminRepresentation = super.createAdminDetails();
+        adminRepresentation.put("status", status);
+        if (reason != null) {
+            adminRepresentation.put("reason", reason);
+        }
+        return adminRepresentation;
+    }
+
+    @Override
     protected void appendFields(Map<String, Object> fields) {
         super.appendFields(fields);
         fields.put("status", status);

@@ -403,7 +403,7 @@ public class RoleContainerResource extends RoleResource {
         if (role == null) {
             throw new NotFoundException("Could not find role");
         }
-        return role.getCompositesStream().map(ModelToRepresentation::toBriefRepresentation);
+        return role.getCompositesStream().filter(r -> auth.roles().canView(r)).map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**
@@ -429,7 +429,7 @@ public class RoleContainerResource extends RoleResource {
         if (role == null) {
             throw new NotFoundException("Could not find role");
         }
-        return getRealmRoleComposites(role);
+        return getRealmRoleComposites(auth, role);
     }
 
     /**
@@ -462,7 +462,7 @@ public class RoleContainerResource extends RoleResource {
             throw new NotFoundException("Could not find client");
 
         }
-        return getClientRoleComposites(clientModel, role);
+        return getClientRoleComposites(auth, clientModel, role);
     }
 
 
