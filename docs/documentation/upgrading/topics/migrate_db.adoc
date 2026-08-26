@@ -33,7 +33,7 @@ To perform an automatic migration, start the server connected to the desired dat
 
 For example, creating an index on tables with millions of records can be time-consuming and cause a major service disruption.  Therefore, a threshold of `300000` records exists for automatic migration.  If the number of records exceeds this threshold, the index is not created during schema migration.
 
-On databases that support non-blocking index creation — PostgreSQL, Oracle, MySQL/MariaDB, and Microsoft SQL Server Enterprise, Developer, or Azure SQL editions — {project_name} automatically creates the skipped indexes in the background after startup using online index operations that allow concurrent reads and writes. On databases without non-blocking support, a warning is logged with the SQL commands to apply manually.
+On databases that support non-blocking index creation — PostgreSQL, Oracle Enterprise Edition, MySQL/MariaDB, and Microsoft SQL Server Enterprise, Developer, or Azure SQL editions — {project_name} automatically creates the skipped indexes in the background after startup using online index operations that allow concurrent reads and writes. On databases without non-blocking support, a warning is logged with the SQL commands to apply manually.
 
 To change the threshold, set the `index-creation-threshold` property, value for the `connections-liquibase` provider:
 

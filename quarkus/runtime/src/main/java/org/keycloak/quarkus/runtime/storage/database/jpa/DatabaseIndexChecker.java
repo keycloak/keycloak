@@ -177,9 +177,19 @@ public class DatabaseIndexChecker implements Runnable {
 
     private boolean supportsOnlineIndexCreation(Connection connection) throws SQLException {
         String productName = connection.getMetaData().getDatabaseProductName().toLowerCase();
-        if (productName.contains("postgres") || productName.contains("oracle")
+        if (productName.contains("postgres")
                 || productName.contains("mysql") || productName.contains("mariadb")) {
             return true;
+        }
+        if (productName.contains("oracle")) {
+            try (var stmt = connection.createStatement();
+                 var rs = stmt.executeQuery("SELECT BANNER FROM V$VERSION WHERE BANNER LIKE 'Oracle%' AND ROWNUM <= 1")) {
+                if (rs.next()) {
+                    String banner = rs.getString(1);
+                    return banner != null && banner.toUpperCase().contains("ENTERPRISE");
+                }
+            }
+            return false;
         }
         if (productName.contains("microsoft")) {
             try (var stmt = connection.createStatement();
@@ -216,9 +226,10 @@ public class DatabaseIndexChecker implements Runnable {
                     if (info.invalid && isPostgres) {
                         // On PostgreSQL, CREATE INDEX CONCURRENTLY can leave an invalid index if it fails mid-build (e.g. timeout, deadlock, or crash).
                         // The invalid index occupies the name but doesn't serve queries, so it must be dropped before the index can be recreated.
-                        logger.infov("Dropping invalid index {0} before recreating", info.indexName);
+                        String qualifiedIndex = qualifyPostgresIdentifier(info.indexName);
+                        logger.infov("Dropping invalid index {0} before recreating", qualifiedIndex);
                         try (var stmt = connection.createStatement()) {
-                            stmt.execute("DROP INDEX CONCURRENTLY IF EXISTS " + info.indexName);
+                            stmt.execute("DROP INDEX CONCURRENTLY IF EXISTS " + qualifiedIndex);
                         }
                     }
                     String sql = addOnlineSyntax(info.sql, isPostgres, isOracle, isMssql);
@@ -258,6 +269,15 @@ public class DatabaseIndexChecker implements Runnable {
             return sql + " WITH (ONLINE = ON)";
         }
         return sql;
+    }
+
+    private String qualifyPostgresIdentifier(String identifier) {
+        // PostgreSQL folds unquoted identifiers to lowercase
+        String quoted = "\"" + identifier.toLowerCase().replace("\"", "\"\"") + "\"";
+        if (dbSchema != null) {
+            return "\"" + dbSchema.replace("\"", "\"\"") + "\"." + quoted;
+        }
+        return quoted;
     }
 
     private static void logMissingIndex(IndexInfo info) {

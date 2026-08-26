@@ -131,9 +131,19 @@ public class DatabaseIndexCheckerTest {
     private static boolean supportsOnlineIndexCreation(JpaConnectionProviderFactory factory) {
         try (Connection connection = factory.getConnection()) {
             String productName = connection.getMetaData().getDatabaseProductName().toLowerCase();
-            if (productName.contains("postgres") || productName.contains("oracle")
+            if (productName.contains("postgres")
                     || productName.contains("mysql") || productName.contains("mariadb")) {
                 return true;
+            }
+            if (productName.contains("oracle")) {
+                try (Statement stmt = connection.createStatement();
+                     var rs = stmt.executeQuery("SELECT BANNER FROM V$VERSION WHERE BANNER LIKE 'Oracle%' AND ROWNUM <= 1")) {
+                    if (rs.next()) {
+                        String banner = rs.getString(1);
+                        return banner != null && banner.toUpperCase().contains("ENTERPRISE");
+                    }
+                }
+                return false;
             }
             if (productName.contains("microsoft")) {
                 try (Statement stmt = connection.createStatement();
