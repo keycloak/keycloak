@@ -104,7 +104,7 @@ When {project_name} skips creating an index during schema migration because the 
 
 On PostgreSQL, if an invalid index exists from a previously failed `CREATE INDEX CONCURRENTLY`, {project_name} detects it, drops it, and recreates it automatically.
 
-On databases that do not support non-blocking index creation, or when the migration strategy is set to `manual`, {project_name} continues to log the SQL statement for manual execution without creating the index automatically.
+On databases that do not support non-blocking index creation, or when the migration strategy is set to `manual` or `validate`, {project_name} continues to log the SQL statement for manual execution without creating the index automatically.
 
 === Certificate Common Name truncated to 64 characters
 

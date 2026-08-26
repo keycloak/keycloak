@@ -115,15 +115,19 @@ public class DatabaseIndexChecker implements Runnable {
             try (var session = factory.create()) {
                 var clusterProvider = session.getProvider(ClusterProvider.class);
                 clusterProvider.executeIfNotExecuted(TASK_KEY, migrationTimeoutSeconds, () -> {
+                    var currentMissing = getMissingIndexes();
+                    if (currentMissing.isEmpty()) {
+                        return null;
+                    }
                     try (var connection = connectionSupplier.get()) {
                         if (supportsOnlineIndexCreation(connection)) {
-                            createIndexes(connection, missing);
+                            createIndexes(connection, currentMissing);
                             return null;
                         }
                     } catch (SQLException e) {
                         logger.warn("Unable to automatically create missing indexes, logging them for manual creation instead", e);
                     }
-                    for (var info : missing) {
+                    for (var info : currentMissing) {
                         logMissingIndex(info);
                     }
                     return null;
