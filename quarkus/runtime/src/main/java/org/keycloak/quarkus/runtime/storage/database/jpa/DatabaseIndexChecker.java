@@ -218,7 +218,7 @@ public class DatabaseIndexChecker implements Runnable {
                         // The invalid index occupies the name but doesn't serve queries, so it must be dropped before the index can be recreated.
                         logger.infov("Dropping invalid index {0} before recreating", info.indexName);
                         try (var stmt = connection.createStatement()) {
-                            stmt.execute("DROP INDEX IF EXISTS " + info.indexName);
+stmt.execute("DROP INDEX CONCURRENTLY IF EXISTS " + info.indexName);
                         }
                     }
                     String sql = addOnlineSyntax(info.sql, isPostgres, isOracle, isMssql);
