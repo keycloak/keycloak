@@ -198,7 +198,7 @@ public class UserInfoEndpoint {
             if (algorithm == null) {
                 throw new VerificationException("Missing token algorithm");
             }
-            SignatureVerifierContext verifierContext = CryptoUtils.getSignatureProvider(session, algorithm.name()).verifier(header.getKeyId());
+            SignatureVerifierContext verifierContext = CryptoUtils.getSignatureProvider(session, algorithm.getName()).verifier(header.getKeyId());
             verifier.verifierContext(verifierContext);
 
             token = verifier.verify().getToken();
