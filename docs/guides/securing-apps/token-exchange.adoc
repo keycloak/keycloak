@@ -354,7 +354,7 @@ bin/kc.[sh|bat] start --features=token-exchange-delegation,parameterized-scopes
 
 Admin delegation allows a user (subject) to delegate their token to an administrator (actor). The client requests the `delegation:user` scope with the administrator's identifier as a parameter using the https://datatracker.ietf.org/doc/html/rfc9396[parameterized scopes] syntax.
 
-When the feature is enabled, a `delegation:user` client scope is automatically created in new realms. Clients that want to use delegation must add the `delegation:user` scope to their optional client scopes in the Admin Console.
+When the feature is enabled, the `delegation:user` client scope is automatically created in all realms (new and existing) as an *Optional* client scope, making it available to all clients by default. Delegation also requires <<Granting delegation permission,granting delegation permission>>. Without a matching permission granting the `delegate` scope, the delegation scope is silently dropped from the token.
 
 ==== Granting delegation permission
 

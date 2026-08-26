@@ -454,8 +454,6 @@ public class ClientAgentDelegationTest {
         public ClientBuilder configure(ClientBuilder client) {
             return super.configure(client)
                     .clientId(SUBJECT_CLIENT_ID).publicClient(true)
-                    .defaultClientScopes("acr", "basic", "email", "profile")
-                    .optionalClientScopes(OIDCLoginProtocolFactory.CLIENT_DELEGATION_SCOPE)
                     .consentRequired(true)
                     .fullScopeEnabled(false);
         }
