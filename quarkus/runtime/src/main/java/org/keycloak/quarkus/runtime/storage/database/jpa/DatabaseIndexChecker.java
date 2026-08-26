@@ -239,8 +239,14 @@ public class DatabaseIndexChecker implements Runnable {
                     }
                     logger.infov("Successfully created index {0}", info.indexName);
                 } catch (SQLException e) {
-                    logger.warnf("Failed to create index %s automatically: %s. Create the index manually: %s",
-                            info.indexName, e.getMessage(), info.sql);
+                    if (isPostgres) {
+                        String qualifiedIndex = qualifyPostgresIdentifier(info.indexName);
+                        logger.warnf("Failed to create index %s automatically: %s. Drop and recreate the index manually: DROP INDEX CONCURRENTLY IF EXISTS %s; %s",
+                                info.indexName, e.getMessage(), qualifiedIndex, addOnlineSyntax(info.sql, true, false, false));
+                    } else {
+                        logger.warnf("Failed to create index %s automatically: %s. Create the index manually: %s",
+                                info.indexName, e.getMessage(), info.sql);
+                    }
                 }
             }
         } finally {
