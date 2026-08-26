@@ -228,6 +228,20 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
             snapshot.setEmail(user.getEmail());
         }
         snapshot.setEnabled(user.isEnabled());
+
+        // Group and role memberships matter because SsfSubjectInclusionResolver
+        // documents group-attribute lookups and role-based opt-ins as supported
+        // extension points: a resolver doing either would see an empty membership
+        // set for a purged user and silently reach a different verdict than it does
+        // for a live one. AbstractInMemoryUserAdapter stores only the ids and
+        // resolves them back through the realm on read, so — exactly like the
+        // organization aliases above — nothing about the groups or roles themselves
+        // is copied, and they outlive the user. The membership rows are deleted by
+        // JpaUserProvider.removeUser, which runs after this hook, so they are still
+        // readable here.
+        user.getGroupsStream().forEach(snapshot::joinGroup);
+        user.getRoleMappingsStream().forEach(snapshot::grantRole);
+
         snapshot.setReadonly(true);
 
         session.setAttribute(sessionAttributeKey(user.getId()), snapshot);
