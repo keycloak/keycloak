@@ -260,6 +260,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
         String code = null;
         if (responseType.hasResponseType(OIDCResponseType.CODE)) {
             OAuth2Code codeData = new OAuth2Code(SecretGenerator.getInstance().generateSecureID(),
+                authSession.getClient().getId(),
                 Time.currentTime() + userSession.getRealm().getAccessCodeLifespan(),
                 nonce,
                 authSession.getClientNote(OAuth2Constants.SCOPE),
