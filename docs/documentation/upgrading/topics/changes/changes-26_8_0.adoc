@@ -57,6 +57,10 @@ If you enabled it explicitly in a previous release, the `--features=http-optimiz
 
 If needed, you can disable it with `--features-disabled=http-optimized-serializers`.
 
+=== `show-config` will mask all SPI option values
+
+The `show-config` command will mask all SPI option values. The command is not currently aware of provider factory configuration property metadata, so it cannot determine if a property is marked as `isSecret`.
+
 === Redesigned identity provider buttons on the login page
 
 The social identity provider section on the login page has been redesigned with updated icons and layout.
