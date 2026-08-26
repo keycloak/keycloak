@@ -147,6 +147,7 @@ public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientProtocolMapperPath(samlClient.getId(), createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         rep.getConfig().put("role", "account.manage-account");
+        rep.setName("saml-role-name-mapper2-updated");
         rep.setId(createdId);
         samlMappersRsc.update(createdId, rep);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientProtocolMapperPath(samlClient.getId(), createdId), rep, ResourceType.PROTOCOL_MAPPER);
@@ -166,6 +167,7 @@ public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientProtocolMapperPath(oidcClient.getId(), createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         rep.getConfig().put("role", "myotherrole");
+        rep.setName("oidc-hardcoded-role-mapper2-updated");
         rep.setId(createdId);
         oidcMappersRsc.update(createdId, rep);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientProtocolMapperPath(oidcClient.getId(), createdId), rep, ResourceType.PROTOCOL_MAPPER);

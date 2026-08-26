@@ -177,6 +177,8 @@ public class ClientScopeAdapter implements ClientScopeModel, JpaModel<ClientScop
             throw new ModelException("mapping with id " + mapping.getId() + " does not exist");
         }
         entity.setProtocolMapper(mapping.getProtocolMapper());
+        entity.setName(mapping.getName());
+        entity.setProtocol(mapping.getProtocol());
         if (entity.getConfig() == null) {
             entity.setConfig(mapping.getConfig());
         } else {
