@@ -65,6 +65,7 @@ import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.connections.httpclient.SafeInputStream;
 import org.keycloak.crl.CrlStorageProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -342,7 +343,8 @@ public class CertificateValidator {
                 get.setHeader("Pragma", "no-cache");
                 get.setHeader("Cache-Control", "no-cache, no-store");
                 try (CloseableHttpResponse response = httpClient.execute(get)) {
-                    try (InputStream content = response.getEntity().getContent()) {
+                    long maxConsumedResponseSize = session.getProvider(HttpClientProvider.class).getMaxConsumedResponseSize();
+                    try (InputStream content = new SafeInputStream(response.getEntity().getContent(), maxConsumedResponseSize)) {
                         return loadFromStream(cf, content);
                     } finally {
                         EntityUtils.consumeQuietly(response.getEntity());
