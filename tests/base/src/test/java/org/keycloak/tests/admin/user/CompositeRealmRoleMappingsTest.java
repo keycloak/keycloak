@@ -84,6 +84,7 @@ public class CompositeRealmRoleMappingsTest {
 
     private static String parentGroupId;
     private static String childGroupId;
+    private static String compositeGroupId;
 
     @TestSetup
     public void setup() {
@@ -121,6 +122,12 @@ public class CompositeRealmRoleMappingsTest {
         try (Response r = realm.groups().group(parentGroupId).subGroup(childGroup)) {
             childGroupId = ApiUtil.getCreatedId(r);
         }
+
+        try (Response r = realm.groups().add(GroupBuilder.create().name("COMPOSITE_GROUP").build())) {
+            compositeGroupId = ApiUtil.getCreatedId(r);
+        }
+        realm.groups().group(compositeGroupId).roles().realmLevel().add(
+                Collections.singletonList(realm.roles().get("ROLE_NESTED_COMPOSITE").toRepresentation()));
 
         realm.groups().group(parentGroupId).roles().realmLevel().add(
                 Collections.singletonList(realm.roles().get("ROLE_GROUP_ONLY").toRepresentation()));
@@ -290,5 +297,47 @@ public class CompositeRealmRoleMappingsTest {
                 .stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
 
         assertThat("Brief and full representations should return the same roles", briefNames, is(fullNames));
+    }
+    // --- Group endpoint: child group inherits role from parent group directly (not via a user) ---
+    // Exercises the GroupModel branch of RoleMapperResource.getCompositeRealmRoleMappings(),
+    // which must walk the parent-group chain explicitly since
+    // RoleUtils.getDeepRoleMappings() does not do so for GroupModel.
+
+    @Test
+    public void testChildGroupEffectiveRealmRolesIncludesParentGroupRole() {
+        List<RoleRepresentation> effective = managedRealm.admin().groups().group(childGroupId)
+                .roles().realmLevel().listEffective();
+        Set<String> roleNames = effective.stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
+
+        assertThat("Child group should inherit realm roles assigned directly to its parent group",
+                roleNames, containsInAnyOrder("ROLE_GROUP_ONLY"));
+        assertThat(effective, hasSize(1));
+    }
+
+    // --- Group endpoint: parent group's own direct role is returned ---
+
+    @Test
+    public void testParentGroupEffectiveRealmRoles() {
+        List<RoleRepresentation> effective = managedRealm.admin().groups().group(parentGroupId)
+                .roles().realmLevel().listEffective();
+        Set<String> roleNames = effective.stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
+
+        assertThat(roleNames, containsInAnyOrder("ROLE_GROUP_ONLY"));
+        assertThat(effective, hasSize(1));
+    }
+
+    // --- Group endpoint: composite role assigned directly to a group expands correctly ---
+    // Verifies RoleUtils.expandCompositeRoles() is still applied for the GroupModel
+    // branch after the parent-chain fix, not just for UserModel.
+
+    @Test
+    public void testGroupCompositeRoleExpandsCorrectly() {
+        List<RoleRepresentation> effective = managedRealm.admin().groups().group(compositeGroupId)
+                .roles().realmLevel().listEffective();
+        Set<String> roleNames = effective.stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
+
+        assertThat(roleNames, containsInAnyOrder(
+                "ROLE_NESTED_COMPOSITE", "ROLE_COMPOSITE", "LEAF_1", "LEAF_2", "LEAF_3", "LEAF_WITH_ATTRS"));
+        assertThat(effective, hasSize(6));
     }
 }
