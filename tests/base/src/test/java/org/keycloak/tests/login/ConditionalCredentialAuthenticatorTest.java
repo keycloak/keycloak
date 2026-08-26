@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.login;
+package org.keycloak.tests.login;
 
 
 import java.util.Arrays;
@@ -33,44 +33,46 @@ import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.annotations.InjectEvents;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.auth.page.login.OneTimeCode;
-import org.keycloak.testsuite.pages.LoginTotpPage;
+import org.keycloak.testframework.events.Events;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.page.LoginTotpPage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Rule;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  *
  * @author rmartinc
  */
-public class ConditionalCredentialAuthenticatorTest extends AbstractTestRealmKeycloakTest {
+@KeycloakIntegrationTest
+public class ConditionalCredentialAuthenticatorTest {
 
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
+    @InjectRealm(config = ConditionalCredentialAuthenticatorRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    ManagedRealm managedRealm;
 
-    @Page
+    @InjectOAuthClient
+    OAuthClient oauth;
+
+    @InjectEvents
+    Events events;
+
+    @InjectPage
     protected LoginTotpPage loginTotpPage;
 
-    @Page
-    protected OneTimeCode oneTimeCodePage;
-
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-        // setup normal otp policy but with reusable tokens
-        testRealm.setOtpPolicyAlgorithm("HmacSHA1");
-        testRealm.setOtpPolicyDigits(6);
-        testRealm.setOtpPolicyInitialCounter(0);
-        testRealm.setOtpPolicyLookAheadWindow(1);
-        testRealm.setOtpPolicyPeriod(30);
-        testRealm.setOtpPolicyType("totp");
-        testRealm.setOtpPolicyCodeReusable(Boolean.TRUE);
-    }
+    private static final String USERNAME = "user-with-one-configured-otp";
+    private static final String PASSWORD = "password";
 
     @Test
     public void testPasswordIncluded() {
@@ -78,12 +80,12 @@ public class ConditionalCredentialAuthenticatorTest extends AbstractTestRealmKey
 
         // login with username password
         oauth.openLoginForm();
-        oauth.fillLoginForm("user-with-one-configured-otp", "password");
+        oauth.fillLoginForm(USERNAME, PASSWORD);
 
         // 2FA with otp should be displayed
         loginTotpPage.assertCurrent();
-        oneTimeCodePage.sendCode(new TimeBasedOTP().generateTOTP("DJmQfC73VGFhw7D4QJ8A"));
-        checkLoginOk("user-with-one-configured-otp");
+        loginTotpPage.login(new TimeBasedOTP().generateTOTP("DJmQfC73VGFhw7D4QJ8A"));
+        checkLoginOk();
     }
 
     @Test
@@ -92,10 +94,10 @@ public class ConditionalCredentialAuthenticatorTest extends AbstractTestRealmKey
 
         // login with username password
         oauth.openLoginForm();
-        oauth.fillLoginForm("user-with-one-configured-otp", "password");
+        oauth.fillLoginForm(USERNAME, PASSWORD);
 
         // 2FA with otp should not be displayed
-        checkLoginOk("user-with-one-configured-otp");
+        checkLoginOk();
     }
 
     @Test
@@ -104,12 +106,12 @@ public class ConditionalCredentialAuthenticatorTest extends AbstractTestRealmKey
 
         // login with username password
         oauth.openLoginForm();
-        oauth.fillLoginForm("user-with-one-configured-otp", "password");
+        oauth.fillLoginForm(USERNAME, PASSWORD);
 
         // 2FA with otp should be displayed
         loginTotpPage.assertCurrent();
-        oneTimeCodePage.sendCode(new TimeBasedOTP().generateTOTP("DJmQfC73VGFhw7D4QJ8A"));
-        checkLoginOk("user-with-one-configured-otp");
+        loginTotpPage.login(new TimeBasedOTP().generateTOTP("DJmQfC73VGFhw7D4QJ8A"));
+        checkLoginOk();
     }
 
     @Test
@@ -118,10 +120,10 @@ public class ConditionalCredentialAuthenticatorTest extends AbstractTestRealmKey
 
         // login with username password
         oauth.openLoginForm();
-        oauth.fillLoginForm("user-with-one-configured-otp", "password");
+        oauth.fillLoginForm(USERNAME, PASSWORD);
 
         // 2FA with otp should not be displayed
-        checkLoginOk("user-with-one-configured-otp");
+        checkLoginOk();
     }
 
     @Test
@@ -130,12 +132,12 @@ public class ConditionalCredentialAuthenticatorTest extends AbstractTestRealmKey
 
         // login with username password
         oauth.openLoginForm();
-        oauth.fillLoginForm("user-with-one-configured-otp", "password");
+        oauth.fillLoginForm(USERNAME, PASSWORD);
 
         // 2FA with otp should be displayed
         loginTotpPage.assertCurrent();
-        oneTimeCodePage.sendCode(new TimeBasedOTP().generateTOTP("DJmQfC73VGFhw7D4QJ8A"));
-        checkLoginOk("user-with-one-configured-otp");
+        loginTotpPage.login(new TimeBasedOTP().generateTOTP("DJmQfC73VGFhw7D4QJ8A"));
+        checkLoginOk();
     }
 
     @Test
@@ -144,10 +146,10 @@ public class ConditionalCredentialAuthenticatorTest extends AbstractTestRealmKey
 
         // login with username password
         oauth.openLoginForm();
-        oauth.fillLoginForm("user-with-one-configured-otp", "password");
+        oauth.fillLoginForm(USERNAME, PASSWORD);
 
         // 2FA with otp should not be displayed
-        checkLoginOk("user-with-one-configured-otp");
+        checkLoginOk();
     }
 
     @Test
@@ -156,12 +158,12 @@ public class ConditionalCredentialAuthenticatorTest extends AbstractTestRealmKey
 
         // login with username password
         oauth.openLoginForm();
-        oauth.fillLoginForm("user-with-one-configured-otp", "password");
+        oauth.fillLoginForm(USERNAME, PASSWORD);
 
         // 2FA with otp should be displayed
         loginTotpPage.assertCurrent();
-        oneTimeCodePage.sendCode(new TimeBasedOTP().generateTOTP("DJmQfC73VGFhw7D4QJ8A"));
-        checkLoginOk("user-with-one-configured-otp");
+        loginTotpPage.login(new TimeBasedOTP().generateTOTP("DJmQfC73VGFhw7D4QJ8A"));
+        checkLoginOk();
     }
 
     private void configureConditionalCurrentCredentialFlow(Boolean included, String... credentials) {
@@ -209,14 +211,36 @@ public class ConditionalCredentialAuthenticatorTest extends AbstractTestRealmKey
         realmRes.update(realmRep);
     }
 
-    private void checkLoginOk(String username) {
+    private void checkLoginOk() {
         String code = oauth.parseLoginResponse().getCode();
         Assertions.assertNotNull(code);
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         Assertions.assertNull(res.getError());
         Assertions.assertNotNull(res.getAccessToken());
 
-        EventAssertion.expectLoginSuccess(events.poll()).hasUserId().details(Details.USERNAME, username);
+        EventAssertion.expectLoginSuccess(events.poll()).hasUserId().details(Details.USERNAME, USERNAME);
     }
 
+
+    private static class ConditionalCredentialAuthenticatorRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            // setup normal otp policy but with reusable tokens
+            realm.otpAlgorithm("HmacSHA1")
+                    .otpDigits(6)
+                    .otpInitialCounter(0)
+                    .otpLookAheadWindow(1)
+                    .otpPeriod(30)
+                    .otpType("totp")
+                    .otpCodeReusable(Boolean.TRUE);
+            
+            return realm.users(UserBuilder.create(USERNAME)
+                    .password(PASSWORD)
+                            .name("John", "Doe")
+                    .email("otp1@redhat.com")
+                    .totpSecret("DJmQfC73VGFhw7D4QJ8A")
+            );
+        }
+    }
 }
