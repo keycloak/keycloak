@@ -45,6 +45,8 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.tests.broker.BrokerTestTools.getAuthPath;
+
 /**
  *
  * @author rmartinc
@@ -96,7 +98,7 @@ public class KcSamlMetadataSignedBrokerTest extends AbstractKcSamlMetadataBroker
             config.put(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, "true");
             config.put(SAMLIdentityProviderConfig.USE_METADATA_DESCRIPTOR_URL, "true");
             config.put(SAMLIdentityProviderConfig.METADATA_DESCRIPTOR_URL,
-                    BrokerTestTools.getProviderRoot() + "/auth/realms/" + providerRealmName() + "/protocol/saml/descriptor");
+                    BrokerTestTools.getProviderRoot() + getAuthPath() + "/realms/" + providerRealmName() + "/protocol/saml/descriptor");
 
             return result;
         }

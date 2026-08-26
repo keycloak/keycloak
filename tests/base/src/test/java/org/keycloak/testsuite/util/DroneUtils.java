@@ -20,6 +20,8 @@ package org.keycloak.testsuite.util;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -29,7 +31,8 @@ public final class DroneUtils {
     private static final Queue<WebDriver> driverQueue = new LinkedList<>();
 
     public static WebDriver getCurrentDriver() {
-        return driverQueue.peek();
+        WebDriver queuedDriver = driverQueue.peek();
+        return queuedDriver != null ? queuedDriver : ManagedWebDriver.currentDriver();
     }
 
     public static void addWebDriver(WebDriver driver) {

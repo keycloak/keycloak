@@ -32,6 +32,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
 
 import org.junit.jupiter.api.BeforeEach;
 
+import static org.keycloak.tests.broker.BrokerTestConstants.IDP_SAML_ALIAS;
 import static org.keycloak.tests.utils.admin.AdminApiUtil.createUserWithAdminClient;
 import static org.keycloak.tests.utils.admin.AdminApiUtil.resetUserPassword;
 
@@ -57,6 +58,10 @@ public abstract class AbstractInitializedBaseBrokerTest extends AbstractBaseBrok
         UserRepresentation user = new UserRepresentation();
         user.setUsername(bc.getUserLogin());
         user.setEmail(bc.getUserEmail());
+        if (IDP_SAML_ALIAS.equals(bc.getIDPAlias())) {
+            user.setFirstName("Firstname");
+            user.setLastName("Lastname");
+        }
         user.setEmailVerified(true);
         user.setEnabled(true);
         postInitializeUser(user);

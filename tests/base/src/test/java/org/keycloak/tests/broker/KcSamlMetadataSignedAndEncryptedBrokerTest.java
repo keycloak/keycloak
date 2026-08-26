@@ -59,6 +59,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 
+import static org.keycloak.tests.broker.BrokerTestTools.getAuthPath;
+
 /**
  *
  * @author rmartinc
@@ -96,7 +98,7 @@ public class KcSamlMetadataSignedAndEncryptedBrokerTest extends AbstractKcSamlMe
                 attributes.put(SamlConfigAttributes.SAML_SIGNATURE_ALGORITHM, SignatureAlgorithm.RSA_SHA256.name());
                 attributes.put(SamlConfigAttributes.SAML_USE_METADATA_DESCRIPTOR_URL, "true");
                 attributes.put(SamlConfigAttributes.SAML_METADATA_DESCRIPTOR_URL,
-                        BrokerTestTools.getProviderRoot() + "/auth/realms/" + consumerRealmName() + "/broker/" + bc.getIDPAlias() + "/endpoint/descriptor");
+                        BrokerTestTools.getProviderRoot() + getAuthPath() + "/realms/" + consumerRealmName() + "/broker/" + bc.getIDPAlias() + "/endpoint/descriptor");
             }
 
             return clientRepresentationList;

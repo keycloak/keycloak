@@ -16,9 +16,7 @@ import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
-import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 
-import org.junit.Rule;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +31,7 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
     @InjectRealm
     ManagedRealm managedRealm;
 
-    @InjectTimeOffSet
+    @InjectTimeOffSet(enableForCaches = true)
     TimeOffSet timeOffSet;
 
     @InjectRunOnServer
@@ -44,9 +42,6 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
 
     @InjectOAuthClient
     OAuthClient oauth;
-
-    @Rule
-    public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {

@@ -56,7 +56,7 @@ public class OidcBackchannelLogoutBrokerConfiguration implements NestedBrokerCon
         RealmRepresentation realm = new RealmRepresentation();
         realm.setRealm(REALM_PROV_NAME);
         realm.setEnabled(true);
-        realm.setEventsListeners(Arrays.asList("jboss-logging", "event-queue"));
+        realm.setEventsListeners(Collections.singletonList("jboss-logging"));
         realm.setEventsEnabled(true);
 
         return realm;
@@ -68,7 +68,7 @@ public class OidcBackchannelLogoutBrokerConfiguration implements NestedBrokerCon
         realm.setRealm(REALM_CONS_NAME);
         realm.setEnabled(true);
         realm.setResetPasswordAllowed(true);
-        realm.setEventsListeners(Arrays.asList("jboss-logging", "event-queue"));
+        realm.setEventsListeners(Collections.singletonList("jboss-logging"));
         realm.setEventsEnabled(true);
 
         return realm;
@@ -278,7 +278,7 @@ public class OidcBackchannelLogoutBrokerConfiguration implements NestedBrokerCon
         realm.setRealm(REALM_SUB_CONS_NAME);
         realm.setEnabled(true);
         realm.setResetPasswordAllowed(true);
-        realm.setEventsListeners(Arrays.asList("jboss-logging", "event-queue"));
+        realm.setEventsListeners(Collections.singletonList("jboss-logging"));
         realm.setEventsEnabled(true);
 
         return realm;

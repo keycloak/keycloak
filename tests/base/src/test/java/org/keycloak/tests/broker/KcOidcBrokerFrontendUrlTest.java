@@ -18,9 +18,8 @@ import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.ReverseProxy;
 
-import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.tests.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
@@ -41,7 +40,6 @@ public final class KcOidcBrokerFrontendUrlTest extends AbstractBrokerTest {
     @InjectOAuthClient
     OAuthClient oauth;
 
-    @Rule
     public ReverseProxy proxy = new ReverseProxy();
 
     @Override
@@ -99,7 +97,7 @@ public final class KcOidcBrokerFrontendUrlTest extends AbstractBrokerTest {
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
-    @Ignore
+    @Disabled
     @Test
     @Override
     public void loginWithExistingUser() {

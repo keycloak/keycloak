@@ -16,9 +16,11 @@
  */
 package org.keycloak.tests.broker;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
@@ -52,9 +54,9 @@ import org.keycloak.tests.providers.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.AccountHelper;
 
-import org.junit.Ignore;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
@@ -113,6 +115,8 @@ public class AccountLinkTest {
             return;
         }
 
+        ensureTestRealmsImported();
+
         // addIdpUser
         RealmResource realmParent = adminClient.realms().realm(PARENT_IDP);
         UserRepresentation user = new UserRepresentation();
@@ -142,6 +146,19 @@ public class AccountLinkTest {
         testContext.setInitialized(true);
     }
 
+    private void ensureTestRealmsImported() {
+        List<RealmRepresentation> realms = new ArrayList<>();
+        addTestRealms(realms);
+
+        for (RealmRepresentation realmRepresentation : realms) {
+            try {
+                adminClient.realm(realmRepresentation.getRealm()).remove();
+            } catch (NotFoundException ignored) {
+            }
+            adminClient.realms().create(realmRepresentation);
+        }
+    }
+
 
     public void createParentChild() {
         BrokerTestTools.createKcOidcBroker(adminClient, CHILD_IDP, PARENT_IDP);
@@ -153,9 +170,6 @@ public class AccountLinkTest {
             if (managedRealm != null && managedRealm.getBaseUrl() != null) {
                 int realmsIndex = managedRealm.getBaseUrl().indexOf("/realms/");
                 serverUrl = realmsIndex > 0 ? managedRealm.getBaseUrl().substring(0, realmsIndex) : managedRealm.getBaseUrl();
-                if (serverUrl.endsWith("/auth")) {
-                    serverUrl = serverUrl.substring(0, serverUrl.length() - "/auth".length());
-                }
             } else if (OAuthClient.SERVER_ROOT != null && !OAuthClient.SERVER_ROOT.isBlank()) {
                 serverUrl = OAuthClient.SERVER_ROOT.replaceAll("/+$", "");
             } else {
@@ -174,7 +188,7 @@ public class AccountLinkTest {
     }
 
     @Test
-    @Ignore // Ignore should be removed by https://github.com/keycloak/keycloak/issues/20441
+    @Disabled("Blocked by issue 20441")
     public void testAccountLinkWithUserStorageProvider() {
 
         String childUsername = PassThroughFederatedUserStorageProvider.PASSTHROUGH_USERNAME;

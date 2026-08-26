@@ -286,7 +286,11 @@ public class LoginUpdateProfilePage extends AbstractLoginPage {
                 }
             }
 
-            page.submitButton.submit();
+            try {
+                page.submitButton.click();
+            } catch (RuntimeException e) {
+                page.submitButton.submit();
+            }
         }
     }
 

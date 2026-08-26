@@ -48,6 +48,7 @@ import static org.keycloak.tests.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.tests.broker.BrokerTestConstants.USER_LOGIN;
 import static org.keycloak.tests.broker.BrokerTestConstants.USER_PASSWORD;
 import static org.keycloak.tests.broker.BrokerTestTools.createIdentityProvider;
+import static org.keycloak.tests.broker.BrokerTestTools.getAuthPath;
 import static org.keycloak.tests.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.tests.broker.BrokerTestTools.getProviderRoot;
 
@@ -72,7 +73,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
         realm.setEnabled(true);
         realm.setRealm(REALM_PROV_NAME);
-        realm.setEventsListeners(Arrays.asList("jboss-logging", "event-queue"));
+        realm.setEventsListeners(Collections.singletonList("jboss-logging"));
 
         return realm;
     }
@@ -84,7 +85,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         realm.setEnabled(true);
         realm.setRealm(REALM_CONS_NAME);
         realm.setResetPasswordAllowed(true);
-        realm.setEventsListeners(Arrays.asList("jboss-logging", "event-queue"));
+        realm.setEventsListeners(Collections.singletonList("jboss-logging"));
 
         return realm;
     }
@@ -97,21 +98,22 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
     private ClientRepresentation createProviderClient(String clientId) {
         ClientRepresentation client = new ClientRepresentation();
+        String authPath = getAuthPath();
 
         client.setClientId(clientId);
         client.setEnabled(true);
         client.setProtocol(IDP_SAML_PROVIDER_ID);
         client.setRedirectUris(Collections.singletonList(
-                getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_SAML_ALIAS + "/endpoint"
+                getConsumerRoot() + authPath + "/realms/" + REALM_CONS_NAME + "/broker/" + IDP_SAML_ALIAS + "/endpoint"
         ));
 
         Map<String, String> attributes = new HashMap<>();
 
         attributes.put(SamlConfigAttributes.SAML_AUTHNSTATEMENT, "true");
         attributes.put(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE,
-                getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_SAML_ALIAS + "/endpoint");
+                getConsumerRoot() + authPath + "/realms/" + REALM_CONS_NAME + "/broker/" + IDP_SAML_ALIAS + "/endpoint");
         attributes.put(SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE,
-                getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_SAML_ALIAS + "/endpoint");
+                getConsumerRoot() + authPath + "/realms/" + REALM_CONS_NAME + "/broker/" + IDP_SAML_ALIAS + "/endpoint");
         attributes.put(SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE, "true");
         attributes.put(SamlConfigAttributes.SAML_NAME_ID_FORMAT_ATTRIBUTE, "username");
         attributes.put(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, "false");
@@ -193,6 +195,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
     @Override
     public List<ClientRepresentation> createConsumerClients() {
+        String authPath = getAuthPath();
         return Arrays.asList(
           ClientBuilder.create()
             .clientId(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST)
@@ -222,8 +225,8 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
             .secret("broker-app-secret")
             .enabled(true)
             .directAccessGrantsEnabled()
-            .redirectUris(getConsumerRoot() + "/auth/*")
-            .baseUrl(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app")
+            .redirectUris(getConsumerRoot() + authPath + "/*")
+            .baseUrl(getConsumerRoot() + authPath + "/realms/" + REALM_CONS_NAME + "/app")
             .build()
         );
     }
@@ -231,6 +234,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
     @Override
     public IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode syncMode) {
         IdentityProviderRepresentation idp = createIdentityProvider(IDP_SAML_ALIAS, IDP_SAML_PROVIDER_ID);
+        String authPath = getAuthPath();
 
         idp.setTrustEmail(true);
         idp.setAddReadTokenRoleOnCreate(true);
@@ -239,9 +243,9 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         Map<String, String> config = idp.getConfig();
 
         config.put(IdentityProviderModel.SYNC_MODE, syncMode.toString());
-        config.put(SINGLE_SIGN_ON_SERVICE_URL, getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/saml");
-        config.put(ARTIFACT_RESOLUTION_SERVICE_URL, getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/saml");
-        config.put(SINGLE_LOGOUT_SERVICE_URL, getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/saml");
+        config.put(SINGLE_SIGN_ON_SERVICE_URL, getProviderRoot() + authPath + "/realms/" + REALM_PROV_NAME + "/protocol/saml");
+        config.put(ARTIFACT_RESOLUTION_SERVICE_URL, getProviderRoot() + authPath + "/realms/" + REALM_PROV_NAME + "/protocol/saml");
+        config.put(SINGLE_LOGOUT_SERVICE_URL, getProviderRoot() + authPath + "/realms/" + REALM_PROV_NAME + "/protocol/saml");
         config.put(NAME_ID_POLICY_FORMAT, "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress");
         config.put(FORCE_AUTHN, "false");
         config.put(IdentityProviderModel.LOGIN_HINT, String.valueOf(loginHint));
@@ -267,7 +271,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
     @Override
     public String getIDPClientIdInProviderRealm() {
-        return getConsumerRoot() + "/auth/realms/" + consumerRealmName();
+        return getConsumerRoot() + getAuthPath() + "/realms/" + consumerRealmName();
     }
 
     @Override

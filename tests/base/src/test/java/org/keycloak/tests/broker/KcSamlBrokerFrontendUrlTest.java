@@ -19,14 +19,13 @@ import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
-import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
-import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
@@ -41,9 +40,8 @@ import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.TrustAllStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.ssl.SSLContextBuilder;
-import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.tests.broker.BrokerTestConstants.IDP_SAML_ALIAS;
@@ -51,6 +49,7 @@ import static org.keycloak.tests.broker.BrokerTestConstants.REALM_CONS_NAME;
 import static org.keycloak.tests.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.tests.broker.BrokerTestConstants.USER_LOGIN;
 import static org.keycloak.tests.broker.BrokerTestConstants.USER_PASSWORD;
+import static org.keycloak.tests.broker.BrokerTestTools.getAuthPath;
 import static org.keycloak.tests.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
 
@@ -70,11 +69,7 @@ public final class KcSamlBrokerFrontendUrlTest extends AbstractBrokerTest {
     @InjectOAuthClient
     OAuthClient oauth;
 
-    @Rule
     public ReverseProxy proxy = new ReverseProxy();
-
-    @InjectEvents
-    Events events;
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
@@ -221,7 +216,7 @@ public final class KcSamlBrokerFrontendUrlTest extends AbstractBrokerTest {
 
                     assertThat(response.getDestination(), startsWith(proxy.getUrl()));
 
-                    response.setDestination(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_SAML_ALIAS + "/endpoint");
+                    response.setDestination(getConsumerRoot() + getAuthPath() + "/realms/" + REALM_CONS_NAME + "/broker/" + IDP_SAML_ALIAS + "/endpoint");
                     return saml2Object;
                 })
                 .build()
@@ -229,18 +224,21 @@ public final class KcSamlBrokerFrontendUrlTest extends AbstractBrokerTest {
                 // Obtain the response sent to the app
                 .execute(response -> {
                     assertThat(response, Matchers.statusCodeIsHC(Response.Status.BAD_REQUEST));
-                    String consumerRealmId = realmsResouce().realm(bc.consumerRealmName()).toRepresentation().getId();
-                    EventAssertion.assertError(events.poll()).type(EventType.IDENTITY_PROVIDER_RESPONSE_ERROR)
+                    List<EventRepresentation> consumerEvents = realmsResouce().realm(bc.consumerRealmName())
+                            .getEvents(null, null, null, null, null, null, null, null, "asc");
+                    Assertions.assertFalse(consumerEvents.isEmpty(), "Expected at least one consumer realm event");
+                    EventAssertion.assertError(consumerEvents.get(0)).type(EventType.IDENTITY_PROVIDER_RESPONSE_ERROR)
                             .sessionId(null)
                             .userId(null)
                             .clientId(null)
                             .error(Errors.INVALID_SAML_RESPONSE)
                             .details("reason", Errors.INVALID_DESTINATION);
-                    Assertions.assertNull(events.poll());
+                    Assertions.assertEquals(1, consumerEvents.size());
+                    realmsResouce().realm(bc.consumerRealmName()).clearEvents();
                 });
     }
 
-    @Ignore
+    @Disabled
     @Test
     @Override
     public void loginWithExistingUser() {

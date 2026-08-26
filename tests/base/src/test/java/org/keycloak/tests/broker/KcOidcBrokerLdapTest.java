@@ -36,10 +36,13 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.util.LDAPRule;
 
-import org.junit.ClassRule;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
 
 @KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public final class KcOidcBrokerLdapTest extends AbstractInitializedBaseBrokerTest {
@@ -55,8 +58,22 @@ public final class KcOidcBrokerLdapTest extends AbstractInitializedBaseBrokerTes
         return KcOidcBrokerConfiguration.INSTANCE;
     }
 
-    @ClassRule
-    public static LDAPRule ldapRule = new LDAPRule();
+    public static final LDAPRule ldapRule = new LDAPRule();
+
+    @BeforeAll
+    public static void startLdapRule() throws Throwable {
+        ldapRule.apply(new Statement() {
+            @Override
+            public void evaluate() {
+            }
+        }, Description.createSuiteDescription(KcOidcBrokerLdapTest.class));
+        ldapRule.before();
+    }
+
+    @AfterAll
+    public static void stopLdapRule() {
+        ldapRule.after();
+    }
 
     @BeforeEach
     public void onBefore() {

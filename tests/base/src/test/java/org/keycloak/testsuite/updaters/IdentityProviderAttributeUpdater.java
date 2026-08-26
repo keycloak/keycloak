@@ -18,6 +18,7 @@ public class IdentityProviderAttributeUpdater {
     private final IdentityProviderResource identityProviderResource;
 
     private final IdentityProviderRepresentation rep;
+    private Boolean originalStoreToken;
 
     public IdentityProviderAttributeUpdater(IdentityProviderResource identityProviderResource) {
         this.identityProviderResource = identityProviderResource;
@@ -46,6 +47,9 @@ public class IdentityProviderAttributeUpdater {
     }
 
     public IdentityProviderAttributeUpdater setStoreToken(boolean storeToken) {
+        if (originalStoreToken == null) {
+            originalStoreToken = rep.isStoreToken();
+        }
         rep.setStoreToken(storeToken);
         return this;
     }
@@ -55,6 +59,9 @@ public class IdentityProviderAttributeUpdater {
 
         return () -> {
             rep.getConfig().putAll(originalAttributes);
+            if (originalStoreToken != null) {
+                rep.setStoreToken(originalStoreToken);
+            }
             identityProviderResource.update(rep);
         };
     }

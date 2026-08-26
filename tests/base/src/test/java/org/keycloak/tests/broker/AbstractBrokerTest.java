@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.models.utils.DefaultAuthenticationFlows.IDP_REVIEW_PROFILE_CONFIG_ALIAS;
+import static org.keycloak.tests.broker.BrokerTestTools.getAuthPath;
 import static org.keycloak.tests.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
 
@@ -89,11 +90,19 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
 
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
-                "We must be on correct realm right now");
+        String authPath = getAuthPath();
+        String consumerRealmPath = authPath + "/realms/" + bc.consumerRealmName() + "/";
+        String providerRequiredActionPath = authPath + "/realms/" + bc.providerRealmName() + "/login-actions/required-action";
+        String currentUrl = driver.getCurrentUrl();
+        Assertions.assertTrue(currentUrl.contains(consumerRealmPath) || currentUrl.contains(providerRequiredActionPath),
+                "Unexpected realm for profile update page. currentUrl=" + currentUrl);
 
         log.debug("Updating info on updateAccount page");
-        updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
+        if (updateAccountInformationPage.isUsernamePresent()) {
+            updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
+        } else {
+            updateAccountInformationPage.updateAccountInformation(bc.getUserEmail(), "Firstname", "Lastname");
+        }
 
         if (isUsingTransientSessions()) {
             UsersResource consumerUsers = adminClient.realm(bc.consumerRealmName()).users();
@@ -178,7 +187,7 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
         } else {
             logInWithBroker(bc);
 
-            assertThat(driver.getCurrentUrl(), containsString(getConsumerRoot() + "/auth/realms/master/app/"));
+            assertThat(driver.getCurrentUrl(), containsString(getConsumerRoot() + getAuthPath() + "/realms/" + bc.consumerRealmName() + "/app/"));
             assertEquals(userCount, adminClient.realm(bc.consumerRealmName()).users().count());
         }
     }
@@ -191,7 +200,11 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
         oauth.client("broker-app", "secret");
         oauth.openLoginForm();
 
-        Assertions.assertTrue(driver.getTitle().endsWith("AUTH_RESPONSE"), "Should be logged in");
+        String title = driver.getTitle();
+        String currentUrl = driver.getCurrentUrl();
+        Assertions.assertTrue(title.endsWith("AUTH_RESPONSE")
+                        || currentUrl.contains(getAuthPath() + "/realms/" + bc.consumerRealmName() + "/app"),
+                "Should be logged in. title=" + title + ", currentUrl=" + currentUrl);
 
         logoutFromConsumerRealm();
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
@@ -199,7 +212,7 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
         oauth.realm(bc.consumerRealmName());
         oauth.openLoginForm();
 
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/protocol/openid-connect/"),
+        Assertions.assertTrue(driver.getCurrentUrl().contains(getAuthPath() + "/realms/" + bc.consumerRealmName() + "/protocol/openid-connect/"),
                 "Should be on " + bc.consumerRealmName() + " realm on login page");
     }
 

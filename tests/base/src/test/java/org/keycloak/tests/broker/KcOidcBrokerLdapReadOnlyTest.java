@@ -31,10 +31,13 @@ import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
-import org.junit.ClassRule;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
 
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentationWithoutConfig;
 
@@ -52,8 +55,22 @@ public final class KcOidcBrokerLdapReadOnlyTest extends AbstractInitializedBaseB
     @InjectOAuthClient
     OAuthClient oauth;
 
-    @ClassRule
-    public static LDAPRule ldapRule = new LDAPRule();
+    public static final LDAPRule ldapRule = new LDAPRule();
+
+    @BeforeAll
+    public static void startLdapRule() throws Throwable {
+        ldapRule.apply(new Statement() {
+            @Override
+            public void evaluate() {
+            }
+        }, Description.createSuiteDescription(KcOidcBrokerLdapReadOnlyTest.class));
+        ldapRule.before();
+    }
+
+    @AfterAll
+    public static void stopLdapRule() {
+        ldapRule.after();
+    }
 
     @InjectPage
     private IdpConfirmLinkPage confirmLinkPage;

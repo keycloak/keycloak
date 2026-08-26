@@ -61,14 +61,15 @@ import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import static org.keycloak.tests.broker.BrokerTestTools.getAuthPath;
 import static org.keycloak.tests.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.tests.broker.BrokerTestTools.getProviderRoot;
 import static org.keycloak.testsuite.util.Matchers.bodyHC;
 import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 import static org.keycloak.testsuite.util.SamlStreams.assertionsUnencrypted;
 import static org.keycloak.testsuite.util.SamlStreams.attributeStatements;
 import static org.keycloak.testsuite.util.SamlStreams.attributesUnecrypted;
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST2;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
@@ -394,8 +395,9 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
     @Test
     public void loginWithIdpEntityIdCorrect() throws Exception {
       // Set the expected IDP Entity ID to the correct value
+      String expectedIdpEntityId = getProviderRoot() + getAuthPath() + "/realms/" + bc.providerRealmName();
       try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
-          .setAttribute(SAMLIdentityProviderConfig.IDP_ENTITY_ID, "https://" + AUTH_SERVER_HOST2 + ":8543/auth/realms/provider")
+          .setAttribute(SAMLIdentityProviderConfig.IDP_ENTITY_ID, expectedIdpEntityId)
           .update())
       {
         AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted", getConsumerRoot() + "/sales-post/saml", null);

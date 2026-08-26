@@ -6,6 +6,7 @@ import java.io.IOException;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -19,6 +20,8 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.keycloak.tests.broker.BrokerTestTools.getAuthPath;
 
 @KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public final class KcSamlBrokerArtifactBindingTest extends AbstractInitializedBaseBrokerTest {
@@ -34,11 +37,17 @@ public final class KcSamlBrokerArtifactBindingTest extends AbstractInitializedBa
         return KcSamlBrokerConfiguration.INSTANCE;
     }
 
+    @Override
+    protected void postInitializeUser(UserRepresentation user) {
+        user.setFirstName("Firstname");
+        user.setLastName("Lastname");
+    }
+
     @Test
     public void testLoginNoSignatures() throws Exception {
         try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
                 .setAttribute(SAMLIdentityProviderConfig.ARTIFACT_RESOLUTION_SERVICE_URL,
-                        BrokerTestTools.getProviderRoot() + "/auth/realms/" + bc.providerRealmName() + "/protocol/saml/resolve")
+                        BrokerTestTools.getProviderRoot() + getAuthPath() + "/realms/" + bc.providerRealmName() + "/protocol/saml/resolve")
                 .setAttribute(SAMLIdentityProviderConfig.ARTIFACT_BINDING_RESPONSE, Boolean.TRUE.toString())
                 .update();
             Closeable clientUpdater = ClientAttributeUpdater.forClient(adminClient, bc.providerRealmName(), bc.getIDPClientIdInProviderRealm())
@@ -142,14 +151,14 @@ public final class KcSamlBrokerArtifactBindingTest extends AbstractInitializedBa
 
         try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
                 .setAttribute(SAMLIdentityProviderConfig.ARTIFACT_RESOLUTION_SERVICE_URL,
-                        BrokerTestTools.getProviderRoot() + "/auth/realms/" + bc.providerRealmName() + "/protocol/saml/resolve")
+                        BrokerTestTools.getProviderRoot() + getAuthPath() + "/realms/" + bc.providerRealmName() + "/protocol/saml/resolve")
                 .setAttribute(SAMLIdentityProviderConfig.ARTIFACT_BINDING_RESPONSE, Boolean.TRUE.toString())
                 .setAttribute(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, Boolean.TRUE.toString()) // always sign requests
                 .setAttribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.TRUE.toString()) // always validate signatures
                 .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, Boolean.toString(consumerWantsAssertionSigned))
                 .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_ENCRYPTED, Boolean.toString(consumerWantsAssertionEncrypted))
                 .setAttribute(SAMLIdentityProviderConfig.METADATA_DESCRIPTOR_URL,
-                        BrokerTestTools.getProviderRoot() + "/auth/realms/" + bc.providerRealmName() + "/protocol/saml/descriptor")
+                        BrokerTestTools.getProviderRoot() + getAuthPath() + "/realms/" + bc.providerRealmName() + "/protocol/saml/descriptor")
                 .setAttribute(SAMLIdentityProviderConfig.USE_METADATA_DESCRIPTOR_URL, Boolean.toString(!incorrectSigningKey)) // use metadata only if correct cert
                 .setAttribute(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, consumerSigCert)
                 .update();
@@ -175,7 +184,7 @@ public final class KcSamlBrokerArtifactBindingTest extends AbstractInitializedBa
 
         if (success) {
             updateAccountInformationPage.assertCurrent();
-            updateAccountInformationPage.updateAccountInformation("f", "l");
+            updateAccountInformationPage.updateAccountInformation("Firstname", "Lastname");
             Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         } else {
             errorPage.assertCurrent();

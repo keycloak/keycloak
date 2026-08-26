@@ -3,13 +3,11 @@ package org.keycloak.tests.broker;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 
 /**
  * @author Martin Kanis <mkanis@redhat.com>
  */
-@EnableVault
-@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
+@KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerVaultServerConfig.class)
 public class KcOidcBrokerVaultTest extends AbstractBrokerTest {
 
     @InjectRealm

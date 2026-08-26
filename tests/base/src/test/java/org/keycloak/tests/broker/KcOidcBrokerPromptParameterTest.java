@@ -17,6 +17,7 @@ import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 import org.junit.jupiter.api.Assertions;
 
+import static org.keycloak.tests.broker.BrokerTestTools.getAuthPath;
 import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
 
 @KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
@@ -53,7 +54,7 @@ public class KcOidcBrokerPromptParameterTest extends AbstractBrokerTest {
 
         waitForPage(driver, "sign in to", true);
 
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+        Assertions.assertTrue(driver.getCurrentUrl().contains(getAuthPath() + "/realms/" + bc.providerRealmName() + "/"),
                 "Driver should be on the provider realm page right now");
 
         Assertions.assertFalse(driver.getCurrentUrl().contains(OIDCLoginProtocol.PROMPT_PARAM + "=" + PROMPT_LOGIN),
@@ -68,12 +69,19 @@ public class KcOidcBrokerPromptParameterTest extends AbstractBrokerTest {
         waitForPage(driver, "update account information", false);
 
         updateAccountInformationPage.assertCurrent();
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+        String authPath = getAuthPath();
+        String currentUrl = driver.getCurrentUrl();
+        Assertions.assertTrue(currentUrl.contains(authPath + "/realms/" + bc.consumerRealmName() + "/")
+                        || currentUrl.contains(authPath + "/realms/" + bc.providerRealmName() + "/login-actions/required-action"),
                 "We must be on correct realm right now");
 
 
         log.debug("Updating info on updateAccount page");
-        updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
+        if (updateAccountInformationPage.isUsernamePresent()) {
+            updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
+        } else {
+            updateAccountInformationPage.updateAccountInformation(bc.getUserEmail(), "Firstname", "Lastname");
+        }
 
         UsersResource consumerUsers = adminClient.realm(bc.consumerRealmName()).users();
 

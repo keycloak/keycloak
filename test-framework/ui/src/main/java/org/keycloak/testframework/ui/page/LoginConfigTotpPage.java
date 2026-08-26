@@ -36,7 +36,7 @@ public class LoginConfigTotpPage extends AbstractLoginPage {
     @FindBy(id = "userLabel")
     private WebElement totpLabelInput;
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(css = "input[type=\"submit\"], button[type=\"submit\"]")
     private WebElement submitButton;
 
     @FindBy(name = "cancel-aia")
@@ -82,7 +82,11 @@ public class LoginConfigTotpPage extends AbstractLoginPage {
     }
 
     public void submit() {
-        submitButton.click();
+        try {
+            submitButton.click();
+        } catch (NoSuchElementException e) {
+            submitButton.submit();
+        }
     }
 
     public void cancel() {

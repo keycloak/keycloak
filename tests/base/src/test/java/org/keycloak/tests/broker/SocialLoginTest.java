@@ -5,6 +5,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Properties;
 
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
@@ -74,16 +75,18 @@ import org.keycloak.util.BasicAuthHelper;
 
 import com.google.common.collect.ImmutableMap;
 import org.jboss.logging.Logger;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.PageFactory;
 
+import static org.keycloak.tests.broker.BrokerTestTools.getAuthPath;
 import static org.keycloak.tests.broker.SocialLoginTest.Provider.BITBUCKET;
 import static org.keycloak.tests.broker.SocialLoginTest.Provider.FACEBOOK;
 import static org.keycloak.tests.broker.SocialLoginTest.Provider.FACEBOOK_INCLUDE_BIRTHDAY;
@@ -104,7 +107,6 @@ import static org.keycloak.tests.broker.SocialLoginTest.Provider.STACKOVERFLOW;
 import static org.keycloak.tests.broker.SocialLoginTest.Provider.TWITTER;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
-import static org.junit.Assume.assumeTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -199,14 +201,15 @@ public class SocialLoginTest {
     private Provider currentTestProvider = null;
     private AbstractSocialLoginPage currentSocialLoginPage = null;
 
-    @BeforeClass
+    @BeforeAll
     public static void loadConfig() throws Exception {
-        assumeTrue(System.getProperties().containsKey(SOCIAL_CONFIG));
+        Assumptions.assumeTrue(System.getProperties().containsKey(SOCIAL_CONFIG));
         config.load(new FileInputStream(System.getProperty(SOCIAL_CONFIG)));
     }
 
     @BeforeEach
     public void beforeSocialLoginTest() {
+        ensureSocialRealmExists();
         oauth.realm(REALM);
         createAppClientInRealm(REALM);
     }
@@ -253,19 +256,31 @@ public class SocialLoginTest {
         testRealms.add(rep);
     }
 
+    private void ensureSocialRealmExists() {
+        try {
+            adminClient.realm(REALM).toRepresentation();
+            return;
+        } catch (NotFoundException ignored) {
+        }
+
+        adminClient.realms().create(RealmBuilder.create().name(REALM).build());
+    }
+
     protected boolean isImportAfterEachMethod() {
         return true;
     }
 
     private void createAppClientInRealm(String realm) {
+        String authPath = getAuthPath();
+        String root = resolveAuthServerRoot() + authPath;
         org.keycloak.representations.idm.ClientRepresentation client = new org.keycloak.representations.idm.ClientRepresentation();
         client.setClientId("test-app");
         client.setName("test-app");
         client.setSecret("password");
         client.setEnabled(true);
         client.setDirectAccessGrantsEnabled(true);
-        client.setRedirectUris(java.util.Collections.singletonList(OAuthClient.SERVER_ROOT + "/auth/*"));
-        client.setBaseUrl(OAuthClient.SERVER_ROOT + "/auth/realms/" + realm + "/app");
+        client.setRedirectUris(java.util.Collections.singletonList(root + "/*"));
+        client.setBaseUrl(root + "/realms/" + realm + "/app");
         try {
             adminClient.realm(realm).clients().create(client).close();
         } catch (Exception ignored) {
@@ -273,7 +288,7 @@ public class SocialLoginTest {
     }
 
     private URI getAuthServerRoot() {
-        return URI.create(resolveAuthServerRoot() + "/auth/");
+        return URI.create(resolveAuthServerRoot() + getAuthPath() + "/");
     }
 
     private KeycloakTestingClient getTestingClient() {
@@ -287,8 +302,7 @@ public class SocialLoginTest {
         if (managedRealm != null && managedRealm.getBaseUrl() != null) {
             int realmsIndex = managedRealm.getBaseUrl().indexOf("/realms/");
             if (realmsIndex > 0) {
-                String root = managedRealm.getBaseUrl().substring(0, realmsIndex);
-                return root.endsWith("/auth") ? root.substring(0, root.length() - "/auth".length()) : root;
+                return managedRealm.getBaseUrl().substring(0, realmsIndex);
             }
         }
         if (OAuthClient.SERVER_ROOT != null && !OAuthClient.SERVER_ROOT.isBlank()) {
@@ -431,7 +445,7 @@ public class SocialLoginTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void instagramLogin() throws InterruptedException {
         setTestProvider(INSTAGRAM);
         performLogin();

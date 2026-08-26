@@ -18,20 +18,17 @@ package org.keycloak.tests.broker;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.core.MediaType;
 
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -42,8 +39,6 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
-
 /**
  *
  * @author rmartinc
@@ -51,16 +46,13 @@ import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 @KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcSamlParseIdPDescriptorTest {
 
-    @InjectRealm
+    @InjectRealm(config = KcSamlParseIdPDescriptorTest.TestRealmConfig.class)
     ManagedRealm managedRealm;
 
-    @InjectAdminClient
-    Keycloak adminClient;
-
-    private final URI authServerPage = URI.create(getAuthServerContextRoot() + "/auth");
-
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        testRealms.add(RealmBuilder.create().name("test").build());
+    private URI getAuthServerPage() {
+        String baseUrl = managedRealm.getBaseUrl();
+        int realmsIndex = baseUrl.indexOf("/realms/");
+        return URI.create(realmsIndex > 0 ? baseUrl.substring(0, realmsIndex) : baseUrl);
     }
 
     @Test
@@ -70,25 +62,26 @@ public class KcSamlParseIdPDescriptorTest {
         MultipartFormDataOutput output = new MultipartFormDataOutput();
         output.addFormData("providerId", "saml", MediaType.TEXT_PLAIN_TYPE);
         output.addFormData("file", descriptor, MediaType.TEXT_XML_TYPE);
-        Map<String, String> response = adminClient.realm("test").identityProviders().importFrom(output);
+        Map<String, String> response = managedRealm.admin().identityProviders().importFrom(output);
+        URI authServerPage = getAuthServerPage();
         Assertions.assertNotNull(response.get(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY));
-        Assertions.assertEquals(authServerPage.toString() + "/realms/test", response.get(SAMLIdentityProviderConfig.IDP_ENTITY_ID));
+        Assertions.assertEquals(authServerPage + "/realms/" + managedRealm.getName(), response.get(SAMLIdentityProviderConfig.IDP_ENTITY_ID));
         Assertions.assertEquals("true", response.get(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE));
         Assertions.assertEquals("true", response.get(SAMLIdentityProviderConfig.POST_BINDING_LOGOUT));
         Assertions.assertEquals("true", response.get(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE));
         Assertions.assertEquals("true", response.get(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST));
         Assertions.assertEquals("true", response.get(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED));
         Assertions.assertEquals(JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get(), response.get("nameIDPolicyFormat"));
-        Assertions.assertEquals(authServerPage.toString() + "/realms/test/protocol/saml", response.get(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL));
-        Assertions.assertEquals(authServerPage.toString() + "/realms/test/protocol/saml", response.get(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL));
-        Assertions.assertEquals(authServerPage.toString() + "/realms/test/protocol/saml/resolve", response.get(SAMLIdentityProviderConfig.ARTIFACT_RESOLUTION_SERVICE_URL));
+        Assertions.assertEquals(authServerPage + "/realms/" + managedRealm.getName() + "/protocol/saml", response.get(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL));
+        Assertions.assertEquals(authServerPage + "/realms/" + managedRealm.getName() + "/protocol/saml", response.get(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL));
+        Assertions.assertEquals(authServerPage + "/realms/" + managedRealm.getName() + "/protocol/saml/resolve", response.get(SAMLIdentityProviderConfig.ARTIFACT_RESOLUTION_SERVICE_URL));
 
         // modify it with WantAuthnRequestsSigned=false
         descriptor = descriptor.replaceFirst("WantAuthnRequestsSigned=\"true\"", "WantAuthnRequestsSigned=\"false\"");
         output = new MultipartFormDataOutput();
         output.addFormData("providerId", "saml", MediaType.TEXT_PLAIN_TYPE);
         output.addFormData("file", descriptor, MediaType.TEXT_XML_TYPE);
-        response = adminClient.realm("test").identityProviders().importFrom(output);
+        response = managedRealm.admin().identityProviders().importFrom(output);
         Assertions.assertEquals("false", response.get(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED));
         Assertions.assertEquals("true", response.get(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE));
     }
@@ -106,7 +99,7 @@ public class KcSamlParseIdPDescriptorTest {
         MultipartFormDataOutput output = new MultipartFormDataOutput();
         output.addFormData("providerId", "saml", MediaType.TEXT_PLAIN_TYPE);
         output.addFormData("file", descriptor, MediaType.TEXT_XML_TYPE);
-        Map<String, String> response = adminClient.realm("test").identityProviders().importFrom(output);
+        Map<String, String> response = managedRealm.admin().identityProviders().importFrom(output);
         Assertions.assertNotNull(response.get(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY));
         Assertions.assertNotNull(response.get(SAMLIdentityProviderConfig.ENCRYPTION_PUBLIC_KEY));
         Assertions.assertEquals("false", response.get(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED));
@@ -114,11 +107,19 @@ public class KcSamlParseIdPDescriptorTest {
     }
 
     private String readSamlIdPDescriptor() throws IOException {
+        URI authServerPage = getAuthServerPage();
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            HttpGet httpGet = new HttpGet(authServerPage.toString() + "/realms/test/protocol/saml/descriptor");
+            HttpGet httpGet = new HttpGet(authServerPage + "/realms/" + managedRealm.getName() + "/protocol/saml/descriptor");
             try (CloseableHttpResponse response = client.execute(httpGet)) {
                 return EntityUtils.toString(response.getEntity());
             }
+        }
+    }
+
+    public static class TestRealmConfig implements RealmConfig {
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return realm.name("test");
         }
     }
 

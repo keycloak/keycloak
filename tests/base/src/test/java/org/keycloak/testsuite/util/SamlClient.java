@@ -28,11 +28,13 @@ import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -72,8 +74,10 @@ import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.util.JAXPValidationUtil;
 import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
+import org.keycloak.testsuite.util.saml.LoginBuilder;
 import org.keycloak.testsuite.util.saml.StepWithCheckers;
 
+import org.apache.http.HttpRequest;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -88,6 +92,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 import org.jsoup.Jsoup;
@@ -810,6 +815,9 @@ public class SamlClient {
                     LOG.debugf("Disabling following redirects");
                     strategy.setRedirectable(false);
                     i++;
+                } else if (i < steps.size() - 1 && steps.get(i + 1) instanceof LoginBuilder) {
+                    // Preserve first redirect so LoginBuilder can follow it explicitly.
+                    strategy.setRedirectable(false);
                 } else {
                     strategy.setRedirectable(true);
                 }
@@ -821,6 +829,7 @@ public class SamlClient {
                     if (beforeChecker != null) beforeChecker.run();
                 }
 
+                attachCookieHeader(request, currentUri);
                 currentResponse = client.execute(request, context);
 
                 if (s instanceof StepWithCheckers) {
@@ -853,9 +862,42 @@ public class SamlClient {
         return context;
     }
 
+    private void attachCookieHeader(HttpUriRequest request, URI currentUri) {
+        if (request.containsHeader("Cookie") || context.getCookieStore() == null) {
+            return;
+        }
+
+        URI requestUri = request.getURI();
+        if (requestUri != null && !requestUri.isAbsolute() && currentUri != null) {
+            requestUri = currentUri.resolve(requestUri);
+        }
+
+        String requestPath = requestUri != null && requestUri.getPath() != null ? requestUri.getPath() : "/";
+        Date now = new Date();
+        String cookieHeader = context.getCookieStore().getCookies().stream()
+                .filter(cookie -> cookie.getExpiryDate() == null || cookie.getExpiryDate().after(now))
+                .filter(cookie -> {
+                    String cookiePath = cookie.getPath() == null ? "/" : cookie.getPath();
+                    return requestPath.startsWith(cookiePath);
+                })
+                .map(cookie -> cookie.getName() + "=" + cookie.getValue())
+                .collect(Collectors.joining("; "));
+
+        if (!cookieHeader.isEmpty()) {
+            request.setHeader("Cookie", cookieHeader);
+        }
+    }
+
     protected HttpClientBuilder createHttpClientBuilderInstance() {
         return HttpClientBuilder
                 .create()
+                .addInterceptorLast((HttpRequest request, HttpContext context) -> {
+                    if (request.getRequestLine() != null && request.getRequestLine().getUri() != null
+                            && request.getRequestLine().getUri().contains("login-actions/authenticate")) {
+                        context.setAttribute("kc.test.last.auth.request.uri", request.getRequestLine().getUri());
+                        context.setAttribute("kc.test.last.auth.cookie", request.getFirstHeader("Cookie"));
+                    }
+                })
                 .evictIdleConnections(100, TimeUnit.MILLISECONDS);
     }
 }

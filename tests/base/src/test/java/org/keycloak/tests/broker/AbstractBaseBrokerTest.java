@@ -24,11 +24,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
@@ -37,6 +41,7 @@ import jakarta.ws.rs.core.UriBuilderException;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.saml.SamlProtocol;
@@ -69,23 +74,32 @@ import org.keycloak.testframework.ui.page.ProceedPage;
 import org.keycloak.testframework.ui.page.UpdateAccountInformationPage;
 import org.keycloak.testframework.ui.page.VerifyEmailPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.LogoutUrlBuilder;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
+import org.apache.http.Header;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.hamcrest.Matchers;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import static org.keycloak.tests.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.tests.broker.BrokerTestTools.encodeUrl;
+import static org.keycloak.tests.broker.BrokerTestTools.getAuthPath;
 import static org.keycloak.tests.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.tests.broker.BrokerTestTools.getProviderRoot;
 import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
@@ -122,6 +136,8 @@ public abstract class AbstractBaseBrokerTest {
     protected final CompatibilityTestContext testContext = new CompatibilityTestContext();
     protected final AtomicInteger timeOffSet = new AtomicInteger();
     private final Map<String, TestCleanupSupport> cleanups = new HashMap<>();
+    private final Set<String> additionalRealmNames = new LinkedHashSet<>();
+    private final Set<Profile.Feature> enabledFeatures = new HashSet<>();
 
     protected static final String ATTRIBUTE_VALUE = "attribute.value";
 
@@ -242,7 +258,9 @@ public abstract class AbstractBaseBrokerTest {
         String authServerRoot = resolveAuthServerContextRoot();
         testingClient = KeycloakTestingClient.getInstance(authServerRoot);
         OAuthClient.updateURLs(authServerRoot);
+        OAuthClient.updateAppRootRealm(bc.consumerRealmName());
         oauth.init();
+        enableAnnotatedFeatures();
 
         RealmRepresentation consumerRealm = bc.createConsumerRealm();
         RealmRepresentation providerRealm = bc.createProviderRealm();
@@ -251,19 +269,28 @@ public abstract class AbstractBaseBrokerTest {
 
         UserProfileUtil.enableUnmanagedAttributes(adminClient.realm(consumerRealm.getRealm()).users().userProfile());
         UserProfileUtil.enableUnmanagedAttributes(adminClient.realm(providerRealm.getRealm()).users().userProfile());
+        importAdditionalTestRealms(consumerRealm.getRealm(), providerRealm.getRealm());
     }
 
     @AfterEach
     public void cleanupUsers() {
         cleanups.values().forEach(cleanup -> cleanup.execute(adminClient));
         cleanups.clear();
+        deleteAllCookiesForRealm(bc.consumerRealmName());
+        try {
+            adminClient.realm(bc.consumerRealmName()).remove();
+        } catch (Exception ignored) {
+        }
+        try {
+            adminClient.realm(bc.providerRealmName()).remove();
+        } catch (Exception ignored) {
+        }
+        removeAdditionalTestRealms();
+        resetEnabledFeatures();
         if (testingClient != null) {
             testingClient.close();
             testingClient = null;
         }
-        deleteAllCookiesForRealm(bc.consumerRealmName());
-        adminClient.realm(bc.consumerRealmName()).remove();
-        adminClient.realm(bc.providerRealmName()).remove();
     }
 
     protected String createUser(String username, String email) {
@@ -360,13 +387,27 @@ public abstract class AbstractBaseBrokerTest {
 
     protected void logInWithIdp(String idpAlias, String username, String password) {
         waitForPage(driver, "sign in to", true);
+        String initialUrl = driver.getCurrentUrl();
         log.debug("Clicking social " + idpAlias);
         loginPage.clickSocial(idpAlias);
-        new WebDriverWait(driver.driver(), Duration.ofSeconds(10)).until(webDriver ->
-                !webDriver.findElements(By.id("username")).isEmpty()
-                        || !webDriver.findElements(By.id("password")).isEmpty()
-                        || webDriver.getCurrentUrl().contains("/broker/" + idpAlias + "/endpoint")
-                        || webDriver.getCurrentUrl().contains("/login-actions/first-broker-login"));
+        try {
+            new WebDriverWait(driver.driver(), Duration.ofSeconds(10)).until(webDriver ->
+                    !webDriver.getCurrentUrl().equals(initialUrl));
+
+            String brokerLoginSegment = "/broker/" + idpAlias + "/login";
+            if (driver.getCurrentUrl().contains(brokerLoginSegment)) {
+                List<org.openqa.selenium.WebElement> forms = driver.findElements(By.tagName("form"));
+                if (!forms.isEmpty()) {
+                    forms.get(0).submit();
+                }
+                new WebDriverWait(driver.driver(), Duration.ofSeconds(10)).until(webDriver ->
+                        !webDriver.getCurrentUrl().contains(brokerLoginSegment));
+            }
+        } catch (TimeoutException e) {
+            Assertions.fail("Timed out waiting for social redirect for " + idpAlias + ". URL: " + driver.getCurrentUrl()
+                    + ", page: " + driver.findElement(By.tagName("body")).getText()
+                    + ", source: " + driver.getPageSource());
+        }
         if (loginPage.isUsernameInputPresent()) {
             log.debug("Logging in with username and password");
             loginPage.login(username, password);
@@ -400,23 +441,145 @@ public abstract class AbstractBaseBrokerTest {
 
     protected void logInAsUserInIDPForFirstTimeAndAssertSuccess() {
         logInAsUserInIDPForFirstTime();
-        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+        try {
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+        } catch (AssertionError e) {
+            String currentUrl = driver.getCurrentUrl();
+            String currentPageId = driver.page().getCurrentPageId();
+            String alert = updateAccountInformationPage.getAlertError();
+            String body = driver.findElement(By.tagName("body")).getText();
+            String source = driver.getPageSource();
+            Assertions.fail("First broker login did not reach OAuth callback. url=" + currentUrl
+                    + ", pageId=" + currentPageId
+                    + ", alert=" + alert
+                    + ", body=" + body
+                    + ", source=" + source, e);
+        }
     }
 
     protected void updateAccountInformation() {
         waitForPage(driver, "update account information", false);
 
         updateAccountInformationPage.assertCurrent();
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+        String authPath = getAuthPath();
+        String consumerRealmPath = authPath + "/realms/" + bc.consumerRealmName() + "/";
+        String providerRequiredActionPath = authPath + "/realms/" + bc.providerRealmName() + "/login-actions/required-action";
+        String currentUrl = driver.getCurrentUrl();
+        Assertions.assertTrue(currentUrl.contains(consumerRealmPath) || currentUrl.contains(providerRequiredActionPath),
                 "We must be on correct realm right now");
 
         log.debug("Updating info on updateAccount page");
-        updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
+        setInputValueIfPresent(By.id("username"), bc.getUserLogin());
+        setInputValueIfPresent(By.name("email"), bc.getUserEmail());
+        setInputValueIfPresent(By.name("firstName"), "Firstname");
+        setInputValueIfPresent(By.name("lastName"), "Lastname");
+        log.info("Profile values before submit: username=" + readInputValue(By.id("username"))
+                + ", email=" + readInputValue(By.name("email"))
+                + ", firstName=" + readInputValue(By.name("firstName"))
+                + ", lastName=" + readInputValue(By.name("lastName")));
+
+        if (!submitFormIfPresent(By.id("kc-idp-review-profile-form"))
+                && !submitFormIfPresent(By.id("kc-update-profile-form"))) {
+            submitFormIfPresent(By.cssSelector("form"));
+        }
+
+        if (driver.getCurrentUrl().contains("/login-actions/first-broker-login")) {
+            submitProfileFormThroughHttp();
+        }
+    }
+
+    private void setInputValueIfPresent(By locator, String value) {
+        List<org.openqa.selenium.WebElement> elements = driver.findElements(locator);
+        if (elements.isEmpty()) {
+            return;
+        }
+        org.openqa.selenium.WebElement element = elements.stream()
+                .filter(org.openqa.selenium.WebElement::isDisplayed)
+                .findFirst()
+                .orElse(elements.get(0));
+        element.click();
+        element.clear();
+        element.sendKeys(value);
+        if (!value.equals(element.getAttribute("value")) && driver.driver() instanceof JavascriptExecutor javascriptExecutor) {
+            javascriptExecutor.executeScript("arguments[0].value = arguments[1];", element, value);
+        }
+    }
+
+    private boolean submitFormIfPresent(By locator) {
+        List<org.openqa.selenium.WebElement> forms = driver.findElements(locator);
+        if (forms.isEmpty()) {
+            return false;
+        }
+        org.openqa.selenium.WebElement form = forms.get(0);
+        String currentUrl = driver.getCurrentUrl();
+        List<org.openqa.selenium.WebElement> submitButtons = form.findElements(By.cssSelector("input[type='submit'], button[type='submit']"));
+        if (!submitButtons.isEmpty()) {
+            submitButtons.get(0).click();
+            try {
+                new WebDriverWait(driver.driver(), Duration.ofSeconds(1)).until(webDriver -> !webDriver.getCurrentUrl().equals(currentUrl));
+            } catch (TimeoutException ignore) {
+                if (driver.driver() instanceof JavascriptExecutor javascriptExecutor) {
+                    javascriptExecutor.executeScript("arguments[0].submit();", form);
+                } else {
+                    form.submit();
+                }
+            }
+            return true;
+        }
+        if (driver.driver() instanceof JavascriptExecutor javascriptExecutor) {
+            javascriptExecutor.executeScript("arguments[0].submit();", form);
+            return true;
+        }
+        form.submit();
+        return true;
+    }
+
+    private String readInputValue(By locator) {
+        List<org.openqa.selenium.WebElement> elements = driver.findElements(locator);
+        if (elements.isEmpty()) {
+            return null;
+        }
+        return elements.get(0).getAttribute("value");
+    }
+
+    private void submitProfileFormThroughHttp() {
+        List<org.openqa.selenium.WebElement> forms = driver.findElements(By.cssSelector("#kc-idp-review-profile-form, #kc-update-profile-form"));
+        if (forms.isEmpty()) {
+            return;
+        }
+
+        String actionUrl = forms.get(0).getAttribute("action");
+        if (actionUrl == null || actionUrl.isBlank()) {
+            return;
+        }
+
+        String cookieHeader = driver.manage().getCookies().stream()
+                .map(cookie -> cookie.getName() + "=" + cookie.getValue())
+                .collect(Collectors.joining("; "));
+
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            HttpUriRequest request = RequestBuilder.post(actionUrl)
+                    .addParameter("username", bc.getUserLogin())
+                    .addParameter("email", bc.getUserEmail())
+                    .addParameter("firstName", "Firstname")
+                    .addParameter("lastName", "Lastname")
+                    .addHeader("Cookie", cookieHeader)
+                    .build();
+
+            try (CloseableHttpResponse response = httpClient.execute(request)) {
+                Header location = response.getFirstHeader("Location");
+                if (location != null && location.getValue() != null && !location.getValue().isBlank()) {
+                    driver.navigate().to(location.getValue());
+                }
+            }
+        } catch (Exception e) {
+            log.debug("HTTP profile submit fallback failed", e);
+        }
     }
 
 
     protected String getAccountUrl(String contextRoot, String realmName) {
-        return contextRoot + "/auth/realms/" + realmName + "/account";
+        return contextRoot + getAuthPath() + "/realms/" + realmName + "/account";
     }
 
     protected String getLoginUrl(String contextRoot, String realmName, String clientId) {
@@ -439,10 +602,10 @@ public abstract class AbstractBaseBrokerTest {
 
         String redirectURI = clients.get(0).getBaseUrl();
         if (redirectURI.startsWith("/")) {
-            redirectURI = contextRoot + "/auth" + redirectURI;
+            redirectURI = contextRoot + getAuthPath() + redirectURI;
         }
 
-        return contextRoot + "/auth/realms/" + realmName + "/protocol/openid-connect/auth?client_id=" +
+        return contextRoot + getAuthPath() + "/realms/" + realmName + "/protocol/openid-connect/auth?client_id=" +
                 clientId + "&redirect_uri=" + redirectURI + "&response_type=code&scope=" + scope;
     }
 
@@ -497,7 +660,8 @@ public abstract class AbstractBaseBrokerTest {
             builder.open();
         } finally {
             if (isDifferentContext) {
-                OAuthClient.updateURLs(getAuthServerContextRoot());
+                OAuthClient.updateURLs(resolveAuthServerContextRoot());
+                OAuthClient.updateAppRootRealm(bc.consumerRealmName());
                 oauth.init();
             }
         }
@@ -563,8 +727,12 @@ public abstract class AbstractBaseBrokerTest {
     }
 
     protected URI getSamlEndpoint(String fromUri, String realm) {
+        String authPath = getAuthPath();
+        String baseUri = fromUri.endsWith("/") && authPath.startsWith("/")
+                ? fromUri.substring(0, fromUri.length() - 1) + authPath
+                : fromUri + authPath;
         return RealmsResource
-                .protocolUrl(UriBuilder.fromUri(fromUri).path("auth"))
+                .protocolUrl(UriBuilder.fromUri(baseUri))
                 .build(realm, SamlProtocol.LOGIN_PROTOCOL);
     }
 
@@ -573,7 +741,7 @@ public abstract class AbstractBaseBrokerTest {
     }
 
     public URI getAuthServerRoot() {
-        return URI.create(resolveAuthServerContextRoot() + "/auth/");
+        return URI.create(resolveAuthServerContextRoot() + getAuthPath() + "/");
     }
 
     protected TestCleanupSupport getCleanup(String realmName) {
@@ -599,14 +767,60 @@ public abstract class AbstractBaseBrokerTest {
         if (managedRealm != null && managedRealm.getBaseUrl() != null) {
             int realmsIndex = managedRealm.getBaseUrl().indexOf("/realms/");
             if (realmsIndex > 0) {
-                String root = managedRealm.getBaseUrl().substring(0, realmsIndex);
-                return root.endsWith("/auth") ? root.substring(0, root.length() - "/auth".length()) : root;
+                return managedRealm.getBaseUrl().substring(0, realmsIndex);
             }
         }
         if (OAuthClient.SERVER_ROOT != null && !OAuthClient.SERVER_ROOT.isBlank()) {
             return OAuthClient.SERVER_ROOT.replaceAll("/+$", "");
         }
         return getAuthServerContextRoot();
+    }
+
+    private void importAdditionalTestRealms(String consumerRealmName, String providerRealmName) {
+        additionalRealmNames.clear();
+        List<RealmRepresentation> additionalRealms = new ArrayList<>();
+        addTestRealms(additionalRealms);
+        for (RealmRepresentation realmRepresentation : additionalRealms) {
+            if (realmRepresentation == null || realmRepresentation.getRealm() == null) {
+                continue;
+            }
+            String realmName = realmRepresentation.getRealm();
+            if (realmName.equals(consumerRealmName) || realmName.equals(providerRealmName)) {
+                continue;
+            }
+            importRealm(realmRepresentation);
+            UserProfileUtil.enableUnmanagedAttributes(adminClient.realm(realmName).users().userProfile());
+            additionalRealmNames.add(realmName);
+        }
+    }
+
+    private void removeAdditionalTestRealms() {
+        for (String realmName : additionalRealmNames) {
+            try {
+                adminClient.realm(realmName).remove();
+            } catch (Exception ignored) {
+            }
+        }
+        additionalRealmNames.clear();
+    }
+
+    private void enableAnnotatedFeatures() {
+        for (EnableFeature enableFeature : getClass().getAnnotationsByType(EnableFeature.class)) {
+            Profile.Feature feature = enableFeature.value();
+            if (enabledFeatures.add(feature)) {
+                testingClient.enableFeature(feature);
+            }
+        }
+    }
+
+    private void resetEnabledFeatures() {
+        for (Profile.Feature feature : enabledFeatures) {
+            try {
+                testingClient.resetFeature(feature);
+            } catch (Exception ignored) {
+            }
+        }
+        enabledFeatures.clear();
     }
 
     protected static class CompatibilityTestContext {

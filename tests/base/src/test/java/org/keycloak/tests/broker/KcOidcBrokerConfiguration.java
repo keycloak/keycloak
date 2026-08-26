@@ -58,7 +58,7 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         RealmRepresentation realm = new RealmRepresentation();
         realm.setRealm(REALM_PROV_NAME);
         realm.setEnabled(true);
-        realm.setEventsListeners(Arrays.asList("jboss-logging", "event-queue"));
+        realm.setEventsListeners(Collections.singletonList("jboss-logging"));
         realm.setEventsEnabled(true);
         realm.setInternationalizationEnabled(true);
         realm.setSupportedLocales(Set.of("en", "hu"));
@@ -72,7 +72,7 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         realm.setRealm(REALM_CONS_NAME);
         realm.setEnabled(true);
         realm.setResetPasswordAllowed(true);
-        realm.setEventsListeners(Arrays.asList("jboss-logging", "event-queue"));
+        realm.setEventsListeners(Collections.singletonList("jboss-logging"));
         realm.setEventsEnabled(true);
         realm.setInternationalizationEnabled(true);
         realm.setSupportedLocales(Set.of("en", "hu"));

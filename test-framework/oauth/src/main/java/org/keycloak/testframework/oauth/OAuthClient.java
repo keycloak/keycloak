@@ -58,8 +58,18 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
     }
 
     public static void updateURLs(String serverRoot) {
-        SERVER_ROOT = removeDefaultPorts(serverRoot);
-        AUTH_SERVER_ROOT = SERVER_ROOT + "/auth";
+        String normalizedRoot = removeDefaultPorts(serverRoot);
+        if (normalizedRoot != null) {
+            normalizedRoot = normalizedRoot.replaceAll("/+$", "");
+        }
+
+        if (normalizedRoot != null && normalizedRoot.endsWith("/auth")) {
+            AUTH_SERVER_ROOT = normalizedRoot;
+            SERVER_ROOT = normalizedRoot.substring(0, normalizedRoot.length() - "/auth".length());
+        } else {
+            SERVER_ROOT = normalizedRoot;
+            AUTH_SERVER_ROOT = normalizedRoot;
+        }
         updateAppRootRealm("master");
     }
 

@@ -43,11 +43,9 @@ import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.BrowserTabUtil;
-import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 import org.hamcrest.Matchers;
-import org.junit.Rule;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
@@ -68,7 +66,7 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
     @InjectRealm
     ManagedRealm managedRealm;
 
-    @InjectTimeOffSet
+    @InjectTimeOffSet(enableForCaches = true)
     TimeOffSet timeOffSet;
 
     @InjectWebDriver
@@ -79,9 +77,6 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
 
     @InjectEvents
     Events events;
-
-    @Rule
-    public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
 
     private String providerRealmId;
     private String consumerRealmId;

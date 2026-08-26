@@ -16,6 +16,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
@@ -45,9 +46,7 @@ import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.testframework.annotations.InjectAdminClient;
-import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ErrorPage;
@@ -70,7 +69,8 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import static org.keycloak.tests.broker.BrokerTestConstants.REALM_CONS_NAME;
 import static org.keycloak.tests.broker.BrokerTestConstants.REALM_PROV_NAME;
-import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
+import static org.keycloak.tests.broker.BrokerTestTools.getAuthPath;
+import static org.keycloak.tests.broker.BrokerTestTools.getConsumerRoot;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -93,9 +93,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class KcSamlIdPInitiatedSsoTest {
 
     private static final Logger log = Logger.getLogger(KcSamlIdPInitiatedSsoTest.class);
-
-    @InjectRealm
-    ManagedRealm managedRealm;
 
     @InjectWebDriver
     ManagedWebDriver driver;
@@ -123,7 +120,7 @@ public class KcSamlIdPInitiatedSsoTest {
     private final Map<String, CleanupSupport> cleanups = new HashMap<>();
 
     protected String getAuthRoot() {
-        return getAuthServerContextRoot();
+        return getConsumerRoot() + getAuthPath();
     }
 
     private CleanupSupport getCleanup(String realm) {
@@ -155,6 +152,7 @@ public class KcSamlIdPInitiatedSsoTest {
 
     @BeforeEach
     public void cleanupTestUserInConsumerRealm() {
+        ensureTestRealmsImported();
         final UsersResource users = adminClient.realm(REALM_CONS_NAME).users();
         users.search(CONSUMER_CHOSEN_USERNAME).stream()
           .map(UserRepresentation::getId)
@@ -164,13 +162,14 @@ public class KcSamlIdPInitiatedSsoTest {
 
     @BeforeEach
     public void initRealmUrls() {
-        urlRealmProvider = getAuthRoot() + "/auth/realms/" + REALM_PROV_NAME;
-        urlRealmConsumer = getAuthRoot() + "/auth/realms/" + REALM_CONS_NAME;
-        urlRealmConsumer2 = getAuthRoot() + "/auth/realms/" + REALM_CONS_NAME + "-2";
+        urlRealmProvider = getAuthRoot() + "/realms/" + REALM_PROV_NAME;
+        urlRealmConsumer = getAuthRoot() + "/realms/" + REALM_CONS_NAME;
+        urlRealmConsumer2 = getAuthRoot() + "/realms/" + REALM_CONS_NAME + "-2";
     }
 
     @BeforeEach
     public void resetPrincipalType() {
+        ensureTestRealmsImported();
         IdentityProviderResource idp = adminClient.realm(REALM_CONS_NAME).identityProviders().get("saml-leaf");
         IdentityProviderRepresentation rep = idp.toRepresentation();
         rep.getConfig().put(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get());
@@ -193,6 +192,26 @@ public class KcSamlIdPInitiatedSsoTest {
         testRealms.add(loadFromClasspath("kc3731-broker-realm.json", p));
     }
 
+    private void ensureTestRealmsImported() {
+        try {
+            adminClient.realm(REALM_PROV_NAME).toRepresentation();
+            adminClient.realm(REALM_CONS_NAME).toRepresentation();
+            return;
+        } catch (NotFoundException ignored) {
+        }
+
+        List<RealmRepresentation> testRealms = new ArrayList<>();
+        addTestRealms(testRealms);
+
+        for (RealmRepresentation realmRepresentation : testRealms) {
+            try {
+                adminClient.realm(realmRepresentation.getRealm()).remove();
+            } catch (NotFoundException ignored) {
+            }
+            adminClient.realms().create(realmRepresentation);
+        }
+    }
+
     @Test
     public void testProviderIdpInitiatedLogin() throws Exception {
         driver.navigate().to(getSamlIdpInitiatedUrl(REALM_PROV_NAME, "samlbroker"));
@@ -200,7 +219,7 @@ public class KcSamlIdPInitiatedSsoTest {
         waitForPage("sign in to", true);
 
         assertThat("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_PROV_NAME + "/"));
+                driver.getCurrentUrl(), containsString(getAuthPath() + "/realms/" + REALM_PROV_NAME + "/"));
 
         log.debug("Logging in");
         accountLoginPage.login(PROVIDER_REALM_USER_NAME, PROVIDER_REALM_USER_PASSWORD);
@@ -209,7 +228,7 @@ public class KcSamlIdPInitiatedSsoTest {
 
         updateAccountInformationPage.assertCurrent();
         assertThat("We must be on consumer realm right now",
-                driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_CONS_NAME + "/"));
+                driver.getCurrentUrl(), containsString(getAuthPath() + "/realms/" + REALM_CONS_NAME + "/"));
 
         log.debug("Updating info on updateAccount page");
         updateAccountInformationPage.updateAccountInformation(CONSUMER_CHOSEN_USERNAME, "test@localhost", "Firstname", "Lastname");
@@ -234,7 +253,7 @@ public class KcSamlIdPInitiatedSsoTest {
         waitForPage("sign in to", true);
 
         assertThat("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_PROV_NAME + "/"));
+                driver.getCurrentUrl(), containsString(getAuthPath() + "/realms/" + REALM_PROV_NAME + "/"));
 
         log.debug("Logging in");
         accountLoginPage.login(PROVIDER_REALM_USER_NAME, PROVIDER_REALM_USER_PASSWORD);
@@ -243,7 +262,7 @@ public class KcSamlIdPInitiatedSsoTest {
 
         updateAccountInformationPage.assertCurrent();
         assertThat("We must be on consumer realm right now",
-                driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_CONS_NAME + "/"));
+                driver.getCurrentUrl(), containsString(getAuthPath() + "/realms/" + REALM_CONS_NAME + "/"));
 
         log.debug("Updating info on updateAccount page");
         updateAccountInformationPage.updateAccountInformation(CONSUMER_CHOSEN_USERNAME, "test@localhost", "Firstname", "Lastname");
@@ -273,7 +292,7 @@ public class KcSamlIdPInitiatedSsoTest {
         waitForPage("sign in to", true);
 
         assertThat("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_PROV_NAME + "/"));
+                driver.getCurrentUrl(), containsString(getAuthPath() + "/realms/" + REALM_PROV_NAME + "/"));
 
         log.debug("Logging in");
         accountLoginPage.login(PROVIDER_REALM_USER_NAME, PROVIDER_REALM_USER_PASSWORD);
@@ -282,7 +301,7 @@ public class KcSamlIdPInitiatedSsoTest {
 
         updateAccountInformationPage.assertCurrent();
         assertThat("We must be on consumer realm right now",
-                driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_CONS_NAME + "/"));
+                driver.getCurrentUrl(), containsString(getAuthPath() + "/realms/" + REALM_CONS_NAME + "/"));
 
         log.debug("Updating info on updateAccount page");
         updateAccountInformationPage.updateAccountInformation(CONSUMER_CHOSEN_USERNAME, "test@localhost", "Firstname", "Lastname");
@@ -321,15 +340,15 @@ public class KcSamlIdPInitiatedSsoTest {
     }
 
     private String getSamlIdpInitiatedUrl(String realmName, String samlIdpInitiatedSsoUrlName) {
-        return getAuthRoot() + "/auth/realms/" + realmName + "/protocol/saml/clients/" + samlIdpInitiatedSsoUrlName;
+        return getAuthRoot() + "/realms/" + realmName + "/protocol/saml/clients/" + samlIdpInitiatedSsoUrlName;
     }
 
     private String getSamlBrokerIdpInitiatedUrl(String realmName, String samlIdpInitiatedSsoUrlName) {
-        return getAuthRoot() + "/auth/realms/" + realmName + "/broker/saml-leaf/endpoint/clients/" + samlIdpInitiatedSsoUrlName;
+        return getAuthRoot() + "/realms/" + realmName + "/broker/saml-leaf/endpoint/clients/" + samlIdpInitiatedSsoUrlName;
     }
 
     private String getSamlBrokerUrl(String realmName) {
-        return getAuthRoot() + "/auth/realms/" + realmName + "/broker/saml-leaf/endpoint";
+        return getAuthRoot() + "/realms/" + realmName + "/broker/saml-leaf/endpoint";
     }
 
     private void waitForPage(final String title, final boolean htmlTitle) {
@@ -674,7 +693,7 @@ public class KcSamlIdPInitiatedSsoTest {
         waitForPage("sign in to", true);
 
         assertThat("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_PROV_NAME + "/"));
+                driver.getCurrentUrl(), containsString(getAuthPath() + "/realms/" + REALM_PROV_NAME + "/"));
 
         log.debug("Logging in");
         accountLoginPage.login(PROVIDER_REALM_USER_NAME, PROVIDER_REALM_USER_PASSWORD);
@@ -683,7 +702,7 @@ public class KcSamlIdPInitiatedSsoTest {
 
         updateAccountInformationPage.assertCurrent();
         assertThat("We must be on consumer realm right now",
-                driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_CONS_NAME + "/"));
+                driver.getCurrentUrl(), containsString(getAuthPath() + "/realms/" + REALM_CONS_NAME + "/"));
 
         log.debug("Updating info on updateAccount page");
         updateAccountInformationPage.updateAccountInformation(CONSUMER_CHOSEN_USERNAME, "test@localhost", "Firstname", "Lastname");

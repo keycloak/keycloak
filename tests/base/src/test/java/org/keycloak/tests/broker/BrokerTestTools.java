@@ -49,7 +49,12 @@ public class BrokerTestTools {
     }
 
     public static String getAuthPath() {
-        String path = URI.create(getConsumerRoot()).getPath();
+        String authServerRoot = OAuthClient.AUTH_SERVER_ROOT;
+        if (authServerRoot == null || authServerRoot.isBlank()) {
+            authServerRoot = getAuthServerContextRoot();
+        }
+
+        String path = URI.create(authServerRoot).getPath();
         if (path == null || path.isBlank() || "/".equals(path)) {
             return "";
         }
@@ -73,12 +78,14 @@ public class BrokerTestTools {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
         ExpectedCondition<Boolean> condition = new ExpectedCondition<Boolean>() {
             private String actualTitle = null;
+            private String actualUrl = null;
 
             public Boolean apply(final WebDriver input) {
                 if (input == null) {
                     return false;
                 }
 
+                actualUrl = input.getCurrentUrl();
                 actualTitle = isHtmlTitle ? input.getTitle() : input.findElement(By.id("kc-page-title")).getText();
                 if (actualTitle == null) {
                     return false;
@@ -88,8 +95,8 @@ public class BrokerTestTools {
             }
 
             public String toString() {
-                return String.format("value to contain (ignoring case) \"%s\". Current value: \"%s\"", title,
-                        this.actualTitle);
+                return String.format("value to contain (ignoring case) \"%s\". Current value: \"%s\". URL: \"%s\"",
+                        title, this.actualTitle, this.actualUrl);
             }
         };
 
@@ -142,10 +149,11 @@ public class BrokerTestTools {
 
         config.put("clientId", childRealm);
         config.put("clientSecret", childRealm);
-        config.put("authorizationUrl", getProviderRoot() + "/auth/realms/" + idpRealm + "/protocol/openid-connect/auth");
-        config.put("tokenUrl", getProviderRoot() + "/auth/realms/" + idpRealm + "/protocol/openid-connect/token");
-        config.put("logoutUrl", getProviderRoot() + "/auth/realms/" + idpRealm + "/protocol/openid-connect/logout");
-        config.put("userInfoUrl", getProviderRoot() + "/auth/realms/" + idpRealm + "/protocol/openid-connect/userinfo");
+        String authPath = getAuthPath();
+        config.put("authorizationUrl", getProviderRoot() + authPath + "/realms/" + idpRealm + "/protocol/openid-connect/auth");
+        config.put("tokenUrl", getProviderRoot() + authPath + "/realms/" + idpRealm + "/protocol/openid-connect/token");
+        config.put("logoutUrl", getProviderRoot() + authPath + "/realms/" + idpRealm + "/protocol/openid-connect/logout");
+        config.put("userInfoUrl", getProviderRoot() + authPath + "/realms/" + idpRealm + "/protocol/openid-connect/userinfo");
         config.put("backchannelSupported", "true");
         adminClient.realm(childRealm).identityProviders().create(idp);
 
@@ -156,10 +164,10 @@ public class BrokerTestTools {
         client.setEnabled(true);
 
         client.setRedirectUris(Collections.singletonList(getConsumerRoot() +
-                "/auth/realms/" + childRealm + "/broker/" + idpRealm + "/endpoint/*"));
+                authPath + "/realms/" + childRealm + "/broker/" + idpRealm + "/endpoint/*"));
 
         client.setAdminUrl(getConsumerRoot() +
-                "/auth/realms/" + childRealm + "/broker/" + idpRealm + "/endpoint");
+                authPath + "/realms/" + childRealm + "/broker/" + idpRealm + "/endpoint");
         adminClient.realm(idpRealm).clients().create(client);
     }
 }

@@ -25,8 +25,8 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
-import org.junit.Ignore;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -88,7 +88,7 @@ public final class OAuth2BrokerTest extends AbstractAdvancedBrokerTest {
         logInWithBroker(bc);
 
         updateAccountInformationPage.assertCurrent();
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/realms/" + bc.consumerRealmName() + "/"),
                 "We must be on correct realm right now");
         log.debug("Updating info on updateAccount page");
         updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
@@ -154,25 +154,25 @@ public final class OAuth2BrokerTest extends AbstractAdvancedBrokerTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     @Override
     public void differentMappersCanHaveDifferentSyncModes() {
     }
 
     @Test
-    @Ignore
+    @Disabled
     @Override
     public void mapperDoesNotGrantNewRoleFromTokenWithSyncModeImport() {
     }
 
     @Test
-    @Ignore
+    @Disabled
     @Override
     public void mapperGrantsNewRoleFromTokenWithInheritedSyncModeForce() {
     }
 
     @Test
-    @Ignore
+    @Disabled
     @Override
     public void mapperDoesNotGrantNewRoleFromTokenWithInheritedSyncModeImport() {
     }

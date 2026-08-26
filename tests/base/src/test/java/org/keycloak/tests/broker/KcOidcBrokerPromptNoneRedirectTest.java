@@ -35,13 +35,14 @@ import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.AccountHelper;
 
-import org.junit.Ignore;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.tests.broker.BrokerRunOnServerUtil.configurePostBrokerLoginWithOTP;
 import static org.keycloak.tests.broker.BrokerTestConstants.CLIENT_ID;
 import static org.keycloak.tests.broker.BrokerTestConstants.USER_EMAIL;
+import static org.keycloak.tests.broker.BrokerTestTools.getAuthPath;
 import static org.keycloak.tests.broker.BrokerTestTools.getProviderRoot;
 import static org.keycloak.tests.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.tests.utils.admin.AdminApiUtil.createUserWithAdminClient;
@@ -56,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
 // Remove @Ignore when closing Github issue 20642
-@Ignore
+@Disabled("Blocked by issue 20642")
 @KeycloakIntegrationTest(config = org.keycloak.tests.broker.BrokerServerConfig.class)
 public class KcOidcBrokerPromptNoneRedirectTest extends AbstractInitializedBaseBrokerTest {
 
@@ -103,7 +104,7 @@ public class KcOidcBrokerPromptNoneRedirectTest extends AbstractInitializedBaseB
 
         /* no need to log in again, the idp should have been able to identify that the user is already logged in and the authenticated user should
            have been established in the consumer realm. Lastly, user must be redirected to the account app as expected. */
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/account"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains(getAuthPath() + "/realms/" + bc.providerRealmName() + "/account"));
 
         /* let's try logging out from the consumer realm and then send an auth request with only prompt=none. The absence of a default idp
            should result in a login required error because the user is not authenticated in the consumer realm and the request won't be propagated
@@ -255,13 +256,11 @@ public class KcOidcBrokerPromptNoneRedirectTest extends AbstractInitializedBaseB
         oauth.openLoginForm();
 
         waitForPage(driver, "sign in to", true);
-        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+        Assertions.assertTrue(driver.getCurrentUrl().contains(getAuthPath() + "/realms/" + bc.providerRealmName() + "/"),
                 "Driver should be on the provider realm page right now");
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
-        Assertions.assertTrue(
-                driver.getCurrentUrl().contains(
-                        "/auth/realms/" + bc.providerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains(getAuthPath() + "/realms/" + bc.providerRealmName() + "/"));
     }
 
     private class KcOidcBrokerPromptNoneConfiguration extends KcOidcBrokerConfiguration {
