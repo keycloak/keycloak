@@ -17,7 +17,9 @@ import {
   goToPermissions,
   openSearchPanel,
   pickGroup,
+  pickOrganization,
   removeGroup,
+  removeOrganization,
   selectClient,
   selectResource,
 } from "./main.ts";
@@ -35,6 +37,16 @@ test.describe.serial("Permissions section tests", () => {
     });
     await adminClient.createGroup("one", realmName);
     await adminClient.createGroup("two", realmName);
+    await adminClient.createOrganization({
+      name: "one",
+      realm: realmName,
+      enabled: true,
+    });
+    await adminClient.createOrganization({
+      name: "two",
+      realm: realmName,
+      enabled: true,
+    });
   });
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
@@ -110,6 +122,40 @@ test.describe.serial("Permissions section tests", () => {
     await assertNotificationMessage(page, "Successfully created the policy");
     await clickSaveButton(page);
     await removeGroup(page, "one");
+    await clickSaveButton(page);
+    await assertNotificationMessage(
+      page,
+      "Successfully updated the permission",
+    );
+  });
+
+  test("should edit organization permission", async ({ page }) => {
+    await clickCreatePermission(page);
+    await selectResource(page, "Organizations");
+    await fillPermissionForm(page, {
+      name: "test-organization-permission",
+      scopes: ["view"],
+      enforcementMode: "specificResources",
+    });
+    await pickOrganization(page, "one");
+    await pickOrganization(page, "two");
+
+    await clickCreateNewPolicy(page);
+    await fillPolicyForm(
+      page,
+      {
+        name: "test-policy2",
+        description: "test-description",
+        type: "User",
+        user: "test-user",
+      },
+      true,
+    );
+
+    await clickCreatePolicySaveButton(page);
+    await assertNotificationMessage(page, "Successfully created the policy");
+    await clickSaveButton(page);
+    await removeOrganization(page, "one");
     await clickSaveButton(page);
     await assertNotificationMessage(
       page,
