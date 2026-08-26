@@ -49,6 +49,8 @@ public class DistributionKeycloakServer implements KeycloakServer {
     private final boolean debug;
     private final boolean reuse;
     private final long startTimeout;
+    private final StringBuilder errorOutput = new StringBuilder();
+    private Thread stderrDrainer;
     private boolean tlsEnabled = false;
 
     public DistributionKeycloakServer(boolean debug, boolean reuse, long startTimeout) {
@@ -95,8 +97,15 @@ public class DistributionKeycloakServer implements KeycloakServer {
 
             OutputHandler outputHandler = startKeycloak(args);
 
-            waitForStart(outputHandler);
-            ReadinessProbe.waitUntilReady(this);
+            try {
+                waitForStart(outputHandler);
+                ReadinessProbe.waitUntilReady(this);
+            } catch (Exception e) {
+                ProcessUtils.killRunningProcess(keycloakProcess);
+                throw e;
+            } finally {
+                stderrDrainer.interrupt();
+            }
 
             if (!Environment.isWindows()) {
                 FileUtils.writeToFile(getPidFile(), ProcessUtils.getKeycloakPid(keycloakProcess));
@@ -155,6 +164,30 @@ public class DistributionKeycloakServer implements KeycloakServer {
         OutputHandler outputHandler;
         try {
             keycloakProcess = pb.start();
+
+            errorOutput.setLength(0);
+            // Uses ready()+read() polling instead of blocking readLine() because
+            // blocking readBytes() on process pipes is not interruptible via Thread.interrupt()
+            stderrDrainer = new Thread(() -> {
+                try (InputStreamReader isr = new InputStreamReader(keycloakProcess.getErrorStream(), StandardCharsets.UTF_8)) {
+                    char[] buf = new char[1024];
+                    while (!Thread.currentThread().isInterrupted()) {
+                        if (isr.ready()) {
+                            int n = isr.read(buf);
+                            if (n < 0) break;
+                            errorOutput.append(buf, 0, n);
+                        } else {
+                            Thread.sleep(100);
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    // Interrupted after startup
+                } catch (IOException e) {
+                    // Ignored
+                }
+            });
+            stderrDrainer.start();
+
             outputHandler = new OutputHandler(keycloakProcess);
             new Thread(outputHandler).start();
         } catch (IOException e) {
@@ -273,12 +306,14 @@ public class DistributionKeycloakServer implements KeycloakServer {
     }
 
     private void waitForStart(OutputHandler outputHandler) {
-        boolean started = outputHandler.waitForStarted();
-        if (started && ping()) {
-            return;
+        boolean processAlive = outputHandler.waitForStarted();
+        if (!processAlive) {
+            throw new RuntimeException("Keycloak process exited during startup: " + getErrorOutput());
         }
-        keycloakProcess.destroy();
-        throw new RuntimeException("Keycloak did not start within timeout: " + getErrorOutput());
+    }
+
+    private String getErrorOutput() {
+        return errorOutput.toString();
     }
 
     private File getZipLastModifiedFile(File dir) {
@@ -305,14 +340,6 @@ public class DistributionKeycloakServer implements KeycloakServer {
         ServerInfoRepresentation info = kc.serverInfo().getInfo();
         kc.close();
         return info;
-    }
-
-    private String getErrorOutput() {
-        try {
-            return new String(keycloakProcess.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            return "";
-        }
     }
 
     private static File resolveKeycloakDist() {
