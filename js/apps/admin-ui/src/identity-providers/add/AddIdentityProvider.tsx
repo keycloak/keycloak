@@ -18,6 +18,7 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { toUpperCase } from "../../util";
 import { useParams } from "../../utils/useParams";
+import { isSocialIdentityProvider } from "../socialIdentityProvider";
 import { toIdentityProvider } from "../routes/IdentityProvider";
 import type { IdentityProviderCreateParams } from "../routes/IdentityProviderCreate";
 import { toIdentityProviders } from "../routes/IdentityProviders";
@@ -106,7 +107,9 @@ export default function AddIdentityProvider() {
                 properties={providerInfo.properties}
               />
             )}
-            <SocialBrokerSettings />
+            {isSocialIdentityProvider(providerId, serverInfo) && (
+              <SocialBrokerSettings />
+            )}
           </FormProvider>
           <ActionGroup>
             <Button
