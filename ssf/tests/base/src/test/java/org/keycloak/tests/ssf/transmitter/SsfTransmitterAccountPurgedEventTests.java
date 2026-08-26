@@ -25,6 +25,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.risc.RiscAccountPurged;
@@ -127,6 +128,10 @@ public class SsfTransmitterAccountPurgedEventTests {
         });
 
         assignOptionalClientScopes(RECEIVER, SsfScopes.SCOPE_SSF_READ, SsfScopes.SCOPE_SSF_MANAGE);
+
+        // Tests vary the realm's duplicate-email policy; reset it so ordering
+        // cannot leak one test's setting into the next.
+        setDuplicateEmailsAllowed(false);
 
         // Tests in this class deliberately vary the receiver's subject format and
         // default_subjects policy, so reset both to the class defaults rather than
@@ -308,6 +313,34 @@ public class SsfTransmitterAccountPurgedEventTests {
                         + "even under default_subjects=ALL");
     }
 
+
+    @Test
+    public void emailSubject_duplicateEmails_purgeResolvesTheDeletedUser() throws Exception {
+        // Regression: the dispatcher's subject gate used to resolve the token's
+        // subject live-first. In a realm that allows duplicate emails,
+        // getUserByEmail returns the first surviving match -- so after purging the
+        // subscribed user, the gate evaluated a *different* account that happens to
+        // share the address, and dropped the purge under default_subjects=NONE.
+        setDuplicateEmailsAllowed(true);
+        setReceiverAttributes(Map.of(
+                ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "NONE",
+                ClientStreamStore.SSF_STREAM_USER_SUBJECT_FORMAT_KEY, EmailSubjectId.TYPE));
+
+        String sharedEmail = "purge-shared@local.test";
+        String purgedId = createUser("purge-dup-a", sharedEmail);
+        addSubject(purgedId);
+        // The survivor is deliberately NOT subscribed: if the gate resolves it
+        // instead of the snapshot, the purge is suppressed and this test fails.
+        createUser("purge-dup-b", sharedEmail);
+
+        deleteUser(purgedId);
+
+        JsonNode set = decodeSet(awaitPush(
+                "the purge must be gated on the deleted user, not on another account sharing its email"));
+        Assertions.assertEquals(sharedEmail, set.path("sub_id").path("email").asText(),
+                "the SET subject is the purged user's email");
+    }
+
     // --- deletions that are not purges --------------------------------------
 
     @Test
@@ -463,6 +496,17 @@ public class SsfTransmitterAccountPurgedEventTests {
     }
 
     // --- setup --------------------------------------------------------------
+
+    /**
+     * Toggles the realm's duplicate-email policy. Keycloak only permits duplicate
+     * emails when login-by-email is off, so the two move together.
+     */
+    protected void setDuplicateEmailsAllowed(boolean allowed) {
+        RealmRepresentation rep = realm.admin().toRepresentation();
+        rep.setLoginWithEmailAllowed(!allowed);
+        rep.setDuplicateEmailsAllowed(allowed);
+        realm.admin().update(rep);
+    }
 
     protected void setReceiverAttributes(Map<String, String> attributes) {
         ClientResource clientResource = realm.admin().clients().get(findClientByClientId(RECEIVER).getId());

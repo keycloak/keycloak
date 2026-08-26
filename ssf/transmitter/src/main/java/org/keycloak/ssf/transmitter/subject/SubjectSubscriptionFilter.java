@@ -5,6 +5,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.ssf.event.risc.RiscAccountPurged;
 import org.keycloak.ssf.event.stream.SsfStreamUpdatedEvent;
 import org.keycloak.ssf.event.stream.SsfStreamVerificationEvent;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
@@ -253,26 +254,56 @@ public class SubjectSubscriptionFilter {
             return null;
         }
 
+        boolean purged = isAccountPurgedEvent(eventToken);
+
         if (subjectId instanceof ComplexSubjectId complex) {
             SubjectId userSubject = complex.getUser();
             if (userSubject == null) {
                 return null;
             }
-            return lookupUserBySubject(session, realm, userSubject);
+            return lookupUserBySubject(session, realm, userSubject, purged);
         }
 
-        return lookupUserBySubject(session, realm, subjectId);
+        return lookupUserBySubject(session, realm, subjectId, purged);
+    }
+
+    /**
+     * Returns {@code true} when the token carries a RISC {@code account-purged}
+     * event — the one case where the subject names a user that no longer exists, so
+     * a live lookup must not be preferred over this request's snapshot.
+     */
+    protected boolean isAccountPurgedEvent(SsfSecurityEventToken eventToken) {
+        var events = eventToken.getEvents();
+        return events != null && events.containsKey(RiscAccountPurged.TYPE);
     }
 
     protected UserModel lookupUserBySubject(KeycloakSession session, RealmModel realm, SubjectId userSubject) {
+        return lookupUserBySubject(session, realm, userSubject, false);
+    }
+
+    protected UserModel lookupUserBySubject(KeycloakSession session, RealmModel realm, SubjectId userSubject,
+                                            boolean preferSnapshot) {
+        // For a purge the subject names a user that was just deleted, so the snapshot
+        // is authoritative and is consulted first. Live-first would be wrong here:
+        // in a realm that allows duplicate emails, getUserByEmail returns the first
+        // surviving match, so an `email` subject could resolve to a *different*
+        // account and the gate would evaluate that user's notification state instead
+        // of the purged user's — silently dropping the purge under the default
+        // default_subjects=NONE.
+        if (preferSnapshot) {
+            PurgedUserSnapshot snapshot = PurgedUserSnapshot.lookupBySubject(session, realm, userSubject);
+            if (snapshot != null) {
+                return snapshot;
+            }
+        }
+
         UserModel user = SubjectUserLookup.lookupUser(session, realm, userSubject);
         if (user != null) {
             return user;
         }
-        // An account-purged SET names a user that no longer exists, so the lookup
-        // above can never succeed for one. Falling back to this request's snapshot
-        // keeps the gate meaningful: without it every purge would be evaluated as an
-        // unresolvable subject and dropped under the default default_subjects=NONE.
+        // Non-purge events still fall back to a snapshot: the subject may name a user
+        // deleted earlier in this same request, and evaluating it as unresolvable
+        // would drop the event under default_subjects=NONE.
         return PurgedUserSnapshot.lookupBySubject(session, realm, userSubject);
     }
 
