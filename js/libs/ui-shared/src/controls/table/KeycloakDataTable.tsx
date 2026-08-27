@@ -138,6 +138,14 @@ function DataTable<T>({
     [selectedRows, rows],
   );
 
+  const selectableRows = useMemo(
+    () =>
+      rows.filter(
+        (row) => "disableSelection" in row && !row.disableSelection && row.data,
+      ),
+    [rows],
+  );
+
   useEffect(() => {
     if (canSelectAll) {
       const selectAllCheckbox = document.getElementsByName("check-all").item(0);
@@ -145,14 +153,17 @@ function DataTable<T>({
       if (selectAllCheckbox) {
         const checkbox = selectAllCheckbox as HTMLInputElement;
         checkbox.indeterminate =
-          rowsSelectedOnPage.length <
-            rows.filter(
-              (row) =>
-                "disableSelection" in row && !row.disableSelection && row.data,
-            ).length && rowsSelectedOnPage.length > 0;
+          rowsSelectedOnPage.length < selectableRows.length &&
+          rowsSelectedOnPage.length > 0;
       }
     }
-  }, [selectedRows, canSelectAll, rows]);
+  }, [
+    selectedRows,
+    canSelectAll,
+    rows,
+    selectableRows.length,
+    rowsSelectedOnPage.length,
+  ]);
 
   const updateSelectedRows = (selected: T[]) => {
     setSelectedRows(selected);
@@ -170,17 +181,7 @@ function DataTable<T>({
         );
         updateSelectedRows(
           isSelected
-            ? [
-                ...selectedRows,
-                ...rows
-                  .filter(
-                    (row) =>
-                      "disableSelection" in row &&
-                      !row.disableSelection &&
-                      row.data,
-                  )
-                  .map((row) => row.data),
-              ]
+            ? [...selectedRows, ...selectableRows.map((row) => row.data)]
             : selectedRows.filter(
                 (v) => !rowsSelectedOnPageIds.includes(get(v, "id")),
               ),
@@ -218,20 +219,9 @@ function DataTable<T>({
                         updateState(-1, isSelected);
                       },
                       isSelected:
-                        rowsSelectedOnPage.length ===
-                          rows.filter(
-                            (row) =>
-                              "disableSelection" in row &&
-                              !row.disableSelection &&
-                              row.data,
-                          ).length && rowsSelectedOnPage.length > 0,
-                      isDisabled:
-                        rows.filter(
-                          (row) =>
-                            "disableSelection" in row &&
-                            !row.disableSelection &&
-                            row.data,
-                        ).length === 0,
+                        rowsSelectedOnPage.length === selectableRows.length &&
+                        rowsSelectedOnPage.length > 0,
+                      isDisabled: selectableRows.length === 0,
                     }
                   : undefined
               }
