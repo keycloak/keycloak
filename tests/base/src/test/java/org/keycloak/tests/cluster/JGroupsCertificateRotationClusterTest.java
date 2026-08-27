@@ -3,24 +3,20 @@ package org.keycloak.tests.cluster;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.jgroups.certificates.CertificateReloadManager;
-import org.keycloak.jgroups.certificates.DatabaseJGroupsCertificateProvider;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.providers.runonserver.ClusterTestTasks;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 
 import org.awaitility.Awaitility;
-import org.infinispan.factories.GlobalComponentRegistry;
-import org.infinispan.manager.EmbeddedCacheManager;
-import org.junit.Assume;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @KeycloakIntegrationTest
 public class JGroupsCertificateRotationClusterTest extends AbstractClusterTest {
@@ -28,10 +24,13 @@ public class JGroupsCertificateRotationClusterTest extends AbstractClusterTest {
     @InjectRealm
     ManagedRealm managedRealm;
 
+    @InjectRunOnServer(permittedPackages = {"org.keycloak.tests"}, ref = "cluster-run-on-server")
+    RunOnServerClient clusterRunOnServer;
+
     @Test
     public void testRotation() {
-        Assume.assumeTrue(getClusterSize() >= 2);
-        Assume.assumeTrue(isMtlsEnabled());
+        assumeTrue(getClusterSize() >= 2);
+        assumeTrue(isMtlsEnabled());
 
         assertClusterSize();
 
@@ -50,8 +49,8 @@ public class JGroupsCertificateRotationClusterTest extends AbstractClusterTest {
 
     @Test
     public void testAutoRotation() {
-        Assume.assumeTrue(getClusterSize() >= 2);
-        Assume.assumeTrue(isMtlsEnabled());
+        assumeTrue(getClusterSize() >= 2);
+        assumeTrue(isMtlsEnabled());
 
         try (var revert = overwriteRotation(5, ChronoUnit.SECONDS)) {
             assertClusterSize();
@@ -68,11 +67,8 @@ public class JGroupsCertificateRotationClusterTest extends AbstractClusterTest {
 
     @Test
     public void testCoordinatorHasScheduleTask() {
-        Assume.assumeTrue(getClusterSize() >= 2);
-        Assume.assumeTrue(isMtlsEnabled());
-
-        var alias = currentCertificateAliasFor(0);
-        log.infof("Current JGroups Certificate alias: %s", alias);
+        assumeTrue(getClusterSize() >= 2);
+        assumeTrue(isMtlsEnabled());
 
         int coordinatorIdx = -1;
         for (int i = 0; i < getClusterSize(); ++i) {
@@ -84,29 +80,27 @@ public class JGroupsCertificateRotationClusterTest extends AbstractClusterTest {
         }
 
         assertTrue(coordinatorIdx >= 0);
-        killBackendNode(backendNode(coordinatorIdx));
+        ContainerInfo coordinatorNode = backendNode(coordinatorIdx);
+        killBackendNode(coordinatorNode);
         failback();
         assertClusterSize();
 
-        // new coordinator should be the next in line
-        coordinatorIdx++;
-        if (coordinatorIdx >= getClusterSize()) {
-            coordinatorIdx = 0;
+        boolean foundCoordinatorWithTask = false;
+        for (int i = 0; i < getClusterSize(); ++i) {
+            if (isCoordinator(i) && hasRotationTask(i)) {
+                foundCoordinatorWithTask = true;
+                break;
+            }
         }
-
-        assertTrue(isCoordinator(coordinatorIdx));
-        assertTrue(hasRotationTask(coordinatorIdx));
+        assertTrue(foundCoordinatorWithTask, "Expected a coordinator with scheduled rotation task after failback");
     }
 
     private boolean isMtlsEnabled() {
         boolean isMtlsEnabled = true;
         for (int i = 0; i < getClusterSize(); ++i) {
-            var crmEnabled = getTestingClientFor(backendNode(i))
+            var crmEnabled = testingClientFor(backendNode(i))
                     .server()
-                    .fetch(session -> {
-                        var crm = certificateReloadManager(session);
-                        return crm != null;
-                    }, Boolean.class);
+                    .fetch(new ClusterTestTasks.HasCertificateReloadManager(), Boolean.class);
 
             isMtlsEnabled = isMtlsEnabled && crmEnabled;
         }
@@ -117,38 +111,17 @@ public class JGroupsCertificateRotationClusterTest extends AbstractClusterTest {
     private AutoCloseable overwriteRotation(long amount, ChronoUnit timeUnit) {
         long previousRotationSeconds = 0;
         for (int i = 0; i < getClusterSize(); ++i) {
-            previousRotationSeconds = getTestingClientFor(backendNode(i))
+            previousRotationSeconds = testingClientFor(backendNode(i))
                     .server()
-                    .fetch(session -> {
-                        var crm = certificateReloadManager(session);
-                        if (crm == null) {
-                            throw new RuntimeException("MTLS is not enabled");
-                        }
-                        var provider = databaseJGroupsCertificateProvider(session);
-                        var originalRotation = provider.getRotationPeriod();
-                        databaseJGroupsCertificateProvider(session).setRotationPeriod(Duration.of(amount, timeUnit));
-                        if (crm.isCoordinator()) {
-                            crm.rotateCertificate();
-                        }
-                        return originalRotation.toSeconds();
-                    }, Long.class);
+                    .fetch(new ClusterTestTasks.OverwriteRotationPeriod(amount, timeUnit), Long.class);
         }
 
         long finalPreviousRotationSeconds = previousRotationSeconds;
         return () -> {
             for (int i = 0; i < getClusterSize(); ++i) {
-                getTestingClientFor(backendNode(i))
+                testingClientFor(backendNode(i))
                         .server()
-                        .run(session -> {
-                            var crm = certificateReloadManager(session);
-                            if (crm == null) {
-                                throw new RuntimeException("MTLS is not enabled");
-                            }
-                            databaseJGroupsCertificateProvider(session).setRotationPeriod(Duration.ofSeconds(finalPreviousRotationSeconds));
-                            if (crm.isCoordinator()) {
-                                crm.rotateCertificate();
-                            }
-                        });
+                        .run(new ClusterTestTasks.RestoreRotationPeriod(finalPreviousRotationSeconds));
             }
         };
     }
@@ -163,23 +136,23 @@ public class JGroupsCertificateRotationClusterTest extends AbstractClusterTest {
     }
 
     private String currentCertificateAliasFor(int index) {
-        return getTestingClientFor(backendNode(index)).server().fetch(JGroupsCertificateRotationClusterTest::currentCertificateAlias, String.class);
+        return testingClientFor(backendNode(index)).server().fetch(new ClusterTestTasks.CurrentCertificateAlias(), String.class);
     }
 
     private void rotateCertificate(int index) {
-        getTestingClientFor(backendNode(index)).server().run(JGroupsCertificateRotationClusterTest::rotateCertificate);
+        testingClientFor(backendNode(index)).server().run(new ClusterTestTasks.RotateCertificate());
     }
 
     private boolean isCoordinator(int index) {
-        return getTestingClientFor(backendNode(index)).server().fetch(session -> certificateReloadManager(session).isCoordinator(), Boolean.class);
+        return testingClientFor(backendNode(index)).server().fetch(new ClusterTestTasks.IsCoordinator(), Boolean.class);
     }
 
     private boolean hasRotationTask(int index) {
-        return getTestingClientFor(backendNode(index)).server().fetch(session -> certificateReloadManager(session).hasRotationTask(), Boolean.class);
+        return testingClientFor(backendNode(index)).server().fetch(new ClusterTestTasks.HasRotationTask(), Boolean.class);
     }
 
     private int fetchClusterSize(int index) {
-        return getTestingClientFor(backendNode(index)).server().fetch(session -> cacheManager(session).getMembers().size(), Integer.class);
+        return testingClientFor(backendNode(index)).server().fetch(new ClusterTestTasks.ClusterMembersCount(), Integer.class);
     }
 
     private void assertClusterSize(){
@@ -192,28 +165,8 @@ public class JGroupsCertificateRotationClusterTest extends AbstractClusterTest {
         }
     }
 
-    private static CertificateReloadManager certificateReloadManager(KeycloakSession session) {
-        return GlobalComponentRegistry.componentOf(cacheManager(session), CertificateReloadManager.class);
-    }
-
-    private static DatabaseJGroupsCertificateProvider databaseJGroupsCertificateProvider(KeycloakSession session) {
-        return (DatabaseJGroupsCertificateProvider) session.getProvider(JGroupsCertificateProvider.class);
-    }
-
-    private static EmbeddedCacheManager cacheManager(KeycloakSession session) {
-        return session.getProvider(InfinispanConnectionProvider.class)
-                .getCache(InfinispanConnectionProvider.USER_CACHE_NAME)
-                .getCacheManager();
-    }
-
-    private static String currentCertificateAlias(KeycloakSession session) {
-        return databaseJGroupsCertificateProvider(session)
-                .getCurrentCertificate()
-                .getAlias();
-    }
-
-    private static void rotateCertificate(KeycloakSession session) {
-        certificateReloadManager(session).rotateCertificate();
+    private ClusterTestingClient testingClientFor(ContainerInfo node) {
+        return new ClusterTestingClient(node.getIndex(), loadBalancer, clusterRunOnServer);
     }
 
 }

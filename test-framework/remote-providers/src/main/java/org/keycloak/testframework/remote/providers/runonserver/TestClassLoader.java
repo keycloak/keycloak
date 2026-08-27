@@ -21,7 +21,12 @@ public class TestClassLoader extends URLClassLoader {
         // prevent this we are detecting if a class was loaded by the system classloader, and if it was we're forcing
         // it to load the class from the remote test class provider.
         if (loadClass != null && loadClass.getClassLoader() != null && loadClass.getClassLoader().equals(ClassLoader.getSystemClassLoader())) {
-            return findClass(name);
+            try {
+                return findClass(name);
+            } catch (ClassNotFoundException e) {
+                // Fallback to the already-loaded system class if the test class provider cannot serve this class.
+                return loadClass;
+            }
         } else {
             return loadClass;
         }
