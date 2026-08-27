@@ -23,7 +23,7 @@ package org.keycloak.connections.jpa;
  * When a transaction only modifies entities that implement this interface (and whose
  * {@link #isAsyncCommitAllowed(EntityOperationType)} returns {@code true} for the
  * respective operation). See {@link AsyncCommitIntegrator} for details.
- * This is currently only supported for PostgreSQL databases.
+ * This is currently supported for PostgreSQL, SQL Server, and Oracle databases.
  * <p>
  * Entities that do NOT implement this interface are considered "important" — any modification
  * to them forces synchronous commit for the entire transaction.

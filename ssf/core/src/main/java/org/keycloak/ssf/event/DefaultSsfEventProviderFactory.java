@@ -12,6 +12,8 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
+import org.keycloak.ssf.event.risc.RiscAccountDisabled;
+import org.keycloak.ssf.event.risc.RiscAccountEnabled;
 import org.keycloak.ssf.event.stream.SsfStreamUpdatedEvent;
 import org.keycloak.ssf.event.stream.SsfStreamVerificationEvent;
 
@@ -50,6 +52,10 @@ public class DefaultSsfEventProviderFactory implements SsfEventProviderFactory, 
         events.put(CaepCredentialChange.TYPE, CaepCredentialChange::new);
         events.put(CaepSessionRevoked.TYPE, CaepSessionRevoked::new);
 
+        // RISC events
+        events.put(RiscAccountDisabled.TYPE, RiscAccountDisabled::new);
+        events.put(RiscAccountEnabled.TYPE, RiscAccountEnabled::new);
+
         STANDARD_EVENT_FACTORIES = Map.copyOf(events);
     }
 
@@ -60,17 +66,22 @@ public class DefaultSsfEventProviderFactory implements SsfEventProviderFactory, 
      * Every other built-in event in the map is contributed to the registry
      * only so the receiver-side parser can decode incoming SETs of that type.
      *
-     * <p>The two types here are use-cases enumerated by the OpenID CAEP
-     * Interoperability Profile 1.0: {@code session-revoked} and
-     * {@code credential-change}. The profile is opt-in per use-case
-     * ("Implementations MAY choose to support one or more …"), so supporting
-     * any one of them is enough to count as interoperable.
+     * <p>{@code session-revoked} and {@code credential-change} are the two
+     * use-cases enumerated by the OpenID CAEP Interoperability Profile 1.0.
+     * The profile is opt-in per use-case ("Implementations MAY choose to
+     * support one or more …"), so supporting any one of them is enough to
+     * count as interoperable. {@code account-disabled} and
+     * {@code account-enabled} are RISC 1.0 events, not part of that CAEP
+     * profile, added alongside it.
      *
      * @see <a href="https://openid.github.io/sharedsignals/openid-caep-interoperability-profile-1_0.html">OpenID CAEP Interoperability Profile 1.0</a>
+     * @see <a href="https://openid.net/specs/openid-risc-1_0-final.html">OpenID RISC 1.0 (Final)</a>
      */
     public static final Set<String> EMITTABLE_EVENT_TYPES = Set.of(
             CaepCredentialChange.TYPE,
-            CaepSessionRevoked.TYPE);
+            CaepSessionRevoked.TYPE,
+            RiscAccountDisabled.TYPE,
+            RiscAccountEnabled.TYPE);
 
     /**
      * Subset of {@link #EMITTABLE_EVENT_TYPES} that {@code SecurityEventTokenMapper}
@@ -79,7 +90,9 @@ public class DefaultSsfEventProviderFactory implements SsfEventProviderFactory, 
      */
     public static final Set<String> NATIVELY_EMITTED_EVENT_TYPES = Set.of(
             CaepCredentialChange.TYPE,
-            CaepSessionRevoked.TYPE);
+            CaepSessionRevoked.TYPE,
+            RiscAccountDisabled.TYPE,
+            RiscAccountEnabled.TYPE);
 
     private volatile SsfEventRegistry registry;
 

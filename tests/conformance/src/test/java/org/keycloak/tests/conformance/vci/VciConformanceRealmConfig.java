@@ -43,6 +43,7 @@ import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.TimeClaimNormalizer;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGeneratedIdMapper;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCIssuedAtTimeClaimMapper;
+import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -70,6 +71,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import static org.keycloak.OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY;
 import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.models.Constants.CREATE_DEFAULT_CLIENT_SCOPES;
 import static org.keycloak.models.Constants.DEFAULT_ROLES_ROLE_PREFIX;
@@ -84,11 +86,27 @@ public class VciConformanceRealmConfig implements RealmConfig {
     public static final String APP_CLIENT = "oid4vci-app";
     public static final String SD_JWT_SCOPE = "conformance_sd_jwt_vc";
     public static final String CREDENTIAL_CONFIGURATION_ID = "conformance_sd_jwt_vc";
+    public static final String MDOC_SCOPE = "conformance_mso_mdoc";
+    public static final String MDOC_CREDENTIAL_CONFIGURATION_ID = "conformance_mso_mdoc";
+    public static final String MDOC_DOC_TYPE = "org.iso.18013.5.1.mDL";
+    public static final String MDOC_NAMESPACE = "org.iso.18013.5.1";
+    // The credential_format plan variant value the conformance suite uses for ISO mdoc, see VCI1FinalCredentialFormat
+    public static final String MDOC_CREDENTIAL_FORMAT_VARIANT = "mdoc";
     public static final String CONFORMANCE_CALLBACK = OpenIdConformanceSuite.INTERNAL_BASE_URI + "/test/a/keycloak/callback";
     public static final String TRUST_IDP_ALIAS = "conformance-client-attester";
     public static final String X509_TRUST_IDP_ALIAS = "conformance-attester-x509";
     // The attester leaf certificate is generated with the emailProtection extended key usage.
     private static final String ATTESTER_ATTESTATION_EKU = "1.3.6.1.5.5.7.3.4";
+
+    /**
+     * Maps the conformance suite {@code credential_format} plan variant to the matching credential configuration id
+     * provisioned on the realm, defaulting to SD-JWT VC.
+     */
+    public static String credentialConfigurationId(String credentialFormatVariant) {
+        return MDOC_CREDENTIAL_FORMAT_VARIANT.equals(credentialFormatVariant)
+                ? MDOC_CREDENTIAL_CONFIGURATION_ID
+                : CREDENTIAL_CONFIGURATION_ID;
+    }
 
     @Override
     public RealmBuilder configure(RealmBuilder realm) {
@@ -104,7 +122,7 @@ public class VciConformanceRealmConfig implements RealmConfig {
                 .attribute(OID4VCIConstants.TIME_CLAIMS_STRATEGY, TimeClaimNormalizer.Strategy.RANDOMIZE.name())
                 .attribute(OID4VCIConstants.TIME_RANDOMIZE_WINDOW_SECONDS, "300")
                 .defaultSignatureAlgorithm(Algorithm.ES256)
-                .clientScopes(createSdJwtCredentialScope())
+                .clientScopes(createSdJwtCredentialScope(), createMdocCredentialScope())
                 .users(UserBuilder.create()
                         .username(HOLDER)
                         .enabled(true)
@@ -118,6 +136,7 @@ public class VciConformanceRealmConfig implements RealmConfig {
                         .attribute("address_locality", "London")
                         .realmRoles(DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM)
                         .verifiableCredential(SD_JWT_SCOPE)
+                        .verifiableCredential(MDOC_SCOPE)
                         .build())
                 .clients(conformanceClient(CLIENT, false), conformanceClient(CLIENT2, true), appClient())
                 .clientProfile(haipClientProfile())
@@ -158,7 +177,7 @@ public class VciConformanceRealmConfig implements RealmConfig {
         trust.setConfig(Map.of(
                 DefaultTrustIdentityProviderConfig.USE_X509, "true",
                 DefaultTrustIdentityProviderConfig.TRUSTED_CERTIFICATES, VciAttesterKey.caCertificatePem(),
-                DefaultTrustIdentityProviderConfig.ATTESTATION_EXTENDED_KEY_USAGES, ATTESTER_ATTESTATION_EKU));
+                DefaultTrustIdentityProviderConfig.REQUIRED_EXTENDED_KEY_USAGES, ATTESTER_ATTESTATION_EKU));
         return trust;
     }
 
@@ -173,7 +192,7 @@ public class VciConformanceRealmConfig implements RealmConfig {
                 // DPoP proof (the holder-of-key conformance module checks exactly this)
                 .attribute(OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS, "true")
                 .defaultClientScopes("basic", "profile", "roles")
-                .optionalClientScopes(SD_JWT_SCOPE, "email")
+                .optionalClientScopes(SD_JWT_SCOPE, MDOC_SCOPE, "email")
                 .attribute(OID4VCI_ENABLED_ATTRIBUTE_KEY, "true")
                 .redirectUris(CONFORMANCE_CALLBACK + (wildcardRedirect ? "*" : ""))
                 .webOrigins(OpenIdConformanceSuite.INTERNAL_BASE_URI.toString());
@@ -208,6 +227,28 @@ public class VciConformanceRealmConfig implements RealmConfig {
         attributes.put(CredentialScopeModel.VC_BINDING_REQUIRED, "true");
         attributes.put(CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES, "jwt");
         attributes.put(CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS, CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
+        scope.setAttributes(attributes);
+        return scope;
+    }
+
+    private CredentialScopeRepresentation createMdocCredentialScope() {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation(MDOC_SCOPE)
+                .setIncludeInTokenScope(true)
+                .setExpiryInSeconds(300)
+                .setCredentialConfigurationId(MDOC_CREDENTIAL_CONFIGURATION_ID)
+                .setCredentialIdentifier(MDOC_CREDENTIAL_CONFIGURATION_ID)
+                .setFormat(VCFormat.MSO_MDOC)
+                .setSigningAlg(Algorithm.ES256)
+                // mDoc carries the doctype where SD-JWT VC carries the vct
+                .setVct(MDOC_DOC_TYPE);
+
+        scope.setDisplay(JsonSerialization.valueAsString(List.of(new DisplayObject().setName(MDOC_CREDENTIAL_CONFIGURATION_ID).setLocale("en-EN"))));
+        scope.setProtocolMappers(mdocProtocolMappers());
+
+        Map<String, String> attributes = Optional.ofNullable(scope.getAttributes()).orElseGet(HashMap::new);
+        attributes.put(CredentialScopeModel.VC_BINDING_REQUIRED, "true");
+        attributes.put(CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES, "jwt");
+        attributes.put(CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS, CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY);
         scope.setAttributes(attributes);
         return scope;
     }
@@ -265,6 +306,21 @@ public class VciConformanceRealmConfig implements RealmConfig {
                 mapper("not-before-mapper", "oid4vc-issued-at-time-claim-mapper", Map.of(
                         OID4VCIssuedAtTimeClaimMapper.CLAIM_NAME, "nbf",
                         OID4VCIssuedAtTimeClaimMapper.VALUE_SOURCE, "COMPUTE")));
+    }
+
+    // mDoc claims are organised into namespaces, so every mapper pins the ISO 18013-5 namespace
+    private List<ProtocolMapperRepresentation> mdocProtocolMappers() {
+        return List.of(
+                mdocMapper("did-mapper", "oid4vc-subject-id-mapper", "id", "did"),
+                mdocMapper("given-name-mapper", "oid4vc-user-attribute-mapper", "given_name", "firstName"),
+                mdocMapper("family-name-mapper", "oid4vc-user-attribute-mapper", "family_name", "lastName"));
+    }
+
+    private ProtocolMapperRepresentation mdocMapper(String name, String type, String claimName, String userAttribute) {
+        return mapper(name, type, Map.of(
+                OID4VCMapper.CLAIM_NAME, claimName,
+                OID4VCMapper.USER_ATTRIBUTE_KEY, userAttribute,
+                OID4VCMapper.MDOC_NAMESPACE, MDOC_NAMESPACE));
     }
 
     private ProtocolMapperRepresentation mapper(String name, String type, Map<String, String> config) {
@@ -345,7 +401,7 @@ public class VciConformanceRealmConfig implements RealmConfig {
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.CLIENT_AUTH_ABCA)
+            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.OID4VC_MDOC, Profile.Feature.CLIENT_AUTH_ABCA)
                     .option("hostname", OpenIdConformanceSuite.KEYCLOAK_BASE_URI.toString())
                     .spiOption("keys", "java-keystore", "keystores-path", ConformanceSigningKey.keystoresBaseDir())
                     .option("https-protocols", "TLSv1.3,TLSv1.2")

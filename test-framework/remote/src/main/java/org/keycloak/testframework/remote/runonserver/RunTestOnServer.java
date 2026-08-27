@@ -1,6 +1,7 @@
 package org.keycloak.testframework.remote.runonserver;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import org.keycloak.common.VerificationException;
@@ -24,6 +25,15 @@ public class RunTestOnServer implements RunOnServer {
             Object test = clazz.getDeclaredConstructor().newInstance();
             Method method = clazz.getDeclaredMethod(testMethod, KeycloakSession.class);
             method.invoke(test, session);
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException re) {
+                throw re;
+            }
+            if (cause instanceof Error er) {
+                throw er;
+            }
+            throw new RuntimeException(cause);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -12,7 +12,6 @@ import org.keycloak.admin.client.resource.ClientPoliciesProfilesResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.Profile;
-import org.keycloak.common.profile.CommaSeparatedListProfileConfigResolver;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -63,7 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  *
  * @author <a href="mailto:masales@redhat.com">Marcelo Sales</a>
  */
-@KeycloakIntegrationTest(config = ClientSecretRotationUtils.ClientSecretRotationServerConfig.class)
+@KeycloakIntegrationTest
 public class ClientSecretRotationTest {
 
     private static final String CLIENT_NAME = "confidential-client";
@@ -88,7 +87,7 @@ public class ClientSecretRotationTest {
 
     @BeforeAll
     public static void beforeAll() {
-        Profile.configure(new CommaSeparatedListProfileConfigResolver(Profile.Feature.CLIENT_SECRET_ROTATION.getVersionedKey(), ""));
+        Profile.defaults();
     }
 
     /**

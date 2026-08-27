@@ -18,11 +18,13 @@
 package org.keycloak.tests.admin.authz.fgap;
 
 import java.util.List;
+import java.util.Set;
 
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
@@ -30,10 +32,13 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
@@ -121,6 +126,243 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
                 assertWorkflowAccess(client);
             } finally {
                 client.realm(myrealm.getRealm()).remove();
+            }
+        }
+    }
+
+    @Test
+    public void testRolePolicyRespectsClientScope() {
+        String realmName = realm.getName();
+
+        // Create a custom role and a user who has it
+        RoleRepresentation customRole = new RoleRepresentation();
+        customRole.setName("custom-manager");
+        realm.admin().roles().create(customRole);
+        customRole = realm.admin().roles().get("custom-manager").toRepresentation();
+
+        UserRepresentation scopedAdmin = createUser("scoped-admin", "password");
+        realm.admin().users().get(scopedAdmin.getId()).roles()
+                .realmLevel().add(List.of(customRole));
+
+        // Grant query-users and view-users so the admin can reach and list users
+        ClientRepresentation realmMgmt = realm.admin().clients()
+                .findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation queryUsersRole = realm.admin().clients().get(realmMgmt.getId())
+                .roles().get(AdminRoles.QUERY_USERS).toRepresentation();
+        RoleRepresentation viewUsersRole = realm.admin().clients().get(realmMgmt.getId())
+                .roles().get(AdminRoles.VIEW_USERS).toRepresentation();
+        realm.admin().users().get(scopedAdmin.getId()).roles()
+                .clientLevel(realmMgmt.getId()).add(List.of(queryUsersRole, viewUsersRole));
+
+        // Create a role policy requiring custom-manager with fetchRoles=false so that
+        // RolePolicyProvider delegates to identity.hasRealmRole() rather than user.hasRole()
+        RolePolicyRepresentation rolePolicy = createRolePolicy(realm, adminPermissionsClient,
+                "Custom Manager Role Policy", customRole.getId(), Logic.POSITIVE);
+        rolePolicy = adminPermissionsClient.authorization().policies().role()
+                .findByName(rolePolicy.getName());
+        rolePolicy.setFetchRoles(false);
+        adminPermissionsClient.authorization().policies().role()
+                .findById(rolePolicy.getId()).update(rolePolicy);
+        createAllPermission(adminPermissionsClient, AdminPermissionsSchema.USERS.getType(),
+                rolePolicy, Set.of(AdminPermissionsSchema.MANAGE));
+
+        // Create a restricted client that includes custom-manager in scope
+        ClientRepresentation fullScopeClient = ClientBuilder.create("full-scope-client")
+                .publicClient()
+                .directAccessGrantsEnabled()
+                .build();
+        try (Response response = realm.admin().clients().create(fullScopeClient)) {
+            fullScopeClient.setId(ApiUtil.getCreatedId(response));
+        }
+
+        // Verify the permission works with a full-scope client
+        try (Keycloak client = adminClientFactory.create()
+                .realm(realmName)
+                .clientId("full-scope-client")
+                .username("scoped-admin")
+                .password("password")
+                .build()) {
+            UserRepresentation target = client.realm(realmName).users().search("myadmin").get(0);
+            target.setLastName("updated");
+            client.realm(realmName).users().get(target.getId()).update(target);
+        }
+
+        // Now create a restricted client that does NOT include custom-manager in scope
+        ClientRepresentation restrictedClient = ClientBuilder.create("restricted-client")
+                .publicClient()
+                .directAccessGrantsEnabled()
+                .fullScopeEnabled(false)
+                .build();
+        try (Response response = realm.admin().clients().create(restrictedClient)) {
+            restrictedClient.setId(ApiUtil.getCreatedId(response));
+        }
+
+        // Add query-users and view-users to scope — custom-manager is NOT in scope
+        realm.admin().clients().get(restrictedClient.getId()).getScopeMappings()
+                .clientLevel(realmMgmt.getId()).add(List.of(queryUsersRole, viewUsersRole));
+
+        // The role policy should deny because custom-manager is not in the client's scope
+        try (Keycloak client = adminClientFactory.create()
+                .realm(realmName)
+                .clientId("restricted-client")
+                .username("scoped-admin")
+                .password("password")
+                .build()) {
+            UserRepresentation target = client.realm(realmName).users().search("myadmin").get(0);
+            target.setLastName("should-not-update");
+            try {
+                client.realm(realmName).users().get(target.getId()).update(target);
+                fail("Updating a user should be denied when the role required by the policy is not in the client scope");
+            } catch (ForbiddenException e) {
+                // expected
+            }
+        }
+    }
+
+    @Test
+    public void testFetchRolesEnabledBypassesScopeFiltering() {
+        String realmName = realm.getName();
+
+        RoleRepresentation customRole = new RoleRepresentation();
+        customRole.setName("custom-manager");
+        realm.admin().roles().create(customRole);
+        customRole = realm.admin().roles().get("custom-manager").toRepresentation();
+
+        UserRepresentation scopedAdmin = createUser("scoped-admin", "password");
+        realm.admin().users().get(scopedAdmin.getId()).roles()
+                .realmLevel().add(List.of(customRole));
+
+        ClientRepresentation realmMgmt = realm.admin().clients()
+                .findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation queryUsersRole = realm.admin().clients().get(realmMgmt.getId())
+                .roles().get(AdminRoles.QUERY_USERS).toRepresentation();
+        RoleRepresentation viewUsersRole = realm.admin().clients().get(realmMgmt.getId())
+                .roles().get(AdminRoles.VIEW_USERS).toRepresentation();
+        realm.admin().users().get(scopedAdmin.getId()).roles()
+                .clientLevel(realmMgmt.getId()).add(List.of(queryUsersRole, viewUsersRole));
+
+        RolePolicyRepresentation rolePolicy = createRolePolicy(realm, adminPermissionsClient,
+                "Fetch Roles Policy", customRole.getId(), Logic.POSITIVE);
+        rolePolicy = adminPermissionsClient.authorization().policies().role()
+                .findByName(rolePolicy.getName());
+        rolePolicy.setFetchRoles(true);
+        adminPermissionsClient.authorization().policies().role()
+                .findById(rolePolicy.getId()).update(rolePolicy);
+        createAllPermission(adminPermissionsClient, AdminPermissionsSchema.USERS.getType(),
+                rolePolicy, Set.of(AdminPermissionsSchema.MANAGE));
+
+        ClientRepresentation restrictedClient = ClientBuilder.create("restricted-client")
+                .publicClient()
+                .directAccessGrantsEnabled()
+                .fullScopeEnabled(false)
+                .build();
+        try (Response response = realm.admin().clients().create(restrictedClient)) {
+            restrictedClient.setId(ApiUtil.getCreatedId(response));
+        }
+
+        realm.admin().clients().get(restrictedClient.getId()).getScopeMappings()
+                .clientLevel(realmMgmt.getId()).add(List.of(queryUsersRole, viewUsersRole));
+
+        // fetchRoles=true resolves roles directly from the user model, bypassing scope filtering
+        try (Keycloak client = adminClientFactory.create()
+                .realm(realmName)
+                .clientId("restricted-client")
+                .username("scoped-admin")
+                .password("password")
+                .build()) {
+            UserRepresentation target = client.realm(realmName).users().search("myadmin").get(0);
+            target.setLastName("updated-via-fetch-roles");
+            client.realm(realmName).users().get(target.getId()).update(target);
+        }
+    }
+
+    @Test
+    public void testClientRolePolicyRespectsClientScope() {
+        String realmName = realm.getName();
+
+        // Create a custom client with a client role
+        ClientRepresentation customApp = ClientBuilder.create("custom-app")
+                .publicClient()
+                .directAccessGrantsEnabled()
+                .build();
+        try (Response response = realm.admin().clients().create(customApp)) {
+            customApp.setId(ApiUtil.getCreatedId(response));
+        }
+        RoleRepresentation appManagerRole = new RoleRepresentation();
+        appManagerRole.setName("app-manager");
+        realm.admin().clients().get(customApp.getId()).roles().create(appManagerRole);
+        appManagerRole = realm.admin().clients().get(customApp.getId())
+                .roles().get("app-manager").toRepresentation();
+
+        UserRepresentation scopedAdmin = createUser("scoped-admin", "password");
+        realm.admin().users().get(scopedAdmin.getId()).roles()
+                .clientLevel(customApp.getId()).add(List.of(appManagerRole));
+
+        ClientRepresentation realmMgmt = realm.admin().clients()
+                .findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation queryUsersRole = realm.admin().clients().get(realmMgmt.getId())
+                .roles().get(AdminRoles.QUERY_USERS).toRepresentation();
+        RoleRepresentation viewUsersRole = realm.admin().clients().get(realmMgmt.getId())
+                .roles().get(AdminRoles.VIEW_USERS).toRepresentation();
+        realm.admin().users().get(scopedAdmin.getId()).roles()
+                .clientLevel(realmMgmt.getId()).add(List.of(queryUsersRole, viewUsersRole));
+
+        RolePolicyRepresentation rolePolicy = createRolePolicy(realm, adminPermissionsClient,
+                "App Manager Policy", appManagerRole.getId(), Logic.POSITIVE);
+        rolePolicy = adminPermissionsClient.authorization().policies().role()
+                .findByName(rolePolicy.getName());
+        rolePolicy.setFetchRoles(false);
+        adminPermissionsClient.authorization().policies().role()
+                .findById(rolePolicy.getId()).update(rolePolicy);
+        createAllPermission(adminPermissionsClient, AdminPermissionsSchema.USERS.getType(),
+                rolePolicy, Set.of(AdminPermissionsSchema.MANAGE));
+
+        // Full-scope client — client role is in scope, operation should succeed
+        ClientRepresentation fullScopeClient = ClientBuilder.create("full-scope-client")
+                .publicClient()
+                .directAccessGrantsEnabled()
+                .build();
+        try (Response response = realm.admin().clients().create(fullScopeClient)) {
+            fullScopeClient.setId(ApiUtil.getCreatedId(response));
+        }
+
+        try (Keycloak client = adminClientFactory.create()
+                .realm(realmName)
+                .clientId("full-scope-client")
+                .username("scoped-admin")
+                .password("password")
+                .build()) {
+            UserRepresentation target = client.realm(realmName).users().search("myadmin").get(0);
+            target.setLastName("updated");
+            client.realm(realmName).users().get(target.getId()).update(target);
+        }
+
+        // Restricted-scope client without the client role — operation should be denied
+        ClientRepresentation restrictedClient = ClientBuilder.create("restricted-client")
+                .publicClient()
+                .directAccessGrantsEnabled()
+                .fullScopeEnabled(false)
+                .build();
+        try (Response response = realm.admin().clients().create(restrictedClient)) {
+            restrictedClient.setId(ApiUtil.getCreatedId(response));
+        }
+
+        realm.admin().clients().get(restrictedClient.getId()).getScopeMappings()
+                .clientLevel(realmMgmt.getId()).add(List.of(queryUsersRole, viewUsersRole));
+
+        try (Keycloak client = adminClientFactory.create()
+                .realm(realmName)
+                .clientId("restricted-client")
+                .username("scoped-admin")
+                .password("password")
+                .build()) {
+            UserRepresentation target = client.realm(realmName).users().search("myadmin").get(0);
+            target.setLastName("should-not-update");
+            try {
+                client.realm(realmName).users().get(target.getId()).update(target);
+                fail("Updating a user should be denied when the client role required by the policy is not in the client scope");
+            } catch (ForbiddenException e) {
+                // expected
             }
         }
     }

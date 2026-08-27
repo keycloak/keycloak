@@ -47,6 +47,9 @@ public interface Details {
     String USERNAME = "username";
     String ACTOR = "actor";
     String ACTOR_ID = "actor_id";
+    String ACTOR_TYPE = "actor_type";
+    String ACTOR_TYPE_USER = "user";
+    String ACTOR_TYPE_CLIENT = "client";
     String ACTOR_SESSION_ID = "actor_session_id";
     String FIRST_NAME = "first_name";
     String LAST_NAME = "last_name";
@@ -54,6 +57,8 @@ public interface Details {
     String UPDATED_FIRST_NAME = PREF_UPDATED + "first_name";
     String PREVIOUS_LAST_NAME = PREF_PREVIOUS + "last_name";
     String UPDATED_LAST_NAME = PREF_UPDATED + "last_name";
+    String PREVIOUS_ENABLED = PREF_PREVIOUS + "enabled";
+    String UPDATED_ENABLED = PREF_UPDATED + "enabled";
     String REMEMBER_ME = "remember_me";
     String TOKEN_ID = "token_id";
     String TOKEN_TYPE = "token_type";

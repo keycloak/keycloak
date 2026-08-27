@@ -43,8 +43,11 @@ test.describe.serial("Client registration policies tab", () => {
     const policyNameUpdated = "policy2";
 
     test("check anonymous clients list is not empty", async ({ page }) => {
-      const rows = await getTableData(page, tabName);
-      expect(rows.length).toBeGreaterThan(1);
+      await expect
+        .poll(async () => (await getTableData(page, tabName)).length, {
+          timeout: 15_000,
+        })
+        .toBeGreaterThan(1);
     });
 
     test("add anonymous client registration policy", async ({ page }) => {
@@ -95,8 +98,11 @@ test.describe.serial("Client registration policies tab", () => {
     });
 
     test("check authenticated clients list is not empty", async ({ page }) => {
-      const rows = await getTableData(page, tabName);
-      expect(rows.length).toBeGreaterThan(1);
+      await expect
+        .poll(async () => (await getTableData(page, tabName)).length, {
+          timeout: 15_000,
+        })
+        .toBeGreaterThan(1);
     });
 
     test("add authenticated client registration policy", async ({ page }) => {

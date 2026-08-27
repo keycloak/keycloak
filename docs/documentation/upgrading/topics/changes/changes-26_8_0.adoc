@@ -11,6 +11,22 @@ The listing endpoints for default and optional client scopes now return an empty
 
 If you have delegated administrators that assign client scopes using Fine-Grained Admin Permissions, ensure they also have the `manage-clients` realm admin role or a type-level `manage` permission on the Clients resource type.
 
+=== Client secret no longer returned for view-only client permissions
+
+The Admin REST API endpoints for retrieving client representations (`GET /admin/realms/\{realm}/clients` and `GET /admin/realms/\{realm}/clients/\{id}`) no longer include the client secret in the response when the caller only has `view-clients` permission. To view the client secret, the caller must have `manage-clients` permission.
+
+Previously, any caller with the `view-clients` role could read client secrets from the API response, which posed a security risk as it allowed read-only administrators to access sensitive credentials. After upgrading, callers with only `view-clients` permission will see a masked placeholder (`**********`) instead of the actual secret value.
+
+If you have delegated administrators or automation that reads client secrets using the `view-clients` role, ensure they are granted the `manage-clients` realm admin role or equivalent `manage` permission on the Clients resource type.
+
+=== `initiating_idp` logout parameter ignored by default
+
+The `initiating_idp` query parameter on the OIDC RP-initiated logout endpoint is now ignored by default. This parameter suppressed the logout at the upstream identity provider for the referenced broker.
+
+After upgrading, {project_name} always performs the upstream identity provider logout during a browser logout, regardless of the `initiating_idp` parameter. To handle logout initiated by an upstream identity provider, rely on the standard OIDC link:https://openid.net/specs/openid-connect-backchannel-1_0.html[back-channel] or link:https://openid.net/specs/openid-connect-frontchannel-1_0.html[front-channel] logout mechanisms instead.
+
+To temporarily restore the previous behavior, enable the `allow-initiating-idp-logout-param` server option for the OpenID Connect provider. This option is deprecated and will be removed in a future release.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
@@ -30,12 +46,20 @@ When calling {project_name}'s experimental AuthZEN endpoints, the caller now nee
 
 The Admin REST API endpoints for listing client sessions (`GET /admin/realms/\{realm}/clients/\{id}/user-sessions` and `GET /admin/realms/\{realm}/clients/\{id}/offline-sessions`) now filter out sessions belonging to users that the caller does not have permission to view. Previously, any caller with the `view-clients` role could see all user sessions for a client, potentially exposing user identities to callers without the `view-users` role. After upgrading, callers without `view-users` permission will see fewer results from these endpoints.
 
+=== Client Secret Rotation is now enabled by default
+
+The `client-secret-rotation` feature has been promoted from preview to supported and is now enabled by default. If you previously enabled this feature explicitly with `--features=client-secret-rotation` or `--features=preview`, that configuration is no longer required.
+
 === HTTP optimized serializers enabled by default
 
 The `http-optimized-serializers` feature is now enabled by default.
 If you enabled it explicitly in a previous release, the `--features=http-optimized-serializers` option is no longer required.
 
 If needed, you can disable it with `--features-disabled=http-optimized-serializers`.
+
+=== `show-config` will mask all SPI option values
+
+The `show-config` command will mask all SPI option values. The command is not currently aware of provider factory configuration property metadata, so it cannot determine if a property is marked as `isSecret`.
 
 === Redesigned identity provider buttons on the login page
 
@@ -51,6 +75,16 @@ The token introspection endpoint previously set the `act.sub` field to the imper
 
 If you have resource servers that parse `act.sub` from introspection responses and expect a username, update them to read `act.preferred_username` instead.
 
+=== Group policy matching for bare group names
+
+Group-based policies in Authorization Services use the groups claim from the token as the first source of truth. When the claim is not defined or empty, the policy falls back to the user's actual group memberships from the realm. Bare group names in token claims are now resolved to top-level realm groups only. Previously, a bare name like `Admins` in a group claim would match any group named `Admins` regardless of its position in the group hierarchy. This allowed users who are members of one group to satisfy policies targeting a different group with the same name at a different path.
+
+If your deployment uses the Group Membership protocol mapper with *Full group path* disabled and relies on group policies targeting nested groups, enable *Full group path* in the protocol mapper configuration so that tokens include the complete group path (for example, `/Organization/Admins` instead of `Admins`).
+
+Group names that contain slashes (for example, a group named `/Organization/Admins`) are now resolved as top-level group names first, before being treated as paths. This prevents a group name from being confused with a nested group path.
+
+Group policies that use full group paths in claims are not affected unless a top-level group name is identical to a nested group path. In that ambiguous case, the top-level group name takes precedence.
+
 === Authorization services claim handling changes
 
 Two changes affect how claims are handled in the authorization services token endpoint:
@@ -58,6 +92,25 @@ Two changes affect how claims are handled in the authorization services token en
 * Claims with the `kc.` prefix are now reserved for server-controlled evaluation context attributes (such as `kc.time.date_time`, `kc.client.id`, and `kc.realm.name`). User-supplied claims with this prefix, whether pushed via `claim_token` or via the UMA permission ticket, are filtered out before policy evaluation. If your authorization policies rely on custom claims that start with `kc.`, rename them to use a different prefix.
 
 * When both a UMA permission ticket and a `claim_token` contain claims with the same key, ticket claims now take precedence. Previously, `claim_token` claims would silently override ticket claims on collision. This change ensures that claims set by the resource server when creating the permission ticket cannot be overridden by the requesting party.
+
+=== Token exchange delegation now requires FGAP V2 permissions
+
+The experimental token exchange delegation feature no longer uses the `impersonation` role from the `realm-management` client to authorize delegation. Instead, delegation is controlled exclusively through link:{adminguide_link}#_fine_grained_permissions[Fine-grained admin permissions version 2] (FGAP V2) using the new `delegate` scope on the Users resource type and the `delegate-members` scope on the Groups resource type.
+
+If you were previously using delegation with the `impersonation` role, you need to:
+
+. Enable Admin Permissions (FGAP V2) on your realm.
+. Create a User permission with the `delegate` scope and assign a policy targeting the administrators or service accounts that should be allowed to delegate. Alternatively, create a Group permission with the `delegate-members` scope to grant delegation for members of a specific group.
+
+FGAP V1 does not support delegation permissions.
+
+=== Token exchange delegation scope renamed from `delegation` to `delegation:user`
+
+The parameterized client scope used by the experimental token exchange delegation feature has been renamed from `delegation` to `delegation:user` to better reflect that this scope targets delegation to a specific user (administrator).
+
+The full scope format in token requests changes from `delegation:<administrator>` to `delegation:user:<administrator>`. For example, a scope value that was previously `delegation:admin1` is now `delegation:user:admin1`.
+
+During migration, the `delegation:user` and `delegation:client` client scopes are automatically created in existing realms as *Optional* client scopes. Delegation also requires configuring a delegation permission through FGAP V2. If you had a `delegation` client scope from a previous version, it can be safely removed after migration. Update clients and automation to request `delegation:user:<administrator>`.
 
 === Email is no longer marked as verified by other flows
 
@@ -68,10 +121,55 @@ This changes the behavior of identity provider account linking by email, of admi
 and of the verifiable credential offer emails of the experimental OID4VCI feature.
 The *Trust Email* setting of identity providers and LDAP federation is not affected, as it is an explicit decision of the administrator to trust the email from the external source.
 
+=== Offline session expiration indexes rebuilt with session bucket and coarse refresh columns
+
+The `OFFLINE_USER_SESSION` table has a new `LAST_SESSION_REFRESH_COARSE` column and updated indexes `IDX_USER_SESSION_EXPIRATION_CREATED` and `IDX_USER_SESSION_EXPIRATION_LAST_REFRESH`. On PostgreSQL and Microsoft SQL Server, `IDX_OFFLINE_USS_BY_BROKER_SESSION_ID` is also rebuilt as a filtered index.
+If the table contains more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
+=== Automatic non-blocking index creation after startup
+
+When {project_name} skips creating an index during schema migration because the table exceeds the row count threshold, the index checker now automatically creates the missing index in the background after startup on databases that support non-blocking index creation. This applies to PostgreSQL (`CREATE INDEX CONCURRENTLY`), Oracle (`CREATE INDEX ... ONLINE`), MySQL/MariaDB (online DDL by default), and Microsoft SQL Server Enterprise, Developer, and Azure SQL editions (`CREATE INDEX ... WITH (ONLINE = ON)`).
+
+On PostgreSQL, if an invalid index exists from a previously failed `CREATE INDEX CONCURRENTLY`, {project_name} detects it, drops it, and recreates it automatically.
+
+On databases that do not support non-blocking index creation, or when the migration strategy is set to `manual` or `validate`, {project_name} continues to log the SQL statement for manual execution without creating the index automatically.
+
+=== Certificate Common Name truncated to 64 characters
+
+When {project_name} generates self-signed certificates (for example, during SAML client creation), the Common Name (CN) is now truncated to 64 characters to comply with the https://datatracker.ietf.org/doc/html/rfc5280[RFC 5280] `ub-common-name` upper bound. Previously, values longer than 64 characters, such as long client IDs, were used as-is. With the BouncyCastle 1.85 update, this caused certificate generation to fail.
+
+If you have tooling that inspects the CN of {project_name}-generated certificates and expects it to match a value longer than 64 characters, be aware that the CN may now be shorter.
+
+=== Asynchronous commit on MS SQL Server and Oracle databases
+
+The asynchronous commit optimization, previously available only on PostgreSQL, now also supports MS SQL Server and Oracle databases.
+Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events will use delayed/asynchronous commit, improving throughput.
+Logouts will still force a synchronous commit.
+
+On MS SQL Server, the DBA must enable delayed durability first: `ALTER DATABASE ... SET DELAYED_DURABILITY = ALLOWED`.
+On Oracle, no database-level configuration is required.
+On both databases, the optimization is automatically disabled when using XA datasources (`+--transaction-xa-enabled=true+`).
+
+You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--async-commit=false+`
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
 The following sections provide details on deprecated features.
+
+=== Client certificate REST API endpoints for key pair management
+
+Several REST API endpoints under `/admin/realms/\{realm}/clients/\{id}/certificates/\{attr}` that deal with server-side key pair generation or private key storage are now deprecated:
+
+* `POST .../generate` -- Generates a key pair on the server. Clients should generate their own key pairs locally and upload only the public certificate.
+* `POST .../upload` -- Superseded by `POST .../upload-certificate`, which is functionally identical but not deprecated.
+* `POST .../download` -- Downloads a keystore containing the client's private key. Clients should manage their own private keys.
+* `POST .../generate-and-download` -- Generates a key pair and returns the private key as a keystore download. Clients should generate their own key pairs locally.
+
+These endpoints no longer store private keys in the database. The `generate` endpoint returns the private key in the response but only persists the public certificate. The `generate-and-download` endpoint returns the private key in the keystore download but only persists the public certificate.
+
+Use the `POST .../upload-certificate` endpoint to upload a public certificate or JWKS after generating your key pair locally.
 
 === Introspection endpoint 'jwt' extension
 
@@ -79,11 +177,37 @@ Proprietary {project_name} extension to invoke introspection endpoint with the H
 deprecated now. In case you have lightweight access token, which you want to exchange for the proper access token, it is instead recommended to use the
 link:{securing_apps_token_exchange_link}[Token Exchange].
 
+=== Client switches in the 'OpenID Connect Compatibility Modes'
+
+There are few client switches in the client settings in the admin console in the section **OpenID Connect Compatibility Modes**. Those were created longer time ago
+for the backwards compatibility with the older OIDC/OAuth2 client adapters. Those switches are officially deprecated now and would be removed in future version.
+Some of the switches were deprecated already in previous versions. In addition to those, the newly deprecated switches are:
+
+* Exclude Session State From Authentication Response
+* Exclude Issuer From Authentication Response
+* Use lower-case bearer type in token responses
+
+Please update your client applications if you still rely on these switches as they will be removed in the future version.
+
 === `HttpResponse#getStatus()` and `setStatus(int)` in server SPI
 
 `org.keycloak.http.HttpResponse#getStatus()` and `org.keycloak.http.HttpResponse#setStatus(int)` are now deprecated.
 These methods are not useful for JAX-RS resource endpoints because the JAX-RS runtime usually determines the final HTTP status from the endpoint return value or exception.
 Use JAX-RS response handling for setting and observing status codes in resource endpoints.
+
+=== Route in `AUTH_SESSION_ID` cookie for sticky sessions
+
+Having the load balancer route appended to the `AUTH_SESSION_ID` cookie is now deprecated.
+
+Since the optimizations in 26.6, sticky sessions no longer bring a significant benefit given the complex setup on the proxy side to get this working.
+Authentication sessions are created on the node where the browser starts the session, and while a session may move to another node on a subsequent request, the overhead is low.
+Most interactions such as backchannel calls and token refreshes do not use cookies and are distributed across nodes regardless.
+The recommendation is to aim for an even distribution of load across {project_name} nodes instead of using sticky sessions.
+
+The options `+spi-sticky-session-encoder--infinispan--should-attach-route+` and `+spi-sticky-session-encoder--remote--should-attach-route+` will be removed in a future release.
+
+The setting is still enabled by default to avoid breaking existing setups.
+To avoid the deprecation warning at startup, set those SPI options to `false`.
 
 === Organization invitation link no longer exposed in API responses
 

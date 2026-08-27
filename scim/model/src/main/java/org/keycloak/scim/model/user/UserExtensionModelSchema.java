@@ -1,12 +1,16 @@
 package org.keycloak.scim.model.user;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.UserModel;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.user.User;
@@ -122,7 +126,7 @@ public class UserExtensionModelSchema extends AbstractUserModelSchema {
             return null;
         }
 
-        return createCustomAttribute(scimName);
+        return createCustomAttribute(scimName, metadata.isMultivalued());
     }
 
     @Override
@@ -133,8 +137,39 @@ public class UserExtensionModelSchema extends AbstractUserModelSchema {
         return schema != null && !List.of(USER_CORE_SCHEMA, ENTERPRISE_USER_SCHEMA).contains(schema);
     }
 
-    private Attribute<UserModel,  User> createCustomAttribute(Object scimName) {
-        return Attribute.<UserModel, User>simple(scimName.toString())
+    private Attribute<UserModel, User> createCustomAttribute(Object scimName, boolean isMultivalued) {
+        Attribute.Builder<UserModel, User> builder = Attribute.<UserModel, User>simple(scimName.toString());
+        if (isMultivalued) {
+            builder = builder.multivalued()
+                    .withModelRemover((model, name, values) -> {
+                        if (getUserProfile().getAttributes().isReadOnly(name)) {
+                            return;
+                        }
+                        if (values == null || values.isEmpty()) {
+                            model.removeAttribute(name);
+                            return;
+                        }
+                        List<String> remaining = model.getAttributeStream(name)
+                                .filter(value -> !values.contains(value))
+                                .toList();
+                        if (remaining.isEmpty()) {
+                            model.removeAttribute(name);
+                        } else {
+                            model.setAttribute(name, remaining);
+                        }
+                    })
+                    .withModelAdder((model, name, values) -> {
+                        if (getUserProfile().getAttributes().isReadOnly(name) || values == null || values.isEmpty()) {
+                            return;
+                        }
+                        Set<String> merged = new LinkedHashSet<>();
+                        model.getAttributeStream(name).forEach(merged::add);
+                        merged.addAll(values.stream().map(Object::toString).toList());
+                        model.setAttribute(name, List.copyOf(merged));
+                    });
+        }
+
+        return builder
                 .modelAttributeResolver(attribute -> {
                     if (isCore()) {
                         return null;
@@ -176,6 +211,8 @@ public class UserExtensionModelSchema extends AbstractUserModelSchema {
                     }
                     if (value == null) {
                         model.removeAttribute(name);
+                    } else if (value instanceof Collection<?> values) {
+                        model.setAttribute(name, values.stream().map(Object::toString).toList());
                     } else {
                         model.setSingleAttribute(name, value.toString());
                     }
@@ -184,11 +221,11 @@ public class UserExtensionModelSchema extends AbstractUserModelSchema {
                         return;
                     }
 
-                    String schema = attribute.getSchema();
-
-                    if (schema == null) {
+                    if (value == null || (value instanceof Collection<?> collection && collection.isEmpty()) || attribute.getSchema() == null) {
                         return;
                     }
+
+                    String schema = attribute.getSchema();
 
                     String attributeName = attribute.getSimpleName();
                     Map<String, Object> extensions = user.getExtensions();
@@ -206,11 +243,33 @@ public class UserExtensionModelSchema extends AbstractUserModelSchema {
 
                     if (subSubAttribute != -1) {
                         String parentAttributeName = attributeName.substring(0, subSubAttribute);
-                        subAttributes = (Map<String, Object>) subAttributes.computeIfAbsent(parentAttributeName, k -> new HashMap<>());
                         attributeName = attributeName.substring(parentAttributeName.length() + 1);
+                        Object existingParent = subAttributes.get(parentAttributeName);
+                        // Handle multivalued attributes annotated as "<parent>.value"
+                        // so that SCIM gets: "<parent>": [ { "value": "..." }, ... ]
+                        if ("value".equals(attributeName) && value instanceof Collection<?> values) {
+                            if (existingParent instanceof Map<?, ?> existingMap && !existingMap.isEmpty()) {
+                                throw incompatibleSiblingMapping(parentAttributeName, schema);
+                            }
+                            subAttributes.put(parentAttributeName, values.stream()
+                                    .filter(Objects::nonNull)
+                                    .map(v -> Map.<String, Object>of("value", v))
+                                    .toList());
+                            return;
+                        }
+                        if (existingParent instanceof Collection<?>) {
+                            throw incompatibleSiblingMapping(parentAttributeName, schema);
+                        }
+                        subAttributes = (Map<String, Object>) subAttributes.computeIfAbsent(parentAttributeName, k -> new HashMap<>());
                     }
 
                     subAttributes.put(attributeName, value);
                 }).build().get(0);
+    }
+
+    private ModelValidationException incompatibleSiblingMapping(String parentAttributeName, String schema) {
+        return new ModelValidationException(
+                "Incompatible SCIM extension mappings for complex attribute '" + schema + ":" + parentAttributeName
+                        + "': multivalued '.value' cannot be combined with sibling sub-attributes");
     }
 }
