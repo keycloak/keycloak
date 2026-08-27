@@ -29,7 +29,10 @@ test.describe.serial("Permissions section tests", () => {
   const realmName = `permissions-${uuid()}`;
 
   test.beforeAll(async () => {
-    await adminClient.createRealm(realmName, { adminPermissionsEnabled: true });
+    await adminClient.createRealm(realmName, {
+      adminPermissionsEnabled: true,
+      organizationsEnabled: true,
+    });
     await adminClient.createUser({
       realm: realmName,
       username: "test-user",
