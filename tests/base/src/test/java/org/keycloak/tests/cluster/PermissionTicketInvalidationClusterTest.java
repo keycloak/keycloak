@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.cluster;
+package org.keycloak.tests.cluster;
 
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -24,14 +24,21 @@ import org.keycloak.authorization.AuthorizationProviderFactory;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 
 import org.apache.commons.lang3.RandomStringUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@KeycloakIntegrationTest
 public class PermissionTicketInvalidationClusterTest extends AbstractInvalidationClusterTestWithTestRealm<PermissionTicketRepresentation, Object> {
+
+    @InjectRealm
+    ManagedRealm managedRealm;
 
     private String clientId;
     private String userId;

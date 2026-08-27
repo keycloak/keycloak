@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.cluster;
+package org.keycloak.tests.cluster;
 
 import java.util.Map;
 
@@ -24,12 +24,19 @@ import jakarta.ws.rs.NotFoundException;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+@KeycloakIntegrationTest
 public class ClientScopeInvalidationClusterTest extends AbstractInvalidationClusterTestWithTestRealm<ClientScopeRepresentation, ClientScopeResource> {
+
+    @InjectRealm
+    ManagedRealm managedRealm;
     @Override
     protected ClientScopeRepresentation createTestEntityRepresentation() {
         var clientScope = new ClientScopeRepresentation();

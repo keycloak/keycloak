@@ -1,19 +1,26 @@
-package org.keycloak.testsuite.cluster;
+package org.keycloak.tests.cluster;
 
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  *
  * @author tkyjovsk
  */
+@KeycloakIntegrationTest
 public abstract class AbstractInvalidationClusterTestWithTestRealm<T, TR> extends AbstractInvalidationClusterTest<T, TR> {
+
+    @InjectRealm
+    ManagedRealm managedRealm;
 
     protected String testRealmName = null;
     
-    @Before
+    @BeforeEach
     public void createTestRealm() {
         createTestRealm(frontendNode());
     }

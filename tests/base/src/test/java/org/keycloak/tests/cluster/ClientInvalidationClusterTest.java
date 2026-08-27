@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.cluster;
+package org.keycloak.tests.cluster;
 
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
@@ -6,11 +6,14 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -18,9 +21,13 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  *
  * @author tkyjovsk
  */
+@KeycloakIntegrationTest
 public class ClientInvalidationClusterTest extends AbstractInvalidationClusterTestWithTestRealm<ClientRepresentation, ClientResource> {
 
-    @Before
+    @InjectRealm
+    ManagedRealm managedRealm;
+
+    @BeforeEach
     public void setExcludedComparisonFields() {
         excludedComparisonFields.add("protocolMappers");
     }

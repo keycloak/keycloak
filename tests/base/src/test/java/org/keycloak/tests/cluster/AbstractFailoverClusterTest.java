@@ -15,26 +15,33 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.cluster;
+package org.keycloak.tests.cluster;
 
 
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.InfoPage;
+import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.page.LogoutConfirmPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.pages.InfoPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.openqa.selenium.Cookie;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
@@ -46,7 +53,17 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+@KeycloakIntegrationTest
 public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
+
+    @InjectRealm
+    ManagedRealm managedRealm;
+
+    @InjectWebDriver
+    ManagedWebDriver driver;
+
+    @InjectOAuthClient
+    OAuthClient oauth;
 
     public static final String KEYCLOAK_SESSION_COOKIE = "KEYCLOAK_SESSION";
 
@@ -56,13 +73,13 @@ public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
 
     public static final Integer REBALANCE_WAIT = Integer.parseInt(System.getProperty("rebalance.wait", "5000"));
 
-    @Page
+    @InjectPage
     protected LoginPage loginPage;
 
-    @Page
+    @InjectPage
     protected LogoutConfirmPage logoutConfirmPage;
 
-    @Page
+    @InjectPage
     protected InfoPage infoPage;
 
     @BeforeClass
@@ -76,7 +93,7 @@ public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
         OAuthClient.resetAppRootRealm();
     }
 
-    @Before
+    @BeforeEach
     public void setup() {
         try {
             adminClient.realm("test").remove();
@@ -101,7 +118,7 @@ public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
         oauth.client("test-app", "password");
     }
 
-    @After
+    @AfterEach
     public void after() {
         adminClient.realm("test").remove();
     }

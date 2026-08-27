@@ -1,7 +1,11 @@
-package org.keycloak.testsuite.cluster;
+package org.keycloak.tests.cluster;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.openqa.selenium.Cookie;
 
 import static org.keycloak.testsuite.util.WaitUtils.pause;
@@ -12,9 +16,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *
  * @author tkyjovsk
  */
+@KeycloakIntegrationTest
 public class SessionFailoverClusterTest extends AbstractFailoverClusterTest {
 
-    @Before
+    @InjectRealm
+    ManagedRealm managedRealm;
+
+    @BeforeEach
     public void beforeSessionFailover() {
         log.info("Initial node failure");
         failure();

@@ -15,19 +15,26 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.cluster;
+package org.keycloak.tests.cluster;
 
 import java.io.IOException;
 
 import jakarta.mail.MessagingException;
 
 import org.keycloak.cookie.CookieType;
-import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
-import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
+import org.keycloak.testframework.ui.page.LoginUpdateProfilePage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
 
@@ -38,13 +45,23 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@KeycloakIntegrationTest
 public class AuthenticationSessionFailoverClusterTest extends AbstractFailoverClusterTest {
 
-    @Page
+    @InjectRealm
+    ManagedRealm managedRealm;
+
+    @InjectWebDriver
+    ManagedWebDriver driver;
+
+    @InjectOAuthClient
+    OAuthClient oauth;
+
+    @InjectPage
     protected LoginPasswordUpdatePage updatePasswordPage;
 
 
-    @Page
+    @InjectPage
     protected LoginUpdateProfilePage updateProfilePage;
 
 

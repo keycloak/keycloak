@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.cluster;
+package org.keycloak.tests.cluster;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,7 +9,9 @@ import java.util.Set;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.ContainerAssume;
@@ -18,8 +20,8 @@ import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeEach;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
@@ -31,7 +33,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author tkyjovsk
  */
-public abstract class AbstractClusterTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest
+public abstract class AbstractClusterTest {
+
+    @InjectRealm
+    ManagedRealm managedRealm;
 
     // Keep the following constants in sync with arquillian
     public static final String QUALIFIER_AUTH_SERVER_NODE_1 = "auth-server-${auth.server}-backend1";
@@ -182,7 +188,7 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
 
     }
 
-    @Before
+    @BeforeEach
     public void beforeClusterTest() {
         failback();
         logFailoverSetup();
