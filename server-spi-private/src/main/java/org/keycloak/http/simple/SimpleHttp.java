@@ -39,11 +39,14 @@ public class SimpleHttp {
     }
 
     public SimpleHttp disableRedirectHandling() {
-        RequestConfig defaultRequestConfig = RequestConfig.DEFAULT;
-        if (client instanceof Configurable configurable && configurable.getConfig() != null) {
-            defaultRequestConfig = configurable.getConfig();
+        RequestConfig baseRequestConfig = requestConfig;
+        if (baseRequestConfig == null) {
+            baseRequestConfig = RequestConfig.DEFAULT;
+            if (client instanceof Configurable configurable && configurable.getConfig() != null) {
+                baseRequestConfig = configurable.getConfig();
+            }
         }
-        requestConfig = RequestConfig.copy(defaultRequestConfig).setRedirectsEnabled(false).build();
+        requestConfig = RequestConfig.copy(baseRequestConfig).setRedirectsEnabled(false).build();
         return this;
     }
 

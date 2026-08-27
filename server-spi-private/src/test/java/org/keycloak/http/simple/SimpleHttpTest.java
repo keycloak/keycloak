@@ -147,6 +147,21 @@ public final class SimpleHttpTest {
             assertFalse(client.requestConfig.isRedirectsEnabled());
         }
 
+        @Test
+        public void disableRedirectHandlingPreservesExplicitRequestConfig() throws IOException {
+            HttpClientMock client = new HttpClientMock();
+            RequestConfig explicitConfig = RequestConfig.copy(client.config)
+                    .setConnectTimeout(9012)
+                    .setSocketTimeout(3456)
+                    .build();
+
+            SimpleHttp.create(client).withRequestConfig(explicitConfig).disableRedirectHandling().doPost("").param("dummy", "value").asResponse();
+
+            assertEquals(explicitConfig.getConnectTimeout(), client.requestConfig.getConnectTimeout());
+            assertEquals(explicitConfig.getSocketTimeout(), client.requestConfig.getSocketTimeout());
+            assertFalse(client.requestConfig.isRedirectsEnabled());
+        }
+
         public static final class DummyEntity {
             public String value;
             public DummyEntity(String value) {
