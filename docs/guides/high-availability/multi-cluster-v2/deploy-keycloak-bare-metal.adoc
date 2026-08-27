@@ -75,7 +75,7 @@ bin/kc.sh start \
     --db-pool-min-size=30 \ # <2>
     --db-pool-max-size=30 \ # <2>
     --features=stateless \ # <3>
-    --spi-cache-embedded--default--cluster-name=<CLUSTER_NAME> \ # <4>
+    --cache-embedded-cluster-name=<CLUSTER_NAME> \ # <4>
     --hostname=<KEYCLOAK_HOSTNAME> \ # <5>
     --https-certificate-file=/path/to/tls.crt \ # <6>
     --https-certificate-key-file=/path/to/tls.key \ # <6>

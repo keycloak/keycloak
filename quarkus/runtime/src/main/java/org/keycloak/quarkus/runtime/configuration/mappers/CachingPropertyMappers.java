@@ -110,6 +110,16 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
                         .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
                         .validator(CachingPropertyMappers::validateCertificateRotationIsPositive)
                         .build(),
+                fromOption(CachingOptions.CACHE_EMBEDDED_NODE_NAME)
+                        .paramLabel("name")
+                        .to("kc.spi-cache-embedded--default--node-name")
+                        .isEnabled(CachingPropertyMappers::cacheSetToInfinispan, "Infinispan clustered embedded is enabled")
+                        .build(),
+                fromOption(CachingOptions.CACHE_EMBEDDED_CLUSTER_NAME)
+                        .paramLabel("name")
+                        .to("kc.spi-cache-embedded--default--cluster-name")
+                        .isEnabled(CachingPropertyMappers::cacheSetToInfinispan, "Infinispan clustered embedded is enabled")
+                        .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS)
                         .paramLabel("address")
                         .to("kc.spi-cache-embedded--default--network-bind-address")
