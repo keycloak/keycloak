@@ -53,6 +53,12 @@ public abstract class BaseResourceTypeProvider<M extends Model, R> implements Sc
         M model = getModel(id);
 
         if (model == null) {
+            // Do not leak the existence of a resource to callers without view permission:
+            // a missing resource must be reported as forbidden (403), not as not found (404),
+            // otherwise callers can probe which resource ids exist.
+            if (!canQuery()) {
+                throw new ForbiddenException();
+            }
             return null;
         }
 
