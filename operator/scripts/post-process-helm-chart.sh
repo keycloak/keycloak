@@ -69,3 +69,10 @@ for binding in "${TEMPLATES_DIR}/clusterrolebinding.yaml"; do
   mv "${tmp}" "${binding}"
   echo "post-process-helm-chart: set ServiceAccount subject namespaces in $(basename "${binding}")"
 done
+
+# Replace {{ $.Chart.Name }} with the fixed operator name across all templates
+for tmpl in "${TEMPLATES_DIR}"/*.yaml "${TEMPLATES_DIR}"/*.yml; do
+  [[ -f "${tmpl}" ]] || continue
+  sed -i 's/{{ \$\?.Chart\.Name }}/keycloak-operator/g' "${tmpl}"
+done
+echo "post-process-helm-chart: replaced Chart.Name references in templates"

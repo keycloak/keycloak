@@ -161,12 +161,12 @@ jobs:
         run: ./mvnw -B -Poperator -Pcluster-wide -pl :keycloak-operator -am package -DskipTests
 
       - name: helm lint
-        run: helm lint operator/target/helm/kubernetes/keycloak-operator
+        run: helm lint operator/target/helm/kubernetes/keycloak-operator-helm
 
       - name: helm template — default
         run: |
           set -euo pipefail
-          out=$(helm template kc-op operator/target/helm/kubernetes/keycloak-operator)
+          out=$(helm template kc-op operator/target/helm/kubernetes/keycloak-operator-helm)
           # Default install ships one CRD per CR class (Keycloak, KeycloakRealmImport,
           # KeycloakOIDCClient, KeycloakSAMLClient) plus the operator's Deployment.
           crds=$(echo "$out" | grep -cE '^kind: "?CustomResourceDefinition"?$' || true)
@@ -184,7 +184,7 @@ jobs:
       - name: helm template — crds.enabled=false
         run: |
           set -euo pipefail
-          out=$(helm template kc-op operator/target/helm/kubernetes/keycloak-operator --set crds.enabled=false)
+          out=$(helm template kc-op operator/target/helm/kubernetes/keycloak-operator-helm --set crds.enabled=false)
           # CRDs are excluded; everything else still renders.
           if echo "$out" | grep -qE '^kind: "?CustomResourceDefinition"?$'; then
             echo "expected no CRDs with crds.enabled=false"; exit 1
@@ -194,7 +194,7 @@ jobs:
       - name: helm template — resource overrides
         run: |
           set -euo pipefail
-          out=$(helm template kc-op operator/target/helm/kubernetes/keycloak-operator \
+          out=$(helm template kc-op operator/target/helm/kubernetes/keycloak-operator-helm \
             --set-string operator.resources.limits.cpu=1500m \
             --set-string operator.resources.limits.memory=1Gi)
           echo "$out" | grep -A4 'resources:' | grep -q 'cpu: 1500m'
@@ -249,7 +249,7 @@ jobs:
         run: |
           set -euo pipefail
           kubectl create namespace keycloak-operator
-          helm install kc-op operator/target/helm/kubernetes/keycloak-operator \
+          helm install kc-op operator/target/helm/kubernetes/keycloak-operator-helm \
             --namespace keycloak-operator \
             --set operator.image=keycloak/keycloak-operator:ci \
             --wait --timeout 5m
