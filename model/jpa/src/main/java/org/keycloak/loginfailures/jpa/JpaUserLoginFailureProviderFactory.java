@@ -121,6 +121,6 @@ public class JpaUserLoginFailureProviderFactory implements UserLoginFailureProvi
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return Profile.isFeatureEnabled(Profile.Feature.STATELESS);
+        return Profile.isFeatureEnabled(Profile.Feature.LOGIN_FAILURES_V2);
     }
 }
