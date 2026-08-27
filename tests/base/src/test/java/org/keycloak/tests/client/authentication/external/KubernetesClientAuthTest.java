@@ -66,6 +66,7 @@ public class KubernetesClientAuthTest extends AbstractBaseClientAuthTest {
     @Test
     public void testAuthorizationHeaderNotSentToExternalJwks() throws Exception {
         Path tokenFile = Files.createTempFile("kubernetes-service-account-token", ".jwt");
+        String previousTokenPath = System.getProperty(SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY);
         try {
             Files.writeString(tokenFile, identityProvider.encodeToken(createDefaultToken()), StandardCharsets.UTF_8);
             System.setProperty(SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY, tokenFile.toString());
@@ -76,7 +77,11 @@ public class KubernetesClientAuthTest extends AbstractBaseClientAuthTest {
             Assertions.assertNull(identityProvider.getLastWellKnownAuthorizationHeader());
             Assertions.assertNull(identityProvider.getLastJwksAuthorizationHeader());
         } finally {
-            System.clearProperty(SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY);
+            if (previousTokenPath == null) {
+                System.clearProperty(SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY);
+            } else {
+                System.setProperty(SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY, previousTokenPath);
+            }
             Files.deleteIfExists(tokenFile);
         }
     }

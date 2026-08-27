@@ -32,6 +32,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -167,6 +168,10 @@ public class ConsentsTest {
         }
 
         Assertions.assertNotNull(foundUser, "There must be user " + userFromProviderRealm.getUsername() + " in realm " + consumerRealm.getName());
+        List<FederatedIdentityRepresentation> federatedIdentities = consumerRealm.admin().users().get(foundUser.getId()).getFederatedIdentity();
+        Assertions.assertEquals(1, federatedIdentities.size(), "The user is not federated");
+        Assertions.assertEquals(IDP_OIDC_ALIAS, federatedIdentities.get(0).getIdentityProvider());
+        Assertions.assertEquals(userFromProviderRealm.getUsername(), federatedIdentities.get(0).getUserName());
 
         // get user with the same username from provider realm
         UserResource userResource = userFromProviderRealm.admin();

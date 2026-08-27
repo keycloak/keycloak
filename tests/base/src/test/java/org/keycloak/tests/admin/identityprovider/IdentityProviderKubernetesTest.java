@@ -100,6 +100,7 @@ public class IdentityProviderKubernetesTest extends AbstractIdentityProviderTest
     @Test
     public void testCreateIdentityProviderResolvesIssuerWhenServiceAccountTokenCannotBeRead() throws Exception {
         Path tokenPath = Files.createTempDirectory("kubernetes-service-account-token");
+        String previousTokenPath = System.getProperty(SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY);
         try {
             System.setProperty(SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY, tokenPath.toString());
 
@@ -115,7 +116,11 @@ public class IdentityProviderKubernetesTest extends AbstractIdentityProviderTest
             IdentityProviderRepresentation created = managedRealm.admin().identityProviders().get("kubernetes").toRepresentation();
             assertEquals(DISCOVERED_ISSUER, created.getConfig().get("issuer"));
         } finally {
-            System.clearProperty(SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY);
+            if (previousTokenPath == null) {
+                System.clearProperty(SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY);
+            } else {
+                System.setProperty(SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY, previousTokenPath);
+            }
             Files.deleteIfExists(tokenPath);
         }
     }

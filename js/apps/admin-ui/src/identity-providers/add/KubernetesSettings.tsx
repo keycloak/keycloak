@@ -11,9 +11,12 @@ const DEFAULT_KUBERNETES_API_SERVER_URL = "https://kubernetes.default.svc";
 
 type DiscoveryMode = "inCluster" | "external";
 
+const normalizeDiscoveryUrl = (url: string) => url.replace(/\/+$/, "");
+
 const discoveryMode = (issuerDiscoveryUrl?: string): DiscoveryMode =>
   !issuerDiscoveryUrl ||
-  issuerDiscoveryUrl === DEFAULT_KUBERNETES_API_SERVER_URL
+  normalizeDiscoveryUrl(issuerDiscoveryUrl) ===
+    DEFAULT_KUBERNETES_API_SERVER_URL
     ? "inCluster"
     : "external";
 

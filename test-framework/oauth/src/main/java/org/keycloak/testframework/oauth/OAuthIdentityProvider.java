@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -42,9 +43,9 @@ public class OAuthIdentityProvider {
     private final OAuthIdentityProviderConfigBuilder.OAuthIdentityProviderConfiguration config;
     private final String issuer;
 
-    private int keysRequestCount = 0;
-    private String lastWellKnownAuthorizationHeader;
-    private String lastJwksAuthorizationHeader;
+    private final AtomicInteger keysRequestCount = new AtomicInteger();
+    private volatile String lastWellKnownAuthorizationHeader;
+    private volatile String lastJwksAuthorizationHeader;
 
     public OAuthIdentityProvider(HttpServer httpServer, OAuthIdentityProviderConfigBuilder.OAuthIdentityProviderConfiguration config) {
         this.config = config;
@@ -81,7 +82,7 @@ public class OAuthIdentityProvider {
     }
 
     public int getKeysRequestCount() {
-        return keysRequestCount;
+        return keysRequestCount.get();
     }
 
     public String getLastJwksAuthorizationHeader() {
@@ -145,7 +146,7 @@ public class OAuthIdentityProvider {
             outputStream.write(keys.getJwksString().getBytes(StandardCharsets.UTF_8));
             outputStream.close();
 
-            keysRequestCount++;
+            keysRequestCount.incrementAndGet();
         }
 
     }
