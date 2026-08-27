@@ -55,8 +55,7 @@ export async function removeGroup(page: Page, groupName: string) {
 export async function pickOrganization(page: Page, organizationName: string) {
   await page.getByTestId("select-organization-button").click();
   await page
-    .locator("tr")
-    .filter({ hasText: organizationName })
+    .getByRole("row", { name: organizationName })
     .getByRole("checkbox")
     .click();
   await page.getByTestId("add").click();
