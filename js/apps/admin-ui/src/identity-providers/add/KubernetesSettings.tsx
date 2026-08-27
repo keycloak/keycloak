@@ -47,8 +47,7 @@ export const KubernetesSettings = () => {
     if (newMode === "inCluster") {
       setValue("config.issuerDiscoveryUrl", DEFAULT_KUBERNETES_API_SERVER_URL);
     } else if (
-      getValues("config.issuerDiscoveryUrl") ===
-      DEFAULT_KUBERNETES_API_SERVER_URL
+      discoveryMode(getValues("config.issuerDiscoveryUrl")) === "inCluster"
     ) {
       setValue("config.issuerDiscoveryUrl", "");
     }

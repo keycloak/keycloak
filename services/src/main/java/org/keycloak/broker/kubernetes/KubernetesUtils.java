@@ -17,6 +17,8 @@ import static org.keycloak.broker.kubernetes.KubernetesConstants.SERVICE_ACCOUNT
 
 final class KubernetesUtils {
 
+    private static final String OIDC_DISCOVERY_PATH = "/.well-known/openid-configuration";
+
     private KubernetesUtils() {
     }
 
@@ -25,7 +27,8 @@ final class KubernetesUtils {
         while (end > 0 && issuer.charAt(end - 1) == '/') {
             end--;
         }
-        return issuer.substring(0, end) + "/.well-known/openid-configuration";
+        String normalizedIssuer = issuer.substring(0, end);
+        return normalizedIssuer.endsWith(OIDC_DISCOVERY_PATH) ? normalizedIssuer : normalizedIssuer + OIDC_DISCOVERY_PATH;
     }
 
     static String getServiceAccountToken() throws Exception {
@@ -38,6 +41,13 @@ final class KubernetesUtils {
     }
 
     static boolean isTrustedKubernetesApiUrl(String url) {
+        return isTrustedKubernetesApiUrl(url,
+                System.getenv(KUBERNETES_SERVICE_HOST_KEY),
+                System.getenv(KUBERNETES_SERVICE_PORT_HTTPS_KEY),
+                System.getenv(KUBERNETES_SERVICE_PORT_KEY));
+    }
+
+    static boolean isTrustedKubernetesApiUrl(String url, String serviceHost, String httpsServicePort, String servicePort) {
         URI uri;
         try {
             uri = URI.create(url);
@@ -55,15 +65,14 @@ final class KubernetesUtils {
         }
 
         if ("kubernetes".equals(host) || "kubernetes.default".equals(host) || "kubernetes.default.svc".equals(host) || "kubernetes.default.svc.cluster.local".equals(host)) {
-            return isTrustedKubernetesApiPort(uri);
+            return isTrustedKubernetesApiPort(uri, httpsServicePort, servicePort);
         }
 
-        String serviceHost = System.getenv(KUBERNETES_SERVICE_HOST_KEY);
         if (!host.equals(serviceHost)) {
             return false;
         }
 
-        return isTrustedKubernetesApiPort(uri);
+        return isTrustedKubernetesApiPort(uri, httpsServicePort, servicePort);
     }
 
     static boolean isTrustedKubernetesApiJwksUrl(String jwksUrl, String issuer) {
@@ -105,9 +114,15 @@ final class KubernetesUtils {
     }
 
     private static boolean isTrustedKubernetesApiPort(URI uri) {
-        String servicePort = System.getenv(KUBERNETES_SERVICE_PORT_HTTPS_KEY);
-        if (Strings.isEmpty(servicePort)) {
-            servicePort = System.getenv(KUBERNETES_SERVICE_PORT_KEY);
+        return isTrustedKubernetesApiPort(uri,
+                System.getenv(KUBERNETES_SERVICE_PORT_HTTPS_KEY),
+                System.getenv(KUBERNETES_SERVICE_PORT_KEY));
+    }
+
+    private static boolean isTrustedKubernetesApiPort(URI uri, String httpsServicePort, String servicePort) {
+        String configuredPort = httpsServicePort;
+        if (Strings.isEmpty(configuredPort)) {
+            configuredPort = servicePort;
         }
 
         int port = uri.getPort();
@@ -115,10 +130,10 @@ final class KubernetesUtils {
             return true;
         }
 
-        if (Strings.isEmpty(servicePort)) {
+        if (Strings.isEmpty(configuredPort)) {
             return port == 443;
         }
 
-        return servicePort.equals(Integer.toString(port));
+        return configuredPort.equals(Integer.toString(port));
     }
 }

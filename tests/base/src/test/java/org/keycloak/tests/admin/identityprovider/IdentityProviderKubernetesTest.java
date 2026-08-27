@@ -75,6 +75,7 @@ public class IdentityProviderKubernetesTest extends AbstractIdentityProviderTest
         identityProvider.getConfig().remove("issuer");
 
         try (Response response = managedRealm.admin().identityProviders().create(identityProvider)) {
+            response.bufferEntity();
             assertEquals(400, response.getStatus(), () -> response.readEntity(String.class));
             ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
             assertEquals("Failed to resolve Kubernetes issuer from 'http://127.0.0.1:1/idp'", error.getErrorMessage());
