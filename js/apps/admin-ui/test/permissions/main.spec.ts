@@ -147,7 +147,7 @@ test.describe.serial("Permissions section tests", () => {
     await fillPolicyForm(
       page,
       {
-        name: "test-policy2",
+        name: "test-organization-policy",
         description: "test-description",
         type: "User",
         user: "test-user",
