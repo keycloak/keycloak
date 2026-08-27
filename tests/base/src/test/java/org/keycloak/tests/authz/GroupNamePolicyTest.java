@@ -51,6 +51,8 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.BlockJUnit4ClassRunner;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -58,6 +60,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@RunWith(BlockJUnit4ClassRunner.class)
 @KeycloakIntegrationTest
 public class GroupNamePolicyTest extends AbstractAuthzTest {
 
