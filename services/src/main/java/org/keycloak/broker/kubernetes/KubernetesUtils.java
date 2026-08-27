@@ -55,7 +55,7 @@ final class KubernetesUtils {
             return false;
         }
 
-        if (!"https".equals(uri.getScheme())) {
+        if (!"https".equalsIgnoreCase(uri.getScheme())) {
             return false;
         }
 
@@ -76,6 +76,20 @@ final class KubernetesUtils {
     }
 
     static boolean isTrustedKubernetesApiJwksUrl(String jwksUrl, String issuer) {
+        URI jwksUri;
+        try {
+            jwksUri = URI.create(jwksUrl);
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+
+        if (!"https".equalsIgnoreCase(jwksUri.getScheme())
+                || !"/openid/v1/jwks".equals(jwksUri.getPath())
+                || jwksUri.getQuery() != null
+                || jwksUri.getFragment() != null) {
+            return false;
+        }
+
         if (isTrustedKubernetesApiUrl(jwksUrl)) {
             return true;
         }
@@ -84,18 +98,7 @@ final class KubernetesUtils {
             return false;
         }
 
-        URI jwksUri;
-        try {
-            jwksUri = URI.create(jwksUrl);
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
-
-        return "https".equals(jwksUri.getScheme())
-                && "/openid/v1/jwks".equals(jwksUri.getPath())
-                && jwksUri.getQuery() == null
-                && jwksUri.getFragment() == null
-                && isIpLiteral(jwksUri.getHost())
+        return isIpLiteral(jwksUri.getHost())
                 // Kubernetes API servers commonly advertise their secure port as 6443.
                 && (jwksUri.getPort() == 6443 || isTrustedKubernetesApiPort(jwksUri));
     }

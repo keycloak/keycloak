@@ -53,6 +53,11 @@ class KubernetesUtilsTest {
     }
 
     @Test
+    void trustedApiUrlAcceptsCaseInsensitiveHttpsScheme() {
+        assertTrue(KubernetesUtils.isTrustedKubernetesApiUrl("HTTPS://kubernetes.default.svc", null, null, null));
+    }
+
+    @Test
     void trustedApiJwksUrlAllowsApiServerAdvertiseAddressFromTrustedIssuer() {
         assertTrue(KubernetesUtils.isTrustedKubernetesApiJwksUrl(
                 "https://172.18.0.2:6443/openid/v1/jwks",
@@ -78,6 +83,23 @@ class KubernetesUtilsTest {
         assertFalse(KubernetesUtils.isTrustedKubernetesApiJwksUrl(
                 "https://172.18.0.2:6443/external/jwks",
                 "https://kubernetes.default.svc.cluster.local"));
+    }
+
+    @Test
+    void trustedApiJwksUrlRejectsUnexpectedPathOnTrustedApiHost() {
+        assertFalse(KubernetesUtils.isTrustedKubernetesApiJwksUrl(
+                "https://kubernetes.default.svc/api/v1/secrets",
+                "https://oidc.eks.example.com/id/cluster"));
+    }
+
+    @Test
+    void trustedApiJwksUrlRejectsQueryAndFragmentOnTrustedApiHost() {
+        assertFalse(KubernetesUtils.isTrustedKubernetesApiJwksUrl(
+                "https://kubernetes.default.svc/openid/v1/jwks?audience=keycloak",
+                "https://oidc.eks.example.com/id/cluster"));
+        assertFalse(KubernetesUtils.isTrustedKubernetesApiJwksUrl(
+                "https://kubernetes.default.svc/openid/v1/jwks#fragment",
+                "https://oidc.eks.example.com/id/cluster"));
     }
 
     @Test
