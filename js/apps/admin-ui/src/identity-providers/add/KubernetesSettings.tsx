@@ -3,7 +3,7 @@ import { Radio } from "@patternfly/react-core";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FormGroupField } from "../component/FormGroupField";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import IdentityProviderRepresentation from "libs/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 
@@ -24,9 +24,19 @@ export const KubernetesSettings = () => {
   const { t } = useTranslation();
   const { control, getValues, setValue } =
     useFormContext<IdentityProviderRepresentation>();
+  const issuerDiscoveryUrl = useWatch({
+    control,
+    name: "config.issuerDiscoveryUrl",
+  });
   const [mode, setMode] = useState<DiscoveryMode>(() =>
     discoveryMode(getValues("config.issuerDiscoveryUrl")),
   );
+
+  useEffect(() => {
+    if (issuerDiscoveryUrl) {
+      setMode(discoveryMode(issuerDiscoveryUrl));
+    }
+  }, [issuerDiscoveryUrl]);
 
   useEffect(() => {
     if (

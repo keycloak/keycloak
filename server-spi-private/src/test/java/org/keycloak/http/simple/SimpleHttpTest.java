@@ -21,6 +21,8 @@ import org.apache.http.HttpVersion;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.Configurable;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.conn.ClientConnectionManager;
@@ -37,6 +39,7 @@ import org.junit.runners.Parameterized.Parameters;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
@@ -133,6 +136,17 @@ public final class SimpleHttpTest {
             }
         }
 
+        @Test
+        public void disableRedirectHandlingPreservesRequestConfig() throws IOException {
+            HttpClientMock client = new HttpClientMock();
+
+            SimpleHttp.create(client).disableRedirectHandling().doPost("").param("dummy", "value").asResponse();
+
+            assertEquals(client.config.getConnectTimeout(), client.requestConfig.getConnectTimeout());
+            assertEquals(client.config.getSocketTimeout(), client.requestConfig.getSocketTimeout());
+            assertFalse(client.requestConfig.isRedirectsEnabled());
+        }
+
         public static final class DummyEntity {
             public String value;
             public DummyEntity(String value) {
@@ -143,7 +157,18 @@ public final class SimpleHttpTest {
         /**
          * As no mocking framework is wanted, this is done the good old way.
          */
-        public static final class HttpClientMock implements HttpClient {
+        public static final class HttpClientMock implements HttpClient, Configurable {
+
+            private final RequestConfig config = RequestConfig.custom()
+                    .setConnectTimeout(1234)
+                    .setSocketTimeout(5678)
+                    .build();
+            private RequestConfig requestConfig;
+
+            @Override
+            public RequestConfig getConfig() {
+                return config;
+            }
 
             @Override
             public HttpParams getParams() {
@@ -157,6 +182,7 @@ public final class SimpleHttpTest {
 
             @Override
             public HttpResponse execute(HttpUriRequest paramHttpUriRequest) throws IOException {
+                requestConfig = ((HttpPost) paramHttpUriRequest).getConfig();
                 HttpPost post = (HttpPost) paramHttpUriRequest;
                 String content = StreamUtil.readString(post.getEntity().getContent(), StandardCharsets.UTF_8);
                 BasicHttpResponse httpResponse = new BasicHttpResponse(new ProtocolVersion("HTTP", 1, 1), HttpStatus.SC_OK, "OK");
