@@ -71,6 +71,7 @@ class KubernetesUtilsTest {
         assertTrue(KubernetesUtils.isTrustedKubernetesApiUrl("https://10.0.0.1", "10.0.0.1", null, null));
         assertTrue(KubernetesUtils.isTrustedKubernetesApiUrl("https://10.0.0.1:443", "10.0.0.1", null, null));
         assertFalse(KubernetesUtils.isTrustedKubernetesApiUrl("https://10.0.0.1:8443", "10.0.0.1", null, null));
+        assertFalse(KubernetesUtils.isTrustedKubernetesApiUrl("https://10.0.0.1", "10.0.0.1", "8443", null));
     }
 
     @Test

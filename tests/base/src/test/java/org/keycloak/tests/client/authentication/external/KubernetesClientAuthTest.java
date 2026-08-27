@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.parallel.ResourceLock;
 
 import static org.keycloak.broker.kubernetes.KubernetesConstants.SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY;
 
@@ -64,6 +65,7 @@ public class KubernetesClientAuthTest extends AbstractBaseClientAuthTest {
     }
 
     @Test
+    @ResourceLock(SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY)
     public void testAuthorizationHeaderNotSentToExternalJwks() throws Exception {
         Path tokenFile = Files.createTempFile("kubernetes-service-account-token", ".jwt");
         String previousTokenPath = System.getProperty(SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY);

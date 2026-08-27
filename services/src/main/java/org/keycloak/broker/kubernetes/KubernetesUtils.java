@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import org.keycloak.util.Strings;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.http.client.config.RequestConfig;
 
 import static org.keycloak.broker.kubernetes.KubernetesConstants.KUBERNETES_SERVICE_HOST_KEY;
 import static org.keycloak.broker.kubernetes.KubernetesConstants.KUBERNETES_SERVICE_PORT_HTTPS_KEY;
@@ -39,6 +40,10 @@ final class KubernetesUtils {
 
         String token = FileUtils.readFileToString(file, StandardCharsets.UTF_8).strip();
         return token.isEmpty() ? null : token;
+    }
+
+    static RequestConfig noRedirectRequestConfig() {
+        return RequestConfig.copy(RequestConfig.DEFAULT).setRedirectsEnabled(false).build();
     }
 
     static boolean isTrustedKubernetesApiUrl(String url) {
@@ -131,7 +136,7 @@ final class KubernetesUtils {
 
         int port = uri.getPort();
         if (port == -1) {
-            return true;
+            return Strings.isEmpty(configuredPort) || "443".equals(configuredPort);
         }
 
         if (Strings.isEmpty(configuredPort)) {

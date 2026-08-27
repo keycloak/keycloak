@@ -29,7 +29,8 @@ public class KubernetesJwksEndpointLoader implements PublicKeyLoader {
 
     @Override
     public PublicKeysWrapper loadKeys() throws Exception {
-        SimpleHttp simpleHttp = SimpleHttp.create(session);
+        SimpleHttp simpleHttp = SimpleHttp.create(session)
+                .withRequestConfig(KubernetesUtils.noRedirectRequestConfig());
 
         String token = getToken(issuer);
 

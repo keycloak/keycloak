@@ -95,6 +95,7 @@ public class KubernetesIdentityProviderConfig extends IdentityProviderModel impl
         try {
             KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
             SimpleHttpRequest request = SimpleHttp.create(session)
+                    .withRequestConfig(KubernetesUtils.noRedirectRequestConfig())
                     .doGet(KubernetesUtils.discoveryUrl(issuerDiscoveryUrl))
                     .acceptJson();
 

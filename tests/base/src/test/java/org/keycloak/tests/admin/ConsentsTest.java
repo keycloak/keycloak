@@ -161,7 +161,7 @@ public class ConsentsTest {
 
         UserRepresentation foundUser = null;
         for (UserRepresentation userRep : users) {
-            if (userRep.getUsername().equals(userFromProviderRealm.getUsername()) && Objects.equals(userRep.getEmail(), providerEmail)) {
+            if (Objects.equals(userRep.getUsername(), userFromProviderRealm.getUsername()) && Objects.equals(userRep.getEmail(), providerEmail)) {
                 foundUser = userRep;
                 break;
             }

@@ -29,7 +29,9 @@ export const KubernetesSettings = () => {
   );
 
   useEffect(() => {
-    if (!getValues("config.automaticIssuerDiscovery")) {
+    if (
+      getValues("config.automaticIssuerDiscovery")?.toLowerCase() !== "true"
+    ) {
       setValue("config.automaticIssuerDiscovery", "true", {
         shouldDirty: false,
       });
@@ -68,7 +70,7 @@ export const KubernetesSettings = () => {
         labelIcon={t("kubernetesIssuerUrlHelp")}
         label={t("kubernetesIssuerUrl")}
       />
-      <FormGroupField label="kubernetesIssuerDiscoveryMode">
+      <FormGroupField label={t("kubernetesIssuerDiscoveryMode")}>
         <Radio
           id="kubernetes-in-cluster-discovery"
           data-testid="kubernetes-in-cluster-discovery"
