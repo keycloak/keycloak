@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.cluster;
+package org.keycloak.tests.cluster;
 
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
@@ -6,7 +6,10 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 
 import org.apache.commons.lang3.RandomStringUtils;
@@ -17,7 +20,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  *
  * @author tkyjovsk
  */
+@KeycloakIntegrationTest
 public class UserInvalidationClusterTest extends AbstractInvalidationClusterTestWithTestRealm<UserRepresentation, UserResource> {
+
+    @InjectRealm
+    ManagedRealm managedRealm;
 
     @Override
     protected UserRepresentation createTestEntityRepresentation() {

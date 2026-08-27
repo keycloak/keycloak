@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.cluster;
+package org.keycloak.tests.cluster;
 
 import java.lang.reflect.Field;
 import java.util.Collections;
@@ -29,6 +29,9 @@ import org.keycloak.admin.client.resource.RoleByIdResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 
@@ -37,7 +40,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 import static org.keycloak.common.util.reflections.Reflections.resolveListType;
 import static org.keycloak.common.util.reflections.Reflections.setAccessible;
@@ -50,9 +53,13 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  *
  * @author tkyjovsk
  */
+@KeycloakIntegrationTest
 public class RoleInvalidationClusterTest extends AbstractInvalidationClusterTestWithTestRealm<RoleRepresentation, RoleResource> {
 
-    @Before
+    @InjectRealm
+    ManagedRealm managedRealm;
+
+    @BeforeEach
     public void setExcludedComparisonFields() {
         excludedComparisonFields.add("composites");
     }
