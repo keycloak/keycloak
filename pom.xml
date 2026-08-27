@@ -112,7 +112,7 @@
         <undertow.version>2.3.24.Final</undertow.version>
         <wildfly-elytron.version>2.9.2.Final</wildfly-elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
-        <woodstox.version>6.0.3</woodstox.version>
+        <woodstox.version>6.4.0</woodstox.version>
         <wildfly.common.quarkus.aligned.version>1.5.4.Final-format-001</wildfly.common.quarkus.aligned.version>
         <wildfly.common.wildfly.aligned.version>1.6.0.Final</wildfly.common.wildfly.aligned.version>
         <xmlsec.version>3.0.6</xmlsec.version>
