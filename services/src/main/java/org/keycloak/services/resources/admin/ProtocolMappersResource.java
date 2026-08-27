@@ -233,14 +233,17 @@ public class ProtocolMappersResource {
     }
 
     private ProtocolMapperRepresentation toEffectiveProtocolMapperRep(ProtocolMapperModel model) {
+        return ModelToRepresentation.toRepresentation(toEffectiveProtocolMapperModel(model));
+    }
+
+    private ProtocolMapperModel toEffectiveProtocolMapperModel(ProtocolMapperModel model) {
         ProtocolMapper mapper = (ProtocolMapper) session.getKeycloakSessionFactory().getProviderFactory(ProtocolMapper.class, model.getProtocolMapper());
         if (mapper == null) {
             logger.warnf("Protocol mapper provider '%s' not found. Configured on mapper with ID '%s'", model.getProtocolMapper(), model.getId());
             throw new NotFoundException("Protocol mapper provider not found");
         }
 
-        model = mapper.getEffectiveModel(session, realm, model);
-        return ModelToRepresentation.toRepresentation(model);
+        return mapper.getEffectiveModel(session, realm, model);
     }
 
     /**
@@ -260,15 +263,21 @@ public class ProtocolMappersResource {
 
         ProtocolMapperModel existing = client.getProtocolMapperById(id);
         if (existing == null) throw new NotFoundException("Model not found");
+        if (rep.getId() != null && !id.equals(rep.getId())) {
+            throw ErrorResponse.error("Protocol mapper id does not match path id", Response.Status.BAD_REQUEST);
+        }
+        rep.setId(id);
+
+        ProtocolMapperModel proposed = RepresentationToModel.toModel(rep);
 
         if (client instanceof ClientModel) {
-            triggerClientPolicy(new ClientProtocolMapperUpdateContext(client, rep, existing, auth.adminAuth()));
+            triggerClientPolicy(new ClientProtocolMapperUpdateContext(client, rep, existing,
+                    toEffectiveProtocolMapperModel(proposed), toEffectiveProtocolMapperModel(existing), auth.adminAuth()));
         }
 
-        ProtocolMapperModel model = RepresentationToModel.toModel(rep);
-        validateModel(model);
+        validateModel(proposed);
 
-        client.updateProtocolMapper(model);
+        client.updateProtocolMapper(proposed);
         adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
     }
 

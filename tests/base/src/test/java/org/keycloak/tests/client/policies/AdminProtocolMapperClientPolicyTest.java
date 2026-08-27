@@ -148,6 +148,21 @@ public class AdminProtocolMapperClientPolicyTest extends AbstractClientPoliciesT
     }
 
     @Test
+    public void rejectProtocolMapperUpdateWithMismatchedPathAndBodyIds() throws Exception {
+        ProtocolMappersResource mappers = createClient("mismatched-mapper-client").getProtocolMappers();
+        String firstMapperId = createMapper(mappers, mapper("first-mapper", "email"));
+        String secondMapperId = createMapper(mappers, mapper("second-mapper", "username"));
+
+        setupAllowedProtocolMappersPolicy(List.of(AudienceProtocolMapper.PROVIDER_ID));
+
+        ProtocolMapperRepresentation update = mappers.getMapperById(firstMapperId);
+        update.setId(secondMapperId);
+        Assertions.assertThrows(BadRequestException.class, () -> mappers.update(firstMapperId, update));
+        Assertions.assertEquals("first-mapper", mappers.getMapperById(firstMapperId).getName());
+        Assertions.assertEquals("second-mapper", mappers.getMapperById(secondMapperId).getName());
+    }
+
+    @Test
     public void doNotApplyClientPolicyToClientScopeProtocolMapperCrud() throws Exception {
         ProtocolMappersResource mappers = createClientScope("scope-mapper-crud").getProtocolMappers();
         setupRejectingPolicy();

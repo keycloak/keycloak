@@ -62,7 +62,7 @@ public class AllowedProtocolMappersExecutor implements ClientPolicyExecutorProvi
         }
 
         Set<String> allowedMapperTypes = new HashSet<>(configuration.getAllowedProtocolMapperTypes());
-        ProtocolMapperModel existingMapper = mapperContext.getExistingProtocolMapper();
+        ProtocolMapperModel existingMapper = mapperContext.getEffectiveExistingProtocolMapper();
         if (existingMapper == null) {
             ProtocolMapperRepresentation rejectedMapper = proposedMappers.stream()
                     .filter(mapper -> !allowedMapperTypes.contains(mapper.getProtocolMapper()))
@@ -78,8 +78,10 @@ public class AllowedProtocolMappersExecutor implements ClientPolicyExecutorProvi
             return;
         }
 
-        if (!Objects.equals(proposedMapper.getProtocolMapper(), existingMapper.getProtocolMapper())
-                || !Objects.equals(proposedMapper.getConfig(), existingMapper.getConfig())) {
+        ProtocolMapperModel effectiveProposedMapper = mapperContext.getEffectiveProposedProtocolMapper();
+        if (effectiveProposedMapper == null
+                || !Objects.equals(effectiveProposedMapper.getProtocolMapper(), existingMapper.getProtocolMapper())
+                || !Objects.equals(effectiveProposedMapper.getConfig(), existingMapper.getConfig())) {
             throw notAllowed(proposedMapper.getProtocolMapper());
         }
     }

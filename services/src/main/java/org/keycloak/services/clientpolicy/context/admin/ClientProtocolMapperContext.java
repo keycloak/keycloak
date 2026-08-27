@@ -79,6 +79,20 @@ public interface ClientProtocolMapperContext extends ClientModelContext, ClientP
     }
 
     /**
+     * @return the effective proposed mapper model on UPDATE; null when unavailable.
+     */
+    default ProtocolMapperModel getEffectiveProposedProtocolMapper() {
+        return null;
+    }
+
+    /**
+     * @return the effective existing mapper model on UPDATE; null when unavailable.
+     */
+    default ProtocolMapperModel getEffectiveExistingProtocolMapper() {
+        return getExistingProtocolMapper();
+    }
+
+    /**
      * @return the authenticated user performing this operation.
      */
     default UserModel getAuthenticatedUser() {
