@@ -1,29 +1,23 @@
 package org.keycloak.tests.oauth;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import jakarta.persistence.EntityManager;
-import jakarta.ws.rs.NotFoundException;
 
 import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.Profile;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.jpa.session.JpaSessionUtil;
 import org.keycloak.models.jpa.session.PersistentClientSessionEntity;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
-import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -37,7 +31,6 @@ import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.TokenUtil;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -58,37 +51,20 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 public class OfflineTokenExchangeTest {
 
     private static final String OFFLINE_CLIENT_ID = "offline-client";
-    private static final String REQUESTER_CLIENT_ID = "test-app";
+    private static final String TEST_APP_CLIENT_ID = "test-app";
     private static final String OFFLINE_CLIENT_APP_URI = "http://localhost:8080/offline-client";
 
     @InjectRealm(config = OfflineTokenExchangeTest.OfflineTokenExchangeRealmConfig.class)
     ManagedRealm realm;
 
-    @InjectOAuthClient(config = OfflineTokenExchangeTest.OfflineAuthClientConfig.class)
+    @InjectOAuthClient
     OAuthClient oauth;
-
-    @InjectAdminClient
-    Keycloak adminClient;
 
     @InjectWebDriver
     ManagedWebDriver driver;
 
     @InjectRunOnServer
     RunOnServerClient runOnServer;
-
-    @BeforeEach
-    public void setup() {
-        oauth.realm("test");
-        oauth.client(OFFLINE_CLIENT_ID, "secret1");
-        oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
-        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-
-        try {
-            adminClient.realm("test").logoutAll();
-        } catch (NotFoundException e) {
-            // expected on first run
-        }
-    }
 
     /**
      * V1 token exchange with an offline source session triggers {@code createClientSession} with the
@@ -97,6 +73,9 @@ public class OfflineTokenExchangeTest {
      */
     @Test
     public void testClientSessionStoredAsOfflineDuringTokenExchange() {
+        oauth.client(OFFLINE_CLIENT_ID, "secret1");
+        oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.doLogin("test-user@localhost", "password");
 
         String code = oauth.parseLoginResponse().getCode();
@@ -112,8 +91,8 @@ public class OfflineTokenExchangeTest {
         // the access token targeting itself. This calls attachAuthenticationSession with the offline
         // user session, which in turn calls createClientSession(realm, test-app, offlineUserSession).
         AccessTokenResponse exchangeResponse = oauth.tokenExchangeRequest(accessToken)
-                .client(REQUESTER_CLIENT_ID, "password")
-                .audience(REQUESTER_CLIENT_ID)
+                .client(TEST_APP_CLIENT_ID, "test-secret")
+                .audience(TEST_APP_CLIENT_ID)
                 .send();
         assertEquals(200, exchangeResponse.getStatusCode());
         // V1 defaults requested_token_type to REFRESH_TOKEN_TYPE and the offline session is persistent,
@@ -124,20 +103,19 @@ public class OfflineTokenExchangeTest {
         // Before the fix, createClientSession wrote offline="0", orphaning the client session.
         runOnServer.run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            UserSessionModel offlineSession = session.sessions().getOfflineUserSession(realm, sessionId);
-            assertNotNull(offlineSession, "Offline user session not found");
+            assertNotNull(session.sessions().getOfflineUserSession(realm, sessionId), "Offline user session not found");
 
-            ClientModel requesterClient = realm.getClientByClientId(REQUESTER_CLIENT_ID);
+            ClientModel testAppClient = realm.getClientByClientId(TEST_APP_CLIENT_ID);
             EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
 
             PersistentClientSessionEntity onlineEntry = em.find(PersistentClientSessionEntity.class,
-                    new PersistentClientSessionEntity.Key(sessionId, requesterClient.getId(),
+                    new PersistentClientSessionEntity.Key(sessionId, testAppClient.getId(),
                             PersistentClientSessionEntity.LOCAL, PersistentClientSessionEntity.LOCAL,
                             JpaSessionUtil.offlineToString(false)));
             assertNull(onlineEntry, "createClientSession must not write an online (offline=0) DB entry for an offline session");
 
             PersistentClientSessionEntity offlineEntry = em.find(PersistentClientSessionEntity.class,
-                    new PersistentClientSessionEntity.Key(sessionId, requesterClient.getId(),
+                    new PersistentClientSessionEntity.Key(sessionId, testAppClient.getId(),
                             PersistentClientSessionEntity.LOCAL, PersistentClientSessionEntity.LOCAL,
                             JpaSessionUtil.offlineToString(true)));
             assertNotNull(offlineEntry, "createClientSession must write an offline (offline=1) DB entry for an offline session");
@@ -145,7 +123,8 @@ public class OfflineTokenExchangeTest {
 
         // Use the refresh token returned by the exchange to refresh: the client session must be
         // reachable from the offline session, otherwise this refresh will fail with INVALID_GRANT.
-        oauth.client(REQUESTER_CLIENT_ID, "password");
+        oauth.scope(null);
+        oauth.client(TEST_APP_CLIENT_ID, "test-secret");
         AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(exchangeResponse.getRefreshToken());
         assertEquals(200, refreshResponse.getStatusCode());
     }
@@ -161,18 +140,14 @@ public class OfflineTokenExchangeTest {
     public static class OfflineTokenExchangeRealmConfig implements RealmConfig {
         @Override
         public RealmBuilder configure(RealmBuilder builder) {
-            builder.name("test")
-                    .ssoSessionIdleTimeout(30)
-                    .update(r -> r.setAccessTokenLifespan(10));
+            builder.name("test");
 
             // offline-client is the subject client; it includes test-app in the access token audience
             // so that test-app can perform a V1 self-exchange without needing fine-grained permissions.
-            // test-app is created by @InjectOAuthClient, so only offline-client is declared here.
             builder.clients(ClientBuilder.create(OFFLINE_CLIENT_ID)
                     .secret("secret1")
                     .redirectUris(OFFLINE_CLIENT_APP_URI)
-                    .directAccessGrantsEnabled(true)
-                    .protocolMappers(createAudienceMapper("test-app-audience", REQUESTER_CLIENT_ID)));
+                    .protocolMappers(createAudienceMapper("test-app-audience", TEST_APP_CLIENT_ID)));
 
             builder.users(UserBuilder.create("test-user@localhost")
                     .name("Test", "User")
@@ -189,24 +164,8 @@ public class OfflineTokenExchangeTest {
             mapper.setName(name);
             mapper.setProtocol("openid-connect");
             mapper.setProtocolMapper("oidc-audience-mapper");
-            Map<String, String> config = new HashMap<>();
-            config.put("included.client.audience", audience);
-            config.put("id.token.claim", "false");
-            config.put("lightweight.claim", "false");
-            config.put("access.token.claim", "true");
-            config.put("introspection.token.claim", "true");
-            mapper.setConfig(config);
+            mapper.setConfig(Map.of("included.client.audience", audience, "access.token.claim", "true"));
             return mapper;
-        }
-    }
-
-    public static class OfflineAuthClientConfig implements ClientConfig {
-        @Override
-        public ClientBuilder configure(ClientBuilder client) {
-            // This creates test-app (the requester in the exchange). offline-client is created by the realm config.
-            return client.clientId(REQUESTER_CLIENT_ID)
-                    .secret("password")
-                    .directAccessGrantsEnabled(true);
         }
     }
 }
