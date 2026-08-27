@@ -5,6 +5,6 @@ export function useIsAdminPermissionsClient(selectedClientId?: string) {
 
   return (
     !!selectedClientId &&
-    selectedClientId === realmRepresentation.adminPermissionsClient?.id
+    selectedClientId === realmRepresentation?.adminPermissionsClient?.id
   );
 }
