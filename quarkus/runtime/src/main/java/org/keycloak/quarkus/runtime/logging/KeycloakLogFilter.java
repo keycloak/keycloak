@@ -88,6 +88,14 @@ public abstract class KeycloakLogFilter implements Filter {
             return false;
         }
 
+        // MariaDB/MySQL error 1020 "Record has changed since last read" is logged at WARN by the JDBC driver
+        // for every error packet, but Keycloak already retries the transaction via Retry.executeWithBackoff.
+        // In cases where this isn't handled, it will show as a JPA/Hibernate exception, and then there is also no need to log it here.
+        // https://github.com/keycloak/keycloak/issues/51920
+        if (Objects.equals(record.getLevel(), Level.WARNING) && record.getLoggerName().equals("org.mariadb.jdbc.message.server.ErrorPacket") && record.getMessage().startsWith("Error: 1020-HY000")) {
+            return false;
+        }
+
         if (MultiSiteUtils.isPersistentSessionsEnabled()) {
             // Suppress messages for ISPN000312 as there shouldn't be a warning as this is expected as user and client sessions have only a single owner.
             // https://github.com/keycloak/keycloak/issues/39816
