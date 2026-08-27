@@ -36,6 +36,13 @@ class KubernetesUtilsTest {
     }
 
     @Test
+    void trustedApiJwksUrlRejectsUnexpectedPort() {
+        assertFalse(KubernetesUtils.isTrustedKubernetesApiJwksUrl(
+                "https://172.18.0.2:65535/openid/v1/jwks",
+                "https://kubernetes.default.svc.cluster.local"));
+    }
+
+    @Test
     void trustedApiJwksUrlAllowsDirectlyTrustedApiUrl() {
         assertTrue(KubernetesUtils.isTrustedKubernetesApiJwksUrl(
                 "https://kubernetes.default.svc/openid/v1/jwks",

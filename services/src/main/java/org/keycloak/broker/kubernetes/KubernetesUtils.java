@@ -34,7 +34,7 @@ final class KubernetesUtils {
             return null;
         }
 
-        return FileUtils.readFileToString(file, StandardCharsets.UTF_8);
+        return FileUtils.readFileToString(file, StandardCharsets.UTF_8).strip();
     }
 
     static boolean isTrustedKubernetesApiUrl(String url) {
@@ -86,7 +86,9 @@ final class KubernetesUtils {
                 && "/openid/v1/jwks".equals(jwksUri.getPath())
                 && jwksUri.getQuery() == null
                 && jwksUri.getFragment() == null
-                && isIpLiteral(jwksUri.getHost());
+                && isIpLiteral(jwksUri.getHost())
+                // Kubernetes API servers commonly advertise their secure port as 6443.
+                && (jwksUri.getPort() == 6443 || isTrustedKubernetesApiPort(jwksUri));
     }
 
     private static boolean isIpLiteral(String host) {

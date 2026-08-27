@@ -156,10 +156,11 @@ public class ConsentsTest {
         Assertions.assertTrue(consumerRealmOAuth.parseLoginResponse().isSuccess());
 
         List<UserRepresentation> users = consumerRealm.admin().users().searchByUsername(userFromProviderRealm.getUsername(), true);
+        String providerEmail = userFromProviderRealm.admin().toRepresentation().getEmail();
 
         UserRepresentation foundUser = null;
         for (UserRepresentation userRep : users) {
-            if (userRep.getUsername().equals(userFromProviderRealm.getUsername()) && Objects.equals(userRep.getEmail(), userFromProviderRealm.admin().toRepresentation().getEmail())) {
+            if (userRep.getUsername().equals(userFromProviderRealm.getUsername()) && Objects.equals(userRep.getEmail(), providerEmail)) {
                 foundUser = userRep;
                 break;
             }
