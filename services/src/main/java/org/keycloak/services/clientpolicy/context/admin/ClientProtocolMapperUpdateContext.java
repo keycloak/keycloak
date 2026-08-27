@@ -35,21 +35,15 @@ public class ClientProtocolMapperUpdateContext extends AbstractClientProtocolMap
     private final ProtocolMapperContainerModel protocolMapperContainer;
     private final ProtocolMapperRepresentation proposed;
     private final ProtocolMapperModel existing;
-    private final ProtocolMapperModel effectiveProposed;
-    private final ProtocolMapperModel effectiveExisting;
 
     public ClientProtocolMapperUpdateContext(ProtocolMapperContainerModel protocolMapperContainer,
                                              ProtocolMapperRepresentation proposed,
                                              ProtocolMapperModel existing,
-                                             ProtocolMapperModel effectiveProposed,
-                                             ProtocolMapperModel effectiveExisting,
                                              AdminAuth adminAuth) {
         super(adminAuth);
         this.protocolMapperContainer = protocolMapperContainer;
         this.proposed = proposed;
         this.existing = existing;
-        this.effectiveProposed = effectiveProposed;
-        this.effectiveExisting = effectiveExisting;
     }
 
     /** @return {@link ClientPolicyEvent#UPDATE_PROTOCOL_MAPPER} */
@@ -73,13 +67,4 @@ public class ClientProtocolMapperUpdateContext extends AbstractClientProtocolMap
         return existing;
     }
 
-    @Override
-    public ProtocolMapperModel getEffectiveProposedProtocolMapper() {
-        return effectiveProposed;
-    }
-
-    @Override
-    public ProtocolMapperModel getEffectiveExistingProtocolMapper() {
-        return effectiveExisting;
-    }
 }

@@ -24,7 +24,10 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.keycloak.OAuthErrorException;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
@@ -38,7 +41,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class AllowedProtocolMappersExecutor implements ClientPolicyExecutorProvider<AllowedProtocolMappersExecutor.Configuration> {
 
+    private final KeycloakSession session;
     private Configuration configuration = new Configuration();
+
+    public AllowedProtocolMappersExecutor(KeycloakSession session) {
+        this.session = session;
+    }
 
     @Override
     public void setupConfiguration(Configuration config) {
@@ -62,7 +70,7 @@ public class AllowedProtocolMappersExecutor implements ClientPolicyExecutorProvi
         }
 
         Set<String> allowedMapperTypes = new HashSet<>(configuration.getAllowedProtocolMapperTypes());
-        ProtocolMapperModel existingMapper = mapperContext.getEffectiveExistingProtocolMapper();
+        ProtocolMapperModel existingMapper = mapperContext.getExistingProtocolMapper();
         if (existingMapper == null) {
             ProtocolMapperRepresentation rejectedMapper = proposedMappers.stream()
                     .filter(mapper -> !allowedMapperTypes.contains(mapper.getProtocolMapper()))
@@ -78,12 +86,18 @@ public class AllowedProtocolMappersExecutor implements ClientPolicyExecutorProvi
             return;
         }
 
-        ProtocolMapperModel effectiveProposedMapper = mapperContext.getEffectiveProposedProtocolMapper();
-        if (effectiveProposedMapper == null
-                || !Objects.equals(effectiveProposedMapper.getProtocolMapper(), existingMapper.getProtocolMapper())
-                || !Objects.equals(effectiveProposedMapper.getConfig(), existingMapper.getConfig())) {
+        ProtocolMapperModel effectiveProposedMapper = toEffectiveModel(RepresentationToModel.toModel(proposedMapper));
+        ProtocolMapperModel effectiveExistingMapper = toEffectiveModel(existingMapper);
+        if (!Objects.equals(effectiveProposedMapper.getProtocolMapper(), effectiveExistingMapper.getProtocolMapper())
+                || !Objects.equals(effectiveProposedMapper.getConfig(), effectiveExistingMapper.getConfig())) {
             throw notAllowed(proposedMapper.getProtocolMapper());
         }
+    }
+
+    private ProtocolMapperModel toEffectiveModel(ProtocolMapperModel model) {
+        ProtocolMapper mapper = (ProtocolMapper) session.getKeycloakSessionFactory()
+                .getProviderFactory(ProtocolMapper.class, model.getProtocolMapper());
+        return mapper == null ? model : mapper.getEffectiveModel(session, session.getContext().getRealm(), model);
     }
 
     private ClientPolicyException notAllowed(String mapperType) {

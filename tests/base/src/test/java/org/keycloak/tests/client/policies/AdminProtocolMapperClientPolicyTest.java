@@ -47,6 +47,8 @@ import org.keycloak.services.clientpolicy.executor.RejectRequestExecutorFactory;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ClientPolicyBuilder;
+import org.keycloak.testframework.realm.ClientProfileBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
@@ -148,6 +150,32 @@ public class AdminProtocolMapperClientPolicyTest extends AbstractClientPoliciesT
     }
 
     @Test
+    public void rejectUnlistedProtocolMapperAdjustedByEarlierExecutor() throws Exception {
+        ProtocolMappersResource mappers = createClient("adjusted-unlisted-mapper-client").getProtocolMappers();
+        String mapperId = createMapper(mappers, mapper("adjusted-unlisted-mapper", "email"));
+        setupAdjustingAllowedProtocolMappersPolicy();
+
+        ProtocolMapperRepresentation unchanged = mappers.getMapperById(mapperId);
+        Assertions.assertThrows(BadRequestException.class, () -> mappers.update(mapperId, unchanged));
+        Assertions.assertNull(mappers.getMapperById(mapperId).getConfig().get(TrackEventsClientPolicyExecutor.POLICY_ADJUSTED));
+    }
+
+    @Test
+    public void replaceProtocolMapperWhoseProviderIsMissing() {
+        ClientResource client = createClient("missing-provider-mapper-client");
+        String clientId = client.toRepresentation().getId();
+        ProtocolMappersResource mappers = client.getProtocolMappers();
+        String mapperId = createMapper(mappers, mapper("missing-provider-mapper", "email"));
+
+        runOnServer.run(new SetProtocolMapperProvider(clientId, mapperId, "missing-protocol-mapper-provider"));
+
+        ProtocolMapperRepresentation replacement = mapper("replacement-mapper", "username");
+        replacement.setId(mapperId);
+        Assertions.assertDoesNotThrow(() -> mappers.update(mapperId, replacement));
+        Assertions.assertEquals(UserAttributeMapper.PROVIDER_ID, mappers.getMapperById(mapperId).getProtocolMapper());
+    }
+
+    @Test
     public void rejectProtocolMapperUpdateWithMismatchedPathAndBodyIds() throws Exception {
         ProtocolMappersResource mappers = createClient("mismatched-mapper-client").getProtocolMappers();
         String firstMapperId = createMapper(mappers, mapper("first-mapper", "email"));
@@ -193,7 +221,9 @@ public class AdminProtocolMapperClientPolicyTest extends AbstractClientPoliciesT
         setupAllowedProtocolMappersPolicy(List.of());
 
         String existingMapperId = createMapper(mappers, mapper("allowed-scope-existing-mapper", "email"));
-        Assertions.assertDoesNotThrow(() -> mappers.createMapper(mapper("allowed-scope-created-mapper", "firstName")));
+        try (Response response = mappers.createMapper(mapper("allowed-scope-created-mapper", "firstName"))) {
+            Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        }
 
         ProtocolMapperRepresentation bulkMapper = mapper("allowed-scope-bulk-mapper", "lastName");
         Assertions.assertDoesNotThrow(() -> mappers.createMapper(List.of(bulkMapper)));
@@ -367,6 +397,24 @@ public class AdminProtocolMapperClientPolicyTest extends AbstractClientPoliciesT
         configuration.setAllowedProtocolMapperTypes(allowedMapperTypes);
         setupPolicy(realm, AllowedProtocolMappersExecutorFactory.PROVIDER_ID, configuration,
                 AnyClientConditionFactory.PROVIDER_ID, new ClientPolicyConditionConfigurationRepresentation());
+    }
+
+    private void setupAdjustingAllowedProtocolMappersPolicy() throws Exception {
+        AllowedProtocolMappersExecutor.Configuration configuration = new AllowedProtocolMappersExecutor.Configuration();
+        configuration.setAllowedProtocolMapperTypes(List.of(AudienceProtocolMapper.PROVIDER_ID));
+        realm.updateWithCleanup(r -> {
+            r.resetClientProfiles().clientProfile(ClientProfileBuilder.create()
+                    .name("executor")
+                    .executor(TrackEventsClientPolicyExecutor.PROVIDER_ID, new TrackEventsClientPolicyExecutor.Configuration())
+                    .executor(AllowedProtocolMappersExecutorFactory.PROVIDER_ID, configuration)
+                    .build());
+            r.resetClientPolicies().clientPolicy(ClientPolicyBuilder.create()
+                    .name("policy")
+                    .condition(AnyClientConditionFactory.PROVIDER_ID, new ClientPolicyConditionConfigurationRepresentation())
+                    .profile("executor")
+                    .build());
+            return r;
+        });
     }
 
     private void setupRejectingUpdaterPolicy() throws Exception {

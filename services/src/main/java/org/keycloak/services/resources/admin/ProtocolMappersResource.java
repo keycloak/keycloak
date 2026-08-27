@@ -271,8 +271,7 @@ public class ProtocolMappersResource {
         ProtocolMapperModel proposed = RepresentationToModel.toModel(rep);
 
         if (client instanceof ClientModel) {
-            triggerClientPolicy(new ClientProtocolMapperUpdateContext(client, rep, existing,
-                    toEffectiveProtocolMapperModel(proposed), toEffectiveProtocolMapperModel(existing), auth.adminAuth()));
+            triggerClientPolicy(new ClientProtocolMapperUpdateContext(client, rep, existing, auth.adminAuth()));
         }
 
         proposed = RepresentationToModel.toModel(rep);

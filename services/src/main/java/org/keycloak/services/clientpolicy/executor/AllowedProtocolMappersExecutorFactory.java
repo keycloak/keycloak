@@ -40,7 +40,7 @@ public class AllowedProtocolMappersExecutorFactory implements ClientPolicyExecut
 
     @Override
     public AllowedProtocolMappersExecutor create(KeycloakSession session) {
-        return new AllowedProtocolMappersExecutor();
+        return new AllowedProtocolMappersExecutor(session);
     }
 
     @Override
@@ -71,7 +71,7 @@ public class AllowedProtocolMappersExecutorFactory implements ClientPolicyExecut
 
     @Override
     public String getHelpText() {
-        return "When present, it allows only configured protocol mapper types to be created or updated through the Admin REST API";
+        return "When present, it allows only configured protocol mapper types to be created or updated through the dedicated Admin REST API protocol mapper endpoints";
     }
 
     @Override
