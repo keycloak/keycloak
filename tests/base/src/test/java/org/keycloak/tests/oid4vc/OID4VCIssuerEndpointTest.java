@@ -446,4 +446,34 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCIssuerTestBase {
                 30
         );
     }
+
+    static OAuth2CodeEntry prepareSessionCode(
+            KeycloakSession session,
+            AppAuthManager.BearerTokenAuthenticator authenticator,
+            String note) {
+
+        AuthenticationManager.AuthResult authResult = authenticator.authenticate();
+        UserSessionModel userSessionModel = authResult.session();
+        AuthenticatedClientSessionModel authenticatedClientSessionModel =
+                userSessionModel.getAuthenticatedClientSessionByClient(authResult.client().getId());
+
+        OAuth2Code oauth2Code = new OAuth2Code(
+                SecretGenerator.getInstance().randomString(),
+                authenticatedClientSessionModel.getClient().getId(),
+                Time.currentTime() + 6000,
+                SecretGenerator.getInstance().randomString(),
+                CREDENTIAL_OFFER_URI_CODE_SCOPE,
+                null,
+                null,
+                null,
+                null,
+                null,
+                authenticatedClientSessionModel.getUserSession().getId()
+        );
+
+        String nonce = OAuth2CodeParser.persistCode(session, authenticatedClientSessionModel, oauth2Code);
+        authenticatedClientSessionModel.setNote(nonce, note);
+
+        return new OID4VCIssuerEndpointTest.OAuth2CodeEntry(nonce, oauth2Code);
+    }
 }

@@ -17,18 +17,20 @@
 
 package org.keycloak.tests.cluster;
 
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.AuthorizationProviderFactory;
-import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.providers.runonserver.ClusterTestTasks;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.testsuite.arquillian.ContainerInfo;
 
 import org.apache.commons.lang3.RandomStringUtils;
 
@@ -39,6 +41,9 @@ public class PermissionTicketInvalidationClusterTest extends AbstractInvalidatio
 
     @InjectRealm
     ManagedRealm managedRealm;
+
+    @InjectRunOnServer(permittedPackages = {"org.keycloak.tests"}, ref = "cluster-run-on-server")
+    RunOnServerClient clusterRunOnServer;
 
     private String clientId;
     private String userId;
@@ -79,41 +84,30 @@ public class PermissionTicketInvalidationClusterTest extends AbstractInvalidatio
         }
     }
 
-    private void createResource(ContainerInfo node) {
-        var realmFinal = testRealmName;
-        var clientFinal = clientId;
-        var resourceFinal = resourceName;
-        resourceId = getTestingClientFor(node).server().fetchString(session -> {
-            var realm = session.realms().getRealmByName(realmFinal);
-            session.getContext().setRealm(realm);
-            var factory = (AuthorizationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(AuthorizationProvider.class);
-            var storeFactory = factory.create(session, realm).getStoreFactory();
-            var client = session.clients().getClientById(realm, clientFinal);
+    private UserRepresentation createUserRepresentation(String username, String password) {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername(username);
+        user.setEnabled(true);
 
-            var resourceServer = storeFactory.getResourceServerStore().findByClient(client);
-            if (resourceServer == null) {
-                resourceServer = storeFactory.getResourceServerStore().create(client);
-            }
-            return storeFactory.getResourceStore().create(resourceServer, resourceFinal, clientFinal).getId();
-        }).replaceAll("\"", "");
+        CredentialRepresentation credential = new CredentialRepresentation();
+        credential.setType(CredentialRepresentation.PASSWORD);
+        credential.setValue(password);
+        credential.setTemporary(false);
+        user.setCredentials(List.of(credential));
+
+        return user;
+    }
+
+    private void createResource(ContainerInfo node) {
+        resourceId = testingClientFor(node).server()
+                .fetchString(new ClusterTestTasks.CreateResource(testRealmName, clientId, resourceName))
+                .replaceAll("\"", "");
     }
 
     private void createScope(ContainerInfo node) {
-        var realmFinal = testRealmName;
-        var clientFinal = clientId;
-        var scopeFinal = scopeName;
-        scopeId = getTestingClientFor(node).server().fetchString(session -> {
-            var realm = session.realms().getRealmByName(realmFinal);
-            session.getContext().setRealm(realm);
-            var storeFactory = session.getProvider(AuthorizationProvider.class).getStoreFactory();
-            var client = session.clients().getClientById(realm, clientFinal);
-
-            var resourceServer = storeFactory.getResourceServerStore().findByClient(client);
-            if (resourceServer == null) {
-                resourceServer = storeFactory.getResourceServerStore().create(client);
-            }
-            return storeFactory.getScopeStore().create(resourceServer, scopeFinal).getId();
-        }).replaceAll("\"", "");
+        scopeId = testingClientFor(node).server()
+                .fetchString(new ClusterTestTasks.CreateScope(testRealmName, clientId, scopeName))
+                .replaceAll("\"", "");
     }
 
     @Override
@@ -139,44 +133,16 @@ public class PermissionTicketInvalidationClusterTest extends AbstractInvalidatio
 
     @Override
     protected PermissionTicketRepresentation createEntity(PermissionTicketRepresentation testEntity, ContainerInfo node) {
-        var realmFinal = testRealmName;
-        var clientFinal = clientId;
-        var scopeFinal = scopeId;
-        var resourceFinal = resourceId;
-        var userFinal = userId;
-        return getTestingClientFor(node).server().fetch(session -> {
-            var realm = session.realms().getRealmByName(realmFinal);
-            session.getContext().setRealm(realm);
-            var factory = (AuthorizationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(AuthorizationProvider.class);
-            var provider = factory.create(session, realm);
-            var storeFactory = provider.getStoreFactory();
-            var client = session.clients().getClientById(realm, clientFinal);
-
-            var resourceServer = storeFactory.getResourceServerStore().findByClient(client);
-            var resource = storeFactory.getResourceStore().findById(resourceServer, resourceFinal);
-            var scope = storeFactory.getScopeStore().findById(resourceServer, scopeFinal);
-            var ticket = storeFactory.getPermissionTicketStore().create(resourceServer, resource, scope, userFinal);
-            return ModelToRepresentation.toRepresentation(ticket, provider, false);
-        }, PermissionTicketRepresentation.class);
+        return testingClientFor(node).server().fetch(
+                new ClusterTestTasks.CreatePermissionTicket(testRealmName, clientId, scopeId, resourceId, userId),
+                PermissionTicketRepresentation.class);
     }
 
     @Override
     protected PermissionTicketRepresentation readEntity(PermissionTicketRepresentation entity, ContainerInfo node) {
-        var realmFinal = testRealmName;
-        var clientFinal = clientId;
-        var idFinal = entity.getId();
-        return getTestingClientFor(node).server().fetch(session -> {
-            var realm = session.realms().getRealmByName(realmFinal);
-            session.getContext().setRealm(realm);
-            var factory = (AuthorizationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(AuthorizationProvider.class);
-            var provider = factory.create(session, realm);
-            var storeFactory = provider.getStoreFactory();
-            var client = session.clients().getClientById(realm, clientFinal);
-
-            var resourceServer = storeFactory.getResourceServerStore().findByClient(client);
-            var ticket = storeFactory.getPermissionTicketStore().findById(resourceServer, idFinal);
-            return ticket == null ? null : ModelToRepresentation.toRepresentation(ticket, provider, false);
-        }, PermissionTicketRepresentation.class);
+        return testingClientFor(node).server().fetch(
+                new ClusterTestTasks.ReadPermissionTicket(testRealmName, clientId, entity.getId()),
+                PermissionTicketRepresentation.class);
     }
 
     @Override
@@ -186,52 +152,22 @@ public class PermissionTicketInvalidationClusterTest extends AbstractInvalidatio
 
     @Override
     protected void deleteEntity(PermissionTicketRepresentation entity, ContainerInfo node) {
-        var realmFinal = testRealmName;
-        var idFinal = entity.getId();
-        getTestingClientFor(node).server().run(session -> {
-            var realm = session.realms().getRealmByName(realmFinal);
-            session.getContext().setRealm(realm);
-            var factory = (AuthorizationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(AuthorizationProvider.class);
-            var storeFactory = factory.create(session, realm).getStoreFactory();
-            storeFactory.getPermissionTicketStore().delete(idFinal);
-        });
+        testingClientFor(node).server().run(new ClusterTestTasks.DeletePermissionTicket(testRealmName, entity.getId()));
     }
 
     @Override
     protected PermissionTicketRepresentation testEntityUpdates(PermissionTicketRepresentation entity, boolean backendFailover) {
         final long timestamp = ThreadLocalRandom.current().nextLong(100000);
-        var realmFinal = testRealmName;
-        var clientFinal = clientId;
-        var idFinal = entity.getId();
-
-        getTestingClientFor(getCurrentFailNode()).server().run(session -> {
-            var realm = session.realms().getRealmByName(realmFinal);
-            session.getContext().setRealm(realm);
-            var factory = (AuthorizationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(AuthorizationProvider.class);
-            var storeFactory = factory.create(session, realm).getStoreFactory();
-            var client = session.clients().getClientById(realm, clientFinal);
-
-            var resourceServer = storeFactory.getResourceServerStore().findByClient(client);
-            var ticket = storeFactory.getPermissionTicketStore().findById(resourceServer, idFinal);
-            ticket.setGrantedTimestamp(timestamp);
-        });
+        testingClientFor(getCurrentFailNode()).server().run(
+                new ClusterTestTasks.UpdatePermissionTicketTimestamp(testRealmName, clientId, entity.getId(), timestamp));
 
         if (backendFailover) {
             failure();
         }
 
         for (var node : getCurrentSurvivorNodes()) {
-            var rsp = getTestingClientFor(node).server().fetchString(session -> {
-                var realm = session.realms().getRealmByName(realmFinal);
-                session.getContext().setRealm(realm);
-                var factory = (AuthorizationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(AuthorizationProvider.class);
-                var storeFactory = factory.create(session, realm).getStoreFactory();
-                var client = session.clients().getClientById(realm, clientFinal);
-
-                var resourceServer = storeFactory.getResourceServerStore().findByClient(client);
-                var ticket = storeFactory.getPermissionTicketStore().findById(resourceServer, idFinal);
-                return Long.toString(ticket.getGrantedTimestamp());
-            });
+            var rsp = testingClientFor(node).server()
+                    .fetchString(new ClusterTestTasks.ReadPermissionTicketTimestamp(testRealmName, clientId, entity.getId()));
             assertEquals(timestamp, Long.parseLong(rsp.replaceAll("\"", "")));
         }
 
@@ -239,5 +175,9 @@ public class PermissionTicketInvalidationClusterTest extends AbstractInvalidatio
         iterateCurrentFailNode();
 
         return entity;
+    }
+
+    private ClusterTestingClient testingClientFor(ContainerInfo node) {
+        return new ClusterTestingClient(node.getIndex(), loadBalancer, clusterRunOnServer);
     }
 }
