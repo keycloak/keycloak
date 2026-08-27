@@ -135,6 +135,16 @@ On PostgreSQL, if an invalid index exists from a previously failed `CREATE INDEX
 
 On databases that do not support non-blocking index creation, or when the migration strategy is set to `manual` or `validate`, {project_name} continues to log the SQL statement for manual execution without creating the index automatically.
 
+=== Caching of persistent user sessions disabled by default
+
+Caching of persistent user sessions in the embedded Infinispan cache is now disabled by default. Recent optimizations to the database layer, including async commits, improved indexes, and cheaper refresh-date updates, make persistent sessions without caching a viable default. Disabling the cache reduces memory usage and network traffic between nodes, enabling smoother rolling updates.
+
+Users may observe increased database connection usage and higher CPU usage on the database. For users already using persistent sessions, the database's own caching layer should prevent any additional IOPS.
+
+To re-enable caching, set `+--spi-user-sessions--infinispan--use-caches=true+`. This option is provided as a temporary workaround. It is now deprecated and will be removed in a future release.
+
+See also the <<disabling-persistent-user-sessions-volatile-sessions-is-deprecated>> section below for related changes.
+
 === Certificate Common Name truncated to 64 characters
 
 When {project_name} generates self-signed certificates (for example, during SAML client creation), the Common Name (CN) is now truncated to 64 characters to comply with the https://datatracker.ietf.org/doc/html/rfc5280[RFC 5280] `ub-common-name` upper bound. Previously, values longer than 64 characters, such as long client IDs, were used as-is. With the BouncyCastle 1.85 update, this caused certificate generation to fail.
@@ -209,11 +219,16 @@ The options `+spi-sticky-session-encoder--infinispan--should-attach-route+` and 
 The setting is still enabled by default to avoid breaking existing setups.
 To avoid the deprecation warning at startup, set those SPI options to `false`.
 
+[#disabling-persistent-user-sessions-volatile-sessions-is-deprecated]
+=== Disabling persistent user sessions (volatile sessions) is deprecated
+
+Disabling the `persistent-user-sessions` feature (volatile sessions) is deprecated and will be removed in a future release.Persistent user sessions will become the only supported mode.If you have explicitly disabled persistent user sessions with `--features-disabled=persistent-user-sessions`, remove this option before upgrading to a future release.
+
 === Organization invitation link no longer exposed in API responses
 
 The `inviteLink` field in `OrganizationInvitationRepresentation` is deprecated and is no longer returned in Admin REST API responses from the organization invitation endpoints.
 
-Previously, the invitation link containing the signed registration token was stored and returned in the representation. The invitation link is still sent via email to the intended recipient.
+Previously, the invitation link containing the signed registration token was stored and returned in the representation.The invitation link is still sent via email to the intended recipient.
 
 The `getInviteLink()` and `setInviteLink()` methods on `OrganizationInvitationRepresentation` are deprecated and will be removed in a future major version. If your code reads `inviteLink` from invitation API responses, it will now receive `null`.
 

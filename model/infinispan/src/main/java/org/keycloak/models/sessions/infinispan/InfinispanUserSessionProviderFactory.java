@@ -141,8 +141,16 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             // to be removed in KC 27
             log.warn("The option spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override is deprecated and will be removed in a future release");
         }
-        // Do not use caches for sessions if explicitly disabled or if embedded caches are not used
-        useCaches = config.getBoolean(CONFIG_USE_CACHES, !Profile.isFeatureEnabled(Profile.Feature.STATELESS)) && InfinispanUtils.isEmbeddedInfinispan();
+        // Deprecated since 26.8: disabling persistent user sessions (volatile sessions) is deprecated.
+        if (!MultiSiteUtils.isPersistentSessionsEnabled()) {
+            log.warn("Disabling the persistent-user-sessions feature is deprecated since Keycloak 26.8 and will not be supported in a future release. Persistent user sessions will become the only supported mode.");
+        }
+        // Deprecated since 26.8: caching of persistent user sessions is disabled by default and will be removed in a future release.
+        boolean defaultUseCaches = !Profile.isFeatureEnabled(Profile.Feature.STATELESS) && !MultiSiteUtils.isPersistentSessionsEnabled();
+        useCaches = config.getBoolean(CONFIG_USE_CACHES, defaultUseCaches) && InfinispanUtils.isEmbeddedInfinispan();
+        if (useCaches && MultiSiteUtils.isPersistentSessionsEnabled()) {
+            log.warn("Caching of persistent user sessions is deprecated since Keycloak 26.8 and will be removed in a future release. Remove the spi-user-sessions--infinispan--use-caches option to disable caching.");
+        }
         expirationPeriodSeconds = getExpirationPeriodSeconds(config);
     }
 
