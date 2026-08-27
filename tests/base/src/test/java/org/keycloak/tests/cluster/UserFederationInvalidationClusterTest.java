@@ -11,15 +11,15 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.testsuite.arquillian.ContainerInfo;
-import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
+import org.keycloak.tests.providers.federation.DummyUserFederationProviderFactory;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = ClusterCustomProvidersServerConfig.class)
 public class UserFederationInvalidationClusterTest extends AbstractInvalidationClusterTestWithTestRealm<ComponentRepresentation, ComponentResource> {
 
     @InjectRealm
@@ -58,6 +58,10 @@ public class UserFederationInvalidationClusterTest extends AbstractInvalidationC
     protected ComponentRepresentation createEntity(ComponentRepresentation comp, ContainerInfo node) {
         comp.setParentId(getAdminClientFor(node).realm(testRealmName).toRepresentation().getId());
         try (Response response = components(node).add(comp)) {
+            if (response.getStatus() != 201) {
+                String body = response.readEntity(String.class);
+                assertEquals(201, response.getStatus(), "Unable to create user federation component: " + body);
+            }
             String id = ApiUtil.getCreatedId(response);
             comp.setId(id);
         }

@@ -16,13 +16,12 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.arquillian.ContainerInfo;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 
-import static org.keycloak.testsuite.Assert.assertNames;
+import static org.keycloak.tests.utils.Assert.assertNames;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;

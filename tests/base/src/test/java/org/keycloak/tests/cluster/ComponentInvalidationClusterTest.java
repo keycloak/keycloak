@@ -1,7 +1,6 @@
 package org.keycloak.tests.cluster;
 
 import java.util.Arrays;
-import java.util.Map;
 
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
@@ -14,9 +13,7 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.testsuite.arquillian.ContainerInfo;
-import org.keycloak.testsuite.components.amphibian.TestAmphibianProvider;
-import org.keycloak.testsuite.components.amphibian.TestAmphibianProviderFactoryImpl;
+import org.keycloak.tests.providers.components.TestComponentProvider;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,13 +24,14 @@ import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  *
  * @author tkyjovsk
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = ClusterCustomProvidersServerConfig.class)
 public class ComponentInvalidationClusterTest extends AbstractInvalidationClusterTestWithTestRealm<ComponentRepresentation, ComponentResource> {
 
     @InjectRealm
@@ -49,8 +47,8 @@ public class ComponentInvalidationClusterTest extends AbstractInvalidationCluste
         MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
         comp.setName("comp_" + RandomStringUtils.randomAlphabetic(5));
 
-        comp.setProviderId(TestAmphibianProviderFactoryImpl.PROVIDER_ID);
-        comp.setProviderType(TestAmphibianProvider.class.getName());
+        comp.setProviderId("test-component");
+        comp.setProviderType(TestComponentProvider.class.getName());
 
         config.putSingle("secret", "Secret");
         config.putSingle("required", "required-value");
@@ -79,6 +77,10 @@ public class ComponentInvalidationClusterTest extends AbstractInvalidationCluste
     protected ComponentRepresentation createEntity(ComponentRepresentation comp, ContainerInfo node) {
         comp.setParentId(getAdminClientFor(node).realm(testRealmName).toRepresentation().getId());
         try (Response response = components(node).add(comp)) {
+            if (response.getStatus() != 201) {
+                String body = response.readEntity(String.class);
+                assertEquals(201, response.getStatus(), "Unable to create component: " + body);
+            }
             String id = ApiUtil.getCreatedId(response);
             comp.setId(id);
         }
@@ -141,8 +143,8 @@ public class ComponentInvalidationClusterTest extends AbstractInvalidationCluste
         log.info("(1) createEntityOnCurrentFailNode");
         ComponentRepresentation comp = createEntityOnCurrentFailNode(testEntity);
 
-        for (ContainerInfo ci : suiteContext.getAuthServerBackendsInfo()) {
-            assertComponentHasCorrectConfig(comp, ci);
+        for (int i = 0; i < getClusterSize(); i++) {
+            assertComponentHasCorrectConfig(comp, backendNode(i));
         }
 
         iterateCurrentFailNode();
@@ -151,8 +153,8 @@ public class ComponentInvalidationClusterTest extends AbstractInvalidationCluste
         comp.getConfig().putSingle("val3", "val3 value");
         comp = updateEntityOnCurrentFailNode(comp, "config - adding");
 
-        for (ContainerInfo ci : suiteContext.getAuthServerBackendsInfo()) {
-            assertComponentHasCorrectConfig(comp, ci);
+        for (int i = 0; i < getClusterSize(); i++) {
+            assertComponentHasCorrectConfig(comp, backendNode(i));
         }
 
         iterateCurrentFailNode();
@@ -161,8 +163,8 @@ public class ComponentInvalidationClusterTest extends AbstractInvalidationCluste
         comp.getConfig().remove("val3");
         comp = updateEntityOnCurrentFailNode(comp, "config - removing");
 
-        for (ContainerInfo ci : suiteContext.getAuthServerBackendsInfo()) {
-            assertComponentHasCorrectConfig(comp, ci);
+        for (int i = 0; i < getClusterSize(); i++) {
+            assertComponentHasCorrectConfig(comp, backendNode(i));
         }
 
         iterateCurrentFailNode();
@@ -172,8 +174,8 @@ public class ComponentInvalidationClusterTest extends AbstractInvalidationCluste
                 comp.getConfig().get("val1").get(0) + " - updated");
         comp = updateEntityOnCurrentFailNode(comp, "config");
 
-        for (ContainerInfo ci : suiteContext.getAuthServerBackendsInfo()) {
-            assertComponentHasCorrectConfig(comp, ci);
+        for (int i = 0; i < getClusterSize(); i++) {
+            assertComponentHasCorrectConfig(comp, backendNode(i));
         }
     }
 
@@ -188,19 +190,16 @@ public class ComponentInvalidationClusterTest extends AbstractInvalidationCluste
 
     protected void assertComponentHasCorrectConfig(ComponentRepresentation testEntityOnFailNode, ContainerInfo survivorNode) throws NumberFormatException {
         log.debug(String.format("Attempt to verify %s component reinstantiation on %s (%s)", getEntityType(testEntityOnFailNode), survivorNode, survivorNode.getContextRoot()));
-        Map<String, Map<String, Object>> config = getTestingClientFor(survivorNode).testing(testRealmName).getTestAmphibianComponentDetails();
-        
-        assertThat(config, hasKey(testEntityOnFailNode.getName()));
-        Map<String, Object> c = config.get(testEntityOnFailNode.getName());
-        assertThat(c, hasEntry("number", Integer.valueOf(testEntityOnFailNode.getConfig().getFirst("number"))));
-        assertThat(c, hasEntry("required", testEntityOnFailNode.getConfig().getFirst("required")));
-        assertThat(c, hasEntry("val1", testEntityOnFailNode.getConfig().getFirst("val1")));
-        assertThat(c, hasEntry("val2", testEntityOnFailNode.getConfig().getFirst("val2")));
-        final Object val3 = testEntityOnFailNode.getConfig().getFirst("val3");
+        ComponentRepresentation componentOnNode = readEntity(testEntityOnFailNode, survivorNode);
+        assertThat(componentOnNode.getConfig(), hasEntry("number", testEntityOnFailNode.getConfig().get("number")));
+        assertThat(componentOnNode.getConfig(), hasEntry("required", testEntityOnFailNode.getConfig().get("required")));
+        assertThat(componentOnNode.getConfig(), hasEntry("val1", testEntityOnFailNode.getConfig().get("val1")));
+        assertThat(componentOnNode.getConfig(), hasEntry("val2", testEntityOnFailNode.getConfig().get("val2")));
+        final var val3 = testEntityOnFailNode.getConfig().get("val3");
         if (val3 == null) {
-            assertThat(c, anyOf(hasEntry("val3", null), not(hasKey("val3"))));
+            assertThat(componentOnNode.getConfig(), anyOf(hasEntry("val3", null), not(hasKey("val3"))));
         } else {
-            assertThat(c, hasEntry("val3", val3));
+            assertThat(componentOnNode.getConfig(), hasEntry("val3", val3));
         }
     }
 

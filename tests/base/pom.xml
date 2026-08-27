@@ -54,6 +54,10 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-clustering</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-ui</artifactId>
         </dependency>
         <dependency>

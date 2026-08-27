@@ -9,7 +9,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testsuite.arquillian.ContainerInfo;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;

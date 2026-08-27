@@ -466,9 +466,15 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCIssuerTestBase {
 
         OAuth2Code oauth2Code = new OAuth2Code(
                 SecretGenerator.getInstance().randomString(),
+                authenticatedClientSessionModel.getClient().getId(),
                 Time.currentTime() + 6000,
                 SecretGenerator.getInstance().randomString(),
                 CREDENTIAL_OFFER_URI_CODE_SCOPE,
+                null,
+                null,
+                null,
+                null,
+                null,
                 authenticatedClientSessionModel.getUserSession().getId()
         );
 
