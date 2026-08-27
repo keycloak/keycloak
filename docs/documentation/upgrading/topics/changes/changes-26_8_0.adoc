@@ -127,6 +127,14 @@ The `OFFLINE_USER_SESSION` table has a new `LAST_SESSION_REFRESH_COARSE` column 
 If the table contains more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
 See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
 
+=== Automatic non-blocking index creation after startup
+
+When {project_name} skips creating an index during schema migration because the table exceeds the row count threshold, the index checker now automatically creates the missing index in the background after startup on databases that support non-blocking index creation. This applies to PostgreSQL (`CREATE INDEX CONCURRENTLY`), Oracle (`CREATE INDEX ... ONLINE`), MySQL/MariaDB (online DDL by default), and Microsoft SQL Server Enterprise, Developer, and Azure SQL editions (`CREATE INDEX ... WITH (ONLINE = ON)`).
+
+On PostgreSQL, if an invalid index exists from a previously failed `CREATE INDEX CONCURRENTLY`, {project_name} detects it, drops it, and recreates it automatically.
+
+On databases that do not support non-blocking index creation, or when the migration strategy is set to `manual` or `validate`, {project_name} continues to log the SQL statement for manual execution without creating the index automatically.
+
 === Certificate Common Name truncated to 64 characters
 
 When {project_name} generates self-signed certificates (for example, during SAML client creation), the Common Name (CN) is now truncated to 64 characters to comply with the https://datatracker.ietf.org/doc/html/rfc5280[RFC 5280] `ub-common-name` upper bound. Previously, values longer than 64 characters, such as long client IDs, were used as-is. With the BouncyCastle 1.85 update, this caused certificate generation to fail.
