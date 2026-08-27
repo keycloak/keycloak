@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.cluster;
+package org.keycloak.tests.cluster;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -10,14 +10,17 @@ import org.keycloak.admin.client.resource.ComponentResource;
 import org.keycloak.admin.client.resource.ComponentsResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.components.amphibian.TestAmphibianProvider;
 import org.keycloak.testsuite.components.amphibian.TestAmphibianProviderFactoryImpl;
 
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
@@ -30,9 +33,13 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  *
  * @author tkyjovsk
  */
+@KeycloakIntegrationTest
 public class ComponentInvalidationClusterTest extends AbstractInvalidationClusterTestWithTestRealm<ComponentRepresentation, ComponentResource> {
 
-    @Before
+    @InjectRealm
+    ManagedRealm managedRealm;
+
+    @BeforeEach
     public void setExcludedComparisonFields() {
     }
 

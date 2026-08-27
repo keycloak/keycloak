@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.cluster;
+package org.keycloak.tests.cluster;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -8,18 +8,25 @@ import org.keycloak.jgroups.certificates.CertificateReloadManager;
 import org.keycloak.jgroups.certificates.DatabaseJGroupsCertificateProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
 
 import org.awaitility.Awaitility;
 import org.infinispan.factories.GlobalComponentRegistry;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.junit.Assume;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@KeycloakIntegrationTest
 public class JGroupsCertificateRotationClusterTest extends AbstractClusterTest {
+
+    @InjectRealm
+    ManagedRealm managedRealm;
 
     @Test
     public void testRotation() {

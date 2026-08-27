@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.cluster;
+package org.keycloak.tests.cluster;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -11,13 +11,16 @@ import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.GroupBuilder;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 import static org.keycloak.testsuite.Assert.assertNames;
 
@@ -29,9 +32,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author tkyjovsk
  */
+@KeycloakIntegrationTest
 public class GroupInvalidationClusterTest extends AbstractInvalidationClusterTestWithTestRealm<GroupRepresentation, GroupResource> {
 
-    @Before
+    @InjectRealm
+    ManagedRealm managedRealm;
+
+    @BeforeEach
     public void setExcludedComparisonFields() {
         excludedComparisonFields.add("subGroups");
     }

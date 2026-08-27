@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.cluster;
+package org.keycloak.tests.cluster;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -6,6 +6,9 @@ import java.util.Collections;
 import java.util.List;
 
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 
 import org.apache.commons.lang3.RandomStringUtils;
@@ -13,7 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.common.util.reflections.Reflections.resolveListType;
 import static org.keycloak.common.util.reflections.Reflections.setAccessible;
@@ -27,7 +30,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  * @param <T> entity representation
  * @param <TR> entity resource
  */
+@KeycloakIntegrationTest
 public abstract class AbstractInvalidationClusterTest<T, TR> extends AbstractClusterTest {
+
+    @InjectRealm
+    ManagedRealm managedRealm;
 
     protected RealmRepresentation createTestRealmRepresentation() {
         RealmRepresentation testRealm = new RealmRepresentation();

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.cluster;
+package org.keycloak.tests.cluster;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -27,16 +27,21 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.sessions.StickySessionEncoderProvider;
 import org.keycloak.sessions.StickySessionEncoderProviderFactory;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
-import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
+import org.keycloak.testframework.ui.page.LoginUpdateProfilePage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
@@ -49,20 +54,27 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@KeycloakIntegrationTest
 public class AuthenticationSessionClusterTest extends AbstractClusterTest {
 
-    @Page
+    @InjectRealm
+    ManagedRealm managedRealm;
+
+    @InjectWebDriver
+    ManagedWebDriver driver;
+
+    @InjectPage
     protected LoginPage loginPage;
 
-    @Page
+    @InjectPage
     protected LoginPasswordUpdatePage updatePasswordPage;
 
 
-    @Page
+    @InjectPage
     protected LoginUpdateProfilePage updateProfilePage;
 
     
-    @Before
+    @BeforeEach
     public void setup() {
         try {
             adminClient.realm("test").remove();
@@ -73,7 +85,7 @@ public class AuthenticationSessionClusterTest extends AbstractClusterTest {
         adminClient.realms().create(testRealm);
     }
 
-    @After
+    @AfterEach
     public void after() {
         adminClient.realm("test").remove();
     }
