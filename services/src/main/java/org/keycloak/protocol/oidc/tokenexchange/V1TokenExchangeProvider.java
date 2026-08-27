@@ -36,6 +36,7 @@ import org.keycloak.common.util.Base64Url;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
@@ -61,6 +62,7 @@ import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
@@ -317,12 +319,29 @@ public class V1TokenExchangeProvider extends AbstractTokenExchangeProvider {
         AuthenticationSessionModel authSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, targetClient, scope);
 
         AuthenticationManager.setClientScopesInSession(session, authSession);
-        ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession);
+
+        // For offline sessions, attachAuthenticationSession must not call createClientSession directly
+        // on the offline user session: createClientSession only writes to the Infinispan cache and
+        // skips the UserSessionPersisterProvider call that createOfflineClientSession makes. Use a
+        // transient wrapper so the client session is built in memory first, then import it into
+        // offline storage (Infinispan offline cache + JPA) via createOfflineClientSession.
+        final boolean isOfflineSession = targetUserSession.isOffline();
+        final UserSessionModel sessionForAttach = isOfflineSession
+                ? UserSessionUtil.createTransientUserSession(session, targetUserSession)
+                : targetUserSession;
+
+        ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, sessionForAttach, authSession);
+        if (isOfflineSession) {
+            session.sessions().createOfflineClientSession(clientSessionCtx.getClientSession(), targetUserSession);
+        }
 
         if (!AuthenticationManager.isClientSessionValid(realm, client, targetUserSession, targetUserSession.getAuthenticatedClientSessionByClient(client.getId()))) {
             // create the requester client session if needed
             AuthenticationSessionModel clientAuthSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, client, scope);
-            TokenManager.attachAuthenticationSession(this.session, targetUserSession, clientAuthSession);
+            AuthenticatedClientSessionModel requesterClientSession = TokenManager.attachAuthenticationSession(this.session, sessionForAttach, clientAuthSession).getClientSession();
+            if (isOfflineSession) {
+                session.sessions().createOfflineClientSession(requesterClientSession, targetUserSession);
+            }
         }
 
         updateUserSessionFromClientAuth(targetUserSession);
