@@ -37,7 +37,8 @@ final class KubernetesUtils {
             return null;
         }
 
-        return FileUtils.readFileToString(file, StandardCharsets.UTF_8).strip();
+        String token = FileUtils.readFileToString(file, StandardCharsets.UTF_8).strip();
+        return token.isEmpty() ? null : token;
     }
 
     static boolean isTrustedKubernetesApiUrl(String url) {

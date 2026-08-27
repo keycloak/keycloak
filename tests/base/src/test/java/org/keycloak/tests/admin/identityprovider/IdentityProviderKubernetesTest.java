@@ -37,6 +37,7 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
 
 import static org.keycloak.broker.kubernetes.KubernetesConstants.SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY;
 
@@ -99,6 +100,7 @@ public class IdentityProviderKubernetesTest extends AbstractIdentityProviderTest
     }
 
     @Test
+    @ResourceLock(SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY)
     public void testCreateIdentityProviderResolvesIssuerWhenServiceAccountTokenCannotBeRead() throws Exception {
         Path tokenPath = Files.createTempDirectory("kubernetes-service-account-token");
         String previousTokenPath = System.getProperty(SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY);

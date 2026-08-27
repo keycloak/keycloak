@@ -1,12 +1,38 @@
 package org.keycloak.broker.kubernetes;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.parallel.ResourceLock;
+
+import static org.keycloak.broker.kubernetes.KubernetesConstants.SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class KubernetesUtilsTest {
+
+    @Test
+    @ResourceLock(SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY)
+    void emptyServiceAccountTokenIsTreatedAsMissing(@TempDir Path tempDir) throws Exception {
+        Path tokenPath = tempDir.resolve("token");
+        Files.writeString(tokenPath, " \n");
+        String previousTokenPath = System.getProperty(SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY);
+        try {
+            System.setProperty(SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY, tokenPath.toString());
+            assertNull(KubernetesUtils.getServiceAccountToken());
+        } finally {
+            if (previousTokenPath == null) {
+                System.clearProperty(SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY);
+            } else {
+                System.setProperty(SERVICE_ACCOUNT_TOKEN_PATH_PROPERTY, previousTokenPath);
+            }
+        }
+    }
 
     @Test
     void discoveryUrlAppendsWellKnownPathToIssuerBaseUrl() {
