@@ -275,6 +275,7 @@ public class ProtocolMappersResource {
                     toEffectiveProtocolMapperModel(proposed), toEffectiveProtocolMapperModel(existing), auth.adminAuth()));
         }
 
+        proposed = RepresentationToModel.toModel(rep);
         validateModel(proposed);
 
         client.updateProtocolMapper(proposed);
