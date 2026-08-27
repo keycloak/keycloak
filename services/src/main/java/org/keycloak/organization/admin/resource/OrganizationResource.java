@@ -85,7 +85,9 @@ public class OrganizationResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public OrganizationRepresentation get() {
-        return ModelToRepresentation.toRepresentation(organization, false);
+        OrganizationRepresentation representation = ModelToRepresentation.toRepresentation(organization, false);
+        representation.setAccess(auth.orgs().getAccess(organization));
+        return representation;
     }
 
     @DELETE
@@ -153,5 +155,10 @@ public class OrganizationResource {
     @Path("groups")
     public OrganizationGroupsResource groups() {
         return new OrganizationGroupsResource(session, organization, adminEvent, auth);
+    }
+
+    @Path("roles")
+    public OrganizationRolesResource roles() {
+        return new OrganizationRolesResource(session, organization, adminEvent, auth);
     }
 }

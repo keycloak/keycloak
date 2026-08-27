@@ -86,7 +86,7 @@ public class RealmAdapter implements CachedRealmModel {
         this.cached = cached;
         this.cacheSession = cacheSession;
         this.session = session;
-        this.modelSupplier = new LazyModel<>(this::getRealm);
+        this.modelSupplier = new LazyModel<>(this::getRealmDelegate);
     }
 
     @Override
@@ -1921,8 +1921,13 @@ public class RealmAdapter implements CachedRealmModel {
         return Collections.unmodifiableMap(localizationTexts);
     }
 
-    private RealmModel getRealm() {
+    private RealmModel getRealmDelegate() {
         return cacheSession.getRealmDelegate().getRealm(cached.getId());
+    }
+
+    @Override
+    public RealmModel getRealm() {
+        return this;
     }
 
     @Override

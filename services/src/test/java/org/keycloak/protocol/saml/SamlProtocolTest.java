@@ -211,6 +211,11 @@ public class SamlProtocolTest {
         }
 
         @Override
+        public RealmModel getRealm() {
+            return this;
+        }
+
+        @Override
         public String getName() {
             return "test-realm";
         }

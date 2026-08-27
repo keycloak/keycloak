@@ -21,19 +21,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.admin.client.resource.OrganizationRoleResource;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.storage.ldap.mappers.membership.group.GroupMapperConfig;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.util.LDAPRule;
@@ -44,12 +49,14 @@ import org.junit.ClassRule;
 import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class OrganizationMemberWithLdapTest extends AbstractOrganizationTest {
 
@@ -87,6 +94,16 @@ public class OrganizationMemberWithLdapTest extends AbstractOrganizationTest {
         OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         OrganizationRepresentation orgRepresentation = organization.toRepresentation();
         UserRepresentation ldapUser = managedRealm.admin().users().searchByUsername("johnkeycloak", true).get(0);
+        RoleRepresentation organizationRole = new RoleRepresentation("ldap-organization-role", null, false);
+        String organizationRoleId;
+        try (Response response = organization.roles().create(organizationRole)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            organizationRoleId = ApiUtil.getCreatedId(response);
+        }
+        OrganizationRoleResource organizationRoleResource = organization.roles().get(organizationRoleId);
+        UserRepresentation roleMember = new UserRepresentation();
+        roleMember.setId(ldapUser.getId());
+        assertThrows(BadRequestException.class, () -> organizationRoleResource.addUserMembers(List.of(roleMember)));
 
         // make the LDAP user join the organization and check it was successful.
         try (Response response = organization.members().addMember(ldapUser.getId())) {
@@ -96,6 +113,30 @@ public class OrganizationMemberWithLdapTest extends AbstractOrganizationTest {
         assertThat(orgMemberships, notNullValue());
         assertThat(orgMemberships, hasSize(1));
         assertThat(orgMemberships.get(0).getId(), equalTo(orgRepresentation.getId()));
+        organizationRoleResource.addUserMembers(List.of(roleMember));
+        assertThat(organizationRoleResource.getUserMembers().stream().map(UserRepresentation::getId).toList(),
+                contains(ldapUser.getId()));
+
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId("ldap-organization-role-client");
+        client.setEnabled(true);
+        String clientId;
+        try (Response response = managedRealm.admin().clients().create(client)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            clientId = ApiUtil.getCreatedId(response);
+        }
+        RoleRepresentation clientRole = new RoleRepresentation("ldap-client-role", null, true);
+        managedRealm.admin().clients().get(clientId).roles().create(clientRole);
+        clientRole = managedRealm.admin().clients().get(clientId).roles().get(clientRole.getName()).toRepresentation();
+        managedRealm.admin().users().get(ldapUser.getId()).roles().clientLevel(clientId).add(List.of(clientRole));
+        assertThat(managedRealm.admin().users().get(ldapUser.getId()).roles().clientLevel(clientId).listAll().stream()
+                .map(RoleRepresentation::getId).toList(), contains(clientRole.getId()));
+        assertThat(managedRealm.admin().users().get(ldapUser.getId()).roles().realmLevel().listAll().stream()
+                .map(RoleRepresentation::getId).filter(organizationRoleId::equals).toList(), hasSize(0));
+
+        organizationRoleResource.deleteUserMembers(List.of(roleMember));
+        assertThat(organizationRoleResource.getUserMembers(), hasSize(0));
+        organizationRoleResource.addUserMembers(List.of(roleMember));
 
         // check that the org group was NOT pushed to LDAP as a result of joining the org.
         AtomicReference<String> orgId = new AtomicReference<>(orgRepresentation.getId());
@@ -110,6 +151,9 @@ public class OrganizationMemberWithLdapTest extends AbstractOrganizationTest {
         }
         List<MemberRepresentation> orgMembers = organization.members().list(-1, -1);
         assertThat(orgMembers, hasSize(0));
+        assertThat(organizationRoleResource.getUserMembers(), hasSize(0));
+        assertThat(managedRealm.admin().users().get(ldapUser.getId()).roles().clientLevel(clientId).listAll().stream()
+                .map(RoleRepresentation::getId).toList(), contains(clientRole.getId()));
     }
 
 }

@@ -46,6 +46,16 @@ public class HardcodedRoleStorageProvider implements RoleStorageProvider {
     }
 
     @Override
+    public RoleModel getRole(RoleContainerModel container, String name) {
+        if (container instanceof RealmModel) {
+            return getRealmRole((RealmModel) container, name);
+        } else if (container instanceof ClientModel) {
+            return getClientRole((ClientModel) container, name);
+        }
+        return null;
+    }
+
+    @Override
     public RoleModel getRealmRole(RealmModel realm, String name) {
         if (this.roleName.equals(name)) return new HardcodedRoleAdapter(realm);
         return null;
@@ -57,6 +67,16 @@ public class HardcodedRoleStorageProvider implements RoleStorageProvider {
         final String roleName = storageId.getExternalId();
         if (this.roleName.equals(roleName)) return new HardcodedRoleAdapter(realm);
         return null;
+    }
+
+    @Override
+    public Stream<RoleModel> searchForRolesStream(RoleContainerModel container, String search, Integer first, Integer max) {
+        if (container instanceof RealmModel) {
+            return searchForRolesStream((RealmModel) container, search, first, max);
+        } else if (container instanceof ClientModel) {
+            return searchForClientRolesStream((ClientModel) container, search, first, max);
+        }
+        return Stream.empty();
     }
 
     @Override
@@ -128,11 +148,6 @@ public class HardcodedRoleStorageProvider implements RoleStorageProvider {
         @Override
         public Stream<RoleModel> getCompositesStream(String search, Integer first, Integer max) {
             return Stream.empty();
-        }
-
-        @Override
-        public boolean isClientRole() {
-            return false;
         }
 
         @Override

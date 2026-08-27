@@ -32,10 +32,12 @@ import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.JpaModel;
 import org.keycloak.models.jpa.entities.IdentityProviderEntity;
@@ -69,7 +71,8 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
         return entity.getId();
     }
 
-    RealmModel getRealm() {
+    @Override
+    public RealmModel getRealm() {
         return realm;
     }
 
@@ -79,6 +82,57 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
 
     void setGroupId(String id) {
         entity.setGroupId(id);
+    }
+
+    @Override
+    public RoleModel getDefaultRole() {
+        if (entity.getDefaultRoleId() == null) {
+            return null;
+        }
+        return session.roles().getRoleInContainerById(this, entity.getDefaultRoleId());
+    }
+
+    @Override
+    public void setDefaultRole(RoleModel role) {
+        if (role != null && (!role.isType(RoleModel.Type.ORGANIZATION) || !getId().equals(role.getContainerId()))) {
+            throw new ModelException("Default role must belong to the organization");
+        }
+        entity.setDefaultRoleId(role == null ? null : role.getId());
+    }
+
+    @Override
+    public RoleModel getRole(String name) {
+        return session.roles().getRole(this, name);
+    }
+
+    @Override
+    public RoleModel addRole(String name) {
+        return addRole(null, name);
+    }
+
+    @Override
+    public RoleModel addRole(String id, String name) {
+        return session.roles().addRole(this, id, name);
+    }
+
+    @Override
+    public boolean removeRole(RoleModel role) {
+        return session.roles().removeRole(role);
+    }
+
+    @Override
+    public Stream<RoleModel> getRolesStream() {
+        return session.roles().getRolesStream(this);
+    }
+
+    @Override
+    public Stream<RoleModel> getRolesStream(Integer firstResult, Integer maxResults) {
+        return session.roles().getRolesStream(this, firstResult, maxResults);
+    }
+
+    @Override
+    public Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max) {
+        return session.roles().searchForRolesStream(this, search, first, max);
     }
 
     @Override

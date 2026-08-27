@@ -29,6 +29,7 @@ import org.keycloak.models.IdentityProviderStorageProvider.FetchMode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.UserCache;
@@ -114,20 +115,26 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
             cached = null;
         }
 
+        boolean invalid = isRealmCacheKeyInvalid(id);
+
         if (cached == null) {
             Long loaded = realmCache.getCache().getCurrentRevision(id);
             OrganizationModel model = getDelegate().getById(id);
             if (model == null) return null;
-            if (isRealmCacheKeyInvalid(id)) return model;
             cached = new CachedOrganization(loaded, getRealm(), model, d -> realmCache.registerInvalidation(cacheKeyByDomain(d)));
-            realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
-        } else if (isRealmCacheKeyInvalid(id)) {
-            return getDelegate().getById(id);
-        } else if (managedOrganizations.containsKey(id)) {
+            if (!invalid) {
+                realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
+            }
+        } else if (!invalid && managedOrganizations.containsKey(id)) {
             return managedOrganizations.get(id);
         }
+
         OrganizationAdapter adapter = new OrganizationAdapter(session, cached, this::getDelegate, this);
-        managedOrganizations.put(id, adapter);
+        if (invalid) {
+            adapter.invalidate();
+        } else {
+            managedOrganizations.put(id, adapter);
+        }
         return adapter;
     }
 
@@ -219,6 +226,11 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     @Override
     public Stream<UserModel> getMembersStream(OrganizationModel organization, Map<String, String> filters, Boolean exact, Integer first, Integer max) {
         return getDelegate().getMembersStream(organization, filters, exact, first, max);
+    }
+
+    @Override
+    public Stream<UserModel> getRoleMembersStream(OrganizationModel organization, RoleModel role, String search, Integer first, Integer max) {
+        return getDelegate().getRoleMembersStream(organization, role, search, first, max);
     }
 
     @Override

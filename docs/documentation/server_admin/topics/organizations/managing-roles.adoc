@@ -1,0 +1,296 @@
+[id="managing-organization-roles_{context}"]
+
+[[_managing_roles_]]
+=  Managing roles
+[role="_abstract"]
+
+Organization roles let you define coarse-grained permissions that are scoped to a single organization. Use them to model responsibilities such as `org-admin` or `billing-manager` without affecting the rest of the realm.
+
+Unlike realm roles that are shared across your entire realm, organization roles belong exclusively to one organization. This means `orgA` and `orgB` can each have an `org-admin` role without any conflict—each is a completely separate role with its own unique identifier.
+
+== Creating roles
+
+Navigate to your organization and click the *Roles* tab.
+
+.Procedure
+
+. Click *Create role*.
+. Provide a *Name* for the role.
+. Optionally, provide a *Description*.
+. Click *Create*.
+
+Your role is ready. You can now assign it to members, add attributes, or associate other roles with it.
+
+== Understanding the default role
+
+Every organization automatically has a default role, named `default-roles-<alias>`, that is created when the organization is created and shown with a *Default* badge.
+
+All organization members are automatically granted this role—there's no need to assign it manually. Use it to define permissions that should apply to every member of the organization.
+
+The default role cannot be deleted, and it doesn't expose the *Attributes* or *Users in role* tabs, since it isn't meant to be managed like a regular role.
+
+== Assigning roles to members
+
+Members can be granted an organization role directly, without going through a group.
+
+.Procedure
+
+. Select the role.
+. Click the *Users in role* tab.
+. Click *Add user*.
+. Select one or more organization members.
+. Click *Add*.
+
+To remove a member from the role, select the member in the *Users in role* tab and click *Remove*.
+
+TIP: You can also assign organization roles to a group of members at once. See <<_managing_groups_,Managing groups>> for details.
+
+=== Assigning roles automatically with identity providers
+
+If your organization is linked to an identity provider, you can grant an organization role automatically to members who authenticate through that identity provider by using the *Hardcoded Organization Role* identity provider mapper.
+
+.Procedure
+
+. Click *Identity providers* in the menu and select the identity provider linked to the organization.
+. Click the *Mappers* tab.
+. Click *Add mapper*.
+. Provide a *Name* for the mapper.
+. Select a *Sync mode override* according to when the role should be granted (for example, on first login only or on every login).
+. Set *Mapper type* to *Hardcoded Organization Role*.
+. Select the *Organization Role* to grant.
+. Click *Save*.
+
+When a user authenticates through the identity provider, the selected role is granted automatically. The identity provider must be linked to an enabled organization, and the role must belong to that organization.
+
+== Associating roles
+
+Organization roles support composites, just like realm and client roles. An organization role can be associated with:
+
+* Other roles from the same organization
+* Realm roles
+* Client roles
+
+.Procedure
+
+. Select the role.
+. Click the *Associated roles* tab.
+. Click *Assign role*.
+. Select one or more organization, realm, or client roles.
+. Click *Assign*.
+
+When a member is granted a role, they automatically inherit all of its associated roles. Composite roles are expanded automatically wherever roles are resolved.
+
+== Managing role attributes
+
+Roles can carry attributes—key/value metadata stored at the role level.
+
+.Procedure
+
+. Select a role.
+. Click the *Attributes* tab.
+. Add attributes with keys and values.
+. Click *Save*.
+
+NOTE: The default role does not support attributes.
+
+== Mapping roles to tokens
+
+Organization role membership can appear in tokens for both OIDC and SAML protocols. The setup differs between protocols.
+
+IMPORTANT: The *Organization Role Membership* mapper alone is NOT sufficient. It only works when combined with the *Organization Membership* mapper in the same scope.
+
+=== OIDC: Organization roles in tokens
+
+==== Option 1: Add mapper to built-in organization scope (Recommended)
+
+The built-in `organization` scope already has the Organization Membership mapper. Simply add the role mapper to it.
+
+.Procedure
+
+. Click *Client scopes* in the menu.
+. Select the *organization* scope.
+. Click the *Mappers* tab.
+. Click *Add mapper* → *By configuration*.
+. Select *Organization Role Membership*.
+. Configure the mapper:
+
+Add to ID token::
+Include roles in ID tokens.
+
+Add to access token::
+Include roles in access tokens.
+
+Add to userinfo::
+Include roles in the UserInfo endpoint response.
+
+Add to introspection::
+Include roles in the Introspection endpoint response.
+
+. Click *Save*.
+
+==== Option 2: Create custom scope with both mappers
+
+If you need a dedicated scope for organization data, create one with BOTH required mappers.
+
+.Procedure
+
+. Click *Client scopes* in the menu.
+. Click *Create client scope*.
+. Provide a *Name* (for example, `my-org-scope`).
+. Set *Protocol* to *OpenID Connect*.
+. Click *Save*.
+. Click the *Mappers* tab.
+. Add BOTH mappers:
+.. Click *Configure a new mapper* → *Organization Membership*
+.. Configure and save
+.. Click *Add mapper* → *By configuration* → *Organization Role Membership*
+.. Configure and save
+. Go to your client.
+. Click *Client scopes* tab.
+. Click *Add client scope*.
+. Select your custom scope.
+. Click *Add*.
+. Choose *Default* or *Optional*.
+
+==== Token structure
+
+When a member directly assigned the `org-admin` organization role authenticates and requests the organization scope, the token includes:
+
+[source,json]
+----
+{
+  "organization": {
+    "orgA": {
+      "id": "f8d3c4e1-...",
+      "roles": [ "org-admin" ]
+    }
+  }
+}
+----
+
+If the `org-admin` role has associated realm or client roles, they are included as well:
+
+[source,json]
+----
+{
+  "organization": {
+    "orgA": {
+      "id": "f8d3c4e1-...",
+      "roles": [ "org-admin" ],
+      "realm_access": {
+        "roles": [ "viewer" ]
+      },
+      "resource_access": {
+        "my-client": {
+          "roles": [ "client-editor" ]
+        }
+      }
+    }
+  }
+}
+----
+
+Composite roles are automatically expanded—if an organization role has an associated composite role, all its child roles are included.
+
+NOTE: Organization roles are never added to the top-level `realm_access` or `resource_access` claims. They only appear under the `organization` claim. However, realm and client roles associated with an organization role are added to the standard `realm_access`/`resource_access` claims whenever the member effectively holds them (for example, by having the organization role granted directly or through a group)—no additional mapper configuration is required for those.
+
+=== SAML: Organization roles in assertions
+
+==== Option 1: Add mapper to built-in saml_organization scope (Recommended)
+
+The built-in `saml_organization` scope already has the Organization Membership mapper and is added as a default scope to all SAML clients. Simply add the role mapper to it.
+
+.Procedure
+
+. Click *Client scopes* in the menu.
+. Select the *saml_organization* scope.
+. Click the *Mappers* tab.
+. Click *Add mapper* → *By configuration*.
+. Select *Organization Role Membership*.
+. Click *Save*.
+
+==== Option 2: Create custom SAML scope with both mappers
+
+If you need a dedicated scope, create one with both the membership and role mappers.
+
+.Procedure
+
+. Click *Client scopes* in the menu.
+. Click *Create client scope*.
+. Provide a *Name* (for example, `my-saml-org-scope`).
+. Set *Protocol* to *SAML*.
+. Click *Save*.
+. Click the *Mappers* tab.
+. Add BOTH mappers:
+.. Click *Configure a new mapper* → *Organization Membership*
+.. Click *Save*
+.. Click *Add mapper* → *By configuration* → *Organization Role Membership*
+.. Click *Save*
+. Go to your SAML client.
+. Click *Client scopes* tab.
+. Click *Add client scope*.
+. Select your custom scope.
+. Click *Add*.
+. Choose *Default* or *Optional*.
+
+==== SAML assertion structure
+
+When a member directly assigned the `org-admin` organization role authenticates, the assertion includes attributes for each organization they belong to:
+
+[source,xml]
+----
+<Attribute Name="organization.orgA.roles">
+  <AttributeValue>org-admin</AttributeValue>
+</Attribute>
+<Attribute Name="organization.orgA.realm_access.roles">
+  <AttributeValue>viewer</AttributeValue>
+</Attribute>
+<Attribute Name="organization.orgA.resource_access.my-client.roles">
+  <AttributeValue>client-editor</AttributeValue>
+</Attribute>
+----
+
+Each organization gets its own attributes named `+organization.{alias}.roles+`, `+organization.{alias}.realm_access.roles+`, and `+organization.{alias}.resource_access.{clientId}.roles+`, where `alias` is the organization alias.
+
+== Important distinctions
+
+=== Organization roles vs realm roles
+
+[cols="1,2", options="header"]
+|===
+|Feature
+|Organization roles
+
+|Scope
+|Belong to a single organization
+
+|Isolation
+|Fully isolated—the same role name can exist across organizations
+
+|Composite roles
+|Can compose other organization roles, as well as realm and client roles
+
+|Authorization policies
+|Cannot be used in authorization policies—use realm or client roles instead
+
+|Token mapping
+|Appear in tokens only when using organization context, and only under the `organization` claim
+|===
+
+=== Authorization policies restriction
+
+Organization roles *cannot* be used in Keycloak authorization policies. Only realm and client roles are supported there.
+
+If you try to select an organization role when configuring a role-based policy or a client scope mapping, you'll receive an error. This is intentional—authorization policies and scope mappings operate at the realm level, not the organization level.
+
+NOTE: Managing organization roles requires the `manage-organizations` realm admin role (or equivalent Fine-Grained Admin Permission on the organization). Assigning a role to a member additionally requires the `map-role` permission on the role and the `manage-users` permission on the target user. Listing or viewing organization roles requires `view-organizations` (or the equivalent Fine-Grained Admin Permission).
+
+== Deleting roles
+
+.Procedure
+
+. Select the role.
+. Click the *Delete role* action.
+. Confirm the deletion.
+
+Members who were assigned the role lose the associated permissions. The default role cannot be deleted.

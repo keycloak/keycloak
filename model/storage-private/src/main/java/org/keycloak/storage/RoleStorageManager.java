@@ -26,7 +26,9 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.StorageProviderRealmModel;
@@ -121,6 +123,18 @@ public class RoleStorageManager implements RoleProvider {
     }
 
     @Override
+    public RoleModel addRole(RoleContainerModel container, String id, String name) {
+        if (container instanceof RealmModel) {
+            return addRealmRole((RealmModel) container, id, name);
+        } else if (container instanceof ClientModel) {
+            return addClientRole((ClientModel) container, id, name);
+        } else if (container instanceof OrganizationModel) {
+            return localStorage().addRole(container, id, name);
+        }
+        return null;
+    }
+
+    @Override
     public RoleModel addRealmRole(RealmModel realm, String name) {
         return localStorage().addRealmRole(realm, name);
     }
@@ -128,6 +142,18 @@ public class RoleStorageManager implements RoleProvider {
     @Override
     public RoleModel addRealmRole(RealmModel realm, String id, String name) {
         return localStorage().addRealmRole(realm, id, name);
+    }
+
+    @Override
+    public RoleModel getRole(RoleContainerModel container, String name) {
+        if (container instanceof RealmModel) {
+            return getRealmRole((RealmModel) container, name);
+        } else if (container instanceof ClientModel) {
+            return getClientRole((ClientModel) container, name);
+        } else if (container instanceof OrganizationModel) {
+            return localStorage().getRole(container, name);
+        }
+        return null;
     }
 
     @Override
@@ -151,6 +177,16 @@ public class RoleStorageManager implements RoleProvider {
         if (provider == null) return null;
         if (! isStorageProviderEnabled(realm, storageId.getProviderId())) return null;
         return provider.getRoleById(realm, id);
+    }
+
+    @Override
+    public long getRolesCount(RoleContainerModel container, String search) {
+        return localStorage().getRolesCount(container, search);
+    }
+
+    @Override
+    public Stream<RoleModel> getRolesStream(RoleContainerModel container, Integer first, Integer max) {
+        return localStorage().getRolesStream(container, first, max);
     }
 
     @Override
@@ -189,6 +225,19 @@ public class RoleStorageManager implements RoleProvider {
         return Stream.concat(localComposites, externalComposites).distinct();
     }
 
+    @Override
+    public Stream<RoleModel> searchForRolesStream(RoleContainerModel container, String search, Integer first, Integer max) {
+        if  (container instanceof RealmModel) {
+            return searchForRolesStream((RealmModel) container, search, first, max);
+        } else if (container instanceof ClientModel) {
+            return searchForClientRolesStream((ClientModel) container, search, first, max);
+        } else if (container instanceof OrganizationModel) {
+            return localStorage().searchForRolesStream(container, search, first, max);
+        }
+
+        return Stream.empty();
+    }
+
     /**
      * Obtaining roles from an external role storage is time-bounded. In case the external role storage
      * isn't available at least roles from a local storage are returned. For this purpose
@@ -216,13 +265,23 @@ public class RoleStorageManager implements RoleProvider {
     }
 
     @Override
+    public void removeRoles(RoleContainerModel container) {
+        localStorage().removeRoles(container);
+    }
+
+    @Override
     public void removeRoles(RealmModel realm) {
-        localStorage().removeRoles(realm);
+        removeRoles((RoleContainerModel) realm);
     }
 
     @Override
     public void removeRoles(ClientModel client) {
-        localStorage().removeRoles(client);
+        removeRoles((RoleContainerModel) client);
+    }
+
+    @Override
+    public RoleModel getRoleInContainerById(RoleContainerModel container, String id) {
+        return localStorage().getRoleInContainerById(container, id);
     }
 
     @Override
