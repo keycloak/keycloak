@@ -161,6 +161,18 @@ public class AdminProtocolMapperClientPolicyTest extends AbstractClientPoliciesT
     }
 
     @Test
+    public void rejectUnlistedProtocolMapperWithNullConfig() throws Exception {
+        ProtocolMappersResource mappers = createClient("null-config-unlisted-mapper-client").getProtocolMappers();
+        String mapperId = createMapper(mappers, mapper("null-config-unlisted-mapper", "email"));
+        setupAllowedProtocolMappersPolicy(List.of(AudienceProtocolMapper.PROVIDER_ID));
+
+        ProtocolMapperRepresentation update = mappers.getMapperById(mapperId);
+        update.setConfig(null);
+        Assertions.assertThrows(BadRequestException.class, () -> mappers.update(mapperId, update));
+        Assertions.assertEquals("email", mappers.getMapperById(mapperId).getConfig().get("user.attribute"));
+    }
+
+    @Test
     public void replaceProtocolMapperWhoseProviderIsMissing() {
         ClientResource client = createClient("missing-provider-mapper-client");
         String clientId = client.toRepresentation().getId();

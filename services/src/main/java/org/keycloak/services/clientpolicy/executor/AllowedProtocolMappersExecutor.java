@@ -18,6 +18,7 @@
 package org.keycloak.services.clientpolicy.executor;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -97,7 +98,14 @@ public class AllowedProtocolMappersExecutor implements ClientPolicyExecutorProvi
     private ProtocolMapperModel toEffectiveModel(ProtocolMapperModel model) {
         ProtocolMapper mapper = (ProtocolMapper) session.getKeycloakSessionFactory()
                 .getProviderFactory(ProtocolMapper.class, model.getProtocolMapper());
-        return mapper == null ? model : mapper.getEffectiveModel(session, session.getContext().getRealm(), model);
+        if (mapper == null) {
+            return model;
+        }
+        if (model.getConfig() == null) {
+            model = new ProtocolMapperModel(model);
+            model.setConfig(new HashMap<>());
+        }
+        return mapper.getEffectiveModel(session, session.getContext().getRealm(), model);
     }
 
     private ClientPolicyException notAllowed(String mapperType) {
