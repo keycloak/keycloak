@@ -54,6 +54,14 @@ public class TrackEventsClientPolicyExecutor implements ClientPolicyExecutorProv
         return snapshot;
     }
 
+    public synchronized List<ClientPolicyEvent> getEvents() {
+        return List.copyOf(events);
+    }
+
+    public synchronized void clearEventResult() {
+        events.clear();
+    }
+
     @Override
     public TrackEventsClientPolicyExecutor create(KeycloakSession session) {
         return SINGLETON;

@@ -145,7 +145,9 @@ public class ProtocolMappersResource {
 
         ProtocolMapperModel model = null;
         try {
-            triggerClientPolicy(new ClientProtocolMapperRegisterContext(client, rep, auth.adminAuth()));
+            if (client instanceof ClientModel) {
+                triggerClientPolicy(new ClientProtocolMapperRegisterContext(client, rep, auth.adminAuth()));
+            }
             model = RepresentationToModel.toModel(rep);
             validateModel(model);
             model = client.addProtocolMapper(model);
@@ -172,7 +174,9 @@ public class ProtocolMappersResource {
         managePermission.require();
 
         if (!reps.isEmpty()) {
-            triggerClientPolicy(new ClientProtocolMapperRegisterContext(client, reps, auth.adminAuth()));
+            if (client instanceof ClientModel) {
+                triggerClientPolicy(new ClientProtocolMapperRegisterContext(client, reps, auth.adminAuth()));
+            }
         }
 
         List<ProtocolMapperModel> models = reps.stream()
@@ -257,7 +261,9 @@ public class ProtocolMappersResource {
         ProtocolMapperModel existing = client.getProtocolMapperById(id);
         if (existing == null) throw new NotFoundException("Model not found");
 
-        triggerClientPolicy(new ClientProtocolMapperUpdateContext(client, rep, existing, auth.adminAuth()));
+        if (client instanceof ClientModel) {
+            triggerClientPolicy(new ClientProtocolMapperUpdateContext(client, rep, existing, auth.adminAuth()));
+        }
 
         ProtocolMapperModel model = RepresentationToModel.toModel(rep);
         validateModel(model);
@@ -281,7 +287,9 @@ public class ProtocolMappersResource {
 
         ProtocolMapperModel model = client.getProtocolMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
-        triggerClientPolicy(new ClientProtocolMapperRemoveContext(client, model, auth.adminAuth()));
+        if (client instanceof ClientModel) {
+            triggerClientPolicy(new ClientProtocolMapperRemoveContext(client, model, auth.adminAuth()));
+        }
         client.removeProtocolMapper(model);
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
 

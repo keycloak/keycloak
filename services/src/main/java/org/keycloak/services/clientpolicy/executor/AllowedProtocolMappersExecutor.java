@@ -18,8 +18,10 @@
 package org.keycloak.services.clientpolicy.executor;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.ProtocolMapperModel;
@@ -59,11 +61,14 @@ public class AllowedProtocolMappersExecutor implements ClientPolicyExecutorProvi
             return;
         }
 
-        List<String> allowedMapperTypes = configuration.getAllowedProtocolMapperTypes();
+        Set<String> allowedMapperTypes = new HashSet<>(configuration.getAllowedProtocolMapperTypes());
         ProtocolMapperModel existingMapper = mapperContext.getExistingProtocolMapper();
         if (existingMapper == null) {
-            if (proposedMappers.stream().anyMatch(mapper -> !allowedMapperTypes.contains(mapper.getProtocolMapper()))) {
-                throw notAllowed();
+            ProtocolMapperRepresentation rejectedMapper = proposedMappers.stream()
+                    .filter(mapper -> !allowedMapperTypes.contains(mapper.getProtocolMapper()))
+                    .findFirst().orElse(null);
+            if (rejectedMapper != null) {
+                throw notAllowed(rejectedMapper.getProtocolMapper());
             }
             return;
         }
@@ -75,12 +80,12 @@ public class AllowedProtocolMappersExecutor implements ClientPolicyExecutorProvi
 
         if (!Objects.equals(proposedMapper.getProtocolMapper(), existingMapper.getProtocolMapper())
                 || !Objects.equals(proposedMapper.getConfig(), existingMapper.getConfig())) {
-            throw notAllowed();
+            throw notAllowed(proposedMapper.getProtocolMapper());
         }
     }
 
-    private ClientPolicyException notAllowed() {
-        return new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "ProtocolMapper type not allowed");
+    private ClientPolicyException notAllowed(String mapperType) {
+        return new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Protocol mapper type '" + mapperType + "' is not allowed by client policy");
     }
 
     @Override

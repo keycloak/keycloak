@@ -52,9 +52,7 @@ public interface ClientProtocolMapperContext extends ClientModelContext, ClientP
     /**
      * @return the client or client scope that hosts the mapper.
      */
-    default ProtocolMapperContainerModel getProtocolMapperContainer() {
-        return null;
-    }
+    ProtocolMapperContainerModel getProtocolMapperContainer();
 
     /**
      * @return the inbound mapper representation on single-item REGISTER/UPDATE flows; null on UNREGISTER and
