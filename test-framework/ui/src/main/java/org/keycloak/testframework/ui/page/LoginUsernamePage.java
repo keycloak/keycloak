@@ -22,7 +22,7 @@ public class LoginUsernamePage extends AbstractLoginPage {
     }
 
     public void submit() {
-        submitButton.click();
+        driver.waiting().waitForPageReload(() -> submitButton.click());
     }
 
     @Override
