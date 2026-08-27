@@ -54,7 +54,7 @@ export default function UserFederationKerberosSettings() {
     try {
       if (!id) {
         await adminClient.components.create(component);
-        navigate(`/${realm}/user-federation`);
+        void navigate(`/${realm}/user-federation`);
       } else {
         await adminClient.components.update({ id }, component);
       }
@@ -91,7 +91,7 @@ export default function UserFederationKerberosSettings() {
             </Button>
             <Button
               variant="link"
-              onClick={() => navigate(toUserFederation({ realm }))}
+              onClick={() => void navigate(toUserFederation({ realm }))}
               data-testid="kerberos-cancel"
             >
               {t("cancel")}

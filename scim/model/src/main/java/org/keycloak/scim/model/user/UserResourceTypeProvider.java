@@ -182,9 +182,9 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     }
 
     @Override
-    public boolean onDelete(String id) {
+    public boolean onDelete(UserModel model) {
         RealmModel realm = session.getContext().getRealm();
-        return session.users().removeUser(realm, getModel(id));
+        return session.users().removeUser(realm, model);
     }
 
     @Override

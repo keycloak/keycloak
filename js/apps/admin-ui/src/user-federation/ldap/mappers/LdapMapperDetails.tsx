@@ -105,7 +105,7 @@ export default function LdapMapperDetails() {
     try {
       if (mapperId === "new") {
         await adminClient.components.create(map);
-        navigate(
+        void navigate(
           toUserFederationLdap({ realm, id: mapper.parentId!, tab: "mappers" }),
         );
       } else {
@@ -157,7 +157,7 @@ export default function LdapMapperDetails() {
           id: mapping!.id!,
         });
         addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
-        navigate(toUserFederationLdap({ id, realm, tab: "mappers" }));
+        void navigate(toUserFederationLdap({ id, realm, tab: "mappers" }));
       } catch (error) {
         addError("mappingDeletedError", error);
       }
@@ -344,8 +344,8 @@ export default function LdapMapperDetails() {
                 variant="link"
                 onClick={() =>
                   isNew
-                    ? navigate(-1)
-                    : navigate(
+                    ? void navigate(-1)
+                    : void navigate(
                         `/${realm}/user-federation/ldap/${
                           mapping!.parentId
                         }/mappers`,

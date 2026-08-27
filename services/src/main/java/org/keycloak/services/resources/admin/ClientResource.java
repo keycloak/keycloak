@@ -40,7 +40,9 @@ import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.admin.AuthorizationService;
+import org.keycloak.client.clienttype.ClientType;
 import org.keycloak.client.clienttype.ClientTypeException;
+import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
@@ -891,6 +893,13 @@ public class ClientResource {
     private void updateAuthorizationSettings(ClientRepresentation rep) {
         if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
             if (Boolean.TRUE.equals(rep.getAuthorizationServicesEnabled())) {
+                if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) && client.getType() != null) {
+                    ClientType clientType = session.getProvider(ClientTypeManager.class).getClientType(realm, client.getType());
+                    if (!clientType.isApplicable("authorizationServicesEnabled") ||
+                            Boolean.FALSE.equals(clientType.getTypeValue("authorizationServicesEnabled", Boolean.class))) {
+                        throw ClientTypeException.Message.CLIENT_UPDATE_FAILED_CLIENT_TYPE_VALIDATION.exception("authorizationServicesEnabled");
+                    }
+                }
                 authorization().enable(false);
             } else {
                 authorization().disable();

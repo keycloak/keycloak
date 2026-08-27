@@ -42,6 +42,8 @@ import org.keycloak.ssf.subject.EmailSubjectId;
 import org.keycloak.ssf.subject.IssuerSubjectId;
 import org.keycloak.ssf.subject.OpaqueSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
+import org.keycloak.ssf.subject.SubjectResolver;
+import org.keycloak.ssf.subject.UriSubjectId;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.support.SsfUtil;
@@ -600,8 +602,9 @@ public class SecurityEventTokenMapper {
     }
 
     /**
-     * Builds an {@link OpaqueSubjectId} carrying the user's primary
-     * Keycloak organization alias. Throws {@link SsfException} when
+     * Builds a {@link UriSubjectId} carrying the user's primary
+     * Keycloak organization as an {@code urn:keycloak:org:alias:} URN.
+     * Throws {@link SsfException} when
      * the user belongs to no organization — see
      * {@link #addTenantIfConfigured} for why fail-loud is the right
      * choice.
@@ -641,17 +644,18 @@ public class SecurityEventTokenMapper {
             throw new SsfException("Configured user subject format includes '+tenant' but user " + userId
                     + " belongs to no organization (stream " + (stream != null ? stream.getStreamId() : null) + ")");
         }
-        // Emit alias rather than the internal UUID — alias is the stable,
-        // human-readable organization identifier and the receiver-side
-        // SubjectResolver tries getByAlias as a fallback to getById, so
-        // this resolves on round-trip without requiring receivers to
-        // know the transmitter's internal UUIDs.
+        // Emit the self-describing alias URN rather than an opaque id:
+        // opaque tenant values resolve strictly by internal org id,
+        // while urn:keycloak:org:alias:<alias> names its lookup
+        // explicitly — so the subject round-trips unambiguously through
+        // SubjectResolver and the wire value stays human-readable
+        // without exposing the transmitter's internal UUIDs.
         return createTenantSubjectId(org, user);
     }
 
-    protected OpaqueSubjectId createTenantSubjectId(OrganizationModel org, UserModel user) {
-        OpaqueSubjectId tenantSubject = new OpaqueSubjectId();
-        tenantSubject.setId(org.getAlias());
+    protected UriSubjectId createTenantSubjectId(OrganizationModel org, UserModel user) {
+        UriSubjectId tenantSubject = new UriSubjectId();
+        tenantSubject.setUri(SubjectResolver.ORG_URN_ALIAS_PREFIX + org.getAlias());
         return tenantSubject;
     }
 

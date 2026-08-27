@@ -23,6 +23,13 @@ In this release, Client Secret Rotation is promoted from preview to supported. F
 
 {project_name} now supports encrypted PKCS#8 private keys in PEM format for HTTPS configuration. Use the new `--https-certificate-key-file-password` option to provide the decryption password. The management interface also supports this via `--https-management-certificate-key-file-password`. For details, see <@links.server id="enabletls"/>.
 
+== Automatic non-blocking index creation for large tables
+// https://github.com/keycloak/keycloak/issues/46555
+
+When upgrading {project_name} with large database tables, index creation was previously skipped during schema migration to avoid blocking startup. Operators had to create the missing indexes manually.
+
+{project_name} now automatically creates skipped indexes in the background after startup using non-blocking index creation on PostgreSQL, Oracle, MySQL/MariaDB, and supported Microsoft SQL Server editions. Invalid PostgreSQL indexes left by failed previous attempts are detected and recreated automatically. On databases without non-blocking support, {project_name} continues to log the SQL for manual execution.
+
 = Themes
 
 == Redesigned identity provider buttons on the login page

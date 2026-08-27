@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,18 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.crypto.elytron.test.mdoc;
 
-package org.keycloak.testsuite.webauthn.registration.passwordless;
+import org.keycloak.mdoc.MdocCredentialCreationAndSigningTest;
 
-import org.keycloak.testsuite.webauthn.registration.WebAuthnOtherSettingsTest;
-
-/**
- * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
- */
-public class PwdLessOtherSettingsTest extends WebAuthnOtherSettingsTest {
-
-    @Override
-    public boolean isPasswordless() {
-        return true;
-    }
+public class ElytronCryptoMdocCredentialCreationAndSigningTest extends MdocCredentialCreationAndSigningTest {
 }

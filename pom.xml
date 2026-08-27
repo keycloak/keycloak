@@ -988,7 +988,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-admin-client-tests</artifactId>
+                <artifactId>keycloak-admin-client-internal</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1324,7 +1324,6 @@
                 <artifactId>rdf-urdna</artifactId>
                 <version>${io.setl.rdf-urdna.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-core</artifactId>
