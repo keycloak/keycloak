@@ -46,7 +46,6 @@ import org.keycloak.testsuite.admin.Users;
 import org.keycloak.testsuite.broker.BrokerConfiguration;
 import org.keycloak.testsuite.broker.KcOidcBrokerConfiguration;
 import org.keycloak.testsuite.organization.broker.BrokerConfigurationWrapper;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -62,7 +61,6 @@ import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -98,9 +96,6 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
 
     @Page
     protected UpdateAccountInformationPage updateAccountInformationPage;
-
-    @Page
-    protected AppPage appPage;
 
     protected BrokerConfiguration bc = brokerConfigFunction.apply(organizationName);
 
@@ -257,8 +252,7 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
         }
 
         if (redirectToApp) {
-            appPage.assertCurrent();
-            assertThat(appPage.getRequestType(), is(AppPage.RequestType.AUTH_RESPONSE));
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         }
 
         List<UserRepresentation> users = realmsResouce().realm(bc.consumerRealmName()).users().search(username, Boolean.TRUE);
@@ -312,7 +306,8 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
 
     protected void openIdentityFirstLoginPage(String username, boolean autoIDPRedirect, String idpAlias, boolean isVisible, boolean clickIdp) {
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         log.debug("Logging in");
         assertTrue(loginPage.isUsernameInputPresent());
         assertNull(loginPage.getUsernameInputError());

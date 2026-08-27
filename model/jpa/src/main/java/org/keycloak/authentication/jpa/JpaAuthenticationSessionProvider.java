@@ -30,9 +30,9 @@ import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -46,7 +46,6 @@ public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransactio
     private final KeycloakSession session;
     private final int authSessionsLimit;
     private final Map<String, RootAuthenticationSessionAdapter> transientSessions = new HashMap<>();
-    private KeycloakTransaction transaction;
     private boolean enlisted;
 
     public JpaAuthenticationSessionProvider(KeycloakSession session, int authSessionsLimit) {
@@ -56,7 +55,7 @@ public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransactio
 
     @Override
     public RootAuthenticationSessionModel createRootAuthenticationSession(RealmModel realm) {
-        var model = RootAuthenticationSessionAdapter.create(session, realm, SecretGenerator.SECURE_ID_GENERATOR.get(), Time.currentTime(), authSessionsLimit);
+        var model = RootAuthenticationSessionAdapter.create(session, realm, SecretGenerator.SECURE_ID_GENERATOR.get(), Time.currentTimeSeconds(), authSessionsLimit);
         // Those newly created authentication sessions with a random ID do not exist in the database, so there can not be any conflict.
         // For resource owner password grants, those sessions are created temporarily, so we only insert them if they are not removed within the same session.
         transientSessions.put(model.getEntity().getId(), model);
@@ -80,16 +79,21 @@ public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransactio
         em.createNamedQuery("insertRootAuthSessionIfAbsent")
                 .setParameter("id", id)
                 .setParameter("realmId", realm.getId())
-                .setParameter("timestamp", Time.currentTime())
+                .setParameter("timestamp", Time.currentTimeSeconds())
                 .executeUpdate();
         var entity = em.find(RootAuthenticationSessionEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
         if (entity == null) {
             throw new ModelException("Unable to create or find root authentication session with id '" + id + "'");
         }
+        if (!Objects.equals(realm.getId(), entity.getRealmId())) {
+            throw new ModelException("Another root authentication session with id '" + id + "' already exists in other realm");
+        }
         var lifespan = SessionExpiration.getAuthSessionLifespan(realm);
-        if (entity.getTimestamp() + lifespan < Time.currentTime()) {
+        if (entity.getTimestamp() + lifespan < Time.currentTimeSeconds()) {
             logger.debugf("Root authentication session with id '%s' is expired.", id);
-            return null;
+            // let's restart it
+            entity.setTimestamp(Time.currentTimeSeconds());
+            entity.getAuthenticationSessions().clear();
         }
         return RootAuthenticationSessionAdapter.wrapEntity(session, realm,  entity, authSessionsLimit);
     }
@@ -108,11 +112,11 @@ public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransactio
 
         var em = getEntityManager();
         var entity = em.find(RootAuthenticationSessionEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
-        if (entity == null) {
+        if (entity == null || !Objects.equals(realm.getId(), entity.getRealmId())) {
             return null;
         }
         var lifespan = SessionExpiration.getAuthSessionLifespan(realm);
-        if (entity.getTimestamp() + lifespan < Time.currentTime()) {
+        if (entity.getTimestamp() + lifespan < Time.currentTimeSeconds()) {
             logger.debugf("Root authentication session with id '%s' is expired.", id);
             em.remove(entity);
             return null;
@@ -122,6 +126,9 @@ public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransactio
 
     @Override
     public void removeRootAuthenticationSession(RealmModel realm, RootAuthenticationSessionModel authenticationSession) {
+        if (!Objects.equals(realm.getId(), authenticationSession.getRealm().getId())) {
+            throw new ModelException("Authentication session with id '" + authenticationSession.getId() + "' does not belong to realm '" + realm.getId() + "'");
+        }
         if (transientSessions.remove(authenticationSession.getId()) != null) {
             return;
         }
@@ -134,6 +141,16 @@ public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransactio
         if (entity != null) {
             em.remove(entity);
         }
+    }
+
+    @Override
+    public void removeRootAuthenticationSessionsByAuthenticatedUser(RealmModel realm, UserModel user, String rootAuthenticationSessionIdToKeep) {
+        getEntityManager()
+                .createNamedQuery("deleteRootAuthSessionsByUser")
+                .setParameter("realmId", realm.getId())
+                .setParameter("userId", user.getId())
+                .setParameter("rootSessionIdToKeep", rootAuthenticationSessionIdToKeep)
+                .executeUpdate();
     }
 
     @Override

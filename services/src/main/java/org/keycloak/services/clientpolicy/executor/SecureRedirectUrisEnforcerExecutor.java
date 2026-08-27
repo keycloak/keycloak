@@ -38,6 +38,7 @@ import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationReprese
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory.UriType;
@@ -185,7 +186,7 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
                     throw invalidRedirectUri(ERR_GENERAL);
                 }
                 return;
-            case PRE_AUTHORIZATION_REQUEST:
+            case PRE_AUTHORIZATION_REQUEST:{
                 String redirectUriParam = ((PreAuthorizationRequestContext)context).getRequestParameters()
                         .getFirst(OAuth2Constants.REDIRECT_URI);
                 String clientId = ((PreAuthorizationRequestContext)context).getClientId();
@@ -197,6 +198,18 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
                     verifyRedirectUri(redirectUriParam, true);
                 }
                 return;
+            }
+            case AUTHORIZATION_REQUEST:{
+                ClientModel client = ((AuthorizationRequestContext)context).getClient();
+                String redirectUriParam = ((AuthorizationRequestContext)context).getRedirectUri();
+                if (client == null) {
+                    throw invalidRedirectUri("Invalid parameter: clientId");
+                }
+                if (isAuthFlowWithRedirectEnabled(client)) {
+                    verifyRedirectUri(redirectUriParam, true);
+                }
+                return;
+            }
             default:
         }
     }

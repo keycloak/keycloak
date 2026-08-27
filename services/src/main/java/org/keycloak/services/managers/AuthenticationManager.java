@@ -107,6 +107,7 @@ import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.services.ErrorPage;
+import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
@@ -688,7 +689,7 @@ public class AuthenticationManager {
                     uriInfo,
                     headers);
             clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
-            TokenManager.dettachClientSession(clientSession);
+            TokenManager.detachClientSession(clientSession);
         }
     }
 
@@ -732,10 +733,18 @@ public class AuthenticationManager {
         String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
         String initiatingIdp = logoutAuthSession.getAuthNote(AuthenticationManager.LOGOUT_INITIATING_IDP);
         if (brokerId != null && !brokerId.equals(initiatingIdp)) {
-            UserAuthenticationIdentityProvider<?> identityProvider = IdentityBrokerService.getIdentityProvider(session, brokerId);
-            Response response = identityProvider.keycloakInitiatedBrowserLogout(session, userSession, uriInfo, realm);
-            if (response != null) {
-                return response;
+            UserAuthenticationIdentityProvider<?> identityProvider = null;
+            try {
+                identityProvider = IdentityBrokerService.getIdentityProvider(session, brokerId);
+            } catch (IdentityBrokerException e) {
+                logger.warnf("Identity provider [%s] is no longer available, skipping Keycloak-initiated broker logout for user session [%s]", brokerId, userSession.getId());
+            }
+
+            if (identityProvider != null) {
+                Response response = identityProvider.keycloakInitiatedBrowserLogout(session, userSession, uriInfo, realm);
+                if (response != null) {
+                    return response;
+                }
             }
         }
 
@@ -869,7 +878,7 @@ public class AuthenticationManager {
         }
         keycloakSession.getProvider(CookieProvider.class).set(CookieType.IDENTITY, encoded, maxAge);
 
-        String sessionCookieValue = sha256UrlEncodedHash(session.getId());
+        String sessionCookieValue = sha384UrlEncodedHash(session.getId());
 
         // THIS SHOULD NOT BE A HTTPONLY COOKIE!  It is used for OpenID Connect Iframe Session support!
         // Max age should be set to the max lifespan of the session as it's used to invalidate old-sessions on re-login
@@ -1008,13 +1017,13 @@ public class AuthenticationManager {
             return false;
         }
 
-        if (cookie.equals(sha256UrlEncodedHash(sessionId))) return true;
+        if (cookie.equals(sha384UrlEncodedHash(sessionId))) return true;
 
         // Backwards compatibility
         String[] split = cookie.split("/");
         if (split.length >= 3) {
             String oldSessionId = split[2];
-            return !sessionId.equals(oldSessionId);
+            return sessionId.equals(oldSessionId);
         }
         return false;
     }
@@ -1070,9 +1079,9 @@ public class AuthenticationManager {
 
     }
 
-    private static Response handleActionTokenVerificationException(KeycloakSession session, EventBuilder event, String eventError, String errorMessage) {
+    private static void handleActionTokenVerificationException(KeycloakSession session, EventBuilder event, String eventError, String errorMessage) {
         event.error(eventError);
-        return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, errorMessage == null ? Messages.INVALID_CODE : errorMessage);
+        throw new ErrorPageException(session, null, Response.Status.BAD_REQUEST, errorMessage == null ? Messages.INVALID_CODE : errorMessage);
     }
 
 
@@ -1084,12 +1093,12 @@ public class AuthenticationManager {
             if (actionTokenKey != null) {
                 // Token has expired. We must not accept it, as it will have been removed from the single use provider already
                 if (Time.currentTime() > actionTokenKey.getExp()) {
-                    return handleActionTokenVerificationException(session, event, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
+                    handleActionTokenVerificationException(session, event, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
                 }
 
                 var revokedTokens = session.revokedTokens();
                 if (!revokedTokens.put(actionTokenKeyToInvalidate, actionTokenKey.getExp() - Time.currentTime() + CLOCK_SKEW_SECONDS)) {
-                    return handleActionTokenVerificationException(session, event, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
+                    handleActionTokenVerificationException(session, event, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
                 }
             }
         }
@@ -1115,6 +1124,14 @@ public class AuthenticationManager {
             return response;
         }
         RealmModel realm = authSession.getRealm();
+
+        UserModel user = authSession.getAuthenticatedUser();
+        if (user != null && !user.isEnabled()) {
+            event.user(user);
+            event.detail(Details.USERNAME, user.getUsername());
+            event.error(Errors.USER_DISABLED);
+            return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.ACCOUNT_DISABLED);
+        }
 
         ClientSessionContext clientSessionCtx = AuthenticationProcessor.attachSession(authSession, userSession, session, realm, clientConnection, event);
         userSession = clientSessionCtx.getClientSession().getUserSession();
@@ -1279,7 +1296,7 @@ public class AuthenticationManager {
         //if Parameterized Scopes are enabled, get the scopes from the AuthorizationRequestContext, passing the session and scopes as parameters
         // then concat a Stream with the ClientModel, as it's discarded in the getAuthorizationRequestContext method
         if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
-            return AuthorizationContextUtil.getAuthorizationRequestsStreamFromScopesWithClient(session, client, authSession.getClientNote(OAuth2Constants.SCOPE));
+            return AuthorizationContextUtil.getAuthorizationRequestsStreamFromScopesWithClient(session, client, authSession.getAuthenticatedUser(), authSession.getClientNote(OAuth2Constants.SCOPE));
         }
         // if parameterized scopes are not enabled, we retain the old behaviour, but the ClientScopes will be wrapped in
         // AuthorizationRequest objects to standardize the code handling these.
@@ -1652,11 +1669,19 @@ public class AuthenticationManager {
         return true;
     }
 
-    public static void resolveLightweightAccessTokenRoles(KeycloakSession session, AccessToken accessToken, RealmModel realm) {
+    /**
+     * Resolve lightweight access token roles
+     *
+     * @param session session
+     * @param accessToken access token
+     * @param realm realm
+     * @return true if some roles were resolved. False if the token was not lightweight or there was some issue (EG. user session not found)
+     */
+    public static boolean resolveLightweightAccessTokenRoles(KeycloakSession session, AccessToken accessToken, RealmModel realm) {
         final String issuedFor = accessToken.getIssuedFor();
         ClientModel client = realm.getClientByClientId(issuedFor);
         if(client == null) {
-            return;
+            return false;
         }
 
         TokenContextEncoderProvider encoder = session.getProvider(TokenContextEncoderProvider.class);
@@ -1676,8 +1701,10 @@ public class AuthenticationManager {
                 accessToken.subject(userSession.getUser().getId());
                 accessToken.setRealmAccess(realmAccess);
                 accessToken.setResourceAccess(clientAccess);
+                return true;
             }
         }
+        return false;
     }
 
     public enum AuthenticationStatus {
@@ -1768,8 +1795,8 @@ public class AuthenticationManager {
         return null;
     }
 
-    public static String sha256UrlEncodedHash(String input) {
-        return HashUtils.sha256UrlEncodedHash(input, StandardCharsets.ISO_8859_1);
+    public static String sha384UrlEncodedHash(String input) {
+        return HashUtils.sha384UrlEncodedHash(input, StandardCharsets.ISO_8859_1);
     }
 
     public static String getRequestedScopes(KeycloakSession session) {

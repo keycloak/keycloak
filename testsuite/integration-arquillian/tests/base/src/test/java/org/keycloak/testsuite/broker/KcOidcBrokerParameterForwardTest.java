@@ -50,7 +50,8 @@ public class KcOidcBrokerParameterForwardTest extends AbstractBrokerTest {
     @Override
     protected void loginUser() {
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         String claimsValue = "{\"userinfo\":{\"http://itsme.services/v2/claim/BENationalNumber\":null,\"spaced_value\":\"with space\"}}";
         String urlEncodedClaims = URLEncoder.encode(claimsValue, StandardCharsets.UTF_8);

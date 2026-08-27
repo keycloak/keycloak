@@ -33,6 +33,7 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_ISSUER_DID;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED_KEY_STORAGE;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED_USER_AUTH;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_REFRESH_INTERVAL_IN_SECONDS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SD_JWT_NUMBER_OF_DECOYS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SD_JWT_NUMBER_OF_DECOYS_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SIGNING_ALG;
@@ -121,6 +122,18 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
         return setAttribute(VC_EXPIRY_IN_SECONDS, Optional.ofNullable(expiryInSeconds)
                         .map(String::valueOf)
                         .orElse(null));
+    }
+
+    public Integer getRefreshIntervalInSeconds() {
+        return Optional.ofNullable(getAttribute(VC_REFRESH_INTERVAL_IN_SECONDS))
+                .map(Integer::parseInt)
+                .orElse(null);
+    }
+
+    public CredentialScopeRepresentation setRefreshIntervalInSeconds(Integer refreshIntervalInSeconds) {
+        return setAttribute(VC_REFRESH_INTERVAL_IN_SECONDS, Optional.ofNullable(refreshIntervalInSeconds)
+                .map(String::valueOf)
+                .orElse(null));
     }
 
     public Integer getSdJwtNumberOfDecoys() {
@@ -265,7 +278,11 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
 
     public List<String> getRequiredKeyAttestationKeyStorage() {
         return Optional.ofNullable(getAttribute(VC_KEY_ATTESTATION_REQUIRED_KEY_STORAGE))
-                .map(s -> Arrays.asList(s.split(",")))
+                .map(s -> Arrays.stream(s.split(","))
+                                .map(String::trim)
+                                .filter(value -> !value.isEmpty())
+                                .toList())
+                .filter(values -> !values.isEmpty())
                 // it is important to return null here instead of an empty list:
                 // If both key_storage and user_authentication parameters are absent, the
                 // key_attestations_required parameter may be empty, indicating a key attestation is needed
@@ -275,12 +292,16 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
 
     public CredentialScopeRepresentation setRequiredKeyAttestationKeyStorage(List<String> keyStorage) {
         return setAttribute(VC_KEY_ATTESTATION_REQUIRED_KEY_STORAGE, Optional.ofNullable(keyStorage)
-                .map(list -> String.join(",")).orElse(null));
+                .map(list -> String.join(",", list)).orElse(null));
     }
 
     public List<String> getRequiredKeyAttestationUserAuthentication() {
         return Optional.ofNullable(getAttribute(VC_KEY_ATTESTATION_REQUIRED_USER_AUTH))
-                .map(s -> Arrays.asList(s.split(",")))
+                .map(s -> Arrays.stream(s.split(","))
+                                .map(String::trim)
+                                .filter(value -> !value.isEmpty())
+                                .toList())
+                .filter(values -> !values.isEmpty())
                 // it is important to return null here instead of an empty list:
                 // If both key_storage and user_authentication parameters are absent, the
                 // key_attestations_required parameter may be empty, indicating a key attestation is needed
@@ -290,7 +311,7 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
 
     public CredentialScopeRepresentation setRequiredKeyAttestationUserAuthentication(List<String> userAuthentication) {
         return setAttribute(VC_KEY_ATTESTATION_REQUIRED_USER_AUTH, Optional.ofNullable(userAuthentication)
-                .map(list -> String.join(",")).orElse(null));
+                .map(list -> String.join(",", list)).orElse(null));
     }
 
     public <T> T getCredentialPolicyValue(CredentialClientPolicy<T> policy) {

@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import javax.naming.AuthenticationException;
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -20,6 +21,8 @@ import org.keycloak.tracing.TracingProvider;
 import org.keycloak.truststore.TruststoreProvider;
 import org.keycloak.vault.VaultStringSecret;
 
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Timer;
 import org.jboss.logging.Logger;
 
 import static javax.naming.Context.SECURITY_CREDENTIALS;
@@ -33,26 +36,61 @@ public final class LDAPContextManager implements AutoCloseable {
 
     private final KeycloakSession session;
     private final LDAPConfig ldapConfig;
+    private final Meter.MeterProvider<Timer> requestTimer;
     private StartTlsResponse tlsResponse;
     private LdapContext ldapContext;
 
+    @Deprecated(forRemoval = true, since = "26.8")
     public LDAPContextManager(KeycloakSession session, LDAPConfig connectionProperties) {
-        this.session = session;
-        this.ldapConfig = connectionProperties;
+        this(session, connectionProperties, null);
     }
 
+    public LDAPContextManager(KeycloakSession session, LDAPConfig connectionProperties, Meter.MeterProvider<Timer> requestTimer) {
+        this.session = session;
+        this.ldapConfig = connectionProperties;
+        this.requestTimer = requestTimer;
+    }
+
+    /**
+     * Use this method only when the operation should not be tracked by metrics, for example when testing a connection.
+     */
     public static LDAPContextManager create(KeycloakSession session, LDAPConfig connectionProperties) {
-        return new LDAPContextManager(session, connectionProperties);
+        return new LDAPContextManager(session, connectionProperties, null);
+    }
+
+    /**
+     * This is the default method to create the context manager. It will track metrics for LDAP requests.
+     */
+    public static LDAPContextManager create(KeycloakSession session, LDAPConfig connectionProperties, Meter.MeterProvider<Timer> requestTimer) {
+        return new LDAPContextManager(session, connectionProperties, requestTimer);
+    }
+
+    private void recordLdapRequest(boolean success, long startTimeNanos, String error) {
+        if (requestTimer == null) {
+            return;
+        }
+        long durationNanos = System.nanoTime() - startTimeNanos;
+        requestTimer.withTags("operation", "connect", "outcome", success ? "success" : "error", "error", error != null ? error : "")
+                .record(durationNanos, TimeUnit.NANOSECONDS);
     }
 
     // Create connection that is authenticated as admin user.
     private void createLdapContext() throws NamingException {
         var tracing = session.getProvider(TracingProvider.class);
         tracing.startSpan(LDAPContextManager.class, "createLdapContext");
+
+        long startTimeNanos = System.nanoTime();
+        boolean success = false;
+        String errorName = null;
+
         try {
-            // Create the LDAP context without setting the security principal and credentials yet.
-            // This avoids triggering an automatic bind request, allowing us to send an optional StartTLS request before binding.
             Hashtable<Object, Object> connProp = getNonAuthConnectionProperties(ldapConfig);
+
+            // Without StartTLS, bind via the initial env so the pooled connection is reused, not re-bound per operation
+            // With StartTLS the bind is deferred until after the negotiation
+            if (!ldapConfig.isStartTls()) {
+                setAuthConnectionProperties(connProp, ldapConfig, getBindPassword());
+            }
 
             if (ldapConfig.isConnectionTrace()) {
                 connProp.put(LDAPConstants.CONNECTION_TRACE_BER, System.err);
@@ -74,15 +112,19 @@ public final class LDAPContextManager implements AutoCloseable {
                 if (tlsResponse == null) {
                     throw new NamingException("Wasn't able to establish LDAP connection through StartTLS");
                 }
+
+                // StartTLS must complete before authenticating, so bind only now.
+                setAdminConnectionAuthProperties(ldapContext);
             }
-        } catch (NamingException e) {
+            success = true;
+        } catch (NamingException | RuntimeException e) {
+            errorName = e.getClass().getSimpleName();
             tracing.error(e);
             throw e;
         } finally {
+            recordLdapRequest(success, startTimeNanos, errorName);
             tracing.endSpan();
         }
-
-        setAdminConnectionAuthProperties(ldapContext);
 
         // Bind will be automatically called when operations are executed on the context,
         // or it can be explicitly called by invoking the reconnect() method (e.g., authentication test in LDAPServerCapabilitiesManager.testLDAP()).
@@ -116,6 +158,27 @@ public final class LDAPContextManager implements AutoCloseable {
         return tls;
     }
 
+    // Fill auth properties into the initial connection env so the bound connection can be pooled and reused.
+    static void setAuthConnectionProperties(Hashtable<Object, Object> connProp, LDAPConfig ldapConfig, String bindPassword) {
+        String authType = ldapConfig.getAuthType();
+        if (authType != null) {
+            connProp.put(Context.SECURITY_AUTHENTICATION, authType);
+        }
+
+        if (!LDAPConstants.AUTH_TYPE_NONE.equals(authType)) {
+            String bindDN = ldapConfig.getBindDN();
+            if (bindDN != null) {
+                connProp.put(Context.SECURITY_PRINCIPAL, bindDN);
+            }
+
+            if (bindPassword != null) {
+                connProp.put(SECURITY_CREDENTIALS, bindPassword);
+            }
+        }
+
+        logConnectionProperties(connProp);
+    }
+
     // Fill in the connection properties to authenticate as admin.
     private void setAdminConnectionAuthProperties(LdapContext ldapContext) throws NamingException {
         String authType = ldapConfig.getAuthType();
@@ -123,18 +186,25 @@ public final class LDAPContextManager implements AutoCloseable {
             ldapContext.addToEnvironment(Context.SECURITY_AUTHENTICATION, authType);
         }
 
-        String bindPassword = getBindPassword();
-        if (bindPassword != null) {
-            ldapContext.addToEnvironment(SECURITY_CREDENTIALS, bindPassword);
+        if (!LDAPConstants.AUTH_TYPE_NONE.equals(authType)) {
+            String bindDN = ldapConfig.getBindDN();
+            if (bindDN != null) {
+                ldapContext.addToEnvironment(Context.SECURITY_PRINCIPAL, bindDN);
+            }
+
+            String bindPassword = getBindPassword();
+            if (bindPassword != null) {
+                ldapContext.addToEnvironment(SECURITY_CREDENTIALS, bindPassword);
+            }
         }
 
-        String bindDN = ldapConfig.getBindDN();
-        if (bindDN != null) {
-            ldapContext.addToEnvironment(Context.SECURITY_PRINCIPAL, bindDN);
-        }
+        logConnectionProperties(ldapContext.getEnvironment());
+    }
 
+    // Log the connection environment with the bind credentials masked.
+    private static void logConnectionProperties(Map<?, ?> env) {
         if (logger.isDebugEnabled()) {
-            Map<Object, Object> copyEnv = new Hashtable<>(ldapContext.getEnvironment());
+            Map<Object, Object> copyEnv = new Hashtable<>(env);
             if (copyEnv.containsKey(Context.SECURITY_CREDENTIALS)) {
                 copyEnv.put(Context.SECURITY_CREDENTIALS, "**************************************");
             }

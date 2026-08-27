@@ -2,6 +2,8 @@ package org.keycloak.services;
 
 import org.keycloak.Token;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -12,13 +14,16 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.services.resources.admin.fgap.ClientPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.GroupPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.RealmPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.UserPermissionEvaluator;
 
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.REALMS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
+
 
 public class DefaultPermissions implements Permissions {
 
@@ -42,8 +47,28 @@ public class DefaultPermissions implements Permissions {
             case USERS_RESOURCE_TYPE -> evaluateUserPermission(model, scope);
             case GROUPS_RESOURCE_TYPE -> evaluateGroupPermission(model, scope);
             case REALMS_RESOURCE_TYPE -> evaluateRealmPermission(scope);
+            case CLIENTS_RESOURCE_TYPE -> evaluateClientPermission(model, scope);
             default -> false;
         };
+    }
+
+    private boolean evaluateClientPermission(Model model, String scope) {
+        Token token = context.getBearerToken();
+
+        if (token instanceof AccessToken accessToken) {
+            AdminPermissionEvaluator evaluator = getEvaluator(accessToken);
+            ClientPermissionEvaluator clients = evaluator.clients();
+
+            if (AdminPermissionsSchema.VIEW.equals(scope)) {
+                return model == null ? clients.canView() : clients.canView((ClientModel) model);
+            } else if (AdminPermissionsSchema.MANAGE.equals(scope)) {
+                return model == null ? clients.canManage() : clients.canManage((ClientModel) model);
+            } else if (AdminPermissionsSchema.QUERY.equals(scope)) {
+                return clients.canList();
+            }
+        }
+
+        return false;
     }
 
     private boolean evaluateGroupPermission(Model model, String scope) {
@@ -103,6 +128,22 @@ public class DefaultPermissions implements Permissions {
         }
 
         return false;
+    }
+
+    @Override
+    public boolean isAdminGroup(GroupModel group) {
+        return AdminRoles.groupHasAdminRoles(group);
+    }
+
+    @Override
+    public boolean isAdminUser(UserModel user) {
+        // Direct role mappings (with composite resolution)
+        if (user.getRoleMappingsStream()
+                .anyMatch(AdminRoles::isAdminRoleOrComposite)) {
+            return true;
+        }
+        // Group-inherited roles
+        return user.getGroupsStream().anyMatch(AdminRoles::groupHasAdminRoles);
     }
 
     private AdminPermissionEvaluator getEvaluator(AccessToken accessToken) {

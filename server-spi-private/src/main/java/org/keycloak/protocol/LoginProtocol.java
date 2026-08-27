@@ -147,4 +147,10 @@ public interface LoginProtocol extends Provider {
         return false;
     }
 
+    /**
+     * Protocol specific handling of authentication completeness
+     */
+    default void authenticationComplete(AuthenticationSessionModel authSession) {
+        // do nothing
+    }
 }

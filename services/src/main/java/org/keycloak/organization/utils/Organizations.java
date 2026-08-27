@@ -30,6 +30,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.VerificationException;
@@ -50,6 +51,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.Urls;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
@@ -125,6 +127,13 @@ public class Organizations {
         }
 
         return brokers;
+    }
+
+    public static void stripOrganizationId(IdentityProviderRepresentation representation) {
+        representation.setOrganizationId(null);
+        if (representation.getConfig() != null) {
+            representation.getConfig().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+        }
     }
 
     public static Consumer<GroupModel> removeGroup(KeycloakSession session, RealmModel realm) {
@@ -206,7 +215,7 @@ public class Organizations {
     }
 
     public static void validateDomain(String rawDomain) {
-        if (rawDomain == null) {
+        if (isBlank(rawDomain)) {
             return;
         }
 
@@ -423,10 +432,12 @@ public class Organizations {
             return false;
         }
 
-        // check if provider is enabled and user is managed member of a disabled organization OR provider is disabled and user is managed member
-        return organizationProvider.getByMember(delegate)
-                .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
-                        (!organizationProvider.isEnabled() && org.isManaged(delegate)));
+        // disable FGAP filtering for this system-level check to avoid infinite recursion:
+        // getByMember -> applyAuthorizationFilters -> getPredicates -> getUser -> getUserById -> validateUser -> isReadOnlyOrganizationMember -> ...
+        return AdminPermissionsSchema.runWithoutAuthorization(session, () ->
+                organizationProvider.getByMember(delegate)
+                        .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
+                                (!organizationProvider.isEnabled() && org.isManaged(delegate))));
     }
 
     public static OrganizationModel resolveByDomain(List<OrganizationModel> organizations, String domain) {

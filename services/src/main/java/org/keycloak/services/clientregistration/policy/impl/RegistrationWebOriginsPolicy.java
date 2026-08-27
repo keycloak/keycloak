@@ -17,7 +17,7 @@ public class RegistrationWebOriginsPolicy implements ClientRegistrationPolicy {
     private final List<String> allowedWebOrigins;
 
     public RegistrationWebOriginsPolicy(KeycloakSession session, ComponentModel model) {
-        allowedWebOrigins = model.getConfig().getList(RegistrationWebOriginsPolicyFactory.WEB_ORIGINS);
+        allowedWebOrigins = model.getConfig().getOrDefault(RegistrationWebOriginsPolicyFactory.WEB_ORIGINS, Collections.emptyList());
     }
 
     @Override
@@ -46,7 +46,7 @@ public class RegistrationWebOriginsPolicy implements ClientRegistrationPolicy {
 
     @Override
     public Collection<String> getAllowedOrigins() {
-        return allowedWebOrigins != null ? allowedWebOrigins : Collections.emptyList();
+        return allowedWebOrigins;
     }
 
 }

@@ -5,6 +5,7 @@ import java.util.List;
 import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.scim.client.ScimClientException;
+import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.group.Group;
@@ -26,6 +27,7 @@ import static org.keycloak.scim.resource.Scim.getCoreSchema;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -67,6 +69,14 @@ public class ResourceTypeTest extends AbstractScimTest {
         } catch (ScimClientException e) {
             assertEquals(Status.NOT_FOUND.getStatusCode(), e.getError().getStatusInt());
         }
+    }
+
+    @Test
+    public void testFilterForbidden() {
+        SearchRequest searchRequest = SearchRequest.builder().withFilter("id equal test").build();
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.resourceTypes().search(searchRequest));
+        assertEquals(Status.FORBIDDEN.getStatusCode(), ce.getError().getStatusInt());
     }
 
     private static void assertResourceType(ListResponse<ResourceType> response, Class<? extends ResourceTypeRepresentation> resourceType,

@@ -31,19 +31,24 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.client.clienttype.ClientType;
+import org.keycloak.client.clienttype.ClientTypeException;
+import org.keycloak.client.clienttype.ClientTypeManager;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientRegistrationAccessTokenConstants;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
@@ -73,8 +78,14 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
     public ClientRepresentation create(ClientRegistrationContext context) {
         ClientRepresentation client = context.getClient();
+        RealmModel realm = session.getContext().getRealm();
         if(client.getOptionalClientScopes() != null && client.getDefaultClientScopes() == null) {
-            client.setDefaultClientScopes(List.of(OIDCLoginProtocolFactory.BASIC_SCOPE));
+            String protocol = client.getProtocol() != null ? client.getProtocol() : OIDCLoginProtocol.LOGIN_PROTOCOL;
+            List<String> realmDefaults = realm.getDefaultClientScopesStream(true)
+                    .filter(s -> Objects.equals(protocol, s.getProtocol()))
+                    .map(ClientScopeModel::getName)
+                    .collect(Collectors.toList());
+            client.setDefaultClientScopes(realmDefaults);
         }
 
         event.event(EventType.CLIENT_REGISTER);
@@ -82,7 +93,6 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         RegistrationAuth registrationAuth = auth.requireCreate(context);
 
         try {
-            RealmModel realm = session.getContext().getRealm();
             ClientModel clientModel = ClientManager.createClient(session, realm, client);
 
             if (client.getDefaultRoles() != null) {
@@ -96,6 +106,13 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             }
 
             if (Boolean.TRUE.equals(client.getAuthorizationServicesEnabled())) {
+                if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) && clientModel.getType() != null) {
+                    ClientType clientType = session.getProvider(ClientTypeManager.class).getClientType(realm, clientModel.getType());
+                    if (!clientType.isApplicable("authorizationServicesEnabled") ||
+                            Boolean.FALSE.equals(clientType.getTypeValue("authorizationServicesEnabled", Boolean.class))) {
+                        throw ClientTypeException.Message.CLIENT_UPDATE_FAILED_CLIENT_TYPE_VALIDATION.exception("authorizationServicesEnabled");
+                    }
+                }
                 RepresentationToModel.createResourceServer(clientModel, session, true);
             }
 
@@ -132,6 +149,8 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        } catch (ClientTypeException cte) {
+            throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, cte.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 
@@ -170,6 +189,18 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
         if (!client.getClientId().equals(rep.getClientId())) {
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client Identifier modified", Response.Status.BAD_REQUEST);
+        }
+
+        if (auth.isRegistrationAccessToken()) {
+            String existingProtocol = client.getProtocol();
+            String requestedProtocol = rep.getProtocol();
+            if (requestedProtocol != null && !requestedProtocol.equals(existingProtocol)) {
+                throw new ErrorResponseException(
+                        ErrorCodes.INVALID_CLIENT_METADATA,
+                        "Protocol cannot be changed via registration access token",
+                        Response.Status.BAD_REQUEST
+                );
+            }
         }
 
         ClientResource.updateClientServiceAccount(session, client, rep.isServiceAccountsEnabled());

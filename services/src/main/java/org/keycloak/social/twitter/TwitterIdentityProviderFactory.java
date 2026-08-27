@@ -16,16 +16,20 @@
  */
 package org.keycloak.social.twitter;
 
+import org.keycloak.Config.Scope;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 /**
  * @author Pedro Igor
  */
-public class TwitterIdentityProviderFactory extends AbstractIdentityProviderFactory<TwitterIdentityProvider> implements SocialIdentityProviderFactory<TwitterIdentityProvider> {
+public class TwitterIdentityProviderFactory extends AbstractIdentityProviderFactory<TwitterIdentityProvider> implements SocialIdentityProviderFactory<TwitterIdentityProvider>, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "twitter";
 
@@ -47,5 +51,10 @@ public class TwitterIdentityProviderFactory extends AbstractIdentityProviderFact
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public boolean isSupported(Scope config) {
+        return Profile.isFeatureEnabled(Feature.TWITTER_BROKER);
     }
 }

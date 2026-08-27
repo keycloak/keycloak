@@ -21,6 +21,9 @@ import java.nio.ByteBuffer;
 import java.util.Base64;
 import java.util.UUID;
 
+import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.crypto.Algorithm;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -37,6 +40,21 @@ public class KeycloakModelUtilsTest {
         final String shortId = KeycloakModelUtils.generateShortId(UUID.fromString(id));
         final UUID uuid = fromShortId(shortId);
         Assert.assertEquals(id, uuid.toString());
+    }
+
+    @Test
+    public void testGetRequiredClientSecretLength() {
+        Assert.assertEquals(
+                SecretGenerator.equivalentEntropySize(SecretGenerator.SECRET_LENGTH_512_BITS, SecretGenerator.ALPHANUM.length),
+                KeycloakModelUtils.getRequiredClientSecretLength());
+    }
+
+    @Test
+    public void testGetSecretLengthByAuthenticationTypeAlwaysUsesHs512Entropy() {
+        int requiredLength = KeycloakModelUtils.getRequiredClientSecretLength();
+        Assert.assertEquals(requiredLength, KeycloakModelUtils.getSecretLengthByAuthenticationType("client-secret", null));
+        Assert.assertEquals(requiredLength, KeycloakModelUtils.getSecretLengthByAuthenticationType("client-secret-jwt", Algorithm.HS256));
+        Assert.assertEquals(requiredLength, KeycloakModelUtils.getSecretLengthByAuthenticationType("client-secret-jwt", Algorithm.HS512));
     }
 
     @Test

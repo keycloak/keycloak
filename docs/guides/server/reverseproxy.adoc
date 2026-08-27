@@ -90,6 +90,9 @@ Mitigate this risk, for example, by restricting network access.
 
 * Allow a longer `--shutdown-delay` (for example, 10–30 seconds) to give keepalive connections time to drain during shutdown, since the proxy cannot signal a connection close at the HTTP connection level.
 
+* Due to HTTP/2 connection coalescing, do not configure {project_name} to be the proxy's default backend when {project_name} is using a wildcard certificate and that certificate is shared among several services behind the proxy.
+In this configuration {project_name} will not be able to distinguish between misdirected requests and those sent by default - when no SNI information is sent or SNI does not match any backend.
+
 === Backchannel access considerations
 
 If private backchannel access to {project_name} is requested, using a proxy might be challenging:
@@ -213,6 +216,9 @@ Configure the proxy to apply the following rules to incoming requests before for
 * *Overwrite* `Forwarded` and `+X-Forwarded-*+` headers with the proxy's own values rather than removing them, because {project_name} relies on these headers when `--proxy-headers` is configured.
 * *Strip* all other headers listed below entirely.
 
+Depending on your security setup, you might want to allow some of the tracing headers through — either as-is or after sanitizing their values — for requests from trusted callers.
+This assessment depends on your trust boundaries and security trade-offs and is out of scope for this guide.
+
 [%autowidth]
 |===
 |Header(s) |Category |Risk if not filtered
@@ -285,13 +291,18 @@ The following table shows the recommended paths to expose.
 
 |/admin/
 | -
-|No
+|Only internally
 |Exposed admin paths lead to an unnecessary attack vector.
 
 |/realms/
 |/realms/
 |Yes
 |This path is needed to work correctly, for example, for OIDC endpoints.
+
+|/realms/master/
+|/realms/master/
+|Only internally
+|Assuming the administrative realm is called `master`, restrict `/realms/master/` to internal access. See <<isolating-master-realm, Isolating authentication for the administrative realm>> for more information.
 
 |/resources/
 |/resources/
@@ -313,12 +324,31 @@ The following table shows the recommended paths to expose.
 |No
 |Exposed health checks lead to an unnecessary attack vector.
 
+|/lb-check
+|/lb-check
+|Yes
+|Endpoint to be used for an external load balancer to check the availability of a {project_name} cluster.
+
 |===
 
 We assume you run {project_name} on the root path `/` on your reverse proxy/gateway's public API.
 If not, prefix the path with your desired one.
 
 NOTE: If you configured an `http-relative-path` on the server, proceed as follows to use discovery with RFC 8414: Configure a reverse proxy to map the `/.well-known/` path without the prefix to the path with the prefix on the server.
+
+The `lb-check` endpoint is only available when the `stateless` or the `multi-site` feature is enabled.
+It is intended for external load balancers when you do not want to expose the management interface and its `/health` endpoints publicly.
+This is a non-blocking endpoint and should remain responsive under high load, so the load balancer does not remove a healthy cluster from rotation during transient overload.
+
+[[isolating-master-realm]]
+=== Isolating authentication for the administrative realm
+
+As a security best practice, restrict access to the authentication protocol endpoints of the administrative realm from public IP addresses.
+The following description assumes {project_name}'s default settings and that this realm is called `master`.
+
+To do that, do not expose the path `/realms/master/` to the public internet.
+
+Depending on your topology, you can combine this with serving the Admin UI and Admin API on a dedicated hostname and port. See <@links.server id="hostname" anchor="administration-console-on-a-separate-hostname" /> for details.
 
 === Different context path on reverse proxy
 
@@ -331,49 +361,20 @@ If the proxy uses a different context path than {project_name}, one of the follo
 
 For more details on exposing {project_name} on a different hostname or context path, including the Administration REST API and Console, see <@links.server id="hostname"/>.
 
-=== Enable sticky sessions
+=== Sticky sessions
 
-A typical cluster deployment consists of a load balancer (reverse proxy) and two or more {project_name} servers on a private network.
-For performance purposes, it may be useful if the load balancer forwards all requests related to a particular browser session to the same {project_name} backend node.
+In previous versions of {project_name}, sticky sessions could improve performance by routing all requests for a browser session to the same backend node, avoiding remote cache lookups for session data.
+{project_name} appended the owning node's route to the `AUTH_SESSION_ID` cookie (for example, `123.node2`) so that the load balancer could parse it for routing decisions.
 
-The reason is that {project_name} uses an Infinispan distributed cache internally to store data related to the current authentication session and user session.
-The Infinispan distributed caches are configured with a limited number of owners.
-That means that session-related data is stored only on some cluster nodes, and the other nodes need to look up the data remotely if they want to access it.
+Since the optimizations in 26.6, sticky sessions no longer bring a significant benefit given the complex setup on the proxy side to get this working.
+Authentication sessions are created on the node where the browser starts the session, and while a session may move to another node on a subsequent request, the overhead is low.
+Most interactions such as backchannel calls and token refreshes do not use cookies and are distributed across nodes regardless.
+The recommendation is to aim for an even distribution of load across {project_name} nodes instead of using sticky sessions.
 
-For example, if an authentication session with ID 123 is saved in the Infinispan cache on node1, and then node2 needs to look up this session, it needs to send the request to node1 over the network to retrieve the session entity.
-
-It is beneficial if a particular session entity is always available locally, which can be achieved with sticky sessions.
-The workflow in a cluster environment with a public frontend load balancer and two backend {project_name} nodes can be as follows:
-
-* The user sends the initial request to see the {project_name} login screen.
-
-* This request is served by the frontend load balancer, which forwards it to some random node (e.g., node1).
-Strictly speaking, the node does not need to be random, but can be chosen according to other criteria (client IP address, etc.).
-It all depends on the implementation and configuration of the underlying load balancer (reverse proxy).
-
-* {project_name} creates an authentication session with a random ID (e.g., 123) and saves it to the Infinispan cache.
-
-* The Infinispan distributed cache assigns the primary owner of the session based on the hash of the session ID.
-See the Infinispan documentation for more details.
-Assume that Infinispan assigns node2 as the owner of this session.
-
-* {project_name} creates the cookie `AUTH_SESSION_ID` with the format `<session-id>.<owner-node-id>`.
-In this example, the value is `123.node2`.
-
-* The response is returned to the user with the {project_name} login screen and the `AUTH_SESSION_ID` cookie in the browser.
-
-From this point, it is beneficial if the load balancer forwards all subsequent requests to node2, as this is the node that owns the authentication session with ID 123 and hence Infinispan can look up this session locally.
-After authentication is finished, the authentication session is converted to a user session, which is also saved on node2 because it has the same ID 123.
-
-Sticky sessions are not mandatory for a cluster setup; however, they improve performance for the reasons mentioned above.
-You need to configure your load balancer to use the `AUTH_SESSION_ID` cookie for session affinity.
-The appropriate procedure depends on your load balancer.
-
-If your proxy supports session affinity without processing cookies from backend nodes, you should set the `+spi-sticky-session-encoder--infinispan--should-attach-route+` option to `false` in order to avoid attaching the node to cookies and just rely on the reverse proxy capabilities.
+The options `+spi-sticky-session-encoder--infinispan--should-attach-route+` and `+spi-sticky-session-encoder--remote--should-attach-route+` are deprecated since {project_name} 26.8 and will be removed in a future release.
+To suppress the deprecation warning at startup, set those SPI options to `false`:
 
 <@kc.start parameters="--spi-sticky-session-encoder--infinispan--should-attach-route=false"/>
-
-By default, the `+spi-sticky-session-encoder--infinispan--should-attach-route+` option value is `true` so that the node name is attached to cookies to indicate to the reverse proxy the node that subsequent requests should be sent to.
 
 === Enabling client certificate lookup
 
@@ -488,6 +489,8 @@ Example HAProxy configuration:
 
 [source]
 ----
+http-request del-header Client-Cert
+http-request del-header Client-Cert-Chain
 http-request set-header Client-Cert %[ssl_c_der,base64] if { ssl_c_used } { ssl_c_verify 0 }
 http-request set-header Client-Cert-Chain %[ssl_c_chain_der,base64] if { ssl_c_used } { ssl_c_verify 0 }
 ----

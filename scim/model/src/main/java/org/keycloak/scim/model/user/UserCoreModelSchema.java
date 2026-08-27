@@ -57,14 +57,14 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
 
         attributes.addAll(Attribute.<UserModel, User>simple("userName")
                 .required()
-                .notCaseExact()
+                .storedLowerCase()
                 .serverUnique()
                 .modelAttributeResolver(this::createModelAttributeResolver)
                 .withModelSetter(UserModel::setSingleAttribute)
                 .build());
         attributes.addAll(Attribute.<UserModel, User>complex("emails", Email.class)
                 .modelAttributeResolver(this::createModelAttributeResolver)
-                .notCaseExact()
+                .storedLowerCase()
                 .globalUnique()
                 .multivalued()
                 .withModelSetter((TriConsumer<UserModel, String, Set<Email>>) (model, name, values) -> {
@@ -106,6 +106,7 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                 .withModelSetter(UserModel::setSingleAttribute)
                 .build());
         attributes.addAll(Attribute.<UserModel, User>simple("externalId")
+                .caseExact()
                 .modelAttributeResolver(this::createModelAttributeResolver)
                 .withModelSetter(UserModel::setSingleAttribute)
                 .build());
@@ -255,8 +256,11 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
     }
 
     private static void checkGroupMembershipPermission(Permissions permissions, GroupModel group) {
-        if (GroupModel.Type.ORGANIZATION.equals(group.getType()) && group.getOrganization() != null) {
+        if (isOrganizationGroup(group)) {
             throw new ModelValidationException("Cannot access organization related group via non Organization API.");
+        }
+        if (permissions.isAdminGroup(group)) {
+            throw new ForbiddenException();
         }
         if (!permissions.hasPermission(group, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.MANAGE_MEMBERSHIP)) {
             throw new ForbiddenException();

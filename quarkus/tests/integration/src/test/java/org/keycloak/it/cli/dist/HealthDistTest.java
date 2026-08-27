@@ -177,4 +177,18 @@ public class HealthDistTest {
             runner.stop();
         }
     }
+
+    @Test
+    @Launch({ "start-dev", "--metrics-enabled=true", "--health-enabled=true", "--db-kind-user=mariadb" })
+    void testHealthDownFailingDatasource(KeycloakRunner runner) {
+        when().get("/health/ready").then()
+                .statusCode(503);
+    }
+
+    @Test
+    @Launch({ "start-dev", "--db-health-exclude-user=true", "--metrics-enabled=true", "--health-enabled=true", "--db-kind-user=mariadb" })
+    void testHealthUpExcludingFailingDatasource(KeycloakRunner runner) {
+        when().get("/health/ready").then()
+                .statusCode(200);
+    }
 }

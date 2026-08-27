@@ -147,7 +147,14 @@ The response uses the SCIM list format:
 }
 ----
 
-For filtering and pagination of results, see <<_scim_filtering_resources_,Filtering resources>>.
+For filtering and pagination of results, see <<_scim_filtering_resources,Filtering resources>>.
+
+NOTE: The SCIM `/Users` endpoint only returns users that are stored locally in the {project_name} database. Users
+that are managed by external user federation providers (such as LDAP or custom providers) and have not been imported
+into {project_name} are not included in SCIM search results. Federated users that have been imported (that is,
+synchronized into the local database) are included. This is because {project_name} acts as the identity authority
+only for locally stored users - external identity sources should expose their own SCIM endpoints for managing
+their users.
 
 == Selecting attributes
 
@@ -211,6 +218,9 @@ The `id` in the request body must match the `id` in the URL path, otherwise the 
 The `PATCH` method allows you to modify specific attributes without replacing the entire resource. A patch request
 contains one or more operations, each specifying an action (`add`, `replace`, or `remove`), an optional path to
 the attribute, and a value.
+
+NOTE: A single PATCH request can contain at most 100 operations. Requests exceeding this limit are rejected with
+a `400 Bad Request` response and `scimType: "tooMany"`.
 
 === Adding or replacing attributes
 

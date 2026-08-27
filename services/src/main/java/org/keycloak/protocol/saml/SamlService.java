@@ -270,6 +270,19 @@ public class SamlService extends AuthorizationEndpointBase {
             }
 
             session.getContext().setClient(client);
+
+            SamlClient samlClient = new SamlClient(client);
+            try {
+                if(samlClient.requiresClientSignature()) {
+                    verifyResponseSignature(holder,client);
+                }
+            } catch (VerificationException e) {
+                SamlService.logger.error("LogoutResponse signature validation failed");
+                SamlService.logger.debug("LogoutResponse signature validation failed", e);
+                event.error(Errors.INVALID_SIGNATURE);
+                return error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
+            }
+
             logger.debug("logout response");
             Response response = authManager.browserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);
             event.success();
@@ -438,6 +451,8 @@ public class SamlService extends AuthorizationEndpointBase {
 
         protected abstract void verifySignature(SAMLDocumentHolder documentHolder, ClientModel client) throws VerificationException;
 
+        protected abstract void verifyResponseSignature(SAMLDocumentHolder documentHolder, ClientModel client) throws VerificationException;
+
         protected abstract boolean containsUnencryptedSignature(SAMLDocumentHolder documentHolder);
 
         protected abstract SAMLDocumentHolder extractRequestDocument(String samlRequest);
@@ -543,8 +558,7 @@ public class SamlService extends AuthorizationEndpointBase {
                     String acrValue;
                     if (requestAbstractType.getRequestedAuthnContext() != null
                             && !requestAbstractType.getRequestedAuthnContext().getAuthnContextClassRef().isEmpty()) {
-                        acrValue = SamlProtocolUtils.getSelectedLoA(requestAbstractType.getRequestedAuthnContext(),
-                                acrLoaMap, AcrUtils.getMinimumAcrValue(client));
+                        acrValue = SamlProtocolUtils.getSelectedLoA(client, requestAbstractType.getRequestedAuthnContext(), acrLoaMap);
                         if (acrValue == null) {
                             logger.debug("No AuthnContextClassRef is valid for the requested context.");
                             event.detail(Details.REASON, "Invalid RequestedAuthnContext");
@@ -553,6 +567,11 @@ public class SamlService extends AuthorizationEndpointBase {
                         }
                     } else {
                         acrValue = AcrUtils.getMinimumAcrValue(client);
+                        if (acrValue != null && acrLoaMap.get(acrValue) == null) {
+                            logger.warnf("Invalid value '%s' for option '%s' in client '%s' in realm '%s', no minimum value used",
+                                acrValue, Constants.MINIMUM_ACR_VALUE, client.getClientId(), client.getRealm().getName());
+                            acrValue = null;
+                        }
                     }
 
                     if (acrValue != null) {
@@ -835,6 +854,11 @@ public class SamlService extends AuthorizationEndpointBase {
         }
 
         @Override
+        protected void verifyResponseSignature(SAMLDocumentHolder documentHolder, ClientModel client) throws VerificationException {
+            SamlProtocolUtils.verifyDocumentSignature(session, client, documentHolder.getSamlDocument());
+        }
+
+        @Override
         protected boolean containsUnencryptedSignature(SAMLDocumentHolder documentHolder) {
             Document signedDoc = documentHolder.getSamlDocument();
             NodeList nl = signedDoc.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
@@ -878,6 +902,12 @@ public class SamlService extends AuthorizationEndpointBase {
         protected void verifySignature(SAMLDocumentHolder documentHolder, ClientModel client) throws VerificationException {
             KeyLocator clientKeyLocator = SamlProtocolUtils.createKeyLocatorForClient(session, client, KeyUse.SIG);
             SamlProtocolUtils.verifyRedirectSignature(documentHolder, clientKeyLocator, session.getContext().getUri(), GeneralConstants.SAML_REQUEST_KEY);
+        }
+
+        @Override
+        protected void verifyResponseSignature(SAMLDocumentHolder documentHolder, ClientModel client) throws VerificationException {
+            KeyLocator clientKeyLocator = SamlProtocolUtils.createKeyLocatorForClient(session, client, KeyUse.SIG);
+            SamlProtocolUtils.verifyRedirectSignature(documentHolder, clientKeyLocator, session.getContext().getUri(), GeneralConstants.SAML_RESPONSE_KEY);
         }
 
         @Override

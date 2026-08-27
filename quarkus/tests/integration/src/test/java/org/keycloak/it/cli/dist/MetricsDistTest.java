@@ -62,7 +62,7 @@ public class MetricsDistTest {
     @Launch({ "start-dev", "--metrics-enabled=true" })
     void testMetricsEndpoint(CLIResult cliResult) {
         // See https://github.com/keycloak/keycloak/issues/36927
-        cliResult.assertNoMessage("A MeterFilter is being configured after a Meter has been registered to this registry.");
+        cliResult.assertNoStartupMessage("A MeterFilter is being configured after a Meter has been registered to this registry.");
 
         // Send one request to populate some of the HTTP metrics that are not available on an instance on startup
         when().get("/metrics").then()

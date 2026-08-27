@@ -631,7 +631,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         }
 
         // device code not found in the cache because of expiration => invalid_grant error and redirection to the login page
-        loginPage.assertCurrent();
+        verificationPage.assertCurrent();
     }
 
     @Test

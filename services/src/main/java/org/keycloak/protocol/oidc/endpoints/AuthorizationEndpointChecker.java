@@ -18,6 +18,7 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
+import java.util.Collections;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,6 +34,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -157,12 +159,29 @@ public class AuthorizationEndpointChecker {
 
         event.detail(Details.REDIRECT_URI, redirectUri);
 
-        // redirect_uri parameter is required per OpenID Connect, but optional per OAuth2
-        this.redirectUri = RedirectUtils.verifyRedirectUri(session, redirectUri, client, isOIDCRequest);
+        if(isAllowOidcParamsInRedirectUris()) {
+            // Backward compat: skip forbidden params check
+            this.redirectUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(),
+                    redirectUri, client.getRedirectUris(), isOIDCRequest, Collections.emptySet());
+        } else {
+            // Default: use FORBIDDEN_OIDC_PARAMS (5-arg overload)
+            this.redirectUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(),
+                    redirectUri, client.getRedirectUris(), isOIDCRequest);
+        }
+
         if (this.redirectUri == null) {
             event.error(Errors.INVALID_REDIRECT_URI);
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
         }
+    }
+
+    private boolean isAllowOidcParamsInRedirectUris() {
+        OIDCLoginProtocol protocol = (OIDCLoginProtocol) session.getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
+        if (protocol.getConfig().isAllowOidcParamsInRedirectUris()) {
+            return true;
+        }
+        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
+        return clientConfig.isAllowOidcParamsInRedirectUris();
     }
 
     public void checkResponseType() throws AuthorizationCheckException {
@@ -309,8 +328,6 @@ public class AuthorizationEndpointChecker {
             event.error(Errors.INVALID_REQUEST);
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
-
-        return;
     }
 
     // https://tools.ietf.org/html/rfc7636#section-4
@@ -445,10 +462,6 @@ public class AuthorizationEndpointChecker {
                 event.error(Errors.INVALID_REQUEST);
                 throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
             }
-        } else {
-            // https://tools.ietf.org/html/rfc7636#section-4.3
-            // default code_challenge_method is plane
-            codeChallengeMethod = OIDCLoginProtocol.PKCE_METHOD_PLAIN;
         }
 
         if (!isValidPkceCodeChallenge(codeChallenge)) {

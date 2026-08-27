@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.clientpolicy.executor;
 
+import java.io.IOException;
 import java.util.Map;
 
 import org.keycloak.OAuth2Constants;
@@ -30,6 +31,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.JWTAuthorizationGrantContext;
 import org.keycloak.services.clientpolicy.context.TokenExchangeRequestContext;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -104,8 +106,9 @@ public class JWTClaimEnforcerExecutor implements ClientPolicyExecutorProvider<JW
 
     private  Map<String, Object> getAccessTokenMapFromJWTString(String jwt) throws ClientPolicyException {
         try {
-            return new  JWSInput(jwt).readJsonContent(new TypeReference<>() {});
-        } catch (JWSInputException e) {
+            JWSInput jwsInput = new JWSInput(jwt);
+            return JsonSerialization.readValue(jwsInput.getContent(), new TypeReference<>() {});
+        } catch (JWSInputException | IOException e) {
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "JWT is not valid");
         }
     }

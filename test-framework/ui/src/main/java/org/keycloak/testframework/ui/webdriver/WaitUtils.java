@@ -7,12 +7,18 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.testframework.ui.page.AbstractPage;
 
 import org.junit.jupiter.api.Assertions;
+import org.openqa.selenium.By;
 import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 public class WaitUtils {
+
+    private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(5);
+    private static final Duration POLL_INTERVAL = Duration.ofMillis(50);
 
     private final ManagedWebDriver managed;
 
@@ -21,9 +27,15 @@ public class WaitUtils {
     }
 
     public WaitUtils waitForPage(AbstractPage page) {
+        return waitForPage(page, DEFAULT_TIMEOUT);
+    }
+
+    public WaitUtils waitForPage(AbstractPage page, Duration timeout) {
         String expectedPageId = page.getExpectedPageId();
         try {
-            createDefaultWait().ignoring(StaleElementReferenceException.class).until(d -> expectedPageId.equals(managed.page().getCurrentPageId()));
+            new WebDriverWait(managed.driver(), timeout, POLL_INTERVAL)
+                    .ignoring(StaleElementReferenceException.class)
+                    .until(d -> expectedPageId.equals(managed.page().getCurrentPageId()));
         } catch (TimeoutException e) {
             Assertions.fail("Expected page '" + expectedPageId + "' to be loaded, but currently on page '" + managed.page().getCurrentPageId() + "' after timeout");
         }
@@ -49,12 +61,19 @@ public class WaitUtils {
         return this;
     }
 
+    public WaitUtils waitForPageReload(Runnable action) {
+        WebElement body = managed.findElement(By.tagName("body"));
+        action.run();
+        createDefaultWait().until(ExpectedConditions.stalenessOf(body));
+        return this;
+    }
+
     public <V> V until(Function<WebDriver, V> isTrue) {
         return createDefaultWait().until(isTrue);
     }
 
     private WebDriverWait createDefaultWait() {
-        return new WebDriverWait(managed.driver(), Duration.ofSeconds(5), Duration.ofMillis(50));
+        return new WebDriverWait(managed.driver(), DEFAULT_TIMEOUT, POLL_INTERVAL);
     }
 
 }

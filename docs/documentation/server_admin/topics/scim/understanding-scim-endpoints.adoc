@@ -92,7 +92,7 @@ are also accepted in the body of `POST /.search` requests.
 
 | `filter`
 | String
-| A SCIM filter expression to search for resources. See <<_scim_filtering_resources_,Filtering resources>>.
+| A SCIM filter expression to search for resources. See <<_scim_filtering_resources,Filtering resources>>.
 
 | `startIndex`
 | Integer

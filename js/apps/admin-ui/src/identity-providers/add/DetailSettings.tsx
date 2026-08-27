@@ -78,6 +78,7 @@ import JWTAuthorizationGrantSettings from "./JWTAuthorizationGrantSettings";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { GroupResourceContext } from "../../context/group-resource/GroupResourceContext";
 import DefaultTrustSettings from "./DefaultTrustSettings";
+import Oid4VpSettings from "./Oid4VpSettings";
 
 type HeaderProps = {
   onChange: (value: boolean) => void;
@@ -392,7 +393,7 @@ export default function DetailSettings() {
       try {
         await adminClient.identityProviders.del({ alias: alias });
         addAlert(t("deletedSuccessIdentityProvider"), AlertVariant.success);
-        navigate(toIdentityProviders({ realm }));
+        void navigate(toIdentityProviders({ realm }));
       } catch (error) {
         addError("deleteErrorIdentityProvider", error);
       }
@@ -414,7 +415,7 @@ export default function DetailSettings() {
         });
         addAlert(t("deleteMapperSuccess"), AlertVariant.success);
         refresh();
-        navigate(
+        void navigate(
           toIdentityProvider({ providerId, alias, tab: "mappers", realm }),
         );
       } catch (error) {
@@ -440,6 +441,7 @@ export default function DetailSettings() {
     "jwt-authorization-grant",
   );
   const isDefaultTrust = provider.providerId === "default-trust";
+  const isOid4vp = provider.providerId === "oid4vp";
   const isSocial = !isOIDC && !isSAML && !isOAuth2;
   const isJWTAuthorizationGrantSupported =
     (isOAuth2 || isOIDC) &&
@@ -478,7 +480,11 @@ export default function DetailSettings() {
     {
       title: t("generalSettings"),
       isHidden:
-        isSPIFFE || isKubernetes || isJWTAuthorizationGrant || isDefaultTrust,
+        isSPIFFE ||
+        isKubernetes ||
+        isJWTAuthorizationGrant ||
+        isDefaultTrust ||
+        isOid4vp,
       panel: (
         <FormAccess
           role="manage-identity-providers"
@@ -491,6 +497,19 @@ export default function DetailSettings() {
           {providerInfo && (
             <DynamicComponents stringify properties={providerInfo.properties} />
           )}
+        </FormAccess>
+      ),
+    },
+    {
+      title: t("generalSettings"),
+      isHidden: !isOid4vp,
+      panel: (
+        <FormAccess
+          role="manage-identity-providers"
+          isHorizontal
+          onSubmit={handleSubmit(save)}
+        >
+          <Oid4VpSettings />
         </FormAccess>
       ),
     },
@@ -722,7 +741,7 @@ export default function DetailSettings() {
                     instructions={t("noMappersInstructions")}
                     primaryActionText={t("addMapper")}
                     onPrimaryAction={() =>
-                      navigate(
+                      void navigate(
                         toIdentityProviderAddMapper({
                           realm,
                           alias: alias!,

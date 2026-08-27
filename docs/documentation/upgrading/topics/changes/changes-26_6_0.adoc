@@ -334,3 +334,13 @@ The previous `v2alpha1` version for these resources is deprecated but still serv
 There are currently no differences in the schema between the two versions,
 so you will just need to update the relevant `apiVersion` references.
 
+[WARNING]
+====
+If you are running multiple operator instances in different namespaces on the same cluster and using OLM, installing or upgrading to the 26.6 operator will prevent older operator versions (such as 26.4) from being installed or upgraded.
+Existing 26.4 operator installations will remain unaffected and will keep reconciling existing {project_name} 26.4 deployments.
+This is because CRDs are cluster-scoped and the introduction of the `v2beta1` version in the CRD will cause OLM to block any operator whose CRD does not include this version.
+If you have multiple operator instances, upgrade all of them to 26.6.
+Upgrading the operator does not require upgrading your Keycloak images at the same time — the 26.6 operator can manage instances running older images.
+See the <<truststore-initialization-moved-to-the-server, Truststore initialization moved to the server>> section for a configuration change that may be needed when running older images with the 26.6 operator.
+====
+

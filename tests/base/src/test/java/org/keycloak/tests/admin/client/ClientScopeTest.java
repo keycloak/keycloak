@@ -63,6 +63,7 @@ import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.common.BasicUserConfig;
+import org.keycloak.tests.oauth.ParameterizedScopeBuilder;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
@@ -721,13 +722,9 @@ public class ClientScopeTest extends AbstractClientScopeTest {
 
     @Test
     public void testCreateParameterizedScopeWithFeatureDisabledAndIsParameterizedScopeTrue() {
-        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
-        scopeRep.setName("dynamic-scope-def");
-        scopeRep.setProtocol("openid-connect");
-        scopeRep.setAttributes(new HashMap<>() {{
-            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
-            put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
-        }});
+        ClientScopeRepresentation scopeRep = ParameterizedScopeBuilder.create("dynamic-scope-def")
+                .parameterizedScopeType("string")
+                .build();
         String scopeDefId = createClientScope(scopeRep);
 
         // Assert updated attributes

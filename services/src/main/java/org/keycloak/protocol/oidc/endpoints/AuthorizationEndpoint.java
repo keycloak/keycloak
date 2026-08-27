@@ -70,6 +70,7 @@ import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.protocol.oidc.OIDCLoginProtocol.logMessageForDeprecatedExcludeIssuerSwitch;
 import static org.keycloak.protocol.oidc.par.endpoints.ParEndpoint.PAR_DPOP_PROOF_JKT;
 
 /**
@@ -224,7 +225,11 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
         // Add support for Initiating User Registration via OpenID Connect 1.0 via prompt=create
         // see: https://openid.net/specs/openid-connect-prompt-create-1_0.html#section-4.1
-        if (OIDCLoginProtocol.PROMPT_VALUE_CREATE.equals(params.getFirst(OAuth2Constants.PROMPT))) {
+        String promptValue = Optional
+                .ofNullable(params.getFirst(OAuth2Constants.PROMPT))
+                .orElseGet(() -> session.getContext().getAuthenticationSession().getClientNote(OAuth2Constants.PROMPT));
+
+        if (OIDCLoginProtocol.PROMPT_VALUE_CREATE.equals(promptValue)) {
             if (!Organizations.isRegistrationAllowed(session, realm)) {
                 throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.REGISTRATION_NOT_ALLOWED);
             }
@@ -330,6 +335,8 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
         if (!clientConfig.isExcludeIssuerFromAuthResponse()) {
             errorResponseBuilder.addParam(OAuth2Constants.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+        } else {
+            logMessageForDeprecatedExcludeIssuerSwitch();
         }
 
         return errorResponseBuilder.build();
@@ -397,11 +404,12 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         }
     }
 
-    private Response buildAuthorizationCodeAuthorizationResponse(String requestUriParam) {
+    private Response buildAuthorizationCodeAuthorizationResponse(String requestUri) {
         this.event.event(EventType.LOGIN);
         authenticationSession.setAuthNote(Details.AUTH_TYPE, CODE_AUTH_TYPE);
+        authenticationSession.setAuthNote(Constants.AUTHORIZATION_REQUEST_URI, requestUri);
 
-        RequestUriType requestUriType = Optional.ofNullable(requestUriParam)
+        RequestUriType requestUriType = Optional.ofNullable(requestUri)
                 .map(AuthorizationEndpointRequestParserProcessor::getRequestUriType)
                 .orElse(null);
 

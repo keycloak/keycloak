@@ -45,7 +45,7 @@ import org.jboss.logging.Logger;
 /**
  * Factory for {@link JpaSingleUseObjectProvider}.
  * <p>
- * Enabled only when the {@link Profile.Feature#CACHELESS} feature is active. Registers a periodic
+ * Enabled only when the {@link Profile.Feature#STATELESS} feature is active. Registers a periodic
  * {@link ExpirationTask} to clean up expired single-use objects from the database.
  */
 public class JpaSingleUseObjectProviderFactory implements SingleUseObjectProviderFactory<JpaSingleUseObjectProvider>, EnvironmentDependentProviderFactory, ServerInfoAwareProviderFactory {
@@ -121,7 +121,7 @@ public class JpaSingleUseObjectProviderFactory implements SingleUseObjectProvide
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return Profile.isFeatureEnabled(Profile.Feature.CACHELESS);
+        return Profile.isFeatureEnabled(Profile.Feature.STATELESS);
     }
 
     @Override

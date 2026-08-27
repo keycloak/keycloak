@@ -9,6 +9,7 @@ Therefore, users of {project_name} can do Passkey registration and authenticatio
 
 The *Passkeys* feature has been integrated seamlessly in the default authentication forms in two different ways. When activated, both conditional UI and modal UI are available in the forms in which the username input is displayed (for example *Username Password Form*  or *Username Form*).
 The exact behavior on page load — whether a passkey selection dialog appears automatically or credentials are offered only through browser autofill — is controlled by the *Passkey Mediation* setting in the *WebAuthn Passwordless Policy*.
+
 Besides, the password forms, when the username was already selected, always show the modal UI button to login by passkey if the current user has passwordless WebAuthn credentials associated. This way modal and conditional UI can be used to perform a complete login from scratch that needs username and password, and only modal UI is presented when the username is already selected in the authentication process (because of re-authentication or because the user was selected before in the process not using a passkey).
 
 *Passkeys* have been added to the following authenticator implementations:
@@ -92,10 +93,12 @@ Set up Passkey Authentication for the default forms as follows:
 
 . (If not already done) Check the required action for *WebAuthn Register Passwordless* is enabled. Use the steps described in <<_webauthn-register, Enable WebAuthn Authenticator Registration>>, but using *WebAuthn Register Passwordless* instead of *WebAuthn Register*.
 
-. Configure the *WebAuthn Passwordless Policy* in the same way that is explained in xref:_webauthn_loginless[LoginLess WebAuthn]. Perform the configuration in the Admin Console, `Authentication` section,  in the tab `Policies` →  `WebAuthn Passwordless Policy`. The default configuration for the passwordless policy is usually enough for correct passkeys integration.
+. Configure the *WebAuthn Passwordless Policy* in the same way that is explained in xref:_webauthn_loginless[LoginLess WebAuthn]. The default configuration for the passwordless policy is usually enough for correct passkeys integration.
+
+. In the Admin Console, navigate to *Realm Settings* → *Login* tab. In the *Login Screen Customization* section, activate the *Enable Passkeys* switch. Use the settings icon next to the switch to navigate directly to the *WebAuthn Passwordless Policy* for additional configuration.
+
+. Once *Enable Passkeys* is on, the *Passkey Mediation* select appears. Choose the value that best fits your use case. The default `conditional` value keeps behavior unobtrusive — passkeys are offered through autofill only. Switch to `optional` if you want the browser to automatically open a passkey selection dialog on page load while still allowing the user to dismiss it and fall back to autofill. See <<_passkeys-mediation,Passkey Mediation>> for a description of all available values.
+
 +
 NOTE: Storage capacity is usually very limited on hardware passkeys meaning that you cannot store many discoverable credentials on your passkey. However, this limitation may be mitigated for instance if you use an Android phone backed by a Google account as a passkey device or an iPhone backed by Bitwarden.
 +
-. In the *WebAuthn Passwordless Policy* tab, activate the *Enable Passkeys* option at the bottom. This switch is the one that really enables passkeys in the realm.
-
-. Once *Enable Passkeys* is on, the *Passkey Mediation* select appears. Choose the value that best fits your use case. The default `conditional` value keeps behavior unobtrusive — passkeys are offered through autofill only. Switch to `optional` if you want the browser to automatically open a passkey selection dialog on page load while still allowing the user to dismiss it and fall back to autofill. See <<_passkeys-mediation,Passkey Mediation>> for a description of all available values.

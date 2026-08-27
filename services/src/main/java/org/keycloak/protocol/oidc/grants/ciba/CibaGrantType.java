@@ -304,7 +304,7 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
 
         event.detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
         event.detail(Details.CODE_ID, userSession.getId());
-        event.session(userSession.getId());
+        event.session(userSession);
         event.user(user);
         logger.debugf("Successfully verified Authe Req Id '%s'. User session: '%s', client: '%s'", request, userSession.getId(), client.getId());
 

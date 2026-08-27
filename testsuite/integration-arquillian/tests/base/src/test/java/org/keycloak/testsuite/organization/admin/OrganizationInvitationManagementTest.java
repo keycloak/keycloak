@@ -25,9 +25,12 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.OrganizationAttributeUpdater;
 
 import org.junit.Before;
@@ -60,6 +63,8 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
         OrganizationRepresentation orgRep = createOrganization("test-org", "test-org.com");
         organizationId = orgRep.getId();
         organization = managedRealm.admin().organizations().get(organizationId);
+
+        assertAdminEvents.clear();
     }
 
     @Override
@@ -100,13 +105,24 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
     public void testGetInvitationById() {
         // Create invitation
         sendInvitation("user@test-org.com", "Test", "User");
-        
+
         // Get invitations list
         List<OrganizationInvitationRepresentation> invitations = organization.invitations().list();
         assertThat(invitations, hasSize(1));
-        
+
         String invitationId = invitations.get(0).getId();
-        
+
+        assertAdminEvents.expect()
+                .realmId(TEST_REALM_NAME)
+                .operationType(OperationType.ACTION)
+                .resourceType(ResourceType.ORGANIZATION_MEMBERSHIP)
+                .resourcePath("organizations/" + organizationId + "/members/invite-user")
+                .representation(Map.of(
+                        "id", invitationId,
+                        "email", "user@test-org.com",
+                        "organizationId", organizationId))
+                .assertEvent();
+
         // Get invitation by ID
         OrganizationInvitationRepresentation invitation = organization.invitations().get(invitationId);
         
@@ -114,6 +130,19 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
         assertThat(invitation.getId(), equalTo(invitationId));
         assertThat(invitation.getEmail(), equalTo("user@test-org.com"));
         assertThat(invitation.getStatus(), equalTo(PENDING));
+    }
+
+    @Test
+    public void testInviteLinkNotExposedInApiResponse() {
+        sendInvitation("sectest@test-org.com", "Sec", "Test");
+
+        List<OrganizationInvitationRepresentation> invitations = organization.invitations().list();
+        assertThat(invitations, hasSize(1));
+        assertThat(invitations.get(0).getInviteLink(), is(nullValue()));
+
+        String invitationId = invitations.get(0).getId();
+        OrganizationInvitationRepresentation invitation = organization.invitations().get(invitationId);
+        assertThat(invitation.getInviteLink(), is(nullValue()));
     }
 
     @Test
@@ -158,15 +187,37 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
     public void testDeleteInvitation() {
         // Create invitation
         sendInvitation("user@test-org.com", "Test", "User");
-        
+
         List<OrganizationInvitationRepresentation> invitations = organization.invitations().list();
         String invitationId = invitations.get(0).getId();
-        
+
+        assertAdminEvents.expect()
+                .realmId(TEST_REALM_NAME)
+                .operationType(OperationType.ACTION)
+                .resourceType(ResourceType.ORGANIZATION_MEMBERSHIP)
+                .resourcePath("organizations/" + organizationId + "/members/invite-user")
+                .representation(Map.of(
+                        "id", invitationId,
+                        "email", "user@test-org.com",
+                        "organizationId", organizationId))
+                .assertEvent();
+
         // Delete invitation
         try (Response response = organization.invitations().delete(invitationId)) {
             assertThat(response.getStatus(), equalTo(204));
         }
-        
+
+        assertAdminEvents.expect()
+                .realmId(TEST_REALM_NAME)
+                .operationType(OperationType.DELETE)
+                .resourceType(ResourceType.ORGANIZATION_MEMBERSHIP)
+                .resourcePath("organizations/" + organizationId + "/invitations/" + invitationId)
+                .representation(Map.of(
+                        "id", invitationId,
+                        "email", "user@test-org.com",
+                        "organizationId", organizationId))
+                .assertEvent();
+
         // Verify invitation is deleted
         try {
             OrganizationInvitationRepresentation invitation = organization.invitations().get(invitationId);
@@ -175,7 +226,7 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
             // Expected - invitation should not be found
             assertThat(e.getMessage(), containsString("404"));
         }
-        
+
         // Verify it's not in the list
         List<OrganizationInvitationRepresentation> updatedInvitations = organization.invitations().list();
         assertThat(updatedInvitations, empty());
@@ -441,6 +492,52 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
             try (Response response = organization.members().inviteUser("user@test-org.com", "John", "Doe")) {
                 assertThat(response.getStatus(), equalTo(400));
                 assertThat(response.readEntity(String.class), containsString("Organization is disabled"));
+            }
+        }
+    }
+
+    @Test
+    public void testSendInvitationWithInvalidClient() {
+        try (Response response = organization.members().inviteUser("user@test-org.com", "John", "Doe", "missing-client")) {
+            assertThat(response.getStatus(), equalTo(400));
+            assertThat(response.readEntity(String.class), containsString("Client doesn't exist"));
+        }
+    }
+
+    @Test
+    public void testSendInvitationWithDisabledClient() throws Exception {
+        try (
+                ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, "broker-app").setEnabled(false).update();
+                Response response = organization.members().inviteUser("user@test-org.com", "John", "Doe", "broker-app")
+        ) {
+            assertThat(response.getStatus(), equalTo(400));
+            assertThat(response.readEntity(String.class), containsString("Client is not enabled"));
+        }
+    }
+
+    @Test
+    public void testResendInvitationPreservesOriginalWhenClientDisabled() throws Exception {
+        try (
+                ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, "broker-app")
+                        .setBaseUrl("http://localhost:8180").update()
+        ) {
+            try (Response response = organization.members().inviteUser("user@test-org.com", "John", "Doe", "broker-app")) {
+                assertThat(response.getStatus(), equalTo(204));
+            }
+
+            List<OrganizationInvitationRepresentation> invitations = organization.invitations().list();
+            assertThat(invitations, hasSize(1));
+            String invitationId = invitations.get(0).getId();
+
+            try (ClientAttributeUpdater disabler = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, "broker-app")
+                    .setEnabled(false).update()) {
+                try (Response resendResponse = organization.invitations().resend(invitationId)) {
+                    assertThat(resendResponse.getStatus(), equalTo(400));
+                    assertThat(resendResponse.readEntity(String.class), containsString("Client is not enabled"));
+                }
+
+                List<OrganizationInvitationRepresentation> remaining = organization.invitations().list();
+                assertThat("Original invitation must survive a failed resend", remaining, hasSize(1));
             }
         }
     }

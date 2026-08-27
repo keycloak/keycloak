@@ -41,7 +41,6 @@ import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import jakarta.ws.rs.BadRequestException;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.SecretGenerator;
@@ -395,7 +394,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     @Override
     public UserVerifiableCredentialModel addVerifiableCredential(String userId, UserVerifiableCredentialModel verifCredentialModel) {
         if (verifCredentialModel.getClientScopeId() == null) {
-            throw new BadRequestException("Credential scope not specified");
+            throw new ModelException("Credential scope not specified");
         }
 
         UserVerifiableCredentialEntity vcEntity = new UserVerifiableCredentialEntity();
@@ -1192,6 +1191,17 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     public boolean removeIssuedVerifiableCredential(String credentialId) {
         IssuedVerifiableCredentialEntity entity = em.find(IssuedVerifiableCredentialEntity.class, credentialId, LockModeType.PESSIMISTIC_WRITE);
         if (entity == null) {
+            return false;
+        }
+        em.remove(entity);
+        em.flush();
+        return true;
+    }
+
+    @Override
+    public boolean removeIssuedVerifiableCredential(String userId, String credentialId) {
+        IssuedVerifiableCredentialEntity entity = em.find(IssuedVerifiableCredentialEntity.class, credentialId, LockModeType.PESSIMISTIC_WRITE);
+        if (entity == null || !userId.equals(entity.getUser().getId())) {
             return false;
         }
         em.remove(entity);

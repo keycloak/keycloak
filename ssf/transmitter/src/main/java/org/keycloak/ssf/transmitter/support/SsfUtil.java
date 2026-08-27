@@ -6,6 +6,7 @@ import java.util.Map;
 import org.keycloak.Config;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -16,6 +17,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 
 public class SsfUtil {
+
+    public static final String SSF_ENABLED_KEY = "ssf.enabled";
 
     private static final Logger log = Logger.getLogger(SsfUtil.class);
 
@@ -90,6 +93,47 @@ public class SsfUtil {
 
     public static Map<String, Object> treeToMap(JsonNode node) {
         return JsonSerialization.mapper.convertValue(node, new TypeReference<Map<String, Object>>() {});
+    }
+
+    /**
+     * Configuration-only receiver check: {@code true} when the client
+     * carries the {@code ssf.enabled=true} attribute that marks it as an
+     * SSF Receiver. Returns {@code false} for {@code null} clients, regular
+     * OIDC apps, service accounts, or any client whose attribute is unset /
+     * explicitly {@code false}.
+     *
+     * <p>This reflects <em>configuration</em> only — whether the client is
+     * set up as a receiver. It deliberately does <em>not</em> consider the
+     * client on/off state; a disabled-but-configured receiver still answers
+     * {@code true} here. Callers that care about live delivery use
+     * {@link #isReceiverEnabled} instead.
+     */
+    public static boolean isReceiverClient(ClientModel client) {
+        if (client == null) {
+            return false;
+        }
+        return Boolean.parseBoolean(client.getAttribute(SSF_ENABLED_KEY));
+    }
+
+    /**
+     * Live-delivery receiver check: the client is both a configured SSF
+     * Receiver ({@link #isReceiverClient}) <em>and</em> an enabled Keycloak
+     * client. Disabling the client (the standard client on/off toggle) takes
+     * its streams out of the lookups that drive <em>new</em> delivery
+     * decisions — stream enumeration ({@code findStreamsForSsfReceiverClients}),
+     * synthetic emit, and the receiver auth gate — so no new SSF events are
+     * queued or pushed while it is off. This is the per-client counterpart
+     * to the realm-level transmitter disable
+     * ({@link org.keycloak.ssf.Ssf#isTransmitterEnabled}).
+     *
+     * <p>It does <em>not</em> cancel events already queued in the outbox
+     * before the client was disabled: the drainer resolves those rows via
+     * {@code getStreamForClient} and may still push them. The stream
+     * configuration itself survives, so re-enabling the client resumes
+     * delivery. See keycloak/keycloak#50050.
+     */
+    public static boolean isReceiverEnabled(ClientModel client) {
+        return isReceiverClient(client) && client.isEnabled();
     }
 
     private static final String ADMIN_EVENT_USERS_PREFIX = "users/";

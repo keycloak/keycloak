@@ -28,6 +28,8 @@ import jakarta.ws.rs.core.UriInfo;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenIdGenerator;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.common.util.SecretGenerator;
@@ -48,6 +50,9 @@ import org.keycloak.protocol.ClientData;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
+import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
+import org.keycloak.protocol.oidc.endpoints.request.RequestUriType;
+import org.keycloak.protocol.oidc.par.endpoints.request.AuthzEndpointParParser;
 import org.keycloak.protocol.oidc.utils.LogoutUtil;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
@@ -241,9 +246,13 @@ public class OIDCLoginProtocol implements LoginProtocol {
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(clientSession.getClient());
         if (!clientConfig.isExcludeSessionStateFromAuthResponse()) {
             redirectUri.addParam(OAuth2Constants.SESSION_STATE, userSession.getId());
+        } else {
+            logger.warn("Using deprecated switch 'Exclude session state from authentication response'. The switch might be removed in future Keycloak versions. Please update your application to handle session_state parameter correctly");
         }
         if (!clientConfig.isExcludeIssuerFromAuthResponse()) {
             redirectUri.addParam(OAuth2Constants.ISSUER, clientSession.getNote(OIDCLoginProtocol.ISSUER));
+        } else {
+            logMessageForDeprecatedExcludeIssuerSwitch();
         }
 
         String nonce = authSession.getClientNote(OIDCLoginProtocol.NONCE_PARAM);
@@ -262,6 +271,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
         String code = null;
         if (responseType.hasResponseType(OIDCResponseType.CODE)) {
             OAuth2Code codeData = new OAuth2Code(SecretGenerator.getInstance().generateSecureID(),
+                authSession.getClient().getId(),
                 Time.currentTime() + userSession.getRealm().getAccessCodeLifespan(),
                 nonce,
                 authSession.getClientNote(OAuth2Constants.SCOPE),
@@ -311,6 +321,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 redirectUri.addParam(OAuth2Constants.ERROR_DESCRIPTION, cpe.getError());
                 if (!clientConfig.isExcludeIssuerFromAuthResponse()) {
                     redirectUri.addParam(OAuth2Constants.ISSUER, clientSession.getNote(OIDCLoginProtocol.ISSUER));
+                } else {
+                    logMessageForDeprecatedExcludeIssuerSwitch();
                 }
                 return buildRedirectUri(redirectUri, authSession, userSession, clientSessionCtx, cpe, null);
             }
@@ -409,9 +421,15 @@ public class OIDCLoginProtocol implements LoginProtocol {
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(session.getContext().getClient());
         if (!clientConfig.isExcludeIssuerFromAuthResponse()) {
             redirectUri.addParam(OAuth2Constants.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+        } else {
+            logMessageForDeprecatedExcludeIssuerSwitch();
         }
 
         return redirectUri;
+    }
+
+    public static void logMessageForDeprecatedExcludeIssuerSwitch() {
+        logger.warn("Using deprecated switch 'Exclude issuer from authentication response'. The switch might be removed in future Keycloak versions. Please update your application to handle iss parameter correctly");
     }
 
     @Override
@@ -576,7 +594,19 @@ public class OIDCLoginProtocol implements LoginProtocol {
     }
 
     @Override
-    public void close() {
+    public void authenticationComplete(AuthenticationSessionModel authSession) {
+        // Authorization servers that enforce one-time use of request_uri values do so at the point of authorization,
+        // not at the point of visiting the authorization endpoint
+        String requestUri = authSession.getAuthNote(Constants.AUTHORIZATION_REQUEST_URI);
+        RequestUriType requestUriType = Optional.ofNullable(requestUri)
+                .map(AuthorizationEndpointRequestParserProcessor::getRequestUriType)
+                .orElse(null);
+        if (requestUriType == RequestUriType.PAR && AuthzEndpointParParser.removeRequestObject(session, requestUri) == null) {
+            throw new AuthenticationFlowException("PAR not found, not issued or used multiple times.", AuthenticationFlowError.INTERNAL_ERROR);
+        }
+    }
 
+    @Override
+    public void close() {
     }
 }

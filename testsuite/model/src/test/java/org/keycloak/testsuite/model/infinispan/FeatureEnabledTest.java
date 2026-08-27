@@ -78,7 +78,7 @@ public class FeatureEnabledTest extends KeycloakModelTest {
         assertTrue(InfinispanUtils.isEmbeddedInfinispan());
         inComittedTransaction(session -> {
             var clusterProvider = session.getProvider(InfinispanConnectionProvider.class);
-            if (Profile.isFeatureEnabled(Profile.Feature.CACHELESS)) {
+            if (Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
                 assertEmbeddedCacheExists(clusterProvider, WORK_CACHE_NAME);
                 Arrays.stream(CLUSTERED_CACHE_NAMES).filter(Predicate.not(WORK_CACHE_NAME::equals)).forEach(s -> assertEmbeddedCacheDoesNotExists(clusterProvider, s));
             } else {

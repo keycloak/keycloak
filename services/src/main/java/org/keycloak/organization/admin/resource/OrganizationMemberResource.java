@@ -47,6 +47,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
@@ -131,7 +132,10 @@ public class OrganizationMemberResource {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Invites an existing user or sends a registration link to a new user, based on the provided e-mail address.",
-            description = "If the user with the given e-mail address exists, it sends an invitation link, otherwise it sends a registration link.")
+            description = "If the user with the given e-mail address exists, it sends an invitation link, otherwise it sends a registration link. " +
+                    "The client_id query parameter is optional. If no client_id is provided, the account client is used. " +
+                    "After accepting the invitation the user is redirected to the selected client's home URL; for the account client the " +
+                    "organization redirect URL is used instead when configured.")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
@@ -141,8 +145,9 @@ public class OrganizationMemberResource {
     })
     public Response inviteUser(@FormParam("email") String email,
                                @FormParam("firstName") String firstName,
-                               @FormParam("lastName") String lastName) {
-        return new OrganizationInvitationResource(session, organization, adminEvent, auth).inviteUser(email, firstName, lastName);
+                               @FormParam("lastName") String lastName,
+                               @Parameter(description = "Client id") @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
+        return new OrganizationInvitationResource(session, organization, adminEvent, auth).inviteUser(email, firstName, lastName, clientId);
     }
 
     @POST
