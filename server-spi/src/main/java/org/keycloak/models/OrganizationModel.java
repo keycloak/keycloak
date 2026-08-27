@@ -24,7 +24,7 @@ import java.util.stream.Stream;
 
 import org.keycloak.provider.ProviderEvent;
 
-public interface OrganizationModel {
+public interface OrganizationModel extends RoleContainerModel {
 
     String ORGANIZATION_ATTRIBUTE = "kc.org";
     String ORGANIZATION_SWITCHABLE_ATTRIBUTE = "kc.org.switchable";
@@ -118,6 +118,77 @@ public interface OrganizationModel {
                 }
             });
         }
+    }
+
+    /**
+     * Returns the realm that owns this organization.
+     *
+     * @return the owning realm
+     */
+    default RealmModel getRealm() {
+        throw new UnsupportedOperationException("Organization realm lookup is not supported by this provider");
+    }
+
+    /**
+     * Returns the default role assigned to new members of this organization.
+     *
+     * @return the default organization role
+     */
+    default RoleModel getDefaultRole() {
+        throw new UnsupportedOperationException("Organization roles are not supported by this provider");
+    }
+
+    /**
+     * Sets the default role assigned to new members of this organization.
+     *
+     * @param role the organization role to use as the default role
+     */
+    default void setDefaultRole(RoleModel role) {
+        throw new UnsupportedOperationException("Organization roles are not supported by this provider");
+    }
+
+    /**
+     * Adds a role as a composite of the default organization role.
+     *
+     * @param role the role to add
+     */
+    default void addToDefaultRoles(RoleModel role) {
+        getDefaultRole().addCompositeRole(role);
+    }
+
+    @Override
+    default RoleModel getRole(String name) {
+        throw new UnsupportedOperationException("Organization roles are not supported by this provider");
+    }
+
+    @Override
+    default RoleModel addRole(String name) {
+        return addRole(null, name);
+    }
+
+    @Override
+    default RoleModel addRole(String id, String name) {
+        throw new UnsupportedOperationException("Organization roles are not supported by this provider");
+    }
+
+    @Override
+    default boolean removeRole(RoleModel role) {
+        throw new UnsupportedOperationException("Organization roles are not supported by this provider");
+    }
+
+    @Override
+    default Stream<RoleModel> getRolesStream() {
+        throw new UnsupportedOperationException("Organization roles are not supported by this provider");
+    }
+
+    @Override
+    default Stream<RoleModel> getRolesStream(Integer firstResult, Integer maxResults) {
+        throw new UnsupportedOperationException("Organization roles are not supported by this provider");
+    }
+
+    @Override
+    default Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max) {
+        throw new UnsupportedOperationException("Organization roles are not supported by this provider");
     }
 
     String getId();

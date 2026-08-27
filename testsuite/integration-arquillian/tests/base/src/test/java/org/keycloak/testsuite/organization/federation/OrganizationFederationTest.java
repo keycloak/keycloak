@@ -27,6 +27,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -116,15 +117,25 @@ public class OrganizationFederationTest extends AbstractOrganizationTest {
             RealmModel realm = session.getContext().getRealm();
             UserModel member = session.users().getUserByUsername(realm, "thor");
             orgProvider.addMember(orga, member);
+            UserModel localMember = session.users().addUser(realm, "local-role-member");
+            orgProvider.addMember(orga, localMember);
+            RoleModel role = orga.addRole("federated-member");
+            member.grantRole(role);
+            localMember.grantRole(role);
         });
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
             RealmModel realm = session.getContext().getRealm();
             UserModel member = session.users().getUserByUsername(realm, "thor");
+            RoleModel role = orgProvider.getByDomainName("orga.org").getRole("federated-member");
             Stream<OrganizationModel> memberOf = orgProvider.getByMember(member);
             List<OrganizationModel> results = memberOf.toList();
             assertEquals(1, results.size());
             assertEquals("orga", results.get(0).getAlias());
+            assertEquals(List.of(member.getId()), orgProvider.getRoleMembersStream(results.get(0), role, "tho", 0, 1)
+                    .map(UserModel::getId).toList());
+            assertEquals(List.of(member.getId()), orgProvider.getRoleMembersStream(results.get(0), role, null, 1, 1)
+                    .map(UserModel::getId).toList());
         });
     }
 

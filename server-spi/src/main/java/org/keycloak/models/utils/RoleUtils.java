@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleMapperModel;
@@ -251,11 +252,14 @@ public class RoleUtils {
         if (container instanceof RealmModel realmModel) {
             return realmModel;
         }
+        if (container instanceof OrganizationModel organizationModel) {
+            return organizationModel.getRealm();
+        }
         return ((ClientModel) container).getRealm();
     }
 
     public static boolean isRealmRole(RoleModel r) {
-        return r.getContainer() instanceof RealmModel;
+        return r.isType(RoleModel.Type.REALM);
     }
 
     public static boolean isRealmRole(RoleModel r, RealmModel realm) {
@@ -266,6 +270,10 @@ public class RoleUtils {
         return false;
     }
 
+    /**
+     * @deprecated use {@link RoleModel#isType(RoleModel.Type)} and compare the role container when needed
+     */
+    @Deprecated
     public static boolean isClientRole(RoleModel r, ClientModel c) {
         RoleContainerModel container = r.getContainer();
         if (container instanceof ClientModel) {
