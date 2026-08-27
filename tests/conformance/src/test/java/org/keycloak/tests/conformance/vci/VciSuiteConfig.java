@@ -40,12 +40,12 @@ record VciSuiteConfig(
         Client client2,
         List<BrowserFlow> browser) {
 
-    static VciSuiteConfig create(URI keycloakBaseUri, JsonNode attesterJwks, String trustAnchorPem,
-            BrowserInteraction browserInteraction) {
+    static VciSuiteConfig create(URI keycloakBaseUri, String credentialConfigurationId, JsonNode attesterJwks,
+            String trustAnchorPem, BrowserInteraction browserInteraction) {
         return new VciSuiteConfig(
                 "keycloak",
                 new Vci(keycloakBaseUri + "/realms/" + VciConformanceRealmConfig.REALM,
-                        VciConformanceRealmConfig.CREDENTIAL_CONFIGURATION_ID,
+                        credentialConfigurationId,
                         "https://example.com/client-attester",
                         attesterJwks,
                         attesterJwks),

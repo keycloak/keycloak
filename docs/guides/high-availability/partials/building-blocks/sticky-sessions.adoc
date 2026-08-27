@@ -2,7 +2,8 @@
 == Optional: Disable sticky sessions
 
 When running on OpenShift and the default passthrough Ingress setup as provided by the {project_name} Operator, the load balancing done by HAProxy is done by using sticky sessions based on the IP address of the source.
-When running load tests, or when having a reverse proxy in front of HAProxy, you might want to disable this setup to avoid receiving all requests on a single {project_name} Pod.
+
+The recommended way to run {project_name} behind a load balancer is to disable sticky session to allow for an even distribution of requests across all nodes.
 
 Add the following supplementary configuration under the `spec` in the {project_name} Custom Resource to disable sticky sessions.
 

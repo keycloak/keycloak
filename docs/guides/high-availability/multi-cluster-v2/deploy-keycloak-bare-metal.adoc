@@ -16,7 +16,7 @@ You should verify the performance and failure behavior of your specific environm
 
 * https://openjdk.java.net/[OpenJDK {jdk_version_latest}] installed on each node.
 * {archivedownloadurl}[{archivebasename}-{version}.zip] downloaded and extracted on each node.
-* A highly available database deployed with synchronous replication across sites, reachable from all {project_name} nodes. The following example assumes a PostgreSQL database. Any database supported by {project_name} will work.
+* A highly available database deployed with synchronous replication across sites, reachable from all {project_name} nodes. The following example assumes a PostgreSQL database. Any database supported by {project_name} will work. How to configure the database for high availability is out of scope for this guide.
 * TLS certificate and private key files for HTTPS.
 * A load balancer in front of the {project_name} nodes.
 * The database CA certificate file for securing the database connection.
@@ -91,15 +91,17 @@ bin/kc.sh start \
 ----
 <1> Set the database vendor and URL.
 <2> The database connection pool initial, max and min size should be identical to allow statement caching for the database.
-Adjust this number to meet the needs of your system.
+The values shown are a starting point for production deployments; adjust to meet the needs of your system.
 With the `stateless` feature, authentication sessions and action tokens are stored in the database, which increases database load compared to setups with an external {jdgserver_name} cluster. Adjust the pool size accordingly.
 See the <@links.ha id="multi-cluster-concepts-database-connections" /> {section} for details.
 <3> Enable the `stateless` feature to remove the requirement for an external {jdgserver_name} cluster.
 <4> Set a unique cluster name that identifies this cluster. Each cluster must have a distinct name; no two clusters may share the same name.
 This option is only available if the `stateless` feature is enabled.
-<5> Set the hostname clients use to connect to {project_name}. This should match the hostname configured on the load balancer.
+<5> Set the hostname clients use to connect to {project_name}. This must be the same on every site and match the hostname configured on the external load balancer, so that the OIDC issuer is identical regardless of which site answers.
+If the public URL uses a port other than 443, include the port (for example, `+https://auth.example.com:8443+`).
 <6> Provide the TLS certificate and private key files for HTTPS.
 <7> Secure the database connection. Specify the path to the database CA certificate file. {project_name} automatically loads certificates from the specified truststore path.
+For non-production-grade environments without database TLS, set `--db-tls-mode` to `disabled` and omit `--truststore-paths`.
 <8> Enable the PROXY protocol so that {project_name} can read the real client IP address from the PROXY protocol header sent by the load balancer.
 To use this option, the load balancer must also be configured to send PROXY protocol headers (for example, `send-proxy-v2` in HAProxy).
 If your load balancer does not support the PROXY protocol, remove this option to use plain HTTPS.
@@ -127,7 +129,14 @@ The `checks` array contains the readiness checks enabled for the deployment.
 
 Repeat this check for each node in each site.
 
-Additionally, verify that `/lb-check` per site returns `200 OK` with status `UP`:
+To verify the hostname configuration, confirm that the OIDC issuer is identical on every site by querying each site's load balancer:
+
+[source,bash]
+----
+curl -sk https://<SITE_LB_HOSTNAME>/realms/master/.well-known/openid-configuration | jq .issuer
+----
+
+Additionally, verify that `/lb-check` per site returns `200 OK`:
 
 [source,bash]
 ----

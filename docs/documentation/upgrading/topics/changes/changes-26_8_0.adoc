@@ -19,6 +19,14 @@ Previously, any caller with the `view-clients` role could read client secrets fr
 
 If you have delegated administrators or automation that reads client secrets using the `view-clients` role, ensure they are granted the `manage-clients` realm admin role or equivalent `manage` permission on the Clients resource type.
 
+=== `initiating_idp` logout parameter ignored by default
+
+The `initiating_idp` query parameter on the OIDC RP-initiated logout endpoint is now ignored by default. This parameter suppressed the logout at the upstream identity provider for the referenced broker.
+
+After upgrading, {project_name} always performs the upstream identity provider logout during a browser logout, regardless of the `initiating_idp` parameter. To handle logout initiated by an upstream identity provider, rely on the standard OIDC link:https://openid.net/specs/openid-connect-backchannel-1_0.html[back-channel] or link:https://openid.net/specs/openid-connect-frontchannel-1_0.html[front-channel] logout mechanisms instead.
+
+To temporarily restore the previous behavior, enable the `allow-initiating-idp-logout-param` server option for the OpenID Connect provider. This option is deprecated and will be removed in a future release.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
@@ -49,6 +57,10 @@ If you enabled it explicitly in a previous release, the `--features=http-optimiz
 
 If needed, you can disable it with `--features-disabled=http-optimized-serializers`.
 
+=== `show-config` will mask all SPI option values
+
+The `show-config` command will mask all SPI option values. The command is not currently aware of provider factory configuration property metadata, so it cannot determine if a property is marked as `isSecret`.
+
 === Redesigned identity provider buttons on the login page
 
 The social identity provider section on the login page has been redesigned with updated icons and layout.
@@ -62,6 +74,16 @@ Test your custom login theme to ensure the identity provider buttons display cor
 The token introspection endpoint previously set the `act.sub` field to the impersonator's username. It now uses the impersonator's user ID to be consistent with the `act` claim in JWT access tokens and ID tokens. The `preferred_username` field has been added to the introspection `act` object for consumers that need the impersonator's username.
 
 If you have resource servers that parse `act.sub` from introspection responses and expect a username, update them to read `act.preferred_username` instead.
+
+=== Group policy matching for bare group names
+
+Group-based policies in Authorization Services use the groups claim from the token as the first source of truth. When the claim is not defined or empty, the policy falls back to the user's actual group memberships from the realm. Bare group names in token claims are now resolved to top-level realm groups only. Previously, a bare name like `Admins` in a group claim would match any group named `Admins` regardless of its position in the group hierarchy. This allowed users who are members of one group to satisfy policies targeting a different group with the same name at a different path.
+
+If your deployment uses the Group Membership protocol mapper with *Full group path* disabled and relies on group policies targeting nested groups, enable *Full group path* in the protocol mapper configuration so that tokens include the complete group path (for example, `/Organization/Admins` instead of `Admins`).
+
+Group names that contain slashes (for example, a group named `/Organization/Admins`) are now resolved as top-level group names first, before being treated as paths. This prevents a group name from being confused with a nested group path.
+
+Group policies that use full group paths in claims are not affected unless a top-level group name is identical to a nested group path. In that ambiguous case, the top-level group name takes precedence.
 
 === Authorization services claim handling changes
 
@@ -88,7 +110,7 @@ The parameterized client scope used by the experimental token exchange delegatio
 
 The full scope format in token requests changes from `delegation:<administrator>` to `delegation:user:<administrator>`. For example, a scope value that was previously `delegation:admin1` is now `delegation:user:admin1`.
 
-If you are upgrading an existing realm, rename its `delegation` client scope to `delegation:user`, change its parameterized scope type to `user-delegation`, and change its consent screen text to `${userDelegationScopeConsentText}`. Then update clients and automation to request `delegation:user:<administrator>`.
+During migration, the `delegation:user` and `delegation:client` client scopes are automatically created in existing realms as *Optional* client scopes. Delegation also requires configuring a delegation permission through FGAP V2. If you had a `delegation` client scope from a previous version, it can be safely removed after migration. Update clients and automation to request `delegation:user:<administrator>`.
 
 === Email is no longer marked as verified by other flows
 
@@ -99,10 +121,9 @@ This changes the behavior of identity provider account linking by email, of admi
 and of the verifiable credential offer emails of the experimental OID4VCI feature.
 The *Trust Email* setting of identity providers and LDAP federation is not affected, as it is an explicit decision of the administrator to trust the email from the external source.
 
-=== Offline session expiration indexes rebuilt with session bucket column
+=== Offline session expiration indexes rebuilt with session bucket and coarse refresh columns
 
-The `OFFLINE_USER_SESSION` table now has updated indexes `IDX_USER_SESSION_EXPIRATION_CREATED` and `IDX_USER_SESSION_EXPIRATION_LAST_REFRESH`. On PostgreSQL and Microsoft SQL Server, `IDX_OFFLINE_USS_BY_BROKER_SESSION_ID` is also rebuilt as a filtered index.
-
+The `OFFLINE_USER_SESSION` table has a new `LAST_SESSION_REFRESH_COARSE` column and updated indexes `IDX_USER_SESSION_EXPIRATION_CREATED` and `IDX_USER_SESSION_EXPIRATION_LAST_REFRESH`. On PostgreSQL and Microsoft SQL Server, `IDX_OFFLINE_USS_BY_BROKER_SESSION_ID` is also rebuilt as a filtered index.
 If the table contains more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
 See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
 
@@ -111,6 +132,18 @@ See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to 
 When {project_name} generates self-signed certificates (for example, during SAML client creation), the Common Name (CN) is now truncated to 64 characters to comply with the https://datatracker.ietf.org/doc/html/rfc5280[RFC 5280] `ub-common-name` upper bound. Previously, values longer than 64 characters, such as long client IDs, were used as-is. With the BouncyCastle 1.85 update, this caused certificate generation to fail.
 
 If you have tooling that inspects the CN of {project_name}-generated certificates and expects it to match a value longer than 64 characters, be aware that the CN may now be shorter.
+
+=== Asynchronous commit on MS SQL Server and Oracle databases
+
+The asynchronous commit optimization, previously available only on PostgreSQL, now also supports MS SQL Server and Oracle databases.
+Transactions that update only ephemeral tables like persisted user sessions, client sessions, login failures, or events will use delayed/asynchronous commit, improving throughput.
+Logouts will still force a synchronous commit.
+
+On MS SQL Server, the DBA must enable delayed durability first: `ALTER DATABASE ... SET DELAYED_DURABILITY = ALLOWED`.
+On Oracle, no database-level configuration is required.
+On both databases, the optimization is automatically disabled when using XA datasources (`+--transaction-xa-enabled=true+`).
+
+You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--async-commit=false+`
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
@@ -153,6 +186,20 @@ Please update your client applications if you still rely on these switches as th
 `org.keycloak.http.HttpResponse#getStatus()` and `org.keycloak.http.HttpResponse#setStatus(int)` are now deprecated.
 These methods are not useful for JAX-RS resource endpoints because the JAX-RS runtime usually determines the final HTTP status from the endpoint return value or exception.
 Use JAX-RS response handling for setting and observing status codes in resource endpoints.
+
+=== Route in `AUTH_SESSION_ID` cookie for sticky sessions
+
+Having the load balancer route appended to the `AUTH_SESSION_ID` cookie is now deprecated.
+
+Since the optimizations in 26.6, sticky sessions no longer bring a significant benefit given the complex setup on the proxy side to get this working.
+Authentication sessions are created on the node where the browser starts the session, and while a session may move to another node on a subsequent request, the overhead is low.
+Most interactions such as backchannel calls and token refreshes do not use cookies and are distributed across nodes regardless.
+The recommendation is to aim for an even distribution of load across {project_name} nodes instead of using sticky sessions.
+
+The options `+spi-sticky-session-encoder--infinispan--should-attach-route+` and `+spi-sticky-session-encoder--remote--should-attach-route+` will be removed in a future release.
+
+The setting is still enabled by default to avoid breaking existing setups.
+To avoid the deprecation warning at startup, set those SPI options to `false`.
 
 === Organization invitation link no longer exposed in API responses
 

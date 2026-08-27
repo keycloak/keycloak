@@ -707,6 +707,7 @@ public class TokenExchangeDelegationTest {
                 .clientId("test-app")
                 .hasUserId()
                 .details(Details.USERNAME, USERNAME)
+                .details(Details.ACTOR_TYPE, Details.ACTOR_TYPE_USER)
                 .details(Details.ACTOR, administrator.getUsername())
                 .details(Details.ACTOR_ID, administrator.getId())
                 .details(Details.REQUESTED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE)
@@ -800,8 +801,6 @@ public class TokenExchangeDelegationTest {
         @Override
         public ClientBuilder configure(ClientBuilder client) {
             return super.configure(client)
-                    .defaultClientScopes("acr", "basic", "email", "profile")
-                    .optionalClientScopes(OIDCLoginProtocolFactory.USER_DELEGATION_SCOPE)
                     .consentRequired(true)
                     .attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED, Boolean.TRUE.toString())
                     .attribute(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT, "ping")
