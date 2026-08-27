@@ -82,7 +82,7 @@ export const PageNav = () => {
   };
 
   const onSelect = (item: SelectedItem) => {
-    navigate(item.to);
+    void navigate(item.to);
     item.event.preventDefault();
   };
 
