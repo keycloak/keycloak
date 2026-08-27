@@ -58,6 +58,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
@@ -1499,7 +1500,12 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
     private void cleanClientStorageComponents(KeycloakSession s, RealmModel realm) {
         s.getContext().setRealm(realm);
-        s.roles().removeRoles(realm);
+        // Only remove the role added by setupClientStorageComponents. Using removeRoles(realm) here
+        // would also remove the realm's default role, leaving the realm in an inconsistent state.
+        RoleModel offlineRole = s.roles().getRealmRole(realm, OAuth2Constants.OFFLINE_ACCESS);
+        if (offlineRole != null) {
+            s.roles().removeRole(offlineRole);
+        }
         s.clientScopes().removeClientScopes(realm);
 
         realm.removeComponents(realm.getId());

@@ -561,6 +561,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
     @Override
     public void grantToAllUsers(RealmModel realm, RoleModel role) {
+        if (role.isType(RoleModel.Type.ORGANIZATION)) {
+            return;
+        }
         if (realm.equals(role.isClientRole() ? ((ClientModel)role.getContainer()).getRealm() : role.getContainer())) {
             em.createNamedQuery("grantRoleToAllUsers")
                 .setParameter("realmId", realm.getId())

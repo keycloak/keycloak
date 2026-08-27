@@ -29,15 +29,24 @@ import org.keycloak.provider.ProviderEvent;
  */
 public interface RoleModel {
 
+    enum Type {
+        REALM,
+        CLIENT,
+        ORGANIZATION
+    }
+
     interface RoleNameChangeEvent extends ProviderEvent {
         RealmModel getRealm();
         String getNewName();
         String getPreviousName();
 
         /**
-         * @return the Client ID of the client, for a client role; {@code null}, for a realm role
+         * @return the client ID for a client role, or {@code null} for a realm role
+         * @deprecated consumers should resolve richer role context through supported model APIs
          */
+        @Deprecated
         String getClientId();
+
         KeycloakSession getKeycloakSession();
     }
 
@@ -137,7 +146,42 @@ public interface RoleModel {
      */
     Stream<RoleModel> getCompositesStream(String search, Integer first, Integer max);
 
-    boolean isClientRole();
+    /**
+     * Returns the scope that owns this role.
+     *
+     * @return the role type
+     */
+    default Type getType() {
+        RoleContainerModel container = getContainer();
+        if (container instanceof ClientModel) {
+            return Type.CLIENT;
+        }
+        if (container instanceof OrganizationModel) {
+            return Type.ORGANIZATION;
+        }
+        return Type.REALM;
+    }
+
+    /**
+     * Returns whether this role is of the given {@code type}.
+     *
+     * @param type the role type
+     * @return {@code true} if this role is of the given type
+     */
+    default boolean isType(Type type) {
+        return getType() == type;
+    }
+
+    /**
+     * Returns whether this role is a client role.
+     *
+     * @return {@code true} if this role is a client role
+     * @deprecated use {@link #isType(Type)} with {@link Type#CLIENT}
+     */
+    @Deprecated
+    default boolean isClientRole() {
+        return isType(Type.CLIENT);
+    }
 
     String getContainerId();
 

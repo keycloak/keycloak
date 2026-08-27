@@ -43,6 +43,7 @@ import org.keycloak.models.jpa.entities.ClientEntity;
 import org.keycloak.models.jpa.entities.ProtocolMapperEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.organization.validation.OrganizationsValidation;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -258,6 +259,7 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
 
     @Override
     public void addScopeMapping(RoleModel role) {
+        OrganizationsValidation.validateOrganizationRoleScopeMapping(role);
         entity.getScopeMappingIds().add(role.getId());
     }
 
