@@ -38,6 +38,16 @@ Revalidating certificates can be problematic in certain installations (for examp
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
+=== Login failures now stored in the database by default
+
+Login failure data for brute force detection is now stored in the database by default, instead of only in the embedded Infinispan `loginFailures` cache. This ensures that temporarily locked-out users remain locked out across cluster restarts, and reduces memory consumption from accumulated login failure entries.
+
+This change is controlled by the new `login-failures` versioned feature. The previous in-memory behavior (`login-failures:v1`) is deprecated. To restore it, set `--features=login-failures:v1`. Note that `login-failures:v1` is incompatible with the `stateless` feature.
+
+Deployments using the `multi-site` or `clusterless` features continue to store login failure data in the external Infinispan cluster, regardless of the `login-failures` feature version.
+
+As a trade-off, users may observe increased database connection usage and higher CPU usage on the database.
+
 === Clusterless feature will be removed
 
 The experimental `clusterless` feature will be removed in a future release. The `stateless` feature is the successor for running {project_name} without depending on an external Infinispan cluster. While `clusterless` offloads all session data to an external Infinispan cluster, `stateless` stores session data in the database and uses the embedded Infinispan only as a cache.
@@ -241,6 +251,10 @@ To avoid the deprecation warning at startup, set those SPI options to `false`.
 === Disabling persistent user sessions (volatile sessions) is deprecated
 
 Disabling the `persistent-user-sessions` feature (volatile sessions) is deprecated and will be removed in a future release. Persistent user sessions will become the only supported mode. If you have explicitly disabled persistent user sessions with `--features-disabled=persistent-user-sessions`, remove this option before upgrading to a future release.
+
+=== In-memory login failures (`login-failures:v1`) is deprecated
+
+The previous default of storing login failure data only in the in-memory Infinispan cache (`login-failures:v1`) is deprecated and will be removed in a future release. Login failures are now stored in the database by default (`login-failures:v2`). If you have explicitly enabled `login-failures:v1`, plan to remove this option before upgrading to a future release.
 
 === Organization invitation link no longer exposed in API responses
 
