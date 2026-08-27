@@ -26,6 +26,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.RoleModel.Type;
 import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
 import org.keycloak.models.cache.infinispan.LazyLoader;
 
@@ -41,6 +42,9 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
     final protected String realm;
     final protected String description;
     final protected LazyLoader<RoleModel, CompositeRolesRecord> composites;
+    final String containerId;
+    final Type type;
+
     /**
      * Use this so the cache invalidation can retrieve any previously cached role mappings to determine if this
      * items should be evicted.
@@ -65,6 +69,8 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
             return new CompositeRolesRecord(Collections.unmodifiableSet(clientContainerIds), Collections.unmodifiableSet(ids));
         }, null);
         attributes = new DefaultLazyLoader<>(roleModel -> new MultivaluedHashMap<>(roleModel.getAttributes()), MultivaluedHashMap::new);
+        this.containerId = model.getContainerId();
+        this.type = model.getType();
     }
 
     public String getName() {
@@ -99,5 +105,13 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
 
     public MultivaluedHashMap<String, String> getAttributes(KeycloakSession session, Supplier<RoleModel> roleModel) {
         return attributes.get(session, roleModel);
+    }
+
+    public String getContainerId() {
+        return containerId;
+    }
+
+    public Type getType() {
+        return type;
     }
 }

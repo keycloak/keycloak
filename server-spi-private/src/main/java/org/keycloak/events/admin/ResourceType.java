@@ -202,6 +202,16 @@ public enum ResourceType {
      *
      */
     , ORGANIZATION
+
+    /**
+     *
+     */
+    , ORGANIZATION_ROLE
+
+    /**
+     *
+     */
+    , ORGANIZATION_ROLE_MAPPING
     
     /**
      *

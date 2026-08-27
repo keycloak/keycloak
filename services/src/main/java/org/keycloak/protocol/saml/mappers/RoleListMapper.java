@@ -31,6 +31,7 @@ import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -144,6 +145,7 @@ public class RoleListMapper extends AbstractSAMLProtocolMapper implements SAMLRo
 
         List<String> allRoleNames = clientSessionCtx.getRolesStream()
           // todo need a role mapping
+          .filter(roleModel -> !roleModel.isType(RoleModel.Type.ORGANIZATION))
           .map(roleModel -> roleNameMappers.stream()
             .map(entry -> entry.mapper.mapName(entry.model, roleModel))
             .filter(Objects::nonNull)

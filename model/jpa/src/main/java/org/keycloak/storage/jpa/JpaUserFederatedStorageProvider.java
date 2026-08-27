@@ -55,6 +55,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.jpa.JpaUserCredentialStore;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
@@ -561,6 +562,7 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public void grantRole(RealmModel realm, String userId, RoleModel role) {
+        OrganizationsValidation.validateOrganizationRoleMapping(session.users().getUserById(realm, userId), role);
         createIndex(realm, userId);
         FederatedUserRoleMappingEntity entity = new FederatedUserRoleMappingEntity();
         entity.setUserId(userId);
