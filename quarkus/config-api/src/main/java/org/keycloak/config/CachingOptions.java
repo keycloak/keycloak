@@ -133,7 +133,9 @@ public class CachingOptions {
             .category(OptionCategory.CACHE)
             .description("Name of the embedded Infinispan cluster. All nodes that belong to the same Keycloak deployment must share the same value; "
                     + "nodes that belong to different deployments sharing the same database must each use a different value. "
-                    + "Defaults to 'ISPN' if not set.")
+                    + "Defaults to 'ISPN' if not set. "
+                    + "WARNING: Using distinct cluster names without enabling the stateless feature disables cross-cluster cache invalidation, "
+                    + "which leads to stale caches and incorrect behavior. Use only together with '--features=stateless'.")
             .build();
 
     public static final Option<String> CACHE_EMBEDDED_NETWORK_BIND_ADDRESS = new OptionBuilder<>(CACHE_EMBEDDED_NETWORK_BIND_ADDRESS_PROPERTY, String.class)

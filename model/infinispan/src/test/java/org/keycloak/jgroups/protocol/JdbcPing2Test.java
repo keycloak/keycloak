@@ -249,15 +249,15 @@ public class JdbcPing2Test {
         assertEquals(0, capturingLog.errors.get());
         assertEquals(0, capturingLog.infos.get());
 
-        // ERROR transition: one error logged immediately.
+        // ERROR transition: one warning logged immediately (ERROR is a warn-level event, not an error).
         ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR);
         ping.runHealthCheck(capturingLog);
-        assertEquals(1, capturingLog.errors.get());
+        assertEquals(1, capturingLog.warns.get());
 
         // Stays ERROR: no additional log on the next cycle.
         ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR);
         ping.runHealthCheck(capturingLog);
-        assertEquals(1, capturingLog.errors.get());
+        assertEquals(1, capturingLog.warns.get());
 
         // Recovery to HEALTHY: one info logged.
         ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
@@ -273,6 +273,7 @@ public class JdbcPing2Test {
     /** Minimal {@link Log} that counts error and info calls; everything else is a no-op. */
     static class CapturingLog implements Log {
         final AtomicInteger errors = new AtomicInteger();
+        final AtomicInteger warns  = new AtomicInteger();
         final AtomicInteger infos  = new AtomicInteger();
 
         @Override public void error(String msg, Object... args) { errors.incrementAndGet(); }
@@ -280,9 +281,9 @@ public class JdbcPing2Test {
         @Override public void error(String msg, Throwable t) { errors.incrementAndGet(); }
         @Override public void info(String msg, Object... args) { infos.incrementAndGet(); }
         @Override public void info(String msg) { infos.incrementAndGet(); }
-        @Override public void warn(String msg, Object... args) {}
-        @Override public void warn(String msg) {}
-        @Override public void warn(String msg, Throwable t) {}
+        @Override public void warn(String msg, Object... args) { warns.incrementAndGet(); }
+        @Override public void warn(String msg) { warns.incrementAndGet(); }
+        @Override public void warn(String msg, Throwable t) { warns.incrementAndGet(); }
         @Override public void debug(String msg, Object... args) {}
         @Override public void debug(String msg) {}
         @Override public void debug(String msg, Throwable t) {}

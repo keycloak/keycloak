@@ -346,22 +346,24 @@ public final class JGroupsConfigurator {
     private static List<ProtocolConfiguration> getProtocolConfigurations(String tableName, boolean udp, boolean tracingEnabled, boolean fdSockEnabled) {
         var list = new ArrayList<ProtocolConfiguration>(4);
         list.add(new ProtocolConfiguration(KEYCLOAK_JDBC_PING2.class.getName(),
-              Map.of(
+              Map.ofEntries(
                     // Leave initialize_sql blank as table is already created by Keycloak
-                    "initialize_sql", "",
+                    Map.entry("initialize_sql", ""),
                     // Explicitly specify clear and select_all SQL to ensure "cluster_name" column is used, as the default
                     // "cluster" cannot be used with Oracle DB as it's a reserved word.
-                    "clear_sql", String.format("DELETE from %s WHERE cluster_name=?", tableName),
-                    "delete_single_sql", String.format("DELETE from %s WHERE address=?", tableName),
-                    "insert_single_sql", String.format("INSERT INTO %s (address, name, cluster_name, ip, coord, last_update, coordinated_by) values (?, ?, ?, ?, ?, ?, ?)", tableName),
-                    "select_all_pingdata_sql", String.format("SELECT address, name, ip, coord, coordinated_by, last_update FROM %s WHERE cluster_name=?", tableName),
+                    Map.entry("clear_sql", String.format("DELETE from %s WHERE cluster_name=?", tableName)),
+                    Map.entry("delete_single_sql", String.format("DELETE from %s WHERE address=?", tableName)),
+                    Map.entry("insert_single_sql", String.format("INSERT INTO %s (address, name, cluster_name, ip, coord, last_update, coordinated_by) values (?, ?, ?, ?, ?, ?, ?)", tableName)),
+                    Map.entry("select_all_pingdata_sql", String.format("SELECT address, name, ip, coord, coordinated_by, last_update FROM %s WHERE cluster_name=?", tableName)),
+                    Map.entry("select_other_clusters_count_sql", String.format("SELECT COUNT(*) FROM %s WHERE cluster_name != ? AND last_update >= ?", tableName)),
+                    Map.entry("allow_multiple_clusters", String.valueOf(Profile.isFeatureEnabled(Profile.Feature.STATELESS))),
                     // This guarantees cleanup of stale data
-                    "remove_all_data_on_view_change", "true",
+                    Map.entry("remove_all_data_on_view_change", "true"),
                     // This guarantees that merging happens even after the info writer completed
-                    "write_data_on_find", "true",
-                    "register_shutdown_hook", "false",
-                    "stack.combine", "REPLACE",
-                    "stack.position", udp ? "PING" : "MPING"
+                    Map.entry("write_data_on_find", "true"),
+                    Map.entry("register_shutdown_hook", "false"),
+                    Map.entry("stack.combine", "REPLACE"),
+                    Map.entry("stack.position", udp ? "PING" : "MPING")
               ))
         );
 

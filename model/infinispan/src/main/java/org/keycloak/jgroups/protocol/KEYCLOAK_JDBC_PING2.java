@@ -57,6 +57,16 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     private static final int HEALTH_CHECK_INTERVAL_SECONDS = 10;
     private static final int HEALTH_CHECK_REPEAT_LOG_CYCLES = 180; // re-log after 180 * 10s = 30 minutes
 
+    @Property(description = "SQL to count entries in the JDBC_PING table belonging to cluster names other than the current one. "
+            + "Used to detect multiple clusters sharing the same database without the stateless feature.")
+    protected String select_other_clusters_count_sql =
+            "SELECT COUNT(*) FROM jgroups WHERE cluster != ? AND last_update >= ?";
+
+    @Property(description = "Whether multiple cluster names in the JDBC_PING table are permitted. "
+            + "Set to true when the stateless feature is enabled, as it provides the cross-cluster cache invalidation "
+            + "mechanism that makes multi-cluster setups safe.")
+    protected boolean allow_multiple_clusters = false;
+
     private JpaConnectionProviderFactory factory;
     private volatile HealthStatus previousHealthStatus = HealthStatus.HEALTHY;
     private volatile int cyclesSinceLastLog = 0;
@@ -280,8 +290,14 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
                         cluster_name, local_addr);
                 case NO_COORDINATOR -> logger.warn("No coordinator found in the database for cluster '%s'. "
                         + "This is most likely transient and will resolve once a coordinator is elected.", cluster_name);
-                case ERROR -> logger.error("Failed to determine cluster health for cluster '%s' from the database.",
+                case ERROR -> logger.warn("Failed to determine cluster health for cluster '%s' from the database. "
+                        + "This may indicate a database connectivity issue.",
                         cluster_name);
+                case MULTIPLE_CLUSTERS -> logger.error("Multiple cluster names detected in the JDBC_PING table "
+                        + "while the stateless feature is not enabled. "
+                        + "Cross-cluster cache invalidation requires the stateless feature to be enabled. "
+                        + "Either enable the stateless feature or ensure all nodes use the same cluster name "
+                        + "via 'cache-embedded-cluster-name'.");
             }
         } else {
             cyclesSinceLastLog++;
@@ -316,7 +332,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
      */
     public HealthStatus healthStatus() {
         try {
-            return readFromDB(cluster_name)
+            HealthStatus status = readFromDB(cluster_name)
                     .stream()
                     .filter(PingData::isCoord)
                     .sorted(SPLIT_BRAIN_DECIDER)
@@ -325,10 +341,27 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
                     .map(view.getCoord()::equals)
                     .map(isCoordinatorInView -> isCoordinatorInView ? HealthStatus.HEALTHY : HealthStatus.UNHEALTHY)
                     .orElse(HealthStatus.NO_COORDINATOR);
+
+            if (status == HealthStatus.HEALTHY && !allow_multiple_clusters && hasOtherClusters()) {
+                return HealthStatus.MULTIPLE_CLUSTERS;
+            }
+            return status;
         } catch (Exception e) {
-            // database failed?
-            log.warn("Failed to fetch the cluster members from the database.", e);
             return HealthStatus.ERROR;
+        }
+    }
+
+    private boolean hasOtherClusters() {
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(select_other_clusters_count_sql)) {
+            ps.setString(1, cluster_name);
+            ps.setLong(2, getStalenessCutoff());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        } catch (Exception e) {
+            log.warn("Failed to check for other cluster names in the database.", e);
+            return false;
         }
     }
 
@@ -348,6 +381,11 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
         /**
          * If an error occurs when reading from the database.
          */
-        ERROR
+        ERROR,
+        /**
+         * Multiple cluster names detected in the database table while the stateless feature is not enabled.
+         * Cross-cluster cache invalidation requires the stateless feature.
+         */
+        MULTIPLE_CLUSTERS
     }
 }
