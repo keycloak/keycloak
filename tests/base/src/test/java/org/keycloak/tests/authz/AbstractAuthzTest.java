@@ -2,9 +2,13 @@ package org.keycloak.tests.authz;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Set;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
@@ -12,11 +16,14 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 
@@ -40,21 +47,52 @@ public abstract class AbstractAuthzTest extends AbstractKeycloakTest {
     public void beforeAuthzTest() {
         super.adminClient = adminClient;
         getTestingClient();
+        runOnServerMaster = testingClient.server();
+        runOnServer = testingClient.server("test");
         importedRealmNames.clear();
         testRealmReps = new ArrayList<>();
         addTestRealms(testRealmReps);
-        for (RealmRepresentation realmRepresentation : testRealmReps) {
-            importRealm(realmRepresentation);
-            importedRealmNames.add(realmRepresentation.getRealm());
-        }
+        ensureInjectedOAuthRedirectUris(testRealmReps);
+        importTestRealms();
+        testRealmReps.forEach(r -> importedRealmNames.add(r.getRealm()));
     }
 
     @AfterEach
     public void afterAuthzTest() {
-        for (String realmName : importedRealmNames) {
-            removeRealm(realmName);
+        try {
+            runManagedCleanupBeforeRealmRemoval();
+        } finally {
+            try {
+                for (String realmName : importedRealmNames) {
+                    removeRealm(realmName);
+                }
+            } finally {
+                importedRealmNames.clear();
+                closeTestingClient();
+            }
         }
-        importedRealmNames.clear();
+    }
+
+    protected void runManagedCleanupBeforeRealmRemoval() {
+        Set<ManagedRealm> processedManagedRealms = Collections.newSetFromMap(new IdentityHashMap<>());
+
+        for (Class<?> type = getClass(); type != null; type = type.getSuperclass()) {
+            for (Field field : type.getDeclaredFields()) {
+                if (!ManagedRealm.class.isAssignableFrom(field.getType())) {
+                    continue;
+                }
+
+                field.setAccessible(true);
+                try {
+                    ManagedRealm managedRealm = (ManagedRealm) field.get(this);
+                    if (managedRealm != null && processedManagedRealms.add(managedRealm)) {
+                        managedRealm.runCleanup();
+                    }
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException("Failed to run managed realm cleanup", e);
+                }
+            }
+        }
     }
 
     @Override
@@ -126,6 +164,47 @@ public abstract class AbstractAuthzTest extends AbstractKeycloakTest {
             return new ByteArrayInputStream(config.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             throw new RuntimeException("Failed to read authz configuration", e);
+        }
+    }
+
+    private void ensureInjectedOAuthRedirectUris(List<RealmRepresentation> realms) {
+        String redirectUri = oauth.getRedirectUri();
+        if (redirectUri == null || redirectUri.isBlank()) {
+            return;
+        }
+
+        for (RealmRepresentation realm : realms) {
+            if (realm.getClients() == null) {
+                continue;
+            }
+
+            for (ClientRepresentation client : realm.getClients()) {
+                if (!Boolean.TRUE.equals(client.isPublicClient())) {
+                    continue;
+                }
+
+                if (client.getRedirectUris() == null) {
+                    client.setRedirectUris(new ArrayList<>());
+                }
+                if (!client.getRedirectUris().contains(redirectUri)) {
+                    client.getRedirectUris().add(redirectUri);
+                }
+            }
+        }
+    }
+
+    protected Events createEvents(String realmName) {
+        RealmRepresentation realmRepresentation = new RealmRepresentation();
+        realmRepresentation.setRealm(realmName);
+        Events events = new Events(new ManagedRealm(oauth.getBaseUrl() + "/realms/" + realmName, realmRepresentation, adminClient.realm(realmName)));
+        events.skipAll();
+        return events;
+    }
+
+    private void closeTestingClient() {
+        if (testingClient != null) {
+            testingClient.close();
+            testingClient = null;
         }
     }
 }
