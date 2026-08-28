@@ -139,7 +139,7 @@ export default function MappingDetails() {
           });
         }
         addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
-        navigate(toDetails());
+        void navigate(toDetails());
       } catch (error) {
         addError("mappingDeletedError", error);
       }
@@ -171,7 +171,7 @@ export default function MappingDetails() {
       }
       addAlert(t(`mapping${key}Success`), AlertVariant.success);
       if (!isUpdating) {
-        navigate(toDetails());
+        void navigate(toDetails());
       }
     } catch (error) {
       addError(`mapping${key}Error`, error);
