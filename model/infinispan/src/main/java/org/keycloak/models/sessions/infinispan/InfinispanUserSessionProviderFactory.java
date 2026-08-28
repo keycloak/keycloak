@@ -146,7 +146,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             log.warn("Disabling the persistent-user-sessions feature is deprecated since Keycloak 26.8 and will not be supported in a future release. Persistent user sessions will become the only supported mode.");
         }
         // Deprecated since 26.8: caching of persistent user sessions is disabled by default and will be removed in a future release.
-        useCaches = config.getBoolean(CONFIG_USE_CACHES) && InfinispanUtils.isEmbeddedInfinispan() && !Profile.isFeatureEnabled(Profile.Feature.STATELESS);
+        useCaches = config.getBoolean(CONFIG_USE_CACHES, false) && InfinispanUtils.isEmbeddedInfinispan() && !Profile.isFeatureEnabled(Profile.Feature.STATELESS);
         if (useCaches && MultiSiteUtils.isPersistentSessionsEnabled()) {
             log.warn("Caching of persistent user sessions is deprecated since Keycloak 26.8 and will be removed in a future release. Remove the spi-user-sessions--infinispan--use-caches option to disable caching.");
         }
