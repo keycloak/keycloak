@@ -441,7 +441,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
         boolean isAlreadyScheduled = !scheduled.computeIfAbsent(resourceId, k -> new HashSet<>()).add(workflow.getId());
 
         if (isAlreadyScheduled) {
-            log.debugf("Event %s for workflow %s and resource %s was previously processed for the resource", workflow.getName(), resourceId);
+            log.debugf("Event %s for workflow %s and resource %s was previously processed for the resource", event.getEventProviderId(), workflow.getName(), resourceId);
         }
 
         return isAlreadyScheduled;
