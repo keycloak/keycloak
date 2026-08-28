@@ -70,7 +70,46 @@ public class VertxHttpClientProvider implements HttpClientProvider {
 
     @Override
     public String getString(String uri) throws IOException {
-        return fetchBody(uri, null).toString();
+        return executeWithRetry(() -> {
+            CompletableFuture<String> future = new CompletableFuture<>();
+            webClient.getAbs(uri)
+                    .expect(responseSizePredicate())
+                    .send()
+                    .onComplete(ar -> {
+                        if (ar.succeeded()) {
+                            io.vertx.ext.web.client.HttpResponse<Buffer> response = ar.result();
+                            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                                Buffer body = response.body();
+                                if (body == null || body.length() == 0) {
+                                    future.completeExceptionally(new IOException("No content returned from HTTP call"));
+                                } else if (body.length() > maxConsumedResponseSize) {
+                                    future.completeExceptionally(new IOException(
+                                            "Response size " + body.length() + " exceeds limit of " + maxConsumedResponseSize));
+                                } else {
+                                    String charset = extractCharset(response.getHeader("Content-Type"));
+                                    future.complete(charset != null ? body.toString(charset) : body.toString());
+                                }
+                            } else {
+                                future.completeExceptionally(new IOException(
+                                        "Unexpected HTTP status: " + response.statusCode() + " " + response.statusMessage()));
+                            }
+                        } else {
+                            future.completeExceptionally(ar.cause());
+                        }
+                    });
+            return awaitResult(future);
+        });
+    }
+
+    private static String extractCharset(String contentType) {
+        if (contentType == null) return null;
+        for (String param : contentType.split(";")) {
+            param = param.trim();
+            if (param.toLowerCase().startsWith("charset=")) {
+                return param.substring("charset=".length()).trim();
+            }
+        }
+        return null;
     }
 
     @Override

@@ -23,7 +23,13 @@ import java.util.Map;
 
 import org.keycloak.provider.Provider;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -83,8 +89,17 @@ public interface HttpClientProvider extends Provider {
      * @return Body of the response as an InputStream. The caller is required to close it.
      * @throws IOException On network errors, no content being returned or a non-2xx HTTP status code.
      */
+    @SuppressWarnings("deprecation")
     default InputStream getInputStream(String uri, Map<String, String> headers) throws IOException {
-        return getInputStream(uri);
+        HttpGet get = new HttpGet(uri);
+        if (headers != null) {
+            headers.forEach(get::setHeader);
+        }
+        HttpResponse response = getHttpClient().execute(get);
+        if (response.getEntity() == null) {
+            throw new IOException("No content returned from HTTP call");
+        }
+        return response.getEntity().getContent();
     }
 
     /**
@@ -97,8 +112,21 @@ public interface HttpClientProvider extends Provider {
      * @return response body as byte array.
      * @throws IOException On network errors or a non-2xx HTTP status code.
      */
+    @SuppressWarnings("deprecation")
     default byte[] postBinary(String uri, byte[] body, Map<String, String> headers) throws IOException {
-        throw new IOException("postBinary not implemented by this provider");
+        HttpPost post = new HttpPost(uri);
+        if (headers != null) {
+            headers.forEach(post::setHeader);
+        }
+        post.setEntity(new ByteArrayEntity(body));
+        try (CloseableHttpResponse response =
+                     (CloseableHttpResponse) getHttpClient().execute(post)) {
+            int status = response.getStatusLine().getStatusCode();
+            if (status < 200 || status >= 300) {
+                throw new IOException("HTTP " + status + " from " + uri);
+            }
+            return EntityUtils.toByteArray(response.getEntity());
+        }
     }
 
     /**
