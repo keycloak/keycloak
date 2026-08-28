@@ -59,6 +59,7 @@ import org.keycloak.revoketokens.jpa.JpaRevokedTokenProviderFactory;
 import org.keycloak.sessions.AuthenticationSessionSpi;
 import org.keycloak.singleobject.jpa.JpaSingleUseObjectProviderFactory;
 import org.keycloak.storage.DatastoreSpi;
+import org.keycloak.storage.configuration.ServerConfigurationStorageProviderSpi;
 import org.keycloak.storage.configuration.jpa.JpaServerConfigStorageProviderFactory;
 import org.keycloak.storage.datastore.DefaultDatastoreProviderFactory;
 import org.keycloak.testsuite.model.Config;
@@ -83,7 +84,7 @@ public class Jpa extends KeycloakModelParameters {
       .add(RevokedTokenSpi.class)
       .add(SingleUseObjectSpi.class)
       .add(UserLoginFailureSpi.class)
-
+      .add(ServerConfigurationStorageProviderSpi.class)
       .add(DatastoreSpi.class)
 
       //required for migrateModel
