@@ -33,16 +33,21 @@ import org.keycloak.expiration.jpa.ExpirationHelper;
 import org.keycloak.expiration.jpa.ExpirationTask;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.UserLoginFailureProviderFactory;
+import org.keycloak.models.UserModel;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.provider.ProviderEvent;
+import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 
 import org.jboss.logging.Logger;
 
-public class JpaUserLoginFailureProviderFactory implements UserLoginFailureProviderFactory<JpaUserLoginFailureProvider>, EnvironmentDependentProviderFactory, ServerInfoAwareProviderFactory {
+public class JpaUserLoginFailureProviderFactory implements UserLoginFailureProviderFactory<JpaUserLoginFailureProvider>, EnvironmentDependentProviderFactory, ServerInfoAwareProviderFactory, ProviderEventListener {
 
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
     private static final String PROVIDER_ID = "jpa";
@@ -68,6 +73,7 @@ public class JpaUserLoginFailureProviderFactory implements UserLoginFailureProvi
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        factory.register(this);
         ExpirationTask.builder()
                 .withEntityId("login-failure")
                 .withAction(LoginFailureExpirationAction.INSTANCE)
@@ -100,6 +106,19 @@ public class JpaUserLoginFailureProviderFactory implements UserLoginFailureProvi
         ExpirationHelper.addToOperationalInfo(expirationTaskIntervalSeconds, expirationTaskTimeoutSeconds, expirationTaskMaxRemoval, map);
         map.put(METRICS_KEY, Boolean.toString(metricsEnabled));
         return Map.copyOf(map);
+    }
+
+    @Override
+    public void onEvent(ProviderEvent event) {
+        if (event instanceof RealmModel.RealmRemovedEvent realmRemovedEvent) {
+            KeycloakSession session = realmRemovedEvent.getKeycloakSession();
+            UserLoginFailureProvider provider = session.getProvider(UserLoginFailureProvider.class);
+            provider.removeAllUserLoginFailures(realmRemovedEvent.getRealm());
+        } else if (event instanceof UserModel.UserRemovedEvent userRemovedEvent) {
+            KeycloakSession session = userRemovedEvent.getKeycloakSession();
+            UserLoginFailureProvider provider = session.getProvider(UserLoginFailureProvider.class);
+            provider.removeUserLoginFailure(userRemovedEvent.getRealm(), userRemovedEvent.getUser().getId());
+        }
     }
 
     @Override
