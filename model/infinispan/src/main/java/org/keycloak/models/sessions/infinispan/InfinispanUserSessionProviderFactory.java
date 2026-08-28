@@ -374,7 +374,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         builder.property()
                 .name(CONFIG_USE_CACHES)
                 .type("boolean")
-                .helpText("Enable or disable caches. Enabled by default unless the external feature to use only external remote caches is used or " + Profile.Feature.STATELESS.getUnversionedKey() + " is enabled")
+                .helpText("Enable or disable caching of persistent user sessions. Disabled by default since Keycloak 26.8. When enabled, sessions are cached in the embedded Infinispan to reduce database load, but this is deprecated and will be removed in a future release. Caching is always disabled when the " + Profile.Feature.STATELESS.getUnversionedKey() + " feature is enabled or when using remote Infinispan.")
                 .add();
 
         builder.property()

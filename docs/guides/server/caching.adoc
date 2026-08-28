@@ -89,35 +89,6 @@ to any node without losing their authentication state. However, production-ready
 to the node where their sessions were initially created. By doing that, you are going to avoid unnecessary state transfer between nodes and improve
 CPU, memory, and network utilization.
 
-.User sessions
-Once the user is authenticated, a user session is created. The user session tracks your active users and their state so that they can seamlessly
-authenticate to any application without being asked for their credentials again. For each application, the user authenticates with a client session, so that the server can track the applications the user is authenticated with and their state on a per-application basis.
-
-User and client sessions are automatically destroyed whenever the user performs a logout, the client performs a token revocation, or due to reaching their expiration time.
-
-The session data are stored in the database by default and loaded on-demand to the following caches:
-
-* `sessions`
-* `clientSessions`
-
-By relying on a distributable cache, cached user and client sessions are available to any node in the cluster so that users can be redirected
-to any node without the need to load session data from the database. However, production-ready deployments should always consider session affinity and favor redirecting users
-to the node where their sessions were initially created. By doing that, you are going to avoid unnecessary state transfer between nodes and improve
-CPU, memory, and network utilization.
-
-These in-memory caches for user sessions and client sessions are limited to, by default, 10000 entries per node which reduces the overall memory usage of {project_name} for larger installations.
-The internal caches will run with only a single owner for each cache entry.
-
-.Offline user sessions
-As an OpenID Connect Provider, the server is capable of authenticating users and issuing offline tokens. When issuing an offline token after successful authentication, the server creates an offline user session and offline client session.
-
-The following caches are used to store offline sessions:
-
-* offlineSessions
-* offlineClientSessions
-
-Like the user and client sessions caches, the offline user and client session caches are limited to 10000 entries per node by default. Items which are evicted from the memory will be loaded on-demand from the database when needed.
-
 .Password brute force detection
 The `loginFailures` distributed cache is used to track data about failed login attempts.
 This cache is needed for the Brute Force Protection feature to work in a multi-node {project_name} setup.
@@ -127,6 +98,29 @@ Action tokens are used for scenarios when a user needs to confirm an action asyn
 The `actionTokens` distributed cache is used to track metadata about action tokens.
 
 TIP: You can see the applied Infinispan configuration in the logs by configuring `--log-level=info,org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory:debug`.
+
+=== User session caching (deprecated)
+
+WARNING: Caching of persistent user and offline sessions is deprecated since {project_name} 26.8 and will be removed in a future release.
+
+A user session tracks an authenticated user across one or more applications (client sessions). Offline sessions are long-lived sessions backed by offline tokens.
+User sessions, client sessions, offline user sessions, and offline client sessions are stored in the database. The embedded Infinispan caches (`sessions`, `clientSessions`, `offlineSessions`, `offlineClientSessions`) exist but are not populated by default.
+
+To temporarily re-enable session caching (for example, to reduce database load at the cost of increased memory usage and the risk of data loss on restart), set:
+
+[source]
+----
+spi-user-sessions--infinispan--use-caches=true
+----
+
+When enabled:
+
+* Sessions are loaded on-demand from the database into the embedded caches.
+* Cached sessions are available to any node in the cluster without a database round-trip.
+* In-memory caches are limited to 10000 entries per node by default (configurable via `--cache-embedded-sessions-max-count` etc.).
+* Cache entries use a single owner per entry.
+
+This option will be removed in a future release. Remove it from your configuration before upgrading to that release.
 
 === Volatile user sessions (deprecated)
 
