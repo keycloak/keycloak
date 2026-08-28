@@ -130,6 +130,8 @@ test.describe.serial("Permissions section tests", () => {
       page,
       "Successfully updated the permission",
     );
+    await goToPermissions(page);
+    await deletePermission(page, "test-group-permission");
   });
 
   test("should edit organization permission", async ({ page }) => {
@@ -164,6 +166,8 @@ test.describe.serial("Permissions section tests", () => {
       page,
       "Successfully updated the permission",
     );
+    await goToPermissions(page);
+    await deletePermission(page, "test-organization-permission");
   });
 
   test.describe.serial("evaluate permissions", () => {
