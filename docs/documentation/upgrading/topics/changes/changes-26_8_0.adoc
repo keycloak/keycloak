@@ -38,6 +38,12 @@ Revalidating certificates can be problematic in certain installations (for examp
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
+=== Clusterless feature will be removed
+
+The experimental `clusterless` feature will be removed in a future release. The `stateless` feature is the successor for running {project_name} without depending on an external Infinispan cluster. While `clusterless` offloads all session data to an external Infinispan cluster, `stateless` stores session data in the database and uses the embedded Infinispan only as a cache.
+
+If you are using `--features=clusterless`, migrate to `--features=stateless` before upgrading to a future release.
+
 === Group hierarchy search returns stripped ancestors under Fine-Grained Admin Permissions
 
 When Fine-Grained Admin Permissions is enabled and a delegated administrator has `view` permission on a group but not on its ancestors, the Admin REST API now returns the full group hierarchy with non-viewable ancestor groups represented as stripped representations. Stripped ancestor representations contain only `id`, `name`, `path`, `parentId`, and `description` — sensitive fields such as `attributes`, `realmRoles`, `clientRoles`, and `access` are omitted.
