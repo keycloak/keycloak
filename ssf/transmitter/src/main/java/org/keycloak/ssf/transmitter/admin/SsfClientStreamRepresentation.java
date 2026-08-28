@@ -38,6 +38,14 @@ public class SsfClientStreamRepresentation {
     private Integer lastVerifiedAt;
 
     /**
+     * Epoch seconds of the most recent successfully served poll, or
+     * {@code null} if the stream has never been polled. Only meaningful
+     * for POLL-delivery streams. Accurate to within
+     * {@code SsfActivityTracker.POLL_STAMP_GRANULARITY_SECONDS}.
+     */
+    private Integer lastPollCompletedAt;
+
+    /**
      * Origin / ownership marker — see
      * {@link ManagedBy}. Set at creation time and immutable thereafter.
      * Surfaced to the admin UI so the Stream tab can render the
@@ -140,6 +148,14 @@ public class SsfClientStreamRepresentation {
 
     public void setLastVerifiedAt(Integer lastVerifiedAt) {
         this.lastVerifiedAt = lastVerifiedAt;
+    }
+
+    public Integer getLastPollCompletedAt() {
+        return lastPollCompletedAt;
+    }
+
+    public void setLastPollCompletedAt(Integer lastPollCompletedAt) {
+        this.lastPollCompletedAt = lastPollCompletedAt;
     }
 
     public ManagedBy getManagedBy() {
