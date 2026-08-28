@@ -6,7 +6,11 @@ import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { ScrollForm } from "@keycloak/keycloak-ui-shared";
 import type { AddAlertFunction } from "@keycloak/keycloak-ui-shared";
-import { convertAttributeNameToForm, toUpperCase } from "../util";
+import {
+  convertAttributeNameToForm,
+  normalizeBooleanOverride,
+  toUpperCase,
+} from "../util";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import type { FormFields, SaveOptions } from "./ClientDetails";
 import { AdvancedSettings } from "./advanced/AdvancedSettings";
@@ -61,6 +65,9 @@ const toFormValue = (name: string, value?: string) => {
     } catch {
       return [];
     }
+  }
+  if (name === "revoke.refresh.token") {
+    return normalizeBooleanOverride(value);
   }
   return value || "";
 };

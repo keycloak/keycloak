@@ -21,9 +21,7 @@ export const RefreshTokenRevocation = () => {
   const { realmRepresentation: realm } = useRealm();
   const { watch } = useFormContext();
 
-  const revokeRefreshToken = String(watch(REVOKE_REFRESH_TOKEN, "") ?? "")
-    .trim()
-    .toLowerCase();
+  const revokeRefreshToken = watch(REVOKE_REFRESH_TOKEN, "");
   const realmRevokeRefreshToken = realm.revokeRefreshToken ?? false;
   // Only explicit "true"/"false" are overrides, anything else inherits the realm setting (same as the server side)
   const effectiveRevokeRefreshToken =
