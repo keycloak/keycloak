@@ -25,6 +25,7 @@ import io.quarkus.arc.Arc;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.ext.web.client.WebClient;
@@ -76,6 +77,8 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
         backoffMultiplier = Double.parseDouble(config.get("backoff-multiplier", "2.0"));
         useJitter = config.getBoolean("use-jitter", true);
         jitterFactor = Double.parseDouble(config.get("jitter-factor", "0.5"));
+
+        checkOpenSslPresence();
     }
 
     @Override
@@ -126,12 +129,6 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
                 .defaultValue(900000L)
                 .add()
                 .property()
-                .name("connection-ttl-millis")
-                .type("long")
-                .helpText("Maximum time-to-live for pooled connections.")
-                .defaultValue(-1L)
-                .add()
-                .property()
                 .name("disable-trust-manager")
                 .type("boolean")
                 .helpText("Disable trust verification (INSECURE).")
@@ -156,7 +153,6 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
         if (webClient == null) {
             synchronized (this) {
                 if (webClient == null) {
-                    checkOpenSslPresence();
                     Vertx vertx = Arc.container().instance(Vertx.class).get();
                     WebClientOptions options = buildOptions(session);
                     webClient = WebClient.create(vertx, options);
@@ -172,8 +168,7 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
             throw new RuntimeException("Invalid openssl-required value: '" + policy
                     + "'. Valid values: 'fail', 'warn', 'none'.");
         }
-        boolean available = OpenSsl.isAvailable();
-        if (!available) {
+        if (!OpenSsl.isAvailable()) {
             if ("fail".equals(policy)) {
                 throw new RuntimeException(
                         "HTTP_CLIENT_V2 requires OpenSSL but it is not available. "
@@ -188,6 +183,9 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
 
     private WebClientOptions buildOptions(KeycloakSession session) {
         WebClientOptions options = new WebClientOptions();
+        if (OpenSsl.isAvailable()) {
+            options.setSslEngineOptions(new OpenSSLEngineOptions());
+        }
 
         options.setMaxPoolSize(config.getInt("max-pooled-per-route", 64));
 
