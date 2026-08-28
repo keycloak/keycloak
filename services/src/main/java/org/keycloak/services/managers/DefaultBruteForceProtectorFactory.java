@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -37,7 +38,7 @@ public class DefaultBruteForceProtectorFactory implements BruteForceProtectorFac
 
     @Override
     public BruteForceProtector create(KeycloakSession session) {
-        return protector;
+        return protector != null ? protector : new DefaultLockingBruteForceProtector(session.getKeycloakSessionFactory(), session);
     }
 
     @Override
@@ -48,7 +49,7 @@ public class DefaultBruteForceProtectorFactory implements BruteForceProtectorFac
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        protector = allowConcurrentRequests ? new DefaultBruteForceProtector(factory) : new DefaultBlockingBruteForceProtector(factory);
+        protector = Profile.isFeatureEnabled(Profile.Feature.LOGIN_FAILURES_V2) ? null : allowConcurrentRequests ? new DefaultBruteForceProtector(factory) : new DefaultBlockingBruteForceProtector(factory);
     }
 
     @Override
