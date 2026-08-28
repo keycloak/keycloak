@@ -62,6 +62,7 @@ import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -321,26 +322,45 @@ public class V1TokenExchangeProvider extends AbstractTokenExchangeProvider {
         AuthenticationManager.setClientScopesInSession(session, authSession);
 
         // For offline sessions, attachAuthenticationSession must not call createClientSession directly
-        // on the offline user session: createClientSession only writes to the Infinispan cache and
-        // skips the UserSessionPersisterProvider call that createOfflineClientSession makes. Use a
-        // transient wrapper so the client session is built in memory first, then import it into
-        // offline storage (Infinispan offline cache + JPA) via createOfflineClientSession.
+        // on the offline user session: createClientSession writes to the online Infinispan cache and
+        // skips UserSessionPersisterProvider, resulting in an offline=0 row. The correct path is
+        // createOfflineClientSession, but it requires a source client session to copy data from.
+        // Strategy: use a transient wrapper only when no existing client session is present
+        // (so createClientSession runs safely on the transient session). When a session already
+        // exists, attach directly so restartClientSession() or update logic applies correctly.
         final boolean isOfflineSession = targetUserSession.isOffline();
-        final UserSessionModel sessionForAttach = isOfflineSession
-                ? UserSessionUtil.createTransientUserSession(session, targetUserSession)
-                : targetUserSession;
 
-        ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, sessionForAttach, authSession);
-        if (isOfflineSession) {
-            session.sessions().createOfflineClientSession(clientSessionCtx.getClientSession(), targetUserSession);
+        ClientSessionContext clientSessionCtx;
+        AuthenticatedClientSessionModel existingTargetSession =
+                targetUserSession.getAuthenticatedClientSessionByClient(targetClient.getId());
+        if (isOfflineSession && existingTargetSession == null) {
+            UserSessionModel transientSession = UserSessionUtil.createTransientUserSession(session, targetUserSession);
+            AuthenticatedClientSessionModel transientClientSession =
+                    TokenManager.attachAuthenticationSession(this.session, transientSession, authSession).getClientSession();
+            AuthenticatedClientSessionModel offlineClientSession =
+                    session.sessions().createOfflineClientSession(transientClientSession, targetUserSession);
+            // Rebuild around the persisted offline session so the encoder marks the token OFFLINE,
+            // not OFFLINE_TRANSIENT_CLIENT (which would bypass revocation checks).
+            clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(offlineClientSession, session);
+        } else {
+            clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession);
         }
 
-        if (!AuthenticationManager.isClientSessionValid(realm, client, targetUserSession, targetUserSession.getAuthenticatedClientSessionByClient(client.getId()))) {
+        // Re-read after the target attach so that when target == requester the block below is
+        // correctly skipped (the session was just created/updated by the first attach).
+        AuthenticatedClientSessionModel existingRequesterSession =
+                targetUserSession.getAuthenticatedClientSessionByClient(client.getId());
+        if (!AuthenticationManager.isClientSessionValid(realm, client, targetUserSession, existingRequesterSession)) {
             // create the requester client session if needed
             AuthenticationSessionModel clientAuthSession = createSessionModel(targetUserSession, rootAuthSession, targetUser, client, scope);
-            AuthenticatedClientSessionModel requesterClientSession = TokenManager.attachAuthenticationSession(this.session, sessionForAttach, clientAuthSession).getClientSession();
-            if (isOfflineSession) {
-                session.sessions().createOfflineClientSession(requesterClientSession, targetUserSession);
+            if (isOfflineSession && existingRequesterSession == null) {
+                UserSessionModel transientSession = UserSessionUtil.createTransientUserSession(session, targetUserSession);
+                AuthenticatedClientSessionModel transientClientSession =
+                        TokenManager.attachAuthenticationSession(this.session, transientSession, clientAuthSession).getClientSession();
+                session.sessions().createOfflineClientSession(transientClientSession, targetUserSession);
+            } else {
+                // Session exists but is invalid: restartClientSession() is called internally.
+                TokenManager.attachAuthenticationSession(this.session, targetUserSession, clientAuthSession);
             }
         }
 
