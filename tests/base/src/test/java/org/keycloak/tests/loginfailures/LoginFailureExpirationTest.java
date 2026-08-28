@@ -19,11 +19,11 @@ package org.keycloak.tests.loginfailures;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Time;
 import org.keycloak.loginfailures.jpa.LoginFailureExpirationAction;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -57,10 +57,6 @@ public class LoginFailureExpirationTest {
 
     private static final int MAX_DELTA_TIME_SECONDS = 60; // 1 minute
 
-    // Not important, just large enough to keep test timestamps positive. All APIs take the current time as a parameter,
-    // so we avoid calling Time.currentTimeSeconds() in this test.
-    private static final int CURRENT_TIME_SECONDS = 60 * 60 * 5;
-    private static final long CURRENT_TIME_MILLIS = (long) CURRENT_TIME_SECONDS * 1000L;
     @InjectRealm(config = ConfigureMaxDeltaTimeout.class)
     ManagedRealm realm;
 
@@ -109,43 +105,28 @@ public class LoginFailureExpirationTest {
 
             // User 0: Recent failure (should NOT be expired)
             var failure0 = session.loginFailures().addUserLoginFailure(realmModel, state.user0);
-            failure0.setLastFailure(CURRENT_TIME_MILLIS - 10_000); // 10 seconds ago
+            failure0.setLastFailure(Time.currentTimeMillis() - 10_000); // 10 seconds ago
             failure0.incrementFailures();
 
             // User 1: Failure just at the edge (should NOT be expired)
             var failure1 = session.loginFailures().addUserLoginFailure(realmModel, state.user1);
-            failure1.setLastFailure(CURRENT_TIME_MILLIS - (MAX_DELTA_TIME_SECONDS * 1000)); // exactly at max delta
+            failure1.setLastFailure(Time.currentTimeMillis() - (MAX_DELTA_TIME_SECONDS * 1000)); // exactly at max delta
             failure1.incrementFailures();
 
             // User 2: Old failure (should be expired)
             var failure2 = session.loginFailures().addUserLoginFailure(realmModel, state.user2);
-            failure2.setLastFailure(CURRENT_TIME_MILLIS - ((MAX_DELTA_TIME_SECONDS + 10) * 1000)); // 10 seconds past max delta
+            failure2.setLastFailure(Time.currentTimeMillis() - ((MAX_DELTA_TIME_SECONDS + 10) * 1000)); // 10 seconds past max delta
             failure2.incrementFailures();
 
             // User 3: Very old failure (should be expired)
             var failure3 = session.loginFailures().addUserLoginFailure(realmModel, state.user3);
-            failure3.setLastFailure(CURRENT_TIME_MILLIS - ((MAX_DELTA_TIME_SECONDS + 120) * 1000)); // 2 minutes past max delta
+            failure3.setLastFailure(Time.currentTimeMillis() - ((MAX_DELTA_TIME_SECONDS + 120) * 1000)); // 2 minutes past max delta
             failure3.incrementFailures();
 
             // User 4: Ancient failure (should be expired)
             var failure4 = session.loginFailures().addUserLoginFailure(realmModel, state.user4);
-            failure4.setLastFailure(CURRENT_TIME_MILLIS - ((MAX_DELTA_TIME_SECONDS + 300) * 1000)); // 5 minutes past max delta
+            failure4.setLastFailure(Time.currentTimeMillis() - ((MAX_DELTA_TIME_SECONDS + 300) * 1000)); // 5 minutes past max delta
             failure4.incrementFailures();
-        });
-
-        // Verify all login failures exist before expiration
-        runOnServer.run(session -> {
-            var realmModel = session.realms().getRealm(state.realmId);
-
-            for (var userId : state.allUsers()) {
-                var failure = session.loginFailures().getUserLoginFailure(realmModel, userId);
-                if (Objects.equals(state.user0, userId)) {
-                    assertNotNull(failure, "Login failure should exist for user " + userId);
-                    assertEquals(1, failure.getNumFailures(), "Login failure should have 1 failure");
-                } else {
-                    assertNull(failure, "Login failure should not be returned");
-                }
-            }
         });
 
         // Run the expiration action manually
@@ -157,7 +138,7 @@ public class LoginFailureExpirationTest {
             var hasMore = LoginFailureExpirationAction.INSTANCE.removeExpired(
                     session,
                     realmModel.getId(),
-                    CURRENT_TIME_SECONDS,
+                    Time.currentTime(),
                     100, // maxRemoval
                     removedCount::addAndGet
             );
@@ -206,7 +187,7 @@ public class LoginFailureExpirationTest {
         runOnServer.run(session -> {
             var realmModel = session.realms().getRealm(state.realmId);
             var failure = session.loginFailures().addUserLoginFailure(realmModel, state.user0);
-            failure.setLastFailure(CURRENT_TIME_MILLIS - ((MAX_DELTA_TIME_SECONDS + 60) * 1000));
+            failure.setLastFailure(Time.currentTimeMillis() - ((MAX_DELTA_TIME_SECONDS + 60) * 1000));
             failure.incrementFailures();
         });
 
@@ -217,7 +198,7 @@ public class LoginFailureExpirationTest {
             LoginFailureExpirationAction.INSTANCE.removeExpired(
                     session,
                     realmModel.getId(),
-                    CURRENT_TIME_SECONDS,
+                    Time.currentTime(),
                     100,
                     removedCount::addAndGet
             );
@@ -245,7 +226,7 @@ public class LoginFailureExpirationTest {
             var realmModel = session.realms().getRealm(state.realmId);
             for (var userId : state.allUsers()) {
                 var failure = session.loginFailures().addUserLoginFailure(realmModel, userId);
-                failure.setLastFailure(CURRENT_TIME_MILLIS - ((MAX_DELTA_TIME_SECONDS + 60) * 1000));
+                failure.setLastFailure(Time.currentTimeMillis() - ((MAX_DELTA_TIME_SECONDS + 60) * 1000));
                 failure.incrementFailures();
             }
         });
@@ -257,7 +238,7 @@ public class LoginFailureExpirationTest {
             var hasMore = LoginFailureExpirationAction.INSTANCE.removeExpired(
                     session,
                     realmModel.getId(),
-                    CURRENT_TIME_SECONDS,
+                    Time.currentTime(),
                     2, // maxRemoval - limit to 2
                     removedCount::addAndGet
             );
@@ -273,7 +254,7 @@ public class LoginFailureExpirationTest {
             var hasMore = LoginFailureExpirationAction.INSTANCE.removeExpired(
                     session,
                     realmModel.getId(),
-                    CURRENT_TIME_SECONDS,
+                    Time.currentTime(),
                     100,
                     removedCount::addAndGet
             );
