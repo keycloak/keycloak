@@ -50,7 +50,6 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
-import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
@@ -84,12 +83,12 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
 
     private ResourceRepresentation resource;
 
-    @InjectEvents
-    Events events;
+    private Events events;
     private PolicyRepresentation onlyOwnerPolicy;
 
     @BeforeEach
     public void configureAuthorization() throws Exception {
+        events = createEvents(REALM_NAME);
         ClientResource client = getClient(getRealm());
         AuthorizationResource authorization = client.authorization();
         onlyOwnerPolicy = createOnlyOwnerPolicy(authorization);
