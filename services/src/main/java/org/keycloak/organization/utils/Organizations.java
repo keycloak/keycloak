@@ -64,6 +64,12 @@ import static org.keycloak.utils.StringUtil.isBlank;
 
 public class Organizations {
 
+    /**
+     * Authentication session note holding the invitation token that started the flow, so the
+     * invitation survives the redirect to an identity provider and the flow reset that follows.
+     */
+    public static final String INVITATION_TOKEN_NOTE = "ORG_INVITATION_TOKEN";
+
     private static final String WILDCARD_PREFIX = "*.";
     private static final int MIN_DOMAIN_PARTS = 2;
     private static final int MAX_DOMAIN_PARTS = 10;
@@ -189,15 +195,18 @@ public class Organizations {
 
     public static InviteOrgActionToken parseInvitationToken(KeycloakSession session, HttpRequest request) throws VerificationException {
         MultivaluedMap<String, String> queryParameters = request.getUri().getQueryParameters();
-        String tokenFromQuery = queryParameters.getFirst(Constants.TOKEN);
 
-        if (tokenFromQuery == null) {
+        return parseInvitationToken(session, queryParameters.getFirst(Constants.TOKEN));
+    }
+
+    public static InviteOrgActionToken parseInvitationToken(KeycloakSession session, String tokenString) throws VerificationException {
+        if (tokenString == null) {
             return null;
         }
 
         KeycloakContext context = session.getContext();
         RealmModel realm = session.getContext().getRealm();
-        TokenVerifier<InviteOrgActionToken> verifier = TokenVerifier.create(tokenFromQuery, InviteOrgActionToken.class)
+        TokenVerifier<InviteOrgActionToken> verifier = TokenVerifier.create(tokenString, InviteOrgActionToken.class)
                 .withChecks(TokenVerifier.IS_ACTIVE,
                         new TokenVerifier.RealmUrlCheck(Urls.realmIssuer(context.getUri().getBaseUri(), realm.getName())));
 
