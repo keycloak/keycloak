@@ -254,9 +254,11 @@ public abstract class AbstractWebAuthnVirtualTest implements UseVirtualAuthentic
 
         registerPage.assertCurrent();
         registerPage.register("firstName", "lastName", email, username, password, password);
+        webAuthnRegisterPage.assertCurrent();
+        String userId = AdminApiUtil.findUserByUsername(managedRealm.admin(), username).getId();
+        managedRealm.cleanup().add(r -> r.users().get(userId).remove());
 
         // User was registered. Now he needs to register WebAuthn credential
-        webAuthnRegisterPage.assertCurrent();
         webAuthnRegisterPage.clickRegister();
 
         if (shouldSuccess) {
@@ -520,9 +522,6 @@ public abstract class AbstractWebAuthnVirtualTest implements UseVirtualAuthentic
                 .webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister(true);
 
             builder.browserFlow("browser-webauthn");
-
-            builder.users(UserBuilder.create(USERNAME).password(PASSWORD).name("WebAuthn", "User")
-                    .email("webauthn-user@localhost").emailVerified(true));
 
             builder.users(UserBuilder.create("test-user@localhost")
                     .enabled(true)
