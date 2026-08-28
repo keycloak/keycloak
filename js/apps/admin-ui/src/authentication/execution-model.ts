@@ -337,7 +337,7 @@ export class ExecutionList {
         };
         return {
           kind: "reorder",
-          change: this.getChange(dragged, order),
+          change: this.#reorderChange(dragged, order),
           preview: reorderPreview,
           order,
         };
@@ -371,7 +371,7 @@ export class ExecutionList {
 
     return {
       kind: "reorder",
-      change: this.getChange(dragged, order),
+      change: this.#reorderChange(dragged, order),
       preview,
       order,
     };
@@ -400,6 +400,21 @@ export class ExecutionList {
       }
     }
     return siblingIndex;
+  }
+
+  #reorderChange(dragged: ExpandableExecution, order: string[]): IndexChange {
+    const draggedId = dragged.id!;
+    const draggedLevel = dragged.level || 0;
+    const currentParent = this.#findParentOf(draggedId);
+    return new IndexChange(
+      dragged.index || 0,
+      this.#siblingIndexInOrder(
+        draggedId,
+        draggedLevel,
+        currentParent?.id,
+        order,
+      ),
+    );
   }
 
   getChange(
