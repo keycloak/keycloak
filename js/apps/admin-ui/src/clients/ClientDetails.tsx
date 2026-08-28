@@ -43,6 +43,7 @@ import {
   convertFormValuesToObject,
   convertToFormValues,
   exportClient,
+  normalizeBooleanOverride,
 } from "../util";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { useParams } from "../utils/useParams";
@@ -359,6 +360,14 @@ export default function ClientDetails() {
         Object.entries(JSON.parse(client.attributes["acr.loa.map"])).flatMap(
           ([key, value]) => ({ key, value }),
         ),
+      );
+    }
+    if (client.attributes?.["revoke.refresh.token"]) {
+      form.setValue(
+        convertAttributeNameToForm<FormFields>(
+          "attributes.revoke.refresh.token",
+        ),
+        normalizeBooleanOverride(client.attributes["revoke.refresh.token"]),
       );
     }
     // reset dirty as for reason it is not resetting
