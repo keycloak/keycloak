@@ -77,7 +77,6 @@ import org.keycloak.representations.idm.authorization.ScopePermissionRepresentat
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
-import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
@@ -142,8 +141,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     @ArquillianResource
     protected ContainerController controller;
 
-    @InjectEvents
-    Events events;
+    private Events events;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -192,6 +190,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     @BeforeEach
     public void configureAuthorization() throws Exception {
+        events = createEvents("authz-test");
         configureAuthorization(RESOURCE_SERVER_TEST);
         configureAuthorization(PAIRWISE_RESOURCE_SERVER_TEST);
     }
