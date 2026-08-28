@@ -16,6 +16,8 @@ type ScopeSelectProps = {
   preSelected?: string;
 };
 
+const SCOPES_PAGE_SIZE = 100;
+
 export const ScopeSelect = ({
   clientId,
   resourceId,
@@ -59,6 +61,26 @@ export const ScopeSelect = ({
       </SelectOption>
     ));
 
+  const listAllScopes = async (name?: string) => {
+    const scopes: ScopeRepresentation[] = [];
+
+    for (let first = 0; ; first += SCOPES_PAGE_SIZE) {
+      const currentPage = await adminClient.clients.listAllScopes({
+        id: clientId,
+        deep: false,
+        first,
+        max: SCOPES_PAGE_SIZE,
+        ...(name ? { name } : {}),
+      });
+
+      scopes.push(...currentPage);
+
+      if (currentPage.length < SCOPES_PAGE_SIZE) {
+        return scopes;
+      }
+    }
+  };
+
   // Changing the resource invalidates the current scope selection.
   useEffect(() => {
     if (previousResourceId.current === resourceId) {
@@ -70,17 +92,12 @@ export const ScopeSelect = ({
     if (resourceId) {
       setValue("scopes", []);
     }
-  }, [resourceId]);
+  }, [resourceId, setValue]);
 
   useFetch(
     async (): Promise<ScopeRepresentation[]> => {
       if (!resourceId) {
-        return adminClient.clients.listAllScopes(
-          Object.assign(
-            { id: clientId, deep: false, max: 1000 },
-            search === "" ? null : { name: search },
-          ),
-        );
+        return listAllScopes(search === "" ? undefined : search);
       }
       return adminClient.clients.listScopesByResource({
         id: clientId,
