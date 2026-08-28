@@ -19,6 +19,7 @@ package org.keycloak.tests.loginfailures;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.keycloak.admin.client.Keycloak;
@@ -138,8 +139,12 @@ public class LoginFailureExpirationTest {
 
             for (var userId : state.allUsers()) {
                 var failure = session.loginFailures().getUserLoginFailure(realmModel, userId);
-                assertNotNull(failure, "Login failure should exist for user " + userId);
-                assertEquals(1, failure.getNumFailures(), "Login failure should have 1 failure");
+                if (Objects.equals(state.user0, userId)) {
+                    assertNotNull(failure, "Login failure should exist for user " + userId);
+                    assertEquals(1, failure.getNumFailures(), "Login failure should have 1 failure");
+                } else {
+                    assertNull(failure, "Login failure should not be returned");
+                }
             }
         });
 
