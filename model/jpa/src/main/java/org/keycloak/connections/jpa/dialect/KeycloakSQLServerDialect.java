@@ -42,11 +42,12 @@ public class KeycloakSQLServerDialect extends SQLServerDialect {
                 return new SQLServerSqlAstTranslator<>(sessionFactory, statement) {
                     @Override
                     protected void visitInsertStatementOnly(InsertSelectStatement statement) {
-                        if (statement.getConflictClause() == null) {
-                            super.visitInsertStatementOnly(statement);
-                        } else {
+                        if (statement.getConflictClause() != null
+                                && !statement.getConflictClause().getConstraintColumnNames().isEmpty()) {
                             visitInsertStatementEmulateMerge(statement);
                             appendSql(';');
+                        } else {
+                            super.visitInsertStatementOnly(statement);
                         }
                     }
                 };
