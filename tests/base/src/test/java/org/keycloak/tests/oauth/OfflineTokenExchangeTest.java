@@ -26,8 +26,6 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
-import org.keycloak.testframework.ui.annotations.InjectWebDriver;
-import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.TokenUtil;
 
@@ -59,9 +57,6 @@ public class OfflineTokenExchangeTest {
 
     @InjectOAuthClient
     OAuthClient oauth;
-
-    @InjectWebDriver
-    ManagedWebDriver driver;
 
     @InjectRunOnServer
     RunOnServerClient runOnServer;
