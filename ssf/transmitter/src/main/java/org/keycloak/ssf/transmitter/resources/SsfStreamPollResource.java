@@ -17,6 +17,7 @@ import org.keycloak.ssf.transmitter.delivery.poll.PollResponse;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.support.SsfActivityTracker;
 import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -143,6 +144,12 @@ public class SsfStreamPollResource {
         }
 
         PollResponse response = pollDeliveryService.poll(callerClient, body);
+
+        // 5. Record the poll as completed (end-of-request, success path
+        //    only) so the admin console can show when this receiver last
+        //    polled. Write-coalesced — see SsfActivityTracker.
+        SsfActivityTracker.stampPollCompleted(callerClient);
+
         return Response.ok(response).build();
     }
 

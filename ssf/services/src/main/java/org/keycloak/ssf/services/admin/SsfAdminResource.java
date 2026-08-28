@@ -410,16 +410,26 @@ public class SsfAdminResource {
         rep.setCreatedAt(streamConfig.getCreatedAt());
         rep.setUpdatedAt(streamConfig.getUpdatedAt());
         rep.setManagedBy(streamConfig.getManagedBy());
-        String lastVerifiedAtRaw = client.getAttribute(ClientStreamStore.SSF_LAST_VERIFIED_AT_KEY);
-        if (lastVerifiedAtRaw != null && !lastVerifiedAtRaw.isBlank()) {
-            try {
-                rep.setLastVerifiedAt(Integer.valueOf(lastVerifiedAtRaw));
-            } catch (NumberFormatException ignored) {
-                // Defensive: ignore a malformed attribute value rather than
-                // failing the whole admin GET for this stream.
-            }
-        }
+        rep.setLastVerifiedAt(readEpochSecondsAttribute(client, ClientStreamStore.SSF_LAST_VERIFIED_AT_KEY));
+        rep.setLastPollCompletedAt(readEpochSecondsAttribute(client, ClientStreamStore.SSF_STREAM_LAST_POLL_COMPLETED_AT_KEY));
         return rep;
+    }
+
+    /**
+     * Reads an epoch-seconds client attribute, returning {@code null} when
+     * absent, blank or malformed. Defensive: a bad timestamp attribute
+     * must not fail the whole admin GET for the stream.
+     */
+    protected static Integer readEpochSecondsAttribute(ClientModel client, String key) {
+        String raw = client.getAttribute(key);
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.valueOf(raw.trim());
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
     }
 
     /**

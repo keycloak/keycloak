@@ -43,6 +43,8 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.server.DefaultKeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
@@ -125,6 +127,9 @@ public class SsfTransmitterPollDeliveryTests {
 
     @InjectHttpServer
     HttpServer mockReceiverServer;
+
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
 
     private final BlockingQueue<String> pushes = new LinkedBlockingQueue<>();
 
@@ -471,6 +476,108 @@ public class SsfTransmitterPollDeliveryTests {
         }
     }
 
+    // --- last poll timestamp ------------------------------------------
+
+    @Test
+    public void poll_recordsLastPollCompletedAt() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_POLL, RECEIVER_POLL_SECRET);
+        StreamConfig stream = createPollStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        // Fresh stream — never polled, so the admin representation must
+        // not carry a lastPollCompletedAt at all (NON_NULL serialization).
+        JsonNode beforePoll = getStreamViaAdmin(RECEIVER_POLL);
+        Assertions.assertFalse(beforePoll.has("lastPollCompletedAt"),
+                "a never-polled stream must not report lastPollCompletedAt");
+
+        long beforeSeconds = System.currentTimeMillis() / 1000;
+        poll(token, RECEIVER_POLL, stream.getStreamId(), pollBody(null, true, List.of()));
+        long afterSeconds = System.currentTimeMillis() / 1000;
+
+        JsonNode afterPoll = getStreamViaAdmin(RECEIVER_POLL);
+        JsonNode stamp = afterPoll.path("lastPollCompletedAt");
+        Assertions.assertTrue(stamp.isIntegralNumber(),
+                "a served poll must stamp lastPollCompletedAt (epoch seconds) on the stream; was " + stamp);
+        long stampSeconds = stamp.asLong();
+        Assertions.assertTrue(stampSeconds >= beforeSeconds - 1 && stampSeconds <= afterSeconds + 1,
+                "lastPollCompletedAt=" + stampSeconds + " should fall within the poll window ["
+                        + beforeSeconds + ", " + afterSeconds + "]");
+
+        // The stamp is write-coalesced (POLL_STAMP_GRANULARITY_SECONDS) —
+        // an immediate second poll must not move it backwards or clear it.
+        poll(token, RECEIVER_POLL, stream.getStreamId(), pollBody(null, true, List.of()));
+        JsonNode afterSecondPoll = getStreamViaAdmin(RECEIVER_POLL);
+        Assertions.assertTrue(afterSecondPoll.path("lastPollCompletedAt").asLong() >= stampSeconds,
+                "a subsequent poll must never move lastPollCompletedAt backwards");
+    }
+
+    @Test
+    public void poll_emptyPollAfterGranularityAdvancesLastPollCompletedAt() throws Exception {
+
+        // Regression guard: an empty poll (no pending events) outside the
+        // coalescing window must still advance the stamp — "last poll" is
+        // about the receiver polling, not about events being served.
+        String token = obtainReceiverToken(RECEIVER_POLL, RECEIVER_POLL_SECRET);
+        StreamConfig stream = createPollStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        poll(token, RECEIVER_POLL, stream.getStreamId(), pollBody(null, true, List.of()));
+        long firstStamp = getStreamViaAdmin(RECEIVER_POLL).path("lastPollCompletedAt").asLong();
+        Assertions.assertTrue(firstStamp > 0, "precondition: first poll should stamp");
+
+        int offsetSeconds = 120;
+        timeOffSet.set(offsetSeconds);
+
+        JsonNode emptyPoll = poll(token, RECEIVER_POLL, stream.getStreamId(), pollBody(null, true, List.of()));
+        Assertions.assertTrue(emptyPoll.path("sets").isEmpty(), "precondition: nothing pending, poll must be empty");
+
+        long secondStamp = getStreamViaAdmin(RECEIVER_POLL).path("lastPollCompletedAt").asLong();
+        Assertions.assertTrue(secondStamp >= firstStamp + offsetSeconds - 1,
+                "empty poll after the coalescing window must advance lastPollCompletedAt; first=" + firstStamp
+                        + " second=" + secondStamp);
+    }
+
+    @Test
+    public void poll_rejectedPollDoesNotRecordLastPollCompletedAt() throws Exception {
+
+        // Receiver B polls receiver A's URL with B's token → silent 404.
+        // A rejected poll is not a "completed" poll: A's stream must
+        // stay un-stamped.
+        String aToken = obtainReceiverToken(RECEIVER_POLL, RECEIVER_POLL_SECRET);
+        StreamConfig aStream = createPollStream(aToken, Set.of(CaepSessionRevoked.TYPE));
+
+        String bToken = obtainReceiverToken(RECEIVER_POLL_OTHER, RECEIVER_POLL_OTHER_SECRET);
+
+        try (SimpleHttpResponse response = http.doPost(pollEndpoint(RECEIVER_POLL, aStream.getStreamId()))
+                .json(pollBodyAsMap(null, true, List.of()))
+                .auth(bToken)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(404, response.getStatus());
+        }
+
+        JsonNode aStreamRep = getStreamViaAdmin(RECEIVER_POLL);
+        Assertions.assertFalse(aStreamRep.has("lastPollCompletedAt"),
+                "a rejected poll must not stamp lastPollCompletedAt on the targeted stream");
+    }
+
+    @Test
+    public void streamDelete_clearsLastPollCompletedAt() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_POLL, RECEIVER_POLL_SECRET);
+        StreamConfig stream = createPollStream(token, Set.of(CaepSessionRevoked.TYPE));
+        poll(token, RECEIVER_POLL, stream.getStreamId(), pollBody(null, true, List.of()));
+        Assertions.assertTrue(getStreamViaAdmin(RECEIVER_POLL).has("lastPollCompletedAt"),
+                "precondition: the poll should have stamped lastPollCompletedAt");
+
+        // Delete + re-create: the stamp is per-stream runtime state and
+        // must not leak onto the successor stream as a stale "last poll".
+        deleteStreamViaAdmin(RECEIVER_POLL);
+        createPollStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        Assertions.assertFalse(getStreamViaAdmin(RECEIVER_POLL).has("lastPollCompletedAt"),
+                "re-created stream must not inherit lastPollCompletedAt from the deleted one");
+    }
+
     @Test
     public void poll_unauthenticated_returns401() throws Exception {
 
@@ -689,6 +796,23 @@ public class SsfTransmitterPollDeliveryTests {
         ClientRepresentation client = findClientByClientId(clientId);
         Assertions.assertNotNull(client, () -> "expected client '" + clientId + "' to exist");
         deleteStreamViaAdminInternal(client.getClientId());
+    }
+
+    /**
+     * Reads the admin-side stream representation for the given receiver
+     * ({@code GET /admin/realms/{realm}/ssf/clients/{clientId}/stream}).
+     */
+    protected JsonNode getStreamViaAdmin(String clientOauthId) throws IOException {
+        String adminStreamUrl = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
+                + "/ssf/clients/" + clientOauthId + "/stream";
+        try (SimpleHttpResponse response = http.doGet(adminStreamUrl)
+                .auth(adminClient.tokenManager().getAccessTokenString())
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(200, response.getStatus(),
+                    "admin stream GET should return 200; was " + response.getStatus());
+            return response.asJson();
+        }
     }
 
     protected void deleteStreamViaAdminInternal(String clientOauthId) {
