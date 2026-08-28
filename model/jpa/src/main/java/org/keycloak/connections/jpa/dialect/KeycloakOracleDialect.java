@@ -42,10 +42,11 @@ public class KeycloakOracleDialect extends OracleDialect {
                 return new OracleSqlAstTranslator<>(sessionFactory, statement) {
                     @Override
                     protected void visitInsertStatementOnly(InsertSelectStatement statement) {
-                        if (statement.getConflictClause() == null) {
-                            super.visitInsertStatementOnly(statement);
-                        } else {
+                        if (statement.getConflictClause() != null
+                                && !statement.getConflictClause().getConstraintColumnNames().isEmpty()) {
                             visitInsertStatementEmulateMerge(statement);
+                        } else {
+                            super.visitInsertStatementOnly(statement);
                         }
                     }
                 };
