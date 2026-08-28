@@ -481,6 +481,11 @@ describe("ExecutionList", () => {
       const resolved = list.resolveDropTarget("1", "2", "after");
 
       expect(resolved).not.toBeNull();
+      expect(resolved!.kind).toBe("reorder");
+      expect(resolved!.change).toBeInstanceOf(IndexChange);
+      const reorderChange = resolved!.change as IndexChange;
+      expect(reorderChange.oldIndex).toBe(0);
+      expect(reorderChange.newIndex).toBe(1);
       expect(resolved!.preview.mode).toBe("reorder-after");
       expect(resolved!.preview.insertIndex).toBe(6);
       expect(resolved!.order).toEqual(["2", "3", "4", "5", "6", "1", "7"]);

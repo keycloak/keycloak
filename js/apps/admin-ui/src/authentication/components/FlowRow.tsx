@@ -6,6 +6,7 @@ import { Td, TreeRowWrapper } from "@patternfly/react-table";
 import { useTranslation } from "react-i18next";
 import type { DropInfo, ExpandableExecution } from "../execution-model";
 import { AddFlowDropdown } from "./AddFlowDropdown";
+import { shouldShowDropLineAfter } from "./drop-line-utils";
 import { EditFlow } from "./EditFlow";
 import { ExecutionConfigModal } from "./ExecutionConfigModal";
 import { FlowRequirementDropdown } from "./FlowRequirementDropdown";
@@ -90,11 +91,7 @@ export const FlowRow = ({
     isDropTarget &&
     dropMode === "reorder-before" &&
     dropInfo?.insertIndex === visualIndex;
-  const showDropLineAfter =
-    isDropTarget &&
-    dropMode === "reorder-after" &&
-    visualIndex !== undefined &&
-    dropInfo?.insertIndex === visualIndex + 1;
+  const showDropLineAfter = shouldShowDropLineAfter(dropInfo, visualIndex);
 
   const getDropClassName = () => {
     const classes = ["keycloak__authentication__flow-row"];
