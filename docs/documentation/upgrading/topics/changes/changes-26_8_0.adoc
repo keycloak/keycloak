@@ -222,7 +222,7 @@ To avoid the deprecation warning at startup, set those SPI options to `false`.
 [#disabling-persistent-user-sessions-volatile-sessions-is-deprecated]
 === Disabling persistent user sessions (volatile sessions) is deprecated
 
-Disabling the `persistent-user-sessions` feature (volatile sessions) is deprecated and will be removed in a future release.Persistent user sessions will become the only supported mode.If you have explicitly disabled persistent user sessions with `--features-disabled=persistent-user-sessions`, remove this option before upgrading to a future release.
+Disabling the `persistent-user-sessions` feature (volatile sessions) is deprecated and will be removed in a future release. Persistent user sessions will become the only supported mode. If you have explicitly disabled persistent user sessions with `--features-disabled=persistent-user-sessions`, remove this option before upgrading to a future release.
 
 === Organization invitation link no longer exposed in API responses
 
