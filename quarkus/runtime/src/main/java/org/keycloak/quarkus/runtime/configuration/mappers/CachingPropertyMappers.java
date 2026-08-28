@@ -120,7 +120,7 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
                         .paramLabel("name")
                         .to("kc.spi-cache-embedded--default--cluster-name")
                         .isEnabled(CachingPropertyMappers::cacheSetToInfinispan, "Infinispan clustered embedded is enabled")
-                        .isRequired(CachingPropertyMappers::isStatelessEnabled, STATELESS_FEATURE_SET)
+                        .isRequired(() -> isStatelessEnabled() && cacheSetToInfinispan(), STATELESS_FEATURE_SET + " and embedded Infinispan is enabled")
                         .validator(CachingPropertyMappers::validateClusterName)
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS)

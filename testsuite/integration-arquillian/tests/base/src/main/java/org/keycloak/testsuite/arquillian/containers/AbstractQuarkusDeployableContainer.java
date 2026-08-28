@@ -237,9 +237,6 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             commands.add("--spi-cache-embedded-default-site-name=test");
         }
 
-        if (features.contains("stateless")) {
-            commands.add("--cache-embedded-cluster-name=test-cluster");
-        }
 
         if (!suiteContext.get().isAuthServerMigrationEnabled()) {
             commands.add("--bootstrap-admin-username=" + AuthRealm.ADMIN);
