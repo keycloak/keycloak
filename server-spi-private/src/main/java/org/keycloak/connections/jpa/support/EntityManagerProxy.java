@@ -35,9 +35,9 @@ import jakarta.persistence.Query;
 
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelConcurrentModificationException;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
-import org.keycloak.models.ModelIllegalStateException;
 
 import org.hibernate.exception.ConstraintViolationException;
 
@@ -139,7 +139,7 @@ public class EntityManagerProxy {
             } else if (throwModelDuplicateEx.test(t)) {
                 return new ModelDuplicateException("Duplicate resource error", t);
             } else if (t instanceof OptimisticLockException) {
-                return new ModelIllegalStateException("Database operation failed", t);
+                return new ModelConcurrentModificationException("The entity was concurrently modified, please retry the operation", t);
             } else if (t.getCause() == null) {
                 return new ModelException("Database operation failed", t);
             } else {
