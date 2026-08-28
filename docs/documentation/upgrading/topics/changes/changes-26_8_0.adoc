@@ -145,6 +145,45 @@ On both databases, the optimization is automatically disabled when using XA data
 
 You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--async-commit=false+`
 
+=== Stateless feature requires a distinct cluster name
+
+The `stateless` feature now requires `--cache-embedded-cluster-name` to be set explicitly to a value other than the default `ISPN`.
+{project_name} refuses to start if the `stateless` feature is enabled and this option is missing or still set to `ISPN`.
+
+Previously, the cluster name had to be configured through the low-level SPI option `spi-cache-embedded--default--cluster-name` (or the environment variable `KC_SPI_CACHE_EMBEDDED__DEFAULT__CLUSTER_NAME`).
+This option is now superseded by the first-class CLI option `--cache-embedded-cluster-name` (environment variable `KC_CACHE_EMBEDDED_CLUSTER_NAME`).
+
+If you use the `stateless` feature, add `--cache-embedded-cluster-name=<unique-name>` to your startup command with a name that is unique per deployment.
+Two deployments sharing the same database must use different cluster names so that cross-cluster cache invalidation works correctly.
+
+=== Keycloak validates cluster names when using jdbc-ping discovery
+
+{project_name} nodes that use the `jdbc-ping` cluster stack periodically check whether other {project_name} deployments with a different cluster name are connecting to the same database.
+If this is detected and the `stateless` feature is *not* enabled, each node logs an error and reports itself as unhealthy via the health endpoint.
+
+The `stateless` feature provides the cross-cluster cache invalidation mechanism that makes it safe for separate {project_name} deployments to share a database.
+Without it, realm and authorization data cached by one deployment is never invalidated when the other deployment makes a change, which leads to stale caches and incorrect behavior.
+
+*Impact on blue-green deployments*
+
+A standard blue-green upgrade keeps only one cluster active at a time: the old cluster is fully shut down before the new one starts receiving traffic.
+With this strategy, both clusters never run simultaneously, so no second cluster name is ever visible in the database and this check does not trigger.
+
+If your blue-green process involves a brief overlap period where both clusters are up concurrently — for example, to pre-warm caches — and you use *distinct* cluster names without the `stateless` feature, both deployments will log errors and report unhealthy during that window.
+This is intentional: without the `stateless` feature, neither deployment invalidates the other's caches, which is unsafe when both are serving traffic at the same time.
+
+*Recommendations*
+
+* *Single cluster*: no action required. The check does not trigger.
+
+* *Blue-green with only one cluster active at a time*: no action required. The check does not trigger because both clusters are never running simultaneously.
+
+* *Blue-green with a concurrent overlap period and distinct cluster names, without `stateless`*: the unhealthy status during the overlap is expected and correct.
+  Either accept the brief unhealthy window, avoid running both clusters concurrently, or enable the `stateless` feature.
+
+* *Multiple independent deployments sharing the same database*: enable the `stateless` feature and assign each deployment a unique cluster name via `--cache-embedded-cluster-name`.
+  Without `stateless`, cross-deployment cache invalidation does not work and serving traffic from multiple deployments simultaneously leads to incorrect behavior.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

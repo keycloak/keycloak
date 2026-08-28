@@ -32,6 +32,7 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
     private static final String MULTI_SITE_FEATURE_SET = "feature '%s' or '%s' is set".formatted(Profile.Feature.MULTI_SITE.getKey(), Profile.Feature.CLUSTERLESS.getKey());
 
     private static final String CACHE_STACK_SET_TO_ISPN = "'cache' type is set to '" + CachingOptions.Mechanism.ispn.name() + "'";
+    private static final String STATELESS_FEATURE_SET = "feature '%s' is set".formatted(Profile.Feature.STATELESS.getKey());
 
     @Override
     public List<PropertyMapper<?>> getPropertyMappers() {
@@ -119,6 +120,8 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
                         .paramLabel("name")
                         .to("kc.spi-cache-embedded--default--cluster-name")
                         .isEnabled(CachingPropertyMappers::cacheSetToInfinispan, "Infinispan clustered embedded is enabled")
+                        .isRequired(CachingPropertyMappers::isStatelessEnabled, STATELESS_FEATURE_SET)
+                        .validator(CachingPropertyMappers::validateClusterName)
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_ADDRESS)
                         .paramLabel("address")
@@ -266,6 +269,18 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
             return;
         }
         throw new PropertyException("The option '%s' requires '%s' to be enabled.".formatted(option.getKey(), requiredOption.getKey()));
+    }
+
+    private static boolean isStatelessEnabled() {
+        return Profile.isFeatureEnabled(Profile.Feature.STATELESS);
+    }
+
+    private static void validateClusterName(String value) {
+        if (isStatelessEnabled() && "ISPN".equals(value)) {
+            throw new PropertyException("Option '%s' must be set to a value other than the default 'ISPN' when the stateless feature is enabled. "
+                    + "Each deployment sharing the same database must use a distinct cluster name."
+                    .formatted(CachingOptions.CACHE_EMBEDDED_CLUSTER_NAME_PROPERTY));
+        }
     }
 
     private static void validateCertificateRotationIsPositive(String value) {
