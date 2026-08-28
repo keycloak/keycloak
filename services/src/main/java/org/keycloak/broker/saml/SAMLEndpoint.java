@@ -1152,8 +1152,8 @@ public class SAMLEndpoint {
     private long calculateOneTimeUseMaxIdleSeconds(org.keycloak.dom.saml.v2.assertion.ConditionsType conditions) {
         if (conditions != null && conditions.getNotOnOrAfter() != null) {
             long maxIdle = conditions.getNotOnOrAfter().toGregorianCalendar().getTimeInMillis() / 1000 - System.currentTimeMillis() / 1000;
-            // Add configured clock skew to match the ConditionsValidator acceptance window
-            maxIdle += config.getAllowedClockSkew();
+            // Add configured clock skew and one second to cover timestamp truncation.
+            maxIdle += config.getAllowedClockSkew() + 1;
             // Use the calculated value if positive, otherwise use the default
             if (maxIdle > 0) {
                 return maxIdle;
