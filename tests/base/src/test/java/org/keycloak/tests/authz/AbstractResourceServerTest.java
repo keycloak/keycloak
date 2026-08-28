@@ -265,6 +265,13 @@ public abstract class AbstractResourceServerTest extends AbstractAuthzTest {
     }
 
     @Override
+    protected void runManagedCleanupBeforeRealmRemoval() {
+        if (managedRealm != null) {
+            managedRealm.runCleanup();
+        }
+    }
+
+    @Override
     protected boolean isImportAfterEachMethod() {
         return true;
     }

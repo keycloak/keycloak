@@ -20,12 +20,14 @@ package org.keycloak.tests.authz.admin;
 import jakarta.ws.rs.ServerErrorException;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.common.Profile;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -34,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = AuthorizationDisabledInPreviewTest.AuthorizationDisabledServerConfig.class)
 public class AuthorizationDisabledInPreviewTest {
 
     @InjectRealm
@@ -50,8 +52,15 @@ public class AuthorizationDisabledInPreviewTest {
             assertEquals(Response.Status.NOT_IMPLEMENTED.getStatusCode(), e.getResponse().getStatus());
             return;
         }
-        Assumptions.assumeTrue(false, "Authorization feature is enabled for this test run.");
         fail("Feature Authorization should be disabled.");
+    }
+
+    public static class AuthorizationDisabledServerConfig implements KeycloakServerConfig {
+
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.featuresDisabled(Profile.Feature.AUTHORIZATION);
+        }
     }
 
 }
