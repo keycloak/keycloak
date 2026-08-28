@@ -140,6 +140,16 @@ test.describe.serial("Advanced tab test", () => {
     await assertRevokeRefreshToken(page, "Enabled");
     await assertRefreshTokenMaxReuse(page, "2");
 
+    // Non-canonical but valid values set through the admin API are shown as the matching option
+    await adminClient.updateClient(clientId, {
+      attributes: { "revoke.refresh.token": " TRUE " },
+    });
+    await page.reload();
+    await goToAdvancedTab(page);
+    await assertRevokeRefreshToken(page, "Enabled");
+    await assertRefreshTokenMaxReuseVisible(page, true);
+    await assertRefreshTokenMaxReuse(page, "2");
+
     // Disable for the client and save
     await selectRevokeRefreshToken(page, "Disabled");
     await assertRefreshTokenMaxReuseVisible(page, false);

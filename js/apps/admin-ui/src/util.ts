@@ -126,6 +126,16 @@ export function convertToFormValues<T extends FieldValues>(
   });
 }
 
+/**
+ * Normalizes a three-state boolean attribute ("true", "false" or unset to inherit) to the canonical form used by
+ * select controls. The server accepts "true" and "false" ignoring case and surrounding whitespace, anything else
+ * is treated as unset.
+ */
+export const normalizeBooleanOverride = (value?: string) => {
+  const normalized = (value ?? "").trim().toLowerCase();
+  return normalized === "true" || normalized === "false" ? normalized : "";
+};
+
 export function convertFormValuesToObject<T extends Record<string, any>, G = T>(
   obj: T,
 ): G {
