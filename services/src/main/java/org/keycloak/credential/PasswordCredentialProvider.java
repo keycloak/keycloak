@@ -26,6 +26,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelConcurrentModificationException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
@@ -98,6 +99,8 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
             PasswordCredentialModel credentialModel = hash.encodedCredential(password, policy.getHashIterations());
             credentialModel.setCreatedDate(Time.currentTimeMillis());
             createCredential(realm, user, credentialModel);
+        } catch (ModelConcurrentModificationException e) {
+            throw e;
         } catch (Throwable t) {
             throw new ModelException(t.getMessage(), t);
         }

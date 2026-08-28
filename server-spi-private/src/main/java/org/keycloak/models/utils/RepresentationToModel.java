@@ -84,6 +84,7 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelConcurrentModificationException;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelValidationException;
@@ -870,6 +871,8 @@ public class RepresentationToModel {
                     try {
                         session.getContext().setRealm(realm);
                         user.credentialManager().updateCredential(UserCredentialModel.password(cred.getValue(), false));
+                    } catch (ModelConcurrentModificationException ex) {
+                        throw ex;
                     } catch (ModelException ex) {
                         PasswordPolicyNotMetException passwordPolicyNotMetException = new PasswordPolicyNotMetException(ex.getMessage(), user.getUsername(), ex);
                         passwordPolicyNotMetException.setParameters(ex.getParameters());
