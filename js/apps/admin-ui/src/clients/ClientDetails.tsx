@@ -44,6 +44,7 @@ import {
   convertToFormValues,
   exportClient,
   normalizeBooleanOverride,
+  normalizeNonNegativeIntegerOverride,
 } from "../util";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { useParams } from "../utils/useParams";
@@ -368,6 +369,16 @@ export default function ClientDetails() {
           "attributes.revoke.refresh.token",
         ),
         normalizeBooleanOverride(client.attributes["revoke.refresh.token"]),
+      );
+    }
+    if (client.attributes?.["refresh.token.max.reuse"]) {
+      form.setValue(
+        convertAttributeNameToForm<FormFields>(
+          "attributes.refresh.token.max.reuse",
+        ),
+        normalizeNonNegativeIntegerOverride(
+          client.attributes["refresh.token.max.reuse"],
+        ),
       );
     }
     // reset dirty as for reason it is not resetting
