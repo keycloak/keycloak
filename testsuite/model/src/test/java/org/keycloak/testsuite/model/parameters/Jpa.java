@@ -30,6 +30,8 @@ import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionPr
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionSpi;
 import org.keycloak.connections.jpa.updater.liquibase.lock.LiquibaseDBLockProviderFactory;
 import org.keycloak.events.jpa.JpaEventStoreProviderFactory;
+import org.keycloak.executors.DefaultExecutorsProviderFactory;
+import org.keycloak.executors.ExecutorsSpi;
 import org.keycloak.loginfailures.jpa.JpaUserLoginFailureProviderFactory;
 import org.keycloak.migration.MigrationProviderFactory;
 import org.keycloak.migration.MigrationSpi;
@@ -64,6 +66,8 @@ import org.keycloak.storage.configuration.jpa.JpaServerConfigStorageProviderFact
 import org.keycloak.storage.datastore.DefaultDatastoreProviderFactory;
 import org.keycloak.testsuite.model.Config;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
+import org.keycloak.timer.TimerSpi;
+import org.keycloak.timer.basic.BasicTimerProviderFactory;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -86,6 +90,8 @@ public class Jpa extends KeycloakModelParameters {
       .add(UserLoginFailureSpi.class)
       .add(ServerConfigurationStorageProviderSpi.class)
       .add(DatastoreSpi.class)
+      .add(TimerSpi.class)
+      .add(ExecutorsSpi.class)
 
       //required for migrateModel
       .add(MigrationSpi.class)
@@ -125,6 +131,8 @@ public class Jpa extends KeycloakModelParameters {
       .add(JpaSingleUseObjectProviderFactory.class)
       .add(JpaUserLoginFailureProviderFactory.class)
       .add(JpaServerConfigStorageProviderFactory.class)
+      .add(BasicTimerProviderFactory.class)
+      .add(DefaultExecutorsProviderFactory.class)
 
       //required for migrateModel
       .add(MigrationProviderFactory.class)
