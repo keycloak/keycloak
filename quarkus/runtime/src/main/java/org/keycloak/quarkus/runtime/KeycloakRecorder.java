@@ -39,6 +39,7 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.common.util.KeystoreUtil.TruststoreFormat;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.HealthOptions;
 import org.keycloak.config.HostnameV2Options;
@@ -49,7 +50,9 @@ import org.keycloak.config.OpenApiOptions;
 import org.keycloak.config.Option;
 import org.keycloak.config.ProxyOptions;
 import org.keycloak.config.TruststoreOptions;
+import org.keycloak.headers.SecurityHeadersUtils;
 import org.keycloak.marshalling.Marshalling;
+import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
@@ -74,6 +77,8 @@ import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.annotations.Recorder;
 import io.quarkus.vertx.http.runtime.security.SecurityHandlerPriorities;
 import io.vertx.core.Handler;
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import liquibase.Scope;
@@ -105,7 +110,20 @@ public class KeycloakRecorder {
 
     // default handler for redirecting to specific path
     public Handler<RoutingContext> getRedirectHandler(String redirectPath) {
-        return routingContext -> routingContext.redirect(redirectPath);
+        return routingContext -> {
+            HttpServerResponse response = routingContext.response();
+            for (BrowserSecurityHeaders header : BrowserSecurityHeaders.REDIRECT_HEADERS) {
+                addDefaultSecurityHeader(response, header);
+            }
+
+            response.setStatusCode(302);
+            response.putHeader(HttpHeaders.LOCATION, redirectPath);
+            response.end();
+        };
+    }
+
+    private static void addDefaultSecurityHeader(HttpServerResponse response, BrowserSecurityHeaders header) {
+        SecurityHeadersUtils.addDefaultHeaderIfAbsent(header, response.headers()::contains, (headerName, value) -> response.putHeader(headerName, value));
     }
 
     private static final List<ManagementInterfaceItem> MANAGEMENT_INTERFACE_ENDPOINTS = List.of(
@@ -145,7 +163,7 @@ public class KeycloakRecorder {
     
     public void misdirectedRequestFilter(RuntimeValue<Router> runtimeValue) {
         // not checking for http/2 enablement - it is enabled by default and not exposed as a supported configuration option
-        if (!Configuration.isTrue(HttpPropertyMappers.QUARKUS_HTTPS_SNI) || !HttpPropertyMappers.isHttpsEnabled() || Configuration.getConfigValue(ProxyOptions.PROXY_HEADERS).getValue() != null) {
+        if (!HttpPropertyMappers.isHttpsEnabled() || Configuration.getConfigValue(ProxyOptions.PROXY_HEADERS).getValue() != null) {
             return;
         }
         
@@ -164,7 +182,7 @@ public class KeycloakRecorder {
         }
     }
 
-    public void configureTruststore() {
+    public void configureTruststore(FipsMode fipsMode) {
         List<String> truststores = new ArrayList<>();
         Configuration.getOptionalKcValue(TruststoreOptions.TRUSTSTORE_PATHS.getKey())
                 .ifPresent(s -> Stream.of(s.split(",")).forEach(truststores::add));
@@ -185,7 +203,9 @@ public class KeycloakRecorder {
             return; // nothing to configure, we'll just use the system default
         }
 
-        TruststoreBuilder.setSystemTruststore(truststores.toArray(String[]::new), true, dataDir.orElseThrow());
+        TruststoreFormat truststoreType = fipsMode == FipsMode.STRICT ? TruststoreFormat.BCFKS : null;
+
+        TruststoreBuilder.setSystemTruststore(truststores.toArray(String[]::new), true, dataDir.orElseThrow(), truststoreType);
     }
 
     public void configureLiquibase(Map<String, List<String>> services) {

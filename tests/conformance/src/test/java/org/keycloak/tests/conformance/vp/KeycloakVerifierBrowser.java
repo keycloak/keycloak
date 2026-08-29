@@ -31,11 +31,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.net.ssl.SSLContext;
 
+import org.keycloak.OAuth2Constants;
+import org.keycloak.broker.oid4vp.OID4VPIdentityProviderEndpoint;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.tests.conformance.containers.OpenIdConformanceSuite;
 import org.keycloak.tests.conformance.runner.ModuleRun;
+import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Plays the user's browser in the same device flow. It starts a Keycloak login, extracts the wallet
@@ -46,6 +51,11 @@ final class KeycloakVerifierBrowser {
 
     // Matches the wallet link by its scheme so it does not depend on the login page markup.
     private static final Pattern WALLET_LINK = Pattern.compile("openid4vp://[^\"'\\s]+");
+    // Matches the cross device wallet link the login page exposes on the QR code image.
+    private static final Pattern CROSS_DEVICE_WALLET_LINK = Pattern.compile("data-oid4vp-wallet-url=\"([^\"]+)\"");
+
+    private static final Duration STATUS_POLL_TIMEOUT = Duration.ofSeconds(30);
+    private static final Duration STATUS_POLL_INTERVAL = Duration.ofMillis(500);
 
     private final OpenIdConformanceSuite suite;
     private final String keycloakLocalBaseUrl;
@@ -62,14 +72,22 @@ final class KeycloakVerifierBrowser {
     }
 
     void login(String realm, String clientId, String idpAlias, ModuleRun moduleRun) {
-        WalletLink walletLink = fetchWalletLink(realm, clientId, idpAlias);
+        WalletLink walletLink = fetchWalletLink(realm, clientId, idpAlias, false);
         deliverToWallet(moduleRun, walletLink);
+    }
+
+    // Plays the cross device flow. The wallet gets the QR code link and answers the presentation
+    // without a redirect, so the browser polls the status endpoint and finishes the login itself.
+    void loginCrossDevice(String realm, String clientId, String idpAlias, ModuleRun moduleRun) {
+        WalletLink walletLink = fetchWalletLink(realm, clientId, idpAlias, true);
+        deliverToWallet(moduleRun, walletLink);
+        completeViaStatusPoll(realm, idpAlias, walletLink);
     }
 
     private record WalletLink(String clientId, String requestUri) {
     }
 
-    private WalletLink fetchWalletLink(String realm, String clientId, String idpAlias) {
+    private WalletLink fetchWalletLink(String realm, String clientId, String idpAlias, boolean crossDevice) {
         String codeVerifier = PkceUtils.generateCodeVerifier();
         String loginUrl = keycloakLocalBaseUrl + "/realms/" + realm + "/protocol/openid-connect/auth"
                 + "?client_id=" + urlEncode(clientId)
@@ -85,14 +103,56 @@ final class KeycloakVerifierBrowser {
             throw new IllegalStateException(
                     "Keycloak login page returned HTTP " + response.statusCode() + ": " + response.body());
         }
-        Matcher matcher = WALLET_LINK.matcher(response.body());
+        Matcher matcher = (crossDevice ? CROSS_DEVICE_WALLET_LINK : WALLET_LINK).matcher(response.body());
         if (!matcher.find()) {
-            throw new IllegalStateException("Keycloak login page did not contain the same device wallet link");
+            throw new IllegalStateException("Keycloak login page did not contain the "
+                    + (crossDevice ? "cross" : "same") + " device wallet link");
         }
-        String walletUrl = matcher.group().replace("&amp;", "&");
+        String walletUrl = (crossDevice ? matcher.group(1) : matcher.group()).replace("&amp;", "&");
         String query = walletUrl.contains("?") ? walletUrl.substring(walletUrl.indexOf('?') + 1) : "";
         MultivaluedHashMap<String, String> parameters = UriUtils.parseQueryParameters(query, true);
         return new WalletLink(required(parameters, "client_id", walletUrl), required(parameters, "request_uri", walletUrl));
+    }
+
+    // The wallet answered the cross device direct_post with an empty JSON object, so the completion
+    // signal is only observable through the status endpoint, like the login page script observes it.
+    private void completeViaStatusPoll(String realm, String idpAlias, WalletLink walletLink) {
+        URI requestUri = URI.create(walletLink.requestUri());
+        String state = requestUri.getPath().substring(requestUri.getPath().lastIndexOf('/') + 1);
+        URI statusUri = URI.create(keycloakLocalBaseUrl + "/realms/" + urlEncode(realm) + "/broker/"
+                + urlEncode(idpAlias) + "/endpoint/" + OID4VPIdentityProviderEndpoint.STATUS_PATH
+                + "?" + OAuth2Constants.STATE + "=" + urlEncode(state));
+
+        long deadline = System.currentTimeMillis() + STATUS_POLL_TIMEOUT.toMillis();
+        while (true) {
+            JsonNode status = readJson(get(statusUri).body());
+            String statusValue = status.path(OID4VPIdentityProviderEndpoint.STATUS_KEY).asText();
+            if (OID4VPIdentityProviderEndpoint.STATUS_COMPLETE.equals(statusValue)) {
+                getFollowingRedirects(rewriteToHostReachable(URI.create(
+                        status.path(OID4VPIdentityProviderEndpoint.STATUS_REDIRECT_URI_KEY).asText())));
+                return;
+            }
+            if (!OID4VPIdentityProviderEndpoint.STATUS_PENDING.equals(statusValue)) {
+                throw new IllegalStateException("Cross device status poll ended with status " + statusValue);
+            }
+            if (System.currentTimeMillis() > deadline) {
+                throw new IllegalStateException("Cross device presentation did not arrive within " + STATUS_POLL_TIMEOUT);
+            }
+            try {
+                Thread.sleep(STATUS_POLL_INTERVAL.toMillis());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Interrupted while polling the cross device status", e);
+            }
+        }
+    }
+
+    private static JsonNode readJson(String body) {
+        try {
+            return JsonSerialization.readValue(body, JsonNode.class);
+        } catch (IOException e) {
+            throw new IllegalStateException("Status endpoint did not return JSON: " + body, e);
+        }
     }
 
     private void deliverToWallet(ModuleRun moduleRun, WalletLink walletLink) {

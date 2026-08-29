@@ -47,6 +47,9 @@ public interface Details {
     String USERNAME = "username";
     String ACTOR = "actor";
     String ACTOR_ID = "actor_id";
+    String ACTOR_TYPE = "actor_type";
+    String ACTOR_TYPE_USER = "user";
+    String ACTOR_TYPE_CLIENT = "client";
     String ACTOR_SESSION_ID = "actor_session_id";
     String FIRST_NAME = "first_name";
     String LAST_NAME = "last_name";
@@ -54,6 +57,8 @@ public interface Details {
     String UPDATED_FIRST_NAME = PREF_UPDATED + "first_name";
     String PREVIOUS_LAST_NAME = PREF_PREVIOUS + "last_name";
     String UPDATED_LAST_NAME = PREF_UPDATED + "last_name";
+    String PREVIOUS_ENABLED = PREF_PREVIOUS + "enabled";
+    String UPDATED_ENABLED = PREF_UPDATED + "enabled";
     String REMEMBER_ME = "remember_me";
     String TOKEN_ID = "token_id";
     String TOKEN_TYPE = "token_type";
@@ -91,8 +96,10 @@ public interface Details {
     String CONSENT_VALUE_PERSISTED_CONSENT = "persistent_consent";    // Persistent consent used (was already granted by user before)
     String IMPERSONATOR_REALM = "impersonator_realm";
     String IMPERSONATOR = "impersonator";
+    String IMPERSONATOR_ID = "impersonator_id";
 
     String CLIENT_AUTH_METHOD = "client_auth_method";
+    String CLIENT_AUTH_DETAIL = "client_auth_detail";
 
     String SIGNATURE_REQUIRED = "signature_required";
     String SIGNATURE_ALGORITHM = "signature_algorithm";

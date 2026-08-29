@@ -233,7 +233,9 @@ export const ResourcesPolicySelect = ({
                 onClick={(event) => {
                   if (isDirty) {
                     event.preventDefault();
-                    setOnUnsavedChangesConfirm(() => () => navigate(to(item)));
+                    setOnUnsavedChangesConfirm(
+                      () => () => void navigate(to(item)),
+                    );
                     toggleUnsavedChangesDialog();
                   }
                 }}
@@ -256,7 +258,7 @@ export const ResourcesPolicySelect = ({
         <NewPolicyDialog
           policyProviders={policyProviders}
           onSelect={(p) => {
-            navigate(
+            void navigate(
               toCreatePolicy({ id: clientId, realm, policyType: p.type! }),
             );
           }}

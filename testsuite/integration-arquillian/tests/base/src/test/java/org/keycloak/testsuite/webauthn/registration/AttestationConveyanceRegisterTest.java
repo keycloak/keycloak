@@ -125,7 +125,7 @@ public class AttestationConveyanceRegisterTest extends AbstractWebAuthnVirtualTe
 
             // should fail because none is not allowed
             webAuthnErrorPage.assertCurrent();
-            assertThat(webAuthnErrorPage.getError(), containsString("AttestationVerifier is not configured to handle the supplied AttestationStatement format 'none'."));
+            assertThat(webAuthnErrorPage.getError(), containsString("Failed to register your Passkey."));
         } finally {
             testingClient.testing().reenableTruststoreSpi();
         }

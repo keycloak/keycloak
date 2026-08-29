@@ -56,7 +56,7 @@ function CatchAllRedirect() {
     addAlert(t("pageNotFound"), AlertVariant.warning);
   }, [addAlert, t]);
 
-  return <Navigate to="." replace />;
+  return <Navigate to=".." replace />;
 }
 
 export const Root = () => {

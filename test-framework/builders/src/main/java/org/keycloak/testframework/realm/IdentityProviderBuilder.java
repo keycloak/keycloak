@@ -64,6 +64,36 @@ public class IdentityProviderBuilder extends Builder<IdentityProviderRepresentat
         return this;
     }
 
+    public IdentityProviderBuilder enabled(boolean enabled) {
+        rep.setEnabled(enabled);
+        return this;
+    }
+
+    public IdentityProviderBuilder trustEmail(boolean trustEmail) {
+        rep.setTrustEmail(trustEmail);
+        return this;
+    }
+
+    public IdentityProviderBuilder linkOnly(boolean linkOnly) {
+        rep.setLinkOnly(linkOnly);
+        return this;
+    }
+
+    public IdentityProviderBuilder firstBrokerLoginFlowAlias(String firstBrokerLoginFlowAlias) {
+        rep.setFirstBrokerLoginFlowAlias(firstBrokerLoginFlowAlias);
+        return this;
+    }
+
+    public IdentityProviderBuilder postBrokerLoginFlowAlias(String postBrokerLoginFlowAlias) {
+        rep.setPostBrokerLoginFlowAlias(postBrokerLoginFlowAlias);
+        return this;
+    }
+
+    public IdentityProviderBuilder organizationId(String organizationId) {
+        rep.setOrganizationId(organizationId);
+        return this;
+    }
+
     public IdentityProviderBuilder attribute(String name, String value) {
         rep.setConfig(createIfNull(rep.getConfig(), HashMap::new));
         rep.getConfig().put(name, value);

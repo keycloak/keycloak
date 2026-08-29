@@ -28,6 +28,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.HtmlUnitBrowser;
+import org.keycloak.testsuite.util.MutualTLSUtils;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -116,6 +117,27 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     @Test
     public void loginWithRevalidateCertEnabledCertIsTrusted() throws Exception {
         x509BrowserLogin(createLoginSubjectEmailWithRevalidateCert(true), userId, "test-user@localhost", "test-user@localhost");
+    }
+
+    @Test
+    public void loginWithRevalidateCertEnabledCertIsTrustedAndCASubjectDN() throws Exception {
+        x509BrowserLogin(createLoginSubjectEmailWithRevalidateCert("InvalidCN", "CN=Other", MutualTLSUtils.CA_CERTIFICATE_SUBJECT_DN), userId, "test-user@localhost", "test-user@localhost");
+    }
+
+    @Test
+    public void loginWithRevalidateCertEnabledAndInvalidCASubjectDN() throws Exception {
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", createLoginSubjectEmailWithRevalidateCert(
+                false, MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN, "CN=Other").getConfig());
+        String cfgId = createConfig(browserExecution.getId(), cfg);
+        Assertions.assertNotNull(cfgId);
+
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
+
+        // Verify there is an error message
+        Assertions.assertNotNull(loginPage.getError());
+
+        assertThat(loginPage.getError(), containsString("Certificate validation's failed."));
     }
 
     @Test

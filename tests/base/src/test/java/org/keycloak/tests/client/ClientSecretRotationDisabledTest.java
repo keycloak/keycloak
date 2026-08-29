@@ -1,5 +1,6 @@
 package org.keycloak.tests.client;
 
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -9,6 +10,8 @@ import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.common.TestRealmUserConfig;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -17,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = ClientSecretRotationDisabledTest.ServerConfig.class)
 public class ClientSecretRotationDisabledTest {
 
     private static final String CLIENT_ID = "test-app";
@@ -78,5 +81,13 @@ public class ClientSecretRotationDisabledTest {
         response = oauth.doAccessTokenRequest(code);
         assertEquals(200, response.getStatusCode());
         assertNotNull(response.getAccessToken());
+    }
+
+    public static class ServerConfig implements KeycloakServerConfig {
+
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.featuresDisabled(Profile.Feature.CLIENT_SECRET_ROTATION);
+        }
     }
 }

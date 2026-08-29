@@ -52,6 +52,10 @@ import org.keycloak.util.JsonSerialization;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.logging.Logger;
 
+import static org.keycloak.representations.IDToken.ACT;
+import static org.keycloak.representations.IDToken.PREFERRED_USERNAME;
+import static org.keycloak.representations.JsonWebToken.SUBJECT;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
@@ -106,10 +110,15 @@ public class AccessTokenIntrospectionProvider<T extends AccessToken> implements 
                     }
                 }
 
-                String actor = userSession.getNote(ImpersonationSessionNote.IMPERSONATOR_USERNAME.toString());
-                if (actor != null) {
-                    // for token exchange delegation semantics when an entity (actor) other than the subject is the acting party to whom authority has been delegated
-                    tokenMetadata.putObject("act").put("sub", actor);
+                // "act" claim (RFC 8693 Section 4.1) identifies the impersonator for audit purposes
+                String impersonatorId = userSession.getNote(ImpersonationSessionNote.IMPERSONATOR_ID.toString());
+                if (impersonatorId != null) {
+                    ObjectNode act = tokenMetadata.putObject(ACT);
+                    act.put(SUBJECT, impersonatorId);
+                    String impersonatorUsername = userSession.getNote(ImpersonationSessionNote.IMPERSONATOR_USERNAME.toString());
+                    if (impersonatorUsername != null) {
+                        act.put(PREFERRED_USERNAME, impersonatorUsername);
+                    }
                 }
 
                 tokenMetadata.put(OAuth2Constants.TOKEN_TYPE, transformedToken.getType());

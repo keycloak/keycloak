@@ -71,6 +71,7 @@ import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.json.RawJsonValue;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -557,6 +558,20 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
         parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, signedJwt));
+
+        CloseableHttpResponse response = sendRequest(oauth.getEndpoints().getToken(), parameters);
+        return new AccessTokenResponse(response);
+    }
+
+    protected AccessTokenResponse doAccessTokenRequestWithClientSecretAndAssertion(String code, String clientId, String clientSecret, String clientAssertion) throws Exception {
+        List<NameValuePair> parameters = new LinkedList<>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_SECRET, clientSecret));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, clientAssertion));
 
         CloseableHttpResponse response = sendRequest(oauth.getEndpoints().getToken(), parameters);
         return new AccessTokenResponse(response);
@@ -1072,7 +1087,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         ClientPolicyExecutorRepresentation executorRep = profileRep.getExecutors().stream()
                 .filter(profileRepp -> providerId.equals(profileRepp.getExecutorProviderId()))
                 .findFirst().orElse(null);
-        return executorRep == null ? null : executorRep.getConfiguration();
+        return executorRep == null ? null : RawJsonValue.unwrap(JsonNode.class, executorRep.getConfiguration());
     }
 
     // Assertions about policies

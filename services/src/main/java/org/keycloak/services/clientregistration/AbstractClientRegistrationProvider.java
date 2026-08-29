@@ -31,6 +31,10 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.client.clienttype.ClientType;
+import org.keycloak.client.clienttype.ClientTypeException;
+import org.keycloak.client.clienttype.ClientTypeManager;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -102,6 +106,13 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             }
 
             if (Boolean.TRUE.equals(client.getAuthorizationServicesEnabled())) {
+                if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_TYPES) && clientModel.getType() != null) {
+                    ClientType clientType = session.getProvider(ClientTypeManager.class).getClientType(realm, clientModel.getType());
+                    if (!clientType.isApplicable("authorizationServicesEnabled") ||
+                            Boolean.FALSE.equals(clientType.getTypeValue("authorizationServicesEnabled", Boolean.class))) {
+                        throw ClientTypeException.Message.CLIENT_UPDATE_FAILED_CLIENT_TYPE_VALIDATION.exception("authorizationServicesEnabled");
+                    }
+                }
                 RepresentationToModel.createResourceServer(clientModel, session, true);
             }
 
@@ -138,6 +149,8 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        } catch (ClientTypeException cte) {
+            throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, cte.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 
@@ -176,6 +189,18 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
         if (!client.getClientId().equals(rep.getClientId())) {
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client Identifier modified", Response.Status.BAD_REQUEST);
+        }
+
+        if (auth.isRegistrationAccessToken()) {
+            String existingProtocol = client.getProtocol();
+            String requestedProtocol = rep.getProtocol();
+            if (requestedProtocol != null && !requestedProtocol.equals(existingProtocol)) {
+                throw new ErrorResponseException(
+                        ErrorCodes.INVALID_CLIENT_METADATA,
+                        "Protocol cannot be changed via registration access token",
+                        Response.Status.BAD_REQUEST
+                );
+            }
         }
 
         ClientResource.updateClientServiceAccount(session, client, rep.isServiceAccountsEnabled());

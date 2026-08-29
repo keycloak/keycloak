@@ -68,6 +68,13 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- Helm chart generation -->
+        <dependency>
+            <groupId>io.quarkiverse.helm</groupId>
+            <artifactId>quarkus-helm</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <!-- Quarkus -->
         <dependency>
             <groupId>io.quarkiverse.operatorsdk</groupId>
@@ -119,13 +126,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-client</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-client-common-synced</artifactId>
-                </exclusion>
-            </exclusions>
+            <artifactId>keycloak-admin-client-internal</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss.logging</groupId>
@@ -186,11 +187,6 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-client-tests</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -383,6 +379,28 @@
                     </systemPropertyVariables>
                     <groups>${kc.quarkus.tests.groups}</groups>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <!-- Post-process the chart emitted by quarkus-helm: wrap the
+                         generated CRDs in a {{ if .Values.crds.enabled }} guard. -->
+                    <execution>
+                        <id>post-process-helm-chart</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${basedir}/scripts/post-process-helm-chart.sh</executable>
+                            <arguments>
+                                <argument>${project.build.directory}/helm/kubernetes/keycloak-operator</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
             <plugin>

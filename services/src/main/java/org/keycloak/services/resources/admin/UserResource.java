@@ -193,6 +193,7 @@ public class UserResource {
         auth.users().requireManage(user);
         try {
 
+            boolean wasEnabled = user.isEnabled();
             boolean wasPermanentlyLockedOut = false;
             if (rep.isEnabled() != null && rep.isEnabled()) {
                 if (!user.isEnabled() || session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)) {
@@ -233,6 +234,14 @@ public class UserResource {
                 session.getProvider(BruteForceProtector.class).cleanUpPermanentLockout(session, realm, user);
             }
 
+            if (rep.isEnabled() != null && rep.isEnabled() != wasEnabled) {
+                // Capture the enabled-state transition as admin event details — the
+                // representation only ever carries the new state, so without this a
+                // listener can't tell "account disabled" apart from any other profile
+                // update (see SSF RiscAccountDisabled / RiscAccountEnabled).
+                adminEvent.detail(Details.PREVIOUS_ENABLED, String.valueOf(wasEnabled))
+                        .detail(Details.UPDATED_ENABLED, String.valueOf(rep.isEnabled()));
+            }
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
 
             if (session.getTransactionManager().isActive()) {
@@ -278,7 +287,6 @@ public class UserResource {
                     case Messages.MISSING_USERNAME -> throw ErrorResponse.error("User name is missing", Response.Status.BAD_REQUEST);
                     case Messages.USERNAME_EXISTS -> throw ErrorResponse.exists("User exists with same username");
                     case Messages.EMAIL_EXISTS -> throw ErrorResponse.exists("User exists with same email");
-                    case Messages.DID_EXISTS -> throw ErrorResponse.exists("User exists with same DID");
                 }
                 errors.add(new ErrorRepresentation(error.getAttribute(), error.getMessage(), error.getMessageParameters()));
             }

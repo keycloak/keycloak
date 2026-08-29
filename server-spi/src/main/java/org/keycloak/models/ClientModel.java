@@ -29,7 +29,7 @@ import org.keycloak.provider.ProviderEventManager;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface ClientModel extends ClientScopeModel, RoleContainerModel,  ProtocolMapperContainerModel, ScopeContainerModel {
+public interface ClientModel extends ClientScopeModel, RoleContainerModel, ProtocolMapperContainerModel, ScopeContainerModel, Model {
 
     // COMMON ATTRIBUTES
 

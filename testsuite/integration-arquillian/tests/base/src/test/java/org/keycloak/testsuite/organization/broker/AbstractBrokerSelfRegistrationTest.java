@@ -801,6 +801,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, ANY_DOMAIN);
         managedRealm.admin().identityProviders().get(bc.getIDPAlias()).update(idp);
 
+        idp = bc.setUpIdentityProvider();
         idp.setAlias("second-idp");
         idp.setInternalId(null);
         managedRealm.admin().identityProviders().create(idp).close();
@@ -826,6 +827,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, ANY_DOMAIN);
         managedRealm.admin().identityProviders().get(bc.getIDPAlias()).update(idp);
 
+        idp = bc.setUpIdentityProvider();
         idp.setAlias("second-idp");
         idp.setInternalId(null);
         managedRealm.admin().identityProviders().create(idp).close();

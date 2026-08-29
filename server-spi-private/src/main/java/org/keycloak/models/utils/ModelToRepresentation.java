@@ -356,14 +356,14 @@ public class ModelToRepresentation {
     public static UserRepresentation toRepresentation(KeycloakSession session, UserModel user, boolean brief) {
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
         UserProfile profile = provider.create(UserProfileContext.USER_API, user);
-        UserRepresentation rep = profile.toRepresentation(!brief);
+        UserRepresentation rep = profile.toRepresentation(!brief, false);
         RealmModel realm = session.getContext().getRealm();
 
-        rep = brief ?
-                ModelToRepresentation.toBriefRepresentation(user, rep, false) :
-                ModelToRepresentation.toRepresentation(session, realm, user, rep, false);
-
-        rep.setUserProfileMetadata(null);
+        if (brief) {
+            ModelToRepresentation.toBriefRepresentation(user, rep, false);
+        } else {
+            ModelToRepresentation.toRepresentation(session, realm, user, rep, false);
+        }
 
         return rep;
     }

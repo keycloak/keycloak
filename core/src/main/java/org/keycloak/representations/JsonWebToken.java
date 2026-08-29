@@ -28,16 +28,13 @@ import java.util.Objects;
 import org.keycloak.Token;
 import org.keycloak.TokenCategory;
 import org.keycloak.common.util.Time;
-import org.keycloak.json.StringOrArrayDeserializer;
-import org.keycloak.json.StringOrArraySerializer;
-import org.keycloak.util.JsonSerialization;
+import org.keycloak.json.KeycloakJsonMapperFactory;
+import org.keycloak.json.StringOrArray;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -58,8 +55,7 @@ public class JsonWebToken implements Serializable, Token {
     @JsonProperty("iss")
     protected String issuer;
     @JsonProperty(AUD)
-    @JsonSerialize(using = StringOrArraySerializer.class)
-    @JsonDeserialize(using = StringOrArrayDeserializer.class)
+    @StringOrArray
     protected String[] audience;
     @JsonProperty(SUBJECT)
     protected String subject;
@@ -324,7 +320,7 @@ public class JsonWebToken implements Serializable, Token {
     @Override
     public String toString() {
         try {
-            return JsonSerialization.writeValueAsString(this);
+            return KeycloakJsonMapperFactory.mapper().writeValueAsString(this);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

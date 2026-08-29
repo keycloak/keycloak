@@ -40,7 +40,7 @@ export default function CreateFlow() {
       const { id } =
         await adminClient.authenticationManagement.createFlow(flow);
       addAlert(t("flowCreatedSuccess"), AlertVariant.success);
-      navigate(
+      void navigate(
         toFlow({
           realm,
           id: id!,

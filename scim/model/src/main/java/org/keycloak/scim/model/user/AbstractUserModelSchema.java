@@ -27,6 +27,9 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
 
     public static final String ANNOTATION_SCIM_SCHEMA_ATTRIBUTE = "kc.scim.schema.attribute";
     private final KeycloakSession session;
+    private UserProfile metadataProfile;
+    private UserModel cachedUser;
+    private Attributes cachedUserAttributes;
 
     public AbstractUserModelSchema(KeycloakSession session, String name) {
         super(name);
@@ -36,8 +39,7 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
     @Override
     protected Set<String> getModelAttributeNames() {
         UserProfile profile = getUserProfile();
-        Attributes attributes = profile.getAttributes();
-        Set<String> names = new HashSet<>(attributes.nameSet());
+        Set<String> names = new HashSet<>(profile.getAttributes().getReadable().keySet());
 
         names.add(UserModel.ENABLED);
         names.add("groups");
@@ -70,6 +72,7 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
 
             if (permissions.hasPermission(model, AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW)) {
                 return model.getGroupsStream()
+                        .filter(group -> !isOrganizationGroup(group))
                         .filter(this::canViewGroup)
                         .toList();
             }
@@ -79,24 +82,35 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
         if (UserModel.EMAIL.equals(name)) {
             return model.getEmail() == null ? List.of() : List.of(model.getEmail());
         }
-        UserProfile profile = session.getProvider(UserProfileProvider.class).create(UserProfileContext.SCIM, model);
-        Attributes attributes = profile.getAttributes();
+        if (UserModel.CREATED_TIMESTAMP.equals(name)) {
+            return model.getCreatedTimestamp();
+        }
+        Attributes attributes = getUserAttributes(model);
+
+        if (shouldReturnMultivaluedValues(attributes.getMetadata(name), getAttributeMapperByModelAttribute(name))) {
+            return attributes.get(name);
+        }
         return attributes.getFirst(name);
     }
 
+    /**
+     * Returns whether a multivalued user-profile attribute should be read as a collection when
+     * populating SCIM. This is gated on the target SCIM mapper, not only user-profile cardinality:
+     * a multivalued user-profile attribute mapped to a single-valued core SCIM field must still
+     * return a single value.
+     */
+    protected boolean shouldReturnMultivaluedValues(AttributeMetadata metadata, Attribute<UserModel, User> scimAttribute) {
+        return metadata != null && metadata.isMultivalued() && scimAttribute != null && scimAttribute.isMultivalued();
+    }
+
     private Map<String, Object> getAttributeAnnotations(String name) {
-        AttributeMetadata metadata = getProfileAttributes().getMetadata(name);
+        AttributeMetadata metadata = getUserProfile().getAttributes().getMetadata(name);
 
         if (metadata == null) {
             return Map.of();
         }
 
         return ofNullable(metadata.getAnnotations()).orElse(Map.of());
-    }
-
-    private Attributes getProfileAttributes() {
-        UserProfile profile = session.getProvider(UserProfileProvider.class).create(UserProfileContext.SCIM, Map.of());
-        return profile.getAttributes();
     }
 
     protected String createModelAttributeResolver(Attribute<UserModel, User> attribute) {
@@ -116,10 +130,29 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
     }
 
     protected UserProfile getUserProfile() {
-        return session.getProvider(UserProfileProvider.class).create(UserProfileContext.SCIM, Map.of());
+        if (metadataProfile == null) {
+            metadataProfile = session.getProvider(UserProfileProvider.class).create(UserProfileContext.SCIM, Map.of());
+        }
+        return metadataProfile;
+    }
+
+    private Attributes getUserAttributes(UserModel model) {
+        if (cachedUser != model) {
+            UserProfile profile = session.getProvider(UserProfileProvider.class).create(UserProfileContext.SCIM, model);
+            cachedUserAttributes = profile.getAttributes();
+            cachedUser = model;
+        }
+        return cachedUserAttributes;
     }
 
     protected boolean canViewGroup(GroupModel group) {
         return session.getContext().getPermissions().hasPermission(group, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
+    }
+
+    /**
+     * Organization groups are only accessible through the Organization API and must not be exposed through SCIM.
+     */
+    protected static boolean isOrganizationGroup(GroupModel group) {
+        return GroupModel.Type.ORGANIZATION.equals(group.getType()) && group.getOrganization() != null;
     }
 }
