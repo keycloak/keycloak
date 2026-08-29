@@ -108,7 +108,7 @@ function getRevokeRefreshTokenSelect(page: Page) {
 }
 
 function getRefreshTokenMaxReuseInput(page: Page) {
-  return page.getByTestId("attributes.refresh🍺token🍺max🍺reuse");
+  return page.getByTestId("refreshTokenMaxReuse");
 }
 
 export async function selectRevokeRefreshToken(page: Page, value: string) {
@@ -137,16 +137,6 @@ export async function fillRefreshTokenMaxReuse(page: Page, value: string) {
 
 export async function assertRefreshTokenMaxReuse(page: Page, value: string) {
   await expect(getRefreshTokenMaxReuseInput(page)).toHaveValue(value);
-}
-
-export async function assertRefreshTokenMaxReusePlaceholder(
-  page: Page,
-  value: string,
-) {
-  await expect(getRefreshTokenMaxReuseInput(page)).toHaveAttribute(
-    "placeholder",
-    value,
-  );
 }
 
 const oAuthMutualSwitch =
