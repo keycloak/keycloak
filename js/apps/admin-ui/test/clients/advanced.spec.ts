@@ -146,6 +146,19 @@ test.describe.serial("Advanced tab test", () => {
     await assertRefreshTokenMaxReuseVisible(page, true);
     await assertRefreshTokenMaxReuse(page, "2");
 
+    // A malformed max reuse (e.g. from an import) falls back to the realm value and is not resubmitted
+    await adminClient.updateClient(clientId, {
+      attributes: { "refresh.token.max.reuse": "abc" },
+    });
+    await page.reload();
+    await goToAdvancedTab(page);
+    await assertRefreshTokenMaxReuse(page, "0");
+    await fillRefreshTokenMaxReuse(page, "3");
+    await saveAdvanced(page);
+    await assertNotificationMessage(page, "Client successfully updated");
+    attributes = await getAttributes();
+    expect(attributes["refresh.token.max.reuse"]).toBe("3");
+
     // Disable for the client and save: the max reuse override is cleared as well
     await selectRevokeRefreshToken(page, "Disabled");
     await assertRefreshTokenMaxReuseVisible(page, false);

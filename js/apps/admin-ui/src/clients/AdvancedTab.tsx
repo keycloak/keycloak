@@ -9,6 +9,7 @@ import type { AddAlertFunction } from "@keycloak/keycloak-ui-shared";
 import {
   convertAttributeNameToForm,
   normalizeBooleanOverride,
+  normalizeNonNegativeIntegerOverride,
   toUpperCase,
 } from "../util";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
@@ -68,6 +69,9 @@ const toFormValue = (name: string, value?: string) => {
   }
   if (name === "revoke.refresh.token") {
     return normalizeBooleanOverride(value);
+  }
+  if (name === "refresh.token.max.reuse") {
+    return normalizeNonNegativeIntegerOverride(value);
   }
   return value || "";
 };
