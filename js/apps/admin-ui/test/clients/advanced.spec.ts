@@ -15,7 +15,6 @@ import {
   assertTokenLifespanClientOfflineSessionMaxVisible,
   assertDirectGrantInput,
   assertRefreshTokenMaxReuse,
-  assertRefreshTokenMaxReusePlaceholder,
   assertRefreshTokenMaxReuseVisible,
   assertRevokeRefreshToken,
   fillRefreshTokenMaxReuse,
@@ -112,13 +111,10 @@ test.describe.serial("Advanced tab test", () => {
     await assertRevokeRefreshToken(page, inherited);
     await assertRefreshTokenMaxReuseVisible(page, false);
 
-    // Enable for the client: max reuse field appears, showing the realm value as placeholder
+    // Enable for the client: max reuse field appears, preset with the realm value
     await selectRevokeRefreshToken(page, "Enabled");
     await assertRefreshTokenMaxReuseVisible(page, true);
-    await assertRefreshTokenMaxReusePlaceholder(
-      page,
-      "Inherits from realm settings (0)",
-    );
+    await assertRefreshTokenMaxReuse(page, "0");
     await fillRefreshTokenMaxReuse(page, "2");
     await saveAdvanced(page);
     await assertNotificationMessage(page, "Client successfully updated");
@@ -150,13 +146,14 @@ test.describe.serial("Advanced tab test", () => {
     await assertRefreshTokenMaxReuseVisible(page, true);
     await assertRefreshTokenMaxReuse(page, "2");
 
-    // Disable for the client and save
+    // Disable for the client and save: the max reuse override is cleared as well
     await selectRevokeRefreshToken(page, "Disabled");
     await assertRefreshTokenMaxReuseVisible(page, false);
     await saveAdvanced(page);
     await assertNotificationMessage(page, "Client successfully updated");
     attributes = await getAttributes();
     expect(attributes["revoke.refresh.token"]).toBe("false");
+    expect(attributes["refresh.token.max.reuse"] ?? "").toBe("");
 
     // Back to inheriting from the realm
     await selectRevokeRefreshToken(page, inherited);
@@ -165,6 +162,7 @@ test.describe.serial("Advanced tab test", () => {
     await assertNotificationMessage(page, "Client successfully updated");
     attributes = await getAttributes();
     expect(attributes["revoke.refresh.token"] ?? "").toBe("");
+    expect(attributes["refresh.token.max.reuse"] ?? "").toBe("");
   });
 
   test("Authentication flow override", async ({ page }) => {
