@@ -184,13 +184,13 @@ public abstract class AbstractPersistentClientIdMetadataDocumentProvider<CONFIG 
                 clientRep.setDefaultRoles(defaultRolesNames.toArray(String[]::new));
             }
 
-            event.client(clientRep.getClientId()).success();
-
             clientModel = realm.getClientByClientId(clientRep.getClientId());
             updatePairwiseSubMappers(clientModel, SubjectType.parse(clientOIDC.getSubjectType()), clientOIDC.getSectorIdentifierUri());
             updateClientRepWithProtocolMappers(clientModel, clientRep);
 
             validateClient(clientModel, clientOIDC, true);
+
+            event.client(clientRep.getClientId()).success();
 
             return clientModel;
         } catch (ModelDuplicateException e) {

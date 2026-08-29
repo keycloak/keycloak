@@ -104,6 +104,8 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
 
             validateClient(clientModel, clientOIDC, true);
 
+            event.client(client.getClientId()).success();
+
             URI uri = getRegistrationClientUri(clientModel);
             clientOIDC = DescriptionConverter.toExternalResponse(session, client, uri);
             clientOIDC.setClientIdIssuedAt(Time.currentTime());

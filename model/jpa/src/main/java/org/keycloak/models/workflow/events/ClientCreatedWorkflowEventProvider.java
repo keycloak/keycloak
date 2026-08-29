@@ -1,10 +1,12 @@
 package org.keycloak.models.workflow.events;
 
-import org.keycloak.models.ClientModel;
+import org.keycloak.events.Event;
+import org.keycloak.events.EventType;
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.workflow.AbstractWorkflowEventProvider;
 import org.keycloak.models.workflow.ResourceType;
-import org.keycloak.provider.ProviderEvent;
 
 public class ClientCreatedWorkflowEventProvider extends AbstractWorkflowEventProvider {
 
@@ -18,15 +20,13 @@ public class ClientCreatedWorkflowEventProvider extends AbstractWorkflowEventPro
     }
 
     @Override
-    public boolean supports(ProviderEvent providerEvent) {
-        return providerEvent instanceof ClientModel.ClientCreationEvent;
+    public boolean supports(Event event) {
+        return EventType.CLIENT_REGISTER.equals(event.getType());
     }
 
     @Override
-    protected String resolveResourceId(ProviderEvent providerEvent) {
-        if (providerEvent instanceof ClientModel.ClientCreationEvent cce) {
-            return cce.getCreatedClient().getId();
-        }
-        return null;
+    public boolean supports(AdminEvent adminEvent) {
+        return org.keycloak.events.admin.ResourceType.CLIENT.equals(adminEvent.getResourceType())
+                && OperationType.CREATE.equals(adminEvent.getOperationType());
     }
 }
