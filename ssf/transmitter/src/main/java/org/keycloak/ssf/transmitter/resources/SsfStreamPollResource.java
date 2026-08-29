@@ -145,9 +145,14 @@ public class SsfStreamPollResource {
 
         PollResponse response = pollDeliveryService.poll(callerClient, body);
 
-        // 5. Record the poll as completed (end-of-request, success path
-        //    only) so the admin console can show when this receiver last
-        //    polled. Write-coalesced — see SsfActivityTracker.
+        // 5. Record the poll as completed — after all transmitter-side
+        //    work (ack / NACK / outbox read) is done, success path only —
+        //    so the admin console can show when this receiver last
+        //    polled. Kept inside the request transaction on purpose:
+        //    stamping from a response-completion hook would need a
+        //    second transaction per poll and lose atomicity with the
+        //    outbox row transitions. Write-coalesced — see
+        //    SsfActivityTracker.
         SsfActivityTracker.stampPollCompleted(callerClient);
 
         return Response.ok(response).build();

@@ -70,7 +70,8 @@ public final class SsfActivityTracker {
     /**
      * Records the completion of a successfully served poll for the
      * given receiver client. Call after the poll response has been
-     * assembled — i.e. end-of-request — and only on the success path;
+     * assembled — after all transmitter-side work, not at request
+     * arrival — and only on the success path;
      * rejected polls (bad request, ownership mismatch) must not count.
      * Write-coalesces per {@link #POLL_STAMP_GRANULARITY_SECONDS}.
      */

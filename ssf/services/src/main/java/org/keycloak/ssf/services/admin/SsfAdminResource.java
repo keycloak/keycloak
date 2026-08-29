@@ -410,7 +410,11 @@ public class SsfAdminResource {
         rep.setCreatedAt(streamConfig.getCreatedAt());
         rep.setUpdatedAt(streamConfig.getUpdatedAt());
         rep.setManagedBy(streamConfig.getManagedBy());
-        rep.setLastVerifiedAt(readEpochSecondsAttribute(client, ClientStreamStore.SSF_LAST_VERIFIED_AT_KEY));
+        // lastVerifiedAt is an Integer on the representation like its
+        // createdAt / updatedAt siblings (int-seconds, sourced from
+        // StreamConfig); narrowing here keeps that wire shape untouched.
+        Long lastVerifiedAt = readEpochSecondsAttribute(client, ClientStreamStore.SSF_LAST_VERIFIED_AT_KEY);
+        rep.setLastVerifiedAt(lastVerifiedAt == null ? null : lastVerifiedAt.intValue());
         rep.setLastPollCompletedAt(readEpochSecondsAttribute(client, ClientStreamStore.SSF_STREAM_LAST_POLL_COMPLETED_AT_KEY));
         return rep;
     }
@@ -420,13 +424,13 @@ public class SsfAdminResource {
      * absent, blank or malformed. Defensive: a bad timestamp attribute
      * must not fail the whole admin GET for the stream.
      */
-    protected static Integer readEpochSecondsAttribute(ClientModel client, String key) {
+    protected static Long readEpochSecondsAttribute(ClientModel client, String key) {
         String raw = client.getAttribute(key);
         if (raw == null || raw.isBlank()) {
             return null;
         }
         try {
-            return Integer.valueOf(raw.trim());
+            return Long.valueOf(raw.trim());
         } catch (NumberFormatException ignored) {
             return null;
         }

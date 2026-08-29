@@ -29,6 +29,7 @@ import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.support.SsfActivityTracker;
 import org.keycloak.ssf.transmitter.support.SsfTransmitterUrls;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpServer;
@@ -503,12 +504,16 @@ public class SsfTransmitterPollDeliveryTests {
                 "lastPollCompletedAt=" + stampSeconds + " should fall within the poll window ["
                         + beforeSeconds + ", " + afterSeconds + "]");
 
-        // The stamp is write-coalesced (POLL_STAMP_GRANULARITY_SECONDS) —
-        // an immediate second poll must not move it backwards or clear it.
+        // The stamp is write-coalesced to POLL_STAMP_GRANULARITY_SECONDS:
+        // a second poll inside that window must leave the stored value
+        // untouched (an implementation stamping every request would
+        // move it forward by the offset and fail here).
+        int insideWindow = (int) SsfActivityTracker.POLL_STAMP_GRANULARITY_SECONDS / 2;
+        timeOffSet.set(insideWindow);
         poll(token, RECEIVER_POLL, stream.getStreamId(), pollBody(null, true, List.of()));
         JsonNode afterSecondPoll = getStreamViaAdmin(RECEIVER_POLL);
-        Assertions.assertTrue(afterSecondPoll.path("lastPollCompletedAt").asLong() >= stampSeconds,
-                "a subsequent poll must never move lastPollCompletedAt backwards");
+        Assertions.assertEquals(stampSeconds, afterSecondPoll.path("lastPollCompletedAt").asLong(),
+                "a poll " + insideWindow + "s after the last stamp must be coalesced and not move lastPollCompletedAt");
     }
 
     @Test
