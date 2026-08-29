@@ -114,6 +114,15 @@ public class OIDCProviderConfig {
 
     private final boolean allowClientInitiatedAccountLinking;
 
+    // Default - false, change to true for backward compatibility, to be removed in KC 27
+    public static final boolean DEFAULT_ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS = false;
+
+    private final boolean allowOidcParamsInRedirectUris;
+
+    public static final boolean DEFAULT_ALLOW_INITIATING_IDP_LOGOUT_PARAM = false;
+
+    private final boolean allowInitiatingIdpLogoutParam;
+
     public OIDCProviderConfig(Config.Scope config) {
         this.config = config;
 
@@ -129,6 +138,8 @@ public class OIDCProviderConfig {
         this.allowTokenIntrospectionWithoutAudienceCheck = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK, DEFAULT_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK);
         this.allowUserinfoWithLightweightAccessToken = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, DEFAULT_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN);
         this.allowClientInitiatedAccountLinking = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING, DEFAULT_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING);
+        this.allowOidcParamsInRedirectUris = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS, DEFAULT_ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS);
+        this.allowInitiatingIdpLogoutParam = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_ALLOW_INITIATING_IDP_LOGOUT_PARAM, DEFAULT_ALLOW_INITIATING_IDP_LOGOUT_PARAM);
     }
 
     public int getAdditionalReqParamsMaxNumber() {
@@ -155,12 +166,20 @@ public class OIDCProviderConfig {
         return allowTokenIntrospectionWithoutAudienceCheck;
     }
 
+    public boolean isAllowOidcParamsInRedirectUris() {
+        return allowOidcParamsInRedirectUris;
+    }
+
     public boolean isAllowUserinfoWithLightweightAccessToken() {
         return allowUserinfoWithLightweightAccessToken;
     }
 
     public boolean isAllowClientInitiatedAccountLinking() {
         return allowClientInitiatedAccountLinking;
+    }
+
+    public boolean isAllowInitiatingIdpLogoutParam() {
+        return allowInitiatingIdpLogoutParam;
     }
 
     /**

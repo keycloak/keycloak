@@ -6,6 +6,7 @@ import org.keycloak.scim.filter.FilterUtils;
 import org.keycloak.scim.filter.ScimFilterException;
 import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.services.client.scim.BaseClientModelSchema;
+import org.keycloak.services.client.scim.ClientResourceTypeProvider;
 
 public class QueryParseUtils {
 
@@ -80,7 +81,7 @@ public class QueryParseUtils {
      * removed
      */
     public static void validateField(String fieldPath, String operator) {
-        if (!FieldResolver.isKnownField(fieldPath)) {
+        if (!ClientResourceTypeProvider.isKnownField(fieldPath)) {
             throw new ClientQueryException("Unknown query field: " + fieldPath);
         }
         if (operator != null && !SUPPORTED_OPERATORS.contains(operator)) {

@@ -2,6 +2,7 @@ package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
 import java.util.List;
 
+import org.keycloak.VCFormat;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -12,15 +13,12 @@ import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSigner;
 import org.keycloak.services.resteasy.ResteasyKeycloakSession;
 import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 public class CredentialBuilderFactoryTest {
 
@@ -35,6 +33,11 @@ public class CredentialBuilderFactoryTest {
         session = new ResteasyKeycloakSession(factory);
     }
 
+    @AfterClass
+    public static void afterClass() {
+        Profile.reset();
+    }
+
     @Test
     public void testVerifyNonNullConfigProperties() {
         List<CredentialBuilderFactory> credentialBuilderFactories = session
@@ -44,10 +47,10 @@ public class CredentialBuilderFactoryTest {
             .map(CredentialBuilderFactory.class::cast)
             .toList();
 
-        assertThat(credentialBuilderFactories, is(not(empty())));
+        assertFalse(credentialBuilderFactories.isEmpty());
 
         for (CredentialBuilderFactory credentialBuilderFactory : credentialBuilderFactories) {
-            assertThat(credentialBuilderFactory.getConfigProperties(), notNullValue());
+            assertNotNull(credentialBuilderFactory.getConfigProperties());
         }
     }
 
@@ -59,13 +62,30 @@ public class CredentialBuilderFactoryTest {
                 .map(f -> f.getId())
                 .toList();
 
-        assertThat(builderIds, not(hasItem("ldp_vc")));
+        assertFalse(builderIds.contains("ldp_vc"));
 
         List<String> signerIds = session.getKeycloakSessionFactory()
                 .getProviderFactoriesStream(CredentialSigner.class)
                 .map(f -> f.getId())
                 .toList();
 
-        assertThat(signerIds, not(hasItem("ldp_vc")));
+        assertFalse(signerIds.contains("ldp_vc"));
+    }
+
+    @Test
+    public void testMdocFactoriesDisabledWithoutMdocFeature() {
+        List<String> builderIds = session.getKeycloakSessionFactory()
+                .getProviderFactoriesStream(CredentialBuilder.class)
+                .map(f -> f.getId())
+                .toList();
+
+        assertFalse(builderIds.contains(VCFormat.MSO_MDOC));
+
+        List<String> signerIds = session.getKeycloakSessionFactory()
+                .getProviderFactoriesStream(CredentialSigner.class)
+                .map(f -> f.getId())
+                .toList();
+
+        assertFalse(signerIds.contains(VCFormat.MSO_MDOC));
     }
 }

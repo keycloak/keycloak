@@ -352,9 +352,9 @@ bin/kc.[sh|bat] start --features=token-exchange-delegation,parameterized-scopes
 
 === Admin delegation
 
-Admin delegation allows a user (subject) to delegate their token to an administrator (actor). The client requests the `delegation` scope with the administrator's identifier as a parameter using the https://datatracker.ietf.org/doc/html/rfc9396[parameterized scopes] syntax.
+Admin delegation allows a user (subject) to delegate their token to an administrator (actor). The client requests the `delegation:user` scope with the administrator's identifier as a parameter using the https://datatracker.ietf.org/doc/html/rfc9396[parameterized scopes] syntax.
 
-When the feature is enabled, a `delegation` client scope is automatically created in new realms. Clients that want to use delegation must add the `delegation` scope to their optional client scopes in the Admin Console.
+When the feature is enabled, the `delegation:user` client scope is automatically created in all realms (new and existing) as an *Optional* client scope, making it available to all clients by default. Delegation also requires <<Granting delegation permission,granting delegation permission>>. Without a matching permission granting the `delegate` scope, the delegation scope is silently dropped from the token.
 
 ==== Granting delegation permission
 
@@ -380,7 +380,7 @@ NOTE: To restrict delegation to specific users, select individual users when cre
 
 ==== How it works
 
-. The client requests the `delegation` scope with the administrator's (actor) identifier as a parameter, for example `scope=openid delegation:admin`.
+. The client requests the `delegation:user` scope with the administrator's (actor) identifier as a parameter, for example `scope=openid delegation:user:admin`.
 . {project_name} validates that the specified administrator (actor) exists and has the `delegate` permission for the user (subject) through FGAP V2.
 . The user (subject) is presented with a consent screen to approve the delegation.
 . If the user consents and validation passes, the issued token includes the `may_act` claim with the actor's user ID as the `sub`:
@@ -392,7 +392,7 @@ NOTE: To restrict delegation to specific users, select individual users when cre
   "may_act": {
     "sub": "f1234567-89ab-cdef-0123-456789abcdef"
   },
-  "scope": "openid delegation:admin",
+  "scope": "openid delegation:user:admin",
   ...
 }
 ----
@@ -405,11 +405,11 @@ NOTE: Delegation permissions require FGAP V2. FGAP V1 does not support delegatio
 
 ==== Adding additional claims to `may_act`
 
-By default, only the actor's `sub` (user ID) is included in the `may_act` claim. Additional claims can be added by configuring extra "Parameterized Scope User Property" mappers on the `delegation` client scope in the Admin Console.
+By default, only the actor's `sub` (user ID) is included in the `may_act` claim. Additional claims can be added by configuring extra "Parameterized Scope User Property" mappers on the `delegation:user` client scope in the Admin Console.
 
 For example, to include the actor's username:
 
-. Navigate to *Client scopes* -> *delegation* -> *Mappers* -> *Add mapper* -> *By type* -> *Parameterized Scope User Property*.
+. Navigate to *Client scopes* -> *delegation:user* -> *Mappers* -> *Add mapper* -> *By type* -> *Parameterized Scope User Property*.
 . Set *User Property* to `username`.
 . Set *Token Claim Name* to `may_act.preferred_username`.
 . Enable the token types where the claim should be included (e.g. access token, ID token).
