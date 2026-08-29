@@ -175,6 +175,14 @@ When {project_name} generates self-signed certificates (for example, during SAML
 
 If you have tooling that inspects the CN of {project_name}-generated certificates and expects it to match a value longer than 64 characters, be aware that the CN may now be shorter.
 
+=== Transaction isolation level changed to READ COMMITTED for MySQL and MariaDB in stateless mode
+
+When the `stateless` feature is enabled, {project_name} now sets the transaction isolation level to `READ COMMITTED` for MySQL, MariaDB, and TiDB.
+This prevents deadlocks in highly concurrent environments.
+`READ COMMITTED` is the default isolation level used by PostgreSQL, Oracle, and Microsoft SQL Server.
+
+Changing the default transaction isolation level for all modes is being considered for a future release.
+
 === Asynchronous commit on MS SQL Server and Oracle databases
 
 The asynchronous commit optimization, previously available only on PostgreSQL, now also supports MS SQL Server and Oracle databases.
