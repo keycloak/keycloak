@@ -456,6 +456,31 @@ public class SsfTransmitterPollDeliveryTests {
     }
 
     @Test
+    public void poll_pushStreamAtPollUrl_returns400AndDoesNotStamp() throws Exception {
+
+        // A PUSH stream has no poll endpoint. The URL is deterministic
+        // though, so the receiver could POST it anyway — that must be
+        // rejected (owner is authenticated → clear 400, not the silent
+        // 404 used for other clients' streams) and must not leave
+        // POLL-only state (lastPollCompletedAt) on the PUSH stream.
+        String pushToken = obtainReceiverToken(RECEIVER_PUSH_MIXED, RECEIVER_PUSH_MIXED_SECRET);
+        StreamConfig pushStream = createPushStream(pushToken, Set.of(CaepSessionRevoked.TYPE));
+
+        try (SimpleHttpResponse response = http.doPost(pollEndpoint(RECEIVER_PUSH_MIXED, pushStream.getStreamId()))
+                .json(pollBodyAsMap(null, true, List.of()))
+                .auth(pushToken)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(400, response.getStatus(),
+                    "polling a PUSH stream must be rejected with 400");
+            Assertions.assertEquals("invalid_request", response.asJson().path("err").asText());
+        }
+
+        Assertions.assertFalse(getStreamViaAdmin(RECEIVER_PUSH_MIXED).has("lastPollCompletedAt"),
+                "a rejected poll against a PUSH stream must not stamp lastPollCompletedAt");
+    }
+
+    @Test
     public void poll_pathStreamIdMismatch_returns404() throws Exception {
 
         // Receiver A and receiver B both create streams. Receiver A
