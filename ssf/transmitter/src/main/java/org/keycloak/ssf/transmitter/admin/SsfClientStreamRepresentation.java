@@ -43,7 +43,7 @@ public class SsfClientStreamRepresentation {
      * for POLL-delivery streams. Accurate to within
      * {@code SsfActivityTracker.POLL_STAMP_GRANULARITY_SECONDS}.
      */
-    private Integer lastPollCompletedAt;
+    private Long lastPollCompletedAt;
 
     /**
      * Origin / ownership marker — see
@@ -150,11 +150,11 @@ public class SsfClientStreamRepresentation {
         this.lastVerifiedAt = lastVerifiedAt;
     }
 
-    public Integer getLastPollCompletedAt() {
+    public Long getLastPollCompletedAt() {
         return lastPollCompletedAt;
     }
 
-    public void setLastPollCompletedAt(Integer lastPollCompletedAt) {
+    public void setLastPollCompletedAt(Long lastPollCompletedAt) {
         this.lastPollCompletedAt = lastPollCompletedAt;
     }
 

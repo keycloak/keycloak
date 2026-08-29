@@ -202,10 +202,12 @@ public class ClientStreamStore implements SsfStreamStore {
     public static final String SSF_STREAM_MANAGED_BY_KEY = "ssf.stream.managedBy";
     /**
      * Epoch-seconds timestamp of the most recent <em>successfully served</em>
-     * RFC 8936 poll for this stream, stamped once the poll response has
-     * been assembled (end-of-request, not arrival) so a future
-     * min-poll-interval check measures the gap from the end of the last
-     * poll and doesn't penalise slow responses. Write-coalesced to
+     * RFC 8936 poll for this stream, stamped once the poll batch has
+     * been assembled — i.e. after all transmitter-side work (ack, NACK,
+     * outbox read), not at request arrival — so a future
+     * min-poll-interval check measures the gap from the end of the
+     * transmitter's processing and doesn't charge slow processing to
+     * the receiver. Write-coalesced to
      * {@code SsfActivityTracker.POLL_STAMP_GRANULARITY_SECONDS} — see
      * {@link org.keycloak.ssf.transmitter.support.SsfActivityTracker#stampPollCompleted}
      * — so a busy poller doesn't trigger a client-cache invalidation per
