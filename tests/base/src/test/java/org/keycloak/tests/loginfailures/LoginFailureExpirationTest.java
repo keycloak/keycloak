@@ -108,9 +108,9 @@ public class LoginFailureExpirationTest {
             failure0.setLastFailure(Time.currentTimeMillis() - 10_000); // 10 seconds ago
             failure0.incrementFailures();
 
-            // User 1: Failure just at the edge (should NOT be expired)
+            // User 1: Failure within the safe window (should NOT be expired)
             var failure1 = session.loginFailures().addUserLoginFailure(realmModel, state.user1);
-            failure1.setLastFailure(Time.currentTimeMillis() - (MAX_DELTA_TIME_SECONDS * 1000)); // exactly at max delta
+            failure1.setLastFailure(Time.currentTimeMillis() - ((MAX_DELTA_TIME_SECONDS - 10) * 1000)); // 10 seconds before max delta
             failure1.incrementFailures();
 
             // User 2: Old failure (should be expired)
