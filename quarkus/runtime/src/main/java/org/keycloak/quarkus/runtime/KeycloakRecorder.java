@@ -18,7 +18,6 @@
 package org.keycloak.quarkus.runtime;
 
 import java.io.File;
-import java.lang.annotation.Annotation;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -68,11 +68,8 @@ import org.keycloak.theme.ClasspathThemeProviderFactory;
 import org.keycloak.truststore.TruststoreBuilder;
 import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
 
-import io.agroal.api.AgroalDataSource;
-import io.quarkus.agroal.DataSource;
-import io.quarkus.arc.Arc;
-import io.quarkus.arc.InstanceHandle;
 import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
+import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationStaticInitListener;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.annotations.Recorder;
 import io.quarkus.vertx.http.runtime.security.SecurityHandlerPriorities;
@@ -83,7 +80,10 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import liquibase.Scope;
 import liquibase.servicelocator.ServiceLocator;
+import org.hibernate.boot.Metadata;
+import org.hibernate.boot.spi.BootstrapContext;
 import org.hibernate.cfg.AvailableSettings;
+import org.hibernate.jpa.HibernateHints;
 import org.infinispan.protostream.SerializationContextInitializer;
 
 @Recorder
@@ -232,21 +232,83 @@ public class KeycloakRecorder {
     }
 
 
-    public HibernateOrmIntegrationRuntimeInitListener createUserDefinedUnitListener(String name) {
-        return propertyCollector -> {
-            try (InstanceHandle<AgroalDataSource> instance = Arc.container().instance(
-                    AgroalDataSource.class, new DataSource() {
-                        @Override public Class<? extends Annotation> annotationType() {
-                            return DataSource.class;
-                        }
+    /**
+     * Static-init listener that contributes the given properties to a persistence unit's boot configuration.
+     * {@code contributeBootProperties} runs after Quarkus' build-time overwrites (e.g. dialect), so these values win.
+     * Used for the default PU (dialect from --db-dialect, query startup checking, named queries, ...) and for
+     * per-named-PU Keycloak options that must override values coming from a user's persistence.xml.
+     */
+    public HibernateOrmIntegrationStaticInitListener createStaticPropertiesListener(Map<String, ?> properties) {
+        return new HibernateOrmIntegrationStaticInitListener() {
+            @Override
+            public void contributeBootProperties(BiConsumer<String, Object> propertyCollector) {
+                for (Map.Entry<String, ?> entry : properties.entrySet()) {
+                    if (entry.getValue() != null) {
+                        propertyCollector.accept(entry.getKey(), entry.getValue());
+                    }
+                }
+            }
 
-                        @Override public String value() {
-                            return name;
-                        }
-                    })) {
-                propertyCollector.accept(AvailableSettings.DATASOURCE, instance.get());
+            @Override
+            public void onMetadataInitialized(Metadata metadata, BootstrapContext bootstrapContext,
+                    BiConsumer<String, Object> propertyCollector) {
+                // no-op
             }
         };
+    }
+
+    /**
+     * Runtime-init listener re-applying persistence.xml properties that Quarkus overwrites at runtime for units not
+     * built from a persistence.xml (schema-generation action). Runs after {@code injectRuntimeConfiguration}, so it wins.
+     */
+    public HibernateOrmIntegrationRuntimeInitListener createUserDefinedUnitRuntimeListener(Map<String, String> originalProps) {
+        return propertyCollector -> {
+            String schemaAction = resolveSchemaGenerationAction(originalProps);
+            if (schemaAction != null) {
+                propertyCollector.accept(AvailableSettings.JAKARTA_HBM2DDL_DATABASE_ACTION, schemaAction);
+            }
+            reapply(originalProps, propertyCollector, AvailableSettings.JAKARTA_HBM2DDL_CREATE_SCHEMAS, "javax.persistence.create-database-schemas");
+            reapply(originalProps, propertyCollector, HibernateHints.HINT_FLUSH_MODE);
+            reapply(originalProps, propertyCollector, AvailableSettings.JAKARTA_HBM2DDL_SCRIPTS_ACTION, "javax.persistence.schema-generation.scripts.action");
+        };
+    }
+
+    private static void reapply(Map<String, String> originalProps, BiConsumer<String, Object> propertyCollector, String key, String... legacyKeys) {
+        String value = originalProps.get(key);
+        if (value == null) {
+            for (String legacyKey : legacyKeys) {
+                if (value == null) {
+                    value = originalProps.get(legacyKey);
+                }
+            }
+        }
+        if (value != null) {
+            propertyCollector.accept(key, value);
+        }
+    }
+
+    /**
+     * Resolve the schema-generation action a user persistence.xml requested, following Hibernate's precedence (the JPA
+     * {@code jakarta}/{@code javax} action first, then {@code hibernate.hbm2ddl.auto} as a fallback), so it can be
+     * restored after Quarkus resets it to "none" at runtime for property-configured persistence units. The legacy
+     * {@code hibernate.hbm2ddl.auto=create} (drop-and-create) is mapped to the JPA key's {@code drop-and-create}, because
+     * under the JPA-standard key a bare {@code create} means create-only.
+     */
+    private static String resolveSchemaGenerationAction(Map<String, String> originalProps) {
+        String jakartaAction = originalProps.get(AvailableSettings.JAKARTA_HBM2DDL_DATABASE_ACTION);
+        if (jakartaAction != null) {
+            return jakartaAction;
+        }
+        // Hibernate 7 has no AvailableSettings constant for the deprecated javax key.
+        String javaxAction = originalProps.get("javax.persistence.schema-generation.database.action");
+        if (javaxAction != null) {
+            return javaxAction;
+        }
+        String hbm2ddlAuto = originalProps.get(AvailableSettings.HBM2DDL_AUTO);
+        if (hbm2ddlAuto != null) {
+            return "create".equalsIgnoreCase(hbm2ddlAuto.trim()) ? "drop-and-create" : hbm2ddlAuto;
+        }
+        return null;
     }
 
     public HibernateOrmIntegrationRuntimeInitListener createDefaultUnitListener() {

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import org.keycloak.Config;
@@ -14,22 +15,27 @@ import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import io.smallrye.config.SmallRyeConfig;
 import org.hibernate.cfg.AvailableSettings;
-import org.hibernate.cfg.JdbcSettings;
-import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
+import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
 import org.hibernate.jpa.boot.spi.PersistenceXmlParser;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.quarkus.deployment.KeycloakProcessor.configurePersistenceUnitProperties;
 import static org.keycloak.quarkus.deployment.KeycloakProcessor.getDatasourceNameFromPersistenceXml;
+import static org.keycloak.quarkus.deployment.KeycloakProcessor.getUserPersistenceUnitOverrides;
+import static org.keycloak.quarkus.deployment.KeycloakProcessor.isResourceLocal;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.wildfly.common.Assert.assertNotNull;
 
+/**
+ * Unit tests for the static persistence.xml helpers used by
+ * {@link KeycloakProcessor#produceUserDefinedPersistenceUnits}: the datasource-name resolution order and the
+ * RESOURCE_LOCAL rejection (Keycloak requires JTA for user persistence units).
+ */
 public class PersistenceXmlDatasourcesTest {
     private static final String PERSISTENCE_XML_BODY = """
             <persistence xmlns="https://jakarta.ee/xml/ns/persistence"
@@ -52,98 +58,91 @@ public class PersistenceXmlDatasourcesTest {
     @Test
     public void datasourceNamesOrder() throws IOException {
         // use Jakarta property
-        var content = """
+        assertUsedName("""
                 <persistence-unit name="user-store-pu" transaction-type="JTA">
                     <properties>
                         <property name="jakarta.persistence.jtaDataSource" value="user-store" />
                     </properties>
                 </persistence-unit>
-                """;
-        assertUsedName(content, "user-store");
+                """, "user-store");
 
-        // use Hibernate property
-        content = """
+        // use deprecated Hibernate property
+        assertUsedName("""
                 <persistence-unit name="user-store-pu" transaction-type="JTA">
                     <properties>
                         <property name="hibernate.connection.datasource" value="my-store" />
                     </properties>
                 </persistence-unit>
-                """;
-        assertUsedName(content, "my-store");
+                """, "my-store");
 
-        // use persistence unit name
-        content = """
+        // fall back to persistence unit name
+        assertUsedName("""
                 <persistence-unit name="user-store-pu" transaction-type="JTA">
                 </persistence-unit>
-                """;
-        assertUsedName(content, "user-store-pu");
+                """, "user-store-pu");
 
-        // prefer Jakarta property
-        content = """
+        // prefer Jakarta property over the deprecated Hibernate one
+        assertUsedName("""
                 <persistence-unit name="user-store-pu" transaction-type="JTA">
                     <properties>
                         <property name="jakarta.persistence.jtaDataSource" value="user-store" />
                         <property name="hibernate.connection.datasource" value="my-store" />
                     </properties>
                 </persistence-unit>
-                """;
-        assertUsedName(content, "user-store");
+                """, "user-store");
 
-        // prefer Hibernate property as not accepting nonJta datasource
-        content = """
+        // nonJta datasource is not accepted, so the Hibernate property wins
+        assertUsedName("""
                 <persistence-unit name="user-store-pu" transaction-type="JTA">
                     <properties>
                         <property name="jakarta.persistence.nonJtaDataSource" value="user-store" />
                         <property name="hibernate.connection.datasource" value="my-store" />
                     </properties>
                 </persistence-unit>
-                """;
-        assertUsedName(content, "my-store");
+                """, "my-store");
     }
 
     @Test
-    public void transactionTypes() throws IOException {
-        // not specified transaction-type -> error
-        var content = """
+    public void resourceLocalDetection() throws IOException {
+        // explicit JTA -> not resource-local
+        assertResourceLocal("""
+                <persistence-unit name="user-store-pu" transaction-type="JTA">
+                    <properties>
+                        <property name="jakarta.persistence.jtaDataSource" value="user-store" />
+                    </properties>
+                </persistence-unit>
+                """, false);
+
+        // no transaction-type and only a datasource property -> parser defaults to RESOURCE_LOCAL -> rejected
+        assertResourceLocal("""
                 <persistence-unit name="user-store-pu">
                     <properties>
                         <property name="jakarta.persistence.jtaDataSource" value="user-store" />
                     </properties>
                 </persistence-unit>
-                """;
-        assertPersistenceXmlSingleDS(content, descriptor -> {
-            var exception = assertThrows(IllegalArgumentException.class, () -> configurePersistenceUnitProperties("user-store", descriptor));
-            assertThat(exception.getMessage(), is("You need to use 'JTA' transaction type in your persistence.xml file."));
-        });
+                """, true);
 
-        // jta data source is specified, so the tx type is JTA by default -> ok
-        content = """
+        // a <jta-data-source> element implies JTA -> not resource-local
+        assertResourceLocal("""
                 <persistence-unit name="user-store-pu">
                     <jta-data-source>JDBC/something</jta-data-source>
                     <properties>
                         <property name="jakarta.persistence.jtaDataSource" value="user-store" />
                     </properties>
                 </persistence-unit>
-                """;
-        assertPersistenceXmlSingleDS(content, descriptor -> {
-            assertDoesNotThrow(() -> configurePersistenceUnitProperties("user-store", descriptor));
-        });
+                """, false);
 
-        // tx type is set to RESOURCE_LOCAL -> error
-        content = """
+        // transaction-type attribute RESOURCE_LOCAL -> rejected
+        assertResourceLocal("""
                 <persistence-unit name="user-store-pu" transaction-type="RESOURCE_LOCAL">
                     <properties>
                         <property name="jakarta.persistence.jtaDataSource" value="user-store" />
                     </properties>
                 </persistence-unit>
-                """;
-        assertPersistenceXmlSingleDS(content, descriptor -> {
-            var exception = assertThrows(IllegalArgumentException.class, () -> configurePersistenceUnitProperties("user-store", descriptor));
-            assertThat(exception.getMessage(), is("You need to use 'JTA' transaction type in your persistence.xml file."));
-        });
+                """, true);
 
-        // Jakarta TX prop is set to RESOURCE_LOCAL -> error
-        content = """
+        // jakarta.persistence.transactionType=RESOURCE_LOCAL property -> rejected
+        assertResourceLocal("""
                 <persistence-unit name="user-store-pu">
                     <jta-data-source>JDBC/something</jta-data-source>
                     <properties>
@@ -151,82 +150,50 @@ public class PersistenceXmlDatasourcesTest {
                         <property name="jakarta.persistence.transactionType" value="RESOURCE_LOCAL" />
                     </properties>
                 </persistence-unit>
-                """;
-        assertPersistenceXmlSingleDS(content, descriptor -> {
-            var exception = assertThrows(IllegalArgumentException.class, () -> configurePersistenceUnitProperties("user-store", descriptor));
-            assertThat(exception.getMessage(), is("You need to use 'JTA' transaction type in your persistence.xml file."));
-        });
-
-        // Everything is correct, we can check if the Jakarta prop is automatically set -> ok
-        content = """
-                <persistence-unit name="user-store-pu" transaction-type="JTA">
-                    <properties>
-                        <property name="jakarta.persistence.jtaDataSource" value="user-store" />
-                    </properties>
-                </persistence-unit>
-                """;
-        assertPersistenceXmlSingleDS(content, descriptor -> {
-            configurePersistenceUnitProperties("user-store", descriptor);
-            assertThat(descriptor.getProperties().getProperty(AvailableSettings.JAKARTA_TRANSACTION_TYPE), is("JTA"));
-        });
+                """, true);
     }
 
     @Test
-    public void sqlProperties() throws IOException {
-        ConfigArgsConfigSource.setCliArgs("--db-kind-user-store=dev-mem", "--db-debug-jpql-user-store=true", "--db-log-slow-queries-threshold-user-store=7500");
+    public void perUserPuKeycloakOptionsOverride() {
+        // Per-named-datasource Keycloak options must be resolved and applied to the user persistence unit (they override
+        // any equivalent persistence.xml value). This is the logic moved into configureStaticPersistenceUnitProperties.
+        ConfigArgsConfigSource.setCliArgs("--db-kind-user-store=mariadb", "--db-dialect-user-store=org.hibernate.dialect.MariaDBDialect",
+                "--db-schema-user-store=someSchema",
+                "--db-debug-jpql-user-store=true", "--db-log-slow-queries-threshold-user-store=7500");
         initConfig();
 
-        var content = """
-                <persistence-unit name="user-store-pu" transaction-type="JTA">
-                    <properties>
-                        <property name="jakarta.persistence.jtaDataSource" value="user-store" />
-                    </properties>
-                </persistence-unit>
-                """;
-        assertPersistenceXmlSingleDS(content, descriptor -> {
-            configurePersistenceUnitProperties("user-store", descriptor);
-            var properties = descriptor.getProperties();
-
-            assertThat(properties.getProperty(AvailableSettings.USE_SQL_COMMENTS), is("true"));
-            assertThat(properties.getProperty(AvailableSettings.LOG_SLOW_QUERY), is("7500"));
-        });
+        Map<String, String> overrides = getUserPersistenceUnitOverrides("user-store");
+        assertEquals("org.hibernate.dialect.MariaDBDialect", overrides.get(AvailableSettings.DIALECT));
+        assertEquals("someSchema", overrides.get(AvailableSettings.DEFAULT_SCHEMA));
+        assertEquals("true", overrides.get(AvailableSettings.USE_SQL_COMMENTS));
+        assertEquals("7500", overrides.get(AvailableSettings.LOG_SLOW_QUERY));
     }
 
     @Test
-    public void dialectAndSchema() throws IOException {
+    public void dialectDerivedFromDbKindDoesNotOverridePersistenceXml() {
         ConfigArgsConfigSource.setCliArgs("--db-kind-user-store=mariadb");
         initConfig();
 
-        var content = """
-                <persistence-unit name="user-store-pu" transaction-type="JTA">
-                    <properties>
-                        <property name="jakarta.persistence.jtaDataSource" value="user-store" />
-                    </properties>
-                </persistence-unit>
-                """;
-        assertPersistenceXmlSingleDS(content, descriptor -> {
-            configurePersistenceUnitProperties("user-store", descriptor);
-            var properties = descriptor.getProperties();
-            assertThat(properties.getProperty(AvailableSettings.DIALECT), is("org.hibernate.dialect.MariaDBDialect"));
-            assertThat(properties.getProperty(AvailableSettings.DEFAULT_SCHEMA), is(nullValue()));
-        });
-
-        ConfigArgsConfigSource.setCliArgs("--db-kind-user-store=mariadb", "--db-schema-user-store=someSchema");
-        initConfig();
-
-        assertPersistenceXmlSingleDS(content, descriptor -> {
-            configurePersistenceUnitProperties("user-store", descriptor);
-            var properties = descriptor.getProperties();
-            assertThat(properties.getProperty(AvailableSettings.DIALECT), is("org.hibernate.dialect.MariaDBDialect"));
-            assertThat(properties.getProperty(AvailableSettings.DEFAULT_SCHEMA), is("someSchema"));
-        });
+        Map<String, String> overrides = getUserPersistenceUnitOverrides("user-store");
+        assertFalse(overrides.containsKey(AvailableSettings.DIALECT),
+                "A db-kind-derived dialect must not be applied as an override; only an explicit --db-dialect-<ds> may");
     }
 
-    private static void initConfig(){
+    @Test
+    public void explicitDialectOverridesPersistenceXml() {
+        ConfigArgsConfigSource.setCliArgs("--db-kind-user-store=mariadb",
+                "--db-dialect-user-store=org.hibernate.dialect.MySQLDialect");
+        initConfig();
+
+        Map<String, String> overrides = getUserPersistenceUnitOverrides("user-store");
+        assertEquals("org.hibernate.dialect.MySQLDialect", overrides.get(AvailableSettings.DIALECT));
+    }
+
+    private static void initConfig() {
         Config.init(new MicroProfileConfigProvider(createConfig()));
     }
 
-    // inspired in AbstractConfigurationTest in quarkus/runtime
+    // inspired by AbstractConfigurationTest in quarkus/runtime
     private static SmallRyeConfig createConfig() {
         Configuration.resetConfig();
         Environment.getCurrentOrCreateFeatureProfile();
@@ -234,37 +201,32 @@ public class PersistenceXmlDatasourcesTest {
     }
 
     private void assertUsedName(String content, String expectedName) throws IOException {
-        assertPersistenceXmlSingleDS(content, descriptor -> {
-            var name = getDatasourceNameFromPersistenceXml(descriptor);
-            assertThat(name, is(expectedName));
-            configurePersistenceUnitProperties(name, descriptor);
-            var properties = descriptor.getProperties();
-            assertNotNull(properties);
-            assertThat(properties.getProperty(JdbcSettings.JAKARTA_JTA_DATASOURCE), is(expectedName));
-            assertThat(properties.getProperty(AvailableSettings.DATASOURCE), is(expectedName));
+        assertSingle(content, descriptor -> assertThat(getDatasourceNameFromPersistenceXml(descriptor), is(expectedName)));
+    }
+
+    private void assertResourceLocal(String content, boolean expected) throws IOException {
+        assertSingle(content, descriptor -> {
+            if (expected) {
+                assertTrue(isResourceLocal(descriptor));
+            } else {
+                assertFalse(isResourceLocal(descriptor));
+            }
         });
     }
 
-    private void assertPersistenceXmlSingleDS(String content, Consumer<ParsedPersistenceXmlDescriptor> asserts) throws IOException {
-        assertPersistenceXml(content, descriptors -> {
+    private void assertSingle(String content, Consumer<PersistenceUnitDescriptor> asserts) throws IOException {
+        String xml = PERSISTENCE_XML_BODY.formatted(content);
+        Path file = null;
+        try {
+            file = Files.createTempFile("persistence", ".xml");
+            Files.writeString(file, xml);
+            List<PersistenceUnitDescriptor> descriptors = List.copyOf(parser.parse(List.of(file.toUri().toURL())).values());
             assertNotNull(descriptors);
             assertThat(descriptors.size(), is(1));
-            var descriptor = descriptors.get(0);
-            assertNotNull(descriptor);
-            asserts.accept(descriptor);
-        });
-    }
-
-    private void assertPersistenceXml(String content, Consumer<List<ParsedPersistenceXmlDescriptor>> asserts) throws IOException {
-        String finalPersistenceXmlFileContent = PERSISTENCE_XML_BODY.formatted(content);
-        Path persistenceXmlFile = null;
-        try {
-            persistenceXmlFile = Files.createTempFile("persistence", ".xml");
-            Files.writeString(persistenceXmlFile, finalPersistenceXmlFileContent);
-            asserts.accept(parser.parse(List.of(persistenceXmlFile.toUri().toURL())).values().stream().map(f -> (ParsedPersistenceXmlDescriptor) f).toList());
+            asserts.accept(descriptors.get(0));
         } finally {
-            if (persistenceXmlFile != null) {
-                Files.deleteIfExists(persistenceXmlFile);
+            if (file != null) {
+                Files.deleteIfExists(file);
             }
         }
     }
