@@ -8,6 +8,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.token.TokenInterceptorException;
 import org.keycloak.protocol.oidc.token.TokenPostProcessor;
 import org.keycloak.protocol.oidc.token.TokenPostProcessorContext;
+import org.keycloak.representations.RefreshToken;
 
 public class ResourceIndicatorsPostProcessor implements TokenPostProcessor {
 
@@ -63,7 +64,10 @@ public class ResourceIndicatorsPostProcessor implements TokenPostProcessor {
             throw new TokenInterceptorException(OAuthErrorException.INVALID_TARGET, ResourceIndicatorConstants.ERROR_INVALID_RESOURCE);
         }
 
-        context.refreshToken().getOtherClaims().put(OAuth2Constants.RESOURCE, requestedResource);
+        RefreshToken refreshToken = context.refreshToken();
+        if (refreshToken != null) {
+            refreshToken.getOtherClaims().put(OAuth2Constants.RESOURCE, requestedResource);
+        }
         context.accessToken().audience(audienceToSet);
     }
 
