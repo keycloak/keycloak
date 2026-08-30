@@ -398,6 +398,7 @@ Beginning with MySQL 8.0.30, MySQL supports generated invisible primary keys for
 If this feature is enabled, the database schema initialization and also migrations will fail with the error message `Multiple primary key defined (1068)`.
 You then need to disable it by setting the parameter `sql_generate_invisible_primary_key` to `OFF` in your MySQL server configuration before installing or upgrading {project_name}.
 
+[#mysql-mariadb-transaction-isolation-level-in-stateless-mode]
 === Transaction isolation level in stateless mode
 
 When the `stateless` feature is enabled, {project_name} automatically sets the transaction isolation level to `READ COMMITTED` for MySQL and MariaDB.
