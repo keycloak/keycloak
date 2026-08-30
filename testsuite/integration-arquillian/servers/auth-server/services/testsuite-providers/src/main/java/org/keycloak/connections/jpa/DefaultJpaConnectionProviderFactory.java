@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import javax.naming.InitialContext;
 import javax.sql.DataSource;
 
@@ -56,7 +57,16 @@ import org.keycloak.timer.TimerProvider;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
 import liquibase.GlobalConfiguration;
+import org.hibernate.boot.archive.scan.spi.ClassDescriptor;
+import org.hibernate.boot.archive.scan.spi.MappingFileDescriptor;
+import org.hibernate.boot.archive.scan.spi.PackageDescriptor;
+import org.hibernate.boot.archive.scan.spi.ScanEnvironment;
+import org.hibernate.boot.archive.scan.spi.ScanOptions;
+import org.hibernate.boot.archive.scan.spi.ScanParameters;
+import org.hibernate.boot.archive.scan.spi.ScanResult;
+import org.hibernate.boot.archive.scan.spi.Scanner;
 import org.hibernate.cfg.AvailableSettings;
+import org.hibernate.cfg.PersistenceSettings;
 import org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatform;
 import org.jboss.logging.Logger;
 
@@ -65,6 +75,13 @@ import static org.keycloak.connections.jpa.util.JpaUtils.getDatabaseType;
 import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
 
 /**
+ * Legacy (non-Quarkus) JPA connection provider (provider id {@code "default"}) used only by test servers that boot
+ * Hibernate at runtime without Quarkus build-time enhancement: the embedded Undertow {@code org.keycloak.testsuite.KeycloakServer}
+ * (and the {@code auth-server-undertow} Arquillian container) via {@code keycloak-testsuite-utils}, and the
+ * {@code keycloak-model-test} suite. Both depend on this test-only providers module, so the factory (together with its
+ * {@code META-INF/services/org.keycloak.connections.jpa.JpaConnectionProviderFactory} registration and
+ * {@code default-persistence.xml}) lives here so that it can be shared.
+ *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class DefaultJpaConnectionProviderFactory implements JpaConnectionProviderFactory, ServerInfoAwareProviderFactory {
@@ -245,6 +262,9 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                             }
                             classLoaders.add(getClass().getClassLoader());
                             properties.put(AvailableSettings.CLASSLOADERS, classLoaders);
+                            // See NonScanningScanner: avoids a spurious NoSuchFileException that Hibernate logs while
+                            // probing the (mis-derived) persistence-unit root of default-persistence.xml for orm.xml.
+                            properties.put(PersistenceSettings.SCANNER, new NonScanningScanner());
                             emf = JpaUtils.createEntityManagerFactory(session, unitName, properties, jtaEnabled);
                             addSpecificNamedQueries(session, connection);
                             logger.trace("EntityManagerFactory created");
@@ -466,6 +486,37 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
             jdbcUrl = jdbcUrl + "targetServerType=primary";
         }
         return jdbcUrl;
+    }
+
+    /**
+     * A no-op Hibernate {@link Scanner} used so building the {@code keycloak-default} unit does not scan the
+     * persistence-unit root. Keycloak's {@code default-persistence.xml} is not at the standard
+     * {@code META-INF/persistence.xml} location, so Hibernate's {@code PersistenceXmlParser} mis-derives the PU root URL
+     * (it strips the fixed {@code /META-INF/persistence.xml} suffix); on an exploded classpath the archive scanner then
+     * logs a spurious {@code NoSuchFileException} while probing that non-existent root for {@code META-INF/orm.xml}.
+     * Entities are listed explicitly ({@code exclude-unlisted-classes=true}) and there is no {@code orm.xml}, so
+     * scanning is unnecessary and the result is identical to Hibernate's own {@code DisabledScanner} minus the warning.
+     */
+    private static final class NonScanningScanner implements Scanner {
+        @Override
+        public ScanResult scan(ScanEnvironment environment, ScanOptions options, ScanParameters parameters) {
+            return new ScanResult() {
+                @Override
+                public Set<PackageDescriptor> getLocatedPackages() {
+                    return Set.of();
+                }
+
+                @Override
+                public Set<ClassDescriptor> getLocatedClasses() {
+                    return Set.of();
+                }
+
+                @Override
+                public Set<MappingFileDescriptor> getLocatedMappingFiles() {
+                    return Set.of();
+                }
+            };
+        }
     }
 
 }

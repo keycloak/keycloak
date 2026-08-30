@@ -68,7 +68,6 @@ import static org.keycloak.quarkus.runtime.storage.database.liquibase.QuarkusJpa
 public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionProviderFactory implements ServerInfoAwareProviderFactory {
 
     public static final String QUERY_PROPERTY_PREFIX = "kc.query.";
-    public static final String DEFAULT_PERSISTENCE_UNIT = "keycloak-default";
     private static final Logger logger = Logger.getLogger(QuarkusJpaConnectionProviderFactory.class);
     private static final String SQL_GET_LATEST_VERSION = "SELECT ID, VERSION FROM %sMIGRATION_MODEL ORDER BY UPDATE_TIME DESC";
     private static final String MIGRATION_TRANSACTION_TIMEOUT_KEY = "migrationTransactionTimeout";
@@ -198,11 +197,11 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
     protected EntityManagerFactory getEntityManagerFactory() {
         Instance<EntityManagerFactory> instance = Arc.container().select(EntityManagerFactory.class);
 
-        if (instance.isResolvable()) {
-            return instance.get();
+        if (!instance.isResolvable()) {
+            throw new IllegalStateException("Failed to resolve the default entity manager factory");
         }
 
-        return getEntityManagerFactory(DEFAULT_PERSISTENCE_UNIT).orElseThrow(() -> new IllegalStateException("Failed to resolve the default entity manager factory"));
+        return instance.get();
     }
 
     @Override
