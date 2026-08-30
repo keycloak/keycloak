@@ -390,11 +390,58 @@ Secure the connection by adding the options:
 * `db-tls-trust-store-file=/path/to/certificate`: The path to the server's public certificate file on the client machine.
 ====
 
-== Preparing for MySQL server
+== Preparing for MySQL and MariaDB
+
+=== Generated invisible primary keys (MySQL)
 
 Beginning with MySQL 8.0.30, MySQL supports generated invisible primary keys for any InnoDB table that is created without an explicit primary key (more information https://dev.mysql.com/doc/refman/8.0/en/create-table-gipks.html[here]).
 If this feature is enabled, the database schema initialization and also migrations will fail with the error message `Multiple primary key defined (1068)`.
 You then need to disable it by setting the parameter `sql_generate_invisible_primary_key` to `OFF` in your MySQL server configuration before installing or upgrading {project_name}.
+
+=== Transaction isolation level in stateless mode
+
+When the `stateless` feature is enabled, {project_name} automatically sets the transaction isolation level to `READ COMMITTED` for MySQL and MariaDB.
+The default `REPEATABLE READ` isolation level acquires gap locks on upsert statements, which causes deadlocks under concurrent logins.
+`READ COMMITTED` is the default isolation level used by PostgreSQL, Oracle, and Microsoft SQL Server.
+
+This requires that binary logging is not configured with `binlog_format = STATEMENT`.
+MySQL 8.0 and later default to `binlog_format = ROW`, and MariaDB 10.6 and later defaults to `binlog_format = MIXED`, both of which are compatible.
+
+To verify your current setting, run:
+
+[source,sql]
+----
+SHOW VARIABLES LIKE 'binlog_format';
+----
+
+If the result is `STATEMENT`, change it to `ROW` or `MIXED`:
+
+[source,sql]
+----
+SET GLOBAL binlog_format = 'ROW';
+----
+
+Alternatively, update the MySQL or MariaDB configuration file (`my.cnf` / `my.ini`) to make the change persistent across database restarts.
+
+=== MariaDB Galera Cluster
+
+WARNING: MariaDB Galera Cluster is not a supported database configuration for {project_name}. The guidance in this section is provided on a best-effort basis. Before reporting bugs, reproduce them with a supported database configuration first.
+
+MariaDB Galera Cluster uses certification-based replication.
+The `transaction_isolation` setting configured by {project_name} has no practical effect on Galera, as Galera internally operates under its own Snapshot Isolation model regardless of the configured isolation level.
+
+On a multi-writer Galera setup, concurrent write transactions on different nodes that modify the same row can trigger certification failures.
+{project_name} does not retry these operations, which causes the affected request to fail.
+In `stateless` mode, authentication sessions and login failure data are written directly to the database, increasing the likelihood of such conflicts under concurrent logins.
+
+To avoid certification failures, route all {project_name} write traffic to a single Galera node, using the remaining nodes as read replicas or failover targets.
+
+Galera replication is asynchronous by default.
+A write committed on one node may not yet be visible on other nodes.
+This affects all modes of {project_name}: when data is written to one node and a subsequent request is routed to a different node that has not yet received the replication event, the read may return stale or missing data.
+This can cause cache invalidation to race with replication, leading to stale data being served from the database after the cache has been cleared.
+If read traffic is distributed across multiple nodes, set `wsrep_sync_wait = 1` on the reader nodes to enable causal reads.
+This ensures that read operations wait for all pending replication events to be applied before returning results.
 
 == Preparing for MS SQL server
 
