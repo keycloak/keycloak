@@ -526,6 +526,41 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     );
   });
 
+  test("should clear previously set optional OID4VCI fields on edit", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed({
+      verifiableCredentialsEnabled: true,
+    });
+    const testClientScopeName = `oid4vci-clear-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+    await createClientScopeAndSelectProtocolAndFormat(
+      page,
+      testBed,
+      "SD-JWT VC (dc+sd-jwt)",
+    );
+
+    await page.getByTestId("name").fill(testClientScopeName);
+    await page
+      .getByTestId(OID4VCI_FIELDS.ISSUER_DID)
+      .fill(TEST_VALUES.ISSUER_DID);
+
+    await clickSaveButton(page);
+    await expect(page.getByText("Client scope created")).toBeVisible();
+
+    await navigateBackAndVerifyClientScope(page, testBed, testClientScopeName);
+    await expect(page.getByTestId(OID4VCI_FIELDS.ISSUER_DID)).toHaveValue(
+      TEST_VALUES.ISSUER_DID,
+    );
+
+    await page.getByTestId(OID4VCI_FIELDS.ISSUER_DID).fill("");
+    await clickSaveButton(page);
+    await expect(page.getByText("Client scope updated")).toBeVisible();
+
+    await navigateBackAndVerifyClientScope(page, testBed, testClientScopeName);
+    await expect(page.getByTestId(OID4VCI_FIELDS.ISSUER_DID)).toHaveValue("");
+  });
+
   test("should omit optional OID4VCI fields when left blank", async ({
     page,
   }) => {

@@ -76,6 +76,7 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_EXPIRY_IN_SECO
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_INCLUDE_IN_METADATA;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_ISSUER_DID;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SD_JWT_NUMBER_OF_DECOYS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SD_JWT_NUMBER_OF_DECOYS_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SUPPORTED_TYPES;
@@ -403,6 +404,36 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
             if (realms.findAll().stream().anyMatch(realm -> realmName.equals(realm.getRealm()))) {
                 realms.realm(realmName).remove();
             }
+        }
+    }
+
+    /**
+     * Test that optional OID4VCI attributes can be unset through the admin client-scope update path.
+     */
+    @Test
+    public void testUnsetOptionalOid4vciAttributeOnUpdate() {
+        ClientScopesResource clientScopes = testRealm.admin().clientScopes();
+        String issuerDid = "did:example:123";
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("test-unset-issuer-did");
+        scope.setIssuerDid(issuerDid);
+
+        String scopeId = null;
+        try (Response response = clientScopes.create(scope)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            scopeId = ApiUtil.getCreatedId(response);
+        }
+
+        try {
+            ClientScopeResource scopeResource = clientScopes.get(scopeId);
+            assertEquals(issuerDid, scopeResource.toRepresentation().getAttributes().get(VC_ISSUER_DID));
+
+            CredentialScopeRepresentation update = new CredentialScopeRepresentation(scopeResource.toRepresentation());
+            update.getAttributes().put(VC_ISSUER_DID, "");
+            scopeResource.update(update);
+
+            assertNull(scopeResource.toRepresentation().getAttributes().get(VC_ISSUER_DID));
+        } finally {
+            clientScopes.get(scopeId).remove();
         }
     }
 
