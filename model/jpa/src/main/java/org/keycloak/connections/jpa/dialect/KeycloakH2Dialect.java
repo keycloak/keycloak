@@ -30,6 +30,8 @@ import org.hibernate.sql.exec.spi.JdbcOperation;
 /**
  * Fixes Hibernate's H2 dialect to correctly handle HQL {@code insert ... on conflict ... do nothing}
  * by emitting a MERGE statement instead of a plain INSERT that silently drops the conflict clause.
+ * <p>
+ * See <a href="https://hibernate.atlassian.net/browse/HHH-20826">HHH-20826</a> for the upstream tracker.
  */
 public class KeycloakH2Dialect extends H2Dialect {
 
