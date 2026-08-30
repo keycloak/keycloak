@@ -1168,7 +1168,8 @@ public class OID4VCIssuerEndpoint {
                         eventBuilder.detail(Details.REASON, errorMessage)
                                 .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
                     }
-                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS,
+                            "Encryption is required but request is not a valid JWE."));
                 }
                 if (contentTypeIsJwt) {
                     String errorMessage = "Request has JWT content-type but is not a valid JWE: " + e.getMessage();
@@ -1177,7 +1178,8 @@ public class OID4VCIssuerEndpoint {
                         eventBuilder.detail(Details.REASON, errorMessage)
                                 .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
                     }
-                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS,
+                            "Request has JWT content-type but is not a valid JWE."));
                 }
             }
         }
