@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -15,14 +14,18 @@ import java.util.stream.Stream;
 
 import jakarta.annotation.Nonnull;
 import jakarta.validation.groups.Default;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.events.admin.v2.AdminEventV2Builder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -39,16 +42,19 @@ import org.keycloak.representations.admin.v2.validation.PatchClient;
 import org.keycloak.representations.admin.v2.validation.PutClient;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.scim.filter.ScimFilterException;
+import org.keycloak.scim.filter.ScimFilterParser.FilterContext;
 import org.keycloak.services.PatchType;
 import org.keycloak.services.RolesService;
 import org.keycloak.services.ServiceException;
+import org.keycloak.services.client.query.ClientQueryException;
+import org.keycloak.services.client.query.QueryParseUtils;
 import org.keycloak.services.client.scim.BaseClientModelSchema;
-import org.keycloak.services.client.scim.OIDCClientModelSchema;
-import org.keycloak.services.client.scim.SAMLClientModelSchema;
+import org.keycloak.services.client.scim.ClientJpaQueryExecutor;
+import org.keycloak.services.client.scim.ClientResourceTypeProvider;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisteredContext;
-import org.keycloak.services.clientpolicy.context.AdminClientUnregisterContext;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdatedContext;
 import org.keycloak.services.clientpolicy.context.AdminClientViewContext;
@@ -60,6 +66,7 @@ import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.RoleContainerResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.util.ObjectMapperResolver;
+import org.keycloak.utils.StringUtil;
 import org.keycloak.validation.ValidationUtil;
 import org.keycloak.validation.jakarta.HibernateValidatorProvider;
 import org.keycloak.validation.jakarta.JakartaValidatorProvider;
@@ -83,24 +90,24 @@ import static org.keycloak.utils.StringUtil.isBlank;
  */
 public class DefaultClientService implements ClientService {
     private static final ObjectMapper MAPPER = new ObjectMapperResolver().getContext(null);
-    public static final Map<String, BaseClientModelSchema<?>> SCHEMAS = Map.of(
-            OIDCClientRepresentation.PROTOCOL, OIDCClientModelSchema.INSTANCE,
-            SAMLClientRepresentation.PROTOCOL, SAMLClientModelSchema.INSTANCE);
 
     private final KeycloakSession session;
     private final AdminPermissionEvaluator permissions;
     private final AdminEventBuilder adminEventBuilder;
     private final JakartaValidatorProvider validator;
     private final RolesService rolesService;
+    private final ClientResourceTypeProvider resourceTypeProvider;
 
     public DefaultClientService(@Nonnull KeycloakSession session,
                                 @Nonnull RealmModel realm,
-                                @Nonnull AdminPermissionEvaluator permissions) {
+                                @Nonnull AdminPermissionEvaluator permissions,
+                                @Nonnull ClientResourceTypeProvider resourceTypeProvider) {
         this.session = session;
         this.permissions = permissions;
         this.adminEventBuilder = new AdminEventV2Builder(realm, permissions.adminAuth(), session, session.getContext().getConnection()).resource(ResourceType.CLIENT);
         this.validator = new HibernateValidatorProvider(new ValidationContext(session, realm));
         this.rolesService = new RolesService(session, realm, permissions, adminEventBuilder);
+        this.resourceTypeProvider = resourceTypeProvider;
     }
 
     @Override
@@ -126,18 +133,82 @@ public class DefaultClientService implements ClientService {
     }
 
     @Override
-    public Stream<BaseClientRepresentation> getClients(@Nonnull RealmModel realm,
-                                                       @Nonnull ClientProjectionOptions projectionOptions,
+    public Stream<BaseClientRepresentation> getClients(RealmModel realm,
+                                                       ClientProjectionOptions projectionOptions,
                                                        ClientSearchOptions searchOptions,
-                                                       @Nonnull ClientSortAndSliceOptions sortAndSliceOptions) {
-        throw new UnsupportedOperationException();
+                                                       ClientSortAndSliceOptions sortAndSliceOptions) {
+        FilterContext filterContext;
+        try {
+            filterContext = parseQuery(searchOptions);
+        } catch (ClientQueryException e) {
+            throw new ServiceException(e.getMessage(), Status.BAD_REQUEST);
+        }
+
+        permissions.clients().requireList();
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) && !permissions.clients().canView()) {
+            // TODO: this requires memory based post processing, which defers the slicing operation
+            // meaning that all clients could be iterated in the worst case - may be allowable only if we eventually allow
+            // unlimited limit values
+            throw new ForbiddenException(); 
+        }
+        
+        validateProjectionFields(projectionOptions);
+
+        int offset = sortAndSliceOptions.offset();
+        int limit = sortAndSliceOptions.limit();
+
+        try {
+            if (filterContext != null) {
+                QueryParseUtils.validate(filterContext);
+            }
+
+            Set<String> includeFields = projectionOptions.getFields();
+            List<String> includeList = includeFields.isEmpty() ? null : includeFields.stream().toList();
+            Stream<BaseClientRepresentation> stream = ClientJpaQueryExecutor.findClients(
+                            session, realm, filterContext, sortAndSliceOptions.getSortOptions(), offset, limit)
+                    .<BaseClientRepresentation>map(client -> {
+                        BaseClientModelSchema<?> schema = resourceTypeProvider.getSchemaMap().get(client.getProtocol());
+                        if (schema == null) return null;
+                        return populateFromSchema(schema, client, includeList);
+                    })
+                    .filter(Objects::nonNull);
+
+            return stream;
+        } catch (ClientQueryException | ScimFilterException e) {
+            throw new ServiceException(e.getMessage(), Status.BAD_REQUEST);
+        } catch (ModelException e) {
+            throw new ServiceException(e.getMessage(), Status.BAD_REQUEST);
+        }
+    }
+
+    private FilterContext parseQuery(ClientSearchOptions searchOptions) {
+        if (searchOptions == null || StringUtil.isBlank(searchOptions.query())) {
+            return null;
+        }
+        return QueryParseUtils.parse(searchOptions.query());
+    }
+
+    private static <R extends BaseClientRepresentation> R populateFromSchema(
+            BaseClientModelSchema<R> schema, ClientModel client, List<String> includeFields) {
+        R rep = schema.createRepresentation();
+        schema.populate(rep, client, includeFields, null);
+        return rep;
+    }
+
+    // TODO: still need to have well defined handling for polymorphic fields
+    private void validateProjectionFields(ClientProjectionOptions projectionOptions) {
+        projectionOptions.getFields().forEach(field -> {
+            if (!ClientResourceTypeProvider.isKnownField(field)) {
+                throw new ServiceException("%s is an unknown field".formatted(field), Status.BAD_REQUEST);
+            }
+        });
     }
 
     @SuppressWarnings("unchecked")
     protected Stream<BaseClientRepresentation> applyProjection(Stream<BaseClientRepresentation> stream, ClientProjectionOptions projectionOptions) {
         if (projectionOptions.getFields().isEmpty()) return stream;
         return stream.map(rep -> {
-            BaseClientModelSchema schema = SCHEMAS.get(rep.getProtocol());
+            BaseClientModelSchema schema = resourceTypeProvider.getSchemaMap().get(rep.getProtocol());
             if (schema != null) {
                 schema.applyProjection(rep, projectionOptions.getFields());
             }
@@ -157,26 +228,7 @@ public class DefaultClientService implements ClientService {
 
     @Override
     public void deleteClient(RealmModel realm, String clientId) throws ServiceException {
-        ClientModel client = realm.getClientByClientId(clientId);
-        if (client == null) {
-            throw new ServiceException("Could not find client", Response.Status.NOT_FOUND);
-        }
-
-        permissions.clients().requireManage(client);
-        try {
-            session.clientPolicy().triggerOnEvent(new AdminClientUnregisterContext(client, permissions.adminAuth()));
-        } catch (ClientPolicyException e) {
-            throw new ServiceException(e.getErrorDetail(), Response.Status.BAD_REQUEST);
-        }
-
-        var clientRepresentation = Optional.ofNullable(getSchema(client.getProtocol()).fromModel(client))
-                .orElseThrow(() -> new ServiceException("Cannot map client model", Response.Status.BAD_REQUEST));
-
-        if (new ClientManager(new RealmManager(session)).removeClient(realm, client)) {
-            fireAdminEvent(OperationType.DELETE, clientRepresentation);
-        } else {
-            throw new ServiceException("Could not delete client", Response.Status.BAD_REQUEST);
-        }
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -521,7 +573,7 @@ public class DefaultClientService implements ClientService {
 
     @SuppressWarnings("unchecked")
     public <R extends BaseClientRepresentation> BaseClientModelSchema<R> getSchema(String protocol) {
-        BaseClientModelSchema<?> schema = SCHEMAS.get(protocol);
+        BaseClientModelSchema<?> schema = resourceTypeProvider.getSchemaMap().get(protocol);
         if (schema == null) {
             throw new ServiceException("Schema not found, unsupported client protocol: " + protocol,
                     Response.Status.BAD_REQUEST);

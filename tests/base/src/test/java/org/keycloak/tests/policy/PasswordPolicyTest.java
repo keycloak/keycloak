@@ -47,6 +47,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.endsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -294,6 +295,7 @@ public class PasswordPolicyTest {
             PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
 
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "length(8) and maxLength(32) and digits(2) and lowerCase(2) and upperCase(2) and specialChars(2) and notUsername()"));
+            assertThat(realmModel.getPasswordPolicy().getPolicies(), contains("length", "maxLength", "digits", "lowerCase", "upperCase", "specialChars", "notUsername"));
             Assertions.assertNotNull(policyManager.validate("jdoe", "12aaBB&"));
             Assertions.assertNotNull(policyManager.validate("jdoe", "aaaaBB&-"));
             Assertions.assertNotNull(policyManager.validate("jdoe", "12AABB&-"));

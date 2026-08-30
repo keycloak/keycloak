@@ -41,7 +41,7 @@ public class PasswordPage extends AbstractLoginPage {
     }
 
     public void submit() {
-        submitButton.click();
+        driver.waiting().waitForPageReload(() -> submitButton.click());
     }
 
     public String getPassword() {

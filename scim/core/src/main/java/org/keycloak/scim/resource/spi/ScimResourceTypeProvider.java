@@ -52,7 +52,9 @@ public interface ScimResourceTypeProvider<R> extends Provider {
      */
     String getSchema();
 
-    <M extends Model> List<ModelSchema<M, R>> getSchemas();
+    default <M extends Model> List<ModelSchema<M, R>> getSchemas() {
+        return List.of();
+    }
 
     /**
      * Returns the schema extensions names of the resource type managed by this provider.

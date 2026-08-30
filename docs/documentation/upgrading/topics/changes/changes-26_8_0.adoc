@@ -27,8 +27,22 @@ After upgrading, {project_name} always performs the upstream identity provider l
 
 To temporarily restore the previous behavior, enable the `allow-initiating-idp-logout-param` server option for the OpenID Connect provider. This option is deprecated and will be removed in a future release.
 
+=== X509 user authentication requires CA Subject DN
+
+Following the changes made to the X509 client authenticator, in this release the user counterparts also require the **Certificate Authority subject DN** option. In this case the new configuration attribute is multi-valued and identifies the trusted anchor CA (or CAs) for user certificates. The new option is now compulsory in the admin console. Besides, the option **Revalidate Client Certificate** should always be enabled in order to get the root certificate for the chain and check its subject DN, therefore it is now deprecated and not presented in the console. Previous configurations still work to maintain backwards compatibility but the new behavior will be enforced in the next major version.
+
+Note that {project_name}'s trust store (or mTLS store) is shared for all the realms, the new configuration allows to specify the correct CAs for user certificates and avoids interference with other unrelated CAs.
+
+Revalidating certificates can be problematic in certain installations (for example if a proxy is configured for TLS termination and the certificates are passed to {project_name} using headers). The trust-store or mTLS store in {project_name} should always be configured correctly to validate the client certificate chain. Please see link:https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] and link:https://www.keycloak.org/server/mutual-tls[Configuring trusted certificates for mTLS], for more information if you are using a TLS termination proxy and X509 client authentication.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
+
+=== Clusterless feature will be removed
+
+The experimental `clusterless` feature will be removed in a future release. The `stateless` feature is the successor for running {project_name} without depending on an external Infinispan cluster. While `clusterless` offloads all session data to an external Infinispan cluster, `stateless` stores session data in the database and uses the embedded Infinispan only as a cache.
+
+If you are using `--features=clusterless`, migrate to `--features=stateless` before upgrading to a future release.
 
 === Group hierarchy search returns stripped ancestors under Fine-Grained Admin Permissions
 
@@ -75,6 +89,16 @@ The token introspection endpoint previously set the `act.sub` field to the imper
 
 If you have resource servers that parse `act.sub` from introspection responses and expect a username, update them to read `act.preferred_username` instead.
 
+=== Group policy matching for bare group names
+
+Group-based policies in Authorization Services use the groups claim from the token as the first source of truth. When the claim is not defined or empty, the policy falls back to the user's actual group memberships from the realm. Bare group names in token claims are now resolved to top-level realm groups only. Previously, a bare name like `Admins` in a group claim would match any group named `Admins` regardless of its position in the group hierarchy. This allowed users who are members of one group to satisfy policies targeting a different group with the same name at a different path.
+
+If your deployment uses the Group Membership protocol mapper with *Full group path* disabled and relies on group policies targeting nested groups, enable *Full group path* in the protocol mapper configuration so that tokens include the complete group path (for example, `/Organization/Admins` instead of `Admins`).
+
+Group names that contain slashes (for example, a group named `/Organization/Admins`) are now resolved as top-level group names first, before being treated as paths. This prevents a group name from being confused with a nested group path.
+
+Group policies that use full group paths in claims are not affected unless a top-level group name is identical to a nested group path. In that ambiguous case, the top-level group name takes precedence.
+
 === Authorization services claim handling changes
 
 Two changes affect how claims are handled in the authorization services token endpoint:
@@ -100,7 +124,7 @@ The parameterized client scope used by the experimental token exchange delegatio
 
 The full scope format in token requests changes from `delegation:<administrator>` to `delegation:user:<administrator>`. For example, a scope value that was previously `delegation:admin1` is now `delegation:user:admin1`.
 
-If you are upgrading an existing realm, rename its `delegation` client scope to `delegation:user`, change its parameterized scope type to `user-delegation`, and change its consent screen text to `${userDelegationScopeConsentText}`. Then update clients and automation to request `delegation:user:<administrator>`.
+During migration, the `delegation:user` and `delegation:client` client scopes are automatically created in existing realms as *Optional* client scopes. Delegation also requires configuring a delegation permission through FGAP V2. If you had a `delegation` client scope from a previous version, it can be safely removed after migration. Update clients and automation to request `delegation:user:<administrator>`.
 
 === Email is no longer marked as verified by other flows
 
@@ -116,6 +140,14 @@ The *Trust Email* setting of identity providers and LDAP federation is not affec
 The `OFFLINE_USER_SESSION` table has a new `LAST_SESSION_REFRESH_COARSE` column and updated indexes `IDX_USER_SESSION_EXPIRATION_CREATED` and `IDX_USER_SESSION_EXPIRATION_LAST_REFRESH`. On PostgreSQL and Microsoft SQL Server, `IDX_OFFLINE_USS_BY_BROKER_SESSION_ID` is also rebuilt as a filtered index.
 If the table contains more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
 See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
+=== Automatic non-blocking index creation after startup
+
+When {project_name} skips creating an index during schema migration because the table exceeds the row count threshold, the index checker now automatically creates the missing index in the background after startup on databases that support non-blocking index creation. This applies to PostgreSQL (`CREATE INDEX CONCURRENTLY`), Oracle (`CREATE INDEX ... ONLINE`), MySQL/MariaDB (online DDL by default), and Microsoft SQL Server Enterprise, Developer, and Azure SQL editions (`CREATE INDEX ... WITH (ONLINE = ON)`).
+
+On PostgreSQL, if an invalid index exists from a previously failed `CREATE INDEX CONCURRENTLY`, {project_name} detects it, drops it, and recreates it automatically.
+
+On databases that do not support non-blocking index creation, or when the migration strategy is set to `manual` or `validate`, {project_name} continues to log the SQL statement for manual execution without creating the index automatically.
 
 === Certificate Common Name truncated to 64 characters
 
@@ -170,6 +202,10 @@ Some of the switches were deprecated already in previous versions. In addition t
 * Use lower-case bearer type in token responses
 
 Please update your client applications if you still rely on these switches as they will be removed in the future version.
+
+=== Option Revalidate Client Certificate is deprecated for the X509 user authenticators
+
+As commented in the breaking change section, the option **Revalidate Client Certificate** is deprecated for the X509 user authenticators. This option was used to revalidate the certificate chain presented by the user against the server trust store. In the future, the revalidation will always be executed and the trust store should be configured accordingly.
 
 === `HttpResponse#getStatus()` and `setStatus(int)` in server SPI
 

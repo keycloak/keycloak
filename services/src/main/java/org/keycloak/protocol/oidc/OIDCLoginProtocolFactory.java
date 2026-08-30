@@ -435,29 +435,10 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         }
 
         if (Profile.isFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE_DELEGATION)) {
-            ClientScopeModel delegationScope = newRealm.addClientScope(USER_DELEGATION_SCOPE);
-            delegationScope.setDescription("OpenID Connect scope for token exchange delegation");
-            delegationScope.setIsParameterizedScope(true);
-            delegationScope.setDisplayOnConsentScreen(true);
-            delegationScope.setAttribute(ClientScopeModel.IS_ALWAYS_CONSENT, Boolean.TRUE.toString());
-            delegationScope.setAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, DelegationScopeType.TYPE);
-            delegationScope.setIncludeInTokenScope(true);
-            delegationScope.setProtocol(getId());
-            delegationScope.setConsentScreenText("${userDelegationScopeConsentText}");
-            delegationScope.addProtocolMapper(builtins.get(DELEGATION_MAY_ACT_SUB));
-
-            ClientScopeModel clientDelegationScope = newRealm.addClientScope(CLIENT_DELEGATION_SCOPE);
-            clientDelegationScope.setDescription("OpenID Connect scope for agent/client token exchange delegation");
-            clientDelegationScope.setIsParameterizedScope(true);
-            clientDelegationScope.setDisplayOnConsentScreen(true);
-            clientDelegationScope.setAttribute(ClientScopeModel.IS_ALWAYS_CONSENT, Boolean.TRUE.toString());
-            clientDelegationScope.setAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, ClientDelegationScopeType.TYPE);
-            clientDelegationScope.setIncludeInTokenScope(true);
-            clientDelegationScope.setProtocol(getId());
-            clientDelegationScope.setConsentScreenText("${clientDelegationScopeConsentText}");
-            clientDelegationScope.addProtocolMapper(builtins.get(CLIENT_DELEGATION_MAY_ACT_SUB));
-            clientDelegationScope.addProtocolMapper(builtins.get(CLIENT_DELEGATION_MAY_ACT_CLIENT_ID));
-            clientDelegationScope.addProtocolMapper(builtins.get(CLIENT_DELEGATION_AUDIENCE));
+            // FGAP guards delegation permission evaluation, so both scopes are optional by default for new realms
+            ClientScopeModel userDelegationScope = addUserDelegationClientScope(newRealm);
+            newRealm.addDefaultClientScope(userDelegationScope, false);
+            ClientScopeModel clientDelegationScope = addClientDelegationClientScope(newRealm);
             newRealm.addDefaultClientScope(clientDelegationScope, false);
         }
     }
@@ -606,6 +587,52 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         return serviceAccountScope;
     }
 
+
+    public ClientScopeModel addUserDelegationClientScope(RealmModel newRealm) {
+        ClientScopeModel delegationScope = KeycloakModelUtils.getClientScopeByName(newRealm, USER_DELEGATION_SCOPE);
+        if (delegationScope == null) {
+            delegationScope = newRealm.addClientScope(USER_DELEGATION_SCOPE);
+            delegationScope.setDescription("OpenID Connect scope for token exchange delegation");
+            delegationScope.setIsParameterizedScope(true);
+            delegationScope.setDisplayOnConsentScreen(true);
+            delegationScope.setAttribute(ClientScopeModel.IS_ALWAYS_CONSENT, Boolean.TRUE.toString());
+            delegationScope.setAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, DelegationScopeType.TYPE);
+            delegationScope.setIncludeInTokenScope(true);
+            delegationScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            delegationScope.setConsentScreenText("${userDelegationScopeConsentText}");
+            delegationScope.addProtocolMapper(builtins.get(DELEGATION_MAY_ACT_SUB));
+
+            logger.debugf("Client scope '%s' created in the realm '%s'.", USER_DELEGATION_SCOPE, newRealm.getName());
+        } else {
+            logger.debugf("Client scope '%s' already exists in realm '%s'. Skip creating it.", USER_DELEGATION_SCOPE, newRealm.getName());
+        }
+
+        return delegationScope;
+    }
+
+    public ClientScopeModel addClientDelegationClientScope(RealmModel newRealm) {
+        ClientScopeModel clientDelegationScope = KeycloakModelUtils.getClientScopeByName(newRealm, CLIENT_DELEGATION_SCOPE);
+        if (clientDelegationScope == null) {
+            clientDelegationScope = newRealm.addClientScope(CLIENT_DELEGATION_SCOPE);
+            clientDelegationScope.setDescription("OpenID Connect scope for agent/client token exchange delegation");
+            clientDelegationScope.setIsParameterizedScope(true);
+            clientDelegationScope.setDisplayOnConsentScreen(true);
+            clientDelegationScope.setAttribute(ClientScopeModel.IS_ALWAYS_CONSENT, Boolean.TRUE.toString());
+            clientDelegationScope.setAttribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, ClientDelegationScopeType.TYPE);
+            clientDelegationScope.setIncludeInTokenScope(true);
+            clientDelegationScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            clientDelegationScope.setConsentScreenText("${clientDelegationScopeConsentText}");
+            clientDelegationScope.addProtocolMapper(builtins.get(CLIENT_DELEGATION_MAY_ACT_SUB));
+            clientDelegationScope.addProtocolMapper(builtins.get(CLIENT_DELEGATION_MAY_ACT_CLIENT_ID));
+            clientDelegationScope.addProtocolMapper(builtins.get(CLIENT_DELEGATION_AUDIENCE));
+
+            logger.debugf("Client scope '%s' created in the realm '%s'.", CLIENT_DELEGATION_SCOPE, newRealm.getName());
+        } else {
+            logger.debugf("Client scope '%s' already exists in realm '%s'. Skip creating it.", CLIENT_DELEGATION_SCOPE, newRealm.getName());
+        }
+
+        return clientDelegationScope;
+    }
 
     @Override
     protected void addDefaults(ClientModel client) {
