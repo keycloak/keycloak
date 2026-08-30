@@ -28,6 +28,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -305,12 +306,23 @@ public class AuthorizationEndpointChecker {
     }
 
     public void checkValidResource() throws AuthorizationCheckException {
+        if (!Profile.isFeatureEnabled(Profile.Feature.RESOURCE_INDICATORS)) {
+            return;
+        }
+
         if (!ResourceIndicatorValidation.isValidResourceIndicator(request.getResource())) {
             ServicesLogger.LOGGER.invalidParameter(OIDCLoginProtocol.SCOPE_PARAM);
             String errorMessage = "Invalid resource: " + request.getResource();
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_TARGET, ResourceIndicatorConstants.ERROR_INVALID_RESOURCE);
+        }
+
+        if (request.getResource() != null && !OIDCAdvancedConfigWrapper.fromClientModel(client).isResourceIndicatorsEnabled()) {
+            String errorMessage = "Resource indicators are not enabled for client: " + client.getClientId();
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_REQUEST);
+            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_TARGET, ResourceIndicatorConstants.ERROR_RESOURCE_INDICATORS_DISABLED);
         }
     }
 
