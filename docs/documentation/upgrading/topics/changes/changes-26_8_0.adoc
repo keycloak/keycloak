@@ -177,7 +177,7 @@ If you have tooling that inspects the CN of {project_name}-generated certificate
 
 === Transaction isolation level changed to READ COMMITTED for MySQL and MariaDB in stateless mode
 
-When the `stateless` feature is enabled, {project_name} now sets the transaction isolation level to `READ COMMITTED` for MySQL, MariaDB, and TiDB.
+When the `stateless` feature is enabled, {project_name} now sets the transaction isolation level to `READ COMMITTED` for MySQL and MariaDB.
 This prevents deadlocks that occur under concurrent logins.
 `READ COMMITTED` is the default isolation level used by PostgreSQL, Oracle, and Microsoft SQL Server.
 
@@ -202,6 +202,25 @@ SET GLOBAL binlog_format = 'ROW';
 Alternatively, update the MySQL or MariaDB configuration file (`my.cnf` / `my.ini`) to make the change persistent across database restarts.
 
 Changing the default transaction isolation level for all modes is being considered for a future release.
+
+=== MariaDB Galera Cluster considerations
+
+WARNING: MariaDB Galera Cluster is not a supported database configuration for {project_name}. The guidance in this section is provided on a best-effort basis. Before reporting bugs, reproduce them with a supported database configuration first.
+
+Galera Cluster uses certification-based replication, which means the `transaction_isolation` setting configured by {project_name} has no practical effect -- Galera internally operates under its own Snapshot Isolation model regardless of the configured isolation level.
+
+On a multi-writer Galera setup, concurrent write transactions on different nodes that modify the same row can trigger certification failures.
+{project_name} does not retry these operations, which causes the affected request to fail.
+In `stateless` mode, authentication sessions and login failure data are written directly to the database, increasing the likelihood of such conflicts under concurrent logins.
+
+To avoid certification failures, route all {project_name} write traffic to a single Galera node, using the remaining nodes as read replicas or failover targets.
+
+Galera replication is asynchronous by default.
+A write committed on one node may not yet be visible on other nodes.
+This affects all modes of {project_name}: when data is written to one node and a subsequent request is routed to a different node that has not yet received the replication event, the read may return stale or missing data.
+In non-stateless mode, this can cause cache invalidation to race with replication, leading to stale data being served from the database after the cache has been cleared.
+If read traffic is distributed across multiple nodes, enable causal reads by setting `wsrep_sync_wait = 1` on the reader nodes.
+This ensures that read operations wait for all pending replication events to be applied before returning results.
 
 === Asynchronous commit on MS SQL Server and Oracle databases
 
