@@ -36,6 +36,7 @@ import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.resource.PermissionResource;
@@ -50,6 +51,9 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.AuthorizationResponse;
+import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
@@ -509,6 +513,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         final String sharedWithMeUrl = resourcesUrl + "/shared-with-me";
         final String resourceUrl = resourcesUrl + "/" + encodePathAsIs(resourceId);
         final String permissionsUrl = resourceUrl + "/permissions";
+        final String userPermissionsUrl = permissionsUrl + "/alice";
         final String requestsUrl = resourceUrl + "/permissions/requests";
 
         TokenUtil viewProfileTokenUtil = new TokenUtil("view-account-access", "password");
@@ -531,6 +536,12 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         assertEquals( 403,
                 SimpleHttpDefault.doPut(permissionsUrl, httpClient).acceptJson().auth(viewProfileTokenUtil.getToken()).json(Collections.emptyList()).asStatus(),
                 "view-account-access PUT " + permissionsUrl);
+        assertEquals( 403,
+                SimpleHttpDefault.doDelete(userPermissionsUrl, httpClient).acceptJson().auth(noAccessTokenUtil.getToken()).asStatus(),
+                "no-account-access DELETE " + userPermissionsUrl);
+        assertEquals( 403,
+                SimpleHttpDefault.doDelete(userPermissionsUrl, httpClient).acceptJson().auth(viewProfileTokenUtil.getToken()).asStatus(),
+                "view-account-access DELETE " + userPermissionsUrl);
     }
 
     @Test
@@ -541,16 +552,23 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         final String resourcesUrl = getAccountUrl("resources");
         final String sharedWithOthersUrl = resourcesUrl + "/shared-with-others";
         final String sharedWithMeUrl = resourcesUrl + "/shared-with-me";
+        final String pendingRequestsUrl = resourcesUrl + "/pending-requests";
         final String resourceUrl = resourcesUrl + "/" + encodePathAsIs(resourceId);
         final String permissionsUrl = resourceUrl + "/permissions";
+        final String userPermissionsUrl = permissionsUrl + "/alice";
         final String requestsUrl = resourceUrl + "/permissions/requests";
+        final String userLookupUrl = resourceUrl + "/user?value=alice";
+
+        assertCanAuthorizeWithUmaGrant("alice", resourceId, "Scope A");
+        String permissionTicket = createPermissionTicket(resourceId, "Scope A");
 
         RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
         try {
             realmRep.setUserManagedAccessAllowed(false);
             adminClient.realm("test").update(realmRep);
 
-            for (String url : Arrays.asList(resourcesUrl, sharedWithOthersUrl, sharedWithMeUrl, resourceUrl, permissionsUrl, requestsUrl)) {
+            for (String url : Arrays.asList(resourcesUrl, sharedWithOthersUrl, sharedWithMeUrl, pendingRequestsUrl, resourceUrl, permissionsUrl,
+                    requestsUrl, userLookupUrl)) {
                 assertEquals(403,
                         SimpleHttpDefault.doGet(url, httpClient).acceptJson().auth(tokenUtil.getToken()).asStatus(),
                         "UMA disabled GET " + url);
@@ -561,9 +579,27 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
             assertEquals(403,
                     SimpleHttpDefault.doPut(permissionsUrl, httpClient).acceptJson().auth(tokenUtil.getToken()).json(permissions).asStatus(),
                     "UMA disabled PUT " + permissionsUrl);
+            assertEquals(403,
+                    SimpleHttpDefault.doDelete(userPermissionsUrl, httpClient).acceptJson().auth(tokenUtil.getToken()).asStatus(),
+                    "UMA disabled DELETE " + userPermissionsUrl);
+
+            assertCannotAuthorizeWithUmaGrant("alice", permissionTicket);
         } finally {
             realmRep.setUserManagedAccessAllowed(true);
             adminClient.realm("test").update(realmRep);
+        }
+    }
+
+    @Test
+    public void testResourceOwnerCanAuthorizeOwnResourceWhenUserManagedAccessDisabled() {
+        Resource resource = getMyResources().get(0);
+        String permissionTicket = createPermissionTicket(resource.getId(), "Scope A");
+
+        setUserManagedAccessAllowed(false);
+        try {
+            assertCanAuthorizeWithUmaGrant("test-authz-user@localhost", permissionTicket);
+        } finally {
+            setUserManagedAccessAllowed(true);
         }
     }
 
@@ -602,6 +638,34 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
                 assertEquals(1, sharedResource.getScopes().size());
             }
         }
+    }
+
+    @Test
+    public void testRevokeAllPermissionsForUser() throws Exception {
+        AbstractResourceService.ResourcePermission sharedResource = getSharedWithMe("alice").get(0);
+
+        assertNotNull(sharedResource);
+        assertEquals(2, sharedResource.getScopes().size());
+
+        String resourceId = sharedResource.getId();
+        List<Permission> permissions = doGet("/" + encodePathAsIs(resourceId) + "/permissions",
+                new TypeReference<List<Permission>>() {});
+
+        assertTrue(permissions.stream().anyMatch(permission -> "alice".equals(permission.getUsername())));
+
+        SimpleHttpResponse response = SimpleHttpDefault
+                .doDelete(getAccountUrl("resources/" + encodePathAsIs(resourceId) + "/permissions/alice"), httpClient)
+                .auth(tokenUtil.getToken())
+                .asResponse();
+
+        assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+
+        assertFalse(getSharedWithMe("alice").stream().anyMatch(resource -> resource.getId().equals(resourceId)));
+
+        permissions = doGet("/" + encodePathAsIs(resourceId) + "/permissions",
+                new TypeReference<List<Permission>>() {});
+
+        assertFalse(permissions.stream().anyMatch(permission -> "alice".equals(permission.getUsername())));
     }
 
     @Test
@@ -931,6 +995,38 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
                 .create(new Configuration(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth",
                         managedRealm.admin().toRepresentation().getRealm(), client.getClientId(),
                         credentials, httpClient));
+    }
+
+    private void setUserManagedAccessAllowed(boolean allowed) {
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
+        realm.setUserManagedAccessAllowed(allowed);
+        managedRealm.admin().update(realm);
+    }
+
+    private void assertCanAuthorizeWithUmaGrant(String userName, String resourceId, String scope) {
+        assertCanAuthorizeWithUmaGrant(userName, createPermissionTicket(resourceId, scope));
+    }
+
+    private void assertCanAuthorizeWithUmaGrant(String userName, String permissionTicket) {
+        AuthorizationResponse response = authzClient.authorization(userName, "password")
+                .authorize(new AuthorizationRequest(permissionTicket));
+
+        assertNotNull(response.getToken());
+    }
+
+    private void assertCannotAuthorizeWithUmaGrant(String userName, String permissionTicket) {
+        try {
+            authzClient.authorization(userName, "password")
+                    .authorize(new AuthorizationRequest(permissionTicket));
+            fail("User-managed access grant should not authorize the requester when UMA is disabled");
+        } catch (AuthorizationDeniedException expected) {
+            // expected
+        }
+    }
+
+    private String createPermissionTicket(String resourceId, String scope) {
+        return authzClient.protection("test-authz-user@localhost", "password").permission()
+                .create(new PermissionRequest(resourceId, scope)).getTicket();
     }
 
     private UserRepresentation createUser(String userName, String password, String firstName, String lastName, String email) {

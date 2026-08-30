@@ -27,10 +27,12 @@ import java.util.Map;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
@@ -95,6 +97,33 @@ public class ResourceService extends AbstractResourceService {
         }
 
         return permissions;
+    }
+
+    /**
+     * Revokes all granted permissions for the given user on this resource.
+     *
+     * @param username the username or email of the user whose access should be revoked
+     * @return if successful, a {@link Response.Status#NO_CONTENT} response
+     */
+    @DELETE
+    @Path("permissions/{username}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response revokeAllPermissions(@PathParam("username") String username) {
+        auth.require(AccountRoles.MANAGE_ACCOUNT);
+
+        UserModel requester = getUser(username);
+
+        Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
+        filters.put(PermissionTicket.FilterOption.OWNER, user.getId());
+        filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
+        filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
+        filters.put(PermissionTicket.FilterOption.REQUESTER, requester.getId());
+
+        for (PermissionTicket ticket : ticketStore.find(resourceServer, filters, null, null)) {
+            ticketStore.delete(ticket.getId());
+        }
+
+        return Response.noContent().build();
     }
 
     @GET
