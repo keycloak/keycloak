@@ -838,10 +838,7 @@ public class OID4VCIssuerEndpoint {
 
         CredentialIssuer issuerMetadata = new OID4VCIssuerWellKnownProvider(session).getIssuerMetadata();
 
-        // Validate request encryption
-        CredentialRequest credentialRequest = validateRequestEncryption(requestPayload, issuerMetadata, eventBuilder);
-
-        // Authenticate first to fail fast on auth errors
+        // Authenticate before decrypting the request
         AuthenticationManager.AuthResult authResult = getAuthResult();
 
         // Set client and user info in event
@@ -852,6 +849,12 @@ public class OID4VCIssuerEndpoint {
                 .user(userModel)
                 .session(userSession.getId())
                 .detail(Details.USERNAME, userModel.getUsername());
+
+        // Check that client is enabled
+        checkClientEnabled(eventBuilder);
+
+        // Validate request encryption
+        CredentialRequest credentialRequest = validateRequestEncryption(requestPayload, issuerMetadata, eventBuilder);
 
         // Validate encryption parameters if present
         CredentialResponseEncryption encryptionParams = credentialRequest.getCredentialResponseEncryption();
@@ -889,10 +892,6 @@ public class OID4VCIssuerEndpoint {
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
             }
         }
-
-        // Check that client is enabled - call after authentication
-        //
-        checkClientEnabled(eventBuilder);
 
         // Verify that we have credential_configuration_id or credential_identifier
         //
@@ -1200,7 +1199,8 @@ public class OID4VCIssuerEndpoint {
                         eventBuilder.detail(Details.REASON, errorMessage)
                                 .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
                     }
-                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS,
+                            "Encryption is required but request is not a valid JWE."));
                 }
                 if (contentTypeIsJwt) {
                     String errorMessage = "Request has JWT content-type but is not a valid JWE: " + e.getMessage();
@@ -1209,7 +1209,8 @@ public class OID4VCIssuerEndpoint {
                         eventBuilder.detail(Details.REASON, errorMessage)
                                 .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
                     }
-                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+                    throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS,
+                            "Request has JWT content-type but is not a valid JWE."));
                 }
             }
         }
