@@ -21,9 +21,39 @@ import java.util.function.Supplier;
 
 import jakarta.persistence.EntityManagerFactory;
 
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
+
+import io.agroal.api.AgroalDataSource;
+import io.quarkus.agroal.DataSource;
+import io.quarkus.arc.Arc;
+import org.jboss.logging.Logger;
+
 public final class NamedJpaConnectionProviderFactory extends AbstractJpaConnectionProviderFactory {
 
+    private static final Logger logger = Logger.getLogger(NamedJpaConnectionProviderFactory.class);
+
     private String unitName;
+    private String dataSourceName;
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+        // Skip an inactive datasource's persistence unit instead of failing to resolve its (deactivated) EntityManagerFactory.
+        String dsName = dataSourceName != null ? dataSourceName : unitName;
+        var dsInstance = Arc.requireContainer().select(AgroalDataSource.class, new DataSource.DataSourceLiteral(dsName));
+        if (dsInstance.isResolvable() && !dsInstance.getHandle().getBean().isActive()) {
+            if (!isExplicitlyDisabled(dsName)) {
+                logger.warnf("Datasource '%s' is not active, so the '%s' persistence unit is skipped."
+                        + " If it should be active, configure it using datasource options like 'db-kind-%s'.", dsName, unitName, dsName);
+            }
+            return;
+        }
+        super.postInit(factory);
+    }
+
+    private static boolean isExplicitlyDisabled(String dsName) {
+        return "false".equals(Configuration.getConfigValue("quarkus.datasource.\"" + dsName + "\".active").getValue());
+    }
 
     @Override
     protected EntityManagerFactory getEntityManagerFactory() {
@@ -41,6 +71,10 @@ public final class NamedJpaConnectionProviderFactory extends AbstractJpaConnecti
 
     public void setUnitName(String unitName) {
         this.unitName = unitName;
+    }
+
+    public void setDataSourceName(String dataSourceName) {
+        this.dataSourceName = dataSourceName;
     }
 
     @Override
