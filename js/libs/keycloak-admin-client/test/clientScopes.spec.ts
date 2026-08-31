@@ -403,6 +403,7 @@ describe("Client Scopes", () => {
 
       mapper.config = { "access.token.claim": "false" };
       mapper.name = "updated-mapper-name";
+      dummyMapper.name = mapper.name;
 
       await kcAdminClient.clientScopes.updateProtocolMapper(
         { id: id!, mapperId: mapper.id! },
@@ -420,10 +421,11 @@ describe("Client Scopes", () => {
 
     it("reject duplicate protocol mapper name on update", async () => {
       const { id } = currentClientScope;
+      dummyMapper.name = "first-mapper";
 
       await kcAdminClient.clientScopes.addProtocolMapper(
         { id: id! },
-        { ...dummyMapper, name: "first-mapper" },
+        dummyMapper,
       );
 
       await kcAdminClient.clientScopes.addProtocolMapper(
@@ -450,6 +452,11 @@ describe("Client Scopes", () => {
       } catch {
         failed = true;
       }
+
+      await kcAdminClient.clientScopes.delProtocolMapper({
+        id: id!,
+        mapperId: mapper.id!,
+      });
 
       expect(failed).to.be.true;
     });
