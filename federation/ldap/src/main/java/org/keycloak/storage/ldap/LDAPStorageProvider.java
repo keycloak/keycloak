@@ -721,7 +721,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
     private boolean isUserProfileValid(RealmModel realm, UserModel user, LDAPObject ldapUser) {
         // Opt-in: only validate against the User Profile if the provider is configured to do so
-        boolean validateProfile = Boolean.parseBoolean(model.getConfig().getFirst("validateUserProfile"));
+        boolean validateProfile = Boolean.parseBoolean(model.getConfig().getFirst(LDAPConstants.VALIDATE_USER_PROFILE));
 
         if (!validateProfile) {
             return true;

@@ -1,9 +1,7 @@
 package org.keycloak.testsuite.federation.ldap;
 
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.UserStoragePrivateUtil;
@@ -11,6 +9,10 @@ import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
+
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 public class LDAPUserProfileValidationTest extends AbstractLDAPTest {
 
@@ -50,7 +52,7 @@ public class LDAPUserProfileValidationTest extends AbstractLDAPTest {
             LDAPStorageProvider provider = ctx.getLdapProvider();
             ComponentModel ldapModel = provider.getModel();
 
-            ldapModel.getConfig().putSingle("validateUserProfile", "true");
+            ldapModel.getConfig().putSingle(LDAPConstants.VALIDATE_USER_PROFILE, "true");
             appRealm.updateComponent(ldapModel);
 
             // The test realm fixture allows editing the username; disable that here so a bad username is genuinely
@@ -74,7 +76,7 @@ public class LDAPUserProfileValidationTest extends AbstractLDAPTest {
             LDAPTestUtils.removeAllLDAPUsers(provider, appRealm);
 
             ComponentModel ldapModel = provider.getModel();
-            ldapModel.getConfig().putSingle("validateUserProfile", "false");
+            ldapModel.getConfig().putSingle(LDAPConstants.VALIDATE_USER_PROFILE, "false");
             appRealm.updateComponent(ldapModel);
             appRealm.setEditUsernameAllowed(true);
         });
@@ -104,7 +106,7 @@ public class LDAPUserProfileValidationTest extends AbstractLDAPTest {
             LDAPStorageProvider provider = ctx.getLdapProvider();
             ComponentModel ldapModel = provider.getModel();
 
-            ldapModel.getConfig().putSingle("validateUserProfile", "true");
+            ldapModel.getConfig().putSingle(LDAPConstants.VALIDATE_USER_PROFILE, "true");
             appRealm.updateComponent(ldapModel);
 
             UserModel loadedUser = provider.getUserByUsername(appRealm, TEST_USERNAME);
@@ -123,7 +125,7 @@ public class LDAPUserProfileValidationTest extends AbstractLDAPTest {
             LDAPTestUtils.removeAllLDAPUsers(provider, appRealm);
 
             ComponentModel ldapModel = provider.getModel();
-            ldapModel.getConfig().putSingle("validateUserProfile", "false");
+            ldapModel.getConfig().putSingle(LDAPConstants.VALIDATE_USER_PROFILE, "false");
             appRealm.updateComponent(ldapModel);
         });
     }
@@ -139,7 +141,7 @@ public class LDAPUserProfileValidationTest extends AbstractLDAPTest {
 
             LDAPStorageProvider provider = ctx.getLdapProvider();
             ComponentModel ldapModel = provider.getModel();
-            ldapModel.getConfig().putSingle("validateUserProfile", "true");
+            ldapModel.getConfig().putSingle(LDAPConstants.VALIDATE_USER_PROFILE, "true");
             appRealm.updateComponent(ldapModel);
 
             // See testImportUserFailsUserProfileValidation: disabled so the bad username is genuinely unfixable
@@ -173,7 +175,7 @@ public class LDAPUserProfileValidationTest extends AbstractLDAPTest {
             LDAPTestUtils.removeAllLDAPUsers(provider, appRealm);
 
             ComponentModel ldapModel = provider.getModel();
-            ldapModel.getConfig().putSingle("validateUserProfile", "false");
+            ldapModel.getConfig().putSingle(LDAPConstants.VALIDATE_USER_PROFILE, "false");
             appRealm.updateComponent(ldapModel);
             appRealm.setEditUsernameAllowed(true);
         });

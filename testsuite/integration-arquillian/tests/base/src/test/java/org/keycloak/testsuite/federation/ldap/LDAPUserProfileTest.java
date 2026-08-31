@@ -22,7 +22,6 @@ package org.keycloak.testsuite.federation.ldap;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
-import java.util.Map;
 
 import jakarta.ws.rs.BadRequestException;
 
