@@ -13,11 +13,17 @@ import { clickTableRowItem, clickTableToolbarItem } from "../utils/table.ts";
 import { login } from "../utils/login.ts";
 import {
   OID4VCI_PROTOCOL,
+  OID4VC_MDOC_SERVER_FEATURE,
+  OID4VC_MDOC_UNAVAILABLE_MESSAGE,
   skipIfOID4VCIFeatureDisabled,
+  skipIfOID4VCIMdocFeatureDisabled,
 } from "../utils/oid4vci.ts";
 import { toClientScopes } from "../../src/client-scopes/routes/ClientScopes.tsx";
 
-type Oid4vciFormat = "SD-JWT VC (dc+sd-jwt)" | "JWT VC (jwt_vc_json)";
+type Oid4vciFormat =
+  | "SD-JWT VC (dc+sd-jwt)"
+  | "JWT VC (jwt_vc_json)"
+  | "ISO mDoc (mso_mdoc)";
 const OID4VCI_OPTION_VISIBLE_TIMEOUT_MS = 5_000;
 
 async function getVisibleOID4VCIProtocolOption(page: Page) {
@@ -413,6 +419,111 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await expect(
       page.getByRole("option", { name: "LDP VC (ldp_vc)" }),
     ).toBeHidden();
+  });
+
+  test("should not show mdoc format option when OID4VC mdoc feature is disabled", async ({
+    page,
+  }) => {
+    const isMdocEnabled = await adminClient.isFeatureEnabled(
+      OID4VC_MDOC_SERVER_FEATURE,
+    );
+
+    // eslint-disable-next-line playwright/no-skipped-test -- Requires a server without oid4vc-mdoc enabled.
+    test.skip(isMdocEnabled, OID4VC_MDOC_UNAVAILABLE_MESSAGE);
+
+    await using testBed = await createTestBed({
+      verifiableCredentialsEnabled: true,
+    });
+    await createClientScopeAndSelectProtocolAndFormat(page, testBed);
+
+    await page.locator("#kc-vc-format").click();
+
+    await expect(
+      page.getByRole("option", { name: "ISO mDoc (mso_mdoc)" }),
+    ).toBeHidden();
+  });
+
+  test.describe("mdoc format", () => {
+    test.beforeEach(async () => {
+      await skipIfOID4VCIMdocFeatureDisabled();
+    });
+
+    test("should show mdoc format option when OID4VC mdoc feature is enabled", async ({
+      page,
+    }) => {
+      await using testBed = await createTestBed({
+        verifiableCredentialsEnabled: true,
+      });
+      await createClientScopeAndSelectProtocolAndFormat(page, testBed);
+
+      await page.locator("#kc-vc-format").click();
+
+      await expect(
+        page.getByRole("option", { name: "ISO mDoc (mso_mdoc)" }),
+      ).toBeVisible();
+    });
+
+    test("should accept cose_key binding method for mdoc format", async ({
+      page,
+    }) => {
+      await using testBed = await createTestBed({
+        verifiableCredentialsEnabled: true,
+      });
+      await createClientScopeAndSelectProtocolAndFormat(
+        page,
+        testBed,
+        "ISO mDoc (mso_mdoc)",
+      );
+
+      await page.getByTestId("name").fill(`oid4vci-mdoc-binding-${Date.now()}`);
+
+      await switchToggle(
+        page,
+        page.getByTestId("attributes.vc.binding_required"),
+      );
+
+      await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("cose_key");
+      await page
+        .getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES)
+        .fill("jwt");
+
+      await clickSaveButton(page);
+      await expect(page.getByText("Client scope created")).toBeVisible();
+    });
+
+    test("should reject jwk binding method for mdoc format", async ({
+      page,
+    }) => {
+      await using testBed = await createTestBed({
+        verifiableCredentialsEnabled: true,
+      });
+      await createClientScopeAndSelectProtocolAndFormat(
+        page,
+        testBed,
+        "ISO mDoc (mso_mdoc)",
+      );
+
+      await page
+        .getByTestId("name")
+        .fill(`oid4vci-mdoc-bad-binding-${Date.now()}`);
+
+      await switchToggle(
+        page,
+        page.getByTestId("attributes.vc.binding_required"),
+      );
+
+      await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("jwk");
+      await page
+        .getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES)
+        .fill("jwt");
+
+      await assertSaveButtonIsDisabled(page);
+
+      await expect(
+        page.getByText("Unsupported binding method(s)"),
+      ).toBeVisible();
+      await expect(page.getByText("Allowed values: cose_key")).toBeVisible();
+    });
   });
 
   test("should show format-specific fields for SD-JWT format", async ({

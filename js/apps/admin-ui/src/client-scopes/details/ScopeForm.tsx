@@ -83,7 +83,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const { t, i18n } = useTranslation();
   const { adminClient } = useAdminClient();
   const form = useForm<ClientScopeDefaultOptionalType>({ mode: "onChange" });
-  const { control, handleSubmit, setValue, formState } = form;
+  const { control, handleSubmit, setValue, formState, trigger } = form;
   const { isDirty, isValid } = formState;
   const { realm, realmRepresentation } = useRealm();
 
@@ -265,6 +265,11 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     defaultValue: clientScope?.attributes?.["vc.binding_required"] ?? "false",
   });
 
+  const bindingMethodsFieldName =
+    convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.vc.cryptographic_binding_methods_supported",
+    );
+
   const keyAttestationRequired = useWatch({
     control,
     name: convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
@@ -320,6 +325,12 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       }
     }
   }, [isSigningKeySelected, realmKeys, setValue]);
+
+  useEffect(() => {
+    if (bindingRequired === "true") {
+      void trigger(bindingMethodsFieldName);
+    }
+  }, [bindingRequired, bindingMethodsFieldName, selectedFormat, trigger]);
 
   const isCustomType = parameterType === "custom";
 
@@ -790,6 +801,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                           "cryptographicBindingMethodsSupportedInvalid",
                           {
                             invalid: invalid.join(","),
+                            allowed: allowedCryptoBindingMethods.join(", "),
                           },
                         );
                       }
