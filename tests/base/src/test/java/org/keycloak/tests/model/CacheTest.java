@@ -90,6 +90,26 @@ public class CacheTest {
     }
 
     @Test
+    public void testUserManagedAccessAllowedReadAfterRealmUpdated() {
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            assertTrue(realm instanceof RealmAdapter);
+            assertTrue(realm.isEnabled());
+            Assertions.assertFalse(realm.isUserManagedAccessAllowed());
+
+            // any update to the realm makes the following reads go through the updated delegate
+            realm.setDisplayName("cache-test");
+            Assertions.assertFalse(realm.isUserManagedAccessAllowed());
+
+            realm.setUserManagedAccessAllowed(true);
+            assertTrue(realm.isUserManagedAccessAllowed());
+
+            realm.setUserManagedAccessAllowed(false);
+            realm.setDisplayName(null);
+        });
+    }
+
+    @Test
     public void testAddUserNotAddedToCache() {
 
     	runOnServer.run(session -> {
