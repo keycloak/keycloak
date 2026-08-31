@@ -110,7 +110,7 @@ public class ResourceAdminManager {
         List<String> result = new LinkedList<String>();
         KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(baseMgmtUrl);
         for (String nodeHost : registeredNodesHosts) {
-            String currentNodeUri = uriBuilder.clone().host(nodeHost).build().toString();
+            String currentNodeUri = uriBuilder.clone().host(ClientHostUtils.formatAsUriHost(nodeHost)).build().toString();
             result.add(currentNodeUri);
         }
 
@@ -150,7 +150,7 @@ public class ResourceAdminManager {
                 for (Map.Entry<String, List<String>> entry : adapterSessionIds.entrySet()) {
                     String host = entry.getKey();
                     List<String> sessionIds = entry.getValue();
-                    String currentHostMgmtUrl = managementUrl.replace(CLIENT_SESSION_HOST_PROPERTY, host);
+                    String currentHostMgmtUrl = managementUrl.replace(CLIENT_SESSION_HOST_PROPERTY, ClientHostUtils.formatAsUriHost(host));
                     sendLogoutRequest(realm, resource, sessionIds, userSessions, 0, currentHostMgmtUrl);
                 }
                 return Response.ok().build();
@@ -199,7 +199,7 @@ public class ResourceAdminManager {
                                 "clientId='%s' clientSessionId='%s' client_session_host='%s' client_session_state='%s'",
                         CLIENT_SESSION_HOST_PROPERTY, resource.getClientId(), clientSession.getId(), host, adapterSessionId));
             }
-            String currentHostMgmtUrl = backchannelLogoutUrl.replace(CLIENT_SESSION_HOST_PROPERTY, host);
+            String currentHostMgmtUrl = backchannelLogoutUrl.replace(CLIENT_SESSION_HOST_PROPERTY, ClientHostUtils.formatAsUriHost(host));
             return sendBackChannelLogoutRequestToClientUri(resource, clientSession, currentHostMgmtUrl);
         } else {
             return sendBackChannelLogoutRequestToClientUri(resource, clientSession, backchannelLogoutUrl);
