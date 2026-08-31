@@ -49,6 +49,15 @@ public class AttributeMetadata {
     /** Predicate to decide if attribute is required, it is handled as required if predicate is null */
     private Predicate<AttributeContext> required;
     private final List<Predicate<AttributeContext>> readAllowed = new ArrayList<>();
+    /**
+     * Predicates deciding whether an unchanged value is allowed to bypass validation errors when the attribute is
+     * read-only in the current context (see {@link #isReadOnly(AttributeContext)}). Defaults to {@link #ALWAYS_TRUE},
+     * preserving the existing behavior of forgiving a pre-existing invalid value the user has no way to fix through
+     * this context. A {@link org.keycloak.userprofile.UserProfileDecorator} can add a stricter condition for
+     * attributes whose value it establishes itself (e.g. from an external user storage), so that value is always
+     * validated regardless of whether it happens to be unchanged.
+     */
+    private final List<Predicate<AttributeContext>> readOnlyBypassAllowed = new ArrayList<>(List.of(ALWAYS_TRUE));
     private List<AttributeValidatorMetadata> validators;
     private Map<String, Object> annotations;
     private int guiOrder;
@@ -156,8 +165,26 @@ public class AttributeMetadata {
         this.writeAllowed.add(writeAllowed);
         return this;
     }
+
+    /**
+     * Adds a condition restricting whether an unchanged value is allowed to bypass validation errors while the
+     * attribute is read-only. See {@link #readOnlyBypassAllowed} for the rationale.
+     */
+    public AttributeMetadata addReadOnlyBypassCondition(Predicate<AttributeContext> readOnlyBypassAllowed) {
+        this.readOnlyBypassAllowed.add(readOnlyBypassAllowed);
+        return this;
+    }
+
     public boolean isReadOnly(AttributeContext context) {
         return !canEdit(context);
+    }
+
+    /**
+     * @return whether a validation error on this attribute may be forgiven when the proposed value is identical to
+     * the one already persisted and the attribute is read-only in the given {@code context}.
+     */
+    public boolean isReadOnlyBypassAllowed(AttributeContext context) {
+        return allConditionsMet(readOnlyBypassAllowed, context);
     }
 
     public boolean canView(AttributeContext context) {
@@ -218,6 +245,8 @@ public class AttributeMetadata {
     @Override
     public AttributeMetadata clone() {
         AttributeMetadata cloned = new AttributeMetadata(attributeName, guiOrder, selector, new ArrayList<>(writeAllowed), required, new ArrayList<>(readAllowed));
+        cloned.readOnlyBypassAllowed.clear();
+        cloned.readOnlyBypassAllowed.addAll(readOnlyBypassAllowed);
         // we clone validators list to allow adding or removing validators. Validators
         // itself are not cloned as we do not expect them to be reconfigured.
         if (validators != null) {
