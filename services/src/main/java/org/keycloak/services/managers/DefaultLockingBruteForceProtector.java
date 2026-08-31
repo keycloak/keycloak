@@ -27,7 +27,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
-public class DefaultLockingBruteForceProtector extends DefaultBlockingBruteForceProtector {
+public class DefaultLockingBruteForceProtector extends DefaultBruteForceProtector {
 
     private final KeycloakSession session;
 
