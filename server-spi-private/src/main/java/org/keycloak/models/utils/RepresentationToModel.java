@@ -547,6 +547,10 @@ public class RepresentationToModel {
         // Extended client attributes
         if (rep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
+                // realm_client is computed when a client is converted to a representation, it must not be stored
+                if (Constants.REALM_CLIENT.equals(entry.getKey())) {
+                    continue;
+                }
                 clientPropertyUpdates.add(
                     updatePropertyAction(val -> client.setAttribute(entry.getKey(), val), entry::getValue));
             }
