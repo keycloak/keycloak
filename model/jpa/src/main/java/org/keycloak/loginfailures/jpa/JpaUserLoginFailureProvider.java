@@ -96,7 +96,7 @@ public class JpaUserLoginFailureProvider implements UserLoginFailureProvider {
         UserLoginFailureModel model = new UserLoginFailureAdapter(em, entity);
         if (inserted == 0 && isExpired(realm, entity)) {
             // The entity already existed but is expired — clear its stale data so new failure counting starts fresh.
-            model.clearFailures();
+            model.clearPrimaryAndSecondaryAuthFailures();
         }
         entityInSession.put(key, model);
         return model;

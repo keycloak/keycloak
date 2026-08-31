@@ -192,7 +192,7 @@ Changing the default transaction isolation level for all modes is being consider
 [#mariadb-galera-cluster-considerations]
 === MariaDB Galera Cluster considerations
 
-WARNING: MariaDB Galera Cluster is not a supported database configuration for {project_name}.The guidance in this section is provided on a best-effort basis.Before reporting bugs, reproduce them with a supported database configuration first.
+WARNING: MariaDB Galera Cluster is not a supported database configuration for {project_name}. The guidance in this section is provided on a best-effort basis. Before reporting bugs, reproduce them with a supported database configuration first.
 
 On a multi-writer Galera setup, concurrent writes to the same row on different nodes can trigger certification failures, and asynchronous replication can cause stale reads.
 {project_name} logs an error at startup when it detects Galera with `wsrep_sync_wait = 0`.
