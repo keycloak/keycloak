@@ -216,6 +216,19 @@ This is intentional: without the `stateless` feature, neither deployment invalid
 * *Multiple independent deployments sharing the same database*: enable the `stateless` feature and assign each deployment a unique cluster name via `--cache-embedded-cluster-name`.
   Without `stateless`, cross-deployment cache invalidation does not work and serving traffic from multiple deployments simultaneously leads to incorrect behavior.
 
+=== New executor to secure client cluster node registration
+
+A new client policy executor, `secure-client-node-hostname`, is available to address server-side request forgery (SSRF) via the legacy adapter cluster node registration endpoint (`/clients-management/register-node`).
+Without this executor, a confidential client could register an attacker-chosen hostname that {project_name} would later use as the destination for management callbacks such as logout propagation and push-revocation.
+
+*This protection is opt-in and is not active after upgrading unless explicitly configured.*
+
+If your deployment uses the legacy adapter node registration feature (Wildfly/JBoss adapter or any application that calls `register-node` directly), add the `secure-client-node-hostname` executor to a client policy and configure at least one allowed hostname pattern. Node registrations that do not match any pattern are rejected.
+
+Hostnames must be supplied without a port number. IPv6 addresses must use bracket notation (for example, `[2001:db8::1]`). Registrations that include a port suffix (for example, `app.example.com:8443`) are always rejected regardless of the configured patterns.
+
+If you plan to enable this executor, audit the `registeredNodes` map for any affected clients before activating the policy. Any entry that contains a port suffix or uses bare IPv6 notation will no longer be accepted at registration time and will not match the allowed patterns. Re-register those nodes with a bare hostname that satisfies at least one configured pattern, or update the patterns to match the corrected hostnames, before enabling the executor.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
