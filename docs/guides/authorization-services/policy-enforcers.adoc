@@ -1,5 +1,23 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Policy enforcers"
+priority=90
+summary="Understand Policy Enforcement Points and how to use them with {project_name}.">
+
+[[_enforcer_overview]]
+Policy Enforcement Point (PEP) is a design pattern and as such you can implement it in different ways. {project_name} provides all the necessary means to implement PEPs for different
+platforms, environments, and programming languages. {project_name} Authorization Services presents a RESTful API and leverages OAuth2 authorization capabilities for fine-grained
+authorization using a centralized authorization server.
+
+The Policy enforcers available by {project_name} are:
+
+* https://www.keycloak.org/securing-apps/policy-enforcer[Java Policy enforcer] - useful to be used in the Java client applications
+* <<_enforcer_js_adapter, Javascript Policy enforcer>> - useful to be used in the applications secured by {project_name} Javascript adapter
+
 [[_enforcer_js_adapter]]
-= JavaScript integration for Policy Enforcer
+== JavaScript integration for Policy Enforcer
 
 The {project_name} Server comes with a JavaScript library you can use to interact with a resource server protected by a policy enforcer.
 This library is based on the {project_name} JavaScript adapter, which can be integrated to allow your client to obtain permissions from a {project_name} Server.
@@ -40,7 +58,7 @@ The `keycloak-js/authz` library provides two main features:
 In both cases, the library allows you to easily interact with both resource server and {project_name} Authorization Services to obtain tokens with
 permissions your client can use as bearer tokens to access the protected resources on a resource server.
 
-== Handling authorization responses from a UMA-Protected resource server
+=== Handling authorization responses from a UMA-Protected resource server
 
 If a resource server is protected by a policy enforcer, it responds to client requests based on the permissions carried along with a bearer token.
 Typically, when you try to access a resource server with a bearer token that is lacking permissions to access a protected resource, the resource server
@@ -49,8 +67,8 @@ responds with a *401* status code and a `WWW-Authenticate` header.
 [source,bash,subs="attributes+"]
 ----
 HTTP/1.1 401 Unauthorized
-WWW-Authenticate: UMA realm="${realm-name}",
-    as_uri="https://${host}:${port}{kc_realms_path}/${realm-name}",
+WWW-Authenticate: UMA realm="{realm-name}",
+    as_uri="https://{host}:{port}{kc_realms_path}/{realm-name}",
     ticket="016f84e8-f9b9-11e0-bd6f-0021cc6004de"
 ----
 
@@ -82,7 +100,7 @@ The `authorize` function is completely asynchronous and supports a few callback 
 
 Most applications should use the `onGrant` callback to retry a request after a 401 response. Subsequent requests should include the RPT as a bearer token for retries.
 
-== Obtaining entitlements
+=== Obtaining entitlements
 
 The `keycloak-js/authz` library provides an `entitlement` function that you can use to obtain an RPT from the server by providing
 the resources and scopes your client wants to access.
@@ -119,7 +137,7 @@ The `entitlement` function is completely asynchronous and supports a few callbac
 * `onDeny`: The second argument of the function. Only called if the server has denied the authorization request.
 * `onError`: The third argument of the function. Only called if the server responds unexpectedly.
 
-== Authorization request
+=== Authorization request
 
 Both `authorize` and `entitlement` functions accept an authorization request object. This object can be set with the following
 properties:
@@ -158,7 +176,7 @@ An integer N that defines a limit for the amount of permissions an RPT can have.
 A boolean value indicating whether the server should create permission requests to the resources and scopes referenced by a permission ticket.
 This parameter will only take effect when used together with the `ticket` parameter as part of a UMA authorization process.
 
-== Obtaining the RPT
+=== Obtaining the RPT
 
 If you have already obtained an RPT using any of the authorization functions provided by the library, you can always obtain the RPT as follows from the authorization object (assuming that it has been initialized by one of the techniques shown earlier):
 
@@ -166,3 +184,5 @@ If you have already obtained an RPT using any of the authorization functions pro
 ----
 const rpt = authorization.rpt;
 ----
+
+</@tmpl.guide>
