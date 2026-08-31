@@ -178,7 +178,7 @@ public abstract class OID4VCIssuerTestBase {
 
     public static final String mdocTypeCredentialScopeName = "mdoc-credential";
     public static final String mdocTypeCredentialConfigurationIdName = "mdoc-credential-config-id";
-    public static final String mdocTypeCredentialDocType = "org.iso.18013.5.1.mDL";
+    public static final String mdocTypeCredentialDocType = "org.example.credential.mdoc";
 
     public static final String CONTEXT_URL = "https://www.w3.org/2018/credentials/v1";
     public static final List<String> TEST_TYPES = List.of("VerifiableCredential");
@@ -1046,9 +1046,9 @@ public abstract class OID4VCIssuerTestBase {
                     .setBindingRequired(true)
                     .setCryptographicBindingMethods(List.of(CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY));
             cs.setProtocolMappers(List.of(
-                    ProtocolMapperUtils.getUserAttributeMapper("given_name", "firstName", "org.iso.18013.5.1"),
-                    ProtocolMapperUtils.getUserAttributeMapper("family_name", "lastName", "org.iso.18013.5.1"),
-                    ProtocolMapperUtils.getSubjectIdMapper("id", UserModel.USERNAME, "org.iso.18013.5.1")
+                    ProtocolMapperUtils.getUserAttributeMapper("given_name", "firstName", "org.example.credential"),
+                    ProtocolMapperUtils.getUserAttributeMapper("family_name", "lastName", "org.example.credential"),
+                    ProtocolMapperUtils.getSubjectIdMapper("id", UserModel.USERNAME, "org.example.credential")
             ));
             cs.getAttributes().put(VC_BINDING_REQUIRED_PROOF_TYPES, "jwt");
 

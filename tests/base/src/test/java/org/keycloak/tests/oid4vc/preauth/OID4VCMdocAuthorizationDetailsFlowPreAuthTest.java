@@ -41,12 +41,12 @@ public class OID4VCMdocAuthorizationDetailsFlowPreAuthTest extends OID4VCAuthori
 
     @Override
     protected List<Object> getExpectedClaimPath() {
-        return List.of("org.iso.18013.5.1", "given_name");
+        return List.of("org.example.credential", "given_name");
     }
 
     @Override
     protected String getClaimsNamespace() {
-        return "org.iso.18013.5.1";
+        return "org.example.credential";
     }
 
     @Override

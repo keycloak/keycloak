@@ -41,7 +41,7 @@ public class OID4VCMdocAuthorizationCodeFlowTest extends OID4VCAuthorizationCode
 
     @Override
     protected List<Object> getExpectedClaimPath() {
-        return List.of("org.iso.18013.5.1", "family_name");
+        return List.of("org.example.credential", "family_name");
     }
 
     @Override
