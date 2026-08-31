@@ -153,7 +153,7 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
         if (webClient == null) {
             synchronized (this) {
                 if (webClient == null) {
-                    Vertx vertx = Arc.container().instance(Vertx.class).get();
+                    Vertx vertx = Arc.requireContainer().instance(Vertx.class).get();
                     WebClientOptions options = buildOptions(session);
                     webClient = WebClient.create(vertx, options);
                     logger.info("Vert.x HTTP client initialized (HTTP_CLIENT_V2)");
