@@ -713,8 +713,15 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                         if (!userModelOptional.isPresent() && currentUserLocal == null) {
                             // Add new user to Keycloak
                             exists.value = false;
-                            ldapFedProvider.importUserFromLDAP(session, currentRealm, ldapUser);
-                            syncResult.increaseAdded();
+                            UserModel importedUser = ldapFedProvider.importUserFromLDAP(session, currentRealm, ldapUser);
+                            if (importedUser != null) {
+                                syncResult.increaseAdded();
+                            } else {
+                                // e.g. rejected by User Profile validation - the administrator needs to know this
+                                // user wasn't actually imported, not just see it counted as added
+                                logger.warnf("User '%s' was not imported from LDAP. See previous log messages for the reason.", username);
+                                syncResult.increaseFailed();
+                            }
 
                         } else {
                             UserModel currentUser = userModelOptional.isPresent() ? userModelOptional.get() : currentUserLocal;

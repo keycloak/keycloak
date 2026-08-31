@@ -99,9 +99,14 @@ import org.keycloak.storage.user.UserQueryMethodsProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 import org.keycloak.userprofile.AttributeGroupMetadata;
 import org.keycloak.userprofile.AttributeMetadata;
+import org.keycloak.userprofile.Attributes;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
+import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.UserProfileUtil;
+import org.keycloak.userprofile.ValidationException;
 import org.keycloak.utils.StreamsUtil;
 import org.keycloak.utils.StringUtil;
 
@@ -714,6 +719,50 @@ public class LDAPStorageProvider implements UserStorageProvider,
         NOT_FORCED_RETURN_EXISTING  // the import is not forced and existing user is returned
     };
 
+    private boolean isUserProfileValid(RealmModel realm, UserModel user, LDAPObject ldapUser) {
+        // Opt-in: only validate against the User Profile if the provider is configured to do so
+        boolean validateProfile = Boolean.parseBoolean(model.getConfig().getFirst("validateUserProfile"));
+
+        if (!validateProfile) {
+            return true;
+        }
+
+        UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
+        if (profileProvider == null) {
+            return true;
+        }
+
+        UserProfile profile = profileProvider.create(UserProfileContext.UPDATE_PROFILE, user);
+
+        try {
+            profile.validate();
+            return true;
+        } catch (ValidationException e) {
+            if (canBeFixedByUser(profile, e)) {
+                // Every attribute that failed validation is one the user can edit themselves through their own
+                // profile - so rather than rejecting the import outright, let it through and make them fix it
+                // before they can use the account. This does not apply to e.g. username when editing it is
+                // disabled on the realm: there is nothing the user could do about that themselves.
+                user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
+                logger.warnf("LDAP Sync: Imported user '%s' has invalid attributes according to the User Profile. Added the UPDATE_PROFILE required action: %s",
+                        user.getUsername(), e.getErrors());
+                return true;
+            }
+
+            logger.warnf("LDAP Sync: Skipping user '%s'. Failed User Profile validation: %s",
+                    user.getUsername(), e.getErrors());
+            return false;
+        }
+    }
+
+    private boolean canBeFixedByUser(UserProfile profile, ValidationException e) {
+        Attributes attributes = profile.getAttributes();
+        return e.getErrors().stream()
+                .map(ValidationException.Error::getAttribute)
+                .filter(Objects::nonNull)
+                .noneMatch(attributes::isReadOnly);
+    }
+
     protected UserModel importUserFromLDAP(KeycloakSession session, RealmModel realm, LDAPObject ldapUser, ImportType importType) {
         String ldapUsername = LDAPUtils.getUsername(ldapUser, ldapIdentityStore.getConfig());
         LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
@@ -751,6 +800,14 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 imported = adapter;
             }
             doImportUser(realm, imported, ldapUser);
+
+            if (!isUserProfileValid(realm, imported, ldapUser)) {
+                // Only remove the user locally if we just created it here - leave a pre-existing local user alone
+                if (model.isImportEnabled() && existingLocalUser == null) {
+                    userProvider.removeUser(realm, imported);
+                }
+                return null;
+            }
         } catch (ModelDuplicateException e) {
             logger.warnf(e, "Duplicated user importing from LDAP. LDAP Entry DN: [%s], LDAP_ID: [%s]", ldapUser.getDn(), ldapUser.getUuid());
             if (importType != ImportType.FORCED && existingLocalUser == null) {
@@ -1237,6 +1294,16 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
             if (attributeMetadata != null) {
                 metadatas.add(attributeMetadata);
+            } else {
+                // The attribute already has metadata on the base profile (e.g. username, email, firstName,
+                // lastName): its value is established here from LDAP data rather than entered by the user through
+                // this profile, so a validation error on it must never be silently forgiven just because the
+                // value happens to be unchanged - see AttributeMetadata#isReadOnlyBypassAllowed.
+                metadata.getAttribute(attrName).stream().findFirst().ifPresent(existing -> {
+                    AttributeMetadata override = existing.clone();
+                    override.addReadOnlyBypassCondition(AttributeMetadata.ALWAYS_FALSE);
+                    metadatas.add(override);
+                });
             }
         }
 
