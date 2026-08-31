@@ -387,7 +387,7 @@ image:images/select-policy-type.png[Selecting a policy type]
 
 Once you have a well-defined and stable permission model for your realm, less need exists to create policies. You can instead reuse existing policies to create more permissions.
 
-For more details about each policy type, see link:{authorizationguide_link}#policy_overview[Managing policies].
+For more details about each policy type, see link:{authorizationguide_policies_link}[Managing policies].
 
 [[_evaluating-permissions]]
 ==== Evaluating Permissions

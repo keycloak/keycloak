@@ -41,8 +41,13 @@
 
 :authorizationguide_name: Authorization Services Guide
 :authorizationguide_name_short: Authorization Services
-:authorizationguide_link: {project_doc_base_url}/authorization_services/
-:authorizationguide_link_latest: {project_doc_base_url_latest}/authorization_services/
+:authorizationguide_link: https://www.keycloak.org/guides#authorization-services
+:authorizationguide_policies_link: https://www.keycloak.org/authorization-services/policies
+:authorizationguide_permissions_link: https://www.keycloak.org/authorization-services/policies
+:authorizationguide_obtaining_permissions_link: https://www.keycloak.org/authorization-services/services#_obtaining_permissions
+:authorizationguide_service_authorization_api_link: https://www.keycloak.org/authorization-services/services#_discovering_authorization_services_endpoints_and_metadata
+:authorizationguide_resource_server_enable_authorization_link: https://www.keycloak.org/authorization-services/resource-server#_enabling_authorization_services
+:authorizationguide_resource_create_link: https://www.keycloak.org/authorization-services/resources#_creating_resources
 :adminguide_name: Server Administration Guide
 :adminguide_name_short: Server Administration
 :adminguide_link: {project_doc_base_url}/server_admin/
