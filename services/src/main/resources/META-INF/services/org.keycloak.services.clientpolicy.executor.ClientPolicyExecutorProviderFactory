@@ -38,3 +38,4 @@ org.keycloak.services.clientpolicy.executor.TlsClientAuthCASubjectDNExecutorFact
 org.keycloak.services.clientpolicy.executor.AllowedProtocolMappersExecutorFactory
 org.keycloak.services.clientpolicy.executor.RejectMayActClaimExecutorFactory
 org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutorFactory
+org.keycloak.services.clientpolicy.executor.SecureClientNodeExecutorFactory
