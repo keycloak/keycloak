@@ -52,7 +52,7 @@ export default function NewRealmForm({ onClose }: NewRealmFormProps) {
 
       refresh();
       onClose();
-      navigate(toRealm({ realm: fields.realm! }));
+      void navigate(toRealm({ realm: fields.realm! }));
     } catch (error) {
       addError("saveRealmError", error);
     }

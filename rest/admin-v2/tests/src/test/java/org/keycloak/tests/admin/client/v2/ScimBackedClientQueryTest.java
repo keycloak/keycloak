@@ -9,16 +9,12 @@ import org.keycloak.common.Profile;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
-import org.keycloak.services.client.ClientServiceFactory;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
-import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -39,9 +35,6 @@ public class ScimBackedClientQueryTest extends AbstractClientApiV2Test {
     private static final String SCIM_JPA_PREFIX = "scim-jpa-";
     private static final int SCIM_JPA_CLIENT_COUNT = 12;
 
-    @InjectRunOnServer
-    RunOnServerClient runOnServer;
-
     @InjectRealm
     ManagedRealm testRealm;
 
@@ -59,8 +52,6 @@ public class ScimBackedClientQueryTest extends AbstractClientApiV2Test {
 
     @BeforeEach
     public void enableScimServiceAndSetupClients() {
-        runOnServer.run(session -> System.setProperty(ClientServiceFactory.SCIM_SERVICE_ENABLED_PROPERTY, "true"));
-
         var clientsApi = getClientsApi();
 
         IntStream.range(0, SCIM_JPA_CLIENT_COUNT).forEach(i -> {
@@ -83,11 +74,6 @@ public class ScimBackedClientQueryTest extends AbstractClientApiV2Test {
 
         createClientIfMissing(clientsApi, buildOidcClient("scim-jpa-roles-test", Set.of("admin", "user")));
         createClientIfMissing(clientsApi, buildSamlClient("scim-jpa-saml-test", "SCIM SAML Client"));
-    }
-
-    @AfterEach
-    public void disableScimService() {
-        runOnServer.run(session -> System.clearProperty(ClientServiceFactory.SCIM_SERVICE_ENABLED_PROPERTY));
     }
 
     @Test
@@ -164,17 +150,6 @@ public class ScimBackedClientQueryTest extends AbstractClientApiV2Test {
             List<BaseClientRepresentation> clients = stream.toList();
             assertThat(clients, not(empty()));
             assertTrue(clients.stream().allMatch(c -> Boolean.TRUE.equals(c.getEnabled())));
-        }
-    }
-
-    @Test
-    public void fallbackForRolesQuery() {
-        try (var stream = getClientsApi().getClients(
-                new ListOptions().query("roles eq \"admin\" and roles eq \"user\""))) {
-            List<BaseClientRepresentation> clients = stream.toList();
-            assertThat(clients, hasSize(1));
-            assertThat(clients.get(0).getClientId(), is("scim-jpa-roles-test"));
-            assertTrue(clients.get(0).getRoles().containsAll(Set.of("admin", "user")));
         }
     }
 

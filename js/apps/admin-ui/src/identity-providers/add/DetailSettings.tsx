@@ -393,7 +393,7 @@ export default function DetailSettings() {
       try {
         await adminClient.identityProviders.del({ alias: alias });
         addAlert(t("deletedSuccessIdentityProvider"), AlertVariant.success);
-        navigate(toIdentityProviders({ realm }));
+        void navigate(toIdentityProviders({ realm }));
       } catch (error) {
         addError("deleteErrorIdentityProvider", error);
       }
@@ -415,7 +415,7 @@ export default function DetailSettings() {
         });
         addAlert(t("deleteMapperSuccess"), AlertVariant.success);
         refresh();
-        navigate(
+        void navigate(
           toIdentityProvider({ providerId, alias, tab: "mappers", realm }),
         );
       } catch (error) {
@@ -741,7 +741,7 @@ export default function DetailSettings() {
                     instructions={t("noMappersInstructions")}
                     primaryActionText={t("addMapper")}
                     onPrimaryAction={() =>
-                      navigate(
+                      void navigate(
                         toIdentityProviderAddMapper({
                           realm,
                           alias: alias!,

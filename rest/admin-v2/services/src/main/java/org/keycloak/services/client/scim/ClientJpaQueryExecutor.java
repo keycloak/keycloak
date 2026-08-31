@@ -20,16 +20,13 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.entities.ClientEntity;
 import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
+import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.services.client.ClientField;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 public final class ClientJpaQueryExecutor {
-
-    private static final List<?> SCHEMAS = List.of(
-            OIDCClientModelSchema.INSTANCE,
-            SAMLClientModelSchema.INSTANCE);
 
     private ClientJpaQueryExecutor() {
     }
@@ -51,16 +48,19 @@ public final class ClientJpaQueryExecutor {
         predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(
                 session, AdminPermissionsSchema.CLIENTS, realm, cb, query, root));
 
+        ClientResourceTypeProvider provider = new ClientResourceTypeProvider(session);
+
         ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(
-                null, SCHEMAS, cb, root);
+                provider, provider.getSchemas(), cb, root);
         if (filterContext != null) {
             predicates.add(evaluator.visit(filterContext).predicate());
         }
 
         var q = query.where(predicates.toArray(Predicate[]::new));
         var orders = new ArrayList<>(sortOptions.stream().map(sortOption -> {
-            var field = OIDCClientModelSchema.INSTANCE.getAttributeByPath(sortOption.field().toQueryValue())
-                    .getModelAttributeName();
+            String field = provider.getSchemas().stream()
+                    .map(s -> s.getAttributeByPath(sortOption.field().toQueryValue()))
+                    .map(Attribute::getModelAttributeName).findFirst().orElseThrow();
             return sortOption.isAscending() ? cb.asc(root.get(field)) : cb.desc(root.get(field));
         }).toList());
 

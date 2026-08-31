@@ -270,9 +270,7 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
             @Override
             public void runUpdate(UserSessionEntity entity) {
                 if (value == null) {
-                    if (entity.getNotes().containsKey(name)) {
-                        removeNote(name);
-                    }
+                    entity.getNotes().remove(name);
                     return;
                 }
                 entity.getNotes().put(name, value);

@@ -418,6 +418,11 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder maxSecondaryAuthFailures(int count) {
+        rep.setMaxSecondaryAuthFailures(count);
+        return this;
+    }
+
     public RealmBuilder duplicateEmailsAllowed(boolean allowed) {
         rep.setDuplicateEmailsAllowed(allowed);
         return this;
@@ -600,6 +605,16 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
 
     public RealmBuilder webAuthnPolicyAcceptableAaguids(List<String> aaguids) {
         rep.setWebAuthnPolicyAcceptableAaguids(aaguids);
+        return this;
+    }
+
+    public RealmBuilder webAuthnPolicyPasswordlessAcceptableAaguids(List<String> aaguids) {
+        rep.setWebAuthnPolicyPasswordlessAcceptableAaguids(aaguids);
+        return this;
+    }
+
+    public RealmBuilder webAuthnPolicyPasswordlessRpId(String rpId) {
+        rep.setWebAuthnPolicyPasswordlessRpId(rpId);
         return this;
     }
 

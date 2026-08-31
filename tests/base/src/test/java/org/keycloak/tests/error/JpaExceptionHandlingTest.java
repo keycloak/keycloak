@@ -9,14 +9,11 @@ import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KeycloakIntegrationTest
@@ -35,7 +32,7 @@ class JpaExceptionHandlingTest {
     public void convertTableUniqueConstraintsToModelExceptions() {
         String realmName = managedRealm.getName();
 
-        Exception RunOnServerException = assertThrows(RunOnServerException.class, () ->
+        assertThrows(ModelDuplicateException.class, () ->
         runOnServer.run(session -> {
             RealmModel realm = session.realms().getRealmByName(realmName);
             EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
@@ -58,8 +55,6 @@ class JpaExceptionHandlingTest {
             // The flush to the database will trigger the constraint violation.
             em.flush();
         }));
-
-        assertThat(RunOnServerException.getCause(), instanceOf(ModelDuplicateException.class));
     }
 
 }

@@ -1,9 +1,9 @@
 package org.keycloak.representations.admin.v2.validators;
 
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
-import org.keycloak.services.client.DefaultClientService;
-import org.keycloak.services.client.query.FieldResolver;
+import org.keycloak.services.client.scim.ClientResourceTypeProvider;
 import org.keycloak.validation.jakarta.ValidationContext;
 
 /**
@@ -20,7 +20,7 @@ public class ClientPersistedFieldResolver implements PersistedFieldResolver<Base
     public Object getValue(BaseClientRepresentation representation, String fieldName) {
         // TODO: if this can ever return non-simple types we have to ensure the objects implement the equals method
         // if not, and we could consider converting to JsonNode or Map via Jackson logic
-        return FieldResolver.resolve(fieldName, representation);
+        return ClientResourceTypeProvider.resolveField(fieldName, representation);
     }
 
     @Override
@@ -29,9 +29,7 @@ public class ClientPersistedFieldResolver implements PersistedFieldResolver<Base
         if (persistedClient == null) {
             return null;
         }
-        // TODO: any fields materialized by secondary logic will not be populated
-        var schema = DefaultClientService.SCHEMAS.get(representation.getProtocol());
-        return schema != null ? schema.fromModel(persistedClient) : null;
+        return ClientResourceTypeProvider.fromModel(persistedClient);
     }
 
 }

@@ -2,7 +2,7 @@ import { HelpItem, useFetch } from "@keycloak/keycloak-ui-shared";
 import { Button, Checkbox, FormGroup } from "@patternfly/react-core";
 import { MinusCircleIcon } from "@patternfly/react-icons";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../../admin-client";
@@ -13,32 +13,16 @@ import {
   FilterType,
 } from "../../../components/role-mapping/AddRoleMappingModal";
 import { Row, ServiceRole } from "../../../components/role-mapping/RoleMapping";
-import { NewPermissionPolicyDetailsParams } from "../../../permissions-configuration/routes/NewPermissionPolicy";
-import { useIsAdminPermissionsClient } from "../../../utils/useIsAdminPermissionsClient";
-import { useParams } from "../../../utils/useParams";
-import type { PolicyDetailsParams } from "../../routes/PolicyDetails";
 import type { RequiredIdValue } from "./ClientScope";
 
 export const Role = () => {
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
-  const { id } = useParams<PolicyDetailsParams>();
-  const { permissionClientId } = useParams<NewPermissionPolicyDetailsParams>();
-  const isAdminPermissionsClient = useIsAdminPermissionsClient(
-    permissionClientId || id,
-  );
   const { control, getValues, setValue } = useFormContext<{
     roles?: RequiredIdValue[];
     fetchRoles?: boolean;
   }>();
-
-  useEffect(() => {
-    if (isAdminPermissionsClient) {
-      setValue("fetchRoles", true);
-    }
-  }, [isAdminPermissionsClient, setValue]);
-
   const values = getValues("roles");
 
   const [open, setOpen] = useState(false);
@@ -172,7 +156,6 @@ export const Role = () => {
         name="fetchRoles"
         label={t("fetchRoles")}
         labelIcon={t("fetchRolesHelp")}
-        isDisabled={isAdminPermissionsClient}
       />
     </>
   );

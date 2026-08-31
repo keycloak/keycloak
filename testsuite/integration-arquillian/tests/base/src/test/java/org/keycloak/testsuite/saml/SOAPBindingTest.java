@@ -29,6 +29,7 @@ import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
+import org.keycloak.protocol.saml.profile.ecp.SamlEcpProfileService;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
@@ -265,8 +266,9 @@ public class SOAPBindingTest extends AbstractSamlTest {
                     try {
                         MessageFactory messageFactory = MessageFactory.newInstance();
                         SOAPMessage soapMessage = messageFactory.createMessage(null, response.getEntity().getContent());
-                        String faultDetail = soapMessage.getSOAPBody().getFault().getDetail().getValue();
-                        assertThat(faultDetail, is(equalTo("Client is not allowed to use ECP profile.")));
+                        String faultString = soapMessage.getSOAPPart().getEnvelope().getBody().getFault().getFaultString();
+                        assertThat(faultString, is(equalTo(SamlEcpProfileService.AUTHN_REQUEST_CANNOT_BE_PROCESSED)));
+                        assertThat(soapMessage.getSOAPPart().getEnvelope().getBody().getFault().getDetail(), is(nullValue()));
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }

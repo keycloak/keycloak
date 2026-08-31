@@ -432,7 +432,7 @@ jobs:
     timeout-minutes: 150
     strategy:
       matrix:
-        variant: [clusterless, multi-site]
+        variant: [multi-site]
       fail-fast: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -443,7 +443,7 @@ jobs:
 
       - name: Run base tests without cache
         run: |
-          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh clusterless`
+          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh stateless`
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Pinfinispan-server -Dauth.server.feature=${{ matrix.variant }} -Dauth.server.feature.disable=persistent-user-sessions -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
@@ -474,7 +474,7 @@ jobs:
 
       - name: Run base tests without caches
         run: |
-          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh clusterless`
+          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh stateless`
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dauth.server.feature=stateless -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
@@ -1074,18 +1074,6 @@ jobs:
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
-
-      - id: weekly-cache-key
-        name: Key for weekly rotation of cache
-        shell: bash
-        run: echo "key=ipa-data-`date -u "+%Y-%U"`" >> $GITHUB_OUTPUT
-
-      - id: cache-maven-repository
-        name: ipa-data cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/ipa-data.tar
-          key: ${{ steps.weekly-cache-key.outputs.key }}
 
       - name: Run tests
         run: .github/scripts/run-ipa.sh "${{ github.workspace }}"

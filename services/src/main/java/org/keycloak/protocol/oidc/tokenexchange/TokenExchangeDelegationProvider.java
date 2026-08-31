@@ -96,8 +96,15 @@ public class TokenExchangeDelegationProvider extends StandardTokenExchangeProvid
         UserSessionModel actorSession = actorAuthResult.session();
         actorAccessToken = actorAuthResult.token();
 
+        boolean isClientDelegation = actorUser.getServiceAccountClientLink() != null;
+        if (isClientDelegation) {
+            event.detail(Details.ACTOR_TYPE, Details.ACTOR_TYPE_CLIENT);
+            event.detail(Details.ACTOR, actorAccessToken.getIssuedFor());
+        } else {
+            event.detail(Details.ACTOR_TYPE, Details.ACTOR_TYPE_USER);
+            event.detail(Details.ACTOR, actorUser.getUsername());
+        }
         event.detail(Details.ACTOR_ID, actorUser.getId());
-        event.detail(Details.ACTOR, actorUser.getUsername());
         if (actorAccessToken.getSessionId() != null) {
             event.detail(Details.ACTOR_SESSION_ID, actorSession.getId());
         }
@@ -167,6 +174,20 @@ public class TokenExchangeDelegationProvider extends StandardTokenExchangeProvid
             event.detail(Details.REASON, "Actor user is not allowed by the may_act claim inside the subject_token");
             event.error(Errors.INVALID_TOKEN);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Actor user is not allowed by the may_act claim inside the subject_token", Response.Status.BAD_REQUEST);
+        }
+
+        Object clientIdObject = mayActMap.get(OAuth2Constants.CLIENT_ID);
+        if (clientIdObject instanceof String clientId) {
+            if (!clientId.equals(actorAccessToken.getIssuedFor())) {
+                event.detail(Details.REASON, "Actor token client does not match the client_id in the may_act claim");
+                event.error(Errors.INVALID_TOKEN);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Actor token client does not match the client_id in the may_act claim", Response.Status.BAD_REQUEST);
+            }
+            if (!clientId.equals(client.getClientId())) {
+                event.detail(Details.REASON, "Requesting client does not match the client_id in the may_act claim");
+                event.error(Errors.INVALID_TOKEN);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Requesting client does not match the client_id in the may_act claim", Response.Status.BAD_REQUEST);
+            }
         }
     }
 

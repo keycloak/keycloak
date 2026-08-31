@@ -55,6 +55,8 @@ import org.keycloak.util.Strings;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.models.Constants.PRIVATE_KEY_ATTR_SUFFIX;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -66,7 +68,7 @@ public class CertificateInfoHelper {
 
     private static final Logger logger = Logger.getLogger(CertificateInfoHelper.class);
 
-    public static final String PRIVATE_KEY = "private.key";
+    public static final String PRIVATE_KEY = PRIVATE_KEY_ATTR_SUFFIX;
     public static final String X509CERTIFICATE = "certificate";
     public static final String PUBLIC_KEY = "public.key";
 

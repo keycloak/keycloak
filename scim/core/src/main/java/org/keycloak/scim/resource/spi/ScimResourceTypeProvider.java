@@ -23,7 +23,7 @@ import org.keycloak.scim.resource.schema.ModelSchema;
  * to the underlying model and vice versa, and for enforcing the rules of the resource type and its corresponding model
  * when managing resource type instances.
  */
-public interface ScimResourceTypeProvider<R extends ResourceTypeRepresentation> extends Provider {
+public interface ScimResourceTypeProvider<R> extends Provider {
 
     public static final int DEFAULT_MAX_RESULTS = 100;
 
@@ -52,7 +52,9 @@ public interface ScimResourceTypeProvider<R extends ResourceTypeRepresentation> 
      */
     String getSchema();
 
-    <M extends Model> List<ModelSchema<M, R>> getSchemas();
+    default <M extends Model> List<ModelSchema<M, R>> getSchemas() {
+        return List.of();
+    }
 
     /**
      * Returns the schema extensions names of the resource type managed by this provider.

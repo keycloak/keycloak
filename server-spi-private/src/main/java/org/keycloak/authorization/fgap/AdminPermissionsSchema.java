@@ -109,14 +109,18 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
 
     // user specific scopes
     public static final String IMPERSONATE = "impersonate";
+    public static final String DELEGATE = "delegate";
     public static final String RESET_PASSWORD = "reset-password";
 
     public static final String MANAGE_GROUP_MEMBERSHIP = "manage-group-membership";
 
+    // group specific scope for delegation
+    public static final String DELEGATE_MEMBERS = "delegate-members";
+
     public static final ResourceType CLIENTS = new ResourceType(CLIENTS_RESOURCE_TYPE, Set.of(MANAGE, MAP_ROLES, MAP_ROLES_CLIENT_SCOPE, MAP_ROLES_COMPOSITE, VIEW));
-    public static final ResourceType GROUPS = new ResourceType(GROUPS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, MANAGE_MEMBERSHIP, MANAGE_MEMBERSHIP_OF_MEMBERS, MANAGE_MEMBERS, VIEW_MEMBERS, IMPERSONATE_MEMBERS));
+    public static final ResourceType GROUPS = new ResourceType(GROUPS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, MANAGE_MEMBERSHIP, MANAGE_MEMBERSHIP_OF_MEMBERS, MANAGE_MEMBERS, VIEW_MEMBERS, IMPERSONATE_MEMBERS, DELEGATE_MEMBERS));
     public static final ResourceType ROLES = new ResourceType(ROLES_RESOURCE_TYPE, Set.of(MAP_ROLE, MAP_ROLE_CLIENT_SCOPE, MAP_ROLE_COMPOSITE));
-    public static final ResourceType USERS = new ResourceType(USERS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, IMPERSONATE, MAP_ROLES, MANAGE_GROUP_MEMBERSHIP, RESET_PASSWORD), Map.of(VIEW, Set.of(VIEW_MEMBERS), MANAGE, Set.of(MANAGE_MEMBERS), IMPERSONATE, Set.of(IMPERSONATE_MEMBERS), MANAGE_GROUP_MEMBERSHIP, Set.of(MANAGE_MEMBERSHIP_OF_MEMBERS)), GROUPS.getType());
+    public static final ResourceType USERS = new ResourceType(USERS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, IMPERSONATE, DELEGATE, MAP_ROLES, MANAGE_GROUP_MEMBERSHIP, RESET_PASSWORD), Map.of(VIEW, Set.of(VIEW_MEMBERS), MANAGE, Set.of(MANAGE_MEMBERS), IMPERSONATE, Set.of(IMPERSONATE_MEMBERS), DELEGATE, Set.of(DELEGATE_MEMBERS), MANAGE_GROUP_MEMBERSHIP, Set.of(MANAGE_MEMBERSHIP_OF_MEMBERS)), GROUPS.getType());
     public static final ResourceType ORGANIZATIONS = new ResourceType(ORGANIZATIONS_RESOURCE_TYPE, Set.of(MANAGE, VIEW));
     private static final String SKIP_EVALUATION = "kc.authz.fgap.skip";
     public static final AdminPermissionsSchema SCHEMA = new AdminPermissionsSchema();
