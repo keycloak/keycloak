@@ -220,7 +220,7 @@ If the {jdgserver_name} server has authentication enabled, {project_name} will f
 
 The following options allow you to identify the cluster and its nodes:
 
-Cluster name (experimental)::
+Cluster name::
 Defines the name of the cluster.
 Only nodes with the same cluster name can discover each other and form a cluster.
 Because {project_name} uses the database for node discovery via `jdbc-ping` by default, clusters that share the same database but should remain separate will merge unless they have distinct cluster names.
