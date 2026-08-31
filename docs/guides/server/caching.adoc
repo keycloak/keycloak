@@ -230,7 +230,7 @@ Use `+--cache-embedded-cluster-name+` (or environment variable `+KC_CACHE_EMBEDD
 +
 For example: `+--cache-embedded-cluster-name=my-cluster+`
 +
-WARNING: As invalidation of caches between clusters with distinct names will not work, this will lead to stale caches and incorrect behavior. Do not use in production environments. Use only together with the `stateless` feature.
+WARNING: As invalidation of caches between clusters with distinct names will not work, this will lead to stale caches and incorrect behavior. Use only together with the `stateless` feature.
 
 Node name::
 Sets a human-readable name for the current node, used in log messages and management tools.
