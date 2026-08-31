@@ -79,8 +79,10 @@ public final class VciConformanceRealmUtil {
     public static final String CREDENTIAL_CONFIGURATION_ID = "conformance_sd_jwt_vc";
     public static final String MDOC_SCOPE = "conformance_mso_mdoc";
     public static final String MDOC_CREDENTIAL_CONFIGURATION_ID = "conformance_mso_mdoc";
-    public static final String MDOC_DOC_TYPE = "org.iso.18013.5.1.mDL";
-    public static final String MDOC_NAMESPACE = "org.iso.18013.5.1";
+    // An example doctype rather than org.iso.18013.5.1.mDL because Keycloak does not issue real mDLs
+    // and the suite would otherwise require all mandatory mDL data elements from ISO 18013 chapter 5
+    public static final String MDOC_DOC_TYPE = "org.example.conformance.mdoc";
+    public static final String MDOC_NAMESPACE = "org.example.conformance";
     // The credential_format plan variant value the conformance suite uses for ISO mdoc, see VCI1FinalCredentialFormat
     public static final String MDOC_CREDENTIAL_FORMAT_VARIANT = "mdoc";
     public static final String CONFORMANCE_CALLBACK = OpenIdConformanceServer.INTERNAL_BASE_URI + "/test/a/keycloak/callback";
@@ -288,11 +290,8 @@ public final class VciConformanceRealmUtil {
                         OID4VCIssuedAtTimeClaimMapper.VALUE_SOURCE, "COMPUTE")));
     }
 
-    // mDoc claims are organised into namespaces, so every mapper pins the ISO 18013-5 namespace. ISO/IEC
-    // 18013-5 marks a fixed set of org.iso.18013.5.1 data elements mandatory for an mDL, so a conformant
-    // issuer must emit all of them (the suite's EnsureMdocMdlMandatoryDataElementsPresent check enforces this).
-    // The holder-specific ones come from user attributes; the rest are static document values.
-    private static List<ProtocolMapperRepresentation> mdocProtocolMappers() {
+    // mDoc claims are organised into namespaces, so every mapper pins the example namespace
+    private List<ProtocolMapperRepresentation> mdocProtocolMappers() {
         return List.of(
                 mdocMapper("did-mapper", "oid4vc-subject-id-mapper", "id", "did"),
                 mdocMapper("given-name-mapper", "oid4vc-user-attribute-mapper", "given_name", "firstName"),
