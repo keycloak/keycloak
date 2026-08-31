@@ -181,7 +181,7 @@ public abstract class OID4VCIssuerTestBase {
 
     public static final String mdocTypeCredentialScopeName = "mdoc-credential";
     public static final String mdocTypeCredentialConfigurationIdName = "mdoc-credential-config-id";
-    public static final String mdocTypeCredentialDocType = "org.iso.18013.5.1.mDL";
+    public static final String mdocTypeCredentialDocType = "org.example.credential.mdoc";
 
     public static final String CONTEXT_URL = "https://www.w3.org/2018/credentials/v1";
     public static final List<String> TEST_TYPES = List.of("VerifiableCredential");

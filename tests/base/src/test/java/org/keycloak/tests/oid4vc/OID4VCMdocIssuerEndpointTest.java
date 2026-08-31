@@ -113,8 +113,8 @@ public class OID4VCMdocIssuerEndpointTest extends OID4VCMdocTestBase {
                 "mdoc-optional-binding-endpoint-scope",
                 "mdoc-optional-binding-endpoint-config",
                 List.of(
-                        ProtocolMapperUtils.getUserAttributeMapper("given_name", "firstName", "org.iso.18013.5.1"),
-                        ProtocolMapperUtils.getSubjectIdMapper("id", UserModel.USERNAME, "org.iso.18013.5.1")
+                        ProtocolMapperUtils.getUserAttributeMapper("given_name", "firstName", "org.example.credential"),
+                        ProtocolMapperUtils.getSubjectIdMapper("id", UserModel.USERNAME, "org.example.credential")
                 ),
                 null,
                 false
@@ -180,8 +180,8 @@ public class OID4VCMdocIssuerEndpointTest extends OID4VCMdocTestBase {
                 "mdoc-rsa-endpoint-scope",
                 "mdoc-rsa-endpoint-config",
                 List.of(
-                        ProtocolMapperUtils.getUserAttributeMapper("given_name", "firstName", "org.iso.18013.5.1"),
-                        ProtocolMapperUtils.getSubjectIdMapper("id", UserModel.USERNAME, "org.iso.18013.5.1")
+                        ProtocolMapperUtils.getUserAttributeMapper("given_name", "firstName", "org.example.credential"),
+                        ProtocolMapperUtils.getSubjectIdMapper("id", UserModel.USERNAME, "org.example.credential")
                 ),
                 Algorithm.RS256,
                 true

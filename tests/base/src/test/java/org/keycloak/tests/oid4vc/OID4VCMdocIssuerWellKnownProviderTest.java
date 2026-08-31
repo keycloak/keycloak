@@ -77,9 +77,9 @@ public class OID4VCMdocIssuerWellKnownProviderTest extends OID4VCMdocTestBase {
         assertNotNull(jwtProofSupport, "JWT proof support must be advertised for mDoc binding");
         assertEquals(Set.copyOf(getAllAsymmetricAlgorithms()), Set.copyOf(jwtProofSupport.getSigningAlgorithmsSupported()));
 
-        assertHasClaimPath(supportedConfig, List.of("org.iso.18013.5.1", "given_name"));
-        assertHasClaimPath(supportedConfig, List.of("org.iso.18013.5.1", "family_name"));
-        assertHasClaimPath(supportedConfig, List.of("org.iso.18013.5.1", "id"));
+        assertHasClaimPath(supportedConfig, List.of("org.example.credential", "given_name"));
+        assertHasClaimPath(supportedConfig, List.of("org.example.credential", "family_name"));
+        assertHasClaimPath(supportedConfig, List.of("org.example.credential", "id"));
     }
 
     @Test
@@ -110,7 +110,7 @@ public class OID4VCMdocIssuerWellKnownProviderTest extends OID4VCMdocTestBase {
     @Test
     void testMdocCredentialConfigurationSupportsNestedClaimPaths() {
         ProtocolMapperRepresentation nestedAddressMapper =
-                ProtocolMapperUtils.getUserAttributeMapper("address.street", "address_street_address", "org.iso.18013.5.1");
+                ProtocolMapperUtils.getUserAttributeMapper("address.street", "address_street_address", "org.example.credential");
         nestedAddressMapper.getConfig().put(CredentialScopeModel.VC_INCLUDE_IN_METADATA, "true");
         CredentialScopeRepresentation scope =
                 createCustomMdocCredentialScope("mdoc-nested-claim-scope", "mdoc-nested-claim-config", List.of(nestedAddressMapper));
@@ -119,7 +119,7 @@ public class OID4VCMdocIssuerWellKnownProviderTest extends OID4VCMdocTestBase {
         SupportedCredentialConfiguration supportedConfig =
                 credentialIssuer.getCredentialsSupported().get(scope.getCredentialConfigurationId());
 
-        assertHasClaimPath(supportedConfig, List.of("org.iso.18013.5.1", "address", "street"));
+        assertHasClaimPath(supportedConfig, List.of("org.example.credential", "address", "street"));
     }
 
     @Test
@@ -160,7 +160,7 @@ public class OID4VCMdocIssuerWellKnownProviderTest extends OID4VCMdocTestBase {
         CredentialScopeRepresentation scope = createCustomMdocCredentialScope(
                 "mdoc-default-signing-scope",
                 "mdoc-default-signing-config",
-                List.of(ProtocolMapperUtils.getUserAttributeMapper("given_name", "firstName", "org.iso.18013.5.1")),
+                List.of(ProtocolMapperUtils.getUserAttributeMapper("given_name", "firstName", "org.example.credential")),
                 null,
                 true
         );
@@ -181,7 +181,7 @@ public class OID4VCMdocIssuerWellKnownProviderTest extends OID4VCMdocTestBase {
         CredentialScopeRepresentation scope = createCustomMdocCredentialScope(
                 "mdoc-optional-binding-scope",
                 "mdoc-optional-binding-config",
-                List.of(ProtocolMapperUtils.getUserAttributeMapper("given_name", "firstName", "org.iso.18013.5.1")),
+                List.of(ProtocolMapperUtils.getUserAttributeMapper("given_name", "firstName", "org.example.credential")),
                 "ES256",
                 false
         );
