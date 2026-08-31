@@ -49,7 +49,9 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.ClientNodeRegistrationContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisteredContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdatedContext;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
@@ -83,7 +85,16 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         RegistrationAuth registrationAuth = auth.requireCreate(context);
 
         try {
+
             RealmModel realm = session.getContext().getRealm();
+
+            if (client.getRegisteredNodes() != null && !client.getRegisteredNodes().isEmpty()) {
+                session.clientPolicy().triggerOnEvent(
+                        new ClientNodeRegistrationContext(null,
+                                List.copyOf(client.getRegisteredNodes().keySet()),
+                                ClientPolicyEvent.REGISTER_NODE));
+            }
+
             ClientModel clientModel = ClientManager.createClient(session, realm, client);
 
             if (client.getDefaultRoles() != null) {
@@ -188,8 +199,22 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
                 );
             }
         }
-
         ClientResource.updateClientServiceAccount(session, client, rep.isServiceAccountsEnabled());
+
+        try {
+            if (rep.getRegisteredNodes() != null && !rep.getRegisteredNodes().isEmpty()) {
+                session.clientPolicy().triggerOnEvent(
+                        new ClientNodeRegistrationContext(client,
+                                List.copyOf(rep.getRegisteredNodes().keySet()),
+                                ClientPolicyEvent.REGISTER_NODE));
+            }
+        } catch (ClientPolicyException e) {
+            throw new ErrorResponseException(
+                    e.getError(),
+                    e.getErrorDetail(),
+                    Response.Status.BAD_REQUEST);
+        }
+
         RepresentationToModel.updateClient(rep, client, session);
         RepresentationToModel.updateClientProtocolMappers(rep, client);
         RepresentationToModel.updateClientScopes(rep, client);
