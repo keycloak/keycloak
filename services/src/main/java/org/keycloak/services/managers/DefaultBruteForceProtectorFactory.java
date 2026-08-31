@@ -73,7 +73,7 @@ public class DefaultBruteForceProtectorFactory implements BruteForceProtectorFac
                 .property()
                 .name("allowConcurrentRequests")
                 .type("boolean")
-                .helpText("If concurrent logins are allowed by the brute force protection. This is deprecated and only active for login-failures:v1. login-failure:v2 will execute concurrent logins serially on each Keycloak instance instead of returning an error.")
+                .helpText("If concurrent logins are allowed by the brute force protection. This is deprecated and only active for login-failures:v1. login-failures:v2 will execute concurrent logins serially on each Keycloak instance instead of returning an error.")
                 .defaultValue(false)
                 .add()
                 .build();
