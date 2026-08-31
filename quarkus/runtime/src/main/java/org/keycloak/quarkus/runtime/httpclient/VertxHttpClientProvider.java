@@ -13,6 +13,7 @@ import java.util.concurrent.TimeoutException;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.predicate.ResponsePredicate;
 import io.vertx.ext.web.client.predicate.ResponsePredicateResult;
@@ -70,33 +71,53 @@ public class VertxHttpClientProvider implements HttpClientProvider {
 
     @Override
     public String getString(String uri) throws IOException {
+        HttpResponse<Buffer> response = doGet(uri, null, true);
+        String charset = extractCharset(response.getHeader("Content-Type"));
+        Buffer body = response.body();
+        return charset != null ? body.toString(charset) : body.toString();
+    }
+
+    @Override
+    public InputStream getInputStream(String uri) throws IOException {
+        return new ByteArrayInputStream(doGet(uri, null, false).body().getBytes());
+    }
+
+    @Override
+    public InputStream getInputStream(String uri, Map<String, String> headers) throws IOException {
+        return new ByteArrayInputStream(doGet(uri, headers, false).body().getBytes());
+    }
+
+    private HttpResponse<Buffer> doGet(String uri, Map<String, String> headers, boolean enforceMaxSize) throws IOException {
         return executeWithRetry(() -> {
-            CompletableFuture<String> future = new CompletableFuture<>();
-            webClient.getAbs(uri)
-                    .expect(responseSizePredicate())
-                    .send()
-                    .onComplete(ar -> {
-                        if (ar.succeeded()) {
-                            io.vertx.ext.web.client.HttpResponse<Buffer> response = ar.result();
-                            if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                                Buffer body = response.body();
-                                if (body == null || body.length() == 0) {
-                                    future.completeExceptionally(new IOException("No content returned from HTTP call"));
-                                } else if (body.length() > maxConsumedResponseSize) {
-                                    future.completeExceptionally(new IOException(
-                                            "Response size " + body.length() + " exceeds limit of " + maxConsumedResponseSize));
-                                } else {
-                                    String charset = extractCharset(response.getHeader("Content-Type"));
-                                    future.complete(charset != null ? body.toString(charset) : body.toString());
-                                }
-                            } else {
-                                future.completeExceptionally(new IOException(
-                                        "Unexpected HTTP status: " + response.statusCode() + " " + response.statusMessage()));
-                            }
+            CompletableFuture<HttpResponse<Buffer>> future = new CompletableFuture<>();
+            var req = webClient.getAbs(uri);
+            if (enforceMaxSize) {
+                req.expect(responseSizePredicate());
+            }
+            if (headers != null) {
+                headers.forEach(req::putHeader);
+            }
+            req.send().onComplete(ar -> {
+                if (ar.succeeded()) {
+                    HttpResponse<Buffer> response = ar.result();
+                    if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                        Buffer body = response.body();
+                        if (body == null || body.length() == 0) {
+                            future.completeExceptionally(new IOException("No content returned from HTTP call"));
+                        } else if (enforceMaxSize && body.length() > maxConsumedResponseSize) {
+                            future.completeExceptionally(new IOException(
+                                    "Response size " + body.length() + " exceeds limit of " + maxConsumedResponseSize));
                         } else {
-                            future.completeExceptionally(ar.cause());
+                            future.complete(response);
                         }
-                    });
+                    } else {
+                        future.completeExceptionally(new IOException(
+                                "Unexpected HTTP status: " + response.statusCode() + " " + response.statusMessage()));
+                    }
+                } else {
+                    future.completeExceptionally(ar.cause());
+                }
+            });
             return awaitResult(future);
         });
     }
@@ -113,16 +134,6 @@ public class VertxHttpClientProvider implements HttpClientProvider {
     }
 
     @Override
-    public InputStream getInputStream(String uri) throws IOException {
-        return new ByteArrayInputStream(fetchBody(uri, null).getBytes());
-    }
-
-    @Override
-    public InputStream getInputStream(String uri, Map<String, String> headers) throws IOException {
-        return new ByteArrayInputStream(fetchBody(uri, headers).getBytes());
-    }
-
-    @Override
     public byte[] postBinary(String uri, byte[] body, Map<String, String> headers) throws IOException {
         return executeWithRetry(() -> {
             CompletableFuture<byte[]> future = new CompletableFuture<>();
@@ -132,7 +143,7 @@ public class VertxHttpClientProvider implements HttpClientProvider {
             }
             req.sendBuffer(Buffer.buffer(body)).onComplete(ar -> {
                 if (ar.succeeded()) {
-                    io.vertx.ext.web.client.HttpResponse<Buffer> response = ar.result();
+                    HttpResponse<Buffer> response = ar.result();
                     if (response.statusCode() >= 200 && response.statusCode() < 300) {
                         Buffer b = response.body();
                         if (b == null || b.length() == 0) {
@@ -165,38 +176,6 @@ public class VertxHttpClientProvider implements HttpClientProvider {
                 }
             }
             return ResponsePredicateResult.success();
-        });
-    }
-
-    private Buffer fetchBody(String uri, Map<String, String> headers) throws IOException {
-        return executeWithRetry(() -> {
-            CompletableFuture<Buffer> future = new CompletableFuture<>();
-            var req = webClient.getAbs(uri).expect(responseSizePredicate());
-            if (headers != null) {
-                headers.forEach(req::putHeader);
-            }
-            req.send().onComplete(ar -> {
-                if (ar.succeeded()) {
-                    io.vertx.ext.web.client.HttpResponse<Buffer> response = ar.result();
-                    if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                        Buffer body = response.body();
-                        if (body == null || body.length() == 0) {
-                            future.completeExceptionally(new IOException("No content returned from HTTP call"));
-                        } else if (body.length() > maxConsumedResponseSize) {
-                            future.completeExceptionally(new IOException(
-                                    "Response size " + body.length() + " exceeds limit of " + maxConsumedResponseSize));
-                        } else {
-                            future.complete(body);
-                        }
-                    } else {
-                        future.completeExceptionally(new IOException(
-                                "Unexpected HTTP status: " + response.statusCode() + " " + response.statusMessage()));
-                    }
-                } else {
-                    future.completeExceptionally(ar.cause());
-                }
-            });
-            return awaitResult(future);
         });
     }
 
