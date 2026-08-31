@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc.endpoints;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -57,11 +58,13 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.SystemClientUtil;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.BackchannelLogoutResponse;
 import org.keycloak.protocol.oidc.LogoutTokenValidationCode;
 import org.keycloak.protocol.oidc.LogoutTokenValidationContext;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.protocol.oidc.utils.ContentTypeValidationUtil;
@@ -137,6 +140,7 @@ public class LogoutEndpoint {
      *
      * When the logout is initiated by a remote idp, the parameter "initiating_idp" can be supplied. This param will
      * prevent upstream logout (since the logout procedure has already been started in the remote idp).
+     * Deprecated and ignored by default; re-enable with the "{@value OIDCLoginProtocolFactory#CONFIG_ALLOW_INITIATING_IDP_LOGOUT_PARAM}" provider option.
      *
      * This endpoint is aligned with OpenID Connect RP-Initiated Logout specification https://openid.net/specs/openid-connect-rpinitiated-1_0.html#RPLogout
      *
@@ -147,7 +151,7 @@ public class LogoutEndpoint {
      * @param postLogoutRedirectUri Parameter "post_logout_redirect_uri" as described in the specification with the URL to redirect after logout.
      * @param state Parameter "state" as described in the specification. Will be used to send "state" when redirecting back to the application after the logout
      * @param uiLocales Parameter "ui_locales" as described in the specification. Can be used by the client to display pages in specified locale (if any pages are going to be displayed to the user during logout)
-     * @param initiatingIdp The alias of the idp initiating the logout.
+     * @param initiatingIdp The alias of the idp initiating the logout. Deprecated and ignored by default; see the method description.
      * @return
      */
     @GET
@@ -222,7 +226,13 @@ public class LogoutEndpoint {
             if (client != null) {
                 OIDCAdvancedConfigWrapper wrapper = OIDCAdvancedConfigWrapper.fromClientModel(client);
                 Set<String> postLogoutRedirectUris = wrapper.getPostLogoutRedirectUris() != null ? new HashSet(wrapper.getPostLogoutRedirectUris()) : new HashSet<>();
-                validatedRedirectUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(), postLogoutRedirectUri, postLogoutRedirectUris, true);
+                if (isAllowOidcParamsInRedirectUris(client)) {
+                    // Backward compat: skip forbidden params check
+                    validatedRedirectUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(), postLogoutRedirectUri, postLogoutRedirectUris, true, Collections.emptySet());
+                } else {
+                    // Default: use FORBIDDEN_OIDC_PARAMS (5-arg overload)
+                    validatedRedirectUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(), postLogoutRedirectUri, postLogoutRedirectUris, true);
+                }
             }
 
             if (validatedRedirectUri == null) {
@@ -267,7 +277,13 @@ public class LogoutEndpoint {
             logoutSession.setAuthNote(OIDCLoginProtocol.LOGOUT_STATE_PARAM, state);
         }
         if (initiatingIdp != null) {
-            logoutSession.setAuthNote(AuthenticationManager.LOGOUT_INITIATING_IDP, initiatingIdp);
+            OIDCLoginProtocol loginProtocol = (OIDCLoginProtocol) session.getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
+            if (loginProtocol.getConfig().isAllowInitiatingIdpLogoutParam()) {
+                logoutSession.setAuthNote(AuthenticationManager.LOGOUT_INITIATING_IDP, initiatingIdp);
+            } else {
+                logger.warnf("Ignoring the deprecated 'initiating_idp' logout parameter, the upstream identity provider logout will be performed. " +
+                        "Enable it with the '%s' option if you still rely on it.", OIDCLoginProtocolFactory.CONFIG_ALLOW_INITIATING_IDP_LOGOUT_PARAM);
+            }
         }
         if (idToken != null) {
             logoutSession.setAuthNote(OIDCLoginProtocol.LOGOUT_VALIDATED_ID_TOKEN_SESSION_STATE, idToken.getSessionState());
@@ -290,6 +306,15 @@ public class LogoutEndpoint {
         } else {
             return doBrowserLogout(logoutSession);
         }
+    }
+
+    private boolean isAllowOidcParamsInRedirectUris(ClientModel client) {
+        OIDCLoginProtocol protocol = (OIDCLoginProtocol) session.getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
+        if (protocol.getConfig().isAllowOidcParamsInRedirectUris()) {
+            return true;
+        }
+        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
+        return clientConfig.isAllowOidcParamsInRedirectUris();
     }
 
     private Response displayLogoutConfirmationScreen(LoginFormsProvider loginForm, AuthenticationSessionModel authSession) {

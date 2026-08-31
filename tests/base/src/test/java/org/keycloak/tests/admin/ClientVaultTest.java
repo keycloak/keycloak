@@ -21,7 +21,6 @@ import java.net.URL;
 
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
-import org.keycloak.common.Profile;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.protocol.oidc.client.authentication.JWTClientSecretCredentialsProvider;
@@ -129,8 +128,7 @@ class ClientVaultTest {
             if (url == null) {
                 throw new RuntimeException("Unable to find the vault folder in the classpath for the default_client__secret file!");
             }
-            return config.option("vault", "file").option("vault-dir", url.getPath())
-                    .features(Profile.Feature.CLIENT_SECRET_ROTATION);
+            return config.option("vault", "file").option("vault-dir", url.getPath());
         }
     }
 

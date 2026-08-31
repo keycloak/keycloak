@@ -36,6 +36,7 @@ import org.keycloak.ServerStartupError;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Environment;
 import org.keycloak.config.DatabaseOptions;
+import org.keycloak.config.TransactionOptions;
 import org.keycloak.config.database.Database;
 import org.keycloak.connections.jpa.AsyncCommitIntegrator;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
@@ -103,7 +104,8 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
     public void postInit(KeycloakSessionFactory factory) {
         super.postInit(factory);
         if (config.getBoolean("asyncCommit", true)) {
-            AsyncCommitIntegrator.registerListeners(entityManagerFactory);
+            boolean xaEnabled = Configuration.isKcPropertyTrue(TransactionOptions.TRANSACTION_XA_ENABLED.getKey());
+            AsyncCommitIntegrator.registerListeners(entityManagerFactory, xaEnabled);
         }
 
         checkMySQLWaitTimeout();
@@ -181,6 +183,12 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
                 .name("asyncCommit")
                 .type("boolean")
                 .helpText("If enabled, transactions that only modify ephemeral entities (such as authentication sessions or events) use asynchronous commit on PostgreSQL, skipping the WAL fsync wait. This improves throughput but means the last few milliseconds of such transactions may be lost on a crash. Automatically disabled on Aurora PostgreSQL when logical replication is active.")
+                .defaultValue(true)
+                .add()
+                .property()
+                .name("autoCreateMissingIndexes")
+                .type("boolean")
+                .helpText("If enabled, missing database indexes are automatically created using online/concurrent DDL after startup on databases that support it (PostgreSQL, Oracle, MySQL/MariaDB, and MSSQL Enterprise/Developer/Azure SQL). If disabled, missing indexes are only logged for manual creation.")
                 .defaultValue(true)
                 .add()
                 .build();
@@ -446,7 +454,8 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
     }
 
     private void checkMissingIndexes(KeycloakSessionFactory factory) {
-        var thread = new Thread(new DatabaseIndexChecker(this::getConnection, factory, getSchema()), "db-index-checker");
+        boolean autoCreate = getMigrationStrategy() == MigrationStrategy.UPDATE && config.getBoolean("autoCreateMissingIndexes", true);
+        var thread = new Thread(new DatabaseIndexChecker(this::getConnection, factory, getSchema(), autoCreate, getMigrationTransactionTimeout()), "db-index-checker");
         thread.setDaemon(true);
         thread.start();
     }

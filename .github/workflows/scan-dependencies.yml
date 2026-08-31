@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   define-refs:
+    if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
     runs-on: ubuntu-latest
     outputs:
       refs: ${{ steps.refs.outputs.refs }}
@@ -27,7 +28,9 @@ jobs:
               REFS+="\"refs/heads/$BRANCH\""
           done
 
-          REFS+=", \"refs/tags/$LATEST_TAG\""
+          if [ "$LATEST_TAG" != "" ]; then 
+            REFS+=", \"refs/tags/$LATEST_TAG\""
+          fi
           
           REFS+=']'
 
@@ -45,6 +48,7 @@ jobs:
     strategy:
       matrix:
         ref: ${{ fromJSON(needs.define-refs.outputs.refs) }}
+      fail-fast: false
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -70,6 +74,7 @@ jobs:
         with:
           scan-type: 'fs'
           scan-ref: '.'
+          trivyignores: .trivy/trivyignore.yaml
           format: 'json'
           output: 'trivy-report.json'
           scanners: 'vuln'          
@@ -81,9 +86,17 @@ jobs:
         run: |
           trivy convert --format sarif -o trivy-report.sarif --scanners vuln trivy-report.json
       - name: Upload report
-        uses: github/codeql-action/upload-sarif@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6
+        uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
         with:
           sarif_file: 'trivy-report.sarif'
           category: 'dependencies'
           ref: ${{ matrix.ref }}
           sha: ${{ env.CURRENT_SHA }}
+      - run: echo "TRIVY_ARTIFACT_NAME=$(echo 'trivy-report-${{ matrix.ref }}' | sed 's|/|_|g')" >> $GITHUB_ENV
+
+      - name: Upload Report to Run
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ env.TRIVY_ARTIFACT_NAME }}
+          path: trivy-report.json
+          retention-days: 30

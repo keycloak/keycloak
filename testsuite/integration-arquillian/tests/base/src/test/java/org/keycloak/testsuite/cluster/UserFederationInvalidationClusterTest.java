@@ -11,7 +11,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 
 import static org.junit.jupiter.api.Assertions.assertNull;

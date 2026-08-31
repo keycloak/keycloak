@@ -9,7 +9,6 @@ import java.util.Map;
 
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportImportManager;
-import org.keycloak.exportimport.dir.DirExportProvider;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.RealmModel;
@@ -22,6 +21,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -54,7 +54,7 @@ public class OID4VCExportImportTest extends OID4VCIssuerTestBase {
 
     @AfterAll
     public static void deleteTempDir() throws IOException {
-        DirExportProvider.recursiveDeleteDir(new File(tempDir));
+        FileUtils.deleteDirectory(new File(tempDir));
     }
 
     @Test
@@ -68,7 +68,7 @@ public class OID4VCExportImportTest extends OID4VCIssuerTestBase {
         List<UserVerifiableCredentialRepresentation> verifiableCreds = testRealm.admin().users().get(john.getId()).verifiableCredentials().getCredentials();
         Map<String, List<String>> userAttributes = john.getRawAttributes();
         assertNotNull(userAttributes);
-        assertUserCredentials(verifiableCreds, userAttributes, jwtTypeCredentialScopeName, sdJwtTypeCredentialScopeName, minimalJwtTypeCredentialScopeName, jwtTypeNaturalPersonScopeName, sdJwtTypeNaturalPersonScopeName);
+        assertUserCredentials(verifiableCreds, userAttributes, jwtTypeCredentialScopeName, sdJwtTypeCredentialScopeName, mdocTypeCredentialScopeName, minimalJwtTypeCredentialScopeName, jwtTypeNaturalPersonScopeName, sdJwtTypeNaturalPersonScopeName);
 
         // Export realm
         exportRealm("oid4vc-test-realm.json");
@@ -88,7 +88,7 @@ public class OID4VCExportImportTest extends OID4VCIssuerTestBase {
         assertEquals(verifiableCreds, importedVerifiableCreds);
 
         // Verify each credential's userAttributes are preserved
-        assertUserCredentials(importedVerifiableCreds, userAttributes, jwtTypeCredentialScopeName, sdJwtTypeCredentialScopeName, minimalJwtTypeCredentialScopeName, jwtTypeNaturalPersonScopeName, sdJwtTypeNaturalPersonScopeName);
+        assertUserCredentials(importedVerifiableCreds, userAttributes, jwtTypeCredentialScopeName, sdJwtTypeCredentialScopeName, mdocTypeCredentialScopeName, minimalJwtTypeCredentialScopeName, jwtTypeNaturalPersonScopeName, sdJwtTypeNaturalPersonScopeName);
 
     }
 

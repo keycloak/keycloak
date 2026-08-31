@@ -375,6 +375,12 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
                 log.debugf("Could not generate SSF Security Event Token for Admin Event. id=%s", adminEvent.getId());
                 continue;
             }
+            if (isAnyEventEmitOnlyForReceiver(securityEventToken, stream)) {
+                log.debugf("Skipping native auto-emit — event type is in receiver's emitOnlyEvents set. "
+                                + "streamId=%s clientId=%s jti=%s",
+                        stream.getStreamId(), stream.getClientClientId(), securityEventToken.getJti());
+                continue;
+            }
             log.debugf("Generated SSF Security Event Token for Admin Event. "
                             + "realm=%s clientId=%s streamId=%s operationType=%s resourceType=%s resourcePath=%s jti=%s",
                     session.getContext().getRealm().getName(),
@@ -391,9 +397,17 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
     }
 
     protected boolean isUserSessionExpiration(Event event) {
-        return EventType.USER_SESSION_DELETED.equals(event.getType()) &&
-               (Details.INVALID_USER_SESSION_REMEMBER_ME_REASON.equals(event.getDetails().get(Details.REASON))
-               || Details.USER_SESSION_EXPIRED_REASON.equals(event.getDetails().get(Details.REASON)));
+        if (!EventType.USER_SESSION_DELETED.equals(event.getType())) {
+            return false;
+        }
+        // details can be null depending on how the event was constructed
+        Map<String, String> details = event.getDetails();
+        if (details == null) {
+            return false;
+        }
+        String reason = details.get(Details.REASON);
+        return Details.INVALID_USER_SESSION_REMEMBER_ME_REASON.equals(reason)
+               || Details.USER_SESSION_EXPIRED_REASON.equals(reason);
     }
 
     @Override

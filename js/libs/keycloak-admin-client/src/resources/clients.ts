@@ -996,6 +996,10 @@ export class Clients extends Resource<{ realm?: string }> {
     urlParamKeys: ["id", "attr"],
   });
 
+  /**
+   * @deprecated Clients should generate their own key pairs and upload only the
+   *             public key/certificate. The private key is no longer stored on the server.
+   */
   public generateKey = this.makeRequest<
     { id: string; attr: string },
     CertificateRepresentation
@@ -1005,6 +1009,10 @@ export class Clients extends Resource<{ realm?: string }> {
     urlParamKeys: ["id", "attr"],
   });
 
+  /**
+   * @deprecated Private keys are no longer stored on the server. The downloaded
+   *             keystore will only contain the certificate.
+   */
   public downloadKey = this.makeUpdateRequest<
     { id: string; attr: string },
     KeyStoreConfig,
@@ -1018,6 +1026,10 @@ export class Clients extends Resource<{ realm?: string }> {
     },
   });
 
+  /**
+   * @deprecated Clients should generate their own key pairs and upload only the
+   *             public key/certificate.
+   */
   public generateAndDownloadKey = this.makeUpdateRequest<
     { id: string; attr: string },
     KeyStoreConfig,
@@ -1031,6 +1043,9 @@ export class Clients extends Resource<{ realm?: string }> {
     },
   });
 
+  /**
+   * @deprecated Use {@link uploadCertificate} instead.
+   */
   public uploadKey = this.makeUpdateRequest<
     { id: string; attr: string },
     FormData

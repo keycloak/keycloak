@@ -157,7 +157,7 @@ export const Organizations = ({ user }: OrganizationProps) => {
         addAlert(t("organizationRemovedSuccess"));
         const user = await adminClient.users.findOne({ id: id! });
         if (!user) {
-          navigate(toUsers({ realm: realm }));
+          void navigate(toUsers({ realm: realm }));
         }
         setSelectedOrgs([]);
         refresh();

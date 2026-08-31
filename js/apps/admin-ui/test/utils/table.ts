@@ -1,11 +1,15 @@
 import { type Locator, type Page, expect } from "@playwright/test";
 
+const TABLE_LOAD_TIMEOUT_MS = 5_000;
+
 export async function searchItem(
   page: Page,
   placeHolder: string,
   itemName: string,
 ) {
-  await page.locator("table tbody").waitFor();
+  await page
+    .locator("table tbody")
+    .waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
   await page.getByPlaceholder(placeHolder).fill(itemName);
   await page.keyboard.press("Enter");
 }
@@ -14,12 +18,75 @@ export async function clearAllFilters(page: Page) {
   await page.getByTestId("clear-all-filters-empty-action").click();
 }
 
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+async function clickLinkWhenAvailable(link: Locator): Promise<boolean> {
+  const candidate = link.first();
+  if ((await candidate.count()) === 0) {
+    return false;
+  }
+
+  try {
+    await candidate.waitFor({ state: "visible", timeout: 500 });
+    await candidate.click({ timeout: 500 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function clickTableRowItem(page: Page, itemName: string) {
-  await page.getByRole("link", { name: itemName }).first().click();
+  const tableBody = page.locator("table tbody");
+  await tableBody.waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
+
+  const exactNameRegex = new RegExp(`^${escapeRegex(itemName)}$`, "i");
+
+  for (let attempt = 0; attempt < 6; attempt++) {
+    if (
+      await clickLinkWhenAvailable(
+        tableBody.getByRole("link", { name: itemName, exact: true }),
+      )
+    ) {
+      return;
+    }
+
+    if (
+      await clickLinkWhenAvailable(
+        tableBody.getByRole("link", { name: exactNameRegex }),
+      )
+    ) {
+      return;
+    }
+
+    if (
+      await clickLinkWhenAvailable(
+        tableBody
+          .locator("tr")
+          .filter({ has: page.getByRole("link", { name: exactNameRegex }) })
+          .getByRole("link", { name: exactNameRegex }),
+      )
+    ) {
+      return;
+    }
+
+    if (
+      await clickLinkWhenAvailable(
+        tableBody.getByRole("link", { name: itemName }),
+      )
+    ) {
+      return;
+    }
+  }
+
+  throw new Error(`Table row item "${itemName}" not found`);
 }
 
 export function getRowByCellText(page: Page, cellText: string): Locator {
-  return page.getByText(cellText, { exact: true });
+  return page
+    .locator("table tbody tr")
+    .filter({ has: page.getByText(cellText, { exact: true }) });
 }
 
 export async function clickRowKebabItem(
@@ -39,10 +106,11 @@ export async function assertRowExists(
   itemName: string,
   exist = true,
 ) {
+  const row = page.locator("table tbody").getByRole("row", { name: itemName });
   if (exist) {
-    await expect(page.getByRole("row", { name: itemName })).toBeVisible();
+    await expect(row.first()).toBeVisible();
   } else {
-    await expect(page.getByRole("row", { name: itemName })).toBeHidden();
+    await expect(row).toHaveCount(0);
   }
 }
 
@@ -57,24 +125,75 @@ export async function clickTableToolbarItem(
   itemName: string,
   kebab = false,
 ) {
+  const toolbar = page.getByTestId("table-toolbar");
   if (kebab) {
-    await page.getByTestId("kebab").click();
+    await toolbar.getByTestId("kebab").click();
+    const exactMenuItem = page.getByRole("menuitem", {
+      name: itemName,
+      exact: true,
+    });
+    if ((await exactMenuItem.count()) > 0) {
+      await exactMenuItem.first().click();
+      return;
+    }
+    await page.getByRole("menuitem", { name: itemName }).first().click();
+    return;
   }
-  return page
-    .locator(`[data-testid="table-toolbar"]`)
-    .getByText(itemName)
-    .click();
+
+  const exactToolbarItem = toolbar
+    .getByRole("button", { name: itemName, exact: true })
+    .or(toolbar.getByRole("link", { name: itemName, exact: true }))
+    .first();
+  try {
+    await exactToolbarItem.waitFor({ state: "visible", timeout: 2_000 });
+    await exactToolbarItem.click();
+    return;
+  } catch {
+    // Fall through to partial name and overflow menu attempts.
+  }
+
+  const partialToolbarItem = toolbar
+    .getByRole("button", { name: itemName })
+    .or(toolbar.getByRole("link", { name: itemName }))
+    .first();
+  try {
+    await partialToolbarItem.waitFor({ state: "visible", timeout: 2_000 });
+    await partialToolbarItem.click();
+    return;
+  } catch {
+    // Fall through to overflow menu attempt.
+  }
+
+  const overflowKebab = toolbar.getByTestId("kebab");
+  if ((await overflowKebab.count()) > 0) {
+    await overflowKebab.click();
+    const exactMenuItem = page.getByRole("menuitem", {
+      name: itemName,
+      exact: true,
+    });
+    if ((await exactMenuItem.count()) > 0) {
+      await exactMenuItem.first().click();
+      return;
+    }
+    await page.getByRole("menuitem", { name: itemName }).first().click();
+    return;
+  }
+
+  throw new Error(`Toolbar item "${itemName}" not found`);
 }
 
 export async function getTableData(page: Page, name: string) {
   const rowsLocator = await getTableRows(page, name);
-  const rows = await rowsLocator.elementHandles();
-  const tableData = await Promise.all(
-    rows.map(async (row) => {
-      const cells = await row.$$("td");
-      return await Promise.all(cells.map((cell) => cell.innerText()));
-    }),
-  );
+  const rowCount = await rowsLocator.count();
+  const tableData: string[][] = [];
+
+  for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+    const row = rowsLocator.nth(rowIndex);
+    tableData.push(
+      (await row.locator("td").allInnerTexts()).map((t) => t.trim()),
+    );
+  }
+
   return tableData;
 }
 
@@ -91,7 +210,9 @@ async function getTableRows(page: Page, name: string): Promise<Locator> {
   const table = page
     .getByRole("grid")
     .and(page.getByLabel(name, { exact: true }));
-  await table.locator("tbody").waitFor();
+  await table
+    .locator("tbody")
+    .waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
   return table.locator("tbody tr");
 }
 
@@ -112,10 +233,23 @@ export async function clickSelectRow(
   row: number | string,
 ) {
   if (typeof row === "string") {
-    const rows = await getTableData(page, tableName);
-    const rowIndex = rows.findIndex((r) => r.includes(row as string));
-    if (rowIndex === -1) {
-      throw new Error(`Row ${row} not found: ${rows}`);
+    const rowName = row;
+    let rows: string[][] = [];
+    let rowIndex = -1;
+
+    try {
+      await expect
+        .poll(
+          async () => {
+            rows = await getTableData(page, tableName);
+            rowIndex = rows.findIndex((r) => r.includes(rowName));
+            return rowIndex;
+          },
+          { timeout: TABLE_LOAD_TIMEOUT_MS },
+        )
+        .not.toBe(-1);
+    } catch {
+      throw new Error(`Row ${rowName} not found: ${JSON.stringify(rows)}`);
     }
     row = rowIndex;
   }

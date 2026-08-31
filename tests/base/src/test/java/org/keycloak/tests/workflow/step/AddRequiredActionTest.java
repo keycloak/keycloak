@@ -21,6 +21,8 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -55,6 +57,47 @@ public class AddRequiredActionTest extends AbstractWorkflowTest {
                     Assertions.assertTrue(userRepresentation.getRequiredActions() != null && !userRepresentation.getRequiredActions().isEmpty());
                     assertThat(userRepresentation.getRequiredActions(), hasSize(1));
                     assertThat(userRepresentation.getRequiredActions().get(0), is(UserModel.RequiredAction.UPDATE_PASSWORD.name()));
+                });
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"verify-email", "VERIFY_EMAIL"})
+    @DisplayName("Test required action name compatibility")
+    public void testRequiredActionNameCompatibility(String action) {
+        managedRealm.admin().workflows().create(
+                WorkflowRepresentation.withName("myworkflow")
+                        .onEvent(UserCreatedWorkflowEventFactory.ID)
+                        .withSteps(
+                                WorkflowStepRepresentation.create()
+                                        .of(AddRequiredActionStepProviderFactory.ID)
+                                        .withConfig(
+                                                AddRequiredActionStepProvider.REQUIRED_ACTION_KEY,
+                                                action
+                                        )
+                                        .build()
+                        )
+                        .build()
+        ).close();
+
+        managedRealm.admin().users()
+                .create(UserBuilder.create().username("myuser").build())
+                .close();
+
+        Awaitility.await()
+                .timeout(Duration.ofSeconds(30))
+                .pollInterval(Duration.ofSeconds(1))
+                .untilAsserted(() -> {
+                    var users = managedRealm.admin().users().search("myuser");
+
+                    assertThat(users, hasSize(1));
+
+                    var userRepresentation = users.get(0);
+
+                    assertThat(userRepresentation.getRequiredActions(), hasSize(1));
+                    assertThat(
+                            userRepresentation.getRequiredActions().get(0),
+                            is(UserModel.RequiredAction.VERIFY_EMAIL.name())
+                    );
                 });
     }
 

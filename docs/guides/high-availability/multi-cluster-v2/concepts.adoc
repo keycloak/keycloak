@@ -16,6 +16,8 @@ See <@links.ha id="multi-cluster-v2-introduction" /> for the introduction.
 
 Use this setup to provide {project_name} deployments that are able to tolerate cluster failures, reducing the likelihood of downtime.
 
+Multiple {project_name} clusters share a synchronously replicated database.
+
 Unlike the standard <@links.ha id="multi-cluster-concepts" />, this setup does not require an external {jdgserver_name} cluster.
 This simplifies the deployment architecture and removes the need for an external monitoring solution that reconfigures the external {jdgserver_name} on failover. It also eliminates operational procedures on failback.
 
@@ -32,6 +34,13 @@ image::high-availability/active-active-stateless.dio.svg[]
 === Background jobs
 
 Background jobs will run only in one of the active clusters and will be automatically redistributed to another cluster on a cluster failure.
+
+=== Health check endpoints
+
+{project_name} exposes two health check endpoints for different purposes:
+
+* `/health/ready` on the management port indicates whether an individual node is ready to serve traffic. Use this for the internal load balancer or {kubernetes} readiness probes.
+* `/lb-check` indicates whether a site as a whole is available. Use this for the external load balancer that routes traffic between sites.
 
 === Updates to realm data and cache invalidation
 

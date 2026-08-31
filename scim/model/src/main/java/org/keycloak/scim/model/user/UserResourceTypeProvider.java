@@ -38,6 +38,7 @@ import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider;
 import org.keycloak.scim.resource.user.User;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
@@ -100,7 +101,7 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     @Override
     protected UserModel getModel(String id) {
         RealmModel realm = session.getContext().getRealm();
-        UserModel model = session.users().getUserById(realm, id);
+        UserModel model = UserStoragePrivateUtil.userLocalStorage(session).getUserById(realm, id);
 
         if (model == null || model.getServiceAccountClientLink() == null) {
             return model;
@@ -131,9 +132,6 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     @Override
     protected Stream<UserModel> getModels(SearchRequest searchRequest) {
         RealmModel realm = session.getContext().getRealm();
-        Integer firstResult = searchRequest.getStartIndex() != null ? searchRequest.getStartIndex() - 1 : null;
-        Integer maxResults = searchRequest.getCount();
-        maxResults = maxResults != null ? Math.max(0, Math.min(maxResults, DEFAULT_MAX_RESULTS)) : DEFAULT_MAX_RESULTS;
 
         ScimFilterParser.FilterContext filterContext = searchRequest.getFilterContext();
 
@@ -147,16 +145,20 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
 
             query.where(predicates).distinct(true).orderBy(cb.asc(root.get("username")));
 
-            return closing(paginateQuery(em.createQuery(query), firstResult, maxResults).getResultStream()
+            return closing(paginateQuery(em.createQuery(query), searchRequest.getStartIndex() - 1, searchRequest.getCount()).getResultStream()
                     .map(entity -> session.users().getUserById(realm, entity.getId()))
                     .filter(Objects::nonNull));
         } else {
-            return session.users().searchForUserStream(realm, Map.of(UserModel.INCLUDE_SERVICE_ACCOUNT, "false"), firstResult, maxResults);
+            return UserStoragePrivateUtil.userLocalStorage(session).searchForUserStream(realm, Map.of(UserModel.INCLUDE_SERVICE_ACCOUNT, "false"), searchRequest.getStartIndex() - 1, searchRequest.getCount());
         }
     }
 
     @Override
-    public Long count(SearchRequest searchRequest) {
+    public Long count(SearchRequest searchRequest, int resourceSize) {
+        if (resourceSize < searchRequest.getCount() && (resourceSize > 0 || searchRequest.getStartIndex() == 1)) {
+            return (long) (searchRequest.getStartIndex() - 1 + resourceSize);
+        }
+
         RealmModel realm = session.getContext().getRealm();
         ScimFilterParser.FilterContext filterContext = searchRequest.getFilterContext();
 
@@ -170,7 +172,7 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
             query.select(cb.countDistinct(root)).where(predicates);
             return em.createQuery(query).getSingleResult();
         } else {
-            return (long) session.users().getUsersCount(realm, false);
+            return (long) UserStoragePrivateUtil.userLocalStorage(session).getUsersCount(realm, false);
         }
     }
 
@@ -180,9 +182,9 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     }
 
     @Override
-    public boolean onDelete(String id) {
+    public boolean onDelete(UserModel model) {
         RealmModel realm = session.getContext().getRealm();
-        return session.users().removeUser(realm, getModel(id));
+        return session.users().removeUser(realm, model);
     }
 
     @Override

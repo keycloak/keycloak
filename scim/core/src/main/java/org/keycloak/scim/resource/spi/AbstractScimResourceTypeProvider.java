@@ -1,6 +1,5 @@
 package org.keycloak.scim.resource.spi;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -11,7 +10,6 @@ import org.keycloak.models.Model;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.protocol.request.PatchRequest.PatchOperation;
-import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.schema.ModelSchema;
 
@@ -21,7 +19,7 @@ import static java.util.function.Predicate.not;
 
 import static org.keycloak.utils.StringUtil.isBlank;
 
-public abstract class AbstractScimResourceTypeProvider<M extends Model, R extends ResourceTypeRepresentation> implements ScimResourceTypeProvider<R> {
+public abstract class AbstractScimResourceTypeProvider<M extends Model, R extends ResourceTypeRepresentation> extends BaseResourceTypeProvider<M, R> {
 
     /**
      * Maximum number of operations allowed in a single SCIM PATCH request.
@@ -30,84 +28,22 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
      */
     public static final int MAX_PATCH_OPERATIONS = 100;
 
-    protected final KeycloakSession session;
     private final ModelSchema<M, R> schema;
     private final List<ModelSchema<M, R>> schemaExtensions;
-    private final List<ModelSchema<M, R>> schemas;
 
     public AbstractScimResourceTypeProvider(KeycloakSession session, ModelSchema<M, R> schema, List<ModelSchema<M, R>> schemaExtensions) {
-        this.session = session;
+        super(session, Stream.concat(Stream.of(schema), schemaExtensions.stream()));
         this.schema = schema;
         this.schemaExtensions = schemaExtensions;
-        this.schemas = new ArrayList<>();
-        this.schemas.add(schema);
-        this.schemas.addAll(schemaExtensions);
     }
 
     public AbstractScimResourceTypeProvider(KeycloakSession session, ModelSchema<M, R> schema) {
         this(session, schema, List.of());
     }
-
+    
     @Override
-    public R create(R resource) {
-        if (!hasPermission(getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
-            throw new ForbiddenException();
-        }
-
-        return onCreate(resource);
-    }
-
-    @Override
-    public R update(R resource) {
-        M model = getModel(resource.getId());
-
-        if (!hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
-            throw new ForbiddenException();
-        }
-
-        populate(model, resource);
-
-        return onUpdate(model, resource);
-    }
-
-    @Override
-    public R get(String id) {
-        return get(id, null, null);
-    }
-
-    public R get(String id, List<String> attributes, List<String> excludedAttributes) {
-        M model = getModel(id);
-
-        if (model == null) {
-            return null;
-        }
-
-        if (!hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.VIEW)) {
-            throw new ForbiddenException();
-        }
-
-        return createResourceTypeInstance(model, attributes, excludedAttributes);
-    }
-
-    @Override
-    public Stream<R> getAll(SearchRequest searchRequest) {
-        if (!canQuery()) {
-            throw new ForbiddenException();
-        }
-
-        return getModels(searchRequest)
-                .map(m -> createResourceTypeInstance(m, searchRequest.getAttributes(), searchRequest.getExcludedAttributes()));
-    }
-
-    @Override
-    public boolean delete(String id) {
-        M model = getModel(id);
-
-        if (!hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
-            throw new ForbiddenException();
-        }
-
-        return onDelete(id);
+    protected String getModelId(R resource) {
+        return resource.getId();
     }
 
     @Override
@@ -151,28 +87,11 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
     public String getSchema() {
         return schema.getId();
     }
-
-    @Override
-    public List<ModelSchema<M, R>> getSchemas() {
-        return schemas;
-    }
-
+    
     @Override
     public List<String> getSchemaExtensions() {
         return schemaExtensions.stream().filter(not(ModelSchema::isInternal)).map(ModelSchema::getId).toList();
     }
-
-    protected abstract R onCreate(R resource);
-
-    protected abstract R onUpdate(M model, R resource);
-
-    protected abstract boolean onDelete(String id);
-
-    protected abstract Stream<M> getModels(SearchRequest searchRequest);
-
-    protected abstract M getModel(String id);
-
-    protected abstract String getRealmResourceType();
 
     protected void populate(M model, R resource) {
         for (ModelSchema<M, R> schema : schemas) {
@@ -196,24 +115,4 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
         }
     }
 
-    private boolean canQuery() {
-        return session.getContext().getPermissions().hasPermission(getRealmResourceType(), AdminPermissionsSchema.QUERY)
-                || session.getContext().getPermissions().hasPermission(getRealmResourceType(), AdminPermissionsSchema.VIEW);
-    }
-
-    private boolean hasPermission(String realmResourceType, String scope) {
-        return session.getContext().getPermissions().hasPermission(realmResourceType, scope);
-    }
-
-    protected boolean hasPermission(M model, String realmResourceType, String scope) {
-        if (AdminPermissionsSchema.VIEW.equals(scope)) {
-            return session.getContext().getPermissions().hasPermission(model, realmResourceType, scope);
-        }
-
-        return session.getContext().getPermissions().hasPermission(model, realmResourceType, scope) && isManageable(model);
-    }
-
-    protected boolean isManageable(M model) {
-        return true;
-    }
 }

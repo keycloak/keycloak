@@ -129,7 +129,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
             <artifactId>httpclient5</artifactId>
-            <version>5.0.1</version>
+            <version>5.6.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -272,6 +272,10 @@ public class Attribute<M extends Model, R> {
         mapper.setValue(model, value);
     }
 
+    public void setModelAttribute(M model, Object value) {
+        mapper.setModelAttribute(model, value);
+    }
+
     public void set(R resource, Object value) {
         mapper.setValue(resource, value);
     }
@@ -355,7 +359,7 @@ public class Attribute<M extends Model, R> {
         private TriConsumer<M, String, Set<?>> modelRemover;
         private TriConsumer<M, String, Set<?>> modelAdder;
         private boolean required;
-        private boolean caseExact = true;
+        private boolean caseExact = false;
         private boolean storedLowerCase;
         private String uniqueness = "none";
 
@@ -397,7 +401,7 @@ public class Attribute<M extends Model, R> {
             String subName = this.name + "." + name;
             Attribute<M, R> attribute = assembleAttribute(subName, this.name, alias,
                     new AttributeMapper<>(modelSetter, new ComplexAttributeSetter<>(this.name, name, complexType)),
-                    modelAttributeResolver, "string", null, returned, false, false, true, false, null, null);
+                    modelAttributeResolver, "string", null, returned, false, false, false, false, null, null);
             attributes.add(attribute);
             return this;
         }
@@ -491,6 +495,11 @@ public class Attribute<M extends Model, R> {
 
         public Builder<M, R> notCaseExact() {
             this.caseExact = false;
+            return this;
+        }
+
+        public Builder<M, R> caseExact() {
+            this.caseExact = true;
             return this;
         }
 
