@@ -47,6 +47,9 @@ public interface Details {
     String USERNAME = "username";
     String ACTOR = "actor";
     String ACTOR_ID = "actor_id";
+    String ACTOR_TYPE = "actor_type";
+    String ACTOR_TYPE_USER = "user";
+    String ACTOR_TYPE_CLIENT = "client";
     String ACTOR_SESSION_ID = "actor_session_id";
     String FIRST_NAME = "first_name";
     String LAST_NAME = "last_name";

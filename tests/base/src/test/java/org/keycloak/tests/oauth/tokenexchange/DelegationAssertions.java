@@ -18,6 +18,8 @@ import static org.keycloak.representations.JsonWebToken.SUBJECT;
 
 final class DelegationAssertions {
 
+    record ExpectedActor(String type, String actor, String id) {}
+
     static void assertMayActNotPresent(AccessToken token) {
         Assertions.assertNull(token.getOtherClaims().get(MAY_ACT), "may_act claim should not be present");
     }

@@ -234,7 +234,7 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
           {
             title: t("edit"),
             onClick: (_key, _idx, component) => {
-              navigate(
+              void navigate(
                 toAttribute({
                   realm,
                   attributeName: component.name,

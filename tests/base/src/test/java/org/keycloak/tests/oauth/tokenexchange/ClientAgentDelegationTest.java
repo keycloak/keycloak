@@ -13,6 +13,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
@@ -47,6 +48,7 @@ import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.OAuthGrantPage;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.admin.authz.fgap.PermissionTestUtils;
+import org.keycloak.tests.oauth.tokenexchange.DelegationAssertions.ExpectedActor;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -210,6 +212,7 @@ public class ClientAgentDelegationTest {
         assertScopeContains(loginRes.getScope(), DELEGATION_SCOPE);
 
         String actorToken = getActorToken();
+        ExpectedActor clientActor = new ExpectedActor(Details.ACTOR_TYPE_CLIENT, ACTOR_CLIENT_ID, getServiceAccountUserId());
         AccessTokenResponse exchangeRes = oauth.client(ACTOR_CLIENT_ID, ACTOR_CLIENT_SECRET)
                 .tokenExchangeRequest(loginRes.getAccessToken())
                 .actorToken(actorToken)
@@ -219,6 +222,14 @@ public class ClientAgentDelegationTest {
 
         Assertions.assertFalse(exchangeRes.isSuccess(),
                 "Token exchange should fail when user has no roles for the requested audience");
+        EventAssertion.assertError(events.poll())
+                .type(EventType.TOKEN_EXCHANGE_ERROR)
+                .clientId(ACTOR_CLIENT_ID)
+                .error(Errors.INVALID_REQUEST)
+                .details(Details.REASON, "Requested audience not available: " + RESOURCE_CLIENT_ID)
+                .details(Details.ACTOR_TYPE, clientActor.type())
+                .details(Details.ACTOR, clientActor.actor())
+                .details(Details.ACTOR_ID, clientActor.id());
 
         logout(loginRes.getRefreshToken());
     }
@@ -240,6 +251,7 @@ public class ClientAgentDelegationTest {
 
         // token exchange fails without may_act
         String actorToken = getActorToken();
+        ExpectedActor clientActor = new ExpectedActor(Details.ACTOR_TYPE_CLIENT, ACTOR_CLIENT_ID, getServiceAccountUserId());
         AccessTokenResponse exchangeRes = oauth.client(ACTOR_CLIENT_ID, ACTOR_CLIENT_SECRET)
                 .tokenExchangeRequest(loginRes.getAccessToken())
                 .actorToken(actorToken)
@@ -247,6 +259,14 @@ public class ClientAgentDelegationTest {
                 .audience(RESOURCE_CLIENT_ID)
                 .send();
         Assertions.assertFalse(exchangeRes.isSuccess());
+        EventAssertion.assertError(events.poll())
+                .type(EventType.TOKEN_EXCHANGE_ERROR)
+                .clientId(ACTOR_CLIENT_ID)
+                .error(Errors.INVALID_TOKEN)
+                .details(Details.REASON, "Invalid may_act claim in the subject_token")
+                .details(Details.ACTOR_TYPE, clientActor.type())
+                .details(Details.ACTOR, clientActor.actor())
+                .details(Details.ACTOR_ID, clientActor.id());
 
         logout(loginRes.getRefreshToken());
     }
@@ -454,8 +474,6 @@ public class ClientAgentDelegationTest {
         public ClientBuilder configure(ClientBuilder client) {
             return super.configure(client)
                     .clientId(SUBJECT_CLIENT_ID).publicClient(true)
-                    .defaultClientScopes("acr", "basic", "email", "profile")
-                    .optionalClientScopes(OIDCLoginProtocolFactory.CLIENT_DELEGATION_SCOPE)
                     .consentRequired(true)
                     .fullScopeEnabled(false);
         }
