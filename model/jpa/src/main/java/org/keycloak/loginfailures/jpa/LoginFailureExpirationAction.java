@@ -17,12 +17,12 @@
 
 package org.keycloak.loginfailures.jpa;
 
-import java.util.concurrent.TimeUnit;
 import java.util.function.IntConsumer;
 
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.expiration.jpa.ExpirationAction;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.utils.LoginFailureUtils;
 
 public enum LoginFailureExpirationAction implements ExpirationAction {
     INSTANCE;
@@ -33,12 +33,10 @@ public enum LoginFailureExpirationAction implements ExpirationAction {
         if (realm == null) {
             return false;
         }
-        if (realm.isPermanentLockout() && realm.getMaxTemporaryLockouts() == 0) {
-            // If mode is permanent lockout only, the "failure reset time" cannot be configured and login failures should never expire.
+        var expired = LoginFailureUtils.computeExpirationCutOffTimestamp(realm, currentTime);
+        if (expired == -1) {
             return false;
         }
-        // expired if last-failure + max-delta-time < current time
-        var expired = TimeUnit.SECONDS.toMillis(currentTime - realm.getMaxDeltaTimeSeconds());
         var em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
         var userIds = em.createNamedQuery("findExpiredLoginFailureUserIdsByRealm", String.class)
                 .setParameter("realmId", realmId)
