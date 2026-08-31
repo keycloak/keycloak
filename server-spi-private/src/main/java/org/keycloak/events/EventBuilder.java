@@ -282,7 +282,7 @@ public class EventBuilder {
 
         for (EventListenerProvider l : targetListeners) {
             try {
-                l.onEvent(event);
+                l.onEvent(event.clone());
             } catch (Throwable t) {
                 log.error("Failed to send type to " + l, t);
             }
