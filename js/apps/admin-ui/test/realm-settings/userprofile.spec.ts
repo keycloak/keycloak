@@ -126,6 +126,34 @@ test.describe.serial("User profile tabs", () => {
         "No validators.",
       );
     });
+
+    test("Keeps realm overrides when deleting an attribute without a translation key", async ({
+      page,
+    }) => {
+      const attributeWithoutDisplayName = "NoTranslationKey";
+      await adminClient.addLocalizationText(
+        "en",
+        "loginAccountTitle",
+        "My Custom Login",
+        realmName,
+      );
+
+      await clickCreateAttribute(page);
+      await fillAttributeForm(page, { name: attributeWithoutDisplayName });
+      await clickSaveAttribute(page);
+      await assertNotificationMessage(
+        page,
+        "Success! User Profile configuration has been saved.",
+      );
+
+      await clickRowKebabItem(page, attributeWithoutDisplayName, "Delete");
+      await confirmModal(page);
+      await assertNotificationMessage(page, "Attribute deleted");
+
+      expect(await adminClient.getLocalizationTexts("en", realmName)).toEqual({
+        loginAccountTitle: "My Custom Login",
+      });
+    });
   });
 
   test("Deletes an attributes group", async ({ page }) => {
@@ -133,6 +161,31 @@ test.describe.serial("User profile tabs", () => {
     await clickRowKebabItem(page, group, "Delete");
     await confirmModal(page);
     await assertRowExists(page, group, false);
+  });
+
+  test("Keeps realm overrides when deleting an attribute group without translation keys", async ({
+    page,
+  }) => {
+    const groupWithoutTranslation = `group-without-translation-${uuid()}`;
+    await adminClient.addLocalizationText(
+      "en",
+      "loginAccountTitle",
+      "My Custom Login",
+      realmName,
+    );
+
+    await goToAttributeGroupsTab(page);
+    await page.getByTestId("create-attributes-groups-action").click();
+    await page.getByTestId("name").fill(groupWithoutTranslation);
+    await page.getByTestId("saveGroupBtn").click();
+
+    await clickRowKebabItem(page, groupWithoutTranslation, "Delete");
+    await confirmModal(page);
+    await assertRowExists(page, groupWithoutTranslation, false);
+
+    expect(await adminClient.getLocalizationTexts("en", realmName)).toEqual({
+      loginAccountTitle: "My Custom Login",
+    });
   });
 
   test("Checks that not required attribute is not present when user is created with email as username and edit username set to disabled", async ({

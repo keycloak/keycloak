@@ -23,6 +23,7 @@ import useLocale from "../../utils/useLocale";
 import useToggle from "../../utils/useToggle";
 import { toAddAttribute } from "../routes/AddAttribute";
 import { toAttribute } from "../routes/Attribute";
+import { deleteLocalizationKeys } from "./localization";
 import { useUserProfile } from "./UserProfileContext";
 
 const RESTRICTED_ATTRIBUTES = ["username", "email"];
@@ -61,42 +62,16 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
       const translationsToDelete = config.attributes.find(
         (attribute) => attribute.name === attributeToDelete,
       )?.displayName;
-
-      // Remove the the `${}` from translationsToDelete string
-      const formattedTranslationsToDelete = translationsToDelete?.substring(
-        2,
-        translationsToDelete.length - 1,
-      );
+      const translationValueToDelete = translationsToDelete;
 
       try {
-        await Promise.all(
-          combinedLocales.map(async (locale) => {
-            try {
-              const response =
-                (await adminClient.realms.getRealmLocalizationTexts({
-                  realm,
-                  selectedLocale: locale,
-                })) as Record<string, string> | undefined;
-
-              if (response) {
-                await adminClient.realms.deleteRealmLocalizationTexts({
-                  realm,
-                  selectedLocale: locale,
-                  key: formattedTranslationsToDelete,
-                });
-
-                const updatedData =
-                  await adminClient.realms.getRealmLocalizationTexts({
-                    realm,
-                    selectedLocale: locale,
-                  });
-                setTableData([updatedData]);
-              }
-            } catch {
-              console.error(`Error removing translations for ${locale}`);
-            }
-          }),
-        );
+        await deleteLocalizationKeys({
+          adminClient,
+          realm,
+          locales: combinedLocales,
+          translationValues: [translationValueToDelete],
+          setTableData,
+        });
 
         const updatedAttributes = config.attributes.filter(
           (attribute) => attribute.name !== attributeToDelete,
