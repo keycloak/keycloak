@@ -366,6 +366,8 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
 
     private void checkMySQLBinlogFormat() {
         if (!Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
+            // Only when we switch on stateless, the transaction isolation level for MySQL is set to READ COMMITTED,
+            // and only then we need to check the binlog format.
             return;
         }
         String db = Configuration.getConfigValue(DatabaseOptions.DB).getValue();
