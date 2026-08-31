@@ -57,37 +57,6 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
 
     private static final Logger log = Logger.getLogger(PurgedUserSnapshot.class);
 
-    private static final String SESSION_ATTRIBUTE_PREFIX = "ssf.purgedUser.";
-
-    private static final String SESSION_ATTRIBUTE_COUNT = "ssf.purgedUser.count";
-
-    /**
-     * Upper bound on snapshots retained per session, complementing
-     * {@link #isRequestBound}.
-     *
-     * <p>The request gate excludes deletions with no request behind them, but bulk
-     * deletion still happens <em>inside</em> a request: a partial import under the
-     * {@code OVERWRITE} policy replaces many users in one call, and deleting an
-     * organization removes each of its managed members. Neither emits a purge event,
-     * so their snapshots are never read — and without a bound, one such request would
-     * retain a copied attribute map per account until it finishes.
-     *
-     * <p>An emitting request needs exactly one snapshot live at a time, so this bound
-     * is unreachable on the paths that matter. Being truncated is logged at WARN
-     * rather than DEBUG: dropping a snapshot can only ever cost an event, and that
-     * must never happen quietly.
-     */
-    private static final int MAX_SNAPSHOTS_PER_SESSION = 64;
-
-    /**
-     * Secondary index. The dispatcher's subject gate re-resolves the user from the
-     * token's own {@code sub_id} rather than from the event's user id, and for a
-     * stream configured with the {@code email} subject format that identifier is an
-     * address, not a UUID. Stashing the snapshot under both keys lets that gate find
-     * it without the filter having to know how the subject was built.
-     */
-    private static final String SESSION_ATTRIBUTE_EMAIL_PREFIX = "ssf.purgedUserByEmail.";
-
     /**
      * The user's primary organization alias, resolved managed-preferred to mirror
      * {@code SecurityEventTokenMapper.buildTenantSubject}. {@code null} when the
@@ -146,12 +115,15 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
     }
 
     /**
-     * Captures {@code user} and stashes it on the session under its user id.
-     * No-op when the user is a service account — those are not human subjects and
+     * Captures {@code user} into this request's {@link PurgedUserSnapshots}, indexed by
+     * user id and, when the user has one, by email.
+     *
+     * <p>No-op when the user is a service account — those are not human subjects and
      * never produce a purge SET, so capturing one would only cost an organization
      * query on every client deletion; when the deletion is not bound to an HTTP
      * request (see {@link #isRequestBound}); and once
-     * {@link #MAX_SNAPSHOTS_PER_SESSION} snapshots are already held for this request.
+     * {@link PurgedUserSnapshots#MAX_SNAPSHOTS_PER_SESSION} snapshots are already
+     * held for this request.
      *
      * <p>Callers invoke this from the pre-remove hook, which fires before Keycloak
      * knows whether the removal will succeed. Capturing is therefore deliberately
@@ -169,18 +141,19 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
             return;
         }
 
-        Integer held = session.getAttribute(SESSION_ATTRIBUTE_COUNT, Integer.class);
-        int count = held == null ? 0 : held;
-        if (count >= MAX_SNAPSHOTS_PER_SESSION) {
-            if (count == MAX_SNAPSHOTS_PER_SESSION) {
-                // Warn exactly once per session rather than per deletion, so a bulk
-                // request leaves one line instead of thousands.
-                log.warnf("SSF: reached %d purge snapshots in a single request; no further deletions in it "
-                                + "will be captured, and any purge events they would have produced are lost. "
-                                + "Expected for bulk deletion (partial import OVERWRITE, organization removal), "
-                                + "which do not emit purge events.",
-                        MAX_SNAPSHOTS_PER_SESSION);
-                session.setAttribute(SESSION_ATTRIBUTE_COUNT, count + 1);
+        PurgedUserSnapshots snapshots = PurgedUserSnapshots.of(session);
+        if (snapshots.isFull()) {
+            // Truncation is logged at WARN rather than DEBUG: dropping a snapshot can
+            // only ever cost an event, and that must never happen quietly. The latch
+            // lives on the set rather than being inferred from its size, so a bulk
+            // request leaves one line instead of thousands while a later discard still
+            // frees a slot that the next capture can use.
+            if (snapshots.markBoundWarned()) {
+                log.warnf("SSF: reached %d purge snapshots in a single request; further deletions in it "
+                                + "will not be captured while the set stays full, and any purge events they "
+                                + "would have produced are lost. Expected for bulk deletion (partial import "
+                                + "OVERWRITE, organization removal), which do not emit purge events.",
+                        PurgedUserSnapshots.MAX_SNAPSHOTS_PER_SESSION);
             }
             return;
         }
@@ -244,11 +217,7 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
 
         snapshot.setReadonly(true);
 
-        session.setAttribute(sessionAttributeKey(realm, user.getId()), snapshot);
-        if (snapshot.getEmail() != null) {
-            session.setAttribute(sessionEmailAttributeKey(realm, snapshot.getEmail()), snapshot);
-        }
-        session.setAttribute(SESSION_ATTRIBUTE_COUNT, count + 1);
+        snapshots.put(idKey(realm, user.getId()), emailKey(realm, snapshot.getEmail()), snapshot);
     }
 
     /**
@@ -289,15 +258,16 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
         if (session == null || realm == null || userId == null) {
             return null;
         }
-        return session.getAttribute(sessionAttributeKey(realm, userId), PurgedUserSnapshot.class);
+        PurgedUserSnapshots snapshots = PurgedUserSnapshots.find(session);
+        return snapshots == null ? null : snapshots.byId(idKey(realm, userId));
     }
 
     /**
      * Drops the snapshot for {@code userId}, called by the event listener once it has
      * finished emitting for that deletion.
      *
-     * <p>This is what keeps {@link #MAX_SNAPSHOTS_PER_SESSION} out of the way of the
-     * paths that matter. A request that deletes users <em>and</em> emits for them
+     * <p>This is what keeps {@link PurgedUserSnapshots#MAX_SNAPSHOTS_PER_SESSION} out
+     * of the way of the paths that matter. A request that deletes users <em>and</em> emits for them
      * returns to zero retained snapshots after each one, so it can delete any number
      * without approaching the bound. Only snapshots that are never consumed accumulate
      * — which is precisely the bulk deletion case (partial import {@code OVERWRITE},
@@ -312,18 +282,15 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
         if (session == null || realm == null || userId == null) {
             return;
         }
-        PurgedUserSnapshot snapshot = lookup(session, realm, userId);
+        PurgedUserSnapshots snapshots = PurgedUserSnapshots.find(session);
+        if (snapshots == null) {
+            return;
+        }
+        PurgedUserSnapshot snapshot = snapshots.byId(idKey(realm, userId));
         if (snapshot == null) {
             return;
         }
-        session.removeAttribute(sessionAttributeKey(realm, userId));
-        if (snapshot.getEmail() != null) {
-            session.removeAttribute(sessionEmailAttributeKey(realm, snapshot.getEmail()));
-        }
-        Integer held = session.getAttribute(SESSION_ATTRIBUTE_COUNT, Integer.class);
-        if (held != null && held > 0) {
-            session.setAttribute(SESSION_ATTRIBUTE_COUNT, held - 1);
-        }
+        snapshots.remove(idKey(realm, userId), emailKey(realm, snapshot.getEmail()));
     }
 
     /**
@@ -353,7 +320,8 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
             if (email == null || email.isBlank()) {
                 return null;
             }
-            return session.getAttribute(sessionEmailAttributeKey(realm, email), PurgedUserSnapshot.class);
+            PurgedUserSnapshots snapshots = PurgedUserSnapshots.find(session);
+            return snapshots == null ? null : snapshots.byEmail(emailKey(realm, email));
         }
         return null;
     }
@@ -399,20 +367,32 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
     }
 
     /**
-     * Session keys are scoped by realm id so a snapshot can only ever be found from
-     * the realm it was captured in. User ids are realm-unique in practice, but the
+     * Index keys are scoped by realm id so a snapshot can only ever be found from the
+     * realm it was captured in. User ids are realm-unique in practice, but the
      * external-id component of a federated id is not guaranteed to be, and a
      * cross-realm hit would gate one realm's event on another realm's subject.
      * Scoping is free and removes the need to compare realms after the fact.
      */
-    private static String sessionAttributeKey(RealmModel realm, String userId) {
-        return SESSION_ATTRIBUTE_PREFIX + realm.getId() + "." + userId;
+    private static String idKey(RealmModel realm, String userId) {
+        return realm.getId() + "." + userId;
     }
 
-    private static String sessionEmailAttributeKey(RealmModel realm, String email) {
+    /**
+     * Key into the secondary index. The dispatcher's subject gate re-resolves the user
+     * from the token's own {@code sub_id} rather than from the event's user id, and for
+     * a stream configured with the {@code email} subject format that identifier is an
+     * address, not a UUID. Indexing the snapshot by email as well lets that gate find
+     * it without the filter having to know how the subject was built.
+     *
+     * <p>{@code null} for a user with no email, which the set stores as "no secondary
+     * index entry" rather than indexing under a null key.
+     */
+    private static String emailKey(RealmModel realm, String email) {
+        if (email == null) {
+            return null;
+        }
         // Same normalization AbstractInMemoryUserAdapter applies when storing the
         // email, so the index key matches what getEmail() returns.
-        return SESSION_ATTRIBUTE_EMAIL_PREFIX + realm.getId() + "."
-                + KeycloakModelUtils.toLowerCaseSafe(email);
+        return realm.getId() + "." + KeycloakModelUtils.toLowerCaseSafe(email);
     }
 }
