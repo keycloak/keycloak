@@ -102,6 +102,11 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
     }
 
     @Override
+    public RoleModel addRole(String name) {
+        return addRole(null, name);
+    }
+
+    @Override
     public RoleModel addRole(String id, String name) {
         return session.roles().addOrganizationRole(this, id, name);
     }

@@ -40,7 +40,7 @@ import org.keycloak.models.jpa.entities.RoleAttributeEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
-import org.keycloak.organization.jpa.OrganizationAdapter;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.utils.StreamsUtil;
 
@@ -281,10 +281,14 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
     }
 
     private OrganizationModel getOrganizationContainer() {
+        if (!Organizations.isEnabled(session)) {
+            return null;
+        }
         OrganizationEntity entity = em.find(OrganizationEntity.class, role.getOrganizationId());
         if (entity == null || !realm.getId().equals(entity.getRealmId())) {
             return null;
         }
-        return new OrganizationAdapter(session, realm, entity, session.getProvider(OrganizationProvider.class));
+        OrganizationProvider provider = Organizations.getProvider(session);
+        return provider.getById(role.getOrganizationId());
     }
 }

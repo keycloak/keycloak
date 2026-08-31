@@ -19,6 +19,7 @@ package org.keycloak.tests.organization.authz;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.keycloak.authorization.AuthorizationProvider;
@@ -174,7 +175,7 @@ public class OrganizationRoleAuthorizationTest {
         Scope scope = authorization.getStoreFactory().getScopeStore().create(resourceServer, prefix + "-resource-scope");
         Resource resource = authorization.getStoreFactory().getResourceStore().create(resourceServer,
                 prefix + "-resource", resourceServer.getClientId());
-        resource.updateScopes(java.util.Set.of(scope));
+        resource.updateScopes(Set.of(scope));
 
         ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
         permission.setName(prefix + "-permission");
