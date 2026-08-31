@@ -14,8 +14,8 @@ export const getTranslationKey = (value?: string): string | undefined => {
     return undefined;
   }
 
-  const translationKey = value.slice(2, -1).trim();
-  return translationKey.length > 0 ? translationKey : undefined;
+  const translationKey = value.slice(2, -1);
+  return translationKey.trim().length > 0 ? translationKey : undefined;
 };
 
 export const deleteLocalizationKeys = async ({
