@@ -16,31 +16,42 @@
  */
 package org.keycloak.services.managers;
 
+import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Semaphore;
 
 import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 
 public class DefaultLockingBruteForceProtector extends DefaultBruteForceProtector {
 
-    private final KeycloakSession session;
+    static class UserLock {
+        final Semaphore semaphore = new Semaphore(1);
+        int refCount;
+    }
 
-    public DefaultLockingBruteForceProtector(KeycloakSessionFactory factory, KeycloakSession session) {
+    private final KeycloakSession session;
+    private final ConcurrentMap<String, UserLock> userLocks;
+    private final Set<String> lockedUserIds = new HashSet<>();
+    private boolean transactionEnlisted;
+
+    public DefaultLockingBruteForceProtector(KeycloakSessionFactory factory, KeycloakSession session, ConcurrentMap<String, UserLock> userLocks) {
         super(factory);
         this.session = session;
+        this.userLocks = userLocks;
     }
 
     @Override
     protected void processLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo, boolean success, Set<String> categories) {
-        // This is used with the JPA implementation which will lock the database entry to prevent concurrent updates.
-        // Not spawning a new thread ensures that once the login returns, the data is written to the database, and no concurrent execution is happening,
-        // making the next attempt fail due to the logic in DefaultBlockingBruteForceProtector.
         if (success) {
             success(session, realm, user.getId(), categories);
         } else {
@@ -48,4 +59,53 @@ public class DefaultLockingBruteForceProtector extends DefaultBruteForceProtecto
         }
     }
 
+    @Override
+    protected UserLoginFailureModel getUserFailureModel(KeycloakSession session, RealmModel realm, String userId) {
+        if (realm == null) return null;
+        acquireLock(session, userId);
+        return super.getUserFailureModel(session, realm, userId);
+    }
+
+    private void acquireLock(KeycloakSession session, String userId) {
+        if (lockedUserIds.contains(userId)) {
+            return;
+        }
+
+        UserLock lock = userLocks.compute(userId, (k, existing) -> {
+            if (existing == null) {
+                existing = new UserLock();
+            }
+            existing.refCount++;
+            return existing;
+        });
+
+        lock.semaphore.acquireUninterruptibly();
+        lockedUserIds.add(userId);
+
+        if (!transactionEnlisted) {
+            transactionEnlisted = true;
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    releaseAllLocks();
+                }
+
+                @Override
+                protected void rollbackImpl() {
+                    releaseAllLocks();
+                }
+            });
+        }
+    }
+
+    private void releaseAllLocks() {
+        for (String userId : lockedUserIds) {
+            userLocks.compute(userId, (k, lock) -> {
+                if (lock == null) return null;
+                lock.semaphore.release();
+                lock.refCount--;
+                return lock.refCount == 0 ? null : lock;
+            });
+        }
+    }
 }

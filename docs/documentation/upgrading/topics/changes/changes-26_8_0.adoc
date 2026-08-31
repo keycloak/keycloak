@@ -48,6 +48,9 @@ Deployments using the `multi-site` or `clusterless` features continue to store l
 
 As a trade-off, users may observe increased database connection usage and higher CPU usage on the database.
 
+The option `spi-brute-force-protector-default-brute-force-detector-allow-concurrent-requests` does no longer exist for `login-failures:v2`.
+Instead, concurrent logins for the same user are executed serially for each node.
+
 === Clusterless feature will be removed
 
 The experimental `clusterless` feature will be removed in a future release. The `stateless` feature is the successor for running {project_name} without depending on an external Infinispan cluster. While `clusterless` offloads all session data to an external Infinispan cluster, `stateless` stores session data in the database and uses the embedded Infinispan only as a cache.
