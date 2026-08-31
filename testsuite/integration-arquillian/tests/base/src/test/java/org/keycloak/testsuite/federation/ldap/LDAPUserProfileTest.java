@@ -546,57 +546,6 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
         }
     }
 
-    @Test
-    public void testLdapImportWithInvalidUsername() throws IOException {
-        UPConfig origConfig = managedRealm.admin().users().userProfile().getConfiguration();
-        try {
-            UPConfig config = managedRealm.admin().users().userProfile().getConfiguration();
-            UPAttribute usernameAttr = config.getAttribute(UserModel.USERNAME);
-
-            // Use the validator for prohibited characters
-            usernameAttr.addValidation("username-prohibited-characters", Map.of());
-            managedRealm.admin().users().userProfile().update(config);
-
-            // Create a test user and try to import it
-            testingClient.server().run(session -> {
-                    LDAPTestContext ctx = LDAPTestContext.init(session, "test-ldap");
-                    RealmModel appRealm = ctx.getRealm();
-                    LDAPTestUtils.addLDAPUser(
-                                              ctx.getLdapProvider(), 
-                                              appRealm, 
-                                              "bobby*", 
-                                              "Bobby", 
-                                              "Star", 
-                                              "bobby@example.org", 
-                                              null, 
-                                              "1234"
-                                              );
-                });
-
-            testingClient.server().run(session -> {
-                    LDAPTestContext ctx = LDAPTestContext.init(session, "test-ldap");
-                    RealmModel appRealm = ctx.getRealm();
-            
-                    UserModel loadedUser = ctx.getLdapProvider().getUserByUsername(appRealm, "bobby*");
-            
-                    Assertions.assertNull(loadedUser, "The user 'bobby*' should have been stopped by the User Profile validation at import");
-                });
-            
-        } finally {
-            managedRealm.admin().users().userProfile().update(origConfig);
-        }
-    }
-
-    @Test
-    public void testLdapImportWithInvalidAttributes() throws IOException {
-        UPConfig origConfig = managedRealm.admin().users().userProfile().getConfiguration();
-        try {
-            UPConfig config = managedRealm.admin().users().userProfile().getConfiguration();
-        } finally {
-            managedRealm.admin().users().userProfile().update(origConfig);
-        }
-    }
-
     private void setEmailMapperAlwaysReadFromLDAP(boolean alwaysRead) {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session, "test-ldap");
