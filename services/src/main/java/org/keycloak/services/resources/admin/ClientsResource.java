@@ -53,9 +53,11 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.AdminClientRegisteredContext;
+import org.keycloak.services.clientpolicy.context.ClientNodeRegistrationContext;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakOpenAPI;
@@ -215,7 +217,23 @@ public class ClientsResource {
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientRegisterContext(rep, auth.adminAuth()));
 
+            // save and null-out registeredNodes before RepresentationToModel
+            Map<String, Integer> pendingNodes = rep.getRegisteredNodes();
+            rep.setRegisteredNodes(null);
+
             ClientModel clientModel = ClientManager.createClient(session, realm, rep);
+
+            // apply each saved node with policy enforcement
+            if (pendingNodes != null) {
+                for (Map.Entry<String, Integer> entry : pendingNodes.entrySet()) {
+                    session.clientPolicy().triggerOnEvent(
+                            new ClientNodeRegistrationContext(
+                                    clientModel,
+                                    entry.getKey(),
+                                    ClientPolicyEvent.REGISTER_NODE));
+                    clientModel.registerNode(entry.getKey(), entry.getValue());
+                }
+            }
 
             if (TRUE.equals(rep.isServiceAccountsEnabled())) {
                 new ClientManager(new RealmManager(session)).enableServiceAccount(clientModel);
