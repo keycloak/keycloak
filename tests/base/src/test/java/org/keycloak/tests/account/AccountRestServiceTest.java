@@ -1394,6 +1394,102 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
+    public void revokeApplicationSessionsOffline() throws Exception {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+
+        // Create an offline session for "offline-client"
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client("offline-client", "secret1");
+        AccessTokenResponse offlineTokenResponse = oauth.doPasswordGrantRequest("manage-account-access", "password");
+        Assertions.assertNull(offlineTokenResponse.getErrorDescription());
+        String offlineRefreshToken = offlineTokenResponse.getRefreshToken();
+
+        // Get an account token via direct grant
+        oauth.scope(null);
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("manage-account-access", "password").getAccessToken();
+
+        // skip the offline_access login and the direct access grant login
+        events.skip(2);
+
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "manage-account-access");
+
+        // The application is listed as having offline access
+        Map<String, ClientRepresentation> apps = getApplications(token);
+        Assertions.assertTrue(apps.get("offline-client").isOfflineAccess());
+
+        // End the application sessions
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("applications/offline-client/sessions"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asResponse()) {
+            Assertions.assertEquals(204, response.getStatus());
+        }
+
+        // A logout event is fired for the offline session of "offline-client"
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .clientId("account")
+                .userId(user.toRepresentation().getId())
+                .sessionId(offlineTokenResponse.getSessionState())
+                .details(Details.REVOKED_CLIENT, "offline-client");
+        Assertions.assertNull(events.poll());
+
+        // The offline token can no longer be refreshed
+        oauth.client("offline-client", "secret1");
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(offlineRefreshToken);
+        Assertions.assertEquals("invalid_grant", refreshResponse.getError());
+
+        // The now empty offline user session was removed, so the application no longer reports offline access
+        apps = getApplications(token);
+        Assertions.assertFalse(apps.containsKey("offline-client") && apps.get("offline-client").isOfflineAccess());
+    }
+
+    @Test
+    public void revokeApplicationSessionsOnlineAndOffline() throws Exception {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+
+        // Create an online session for "offline-client"
+        oauth.scope(null);
+        oauth.client("offline-client", "secret1");
+        AccessTokenResponse onlineTokenResponse = oauth.doPasswordGrantRequest("manage-account-access", "password");
+        Assertions.assertNull(onlineTokenResponse.getErrorDescription());
+        String onlineRefreshToken = onlineTokenResponse.getRefreshToken();
+
+        // Create an offline session for the same client
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        AccessTokenResponse offlineTokenResponse = oauth.doPasswordGrantRequest("manage-account-access", "password");
+        Assertions.assertNull(offlineTokenResponse.getErrorDescription());
+        String offlineRefreshToken = offlineTokenResponse.getRefreshToken();
+
+        // Get an account token via direct grant
+        oauth.scope(null);
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("manage-account-access", "password").getAccessToken();
+
+        // skip the online login, the offline_access login and the direct access grant login
+        events.skip(3);
+
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "manage-account-access");
+
+        // End the application sessions
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("applications/offline-client/sessions"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asResponse()) {
+            Assertions.assertEquals(204, response.getStatus());
+        }
+
+        // A logout event is fired for both the online and the offline session
+        assertLogoutEventsForSessions(user, Set.of(onlineTokenResponse.getSessionState(), offlineTokenResponse.getSessionState()));
+
+        // Neither the online nor the offline token can be refreshed afterwards
+        oauth.client("offline-client", "secret1");
+        Assertions.assertEquals("invalid_grant", oauth.doRefreshTokenRequest(onlineRefreshToken).getError());
+        Assertions.assertEquals("invalid_grant", oauth.doRefreshTokenRequest(offlineRefreshToken).getError());
+    }
+
+    @Test
     public void listApplicationsThirdPartyWithoutConsentText() throws Exception {
         listApplicationsThirdParty("acr", false);
     }
@@ -1473,6 +1569,16 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertThat(apps.keySet(), containsInAnyOrder("root-url-client", "always-display-client", "direct-grant"));
 
         assertClientRep(apps.get("root-url-client"), null, null, false, true, false, "http://localhost:8180/foo/bar", "/baz");
+    }
+
+    private Map<String, ClientRepresentation> getApplications(String token) throws IOException {
+        List<ClientRepresentation> applications = simpleHttp
+                .doGet(getAccountUrl("applications"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asJson(new TypeReference<List<ClientRepresentation>>() {
+                });
+        return applications.stream().collect(Collectors.toMap(ClientRepresentation::getClientId, x -> x));
     }
 
     private void assertClientRep(ClientRepresentation clientRep, String name, String description, boolean userConsentRequired, boolean inUse, boolean offlineAccess, String rootUrl, String baseUrl) {

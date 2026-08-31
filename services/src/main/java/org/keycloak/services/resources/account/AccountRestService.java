@@ -424,7 +424,11 @@ public class AccountRestService {
                             session.getContext().getUri(), headers);
                     if (userSession.getAuthenticatedClientSessions().isEmpty()) {
                         // The last client session was ended, remove the now empty user session as well.
-                        session.sessions().removeUserSession(realm, userSession);
+                        if (userSession.isOffline()) {
+                            session.sessions().removeOfflineUserSession(realm, userSession);
+                        } else {
+                            session.sessions().removeUserSession(realm, userSession);
+                        }
                     }
                     event.clone()
                             .event(EventType.LOGOUT)

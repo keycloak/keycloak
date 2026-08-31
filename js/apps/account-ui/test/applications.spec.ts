@@ -141,4 +141,60 @@ test.describe("Applications", () => {
       }),
     ).toHaveCount(0);
   });
+
+  test("shows the end session action for an application with only offline access", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed();
+
+    // The application has no active online session, only offline access.
+    await page.route("**/applications", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            clientId: "offline-application",
+            clientName: "Offline Application",
+            inUse: false,
+            offlineAccess: true,
+          },
+        ]),
+      });
+    });
+
+    let sessionsDeleted = false;
+    await page.route(
+      "**/applications/offline-application/sessions",
+      async (route) => {
+        expect(route.request().method()).toBe("DELETE");
+        sessionsDeleted = true;
+        await route.fulfill({ status: 204 });
+      },
+    );
+
+    // Log in and navigate to the applications page.
+    await login(page, testBed.realm);
+    await page.getByTestId("applications").click();
+
+    // Offline access counts as "in use" and exposes the action.
+    const listItem = page.getByTestId("applications-list-item");
+    await expect(listItem).toContainText("In use");
+
+    const endSessionButton = page.getByRole("button", {
+      name: "End application session",
+      exact: true,
+    });
+    await expect(endSessionButton).toBeVisible();
+
+    // Click the action and confirm the modal.
+    await endSessionButton.click();
+    await page.getByRole("button", { name: "Confirm", exact: true }).click();
+
+    // Expect a success alert after the sessions have been deleted.
+    await expect(page.getByTestId("last-alert")).toContainText(
+      "Ended the application session for Offline Application",
+    );
+    expect(sessionsDeleted).toBe(true);
+  });
 });
