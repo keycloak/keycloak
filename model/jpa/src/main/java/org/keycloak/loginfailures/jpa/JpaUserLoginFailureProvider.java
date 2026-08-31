@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
@@ -32,12 +31,13 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserLoginFailureProvider;
+import org.keycloak.models.utils.LoginFailureUtils;
 
 public class JpaUserLoginFailureProvider implements UserLoginFailureProvider {
 
     private final KeycloakSession session;
     private final Set<LoginFailureKey> notInDatabaseCache = new HashSet<>();
-    private final Map<LoginFailureKey, UserLoginFailureModel> entityInSession = new HashMap();
+    private final Map<LoginFailureKey, UserLoginFailureModel> entityInSession = new HashMap<>();
 
     public JpaUserLoginFailureProvider(KeycloakSession session) {
         this.session = session;
@@ -78,13 +78,9 @@ public class JpaUserLoginFailureProvider implements UserLoginFailureProvider {
             // Entry was cleared after a successful login — treat as expired, matching Infinispan TTL=0 behavior.
             return true;
         }
-        if (realm.isPermanentLockout() && realm.getMaxTemporaryLockouts() == 0) {
-            // Permanent lockout only: entries never expire.
-            return false;
-        }
-        // Expired if last failure is older than maxDeltaTimeSeconds (same threshold used by LoginFailureExpirationAction).
-        long expireMs = TimeUnit.SECONDS.toMillis((long) Time.currentTime() - realm.getMaxDeltaTimeSeconds());
-        return entity.getLastFailure() < expireMs;
+
+        long expireMs = LoginFailureUtils.computeExpirationCutOffTimestamp(realm, Time.currentTimeSeconds());
+        return expireMs != -1 && entity.getLastFailure() < expireMs;
     }
 
     @Override
