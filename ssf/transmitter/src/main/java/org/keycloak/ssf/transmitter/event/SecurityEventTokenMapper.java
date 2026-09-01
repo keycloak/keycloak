@@ -433,13 +433,15 @@ public class SecurityEventTokenMapper {
             // successful deletion while the authoritative store keeps the account, so
             // the account was never purged and receivers must not be told it was.
             // See PurgedUserSnapshot.isLocalRemovalOnly.
-            // Resolved defensively: the context realm is set on every path that emits,
-            // but an NPE here would be swallowed by the catch below and turn every
+            // Resolved the way SsfTransmitterEventListener resolves it, from the admin
+            // event's own realm id, falling back to the context. The two agree today --
+            // the admin API sets the context realm to the realm being administered, and
+            // AdminEventBuilder stamps that same realm onto the event -- but a snapshot
+            // looked up under a different realm than it was captured under would miss
+            // silently, and a missed lookup here means the suppression never fires. Also
+            // null-safe: an NPE would be swallowed by the catch below and turn every
             // purge into a silent "error generating" null.
-            RealmModel contextRealm = session != null && session.getContext() != null
-                    ? session.getContext().getRealm()
-                    : null;
-            PurgedUserSnapshot snapshot = PurgedUserSnapshot.lookup(session, contextRealm, userId);
+            PurgedUserSnapshot snapshot = PurgedUserSnapshot.lookup(session, purgeRealm(adminEvent), userId);
             if (snapshot != null && snapshot.isLocalRemovalOnly()) {
                 log.debugf("Skipping account-purged for user %s: the removal only dropped Keycloak's "
                         + "local copy and the account still exists in its federated store", userId);
@@ -467,6 +469,20 @@ public class SecurityEventTokenMapper {
                     stream != null ? stream.getStreamId() : null);
             return null;
         }
+    }
+
+    /**
+     * The realm a purge snapshot was captured under: the admin event's realm when there
+     * is one, otherwise the context realm that the self-service path runs in.
+     */
+    protected RealmModel purgeRealm(AdminEvent adminEvent) {
+        if (session == null) {
+            return null;
+        }
+        if (adminEvent != null && adminEvent.getRealmId() != null) {
+            return session.realms().getRealm(adminEvent.getRealmId());
+        }
+        return session.getContext() != null ? session.getContext().getRealm() : null;
     }
 
     protected void applyCustomAttributes(Event userEvent, AdminEvent adminEvent, CaepCredentialChange credentialChangeEvent) {
