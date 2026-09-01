@@ -14,10 +14,14 @@ import { login } from "../utils/login.ts";
 import {
   OID4VCI_PROTOCOL,
   skipIfOID4VCIFeatureDisabled,
+  skipIfOID4VCIMdocFeatureDisabled,
 } from "../utils/oid4vci.ts";
 import { toClientScopes } from "../../src/client-scopes/routes/ClientScopes.tsx";
 
-type Oid4vciFormat = "SD-JWT VC (dc+sd-jwt)" | "JWT VC (jwt_vc_json)";
+type Oid4vciFormat =
+  | "SD-JWT VC (dc+sd-jwt)"
+  | "JWT VC (jwt_vc_json)"
+  | "ISO mDoc (mso_mdoc)";
 const OID4VCI_OPTION_VISIBLE_TIMEOUT_MS = 5_000;
 
 async function getVisibleOID4VCIProtocolOption(page: Page) {
@@ -874,6 +878,45 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await expect(page.getByText("Unsupported binding method(s)")).toBeVisible();
 
     await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("jwk");
+
+    await clickSaveButton(page);
+    await expect(page.getByText("Client scope created")).toBeVisible();
+  });
+
+  test("should configure mdoc format and cose_key binding when mdoc feature is enabled", async ({
+    page,
+  }) => {
+    await skipIfOID4VCIMdocFeatureDisabled();
+
+    await using testBed = await createTestBed({
+      verifiableCredentialsEnabled: true,
+    });
+    await createClientScopeAndSelectProtocolAndFormat(
+      page,
+      testBed,
+      "ISO mDoc (mso_mdoc)",
+    );
+
+    await page.getByTestId("name").fill(`oid4vci-mdoc-${Date.now()}`);
+
+    await switchToggle(
+      page,
+      page.getByTestId("attributes.vc.binding_required"),
+    );
+
+    await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("jwk");
+    await page
+      .getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES)
+      .fill("jwt");
+
+    await assertSaveButtonIsDisabled(page);
+    await expect(
+      page.getByText(
+        "Unsupported binding method(s): jwk. Allowed values: cose_key",
+      ),
+    ).toBeVisible();
+
+    await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("cose_key");
 
     await clickSaveButton(page);
     await expect(page.getByText("Client scope created")).toBeVisible();
