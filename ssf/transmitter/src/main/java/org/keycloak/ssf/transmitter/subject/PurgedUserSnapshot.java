@@ -17,6 +17,7 @@ import org.keycloak.ssf.subject.EmailSubjectId;
 import org.keycloak.ssf.subject.IssuerSubjectId;
 import org.keycloak.ssf.subject.OpaqueSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
+import org.keycloak.ssf.transmitter.support.SsfUtil;
 import org.keycloak.storage.adapter.AbstractInMemoryUserAdapter;
 
 import org.jboss.logging.Logger;
@@ -301,6 +302,9 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
      *
      * <p>Complex subjects are drilled into their {@code user} member, matching how
      * the filter unwraps them for live users.
+     *
+     * <p>An {@code iss_sub} subject only names a Keycloak user id when this
+     * transmitter issued it — see {@link #isOwnIssuer}.
      */
     public static PurgedUserSnapshot lookupBySubject(KeycloakSession session, RealmModel realm, SubjectId subjectId) {
         if (session == null || realm == null || subjectId == null) {
@@ -310,6 +314,9 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
             return lookupBySubject(session, realm, complex.getUser());
         }
         if (subjectId instanceof IssuerSubjectId issuerSubject) {
+            if (!isOwnIssuer(session, issuerSubject.getIss())) {
+                return null;
+            }
             return lookup(session, realm, issuerSubject.getSub());
         }
         if (subjectId instanceof OpaqueSubjectId opaqueSubject) {
@@ -364,6 +371,42 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
             return resolved;
         }
         return orgProvider.getByMember(user).toList();
+    }
+
+    /**
+     * Whether {@code iss} is the issuer this transmitter stamps onto the subjects it
+     * builds, and therefore whether an {@code iss_sub} subject's {@code sub} is a
+     * Keycloak user id at all.
+     *
+     * <p>Without this, the snapshot index would answer for any issuer:
+     * {@code SubjectUserLookup} reads {@code sub} as an <em>external</em> IdP subject
+     * whenever {@code iss} is not ours, resolving it through federated identity, and a
+     * foreign {@code sub} that happened to equal a captured user id would otherwise
+     * short-circuit to the wrong subject. Keeping the two in agreement matters more
+     * now that the filter consults the snapshot <em>before</em> the live lookup for
+     * purge events.
+     *
+     * <p>Compared against {@link SsfUtil#getIssuerUrl} rather than
+     * {@code SubjectUserLookup.isRealmIssuer}: the transmitter's issuer is what
+     * {@code SecurityEventTokenMapper.buildUserSubjectId} actually stamps, and it is
+     * not always the realm issuer — a realm carrying a {@code frontendUrl} attribute
+     * uses that value verbatim, and the fallback resolves the base URI without the
+     * {@code FRONTEND} url type. Gating on the realm issuer would reject the
+     * transmitter's own subjects in those deployments and drop every purge.
+     *
+     * <p>Any failure to resolve the issuer is treated as "not ours", which costs at
+     * most a snapshot miss that the live lookup then handles.
+     */
+    private static boolean isOwnIssuer(KeycloakSession session, String iss) {
+        if (iss == null) {
+            return false;
+        }
+        try {
+            return iss.equals(SsfUtil.getIssuerUrl(session));
+        } catch (RuntimeException e) {
+            log.debugf(e, "SSF: could not resolve transmitter issuer while matching purge snapshot for iss=%s", iss);
+            return false;
+        }
     }
 
     /**
