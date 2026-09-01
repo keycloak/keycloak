@@ -93,7 +93,7 @@
                 timeZoneName: 'short'
             };
 
-            return dt.toLocaleString('en-US', options);
+            return dt.toLocaleString('${lang}', options);
         }
 
         function parseRecoveryCodeList() {
@@ -112,15 +112,6 @@
 
         function buildDownloadContent() {
             const recoveryCodeList = parseRecoveryCodeList();
-            const dt = new Date();
-            const options = {
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric',
-                hour: 'numeric',
-                minute: 'numeric',
-                timeZoneName: 'short'
-            };
 
             return fileBodyContent =
                 ${msg("recovery-codes-download-file-header")?c} + "\n\n" +
