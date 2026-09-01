@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag or branch to build (e.g. 26.1.5-backport)'
+        description: 'Tag to build (e.g. 26.6.6, or 26.6.4-INFORM-1 for a backport)'
         required: true
         type: string
       image-tag:
-        description: 'Docker image tag override (defaults to the tag input)'
+        description: 'Image tag override (defaults to the tag input; also sets the image version label)'
         required: false
         type: string
 
@@ -34,6 +34,14 @@ jobs:
         with:
           ref: ${{ inputs.tag }}
 
+      # github.sha is the SHA of the ref this run was dispatched on (normally main), NOT the
+      # tag checked out above, so it must not be used for provenance labels.
+      - name: Resolve build metadata
+        id: meta
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
       - name: Setup Java
         uses: ./.github/actions/java-setup
 
@@ -42,6 +50,13 @@ jobs:
         with:
           create-cache-if-it-doesnt-exist: true
 
+      # Deliberately inlined instead of ./.github/actions/build-keycloak. Local actions resolve
+      # against the CHECKED-OUT TAG, not main. That is wanted for java-setup (JDK 17 on 22.0.2+,
+      # 21 on 26.0-26.5, 25 on 26.6+; absent entirely before 22.0.2), but build-keycloak churned
+      # across releases: the copy on 22.0.3-INFORM-1 uses the retired actions/upload-artifact@v3
+      # and a different mvnw line. Keeping the recipe here means every tag builds the same way.
+      # For the same reason, do not add ./.github/actions/pnpm-store-cache: it does not exist
+      # before 26.0.6, and a missing local action is a fatal step error.
       - name: Build Keycloak
         run: |
           ./mvnw install -Pdistribution -am -pl distribution/maven-plugins/licenses-processor
@@ -79,4 +94,6 @@ jobs:
             KEYCLOAK_SOURCE=https://github.com/${{ github.repository }}
           tags: ${{ env.REGISTRY }}/${{ steps.image-name.outputs.name }}:${{ inputs.image-tag || inputs.tag }}
           labels: |
-            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.revision=${{ steps.meta.outputs.sha }}
+            org.opencontainers.image.version=${{ inputs.image-tag || inputs.tag }}
+            org.opencontainers.image.created=${{ steps.meta.outputs.created }}
