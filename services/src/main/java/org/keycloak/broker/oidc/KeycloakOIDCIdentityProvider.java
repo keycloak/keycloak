@@ -81,7 +81,7 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
                 return Response.status(400).build();
             }
 
-            if (!provider.verify(token)) {
+            if (!provider.verify(token, true)) {
                 logger.warn("Failed to verify logout request");
                 return Response.status(400).build();
             }

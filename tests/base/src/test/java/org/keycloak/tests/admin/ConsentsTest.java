@@ -24,6 +24,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -388,6 +389,9 @@ public class ConsentsTest {
         config.put("userInfoUrl", "http://localhost:8080/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/userinfo");
         config.put("defaultScope", "email profile");
         config.put("backchannelSupported", "true");
+        config.put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.TRUE.toString());
+        config.put(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.TRUE.toString());
+        config.put(OIDCIdentityProviderConfig.JWKS_URL, "http://localhost:8080/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/certs");
 
         return idp;
     }

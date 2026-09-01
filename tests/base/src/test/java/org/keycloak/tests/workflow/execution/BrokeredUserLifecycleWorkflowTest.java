@@ -8,6 +8,7 @@ import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.workflow.DeleteUserStepProviderFactory;
@@ -342,6 +343,9 @@ public class BrokeredUserLifecycleWorkflowTest extends AbstractWorkflowTest {
         config.put("userInfoUrl", "http://localhost:8080/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/userinfo");
         config.put("defaultScope", "email profile");
         config.put("backchannelSupported", "true");
+        config.put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.TRUE.toString());
+        config.put(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.TRUE.toString());
+        config.put(OIDCIdentityProviderConfig.JWKS_URL, "http://localhost:8080/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/certs");
 
         return idp;
     }

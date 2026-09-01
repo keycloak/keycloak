@@ -702,8 +702,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         return PublicKeyStorageManager.getIdentityProviderKeyWrapper(session, session.getContext().getRealm(), getConfig(), jws);
     }
 
-    protected boolean verify(JWSInput jws) {
-        if (!getConfig().isValidateSignature()) return true;
+    protected boolean verify(JWSInput jws, boolean shouldBeSigned) {
+        if (!getConfig().isValidateSignature() && !shouldBeSigned) return true;
         return verifySignature(jws);
     }
 
@@ -796,7 +796,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             }
 
             // verify signature of the JWS
-            if (!verify(jws)) {
+            if (!verify(jws, shouldBeSigned)) {
                 throw new IdentityBrokerException("token signature validation failed");
             }
             return new String(jws.getContent(), StandardCharsets.UTF_8);
