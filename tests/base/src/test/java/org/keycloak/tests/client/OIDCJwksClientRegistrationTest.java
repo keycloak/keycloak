@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.client;
+package org.keycloak.tests.client;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
@@ -46,35 +46,49 @@ import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
-import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.runonserver.CacheHelper;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@KeycloakIntegrationTest(config = AbstractClientRegistrationTest.LegacyTestsuiteProvidersServerConfig.class)
 public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTest {
+
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
+
+    @InjectRealm(ref="master", attachTo="master")
+    ManagedRealm managedMasterRealm;
+
+    @InjectRunOnServer(ref = "master", realmRef = "master",
+            permittedPackages = {"org.keycloak.tests", "org.keycloak.testsuite.util.runonserver"})
+    RunOnServerClient runOnServerMaster;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         super.addTestRealms(testRealms);
     }
 
-    @Before
+    @BeforeEach
     public void before() throws Exception {
         super.before();
 
@@ -85,7 +99,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
     private OIDCClientRepresentation createRep() {
         OIDCClientRepresentation client = new OIDCClientRepresentation();
         client.setClientName("RegistrationAccessTokenTest");
-        client.setClientUri(OAuthClient.APP_ROOT);
+        client.setClientUri(oauth.getRedirectUri());
         client.setRedirectUris(Collections.singletonList(oauth.getRedirectUri()));
         return client;
     }
@@ -249,13 +263,13 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
         Map<String, String> generatedKeys = oidcClientEndpointsResource.generateKeys("RS256");
 
-        clientRep.setJwksUri(TestApplicationResourceUrls.clientJwksUri());
+        clientRep.setJwksUri(clientJwksUri());
 
         OIDCClientRepresentation response = reg.oidc().create(clientRep);
         Assertions.assertEquals(OIDCLoginProtocol.PRIVATE_KEY_JWT, response.getTokenEndpointAuthMethod());
         Assertions.assertNull(response.getClientSecret());
         Assertions.assertNull(response.getClientSecretExpiresAt());
-        Assertions.assertEquals(response.getJwksUri(), TestApplicationResourceUrls.clientJwksUri());
+        Assertions.assertEquals(response.getJwksUri(), clientJwksUri());
 
         // Tries to authenticate client with privateKey JWT
         assertAuthenticateClientSuccess(generatedKeys, response, KEEP_GENERATED_KID);
@@ -272,13 +286,13 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
         Map<String, String> generatedKeys = oidcClientEndpointsResource.generateKeys("RS256");
 
-        clientRep.setJwksUri(TestApplicationResourceUrls.clientJwksUri());
+        clientRep.setJwksUri(clientJwksUri());
 
         OIDCClientRepresentation response = reg.oidc().create(clientRep);
         Assertions.assertEquals(OIDCLoginProtocol.PRIVATE_KEY_JWT, response.getTokenEndpointAuthMethod());
         Assertions.assertNull(response.getClientSecret());
         Assertions.assertNull(response.getClientSecretExpiresAt());
-        Assertions.assertEquals(response.getJwksUri(), TestApplicationResourceUrls.clientJwksUri());
+        Assertions.assertEquals(response.getJwksUri(), clientJwksUri());
 
         // Tries to authenticate client with privateKey JWT
         assertAuthenticateClientSuccess(generatedKeys, response, KEEP_GENERATED_KID);
@@ -364,11 +378,13 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
 
 
     private CloseableHttpResponse sendRequest(String requestUrl, List<NameValuePair> parameters) throws Exception {
-        try (CloseableHttpClient client = new DefaultHttpClient()) {
-            HttpPost post = new HttpPost(requestUrl);
-            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-            post.setEntity(formEntity);
-            return client.execute(post);
-        }
+        HttpPost post = new HttpPost(requestUrl);
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
+        post.setEntity(formEntity);
+        return closeableHttpClient.execute(post);
+    }
+
+    private String clientJwksUri() {
+        return getAuthServerRoot().resolve("realms/master/app/oidc-client-endpoints/get-jwks").toString();
     }
 }

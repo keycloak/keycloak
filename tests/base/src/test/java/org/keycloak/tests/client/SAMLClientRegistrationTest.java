@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.client;
+package org.keycloak.tests.client;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -25,6 +25,7 @@ import java.util.List;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
@@ -35,12 +36,16 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
@@ -52,7 +57,11 @@ import static org.hamcrest.Matchers.notNullValue;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@KeycloakIntegrationTest
 public class SAMLClientRegistrationTest extends AbstractClientRegistrationTest {
+
+    @InjectOAuthClient(ref = "saml-oauth", lifecycle = LifeCycle.METHOD)
+    OAuthClient oauth;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -65,9 +74,21 @@ public class SAMLClientRegistrationTest extends AbstractClientRegistrationTest {
         samlApp.setDirectAccessGrantsEnabled(true);
     }
 
-    @Before
+    @BeforeEach
     public void before() throws Exception {
         super.before();
+
+        if (adminClient.realm(REALM_NAME).clients().findByClientId("oidc-client").isEmpty()) {
+            ClientRepresentation oidcClient = new ClientRepresentation();
+            oidcClient.setClientId("oidc-client");
+            oidcClient.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            oidcClient.setSecret("secret");
+            oidcClient.setPublicClient(false);
+            oidcClient.setServiceAccountsEnabled(true);
+            oidcClient.setDirectAccessGrantsEnabled(true);
+            oidcClient.setEnabled(true);
+            adminClient.realm(REALM_NAME).clients().create(oidcClient).close();
+        }
 
         ClientInitialAccessPresentation token = adminClient.realm(REALM_NAME).clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
         reg.auth(Auth.token(token));

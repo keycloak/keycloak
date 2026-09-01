@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.client;
+package org.keycloak.tests.client;
 
-
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.ClientResource;
@@ -39,40 +38,40 @@ import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
-import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
-import org.keycloak.testsuite.Assert;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.utils.Assert;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
-import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.testsuite.util.UserManager;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@KeycloakIntegrationTest(config = AbstractClientRegistrationTest.LegacyTestsuiteProvidersServerConfig.class)
 public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrationTest {
 
-    @Before
+    @BeforeEach
     public void before() throws Exception {
         super.before();
+        oauth.getDriver().navigate().to(managedRealm.getBaseUrl());
+        oauth.getDriver().manage().deleteAllCookies();
 
         ClientInitialAccessPresentation token = adminClient.realm(REALM_NAME).clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
         reg.auth(Auth.token(token));
@@ -81,7 +80,7 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
     private OIDCClientRepresentation createRep() {
         OIDCClientRepresentation client = new OIDCClientRepresentation();
         client.setClientName("RegistrationAccessTokenTest");
-        client.setClientUri(OAuthClient.APP_ROOT);
+        client.setClientUri(oauth.getRedirectUri());
         client.setRedirectUris(Collections.singletonList(oauth.getRedirectUri()));
         return client;
     }
@@ -187,12 +186,12 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
         oidcClientEndpointsResource.setSectorIdentifierRedirectUris(sectorRedirects);
 
-        response.setSectorIdentifierUri(TestApplicationResourceUrls.pairwiseSectorIdentifierUri());
+        response.setSectorIdentifierUri(pairwiseSectorIdentifierUri());
 
         OIDCClientRepresentation updated = reg.oidc().update(response);
 
         Assertions.assertEquals("pairwise", updated.getSubjectType());
-        Assertions.assertEquals(TestApplicationResourceUrls.pairwiseSectorIdentifierUri(), updated.getSectorIdentifierUri());
+        Assertions.assertEquals(pairwiseSectorIdentifierUri(), updated.getSectorIdentifierUri());
 
     }
 
@@ -208,7 +207,7 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
         oidcClientEndpointsResource.setSectorIdentifierRedirectUris(sectorRedirects);
 
-        String sectorIdentifierUri = TestApplicationResourceUrls.pairwiseSectorIdentifierUri();
+        String sectorIdentifierUri = pairwiseSectorIdentifierUri();
 
         // Add protocolMapper through admin REST endpoint
         String clientId = response.getClientId();
@@ -233,15 +232,16 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
         oidcClientEndpointsResource.setSectorIdentifierRedirectUris(new ArrayList<>());
 
-        String sectorIdentifierUri = TestApplicationResourceUrls.pairwiseSectorIdentifierUri();
+        String sectorIdentifierUri = pairwiseSectorIdentifierUri();
 
         // Add protocolMapper through admin REST endpoint
         String clientId = response.getClientId();
         ProtocolMapperRepresentation pairwiseProtMapper = SHA256PairwiseSubMapper.createPairwiseMapper(sectorIdentifierUri, null);
         RealmResource realmResource = realmsResouce().realm("test");
         ClientResource clientResource = AdminApiUtil.findClientByClientId(realmsResouce().realm("test"), clientId);
-        Response resp = clientResource.getProtocolMappers().createMapper(pairwiseProtMapper);
-        Assertions.assertEquals(400, resp.getStatus());
+        try (Response resp = clientResource.getProtocolMappers().createMapper(pairwiseProtMapper)) {
+            Assertions.assertEquals(400, resp.getStatus());
+        }
 
         // Assert still public
         reg.auth(Auth.token(response));
@@ -261,11 +261,11 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         oidcClientEndpointsResource.setSectorIdentifierRedirectUris(sectorRedirects);
 
         clientRep.setSubjectType("pairwise");
-        clientRep.setSectorIdentifierUri(TestApplicationResourceUrls.pairwiseSectorIdentifierUri());
+        clientRep.setSectorIdentifierUri(pairwiseSectorIdentifierUri());
 
         OIDCClientRepresentation response = reg.oidc().create(clientRep);
         Assertions.assertEquals("pairwise", response.getSubjectType());
-        Assertions.assertEquals(TestApplicationResourceUrls.pairwiseSectorIdentifierUri(), response.getSectorIdentifierUri());
+        Assertions.assertEquals(pairwiseSectorIdentifierUri(), response.getSectorIdentifierUri());
     }
 
     @Test
@@ -294,12 +294,12 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         oidcClientEndpointsResource.setSectorIdentifierRedirectUris(redirects);
 
         clientRep.setSubjectType("pairwise");
-        clientRep.setSectorIdentifierUri(TestApplicationResourceUrls.pairwiseSectorIdentifierUri());
+        clientRep.setSectorIdentifierUri(pairwiseSectorIdentifierUri());
         clientRep.setRedirectUris(redirects);
 
         OIDCClientRepresentation response = reg.oidc().create(clientRep);
         Assertions.assertEquals("pairwise", response.getSubjectType());
-        Assertions.assertEquals(TestApplicationResourceUrls.pairwiseSectorIdentifierUri(), response.getSectorIdentifierUri());
+        Assertions.assertEquals(pairwiseSectorIdentifierUri(), response.getSectorIdentifierUri());
         Assert.assertNames(response.getRedirectUris(), "http://redirect1", "http://redirect2");
     }
 
@@ -314,7 +314,7 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         oidcClientEndpointsResource.setSectorIdentifierRedirectUris(sectorRedirects);
 
         clientRep.setSubjectType("pairwise");
-        clientRep.setSectorIdentifierUri(TestApplicationResourceUrls.pairwiseSectorIdentifierUri());
+        clientRep.setSectorIdentifierUri(pairwiseSectorIdentifierUri());
 
         assertCreateFail(clientRep, 400, "Client redirect URIs does not match redirect URIs fetched from the Sector Identifier URI.");
     }
@@ -330,7 +330,7 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         oidcClientEndpointsResource.setSectorIdentifierRedirectUris(sectorRedirects);
 
         clientRep.setSubjectType("public");
-        clientRep.setSectorIdentifierUri(TestApplicationResourceUrls.pairwiseSectorIdentifierUri());
+        clientRep.setSectorIdentifierUri(pairwiseSectorIdentifierUri());
 
         assertCreateFail(clientRep, 400, "Client redirect URIs does not match redirect URIs fetched from the Sector Identifier URI.");
     }
@@ -394,17 +394,13 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         String pairwiseUserId = accessToken.getSubject();
         Assertions.assertNotEquals(pairwiseUserId, user.getId());
 
-        // Send request to userInfo endpoint
-        Client jaxrsClient = AdminClientUtil.createResteasyClient();
-        try {
-            // Check that userInfo contains pairwise subjectId as well
-            Response userInfoResponse = UserInfoClientUtil.executeUserInfoRequest_getMethod(jaxrsClient, accessTokenResponse.getAccessToken());
-            UserInfo userInfo = UserInfoClientUtil.testSuccessfulUserInfoResponse(userInfoResponse, "test-user", "test-user@localhost");
-            String userInfoSubId = userInfo.getSubject();
-            Assertions.assertEquals(pairwiseUserId, userInfoSubId);
-        } finally {
-            jaxrsClient.close();
-        }
+        // Check that userInfo contains pairwise subjectId as well
+        UserInfoResponse userInfoResponse = oauth.doUserInfoRequest(accessTokenResponse.getAccessToken());
+        Assertions.assertEquals(200, userInfoResponse.getStatusCode());
+        UserInfo userInfo = userInfoResponse.getUserInfo();
+        Assertions.assertEquals("test-user", userInfo.getPreferredUsername());
+        Assertions.assertEquals("test-user@localhost", userInfo.getEmail());
+        Assertions.assertEquals(pairwiseUserId, userInfo.getSubject());
     }
 
     @Test
@@ -415,7 +411,7 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         AccessTokenResponse accessTokenResponse = login(pairwiseClient, "test-user@localhost", "password");
 
         // Verify tokens
-        oauth.parseRefreshToken(accessTokenResponse.getAccessToken());
+        oauth.verifyToken(accessTokenResponse.getAccessToken());
         IDToken idToken = oauth.verifyIDToken(accessTokenResponse.getIdToken());
         oauth.parseRefreshToken(accessTokenResponse.getRefreshToken());
 
@@ -424,18 +420,18 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
 
         // Verify refreshed tokens
         oauth.verifyToken(refreshTokenResponse.getAccessToken());
-        RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(refreshTokenResponse.getRefreshToken());
+        oauth.parseRefreshToken(refreshTokenResponse.getRefreshToken());
         IDToken refreshedIdToken = oauth.verifyIDToken(refreshTokenResponse.getIdToken());
 
         // If an ID Token is returned as a result of a token refresh request, the following requirements apply:
         // its iss Claim Value MUST be the same as in the ID Token issued when the original authentication occurred
-        Assertions.assertEquals(idToken.getIssuer(), refreshedRefreshToken.getIssuer());
+        Assertions.assertEquals(idToken.getIssuer(), refreshedIdToken.getIssuer());
 
         // its sub Claim Value MUST be the same as in the ID Token issued when the original authentication occurred
-        Assertions.assertEquals(idToken.getSubject(), refreshedRefreshToken.getSubject());
+        Assertions.assertEquals(idToken.getSubject(), refreshedIdToken.getSubject());
 
         // its iat Claim MUST represent the time that the new ID Token is issued
-        Assertions.assertEquals(refreshedIdToken.getIat(), refreshedRefreshToken.getIat());
+        Assertions.assertTrue(refreshedIdToken.getIat() >= idToken.getIat());
 
         // if the ID Token contains an auth_time Claim, its value MUST represent the time of the original authentication
         // - not the time that the new ID token is issued
@@ -474,7 +470,9 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         assertEquals(200, accessTokenResponse.getStatusCode());
 
         // Delete user
-        adminClient.realm(REALM_NAME).users().delete(userId);
+        try (Response response = adminClient.realm(REALM_NAME).users().delete(userId)) {
+            Assertions.assertEquals(204, response.getStatus());
+        }
 
         AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
         assertEquals(400, refreshTokenResponse.getStatusCode());
@@ -519,7 +517,11 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
 
     private String getPayload(String token) {
         String payloadBase64 = token.split("\\.")[1];
-        return new String(Base64.getDecoder().decode(payloadBase64));
+        return new String(Base64.getUrlDecoder().decode(payloadBase64), StandardCharsets.UTF_8);
+    }
+
+    private String pairwiseSectorIdentifierUri() {
+        return getAuthServerRoot().resolve("realms/master/app/oidc-client-endpoints/get-sector-identifier-redirect-uris").toString();
     }
 
     public void addDefaultBasicClientScope(String clientId) {

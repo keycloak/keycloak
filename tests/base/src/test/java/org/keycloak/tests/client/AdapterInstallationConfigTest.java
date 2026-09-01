@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.client;
+package org.keycloak.tests.client;
 
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
@@ -22,9 +22,10 @@ import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 
@@ -35,13 +36,14 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@KeycloakIntegrationTest
 public class AdapterInstallationConfigTest extends AbstractClientRegistrationTest {
 
     private ClientRepresentation client;
     private ClientRepresentation client2;
     private ClientRepresentation clientPublic;
 
-    @Before
+    @BeforeEach
     @Override
     public void before() throws Exception {
         super.before();
@@ -92,7 +94,7 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
         AdapterConfig config = reg.getAdapterConfig(client.getClientId());
         assertNotNull(config);
 
-        assertEquals(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/", config.getAuthServerUrl());
+        assertEquals(getAuthServerRoot().toString(), config.getAuthServerUrl());
         assertEquals("test", config.getRealm());
 
         assertEquals(1, config.getCredentials().size());

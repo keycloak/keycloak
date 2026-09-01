@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.client;
+package org.keycloak.tests.client;
 
 
 import java.util.ArrayList;
@@ -44,7 +44,6 @@ import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
-import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
@@ -53,20 +52,20 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
-import org.keycloak.testsuite.Assert;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.utils.Assert;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.util.JsonSerialization;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.testsuite.admin.AdminApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
-import static org.keycloak.testsuite.util.oauth.OAuthClient.AUTH_SERVER_ROOT;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -76,6 +75,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@KeycloakIntegrationTest
 public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
 
     private static final String ERR_MSG_CLIENT_REG_FAIL = "Failed to send request";
@@ -91,7 +91,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         samlApp.setDirectAccessGrantsEnabled(true);
     }
 
-    @Before
+    @BeforeEach
     public void before() throws Exception {
         super.before();
 
@@ -165,7 +165,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertNotNull(response.getClientId());
         assertNotNull(response.getClientSecret());
         assertEquals(0, response.getClientSecretExpiresAt().intValue());
-        assertEquals(AUTH_SERVER_ROOT + "/realms/" + REALM_NAME + "/clients-registrations/openid-connect/" + response.getClientId(), response.getRegistrationClientUri());
+        assertEquals(registrationClientUri(response.getClientId()), response.getRegistrationClientUri());
         assertEquals("RegistrationAccessTokenTest", response.getClientName());
         assertEquals("http://root", response.getClientUri());
         assertEquals(1, response.getRedirectUris().size());
@@ -191,7 +191,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertNotNull(response.getClientSecret());
         assertEquals(0, response.getClientSecretExpiresAt().intValue());
         assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, response.getTokenEndpointAuthMethod());
-        assertEquals(AUTH_SERVER_ROOT + "/realms/" + REALM_NAME + "/clients-registrations/openid-connect/" + response.getClientId(), response.getRegistrationClientUri());
+        assertEquals(registrationClientUri(response.getClientId()), response.getRegistrationClientUri());
     }
 
     @Test
@@ -212,7 +212,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         ClientRepresentation rep = clientResource.toRepresentation();
         Set<String> registeredDefaultClientScopes = new HashSet<>(rep.getDefaultClientScopes());
 
-        assertEquals(AUTH_SERVER_ROOT + "/realms/" + REALM_NAME + "/clients-registrations/openid-connect/" + updated.getClientId(), updated.getRegistrationClientUri());
+        assertEquals(registrationClientUri(updated.getClientId()), updated.getRegistrationClientUri());
         assertTrue(CollectionUtil.collectionEquals(Collections.singletonList("http://newredirect"), updated.getRedirectUris()));
         assertTrue(CollectionUtil.collectionEquals(Arrays.asList(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.IMPLICIT, OAuth2Constants.REFRESH_TOKEN, OAuth2Constants.PASSWORD), updated.getGrantTypes()));
         assertTrue(CollectionUtil.collectionEquals(Arrays.asList(OAuth2Constants.CODE, OIDCResponseType.NONE, OIDCResponseType.ID_TOKEN, "id_token token", "code id_token", "code token", "code id_token token"), updated.getResponseTypes()));
@@ -315,7 +315,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertNotNull(response.getClientId());
         assertNotNull(response.getClientSecret());
         assertEquals(0, response.getClientSecretExpiresAt().intValue());
-        assertEquals(AUTH_SERVER_ROOT + "/realms/" + REALM_NAME + "/clients-registrations/openid-connect/" + response.getClientId(), response.getRegistrationClientUri());
+        assertEquals(registrationClientUri(response.getClientId()), response.getRegistrationClientUri());
         assertEquals("RegistrationAccessTokenTest", response.getClientName());
         assertEquals("http://root", response.getClientUri());
         assertEquals(1, response.getRedirectUris().size());
@@ -369,9 +369,10 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
             Assertions.assertEquals(config.getRequestObjectSignatureAlg(), Algorithm.ES256);
 
             // update (ES256 to PS256)
-            clientRep.setUserinfoSignedResponseAlg(Algorithm.PS256);
-            clientRep.setRequestObjectSigningAlg(Algorithm.PS256);
-            response = reg.oidc().create(clientRep);
+            reg.auth(Auth.token(response));
+            response.setUserinfoSignedResponseAlg(Algorithm.PS256);
+            response.setRequestObjectSigningAlg(Algorithm.PS256);
+            response = reg.oidc().update(response);
             Assertions.assertEquals(Algorithm.PS256, response.getUserinfoSignedResponseAlg());
             Assertions.assertEquals(Algorithm.PS256, response.getRequestObjectSigningAlg());
 
@@ -382,9 +383,12 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
             Assertions.assertEquals(config.getRequestObjectSignatureAlg(), Algorithm.PS256);
         } finally {
             // back to RS256 for other tests
-            clientRep.setUserinfoSignedResponseAlg(Algorithm.RS256);
-            clientRep.setRequestObjectSigningAlg(Algorithm.RS256);
-            response = reg.oidc().create(clientRep);
+            if (response != null) {
+                reg.auth(Auth.token(response));
+                response.setUserinfoSignedResponseAlg(Algorithm.RS256);
+                response.setRequestObjectSigningAlg(Algorithm.RS256);
+                reg.oidc().update(response);
+            }
         }
     }
 
@@ -453,7 +457,8 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         ClientRepresentation kcClientRep = getKeycloakClient(response.getClientId());
         Assertions.assertFalse(kcClientRep.isPublicClient());
         Assertions.assertNotNull(kcClientRep.getSecret());
-        Assertions.assertEquals(OIDCLoginProtocol.CLIENT_SECRET_POST, OIDCClientSecretConfigWrapper.fromClientRepresentation(kcClientRep).getClientSecretAuthenticationAllowedMethod());
+        Assertions.assertEquals(OIDCLoginProtocol.CLIENT_SECRET_POST,
+                kcClientRep.getAttributes().get("client.secret.authentication.allowed.method"));
 
         // Verify that retrieving the client returns client_secret_post
         reg.auth(Auth.token(response));
@@ -469,7 +474,8 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         kcClientRep = getKeycloakClient(response.getClientId());
         Assertions.assertFalse(kcClientRep.isPublicClient());
         Assertions.assertNotNull(kcClientRep.getSecret());
-        Assertions.assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, OIDCClientSecretConfigWrapper.fromClientRepresentation(kcClientRep).getClientSecretAuthenticationAllowedMethod());
+        Assertions.assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC,
+                kcClientRep.getAttributes().get("client.secret.authentication.allowed.method"));
 
         // Update to use different method (tls_client_auth)
         reg.auth(Auth.token(updated));
@@ -900,6 +906,10 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
 
     private ClientRepresentation getKeycloakClient(String clientId) {
         return AdminApiUtil.findClientByClientId(adminClient.realms().realm(REALM_NAME), clientId).toRepresentation();
+    }
+
+    private String registrationClientUri(String clientId) {
+        return getAuthServerRoot().resolve("realms/" + REALM_NAME + "/clients-registrations/openid-connect/" + clientId).toString();
     }
 
     @Test
