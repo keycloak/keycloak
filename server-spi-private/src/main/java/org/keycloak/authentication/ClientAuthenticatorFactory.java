@@ -95,4 +95,13 @@ public interface ClientAuthenticatorFactory extends ProviderFactory<ClientAuthen
     default boolean supportsSecret() {
         return false;
     }
+
+    /**
+     * Is this authenticator supports authentication with client assertion?
+     *
+     * @return if it supports authentication with client assertion
+     */
+    default boolean supportsClientAssertion() {
+        return false;
+    }
 }

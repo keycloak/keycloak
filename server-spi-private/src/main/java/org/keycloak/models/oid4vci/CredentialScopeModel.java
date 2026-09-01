@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ProtocolMapperModel;
@@ -42,7 +43,7 @@ import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
  */
 public class CredentialScopeModel implements ClientScopeModel {
 
-    public static final String CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT = "jwk";
+    public static final String CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT = OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_JWK;
 
     public static final String VC_BUILD_CONFIG_HASH_ALGORITHM_DEFAULT = "SHA-256";
     public static final String VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS_DEFAULT = "id,iat,nbf,exp,jti";

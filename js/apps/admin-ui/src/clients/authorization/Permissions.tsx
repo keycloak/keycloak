@@ -230,7 +230,7 @@ export const AuthorizationPermissions = ({
                       isDisabled={isDisabled || disabledCreate?.resources}
                       component="button"
                       onClick={() =>
-                        navigate(
+                        void navigate(
                           toNewPermission({
                             realm,
                             id: clientId,
@@ -247,7 +247,7 @@ export const AuthorizationPermissions = ({
                       isDisabled={isDisabled || disabledCreate?.scopes}
                       component="button"
                       onClick={() =>
-                        navigate(
+                        void navigate(
                           toNewPermission({
                             realm,
                             id: clientId,

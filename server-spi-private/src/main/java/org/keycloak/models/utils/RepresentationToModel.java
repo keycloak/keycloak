@@ -559,7 +559,21 @@ public class RepresentationToModel {
             add(updatePropertyAction(client::setProtocol, rep::getProtocol, client::getProtocol, () -> DEFAULT_PROTOCOL));
             add(updatePropertyAction(client::setNodeReRegistrationTimeout, rep::getNodeReRegistrationTimeout, () -> defaultNodeReRegistrationTimeout(client, isNew)));
             add(updatePropertyAction(client::setClientAuthenticatorType, rep::getClientAuthenticatorType, client::getClientAuthenticatorType, KeycloakModelUtils::getDefaultClientAuthenticatorType));
-            add(updatePropertyAction(client::setFullScopeAllowed, rep::isFullScopeAllowed, () -> defaultFullScopeAllowed(client, isNew)));
+            if (rep.isFullScopeAllowed() != null) {
+                add(updatePropertyAction(client::setFullScopeAllowed, rep::isFullScopeAllowed));
+            } else {
+                add(() -> {
+                    Boolean fullScopeDefault = defaultFullScopeAllowed(client, isNew);
+                    if (fullScopeDefault != null) {
+                        try {
+                            client.setFullScopeAllowed(fullScopeDefault);
+                        } catch (ClientTypeException e) {
+                            logger.debugf("Default fullScopeAllowed conflicts with client type constraint for client '%s' — preserving typed value", client.getClientId());
+                        }
+                    }
+                    return null;
+                });
+            }
             // Client Secret
             add(updatePropertyAction(client::setSecret, () -> determineNewSecret(client, rep)));
             // Redirect uris / Web origins
@@ -570,6 +584,10 @@ public class RepresentationToModel {
         // Extended client attributes
         if (rep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
+                // realm_client is computed when a client is converted to a representation, it must not be stored
+                if (Constants.REALM_CLIENT.equals(entry.getKey())) {
+                    continue;
+                }
                 clientPropertyUpdates.add(
                     updatePropertyAction(val -> client.setAttribute(entry.getKey(), val), entry::getValue));
             }

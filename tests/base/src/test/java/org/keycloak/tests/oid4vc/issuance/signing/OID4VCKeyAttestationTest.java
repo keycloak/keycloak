@@ -495,6 +495,21 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
     }
 
     @Test
+    public void testAttestationWithTrustMaterialWithoutExtendedKeyUsageRestriction() {
+        // An empty extended key usage list in the trust material imposes no EKU restriction, the
+        // anchored chain alone decides trust.
+        String cNonce = getCNonce();
+        String caCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.caCertificatePem();
+        String leafCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.leafCertificatePem();
+        String leafPrivateKeyPem = X5C_TEST_CERTIFICATE_CHAIN.leafPrivateKeyPem();
+        runOnServer.run(session -> {
+            setupSessionContext(session);
+            runAttestationWithX5cCertificateChain(session, cNonce, caCertificatePem, leafCertificatePem,
+                    leafPrivateKeyPem, ATTESTATION, true, "", true);
+        });
+    }
+
+    @Test
     public void testAttestationWithCaCertificateAsLeafIsRejected() {
         String cNonce = getCNonce();
         String caCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.caCertificatePem();
@@ -546,7 +561,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
             config.setEnabled(true);
             config.setConfig(Map.of(
                     DefaultTrustIdentityProviderConfig.TRUSTED_CERTIFICATES, caCertificatePem,
-                    DefaultTrustIdentityProviderConfig.ATTESTATION_EXTENDED_KEY_USAGES, TEST_ATTESTATION_EKU));
+                    DefaultTrustIdentityProviderConfig.REQUIRED_EXTENDED_KEY_USAGES, TEST_ATTESTATION_EKU));
 
             IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
                     () -> config.validate(session.getContext().getRealm()));
@@ -624,7 +639,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
                     Map.of(
                             DefaultTrustIdentityProviderConfig.USE_X509, "true",
                             DefaultTrustIdentityProviderConfig.TRUSTED_CERTIFICATES, caCertificatePem,
-                            DefaultTrustIdentityProviderConfig.ATTESTATION_EXTENDED_KEY_USAGES,
+                            DefaultTrustIdentityProviderConfig.REQUIRED_EXTENDED_KEY_USAGES,
                             TEST_ATTESTATION_EKU));
         });
 
@@ -1634,10 +1649,10 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
     private static void runAttestationWithX5cCertificateChain(KeycloakSession session, String cNonce,
                                                               String caCertificatePem, String leafCertificatePem, String leafPrivateKeyPem,
                                                               String proofType, boolean configureTrustProvider,
-                                                              String allowedExtendedKeyUsage, boolean expectSuccess) {
+                                                              String requiredExtendedKeyUsage, boolean expectSuccess) {
         runAttestationWithPresentedX5cCertificates(session, cNonce, caCertificatePem,
                 List.of(leafCertificatePem, caCertificatePem), leafPrivateKeyPem, proofType,
-                configureTrustProvider, allowedExtendedKeyUsage, expectSuccess);
+                configureTrustProvider, requiredExtendedKeyUsage, expectSuccess);
     }
 
     private static void runAttestationWithPresentedX5cCertificates(KeycloakSession session, String cNonce,
@@ -1645,7 +1660,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
                                                                    List<String> presentedCertificatePems,
                                                                    String leafPrivateKeyPem, String proofType,
                                                                    boolean configureTrustProvider,
-                                                                   String allowedExtendedKeyUsage,
+                                                                   String requiredExtendedKeyUsage,
                                                                    boolean expectSuccess) {
         try {
             List<X509Certificate> presentedCertificates = presentedCertificatePems.stream()
@@ -1659,8 +1674,8 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
                         Map.of(
                                 DefaultTrustIdentityProviderConfig.USE_X509, "true",
                                 DefaultTrustIdentityProviderConfig.TRUSTED_CERTIFICATES, trustedCaCertificatePem,
-                                DefaultTrustIdentityProviderConfig.ATTESTATION_EXTENDED_KEY_USAGES,
-                                allowedExtendedKeyUsage));
+                                DefaultTrustIdentityProviderConfig.REQUIRED_EXTENDED_KEY_USAGES,
+                                requiredExtendedKeyUsage));
             }
 
             KeyWrapper signerKey = new KeyWrapper();

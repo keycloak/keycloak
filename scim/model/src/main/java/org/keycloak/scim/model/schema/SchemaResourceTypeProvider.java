@@ -8,7 +8,6 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.Model;
 import org.keycloak.models.ModelException;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.scim.model.config.ServiceProviderConfigResourceTypeProvider;
@@ -239,11 +238,6 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
     @Override
     public String getSchema() {
         return Scim.SCHEMA_CORE_SCHEMA;
-    }
-
-    @Override
-    public <M extends Model> List<ModelSchema<M, Schema>> getSchemas() {
-        return List.of();
     }
 
     @Override

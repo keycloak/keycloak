@@ -92,19 +92,19 @@ public class FeaturesDistTest {
 
     @Test
     @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({StartDev.NAME, "--features=token-exchange,client-secret-rotation:v1"})
+    @Launch({StartDev.NAME, "--features=token-exchange,scripts"})
     public void testEnableMultipleFeatures(CLIResult cliResult) {
         cliResult.assertStartedDevMode();
-        cliResult.assertMessage("Preview features enabled: client-secret-rotation:v1, token-exchange:v1");
+        cliResult.assertMessage("Preview features enabled: scripts:v1, token-exchange:v1");
         cliResult.assertNoMessage("recovery-codes");
     }
 
     @Test
     @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({StartDev.NAME, "--features=\"token-exchange,client-secret-rotation:v1\""})
+    @Launch({StartDev.NAME, "--features=\"token-exchange,scripts\""})
     public void testWinEnableMultipleFeatures(CLIResult cliResult) {
         cliResult.assertStartedDevMode();
-        cliResult.assertMessage("Preview features enabled: client-secret-rotation:v1, token-exchange:v1");
+        cliResult.assertMessage("Preview features enabled: scripts:v1, token-exchange:v1");
         cliResult.assertNoMessage("recovery-codes");
     }
 

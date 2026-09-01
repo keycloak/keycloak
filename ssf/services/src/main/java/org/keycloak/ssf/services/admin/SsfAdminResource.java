@@ -951,7 +951,12 @@ public class SsfAdminResource {
      * {@code default_subjects} / {@code ssf.notify.<clientId>}
      * configuration. The dispatch outcome (dispatched vs. drop reason)
      * is reported in the response so emitter integrations can debug
-     * their wiring without enabling verbose logging.
+     * their wiring without enabling verbose logging. Complex subjects
+     * that name both a user and a tenant are additionally required to
+     * be internally consistent — the user must be a member of the
+     * tenant organization — so a subscribed tenant subject member cannot carry
+     * an unrelated, unsubscribed user subject past the subject filter
+     * (keycloak/keycloak#50812).
      *
      * <p>Console-only convenience: callers with {@code manage-clients}
      * on the receiver bypass the {@code allowEmitEvents} opt-in and
@@ -1132,37 +1137,44 @@ public class SsfAdminResource {
         // Each 4xx case uses the status's wire value as the error code
         // so callers can distinguish categories (unknown_event_type,
         // subject_not_found, ...) from the wire response without having
-        // to parse a free-form description.
+        // to parse a free-form description. Any structured params the
+        // emitter attached (e.g. the failing complex-subject member)
+        // are forwarded verbatim so the admin UI can parameterize a
+        // translated message without parsing error_description.
         String emitMessage = emitResult.message();
         String emitErrorCode = emitResult.status().wireValue();
+        Map<String, String> emitParams = emitResult.params();
         switch (emitResult.status()) {
             case INVALID_REQUEST:
                 return invalidRequest(emitErrorCode, emitMessage,
-                        "Event payload could not be deserialized for the given eventType");
+                        "Event payload could not be deserialized for the given eventType", emitParams);
             case INVALID_EVENT_DATA:
-                return invalidRequest(emitErrorCode, emitMessage, "Invalid event data");
+                return invalidRequest(emitErrorCode, emitMessage, "Invalid event data", emitParams);
             case UNKNOWN_EVENT_TYPE:
-                return invalidRequest(emitErrorCode, emitMessage, "Unknown eventType");
+                return invalidRequest(emitErrorCode, emitMessage, "Unknown eventType", emitParams);
             case EVENT_TYPE_NOT_EMITTABLE:
                 return invalidRequest(emitErrorCode, emitMessage,
-                        "Requested event type not emittable");
+                        "Requested event type not emittable", emitParams);
             case SUBJECT_NOT_FOUND:
                 return invalidRequest(emitErrorCode, emitMessage,
-                        "Subject referenced by the request does not exist");
+                        "Subject referenced by the request does not exist", emitParams);
+            case SUBJECT_MISMATCH:
+                return invalidRequest(emitErrorCode, emitMessage,
+                        "User subject is not a member of the tenant organization", emitParams);
             case STREAM_NOT_FOUND:
                 // Defensive — the early stream check above usually catches
                 // this before emit() runs, but emit() can also return it
                 // (e.g. on a stream that was deleted between check and emit).
                 return invalidRequest(emitErrorCode, emitMessage,
-                        "No SSF stream registered for client");
+                        "No SSF stream registered for client", emitParams);
             case RECEIVER_DISABLED:
                 // Receiver is configured but its client is disabled
                 return invalidRequest(emitErrorCode, emitMessage,
-                        "Receiver client is disabled");
+                        "Receiver client is disabled", emitParams);
             case NO_DELIVERY_CONFIG:
                 // Stream exists but is not deliverable
                 return invalidRequest(emitErrorCode, emitMessage,
-                        "Stream has no delivery configuration");
+                        "Stream has no delivery configuration", emitParams);
             case DISPATCHED:
             case DROPPED_UNSUBSCRIBED:
             case DROPPED_FILTERED:
@@ -1773,7 +1785,7 @@ public class SsfAdminResource {
      * shape), looks up the concrete class through
      * {@link SubjectIds#getSubjectIdType} and deserialises into it.
      * When there's no {@code format} key (legacy SSE CAEP, where the
-     * facets are sibling keys under {@code subject} without an outer
+     * subject members are sibling keys under {@code subject} without an outer
      * marker), falls back to {@link ComplexSubjectId}.
      */
     protected SubjectId toTypedSubjectId(Map<String, Object> subjectMap) {
@@ -1804,7 +1816,7 @@ public class SsfAdminResource {
      *         as-is with its {@code format} discriminator.</li>
      *     <li><b>Legacy SSE CAEP</b> — no top-level {@code sub_id}; the
      *         subject lives under {@code events.<type>.subject} with
-     *         complex-subject facets (user / session / tenant / …) as
+     *         complex-subject members (user / session / tenant / …) as
      *         sibling keys and no outer {@code format}. Returned as-is
      *         from there.</li>
      * </ul>

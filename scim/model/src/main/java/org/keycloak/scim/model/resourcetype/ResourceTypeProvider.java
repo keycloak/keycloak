@@ -6,14 +6,12 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.Model;
 import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.config.ServiceProviderConfig;
 import org.keycloak.scim.resource.resourcetype.ResourceType;
 import org.keycloak.scim.resource.resourcetype.ResourceType.SchemaExtension;
-import org.keycloak.scim.resource.schema.ModelSchema;
 import org.keycloak.scim.resource.schema.Schema;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProviderFactory;
@@ -116,8 +114,4 @@ public class ResourceTypeProvider implements ScimResourceTypeProvider<ResourceTy
         return ResourceType.SCHEMA;
     }
 
-    @Override
-    public <M extends Model> List<ModelSchema<M, ResourceType>> getSchemas() {
-        return List.of();
-    }
 }
