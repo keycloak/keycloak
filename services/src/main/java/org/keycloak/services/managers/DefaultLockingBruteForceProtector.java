@@ -32,6 +32,28 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 
+/**
+ * Brute force protector that serializes login attempts per user within a JVM using a {@link Semaphore}.
+ *
+ * <p>The database row for login failures is only locked with {@code PESSIMISTIC_WRITE} when a write occurs
+ * (see {@link org.keycloak.loginfailures.jpa.UserLoginFailureAdapter#ensureLocked()}), not on reads.
+ * Without additional coordination, parallel login attempts could all read the same (stale) failure count,
+ * allowing more attempts than the configured limit. The JVM-level lock prevents this by ensuring only one
+ * thread per user per node reads and updates the failure state at a time.
+ *
+ * <p>This is a performance trade-off: acquiring a database lock on every read (including
+ * {@link #isTemporarilyDisabled} checks on every login) would be expensive. The JVM-level lock avoids that
+ * cost while still providing correctness within a single node. In a cluster, the upper bound for concurrent
+ * attempts that may bypass the check equals the number of nodes, as each node maintains its own lock map.
+ * The database pessimistic write lock still guarantees that no failure count update is lost.
+ *
+ * <p>A database-only locking approach would also require inserting a login failure row on the first login
+ * of every user (before knowing if it is a success or failure) in order to have a row to lock. This would
+ * significantly increase the number of rows and the IOPS on the login failure table.
+ *
+ * <p>This improves on the base {@link DefaultBruteForceProtector}, which processes failures asynchronously
+ * and would reject concurrent login attempts entirely during that window.
+ */
 public class DefaultLockingBruteForceProtector extends DefaultBruteForceProtector {
 
     static class UserLock {
