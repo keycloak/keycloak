@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.authentication;
+package org.keycloak.tests.providers.forms;
 
 import java.util.List;
 
@@ -31,6 +31,7 @@ import org.keycloak.provider.ProviderConfigProperty;
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
 public class CustomAuthenticationFlowCallbackFactory implements AuthenticationFlowCallbackFactory {
+
     public static final String PROVIDER_ID = "custom-callback-authenticator";
 
     private static final CustomAuthenticationFlowCallback SINGLETON = new CustomAuthenticationFlowCallback();

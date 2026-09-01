@@ -1,4 +1,5 @@
 org.keycloak.tests.providers.forms.ClickThroughAuthenticator
+org.keycloak.tests.providers.forms.CustomAuthenticationFlowCallbackFactory
 org.keycloak.tests.providers.providersoverride.CustomValidateUsername
 org.keycloak.tests.providers.providersoverride.CustomValidatePassword1
 org.keycloak.tests.providers.providersoverride.CustomValidatePassword2
