@@ -264,7 +264,7 @@ public class ParTest extends AbstractClientPoliciesTest {
             oauth.loginForm().requestUri(requestUri).state(state).open();
             assertThat(driver.getCurrentUrl(), startsWith(OAuthClient.AUTH_SERVER_ROOT + "/realms/" + oauth.getRealm() + "/login-actions/authenticate"));
             // make sure interactive login waits longer than requestUriLifespan
-            driver.wait(requestUriLifespan * 1000L * 2);
+            timeOffSet.set(requestUriLifespan * 2);
             oauth.fillLoginForm(TEST_USER_NAME, TEST_USER_PASSWORD);
             AuthorizationEndpointResponse loginResponse = oauth.parseLoginResponse();
             assertEquals(state, loginResponse.getState());
