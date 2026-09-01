@@ -51,6 +51,20 @@ const VC_FORMAT_JWT_VC_TYP = "vc+jwt";
 const VC_FORMAT_SD_JWT_TYP = "dc+sd-jwt";
 const VC_EXPIRY_DEFAULT_SECONDS = 31536000; // 1 year (matches VC_EXPIRY_IN_SECONDS_DEFAULT)
 const VC_REFRESH_INTERVAL_DEFAULT_SECONDS = 604800; // 7 days (matches VC_REFRESH_INTERVAL_IN_SECONDS_DEFAULT)
+const VC_FORMAT_OPTIONS = [
+  {
+    key: VC_FORMAT_SD_JWT,
+    value: `SD-JWT VC (${VC_FORMAT_SD_JWT})`,
+  },
+  {
+    key: VC_FORMAT_JWT_VC,
+    value: `JWT VC (${VC_FORMAT_JWT_VC})`,
+  },
+  {
+    key: VC_FORMAT_MSO_MDOC,
+    value: `ISO mDoc (${VC_FORMAT_MSO_MDOC})`,
+  },
+] as const;
 
 // Allowed values for OID4VCI cryptographic binding methods and proof types.
 // Keep these in sync with server-side support in CredentialScopeModel / ProofType.
@@ -219,6 +233,26 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     selectedFormat === VC_FORMAT_MSO_MDOC
       ? ALLOWED_CRYPTO_BINDING_METHODS_MDOC
       : ALLOWED_CRYPTO_BINDING_METHODS_JSON;
+  const allowedCryptoBindingMethodsText =
+    allowedCryptoBindingMethods.join(", ");
+  const credentialBuilderProviders =
+    serverInfo.providers.credentialBuilder.providers;
+  const vcFormatOptions = useMemo(() => {
+    const availableProviderFormats = Object.keys(credentialBuilderProviders);
+    const fallbackFormats = [
+      VC_FORMAT_SD_JWT,
+      VC_FORMAT_JWT_VC,
+      ...(isMdocEnabled ? [VC_FORMAT_MSO_MDOC] : []),
+    ];
+    const availableFormats =
+      availableProviderFormats.length > 0
+        ? availableProviderFormats
+        : fallbackFormats;
+
+    return VC_FORMAT_OPTIONS.filter((option) =>
+      availableFormats.includes(option.key),
+    );
+  }, [credentialBuilderProviders, isMdocEnabled]);
   const isNotSaml = selectedProtocol != "saml";
 
   const computeRefreshIntervalDefault = () => {
@@ -656,24 +690,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               label={t("supportedFormats")}
               labelIcon={t("supportedFormatsHelp")}
               controller={{ defaultValue: VC_FORMAT_SD_JWT }}
-              options={[
-                {
-                  key: VC_FORMAT_SD_JWT,
-                  value: `SD-JWT VC (${VC_FORMAT_SD_JWT})`,
-                },
-                {
-                  key: VC_FORMAT_JWT_VC,
-                  value: `JWT VC (${VC_FORMAT_JWT_VC})`,
-                },
-                ...(isMdocEnabled
-                  ? [
-                      {
-                        key: VC_FORMAT_MSO_MDOC,
-                        value: `ISO mDoc (${VC_FORMAT_MSO_MDOC})`,
-                      },
-                    ]
-                  : []),
-              ]}
+              options={vcFormatOptions}
             />
             <TextControl
               name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
@@ -790,6 +807,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                           "cryptographicBindingMethodsSupportedInvalid",
                           {
                             invalid: invalid.join(","),
+                            allowed: allowedCryptoBindingMethodsText,
                           },
                         );
                       }
