@@ -111,10 +111,11 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
      * therefore drops the event when this is set. {@code READ_ONLY} is the default LDAP
      * edit mode, so this is the common federation setup rather than an edge case.
      *
-     * <p>{@code UNSYNCED} is included deliberately. Local state is authoritative there
-     * for credentials, so the deletion does destroy something real — but the identity
-     * itself persists in the directory and re-imports, which is what {@code
-     * account-purged} makes a claim about.
+     * <p>LDAP is the motivating case, not the rule. Because a wrongly emitted purge is
+     * not recoverable downstream, the test is deliberately conservative: everything is
+     * treated as a local removal unless the deletion is known to be authoritative — see
+     * {@link #isLocalRemovalOnly(RealmModel, UserModel)} for what qualifies and why an
+     * absent edit mode does not.
      */
     public boolean isLocalRemovalOnly() {
         return localRemovalOnly;
@@ -283,9 +284,29 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
      * authoritative store — see {@link #isLocalRemovalOnly()}.
      *
      * <p>Read while the user still exists, because the answer lives on the federation
-     * provider the user links to and nothing can be asked about it afterwards. A local
-     * user, a user whose federation link no longer resolves to a component, or a
-     * provider with no edit mode configured all count as a real removal.
+     * provider the user links to and nothing can be asked about it afterwards.
+     *
+     * <p><b>Unknown never means "purged".</b> Only two cases are treated as a real
+     * removal: a user with no federation link at all, and a provider whose edit mode is
+     * explicitly {@code WRITABLE}, which is the mode that propagates the delete
+     * upstream. Everything else — {@code READ_ONLY}, {@code UNSYNCED}, an edit mode that
+     * is absent, or a federation link that no longer resolves — is treated as a local
+     * removal and suppresses the event.
+     *
+     * <p>Erring this way is not symmetric bookkeeping. A purge a receiver should not
+     * have been told about drives data-retention deletion that cannot be undone; a purge
+     * it is not told about only costs it a signal. Reading an absent edit mode as a real
+     * removal was wrong for exactly that reason: providers disagree on what the missing
+     * value means, and {@code KerberosConfig.getEditMode} defaults it to
+     * {@code UNSYNCED} while {@code KerberosFederationProvider.removeUser} returns
+     * {@code true} without deleting the principal at any edit mode.
+     *
+     * <p>{@code WRITABLE} stays an allowlist rather than provider-specific knowledge.
+     * Kerberos does not offer it — {@code KerberosFederationProviderFactory} exposes only
+     * {@code READ_ONLY} and {@code UNSYNCED} — so in practice it selects LDAP, plus any
+     * third-party provider that declares the mode. A provider declaring {@code WRITABLE}
+     * without actually deleting upstream would still emit; that is its own claim to make,
+     * and an allowlist of provider ids here would only go stale.
      */
     private static boolean isLocalRemovalOnly(RealmModel realm, UserModel user) {
         String federationLink = user.getFederationLink();
@@ -294,14 +315,10 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
         }
         ComponentModel component = realm.getComponent(federationLink);
         if (component == null) {
-            return false;
+            return true;
         }
         String editMode = component.getConfig().getFirst(LDAPConstants.EDIT_MODE);
-        if (editMode == null) {
-            return false;
-        }
-        return UserStorageProvider.EditMode.READ_ONLY.name().equals(editMode)
-                || UserStorageProvider.EditMode.UNSYNCED.name().equals(editMode);
+        return !UserStorageProvider.EditMode.WRITABLE.name().equals(editMode);
     }
 
     /**

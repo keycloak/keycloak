@@ -201,28 +201,34 @@ class PurgedUserSnapshotTest {
 
     @Test
     void writableFederatedUser_isARealRemoval() {
-        // WRITABLE propagates the delete to the directory, so the account really is gone.
+        // WRITABLE is the one federated mode that propagates the delete upstream, so
+        // the account really is gone. It is also the only thing that lifts the
+        // suppression below — unknown never means purged.
         recapture(federationComponent(UserStorageProvider.EditMode.WRITABLE.name()));
 
         assertFalse(PurgedUserSnapshot.lookup(session, realm, USER_ID).isLocalRemovalOnly());
     }
 
     @Test
-    void federationLinkWithoutComponent_isARealRemoval() {
-        // A dangling link tells us nothing; treat it as a real removal rather than
-        // silently suppressing the event.
+    void federationProviderWithoutEditMode_isLocalRemovalOnly() {
+        // The Kerberos shape: the field is optional, and KerberosConfig.getEditMode
+        // defaults a missing value to UNSYNCED while KerberosFederationProvider
+        // .removeUser returns true without deleting the principal at any edit mode.
+        // Providers disagree on what absent means, so absent cannot mean purged.
+        recapture(federationComponent(null));
+
+        assertTrue(PurgedUserSnapshot.lookup(session, realm, USER_ID).isLocalRemovalOnly());
+    }
+
+    @Test
+    void federationLinkWithoutComponent_isLocalRemovalOnly() {
+        // A dangling link tells us nothing about whether the account survived, and a
+        // wrongly emitted purge drives irreversible deletion downstream.
         lenient().when(user.getFederationLink()).thenReturn("gone-provider");
         lenient().when(realm.getComponent("gone-provider")).thenReturn(null);
         recaptureAsIs();
 
-        assertFalse(PurgedUserSnapshot.lookup(session, realm, USER_ID).isLocalRemovalOnly());
-    }
-
-    @Test
-    void federationProviderWithoutEditMode_isARealRemoval() {
-        recapture(federationComponent(null));
-
-        assertFalse(PurgedUserSnapshot.lookup(session, realm, USER_ID).isLocalRemovalOnly());
+        assertTrue(PurgedUserSnapshot.lookup(session, realm, USER_ID).isLocalRemovalOnly());
     }
 
     @Test
