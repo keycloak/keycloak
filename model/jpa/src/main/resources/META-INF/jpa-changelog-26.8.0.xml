@@ -159,4 +159,15 @@
         </modifySql>
     </changeSet>
 
+    <!-- Backfill KEYCLOAK_GROUP.ORG_ID for orgs created before 26.6.0 -->
+    <changeSet author="keycloak" id="26.8.0-backfill-group-org-id">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <and>
+                <columnExists tableName="KEYCLOAK_GROUP" columnName="ORG_ID"/>
+                <columnExists tableName="ORG" columnName="GROUP_ID"/>
+            </and>
+        </preConditions>
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_8_0_BackfillGroupOrgId"/>
+    </changeSet>
+
 </databaseChangeLog>
