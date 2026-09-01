@@ -54,4 +54,28 @@ public class LogoutTokenUtil {
             return null;
         }
     }
+
+    public static String generateUnsignedLogoutToken(
+            String issuer, String clientId, String userId, String sessionId, boolean revokeOfflineSessions)
+            throws IOException {
+        JWSHeader jwsHeader =
+                new JWSHeader(Algorithm.none, OAuth2Constants.JWT, null, null);
+        String logoutTokenHeaderEncoded = Base64Url.encode(JsonSerialization.writeValueAsBytes(jwsHeader));
+
+        LogoutToken logoutToken = new LogoutToken();
+        logoutToken.setSid(sessionId);
+        logoutToken.putEvents(TokenUtil.TOKEN_BACKCHANNEL_LOGOUT_EVENT, new HashMap<>());
+        logoutToken.putEvents(TokenUtil.TOKEN_BACKCHANNEL_LOGOUT_EVENT_REVOKE_OFFLINE_TOKENS, revokeOfflineSessions);
+        logoutToken.setSubject(userId);
+        logoutToken.issuer(issuer);
+        logoutToken.id(UUID.randomUUID().toString());
+        logoutToken.issuedNow();
+        logoutToken.exp(Time.currentTime() + Duration.ofMinutes(2).getSeconds());
+        logoutToken.audience(clientId);
+
+        String logoutTokenPayloadEncoded = Base64Url.encode(JsonSerialization.writeValueAsBytes(logoutToken));
+
+        return logoutTokenHeaderEncoded + "." + logoutTokenPayloadEncoded;
+    }
+    
 }
