@@ -755,12 +755,13 @@ public class LDAPStorageProvider implements UserStorageProvider,
         }
     }
 
-    private boolean canBeFixedByUser(UserProfile profile, ValidationException e) {
+    // Package-private (and static, as it depends on nothing but its arguments) so it can be unit tested directly -
+    // exercising it end-to-end would need a validator that reports an error with no associated attribute, which
+    // none of the built-in User Profile validators do.
+    static boolean canBeFixedByUser(UserProfile profile, ValidationException e) {
         Attributes attributes = profile.getAttributes();
         return e.getErrors().stream()
-                .map(ValidationException.Error::getAttribute)
-                .filter(Objects::nonNull)
-                .noneMatch(attributes::isReadOnly);
+            .allMatch(error -> error.getAttribute() != null && !attributes.isReadOnly(error.getAttribute()));
     }
 
     protected UserModel importUserFromLDAP(KeycloakSession session, RealmModel realm, LDAPObject ldapUser, ImportType importType) {
