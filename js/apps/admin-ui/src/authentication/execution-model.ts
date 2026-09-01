@@ -329,6 +329,17 @@ export class ExecutionList {
     );
     const draggedLevel = dragged.level || 0;
     const currentParent = this.#findParentOf(draggedId);
+    const dropIntoCurrentParent =
+      vertical === "into" && currentParent?.id === hover.id;
+
+    if (dropIntoCurrentParent) {
+      return {
+        kind: "reorder",
+        change: this.#reorderChange(dragged, order),
+        preview,
+        order,
+      };
+    }
 
     const needsLevelChange =
       vertical === "into" ||
