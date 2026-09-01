@@ -2,6 +2,7 @@ package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -271,9 +272,26 @@ public class MdocCredentialBuilderTest {
         issuerKey.setPrivateKey(issuerKeyPair.getPrivate());
         issuerKey.setPublicKey(issuerKeyPair.getPublic());
         if (includeCertificate) {
-            issuerKey.setCertificate(CertificateUtils.generateV1SelfSignedCertificate(issuerKeyPair, "issuer-key"));
+            issuerKey.setCertificate(caIssuedCertificate(issuerKeyPair, type));
         }
         return issuerKey;
+    }
+
+    // The signer rejects self signed signing certificates, so the fixture issues the leaf from a CA
+    private static X509Certificate caIssuedCertificate(KeyPair issuerKeyPair, String type) throws Exception {
+        KeyPair caKeyPair = "RSA".equals(type)
+                ? KeyUtils.generateRsaKeyPair(2048)
+                : generateEcKeyPair();
+        X509Certificate caCertificate =
+                (X509Certificate) CertificateUtils.generateV1SelfSignedCertificate(caKeyPair, "issuer-ca");
+        return CertificateUtils.generateV3Certificate(
+                issuerKeyPair, caKeyPair.getPrivate(), caCertificate, "issuer-key");
+    }
+
+    private static KeyPair generateEcKeyPair() throws Exception {
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("EC");
+        keyPairGenerator.initialize(new ECGenParameterSpec("secp256r1"));
+        return keyPairGenerator.generateKeyPair();
     }
 
     private void assertSignedMdoc(MdocIssuerSignedDocument issuerSignedDocument) {
