@@ -3,6 +3,7 @@ package org.keycloak.ssf.transmitter.subject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.component.ComponentModel;
@@ -122,8 +123,8 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
      * <p>LDAP is the motivating case, not the rule. Because a wrongly emitted purge is
      * not recoverable downstream, the test is deliberately conservative: everything is
      * treated as a local removal unless the deletion is known to be authoritative — see
-     * {@link #isLocalRemovalOnly(RealmModel, UserModel)} for what qualifies and why an
-     * absent edit mode does not.
+     * {@link #resolveLocalRemovalOnly} for what qualifies and why an absent edit mode
+     * does not.
      */
     public boolean isLocalRemovalOnly() {
         return localRemovalOnly;
@@ -218,7 +219,7 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
         }
 
         PurgedUserSnapshot snapshot = new PurgedUserSnapshot(session, realm, user.getId(),
-                tenantAlias, organizationAliases, isLocalRemovalOnly(realm, user));
+                tenantAlias, organizationAliases, resolveLocalRemovalOnly(realm, user));
 
         // Copy the whole attribute map first — it carries username, email and every
         // ssf.notify.* / ssf.notifyRemovedAt.* entry the subject gates read.
@@ -316,7 +317,7 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
      * without actually deleting upstream would still emit; that is its own claim to make,
      * and an allowlist of provider ids here would only go stale.
      */
-    private static boolean isLocalRemovalOnly(RealmModel realm, UserModel user) {
+    private static boolean resolveLocalRemovalOnly(RealmModel realm, UserModel user) {
         String federationLink = user.getFederationLink();
         if (federationLink == null) {
             return false;
@@ -523,6 +524,32 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
             snapshot.resolvedOrganizations = organizations;
         }
         return organizations;
+    }
+
+    /**
+     * Whether any of the user's organizations satisfies {@code predicate}.
+     *
+     * <p>The subject gate only ever asks "is any of them …", so the predicate is passed
+     * in rather than the collection handed out. That keeps a live user's membership
+     * stream short-circuiting — {@code anyMatch} stops at the first hit instead of
+     * loading every membership — while a snapshot still answers from its memoized list.
+     *
+     * <p>Passing the predicate in is also what makes the short-circuit compatible with
+     * the unfiltered read: the stream is consumed <em>inside</em>
+     * {@code runWithoutAuthorization}, where returning a lazy stream from
+     * {@link #organizationsOf} would have run the query after the scope closed and been
+     * filtered after all.
+     */
+    public static boolean anyOrganizationMatches(KeycloakSession session, UserModel user,
+                                                 Predicate<OrganizationModel> predicate) {
+        if (session == null || user == null || predicate == null || !Organizations.isEnabled(session)) {
+            return false;
+        }
+        if (user instanceof PurgedUserSnapshot) {
+            return organizationsOf(session, user).stream().anyMatch(predicate);
+        }
+        return AdminPermissionsSchema.runWithoutAuthorization(session, () ->
+                session.getProvider(OrganizationProvider.class).getByMember(user).anyMatch(predicate));
     }
 
     /**
