@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
@@ -162,20 +163,11 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
         String tenantAlias = null;
         List<String> organizationAliases = List.of();
         if (Organizations.isEnabled(session)) {
-            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            List<OrganizationModel> organizations = orgProvider.getByMember(user).toList();
-            organizationAliases = organizations.stream().map(OrganizationModel::getAlias).toList();
-            // Managed-preferred, matching the mapper's multi-org resolution policy:
-            // the organization that provisioned the user wins, otherwise the first
-            // membership. Keeps the purge event's tenant subject identical to the
-            // one every earlier event for this user carried.
-            OrganizationModel tenant = organizations.stream()
-                    .filter(candidate -> orgProvider.isManagedMember(candidate, user))
-                    .findFirst()
-                    .orElseGet(() -> organizations.stream().findFirst().orElse(null));
-            if (tenant != null) {
-                tenantAlias = tenant.getAlias();
-            }
+            // Read without authorization filtering — see organizationsOf.
+            CapturedOrganizations organizations = AdminPermissionsSchema.runWithoutAuthorization(
+                    session, () -> captureOrganizations(session, user));
+            organizationAliases = organizations.aliases();
+            tenantAlias = organizations.tenantAlias();
         }
 
         PurgedUserSnapshot snapshot = new PurgedUserSnapshot(session, realm, user.getId(),
@@ -219,6 +211,33 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
         snapshot.setReadonly(true);
 
         snapshots.put(idKey(realm, user.getId()), emailKey(realm, snapshot.getEmail()), snapshot);
+    }
+
+    /**
+     * The organization facts the snapshot keeps: the alias of every membership, and
+     * the managed-preferred primary used for {@code +tenant} subjects.
+     */
+    private record CapturedOrganizations(List<String> aliases, String tenantAlias) {
+    }
+
+    /**
+     * Reads the user's memberships while the user still exists. Must be called inside
+     * {@code runWithoutAuthorization} — see {@link #organizationsOf}.
+     */
+    private static CapturedOrganizations captureOrganizations(KeycloakSession session, UserModel user) {
+        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+        List<OrganizationModel> organizations = orgProvider.getByMember(user).toList();
+        // Managed-preferred, matching the mapper's multi-org resolution policy:
+        // the organization that provisioned the user wins, otherwise the first
+        // membership. Keeps the purge event's tenant subject identical to the
+        // one every earlier event for this user carried.
+        OrganizationModel tenant = organizations.stream()
+                .filter(candidate -> orgProvider.isManagedMember(candidate, user))
+                .findFirst()
+                .orElseGet(() -> organizations.stream().findFirst().orElse(null));
+        return new CapturedOrganizations(
+                organizations.stream().map(OrganizationModel::getAlias).toList(),
+                tenant == null ? null : tenant.getAlias());
     }
 
     /**
@@ -354,23 +373,43 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
      * outlive the user, so callers get real models and can apply the same logic in
      * both cases. Aliases that no longer resolve (the organization was deleted in the
      * same request) are dropped.
+     *
+     * <p><b>Read without authorization filtering.</b> Both lookups are FGAP-filtered:
+     * {@code getByMember} applies {@code AdminPermissionsSchema.applyAuthorizationFilters}
+     * directly, and {@code getByAlias} defaults to {@code getAllStream}, which does the
+     * same. Under fine-grained admin permissions an admin who may manage a user but not
+     * view organizations would therefore see no memberships, and the org-derived
+     * verdicts would silently change with the identity of whoever triggered the event:
+     * an org-excluded subject would be delivered under {@code default_subjects=ALL}, an
+     * org-notified one dropped under {@code NONE}, and a {@code +tenant} subject would
+     * fail to build. What a receiver is told about a subject is system bookkeeping — it
+     * cannot depend on the acting admin's visibility — so this reads as the system,
+     * mirroring {@code UserStorageManager.isReadOnlyOrganizationMember} and
+     * {@code DefaultLazyLoader}.
+     *
+     * <p>The result is materialized <em>inside</em> the unfiltered scope on purpose.
+     * {@code runWithoutAuthorization} suppresses filtering by setting a session
+     * attribute and clearing it in a {@code finally}, so a lazily returned stream would
+     * run its query after the scope closed and be filtered after all.
      */
     public static List<OrganizationModel> organizationsOf(KeycloakSession session, UserModel user) {
         if (session == null || user == null || !Organizations.isEnabled(session)) {
             return List.of();
         }
-        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-        if (user instanceof PurgedUserSnapshot snapshot) {
-            List<OrganizationModel> resolved = new ArrayList<>();
-            for (String alias : snapshot.getOrganizationAliases()) {
-                OrganizationModel org = orgProvider.getByAlias(alias);
-                if (org != null) {
-                    resolved.add(org);
+        return AdminPermissionsSchema.runWithoutAuthorization(session, () -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            if (user instanceof PurgedUserSnapshot snapshot) {
+                List<OrganizationModel> resolved = new ArrayList<>();
+                for (String alias : snapshot.getOrganizationAliases()) {
+                    OrganizationModel org = orgProvider.getByAlias(alias);
+                    if (org != null) {
+                        resolved.add(org);
+                    }
                 }
+                return resolved;
             }
-            return resolved;
-        }
-        return orgProvider.getByMember(user).toList();
+            return orgProvider.getByMember(user).toList();
+        });
     }
 
     /**

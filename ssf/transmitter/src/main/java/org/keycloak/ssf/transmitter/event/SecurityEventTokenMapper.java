@@ -8,6 +8,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
@@ -700,10 +701,14 @@ public class SecurityEventTokenMapper {
             throw new SsfException("Cannot build tenant subject: user " + userId + " not found (stream "
                     + (stream != null ? stream.getStreamId() : null) + ")");
         }
-        OrganizationModel org = orgProvider.getByMember(user)
-                .filter(candidate -> orgProvider.isManagedMember(candidate, user))
-                .findFirst()
-                .orElseGet(() -> orgProvider.getByMember(user).findFirst().orElse(null));
+        // Resolved as the system, not as the acting admin — see
+        // PurgedUserSnapshot.organizationsOf for why org reads on the emission path
+        // must not be FGAP-filtered.
+        OrganizationModel org = AdminPermissionsSchema.runWithoutAuthorization(session, () ->
+                orgProvider.getByMember(user)
+                        .filter(candidate -> orgProvider.isManagedMember(candidate, user))
+                        .findFirst()
+                        .orElseGet(() -> orgProvider.getByMember(user).findFirst().orElse(null)));
         if (org == null) {
             throw new SsfException("Configured user subject format includes '+tenant' but user " + userId
                     + " belongs to no organization (stream " + (stream != null ? stream.getStreamId() : null) + ")");
@@ -736,7 +741,9 @@ public class SecurityEventTokenMapper {
                     + snapshot.getId() + " belonged to no organization (stream "
                     + (stream != null ? stream.getStreamId() : null) + ")");
         }
-        OrganizationModel org = orgProvider.getByAlias(alias);
+        // getByAlias defaults to getAllStream and is FGAP-filtered like getByMember.
+        OrganizationModel org = AdminPermissionsSchema.runWithoutAuthorization(
+                session, () -> orgProvider.getByAlias(alias));
         if (org == null) {
             throw new SsfException("Cannot build tenant subject for purged user " + snapshot.getId()
                     + ": organization '" + alias + "' no longer exists (stream "
