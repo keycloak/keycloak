@@ -19,12 +19,12 @@ package org.keycloak.tests.user.profile.config;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.config.UPConfigUtils;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
-import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;

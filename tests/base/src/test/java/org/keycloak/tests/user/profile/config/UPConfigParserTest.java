@@ -38,12 +38,12 @@ import org.keycloak.testframework.realm.ClientScopeBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.tests.utils.LegacyRealmConfig;
 import org.keycloak.userprofile.config.UPConfigUtils;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
-import org.keycloak.tests.utils.LegacyRealmConfig;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.userprofile.config.UPConfigUtils.readConfig;
 import static org.keycloak.userprofile.config.UPConfigUtils.validate;

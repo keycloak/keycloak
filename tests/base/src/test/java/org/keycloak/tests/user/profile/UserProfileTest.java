@@ -48,8 +48,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.AbstractUserRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
@@ -66,8 +66,8 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
-import org.keycloak.tests.utils.LegacyRealmConfig;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.utils.LegacyRealmConfig;
 import org.keycloak.userprofile.AttributeGroupMetadata;
 import org.keycloak.userprofile.Attributes;
 import org.keycloak.userprofile.UserProfile;
@@ -86,8 +86,8 @@ import org.keycloak.validate.validators.LengthValidator;
 import org.keycloak.validate.validators.UriValidator;
 
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static java.util.Optional.ofNullable;
 
