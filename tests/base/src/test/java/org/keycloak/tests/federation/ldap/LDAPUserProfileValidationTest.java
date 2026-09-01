@@ -17,6 +17,8 @@
 
 package org.keycloak.tests.federation.ldap;
 
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.List;
 import java.util.Properties;
 
@@ -69,9 +71,14 @@ public class LDAPUserProfileValidationTest {
 
     @TestSetup
     public void startLdapServerAndCreateProvider() throws Exception {
+        // Use a freely available port rather than the ApacheDS default (10389) - hard-coding it is prone to
+        // collisions when tests run in parallel or on a machine that already has something bound to that port.
+        int ldapPort = findFreePort();
+
         Properties serverProperties = new Properties();
         serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_DSF, LDAPEmbeddedServer.DSF_INMEMORY);
         serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_SSL, "false");
+        serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_BIND_PORT, String.valueOf(ldapPort));
         ldapEmbeddedServer = new LDAPEmbeddedServer(serverProperties);
         ldapEmbeddedServer.init();
         ldapEmbeddedServer.start();
@@ -82,7 +89,7 @@ public class LDAPUserProfileValidationTest {
         ldapRep.setProviderType(UserStorageProvider.class.getName());
 
         MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
-        config.putSingle(LDAPConstants.CONNECTION_URL, "ldap://localhost:10389");
+        config.putSingle(LDAPConstants.CONNECTION_URL, "ldap://localhost:" + ldapPort);
         config.putSingle(LDAPConstants.BASE_DN, "dc=keycloak,dc=org");
         config.putSingle(LDAPConstants.USERS_DN, "ou=People,dc=keycloak,dc=org");
         config.putSingle(LDAPConstants.BIND_DN, "uid=admin,ou=system");
@@ -202,6 +209,12 @@ public class LDAPUserProfileValidationTest {
                 UserModel user = session.users().getUserByUsername(realm, invalidUsername);
                 Assertions.assertNotNull(user, "Local user should exist with the updated username");
             });
+    }
+
+    private static int findFreePort() throws IOException {
+        try (ServerSocket socket = new ServerSocket(0)) {
+            return socket.getLocalPort();
+        }
     }
 
     private static RunOnServer addLdapUser(String username, String firstName, String lastName, String email) {
