@@ -45,7 +45,7 @@ public class LoginPage extends AbstractLoginPage {
     }
 
     public void submit() {
-        submitButton.click();
+        driver.waiting().waitForPageReload(() -> submitButton.click());
     }
 
     public void clickSocial(String alias) {
