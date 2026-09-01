@@ -177,9 +177,9 @@
         <!-- OID4VCI + OID4VP Conformance Container Images -->
         <mongodb.version>6.0.13</mongodb.version>
         <mongodb.container>mongo:${mongodb.version}</mongodb.container>
-        <conformance.version>release-v5.2.2</conformance.version>
+        <conformance.version>release-v5.2.4</conformance.version>
         <conformance.container>registry.gitlab.com/openid/conformance-suite:${conformance.version}</conformance.container>
-        <nginx.version>release-v5.2.2</nginx.version>
+        <nginx.version>release-v5.2.4</nginx.version>
         <nginx.container>registry.gitlab.com/openid/conformance-suite/nginx:${nginx.version}</nginx.container>
 
         <!-- Test -->
