@@ -8,9 +8,12 @@ import java.util.stream.Stream;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.profile.PropertiesProfileConfigResolver;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
@@ -18,14 +21,17 @@ import org.keycloak.ssf.subject.ComplexSubjectId;
 import org.keycloak.ssf.subject.EmailSubjectId;
 import org.keycloak.ssf.subject.IssuerSubjectId;
 import org.keycloak.ssf.subject.OpaqueSubjectId;
+import org.keycloak.storage.UserStorageProvider;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
@@ -106,8 +112,10 @@ class PurgedUserSnapshotTest {
                 UserModel.USERNAME, List.of("purged"),
                 UserModel.EMAIL, List.of(EMAIL),
                 "ssf.notify.receiver-client-id", List.of("true")));
-        lenient().when(user.getGroupsStream()).thenReturn(Stream.empty());
-        lenient().when(user.getRoleMappingsStream()).thenReturn(Stream.empty());
+        // Answers, not fixed returns: a Stream is single-use, and tests that re-capture
+        // would otherwise re-consume the one instance handed out here.
+        lenient().when(user.getGroupsStream()).thenAnswer(invocation -> Stream.empty());
+        lenient().when(user.getRoleMappingsStream()).thenAnswer(invocation -> Stream.empty());
 
         PurgedUserSnapshot.capture(session, realm, user);
     }
@@ -165,6 +173,58 @@ class PurgedUserSnapshotTest {
         assertNotNull(PurgedUserSnapshot.lookupBySubject(session, realm, email));
     }
 
+    // ----- federated users whose account outlives the local record -----
+
+    @Test
+    void localUser_isARealRemoval() {
+        assertFalse(PurgedUserSnapshot.lookup(session, realm, USER_ID).isLocalRemovalOnly(),
+                "a user with no federation link is genuinely gone");
+    }
+
+    @Test
+    void readOnlyFederatedUser_isLocalRemovalOnly() {
+        // LDAPStorageProvider.removeUser returns true without touching the directory in
+        // READ_ONLY mode, so the deletion reports success while the account survives and
+        // will be re-imported. Emitting account-purged there would drive irreversible
+        // data-retention deletion downstream for a user who comes back.
+        recapture(federationComponent(UserStorageProvider.EditMode.READ_ONLY.name()));
+
+        assertTrue(PurgedUserSnapshot.lookup(session, realm, USER_ID).isLocalRemovalOnly());
+    }
+
+    @Test
+    void unsyncedFederatedUser_isLocalRemovalOnly() {
+        recapture(federationComponent(UserStorageProvider.EditMode.UNSYNCED.name()));
+
+        assertTrue(PurgedUserSnapshot.lookup(session, realm, USER_ID).isLocalRemovalOnly());
+    }
+
+    @Test
+    void writableFederatedUser_isARealRemoval() {
+        // WRITABLE propagates the delete to the directory, so the account really is gone.
+        recapture(federationComponent(UserStorageProvider.EditMode.WRITABLE.name()));
+
+        assertFalse(PurgedUserSnapshot.lookup(session, realm, USER_ID).isLocalRemovalOnly());
+    }
+
+    @Test
+    void federationLinkWithoutComponent_isARealRemoval() {
+        // A dangling link tells us nothing; treat it as a real removal rather than
+        // silently suppressing the event.
+        lenient().when(user.getFederationLink()).thenReturn("gone-provider");
+        lenient().when(realm.getComponent("gone-provider")).thenReturn(null);
+        recaptureAsIs();
+
+        assertFalse(PurgedUserSnapshot.lookup(session, realm, USER_ID).isLocalRemovalOnly());
+    }
+
+    @Test
+    void federationProviderWithoutEditMode_isARealRemoval() {
+        recapture(federationComponent(null));
+
+        assertFalse(PurgedUserSnapshot.lookup(session, realm, USER_ID).isLocalRemovalOnly());
+    }
+
     @Test
     void discard_removesBothIndexes() {
         PurgedUserSnapshot.discard(session, realm, USER_ID);
@@ -174,6 +234,28 @@ class PurgedUserSnapshotTest {
         EmailSubjectId email = new EmailSubjectId();
         email.setEmail(EMAIL);
         assertNull(PurgedUserSnapshot.lookupBySubject(session, realm, email));
+    }
+
+    /** Re-captures the user behind a federation provider configured with {@code editMode}. */
+    private void recapture(ComponentModel component) {
+        lenient().when(user.getFederationLink()).thenReturn("ldap-provider");
+        lenient().when(realm.getComponent("ldap-provider")).thenReturn(component);
+        recaptureAsIs();
+    }
+
+    private void recaptureAsIs() {
+        PurgedUserSnapshot.discard(session, realm, USER_ID);
+        PurgedUserSnapshot.capture(session, realm, user);
+    }
+
+    private ComponentModel federationComponent(String editMode) {
+        ComponentModel component = new ComponentModel();
+        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+        if (editMode != null) {
+            config.putSingle(LDAPConstants.EDIT_MODE, editMode);
+        }
+        component.setConfig(config);
+        return component;
     }
 
     private IssuerSubjectId issuerSubject(String iss, String sub) {

@@ -5,7 +5,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SubjectCredentialManager;
@@ -19,6 +21,7 @@ import org.keycloak.ssf.subject.IssuerSubjectId;
 import org.keycloak.ssf.subject.OpaqueSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
 import org.keycloak.ssf.transmitter.support.SsfUtil;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.adapter.AbstractInMemoryUserAdapter;
 
 import org.jboss.logging.Logger;
@@ -72,14 +75,49 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
      */
     private final List<String> organizationAliases;
 
+    /**
+     * Whether the removal only dropped Keycloak's local copy, leaving the account
+     * itself in place — see {@link #isLocalRemovalOnly}.
+     */
+    private final boolean localRemovalOnly;
+
     protected PurgedUserSnapshot(KeycloakSession session,
                                  RealmModel realm,
                                  String id,
                                  String tenantAlias,
-                                 List<String> organizationAliases) {
+                                 List<String> organizationAliases,
+                                 boolean localRemovalOnly) {
         super(session, realm, id);
         this.tenantAlias = tenantAlias;
         this.organizationAliases = organizationAliases;
+        this.localRemovalOnly = localRemovalOnly;
+    }
+
+    /**
+     * True when the deletion removed only Keycloak's local copy of a federated user
+     * while the authoritative store kept the account.
+     *
+     * <p>{@code LDAPStorageProvider.removeUser} returns {@code true} without touching
+     * the directory when the provider's edit mode is {@code READ_ONLY} or
+     * {@code UNSYNCED} — its own log line says the user "will be re-imported from LDAP
+     * again once searched in Keycloak". That {@code true} reaches
+     * {@code UserResource.deleteUser} and {@code DeleteAccount} as a successful
+     * deletion, and both then fire the event this transmitter maps to
+     * {@code account-purged}.
+     *
+     * <p>Receivers drive data-retention deletion off that event, so emitting it for an
+     * account that still exists and will reappear at the next lookup is worse than
+     * emitting nothing: the downstream deletion is not reversible. The purge generator
+     * therefore drops the event when this is set. {@code READ_ONLY} is the default LDAP
+     * edit mode, so this is the common federation setup rather than an edge case.
+     *
+     * <p>{@code UNSYNCED} is included deliberately. Local state is authoritative there
+     * for credentials, so the deletion does destroy something real — but the identity
+     * itself persists in the directory and re-imports, which is what {@code
+     * account-purged} makes a claim about.
+     */
+    public boolean isLocalRemovalOnly() {
+        return localRemovalOnly;
     }
 
     public String getTenantAlias() {
@@ -171,7 +209,7 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
         }
 
         PurgedUserSnapshot snapshot = new PurgedUserSnapshot(session, realm, user.getId(),
-                tenantAlias, organizationAliases);
+                tenantAlias, organizationAliases, isLocalRemovalOnly(realm, user));
 
         // Copy the whole attribute map first — it carries username, email and every
         // ssf.notify.* / ssf.notifyRemovedAt.* entry the subject gates read.
@@ -238,6 +276,32 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
         return new CapturedOrganizations(
                 organizations.stream().map(OrganizationModel::getAlias).toList(),
                 tenant == null ? null : tenant.getAlias());
+    }
+
+    /**
+     * Resolves whether removing {@code user} will leave the account in place in its
+     * authoritative store — see {@link #isLocalRemovalOnly()}.
+     *
+     * <p>Read while the user still exists, because the answer lives on the federation
+     * provider the user links to and nothing can be asked about it afterwards. A local
+     * user, a user whose federation link no longer resolves to a component, or a
+     * provider with no edit mode configured all count as a real removal.
+     */
+    private static boolean isLocalRemovalOnly(RealmModel realm, UserModel user) {
+        String federationLink = user.getFederationLink();
+        if (federationLink == null) {
+            return false;
+        }
+        ComponentModel component = realm.getComponent(federationLink);
+        if (component == null) {
+            return false;
+        }
+        String editMode = component.getConfig().getFirst(LDAPConstants.EDIT_MODE);
+        if (editMode == null) {
+            return false;
+        }
+        return UserStorageProvider.EditMode.READ_ONLY.name().equals(editMode)
+                || UserStorageProvider.EditMode.UNSYNCED.name().equals(editMode);
     }
 
     /**
