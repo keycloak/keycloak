@@ -44,6 +44,7 @@ final class ProviderDeployer {
             Path targetPath = providersDir.toPath().resolve(jarName);
 
             File targetFile = targetPath.toFile();
+            boolean dependencyIsDirectory = dependencyPath.toFile().isDirectory();
 
             long dependencyLastModified = getMostRecentModification(dependencyPath);
             File targetLastModifiedFile = new File(targetFile.getAbsolutePath() + ".lastModified");
@@ -52,7 +53,11 @@ final class ProviderDeployer {
             if (dependencyLastModified != targetLastModified || !targetFile.isFile()) {
                 log.trace("Adding or overwriting existing provider: " + targetPath.toFile().getAbsolutePath());
 
-                if (shouldPackageClasses || d.dependencyCurrentProject()) {
+                if (targetFile.isDirectory()) {
+                    FileUtils.delete(targetFile);
+                }
+
+                if (shouldPackageClasses || d.dependencyCurrentProject() || dependencyIsDirectory) {
                     MavenProjectUtil.buildJar(jarName, dependencyPath, targetPath);
                 } else {
                     Files.copy(dependencyPath, targetPath, StandardCopyOption.REPLACE_EXISTING);

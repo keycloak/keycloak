@@ -17,7 +17,7 @@
  *
  */
 
-package org.keycloak.testsuite.user.profile;
+package org.keycloak.tests.user.profile;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,14 +26,20 @@ import java.util.Optional;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
-import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.config.UPConfigUtils;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -42,18 +48,28 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * @author <a href="mailto:joerg.matysiak@bosch.io">Jörg Matysiak</a>
  */
-@SetDefaultProvider(spi="userProfile", providerId="custom-user-profile", defaultProvider="declarative-user-profile", onlyUpdateDefault = true)
+@KeycloakIntegrationTest(config = CustomUserProfileTest.CustomUserProfileServerConfig.class)
 public class CustomUserProfileTest extends AbstractUserProfileTest {
+
+    @InjectRealm
+    ManagedRealm managedRealm;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
+
+    @Override
+    protected RunOnServerClient runOnServer() {
+        return runOnServer;
+    }
 
     @Test
     public void testCustomUserProfileProviderIsActive() {
-        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) CustomUserProfileTest::testCustomUserProfileProviderIsActive);
+        runOnServer.run((RunOnServer) CustomUserProfileTest::testCustomUserProfileProviderIsActive);
     }
 
     private static void testCustomUserProfileProviderIsActive(KeycloakSession session) {
         UserProfileProvider provider = getUserProfileProvider(session);
-        assertEquals(CustomUserProfileProvider.class.getName(), provider.getClass().getName());
-        assertTrue(provider instanceof  CustomUserProfileProvider);
+        assertEquals("org.keycloak.tests.providers.userprofile.CustomUserProfileProvider", provider.getClass().getName());
         provider.setConfiguration(UPConfigUtils.parseSystemDefaultConfig());
         Optional<ComponentModel> component = getComponentModel(session);
         assertTrue(component.isPresent());
@@ -62,7 +78,7 @@ public class CustomUserProfileTest extends AbstractUserProfileTest {
     
     @Test
     public void testInvalidConfiguration() {
-        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) CustomUserProfileTest::testInvalidConfiguration);
+        runOnServer.run((RunOnServer) CustomUserProfileTest::testInvalidConfiguration);
     }
 
     private static void testInvalidConfiguration(KeycloakSession session) {
@@ -76,7 +92,7 @@ public class CustomUserProfileTest extends AbstractUserProfileTest {
 
     @Test
     public void testDefaultConfig() {
-        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) CustomUserProfileTest::testDefaultConfig);
+        runOnServer.run((RunOnServer) CustomUserProfileTest::testDefaultConfig);
     }
 
     private static void testDefaultConfig(KeycloakSession session) {
@@ -95,6 +111,16 @@ public class CustomUserProfileTest extends AbstractUserProfileTest {
 
         UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, attributes);
         profile.validate();
+    }
+
+    public static class CustomUserProfileServerConfig implements KeycloakServerConfig {
+
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config
+                    .dependency("org.keycloak.tests", "keycloak-tests-custom-providers")
+                    .option("spi-user-profile--provider-default", "custom-user-profile");
+        }
     }
 
 }
