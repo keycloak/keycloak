@@ -48,7 +48,7 @@ Deployments using the `multi-site` or `clusterless` features continue to store l
 
 As a trade-off, users may observe increased database connection usage and higher CPU usage on the database.
 
-The option `spi-brute-force-protector-default-brute-force-detector-allow-concurrent-requests` does no longer exist for `login-failures:v2`.
+The option `spi-brute-force-protector-default-brute-force-detector-allow-concurrent-requests` is deprecated and has no effect with `login-failures:v2`.
 Instead, concurrent logins for the same user are executed serially for each node.
 
 === Clusterless feature will be removed

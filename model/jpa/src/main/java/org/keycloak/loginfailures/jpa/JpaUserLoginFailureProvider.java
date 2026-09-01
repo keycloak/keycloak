@@ -84,6 +84,13 @@ public class JpaUserLoginFailureProvider implements UserLoginFailureProvider {
     }
 
     @Override
+    public void updateWithLatestRealmSettings(RealmModel realm) {
+        if (!realm.isBruteForceProtected()) {
+            removeAllUserLoginFailures(realm);
+        }
+    }
+
+    @Override
     public UserLoginFailureModel addUserLoginFailure(RealmModel realm, String userId) {
         var em = getEntityManager();
         int inserted = em.createNamedQuery("insertLoginFailure")
