@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Red Hat, Inc. and/or its affiliates
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,9 +21,7 @@ import java.util.concurrent.TimeUnit;
 import org.keycloak.models.RealmModel;
 
 /**
- * <p>Shared methods to calculate the session expiration and idle.</p>
- *
- * @author rmartinc
+ * <p>Shared methods to calculate login failure idle times.</p>
  */
 public class LoginFailureUtils {
 
