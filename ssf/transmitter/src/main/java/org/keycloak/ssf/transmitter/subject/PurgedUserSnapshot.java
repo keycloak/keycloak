@@ -547,11 +547,14 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
      * address, not a UUID. Indexing the snapshot by email as well lets that gate find
      * it without the filter having to know how the subject was built.
      *
-     * <p>{@code null} for a user with no email, which the set stores as "no secondary
-     * index entry" rather than indexing under a null key.
+     * <p>{@code null} for a user with no usable email, which the set stores as "no
+     * secondary index entry" rather than indexing under a null key. Blank counts as
+     * missing so that indexing matches lookup: {@link #lookupBySubject} rejects a blank
+     * {@code EmailSubjectId} before it looks, so indexing one would only park a snapshot
+     * under a key nothing can ever ask for.
      */
     private static String emailKey(RealmModel realm, String email) {
-        if (email == null) {
+        if (email == null || email.isBlank()) {
             return null;
         }
         // Same normalization AbstractInMemoryUserAdapter applies when storing the

@@ -460,7 +460,11 @@ public class SecurityEventTokenMapper {
 
             return eventToken;
         } catch (Exception e) {
-            log.error("Error generating account purged event", e);
+            // Carries the subject and stream: this is the line read when a purge
+            // vanishes, and a bare stack trace does not say which one.
+            log.errorf(e, "Error generating account-purged event. userId=%s streamId=%s",
+                    userEvent != null ? userEvent.getUserId() : null,
+                    stream != null ? stream.getStreamId() : null);
             return null;
         }
     }
@@ -721,11 +725,17 @@ public class SecurityEventTokenMapper {
         // Resolved as the system, not as the acting admin — see
         // PurgedUserSnapshot.organizationsOf for why org reads on the emission path
         // must not be FGAP-filtered.
-        OrganizationModel org = AdminPermissionsSchema.runWithoutAuthorization(session, () ->
-                orgProvider.getByMember(user)
-                        .filter(candidate -> orgProvider.isManagedMember(candidate, user))
-                        .findFirst()
-                        .orElseGet(() -> orgProvider.getByMember(user).findFirst().orElse(null)));
+        // Memberships are read once and the managed-preferred pick made from that
+        // list: the fallback used to re-run getByMember, so a user with no managed
+        // membership cost two queries per event. Mirrors PurgedUserSnapshot's
+        // captureOrganizations, which resolves the same policy the same way.
+        OrganizationModel org = AdminPermissionsSchema.runWithoutAuthorization(session, () -> {
+            List<OrganizationModel> organizations = orgProvider.getByMember(user).toList();
+            return organizations.stream()
+                    .filter(candidate -> orgProvider.isManagedMember(candidate, user))
+                    .findFirst()
+                    .orElseGet(() -> organizations.stream().findFirst().orElse(null));
+        });
         if (org == null) {
             throw new SsfException("Configured user subject format includes '+tenant' but user " + userId
                     + " belongs to no organization (stream " + (stream != null ? stream.getStreamId() : null) + ")");
