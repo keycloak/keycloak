@@ -72,6 +72,7 @@ export const providerConditionFilter = (
 
 const SUBFLOW_EXPAND_DELAY_MS = 400;
 const ROW_EDGE_ZONE_RATIO = 0.25;
+const MASKED_SECRET_VALUE = "**********";
 
 type HoveredRow = {
   hoverId: string;
@@ -895,6 +896,16 @@ export default function FlowDetails() {
     return executions.find((execution) => execution.flowId === flowId);
   };
 
+  const snapshotContainsMaskedSecrets = (snapshot: ExecutionMoveSnapshot) => {
+    const currentConfigValues = Object.values(snapshot.config.config || {});
+    if (currentConfigValues.includes(MASKED_SECRET_VALUE)) {
+      return true;
+    }
+    return snapshot.children.some((child) =>
+      snapshotContainsMaskedSecrets(child),
+    );
+  };
+
   const executeChange = async (
     ex: AuthenticationFlowRepresentation | ExpandableExecution,
     change: LevelChange | IndexChange,
@@ -911,20 +922,29 @@ export default function FlowDetails() {
           snapshot ??
           (await snapshotExecutionSubtree(ex as ExpandableExecution));
         const config = subtreeSnapshot.config;
+        if (snapshotContainsMaskedSecrets(subtreeSnapshot)) {
+          throw new Error(
+            "Cannot move executions that use masked secret configuration values. Reconfigure those secret fields first.",
+          );
+        }
+
+        const movingAuthenticationFlow =
+          "authenticationFlow" in ex && ex.authenticationFlow;
+        const executionFlow = ex as ExpandableExecution;
+        const parentFlow = change.parent?.displayName! || flow?.alias!;
+        const flowModel =
+          movingAuthenticationFlow && executionFlow.flowId
+            ? await adminClient.authenticationManagement.getFlow({
+                flowId: executionFlow.flowId,
+              })
+            : undefined;
 
         try {
           await adminClient.authenticationManagement.delExecution({ id });
         } catch {
           // skipping already deleted execution
         }
-        if ("authenticationFlow" in ex && ex.authenticationFlow) {
-          const executionFlow = ex as ExpandableExecution;
-          const parentFlow = change.parent?.displayName! || flow?.alias!;
-          const flowModel = executionFlow.flowId
-            ? await adminClient.authenticationManagement.getFlow({
-                flowId: executionFlow.flowId,
-              })
-            : undefined;
+        if (movingAuthenticationFlow) {
           const flowType = flowModel?.providerId || "basic-flow";
           const flowProvider =
             flowType === "form-flow"
