@@ -62,6 +62,13 @@ public class WaitUtils {
     }
 
     public WaitUtils waitForPageReload(Runnable action) {
+        // HtmlUnitDriver completes navigation synchronously during click(), so staleness checks will not work and are not necessary.
+        if (managed.getBrowserType() == BrowserType.HTML_UNIT) {
+            action.run();
+            return this;
+        }
+        // Real browsers navigate asynchronously; without the staleness check, subsequent actions may run against the old page.
+        // This makes tests that check for an error on the page unstable.
         WebElement body = managed.findElement(By.tagName("body"));
         action.run();
         createDefaultWait().until(ExpectedConditions.stalenessOf(body));
