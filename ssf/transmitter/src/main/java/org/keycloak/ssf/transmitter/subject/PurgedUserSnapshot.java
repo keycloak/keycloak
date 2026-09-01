@@ -81,6 +81,14 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
      */
     private final boolean localRemovalOnly;
 
+    /**
+     * Organizations resolved from {@link #organizationAliases}, memoized after the
+     * first call — see {@link #organizationsOf}. Not volatile: a snapshot belongs to
+     * one request on one thread, the same scope that makes it safe to hold live
+     * {@link OrganizationModel}s at all.
+     */
+    private List<OrganizationModel> resolvedOrganizations;
+
     protected PurgedUserSnapshot(KeycloakSession session,
                                  RealmModel realm,
                                  String id,
@@ -387,11 +395,12 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
         if (snapshots == null) {
             return;
         }
-        PurgedUserSnapshot snapshot = snapshots.byId(idKey(realm, userId));
+        String idKey = idKey(realm, userId);
+        PurgedUserSnapshot snapshot = snapshots.byId(idKey);
         if (snapshot == null) {
             return;
         }
-        snapshots.remove(idKey(realm, userId), emailKey(realm, snapshot.getEmail()));
+        snapshots.remove(idKey, emailKey(realm, snapshot.getEmail()));
     }
 
     /**
@@ -472,12 +481,28 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
      * {@code runWithoutAuthorization} suppresses filtering by setting a session
      * attribute and clearing it in a {@code finally}, so a lazily returned stream would
      * run its query after the scope closed and be filtered after all.
+     *
+     * <p>For a snapshot the answer is memoized. The subject gate asks three separate
+     * questions — notified, excluded, and inside the removal grace — and asks them once
+     * per receiving stream, so without this a user in N organizations costs N alias
+     * lookups times three times the number of streams. There is no bulk alias API to
+     * reach for: {@code getByAlias} resolves one alias per query, and fetching every
+     * organization to index them locally trades a per-membership cost for a per-realm
+     * one. Caching is safe here because the snapshot is request-scoped and read-only,
+     * which is the same reason it can hold live models at all.
+     *
+     * <p>The trade is that an organization deleted later in the same request stays in a
+     * list already resolved. That matches what the snapshot is — a point-in-time
+     * capture — and no purge request deletes organizations.
      */
     public static List<OrganizationModel> organizationsOf(KeycloakSession session, UserModel user) {
         if (session == null || user == null || !Organizations.isEnabled(session)) {
             return List.of();
         }
-        return AdminPermissionsSchema.runWithoutAuthorization(session, () -> {
+        if (user instanceof PurgedUserSnapshot snapshot && snapshot.resolvedOrganizations != null) {
+            return snapshot.resolvedOrganizations;
+        }
+        List<OrganizationModel> organizations = AdminPermissionsSchema.runWithoutAuthorization(session, () -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
             if (user instanceof PurgedUserSnapshot snapshot) {
                 List<OrganizationModel> resolved = new ArrayList<>();
@@ -491,6 +516,10 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
             }
             return orgProvider.getByMember(user).toList();
         });
+        if (user instanceof PurgedUserSnapshot snapshot) {
+            snapshot.resolvedOrganizations = organizations;
+        }
+        return organizations;
     }
 
     /**
