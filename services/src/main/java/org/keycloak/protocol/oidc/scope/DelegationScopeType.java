@@ -31,7 +31,7 @@ import org.keycloak.services.resources.admin.fgap.AdminPermissions;
  */
 public class DelegationScopeType extends UsernameScopeType {
 
-    public static final String TYPE = "delegation";
+    public static final String TYPE = "user-delegation";
 
     public DelegationScopeType() {
     }
@@ -43,6 +43,17 @@ public class DelegationScopeType extends UsernameScopeType {
     @Override
     public String getTypeName() {
         return TYPE;
+    }
+
+    @Override
+    public boolean isRepeatable() {
+        return false;
+    }
+
+    @Override
+    public boolean canAccessTargetUser(ClientScopeModel scope, UserModel currentUser, UserModel targetUser) {
+        // Impersonation relationship is already validated in validateParameterWithUser during scope resolution
+        return true;
     }
 
     @Override
@@ -58,9 +69,9 @@ public class DelegationScopeType extends UsernameScopeType {
         }
         RealmModel realm = scope.getRealm();
         AdminPermissionEvaluator evaluator = AdminPermissions.evaluator(session, realm, realm, targetUser);
-        if (!evaluator.users().canImpersonate(currentUser, session.getContext().getClient())) {
-            throw new InvalidScopeParameterException(String.format("User '%s' cannot be impersonated by the administrator '%s' in realm '%s'",
-                    currentUser.getUsername(), targetUser.getUsername(), realm.getName()));
+        if (!evaluator.users().canDelegate(currentUser)) {
+            throw new InvalidScopeParameterException(String.format("Administrator '%s' is not allowed to delegate as user '%s' in realm '%s'",
+                    targetUser.getUsername(), currentUser.getUsername(), realm.getName()));
         }
     }
 

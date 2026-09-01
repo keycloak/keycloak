@@ -22,9 +22,17 @@ import java.util.stream.Collectors;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Predicate;
 
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.AuthorizationProviderFactory;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.authorization.ResourceType;
+
+import org.jboss.logging.Logger;
 
 import static java.util.function.Predicate.not;
 
@@ -33,6 +41,8 @@ import static java.util.function.Predicate.not;
  * resources of a given {@link ResourceType}.
  */
 public final class PartialEvaluationContext {
+
+    private static final Logger LOG = Logger.getLogger(PartialEvaluationContext.class);
 
     private final ResourceType resourceType;
     private CriteriaQuery<?> criteriaQuery;
@@ -43,12 +53,15 @@ public final class PartialEvaluationContext {
     private final Set<String> deniedResources;
     private Set<String> allowedGroups = Set.of();
     private Set<String> deniedGroups = Set.of();
+    private final AuthorizationProviderFactory authorizationProviderFactory;
+    private int parameterCount;
 
-    public PartialEvaluationContext(PartialEvaluationStorageProvider storage, CriteriaBuilder criteriaBuilder, CriteriaQuery<?> criteriaQuery, Path<?> path) {
-        this(null, Set.of(), Set.of(), storage, criteriaBuilder, criteriaQuery, path);
+    public PartialEvaluationContext(KeycloakSession session, PartialEvaluationStorageProvider storage, CriteriaBuilder criteriaBuilder, CriteriaQuery<?> criteriaQuery, Path<?> path) {
+        this(session, null, Set.of(), Set.of(), storage, criteriaBuilder, criteriaQuery, path);
     }
 
-    public PartialEvaluationContext(ResourceType resourceType, Set<String> allowedResources, Set<String> deniedResources, PartialEvaluationStorageProvider storage, CriteriaBuilder criteriaBuilder, CriteriaQuery<?> criteriaQuery, Path<?> path) {
+    public PartialEvaluationContext(KeycloakSession session, ResourceType resourceType, Set<String> allowedResources, Set<String> deniedResources, PartialEvaluationStorageProvider storage, CriteriaBuilder criteriaBuilder, CriteriaQuery<?> criteriaQuery, Path<?> path) {
+        this.authorizationProviderFactory = (AuthorizationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(AuthorizationProvider.class);
         this.allowedResources = allowedResources;
         this.deniedResources = deniedResources;
         this.storage = storage;
@@ -128,9 +141,29 @@ public final class PartialEvaluationContext {
 
     public void setCriteriaQuery(CriteriaQuery<?> criteriaQuery) {
         this.criteriaQuery = criteriaQuery;
+        this.parameterCount = 0;
     }
 
     public void setPath(Path<?> path) {
         this.path = path;
+    }
+
+    public Predicate inPredicate(Expression<String> expression, Set<String> parameters) {
+        Integer parameterThreshold = getConfig(AuthorizationProviderFactory.JPA_IN_PARAMETERS_LIMIT_THRESHOLD);
+
+        if (parameterCount + parameters.size() > parameterThreshold) {
+            LOG.debug("Using SQL literals instead of bind parameters for IN clause. Consider restructuring your permission model to reduce the number of "
+                    + "individually granted or denied resources per realm administrator.");
+            CriteriaBuilder.In<String> in = criteriaBuilder.in(expression);
+            parameters.forEach(id -> in.value(criteriaBuilder.literal(id)));
+            return in;
+        }
+
+        parameterCount += parameters.size();
+        return expression.in(parameters);
+    }
+
+    public <C> C getConfig(ProviderConfigProperty config) {
+        return authorizationProviderFactory.getConfig(config);
     }
 }

@@ -7,6 +7,8 @@ import java.util.Map;
 
 import org.keycloak.Config;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.common.Profile;
+import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
@@ -18,6 +20,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 
@@ -55,6 +58,7 @@ public class MigrateTo26_7_0 extends RealmMigration {
         migrateParameterizedScopeTypes(realm);
         migrateLdapBinaryAttributeMappers(realm);
         migrateLdapGroupAttributeMappers(realm);
+        migrateSamlAuthnContextClassRefClientScope(session, realm);
     }
 
     private void migrateParameterizedScopeTypes(RealmModel realm) {
@@ -196,5 +200,20 @@ public class MigrateTo26_7_0 extends RealmMigration {
                     c.getConfig().putSingle("decode.group.uuid.attribute", "false");
                     realm.updateComponent(c);
                 });
+    }
+
+    private void migrateSamlAuthnContextClassRefClientScope(KeycloakSession session, RealmModel realm) {
+        if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION_SAML)) {
+            MigrationProvider migrationProvider = session.getProvider(MigrationProvider.class);
+
+            ClientScopeModel samlAuthnContextClassRefScope = KeycloakModelUtils.getClientScopeByName(realm, "AuthnContextClassRef");
+            if (samlAuthnContextClassRefScope == null) {
+                // Create 'AuthnContextClassRef' default client scope in the realm.
+                samlAuthnContextClassRefScope = migrationProvider.addSamlAuthnContextClassRefClientScope(realm);
+
+                // Add the scope to all existing SAML clients
+                session.clients().addClientScopeToAllClients(realm, samlAuthnContextClassRefScope, true);
+            }
+        }
     }
 }

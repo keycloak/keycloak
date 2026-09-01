@@ -3,7 +3,9 @@ package org.keycloak.scim.model.user;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -19,15 +21,15 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationStorageProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
+import org.keycloak.models.Permissions;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
-import org.keycloak.models.jpa.UserAdapter;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
-import org.keycloak.scim.filter.FilterUtils;
 import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.filter.ScimFilterParser.FilterContext;
 import org.keycloak.scim.model.filter.ScimAttributeJpaExpressionResolver;
@@ -36,12 +38,12 @@ import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider;
 import org.keycloak.scim.resource.user.User;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.userprofile.ValidationException.Error;
-import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
@@ -78,10 +80,7 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
             throw handleValidationException(ve);
         }
 
-        resource.setCreatedTimestamp(model.getCreatedTimestamp());
-        resource.setLastModifiedTimestamp(model.getLastModifiedTimestamp());
-
-        return resource;
+        return createResourceTypeInstance(model, null, null);
     }
 
     @Override
@@ -95,16 +94,14 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
         }
 
         model.setLastModifiedTimestamp(Time.currentTimeMillis());
-        resource.setCreatedTimestamp(model.getCreatedTimestamp());
-        resource.setLastModifiedTimestamp(model.getLastModifiedTimestamp());
 
-        return resource;
+        return createResourceTypeInstance(model, null, null);
     }
 
     @Override
     protected UserModel getModel(String id) {
         RealmModel realm = session.getContext().getRealm();
-        UserModel model = session.users().getUserById(realm, id);
+        UserModel model = UserStoragePrivateUtil.userLocalStorage(session).getUserById(realm, id);
 
         if (model == null || model.getServiceAccountClientLink() == null) {
             return model;
@@ -135,15 +132,10 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     @Override
     protected Stream<UserModel> getModels(SearchRequest searchRequest) {
         RealmModel realm = session.getContext().getRealm();
-        Integer firstResult = searchRequest.getStartIndex() != null ? searchRequest.getStartIndex() - 1 : null;
-        Integer maxResults = searchRequest.getCount();
-        maxResults = maxResults != null ? Math.min(maxResults, DEFAULT_MAX_RESULTS) : DEFAULT_MAX_RESULTS;
 
-        if (StringUtil.isNotBlank(searchRequest.getFilter())) {
-            // parse filter into AST
-            ScimFilterParser.FilterContext filterContext = FilterUtils.parseFilter(searchRequest.getFilter());
+        ScimFilterParser.FilterContext filterContext = searchRequest.getFilterContext();
 
-            // execute JPA query with filter
+        if (filterContext != null) {
             EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<UserEntity> query = cb.createQuery(UserEntity.class);
@@ -151,25 +143,26 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
 
             List<Predicate> predicates = getUserPredicates(filterContext, cb, query, root);
 
-            // apply distinct and order by username to ensure consistency with no-filter case
             query.where(predicates).distinct(true).orderBy(cb.asc(root.get("username")));
 
-            // execute query and convert to UserModel stream
-            return closing(paginateQuery(em.createQuery(query), firstResult, maxResults).getResultStream()
-                    .map(entity -> new UserAdapter(session, realm, em, entity)));
+            return closing(paginateQuery(em.createQuery(query), searchRequest.getStartIndex() - 1, searchRequest.getCount()).getResultStream()
+                    .map(entity -> session.users().getUserById(realm, entity.getId()))
+                    .filter(Objects::nonNull));
         } else {
-            return session.users().searchForUserStream(realm, Map.of(UserModel.INCLUDE_SERVICE_ACCOUNT, "false"), firstResult, maxResults);
+            return UserStoragePrivateUtil.userLocalStorage(session).searchForUserStream(realm, Map.of(UserModel.INCLUDE_SERVICE_ACCOUNT, "false"), searchRequest.getStartIndex() - 1, searchRequest.getCount());
         }
     }
 
     @Override
-    public Long count(SearchRequest searchRequest) {
-        RealmModel realm = session.getContext().getRealm();
-        if (StringUtil.isNotBlank(searchRequest.getFilter())) {
-            // parse filter into AST
-            ScimFilterParser.FilterContext filterContext = FilterUtils.parseFilter(searchRequest.getFilter());
+    public Long count(SearchRequest searchRequest, int resourceSize) {
+        if (resourceSize < searchRequest.getCount() && (resourceSize > 0 || searchRequest.getStartIndex() == 1)) {
+            return (long) (searchRequest.getStartIndex() - 1 + resourceSize);
+        }
 
-            // execute JPA count query with filter
+        RealmModel realm = session.getContext().getRealm();
+        ScimFilterParser.FilterContext filterContext = searchRequest.getFilterContext();
+
+        if (filterContext != null) {
             EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<Long> query = cb.createQuery(Long.class);
@@ -179,7 +172,7 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
             query.select(cb.countDistinct(root)).where(predicates);
             return em.createQuery(query).getSingleResult();
         } else {
-            return (long) session.users().getUsersCount(realm, false);
+            return (long) UserStoragePrivateUtil.userLocalStorage(session).getUsersCount(realm, false);
         }
     }
 
@@ -189,9 +182,9 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     }
 
     @Override
-    public boolean onDelete(String id) {
+    public boolean onDelete(UserModel model) {
         RealmModel realm = session.getContext().getRealm();
-        return session.users().removeUser(realm, getModel(id));
+        return session.users().removeUser(realm, model);
     }
 
     @Override
@@ -217,15 +210,37 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     private List<Predicate> getUserPredicates(FilterContext filterContext, CriteriaBuilder cb, CriteriaQuery<?> query, Root<UserEntity> root) {
         List<Predicate> predicates = new ArrayList<>();
 
+        RealmModel realm = session.getContext().getRealm();
+        Permissions permissions = session.getContext().getPermissions();
+
+        // When FGAP is enabled, only the eq operator is supported for groups.value filters. The callback
+        // verifies that the caller has VIEW permission on the specific group being matched. Other operators
+        // (ne, pr, gt, co, etc.) cannot be safely authorized through value comparison because they can match
+        // rows the caller is not permitted to see, so they silently return empty results for this path.
+        // This restriction only applies to the groups.value/groups paths; all other filter attributes are
+        // unaffected. When FGAP is disabled, all operators are allowed.
+        BiPredicate<String, String> authCheck = (path, value) -> {
+            if ("groups.value".equalsIgnoreCase(path) || "groups".equalsIgnoreCase(path)) {
+                if (!realm.isAdminPermissionsEnabled()) {
+                    return true;
+                }
+                if (value == null) {
+                    return false;
+                }
+                GroupModel group = session.groups().getGroupById(realm, value);
+                return group != null && permissions.hasPermission(group, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
+            }
+            return true;
+        };
+
         // create filter predicate using the same query and root that will be used for execution
-        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, root);
+        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, root, authCheck);
         predicates.add(evaluator.visit(filterContext).predicate());
 
         // apply service account restriction
         predicates.add(root.get("serviceAccountClientLink").isNull());
 
         // apply realm restriction
-        RealmModel realm = session.getContext().getRealm();
         predicates.add(cb.equal(root.get("realmId"), realm.getId()));
 
         UserProvider userProvider = session.getProvider(UserProvider.class, "jpa");

@@ -149,7 +149,10 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
         }
 
         try {
-            Set<String> attrsToRemove = getAttributes().keySet();
+            // getAttributes() can expose the group's shared cached attribute map; work off a
+            // copy so we don't structurally modify its live keySet while concurrent requests
+            // read it, which throws ConcurrentModificationException.
+            Set<String> attrsToRemove = new HashSet<>(getAttributes().keySet());
             attrsToRemove.removeAll(attributes.keySet());
             attrsToRemove.forEach(group::removeAttribute);
             attributes.forEach(group::setAttribute);

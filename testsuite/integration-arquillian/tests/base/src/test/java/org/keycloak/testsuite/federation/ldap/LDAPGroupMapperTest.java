@@ -39,6 +39,7 @@ import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
+import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.storage.ldap.mappers.membership.MembershipType;
 import org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapper;
@@ -1177,6 +1178,76 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             List<String> group1Members = session.users().getGroupMembersStream(appRealm, group1, 0, 10)
                     .map(UserModel::getUsername).collect(Collectors.toList());
             assertThat(group1Members, containsInAnyOrder("recuser1", "recuser2", "recuser3"));
+        });
+    }
+
+    @Test
+    public void test13_registrationWithDefaultGroupsAndDeferredLdapCreation() {
+        // GH issue #44832: when LDAP user creation is deferred (mandatory attribute not yet
+        // available) and default groups use LDAP_ONLY mode, joinGroup must not NPE on null DN.
+        configureGroupMapperAndRegistration(LDAPGroupMapperMode.LDAP_ONLY, "true", "false");
+        registerAndVerifyDefaultGroups("newuser@test.com", "newuserkeycloak");
+        revertEmailMapperAndRegistration();
+    }
+
+    @Test
+    public void test14_registrationWithDefaultGroupsAndImmediateLdapCreation() {
+        // Verifies the immediate LDAP creation path (email mandatory + Force Default Value ON)
+        // still works correctly with LDAP_ONLY mode after the deferred-creation fix.
+        configureGroupMapperAndRegistration(LDAPGroupMapperMode.LDAP_ONLY, "true", "true");
+        registerAndVerifyDefaultGroups("immediateuser@test.com", "immediateuserkeycloak");
+        revertEmailMapperAndRegistration();
+    }
+
+    private void configureGroupMapperAndRegistration(LDAPGroupMapperMode groupMode,
+            String emailMandatory, String emailForceDefault) {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.MODE, groupMode.toString());
+            appRealm.updateComponent(mapperModel);
+            if (emailMandatory != null) {
+                ComponentModel emailMapper = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "email");
+                LDAPTestUtils.updateConfigOptions(emailMapper,
+                        UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP, emailMandatory,
+                        UserAttributeLDAPStorageMapper.FORCE_DEFAULT_VALUE, emailForceDefault);
+                appRealm.updateComponent(emailMapper);
+            }
+            appRealm.setRegistrationAllowed(true);
+        });
+    }
+
+    private void revertEmailMapperAndRegistration() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            ComponentModel emailMapper = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "email");
+            LDAPTestUtils.updateConfigOptions(emailMapper,
+                    UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP, "false",
+                    UserAttributeLDAPStorageMapper.FORCE_DEFAULT_VALUE, "true");
+            appRealm.updateComponent(emailMapper);
+            appRealm.setRegistrationAllowed(false);
+        });
+    }
+
+    private void registerAndVerifyDefaultGroups(String email, String username) {
+        oauth.openLoginForm();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+        registerPage.register("Test", "User", email, username, "Password1", "Password1");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            UserModel user = session.users().getUserByUsername(appRealm, username);
+            assertThat(user, notNullValue());
+            GroupModel defaultGroup11 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/defaultGroup1/defaultGroup11");
+            GroupModel defaultGroup12 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/defaultGroup1/defaultGroup12");
+            Set<GroupModel> groups = user.getGroupsStream().collect(Collectors.toSet());
+            assertThat("User should be in default group 11", groups.contains(defaultGroup11), equalTo(true));
+            assertThat("User should be in default group 12", groups.contains(defaultGroup12), equalTo(true));
         });
     }
 }

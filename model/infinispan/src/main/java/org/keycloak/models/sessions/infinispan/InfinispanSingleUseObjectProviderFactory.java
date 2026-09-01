@@ -141,7 +141,7 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return !Profile.isFeatureEnabled(Profile.Feature.CACHELESS) && InfinispanUtils.isEmbeddedInfinispan();
+        return !Profile.isFeatureEnabled(Profile.Feature.STATELESS) && InfinispanUtils.isEmbeddedInfinispan();
     }
 
     @Override

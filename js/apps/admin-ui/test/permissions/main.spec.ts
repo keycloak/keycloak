@@ -18,6 +18,7 @@ import {
   openSearchPanel,
   pickGroup,
   removeGroup,
+  selectClient,
   selectResource,
 } from "./main.ts";
 import { fillPolicyForm, goToPolicies } from "./policy.ts";
@@ -150,7 +151,7 @@ test.describe.serial("Permissions section tests", () => {
       await goToEvaluation(page);
       await selectItem(page, page.getByTestId("user"), "other-user");
       await selectItem(page, "#resourceType", "Clients");
-      await selectItem(page, "#clients", "account");
+      await selectClient(page, "account");
       await selectItem(page, "#authScopes", "view");
       await page.getByTestId("permission-eval").click();
 
@@ -163,13 +164,21 @@ test.describe.serial("Permissions section tests", () => {
       await goToEvaluation(page);
       await selectItem(page, page.getByTestId("user"), "user1");
       await selectItem(page, "#resourceType", "Clients");
-      await selectItem(page, "#clients", "account");
+      await selectClient(page, "account");
       await selectItem(page, "#authScopes", "view");
       await page.getByTestId("permission-eval").click();
 
       await expect(
         page.getByRole("heading", { name: "Warning alert: account with" }),
       ).toBeVisible();
+    });
+
+    test("should select groups for evaluation", async ({ page }) => {
+      await goToEvaluation(page);
+      await selectItem(page, page.getByTestId("user"), "user1");
+      await selectItem(page, "#resourceType", "Groups");
+
+      await expect(page.getByTestId("select-group-button")).toBeVisible();
     });
   });
 

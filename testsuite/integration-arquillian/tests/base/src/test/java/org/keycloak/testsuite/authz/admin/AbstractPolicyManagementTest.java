@@ -103,7 +103,7 @@ public abstract class AbstractPolicyManagementTest extends AbstractKeycloakTest 
 
         if (expected.getPolicies() != null) {
             assertEquals(expected.getPolicies().size(), associatedPolicies.size());
-            assertEquals(0, associatedPolicies.stream().map(representation1 -> representation1.getName()).filter(policyName -> !expected.getPolicies().contains(policyName)).count());
+            assertEquals(0, associatedPolicies.stream().map(AbstractPolicyRepresentation::getName).filter(policyName -> !expected.getPolicies().contains(policyName)).count());
         } else {
             assertTrue(associatedPolicies.isEmpty());
         }

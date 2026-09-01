@@ -7,4 +7,8 @@ public class WorkflowInvalidStateException extends ModelValidationException {
     public WorkflowInvalidStateException(String message) {
         super(message);
     }
+
+    public WorkflowInvalidStateException(String message, Object... parameters) {
+        super(message, parameters);
+    }
 }

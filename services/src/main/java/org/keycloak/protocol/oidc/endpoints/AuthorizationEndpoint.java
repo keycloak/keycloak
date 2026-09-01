@@ -70,6 +70,7 @@ import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.protocol.oidc.OIDCLoginProtocol.logMessageForDeprecatedExcludeIssuerSwitch;
 import static org.keycloak.protocol.oidc.par.endpoints.ParEndpoint.PAR_DPOP_PROOF_JKT;
 
 /**
@@ -334,6 +335,8 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
         if (!clientConfig.isExcludeIssuerFromAuthResponse()) {
             errorResponseBuilder.addParam(OAuth2Constants.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+        } else {
+            logMessageForDeprecatedExcludeIssuerSwitch();
         }
 
         return errorResponseBuilder.build();

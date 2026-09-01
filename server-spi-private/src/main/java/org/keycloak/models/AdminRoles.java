@@ -18,6 +18,7 @@
 package org.keycloak.models;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -62,19 +63,30 @@ public class AdminRoles {
 
     public static final String IMPERSONATION = "impersonation";
 
-    public static String[] ALL_REALM_ROLES = {CREATE_CLIENT, VIEW_REALM, VIEW_USERS, VIEW_CLIENTS, VIEW_EVENTS, VIEW_IDENTITY_PROVIDERS, VIEW_AUTHORIZATION, VIEW_ORGANIZATIONS, MANAGE_REALM, MANAGE_USERS, MANAGE_CLIENTS, MANAGE_EVENTS, MANAGE_IDENTITY_PROVIDERS, MANAGE_AUTHORIZATION, MANAGE_ORGANIZATIONS, QUERY_USERS, QUERY_CLIENTS, QUERY_REALMS, QUERY_GROUPS, QUERY_ORGANIZATIONS};
-    public static String[] ALL_QUERY_ROLES = {QUERY_USERS, QUERY_CLIENTS, QUERY_REALMS, QUERY_GROUPS, QUERY_ORGANIZATIONS};
+    public static final String[] ALL_REALM_ROLES = {CREATE_CLIENT, VIEW_REALM, VIEW_USERS, VIEW_CLIENTS, VIEW_EVENTS, VIEW_IDENTITY_PROVIDERS, VIEW_AUTHORIZATION, VIEW_ORGANIZATIONS, MANAGE_REALM, MANAGE_USERS, MANAGE_CLIENTS, MANAGE_EVENTS, MANAGE_IDENTITY_PROVIDERS, MANAGE_AUTHORIZATION, MANAGE_ORGANIZATIONS, QUERY_USERS, QUERY_CLIENTS, QUERY_REALMS, QUERY_GROUPS, QUERY_ORGANIZATIONS};
+    public static final String[] ALL_QUERY_ROLES = {QUERY_USERS, QUERY_CLIENTS, QUERY_REALMS, QUERY_GROUPS, QUERY_ORGANIZATIONS};
 
-    public static Set<String> ALL_ROLES = new HashSet<>();
+    public static final Set<String> REALM_LEVEL_ROLES = Set.of(ADMIN, CREATE_REALM);
+    public static final Set<String> ALL_ROLES;
+    public static final Set<String> REALM_MANAGEMENT_ROLES;
+
     static {
-        ALL_ROLES.addAll(Arrays.asList(ALL_REALM_ROLES));
-        ALL_ROLES.add(IMPERSONATION);
-        ALL_ROLES.add(ADMIN);
-        ALL_ROLES.add(CREATE_REALM);
-        ALL_ROLES.add(REALM_ADMIN);
+        Set<String> allRoles = new HashSet<>(Arrays.asList(ALL_REALM_ROLES));
+        allRoles.addAll(REALM_LEVEL_ROLES);
+        allRoles.add(IMPERSONATION);
+        allRoles.add(REALM_ADMIN);
+        ALL_ROLES = Collections.unmodifiableSet(allRoles);
+
+        Set<String> realmManagementRoles = new HashSet<>(Set.of(ALL_REALM_ROLES));
+        realmManagementRoles.addAll(Set.of(IMPERSONATION, REALM_ADMIN));
+        REALM_MANAGEMENT_ROLES = Collections.unmodifiableSet(realmManagementRoles);
     }
 
     public static boolean isAdminRole(RoleModel role) {
+        if (role == null) {
+            return false;
+        }
+
         if (!ALL_ROLES.contains(role.getName())) {
             return false;
         }
@@ -82,18 +94,25 @@ public class AdminRoles {
         RoleContainerModel container = role.getContainer();
 
         if (container instanceof RealmModel r) {
-            return r.getName().equals(Config.getAdminRealm());
+            return isAdminRealm(r.getName());
         }
 
         if (container instanceof ClientModel c) {
-            if (c.getClientId().equals(Constants.REALM_MANAGEMENT_CLIENT_ID)) {
-                return true;
-            }
-            return c.getRealm().getName().equals(Config.getAdminRealm())
-                    && c.getClientId().endsWith(APP_SUFFIX);
+            return isAdminClient(c.getRealm(), c.getClientId());
         }
 
         return false;
+    }
+
+    public static boolean isAdminRealm(String realmName) {
+        return Config.getAdminRealm().equals(realmName);
+    }
+
+    public static boolean isAdminClient(RealmModel realm, String clientId) {
+        if (Constants.REALM_MANAGEMENT_CLIENT_ID.equals(clientId)) {
+            return true;
+        }
+        return isAdminRealm(realm.getName()) && clientId.endsWith(APP_SUFFIX);
     }
 
     public static boolean isAdminRoleOrComposite(RoleModel role) {
@@ -122,5 +141,19 @@ public class AdminRoles {
             return false;
         }
         return role.getCompositesStream().anyMatch(child -> isAdminRole(child, visited));
+    }
+
+    public static boolean containsAdminRole(RoleModel role) {
+        return containsAdminRole(role, new HashSet<>());
+    }
+
+    private static boolean containsAdminRole(RoleModel role, Set<String> visited) {
+        if (isAdminRole(role)) {
+            return true;
+        }
+        if (role == null || !role.isComposite() || !visited.add(role.getId())) {
+            return false;
+        }
+        return role.getCompositesStream().anyMatch(r -> containsAdminRole(r, visited));
     }
 }

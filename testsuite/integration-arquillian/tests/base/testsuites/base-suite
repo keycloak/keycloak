@@ -7,7 +7,6 @@ cli,4
 client,4
 cluster,IGNORED
 composites,4
-cookies,4
 docker,4
 domainextension,4
 exportimport,4
@@ -22,7 +21,6 @@ policy,6
 providers,4
 saml,6
 script,6
-sessionlimits,6
 theme,6
 user,4
 util,4

@@ -58,7 +58,6 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.DefaultPasswordHash;
@@ -85,9 +84,6 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected LoginPage loginPage;
-
-    @Page
-    protected AppPage appPage;
 
     @Test
     public void testSetInvalidProvider() {
@@ -117,7 +113,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         oauth.openLoginForm();
         loginPage.login(username, password);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
@@ -152,7 +148,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         oauth.openLoginForm();
         loginPage.login(username, password);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
@@ -175,7 +171,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         oauth.openLoginForm();
         loginPage.login(username, password);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
@@ -197,7 +193,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         oauth.openLoginForm();
         loginPage.login(username, password);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
@@ -226,7 +222,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         oauth.openLoginForm();
         loginPage.login(username, password);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
@@ -239,7 +235,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         oauth.openLoginForm();
         loginPage.login(username, password);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
 
@@ -269,7 +265,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         oauth.openLoginForm();
         loginPage.login(username, password);
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         PasswordCredentialModel postLoginCredentials = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
         // Check that the password was rehashed and the secret string is now twice the size as before
@@ -313,7 +309,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.login("testArgon2", password);
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     private static boolean notFips() {

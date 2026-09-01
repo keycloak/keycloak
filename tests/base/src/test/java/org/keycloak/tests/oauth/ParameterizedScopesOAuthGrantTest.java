@@ -2,23 +2,33 @@ package org.keycloak.tests.oauth;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantTypeFactory;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.ClientNotificationEndpointRequest;
+import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
+import org.keycloak.protocol.oidc.scope.ParameterizedScopeTypeProvider;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -32,9 +42,9 @@ import org.keycloak.testframework.oauth.annotations.InjectCibaProvider;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientScopeBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.ProtocolMapperBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
@@ -43,7 +53,9 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.OAuthGrantPage;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.admin.authz.fgap.PermissionTestUtils;
 import org.keycloak.tests.suites.DatabaseTest;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
@@ -65,6 +77,7 @@ public class ParameterizedScopesOAuthGrantTest {
 
     private static final String THIRD_PARTY_APP = "third-party";
     private static final String DEFAULT_USERNAME = "test-user@localhost";
+    private static final String DEFAULT_ADMIN_USERNAME = "administrator@localhost";
     private static final String DEFAULT_PASSWORD = "password";
 
     private static String PARAMETERIZED_SCOPE_ID;
@@ -89,13 +102,10 @@ public class ParameterizedScopesOAuthGrantTest {
 
     @TestSetup
     public void configureTestRealm() {
-        ClientScopeRepresentation parameterizedScope = ClientScopeBuilder.create()
-                .name("foo-parameter-scope")
-                .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
-                .attribute(ClientScopeModel.IS_PARAMETERIZED_SCOPE, Boolean.TRUE.toString())
-                .attribute(ClientScopeModel.DISPLAY_ON_CONSENT_SCREEN, Boolean.TRUE.toString())
-                .attribute(ClientScopeModel.IS_ALWAYS_CONSENT, Boolean.FALSE.toString())
-                .attribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string")
+        ClientScopeRepresentation parameterizedScope = ParameterizedScopeBuilder.create("foo-parameter-scope")
+                .parameterizedScopeType("string")
+                .displayOnConsentScreen(true)
+                .alwaysConsent(false)
                 .build();
         PARAMETERIZED_SCOPE_ID = ApiUtil.getCreatedId(realm.admin().clientScopes().create(parameterizedScope));
         thirdParty.admin().addOptionalClientScope(PARAMETERIZED_SCOPE_ID);
@@ -109,6 +119,7 @@ public class ParameterizedScopesOAuthGrantTest {
         if (userConsents.stream().anyMatch(m -> THIRD_PARTY_APP.equals(m.get("clientId")))) {
             AccountHelper.revokeConsents(realm.admin(), DEFAULT_USERNAME, THIRD_PARTY_APP);
         }
+        oauth.responseType(OAuth2Constants.CODE);
     }
 
     @Test
@@ -141,10 +152,10 @@ public class ParameterizedScopesOAuthGrantTest {
                 .details(Details.CODE_ID, loginEvent.getDetails().get(Details.CODE_ID));
 
         List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(realm.admin(), DEFAULT_USERNAME);
-        Assertions.assertTrue(((List) userConsents.get(0).get("grantedClientScopes")).stream().anyMatch(p -> p.equals("foo-parameter-scope:param1")));
+        Assertions.assertTrue(grantedScopes(userConsents).contains("foo-parameter-scope:param1"));
 
         res = oauth.doRefreshTokenRequest(res.getRefreshToken());
-        MatcherAssert.assertThat(List.of(res.getScope().split(" ")), Matchers.hasItems("foo-parameter-scope:param1"));
+        MatcherAssert.assertThat(scopesOf(res), Matchers.hasItems("foo-parameter-scope:param1"));
 
         oauth.logoutForm().idTokenHint(res.getIdToken()).open();
 
@@ -178,15 +189,15 @@ public class ParameterizedScopesOAuthGrantTest {
                 .details(Details.CODE_ID, loginEvent.getDetails().get(Details.CODE_ID));
 
         userConsents = AccountHelper.getUserConsents(realm.admin(), DEFAULT_USERNAME);
-        Assertions.assertTrue(((List) userConsents.get(0).get("grantedClientScopes")).stream().anyMatch(p -> p.equals("foo-parameter-scope:param1")));
-        Assertions.assertTrue(((List) userConsents.get(0).get("grantedClientScopes")).stream().anyMatch(p -> p.equals("foo-parameter-scope:param2")));
+        Assertions.assertTrue(grantedScopes(userConsents).contains("foo-parameter-scope:param1"));
+        Assertions.assertTrue(grantedScopes(userConsents).contains("foo-parameter-scope:param2"));
 
         res = oauth.doRefreshTokenRequest(res.getRefreshToken());
-        MatcherAssert.assertThat(List.of(res.getScope().split(" ")), Matchers.hasItems("foo-parameter-scope:param1", "foo-parameter-scope:param2"));
+        MatcherAssert.assertThat(scopesOf(res), Matchers.hasItems("foo-parameter-scope:param1", "foo-parameter-scope:param2"));
 
         res = oauth.scope("foo-parameter-scope:param2").doRefreshTokenRequest(res.getRefreshToken());
-        MatcherAssert.assertThat(List.of(res.getScope().split(" ")), Matchers.not(Matchers.hasItems("foo-parameter-scope:param1")));
-        MatcherAssert.assertThat(List.of(res.getScope().split(" ")), Matchers.hasItems("foo-parameter-scope:param2"));
+        MatcherAssert.assertThat(scopesOf(res), Matchers.not(Matchers.hasItems("foo-parameter-scope:param1")));
+        MatcherAssert.assertThat(scopesOf(res), Matchers.hasItems("foo-parameter-scope:param2"));
 
         oauth.logoutForm().idTokenHint(res.getIdToken()).open();
 
@@ -238,10 +249,10 @@ public class ParameterizedScopesOAuthGrantTest {
                 .details(Details.CODE_ID, loginEvent.getDetails().get(Details.CODE_ID));
 
         List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(realm.admin(), DEFAULT_USERNAME);
-        Assertions.assertTrue(((List) userConsents.get(0).get("grantedClientScopes")).stream().noneMatch(p -> p.equals("foo-parameter-scope:param1")));
+        Assertions.assertFalse(grantedScopes(userConsents).contains("foo-parameter-scope:param1"));
 
         res = oauth.doRefreshTokenRequest(res.getRefreshToken());
-        MatcherAssert.assertThat(List.of(res.getScope().split(" ")), Matchers.hasItems("foo-parameter-scope:param1"));
+        MatcherAssert.assertThat(scopesOf(res), Matchers.hasItems("foo-parameter-scope:param1"));
 
         oauth.logoutForm().idTokenHint(res.getIdToken()).open();
 
@@ -276,15 +287,50 @@ public class ParameterizedScopesOAuthGrantTest {
                 .details(Details.CODE_ID, loginEvent.getDetails().get(Details.CODE_ID));
 
         userConsents = AccountHelper.getUserConsents(realm.admin(), DEFAULT_USERNAME);
-        Assertions.assertTrue(((List) userConsents.get(0).get("grantedClientScopes")).stream().noneMatch(p -> p.equals("foo-parameter-scope:param1")));
-        Assertions.assertTrue(((List) userConsents.get(0).get("grantedClientScopes")).stream().noneMatch(p -> p.equals("foo-parameter-scope:param2")));
+        Assertions.assertFalse(grantedScopes(userConsents).contains("foo-parameter-scope:param1"));
+        Assertions.assertFalse(grantedScopes(userConsents).contains("foo-parameter-scope:param2"));
 
         res = oauth.doRefreshTokenRequest(res.getRefreshToken());
-        MatcherAssert.assertThat(List.of(res.getScope().split(" ")), Matchers.hasItems("foo-parameter-scope:param1", "foo-parameter-scope:param2"));
+        MatcherAssert.assertThat(scopesOf(res), Matchers.hasItems("foo-parameter-scope:param1", "foo-parameter-scope:param2"));
 
         res = oauth.scope("foo-parameter-scope:param2").doRefreshTokenRequest(res.getRefreshToken());
-        MatcherAssert.assertThat(List.of(res.getScope().split(" ")), Matchers.not(Matchers.hasItems("foo-parameter-scope:param1")));
-        MatcherAssert.assertThat(List.of(res.getScope().split(" ")), Matchers.hasItems("foo-parameter-scope:param2"));
+        MatcherAssert.assertThat(scopesOf(res), Matchers.not(Matchers.hasItems("foo-parameter-scope:param1")));
+        MatcherAssert.assertThat(scopesOf(res), Matchers.hasItems("foo-parameter-scope:param2"));
+    }
+
+    @Test
+    public void alwaysConsentMultipleParamsSingleConsentPage() {
+        realm.updateClientScope(PARAMETERIZED_SCOPE_ID, s -> s
+                .attribute(ClientScopeModel.CONSENT_SCREEN_TEXT, "")
+                .attribute(ClientScopeModel.IS_ALWAYS_CONSENT, Boolean.TRUE.toString()));
+
+        oauth.client(THIRD_PARTY_APP, "password");
+        oauth.scope("foo-parameter-scope:param1 foo-parameter-scope:param2");
+        oauth.openLoginForm();
+        oauth.fillLoginForm(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+
+        // both parameterized scopes must appear on a single consent page (along with default grants)
+        grantPage.assertCurrent();
+        List<String> grants = grantPage.getDisplayedGrants();
+        long parameterizedGrantsCount = grants.stream().filter(g -> g.startsWith("foo-parameter-scope:")).count();
+        Assertions.assertEquals(2, parameterizedGrantsCount);
+        Assertions.assertTrue(grants.contains("foo-parameter-scope: param1"));
+        Assertions.assertTrue(grants.contains("foo-parameter-scope: param2"));
+        grantPage.accept();
+
+        // flow must complete — no second consent page
+        String code = oauth.parseLoginResponse().getCode();
+        Assertions.assertNotNull(code, "Expected authorization code after single consent accept");
+
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
+        Assertions.assertTrue(res.isSuccess());
+        MatcherAssert.assertThat(scopesOf(res),
+                Matchers.hasItems("foo-parameter-scope:param1", "foo-parameter-scope:param2"));
+
+        // always-consent scopes must not be persisted to the DB
+        List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(realm.admin(), DEFAULT_USERNAME);
+        Assertions.assertFalse(grantedScopes(userConsents).contains("foo-parameter-scope:param1"));
+        Assertions.assertFalse(grantedScopes(userConsents).contains("foo-parameter-scope:param2"));
     }
 
     @Test
@@ -398,15 +444,15 @@ public class ParameterizedScopesOAuthGrantTest {
                 .hasAccessTokenId(CibaGrantTypeFactory.GRANT_SHORTCUT)
                 .details(Details.USERNAME, DEFAULT_USERNAME)
                 .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
-        MatcherAssert.assertThat(List.of(tokenRes.getScope().split(" ")), Matchers.hasItems("foo-parameter-scope:param1"));
+        MatcherAssert.assertThat(scopesOf(tokenRes), Matchers.hasItems("foo-parameter-scope:param1"));
 
         // assert consent is granted
         List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(realm.admin(), DEFAULT_USERNAME);
-        Assertions.assertTrue(((List) userConsents.get(0).get("grantedClientScopes")).stream().anyMatch(p -> p.equals("foo-parameter-scope:param1")));
+        Assertions.assertTrue(grantedScopes(userConsents).contains("foo-parameter-scope:param1"));
 
         // do a refresh
         tokenRes = oauth.doRefreshTokenRequest(tokenRes.getRefreshToken());
-        MatcherAssert.assertThat(List.of(tokenRes.getScope().split(" ")), Matchers.hasItems("foo-parameter-scope:param1"));
+        MatcherAssert.assertThat(scopesOf(tokenRes), Matchers.hasItems("foo-parameter-scope:param1"));
     }
 
     @Test
@@ -455,25 +501,120 @@ public class ParameterizedScopesOAuthGrantTest {
                 .hasAccessTokenId(CibaGrantTypeFactory.GRANT_SHORTCUT)
                 .details(Details.USERNAME, DEFAULT_USERNAME)
                 .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
-        MatcherAssert.assertThat(List.of(tokenRes.getScope().split(" ")), Matchers.hasItems("foo-parameter-scope:param1"));
+        MatcherAssert.assertThat(scopesOf(tokenRes), Matchers.hasItems("foo-parameter-scope:param1"));
 
         // assert consent is not granted as it always consent
         List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(realm.admin(), DEFAULT_USERNAME);
-        Assertions.assertTrue(((List) userConsents.get(0).get("grantedClientScopes")).stream().noneMatch(p -> p.equals("foo-parameter-scope:param1")));
+        Assertions.assertFalse(grantedScopes(userConsents).contains("foo-parameter-scope:param1"));
 
         // do a refresh
         tokenRes = oauth.doRefreshTokenRequest(tokenRes.getRefreshToken());
-        MatcherAssert.assertThat(List.of(tokenRes.getScope().split(" ")), Matchers.hasItems("foo-parameter-scope:param1"));
+        MatcherAssert.assertThat(scopesOf(tokenRes), Matchers.hasItems("foo-parameter-scope:param1"));
+    }
+
+    @Test
+    public void nonRepeatableScopeRejectsMultipleParams() {
+        ClientScopeRepresentation nonRepeatableScope = ParameterizedScopeBuilder.create("non-repeatable-scope")
+                .parameterizedScopeType("string")
+                .isRepeatableScope(false)
+                .build();
+        String scopeId = ApiUtil.getCreatedId(realm.admin().clientScopes().create(nonRepeatableScope));
+        thirdParty.admin().addOptionalClientScope(scopeId);
+        realm.cleanup().add(r -> {
+            r.clients().get(thirdParty.getId()).removeOptionalClientScope(scopeId);
+            r.clientScopes().get(scopeId).remove();
+        });
+
+        oauth.client(THIRD_PARTY_APP, "password");
+
+        // single param should still work
+        oauth.scope("non-repeatable-scope:param1");
+        oauth.openLoginForm();
+        oauth.fillLoginForm(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        grantPage.assertCurrent();
+        grantPage.accept();
+
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
+        Assertions.assertTrue(res.isSuccess());
+        MatcherAssert.assertThat(scopesOf(res), Matchers.hasItems("non-repeatable-scope:param1"));
+
+        // two different params on a non-repeatable scope should be rejected
+        oauth.scope("non-repeatable-scope:param1 non-repeatable-scope:param2");
+        oauth.openLoginForm();
+        AuthorizationEndpointResponse errorRes = oauth.parseLoginResponse();
+        Assertions.assertEquals(OAuthErrorException.INVALID_SCOPE, errorRes.getError());
+        MatcherAssert.assertThat(errorRes.getErrorDescription(), Matchers.startsWith("Invalid scopes:"));
+    }
+
+    @Test
+    public void repeatableAttributeOverridesTypeDefault() {
+        // boolean type defaults to non-repeatable, but per-scope attribute overrides it
+        ClientScopeRepresentation boolScope = ParameterizedScopeBuilder.create("bool-repeatable-scope")
+                .parameterizedScopeType("boolean")
+                .isRepeatableScope(true)
+                .build();
+        String boolScopeId = ApiUtil.getCreatedId(realm.admin().clientScopes().create(boolScope));
+        thirdParty.admin().addOptionalClientScope(boolScopeId);
+        realm.cleanup().add(r -> {
+            r.clients().get(thirdParty.getId()).removeOptionalClientScope(boolScopeId);
+            r.clientScopes().get(boolScopeId).remove();
+        });
+
+        oauth.client(THIRD_PARTY_APP, "password");
+        oauth.scope("bool-repeatable-scope:true bool-repeatable-scope:false");
+        oauth.openLoginForm();
+        oauth.fillLoginForm(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        grantPage.assertCurrent();
+        grantPage.accept();
+
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
+        Assertions.assertTrue(res.isSuccess());
+        MatcherAssert.assertThat(scopesOf(res),
+                Matchers.hasItems("bool-repeatable-scope:true", "bool-repeatable-scope:false"));
+    }
+
+    @Test
+    public void consentPageExcludesInvalidUsernameScopeParam() {
+        realm.updateClientScope(PARAMETERIZED_SCOPE_ID, s -> s.attribute(ClientScopeModel.CONSENT_SCREEN_TEXT, ""));
+
+        ClientScopeRepresentation usernameScope = ParameterizedScopeBuilder.create("user-scope")
+                .parameterizedScopeType("username")
+                .displayOnConsentScreen(true)
+                .build();
+        String usernameScopeId = ApiUtil.getCreatedId(realm.admin().clientScopes().create(usernameScope));
+        thirdParty.admin().addOptionalClientScope(usernameScopeId);
+        realm.cleanup().add(r -> {
+            r.clients().get(thirdParty.getId()).removeOptionalClientScope(usernameScopeId);
+            r.clientScopes().get(usernameScopeId).remove();
+        });
+
+        oauth.client(THIRD_PARTY_APP, "password");
+        oauth.scope("foo-parameter-scope:param1 user-scope:nonexistent-user");
+        oauth.openLoginForm();
+        oauth.fillLoginForm(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        grantPage.assertCurrent();
+
+        List<String> grants = grantPage.getDisplayedGrants();
+        Assertions.assertTrue(grants.contains("foo-parameter-scope: param1"),
+                "Valid string scope should be on consent page");
+        Assertions.assertTrue(grants.stream().noneMatch(g -> g.contains("user-scope")),
+                "Invalid username scope should NOT be on consent page");
+        grantPage.accept();
+
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
+        Assertions.assertTrue(res.isSuccess());
+        MatcherAssert.assertThat(scopesOf(res), Matchers.hasItems("foo-parameter-scope:param1"));
+        MatcherAssert.assertThat(scopesOf(res), Matchers.not(Matchers.hasItems("user-scope:nonexistent-user")));
     }
 
     @Test
     public void oauthGrantCustomRegexScopeValidation() {
-        ClientScopeRepresentation customScope = ClientScopeBuilder.create()
-                .name("custom-regex-scope")
-                .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
-                .attribute(ClientScopeModel.IS_PARAMETERIZED_SCOPE, Boolean.TRUE.toString())
-                .attribute(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "custom")
-                .attribute(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "[a-z]+")
+        ClientScopeRepresentation customScope = ParameterizedScopeBuilder.create("custom-regex-scope")
+                .parameterizedScopeType("custom")
+                .regexp("[a-z]+")
                 .build();
         String customScopeId = ApiUtil.getCreatedId(realm.admin().clientScopes().create(customScope));
         realm.cleanup().add(r -> {
@@ -498,14 +639,156 @@ public class ParameterizedScopesOAuthGrantTest {
 
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
-        MatcherAssert.assertThat(List.of(res.getScope().split(" ")), Matchers.hasItems("custom-regex-scope:abc"));
+        MatcherAssert.assertThat(scopesOf(res), Matchers.hasItems("custom-regex-scope:abc"));
+    }
+
+    @Test
+    public void customRegexScopeRejectsExcessivelyLongParameter() {
+        createAndAssignOptionalScope(ParameterizedScopeBuilder.create("length-scope")
+                .parameterizedScopeType("custom").regexp("[a-z]+").build());
+
+        oauth.client(THIRD_PARTY_APP, "password");
+        assertLongParameterRejected("length-scope");
+
+        // parameter at max length should be accepted
+        String maxParam = "a".repeat(ParameterizedScopeTypeProvider.MAX_PARAMETER_LENGTH);
+        oauth.scope("length-scope:" + maxParam);
+        oauth.openLoginForm();
+        oauth.fillLoginForm(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        grantPage.assertCurrent();
+        grantPage.accept();
+
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
+        MatcherAssert.assertThat(scopesOf(res), Matchers.hasItems("length-scope:" + maxParam));
+    }
+
+    @Test
+    public void stringScopeRejectsExcessivelyLongParameter() {
+        createAndAssignOptionalScope(ParameterizedScopeBuilder.create("length-scope")
+                .parameterizedScopeType("string").build());
+        oauth.client(THIRD_PARTY_APP, "password");
+        assertLongParameterRejected("length-scope");
+    }
+
+    @Test
+    public void integerScopeRejectsExcessivelyLongParameter() {
+        createAndAssignOptionalScope(ParameterizedScopeBuilder.create("length-scope")
+                .parameterizedScopeType("integer").build());
+        oauth.client(THIRD_PARTY_APP, "password");
+        assertLongParameterRejected("length-scope");
+    }
+
+    @Test
+    public void booleanScopeRejectsExcessivelyLongParameter() {
+        createAndAssignOptionalScope(ParameterizedScopeBuilder.create("length-scope")
+                .parameterizedScopeType("boolean").build());
+        oauth.client(THIRD_PARTY_APP, "password");
+        assertLongParameterRejected("length-scope");
+    }
+
+    @Test
+    public void delegationScopeWithImplicitFlow() {
+        // enable FGAP V2 admin permissions (delegation requires it)
+        realm.updateWithCleanup(r -> r.adminPermissionsEnabled(true));
+
+        // create delegation parameterized scope with a hardcoded claim
+        createAndAssignOptionalScope(ParameterizedScopeBuilder.create("delegated-act")
+                .parameterizedScopeType("user-delegation")
+                .mappers(ProtocolMapperBuilder.create().name("Hardcoded Claim")
+                        .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                        .protocolMapper(HardcodedClaim.PROVIDER_ID)
+                        .config(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "matched_scope")
+                        .config(HardcodedClaim.CLAIM_VALUE, "implicit-delegation")
+                        .config(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, Boolean.TRUE.toString())
+                        .build())
+                .build());
+
+        // change the app to allow implicit flow and no consent required
+        ClientRepresentation rep = thirdParty.admin().toRepresentation();
+        rep.setConsentRequired(Boolean.FALSE);
+        rep.setImplicitFlowEnabled(Boolean.TRUE);
+        thirdParty.admin().update(rep);
+        realm.cleanup().add(r -> {
+            rep.setConsentRequired(Boolean.TRUE);
+            rep.setImplicitFlowEnabled(Boolean.FALSE);
+            r.clients().get(thirdParty.getId()).update(rep);
+        });
+
+        // grant delegation permission to the admin user via FGAP V2
+        final ClientResource adminPerms = AdminApiUtil.findClientByClientId(realm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
+        final String adminUserId = AdminApiUtil.findUserByUsernameId(realm.admin(), DEFAULT_ADMIN_USERNAME).toRepresentation().getId();
+        UserPolicyRepresentation policy = PermissionTestUtils.createUserPolicy(realm, adminPerms, "Delegation Policy", adminUserId);
+        ScopePermissionRepresentation permission = PermissionTestUtils.createAllPermission(adminPerms, AdminPermissionsSchema.USERS_RESOURCE_TYPE, policy, Set.of(AdminPermissionsSchema.DELEGATE));
+
+        // implicit flow login with the delegation scope granted
+        String requestedScope = "delegated-act:" + DEFAULT_ADMIN_USERNAME;
+        oauth.client(THIRD_PARTY_APP)
+                .responseType(OAuth2Constants.TOKEN)
+                .scope(requestedScope)
+                .openLoginForm();
+
+        oauth.fillLoginForm(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        AuthorizationEndpointResponse res = new AuthorizationEndpointResponse(oauth);
+
+        Assertions.assertTrue(res.isRedirected());
+        Assertions.assertNotNull(res.getAccessToken());
+
+        AccessToken token = oauth.verifyToken(res.getAccessToken());
+        MatcherAssert.assertThat(List.of(token.getScope().split(" ")), Matchers.hasItem(requestedScope));
+        Assertions.assertEquals("implicit-delegation", token.getOtherClaims().get("matched_scope"));
+
+        // logout and remove the delegation permission
+        AccountHelper.logout(realm.admin(), DEFAULT_USERNAME);
+        adminPerms.authorization().permissions().scope().findById(permission.getId()).remove();
+
+        // implicit flow login with the delegation scope not granted
+        oauth.client(THIRD_PARTY_APP)
+                .responseType(OAuth2Constants.TOKEN)
+                .scope(requestedScope)
+                .openLoginForm();
+        oauth.fillLoginForm(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        res = new AuthorizationEndpointResponse(oauth);
+
+        Assertions.assertTrue(res.isRedirected());
+        Assertions.assertNotNull(res.getAccessToken());
+
+        token = oauth.verifyToken(res.getAccessToken());
+        MatcherAssert.assertThat(List.of(token.getScope().split(" ")), Matchers.not(Matchers.hasItem(requestedScope)));
+        Assertions.assertNull(token.getOtherClaims().get("matched_scope"));
+    }
+
+    private String createAndAssignOptionalScope(ClientScopeRepresentation scope) {
+        String scopeId = ApiUtil.getCreatedId(realm.admin().clientScopes().create(scope));
+        thirdParty.admin().addOptionalClientScope(scopeId);
+        realm.cleanup().add(r -> {
+            r.clients().get(thirdParty.getId()).removeOptionalClientScope(scopeId);
+            r.clientScopes().get(scopeId).remove();
+        });
+        return scopeId;
+    }
+
+    private void assertLongParameterRejected(String scopeName) {
+        String longParam = "a".repeat(ParameterizedScopeTypeProvider.MAX_PARAMETER_LENGTH + 1);
+        oauth.scope(scopeName + ":" + longParam);
+        oauth.openLoginForm();
+        Assertions.assertEquals(OAuthErrorException.INVALID_SCOPE, oauth.parseLoginResponse().getError());
+    }
+
+    private static List<String> scopesOf(AccessTokenResponse res) {
+        return List.of(res.getScope().split(" "));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<String> grantedScopes(List<Map<String, Object>> consents) {
+        return ((List<String>) consents.get(0).get("grantedClientScopes"));
     }
 
     public static class ParameterizedScopesServerConfig implements KeycloakServerConfig {
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.PARAMETERIZED_SCOPES)
+            return config.features(Profile.Feature.PARAMETERIZED_SCOPES, Profile.Feature.TOKEN_EXCHANGE_DELEGATION)
                     .option("spi-ciba-auth-channel-ciba-http-auth-channel-http-authentication-channel-uri",
                             "http://localhost:8500/ciba/request-authentication-channel");
         }
@@ -517,6 +800,12 @@ public class ParameterizedScopesOAuthGrantTest {
             realm.users(UserBuilder.create(DEFAULT_USERNAME)
                     .email(DEFAULT_USERNAME)
                     .name("Test", "User")
+                    .emailVerified(true)
+                    .password(DEFAULT_PASSWORD)
+                    .enabled(true),
+                    UserBuilder.create(DEFAULT_ADMIN_USERNAME)
+                    .email(DEFAULT_ADMIN_USERNAME)
+                    .name("Admin", "User")
                     .emailVerified(true)
                     .password(DEFAULT_PASSWORD)
                     .enabled(true));

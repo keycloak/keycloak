@@ -240,6 +240,65 @@ public class PaginationTest extends AbstractScimTest {
         assertThat(response.getStartIndex(), is(1));
     }
 
+    @Test
+    public void testUserSearchWithNegativeCount() {
+        createUser("user-0", "User 0", "Test", "user0@keycloak.org", true);
+
+        ListResponse<User> response = client.users().search(null, 1, -5);
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getTotalResults(), is(1));
+        assertThat(response.getItemsPerPage(), is(0));
+        assertThat(response.getResources().size(), is(0));
+    }
+
+    @Test
+    public void testGroupSearchWithNegativeCount() {
+        createGroup("group-0");
+
+        ListResponse<Group> response = client.groups().search(null, 1, -5);
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getTotalResults(), is(1));
+        assertThat(response.getItemsPerPage(), is(0));
+        assertThat(response.getResources().size(), is(0));
+    }
+
+    @Test
+    public void testGroupSearchWithPaginationOutOfRangeAndFilter() {
+        createGroup("team-1");
+
+        // filter by display name and page size of 5, we should have 1 page of 1 result
+        String filter = ResourceFilter.filter().sw("displayName", "team-1").build();
+        ListResponse<Group> response = client.groups().search(filter, 1, 5);
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getTotalResults(), is(1));
+        assertThat(response.getItemsPerPage(), is(1));
+        assertThat(response.getStartIndex(), is(1));
+
+        // fetch out of range page
+        response = client.groups().search(filter, 100, 100);
+        assertThat(response.getTotalResults(), is(1));
+        assertThat(response.getItemsPerPage(), is(0));
+        assertThat(response.getStartIndex(), is(100));
+    }
+
+    @Test
+    public void testUserSearchWithPaginationOutOfRangeAndFilter() {
+        createUser("user-0", "User 0", "Test", "user0@keycloak.org", true);
+
+        // fetch the only user
+        ListResponse<User> response = client.users().search(null, 1, 5);
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getTotalResults(), is(1));
+        assertThat(response.getItemsPerPage(), is(1));
+        assertThat(response.getResources().size(), is(1));
+
+        // fetch out of range page
+        response = client.users().search(null, 2, 5);
+        assertThat(response.getTotalResults(), is(1));
+        assertThat(response.getItemsPerPage(), is(0));
+        assertThat(response.getStartIndex(), is(2));
+    }
+
     private User createUser(String username, String givenName, String familyName, String email, boolean active) {
         User user = new User();
         user.setUserName(username);

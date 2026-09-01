@@ -3,10 +3,10 @@
 
 <@tmpl.guide
 title="Concepts for multi-cluster deployments (v2)"
-summary="Understand multi-cluster deployment with synchronous replication without an external {jdgserver_name} cluster. This is an experimental feature."
-tileVisible="false" >
-
-<#include "/templates/experimental-feature.adoc">
+summary="Understand multi-cluster deployment with synchronous replication without an external {jdgserver_name} cluster."
+tileVisible="false"
+preview="true"
+previewDiscussionLink="https://github.com/keycloak/keycloak/discussions/50640" >
 
 This topic describes a highly available multi-cluster setup and the behavior to expect.
 It outlines the requirements of the high availability architecture and describes the benefits and tradeoffs.
@@ -15,6 +15,8 @@ See <@links.ha id="multi-cluster-v2-introduction" /> for the introduction.
 == When to use this setup
 
 Use this setup to provide {project_name} deployments that are able to tolerate cluster failures, reducing the likelihood of downtime.
+
+Multiple {project_name} clusters share a synchronously replicated database.
 
 Unlike the standard <@links.ha id="multi-cluster-concepts" />, this setup does not require an external {jdgserver_name} cluster.
 This simplifies the deployment architecture and removes the need for an external monitoring solution that reconfigures the external {jdgserver_name} on failover. It also eliminates operational procedures on failback.
@@ -25,17 +27,24 @@ Two or more independent {project_name} deployments running in different sites.
 
 Users, realms, clients, sessions, and other entities are stored in a database that is replicated synchronously across all sites.
 
-The realm data, including clients and groups, is cached in the {project_name} embedded Infinispan caches as local caches.
+Realm data (including clients and groups) and authorization data are cached in the {project_name} embedded Infinispan caches as local caches.
 
-image::high-availability/active-active-cacheless.dio.svg[]
+image::high-availability/active-active-stateless.dio.svg[]
 
 === Background jobs
 
 Background jobs will run only in one of the active clusters and will be automatically redistributed to another cluster on a cluster failure.
 
+=== Health check endpoints
+
+{project_name} exposes two health check endpoints for different purposes:
+
+* `/health/ready` on the management port indicates whether an individual node is ready to serve traffic. Use this for the internal load balancer or {kubernetes} readiness probes.
+* `/lb-check` indicates whether a site as a whole is available. Use this for the external load balancer that routes traffic between sites.
+
 === Updates to realm data and cache invalidation
 
-NOTE: This paragraph describes the internal implementation of how cache invalidation works across clusters with the `cacheless` feature to allow administrators to understand the emerging observed behavior.
+NOTE: This paragraph describes the internal implementation of how cache invalidation works across clusters with the `stateless` feature to allow administrators to understand the emerging observed behavior.
 This internal implementation might change between minor or patch releases.
 If it changes, this section will be updated.
 
@@ -138,6 +147,6 @@ Therefore, tradeoffs exist between high availability and consistency. The focus 
 
 == Next steps
 
-Continue reading the blueprint at <@links.ha id="multi-cluster-v2-deploy-keycloak-kubernetes" />.
+Continue reading the blueprints at <@links.ha id="multi-cluster-v2-deploy-keycloak-kubernetes" /> or <@links.ha id="multi-cluster-v2-deploy-keycloak-bare-metal" />.
 
 </@tmpl.guide>

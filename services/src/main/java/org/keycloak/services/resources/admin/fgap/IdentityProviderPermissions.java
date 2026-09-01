@@ -185,7 +185,7 @@ class IdentityProviderPermissions implements  IdentityProviderPermissionManageme
             @Override
             public Map<String, Collection<String>> getBaseAttributes() {
                 Map<String, Collection<String>> attributes = super.getBaseAttributes();
-                attributes.put("kc.client.id", Arrays.asList(authorizedClient.getClientId()));
+                attributes.put(CLIENT_ID_ATTRIBUTE, Arrays.asList(authorizedClient.getClientId()));
                 return attributes;
             }
 

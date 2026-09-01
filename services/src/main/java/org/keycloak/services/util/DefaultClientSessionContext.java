@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -37,6 +38,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -96,11 +98,12 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
 
     public static DefaultClientSessionContext fromClientSessionAndScopeParameter(AuthenticatedClientSessionModel clientSession, String scopeParam, KeycloakSession session) {
+        UserModel user = Optional.ofNullable(clientSession.getUserSession()).map(UserSessionModel::getUser).orElse(null);
         Stream<ClientScopeModel> requestedScopes;
         if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
-            requestedScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, clientSession.getClient(), scopeParam);
+            requestedScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, clientSession.getClient(), user, scopeParam);
         } else {
-            requestedScopes = TokenManager.getRequestedClientScopes(session, scopeParam, clientSession.getClient(), clientSession.getUserSession().getUser());
+            requestedScopes = TokenManager.getRequestedClientScopes(session, scopeParam, clientSession.getClient(), user);
         }
         return new DefaultClientSessionContext(clientSession, requestedScopes.collect(Collectors.toSet()), null, scopeParam, session);
     }

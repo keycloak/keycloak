@@ -299,7 +299,7 @@ public class RealmAdminResource {
             throw ErrorResponse.error("Can't assign a Parameterized Scope as a Default Scope", Status.BAD_REQUEST);
         }
 
-        ClientResource.validateClientScopeAssignment(session, clientScope, defaultScope, realm);
+        ClientResource.validateClientScopeAssignment(session, clientScope, defaultScope, realm, true);
         
         realm.addDefaultClientScope(clientScope, defaultScope);
 
@@ -428,7 +428,13 @@ public class RealmAdminResource {
     })
     public RealmRepresentation getRealm() {
         if (auth.realm().canViewRealm()) {
-            return ModelToRepresentation.toRepresentation(session, realm, false);
+            RealmRepresentation rep = ModelToRepresentation.toRepresentation(session, realm, false);
+            List<String> filteredDefaultGroups = realm.getDefaultGroupsStream()
+                    .filter(auth.groups()::canView)
+                    .map(ModelToRepresentation::buildGroupPath)
+                    .toList();
+            rep.setDefaultGroups(filteredDefaultGroups.isEmpty() ? null : filteredDefaultGroups);
+            return rep;
         } else {
             auth.realm().requireViewRealmNameList();
 
@@ -651,7 +657,7 @@ public class RealmAdminResource {
 
     @Path("workflows")
     public WorkflowsResource workflows() {
-        return new WorkflowsResource(session, auth);
+        return new WorkflowsResource(session, auth, adminEvent);
     }
 
     @Path("{extension}")
@@ -1194,7 +1200,15 @@ public class RealmAdminResource {
                 && realm.getSmtpConfig().getOrDefault("authType", EmailAuthenticator.AuthenticatorType.BASIC.name()).equalsIgnoreCase(type.name())
                 && Objects.equals(Optional.ofNullable(settings.get("host")).orElse(""), realm.getSmtpConfig().getOrDefault("host", ""))
                 && Objects.equals(Optional.ofNullable(settings.get("port")).orElse("25"), realm.getSmtpConfig().getOrDefault("port", "25"))
-                && Objects.equals(Optional.ofNullable(settings.get("user")).orElse(""), realm.getSmtpConfig().getOrDefault("user", ""));
+                && Objects.equals(Optional.ofNullable(settings.get("user")).orElse(""), realm.getSmtpConfig().getOrDefault("user", ""))
+                && Objects.equals(Optional.ofNullable(settings.get("ssl")).orElse("false"), realm.getSmtpConfig().getOrDefault("ssl", "false"))
+                && Objects.equals(Optional.ofNullable(settings.get("starttls")).orElse("false"), realm.getSmtpConfig().getOrDefault("starttls", "false"))
+                && Objects.equals(Optional.ofNullable(settings.get("from")).orElse(""), realm.getSmtpConfig().getOrDefault("from", ""))
+                && Objects.equals(Optional.ofNullable(settings.get("replyTo")).orElse(""), realm.getSmtpConfig().getOrDefault("replyTo", ""))
+                && Objects.equals(Optional.ofNullable(settings.get("envelopeFrom")).orElse(""), realm.getSmtpConfig().getOrDefault("envelopeFrom", ""))
+                && Objects.equals(Optional.ofNullable(settings.get("authTokenUrl")).orElse(""), realm.getSmtpConfig().getOrDefault("authTokenUrl", ""))
+                && Objects.equals(Optional.ofNullable(settings.get("authTokenClientId")).orElse(""), realm.getSmtpConfig().getOrDefault("authTokenClientId", ""))
+                && Objects.equals(Optional.ofNullable(settings.get("authTokenScope")).orElse(""), realm.getSmtpConfig().getOrDefault("authTokenScope", ""));
     }
 
     @Path("identity-provider")
@@ -1220,7 +1234,9 @@ public class RealmAdminResource {
     public Stream<GroupRepresentation> getDefaultGroups() {
         auth.realm().requireViewRealm();
 
-        return realm.getDefaultGroupsStream().map(ModelToRepresentation::groupToBriefRepresentation);
+        return realm.getDefaultGroupsStream()
+                .filter(auth.groups()::canView)
+                .map(ModelToRepresentation::groupToBriefRepresentation);
     }
 
     @PUT

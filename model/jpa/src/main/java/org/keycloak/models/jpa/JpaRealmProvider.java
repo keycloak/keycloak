@@ -40,10 +40,12 @@ import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.MapJoin;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.migration.MigrationModel;
@@ -75,6 +77,7 @@ import org.keycloak.models.jpa.entities.ClientScopeClientMappingEntity;
 import org.keycloak.models.jpa.entities.ClientScopeEntity;
 import org.keycloak.models.jpa.entities.GroupAttributeEntity;
 import org.keycloak.models.jpa.entities.GroupEntity;
+import org.keycloak.models.jpa.entities.GroupRoleMappingEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RealmLocalizationTextsEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
@@ -94,17 +97,27 @@ import static org.keycloak.utils.StreamsUtil.closing;
  * @version $Revision: 1 $
  */
 public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientScopeProvider, GroupProvider, RoleProvider, DeploymentStateProvider {
+
+    public static final int JPA_IN_PARAMETERS_LIMIT_THRESHOLD = 1000;
+
     protected static final Logger logger = Logger.getLogger(JpaRealmProvider.class);
+
     private final KeycloakSession session;
     protected EntityManager em;
+    protected int jpaInParametersLimitThreshold;
     private Set<String> clientSearchableAttributes;
     private Set<String> groupSearchableAttributes;
 
     public JpaRealmProvider(KeycloakSession session, EntityManager em, Set<String> clientSearchableAttributes, Set<String> groupSearchableAttributes) {
+        this(session, em, clientSearchableAttributes, groupSearchableAttributes, JPA_IN_PARAMETERS_LIMIT_THRESHOLD);
+    }
+
+    public JpaRealmProvider(KeycloakSession session, EntityManager em, Set<String> clientSearchableAttributes, Set<String> groupSearchableAttributes, int jpaInParametersLimitThreshold) {
         this.session = session;
         this.em = em;
         this.clientSearchableAttributes = clientSearchableAttributes;
         this.groupSearchableAttributes = groupSearchableAttributes;
+        this.jpaInParametersLimitThreshold = jpaInParametersLimitThreshold;
     }
 
     @Override
@@ -506,6 +519,34 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     @Override
+    public Stream<RoleModel> getCompositeRolesStream(RealmModel realm, Set<String> parentRoleIds) {
+        if (parentRoleIds == null || parentRoleIds.isEmpty()) {
+            return Stream.empty();
+        }
+        // getChildRolesFromParentIds fetches the child roles of many parents at once, so a
+        // composite-role tree expands with a bounded number of queries per breadth-first level
+        // instead of one per role. The query hydrates the child RoleEntity rows, so the getRoleById
+        // calls below are served from the persistence context without extra round-trips.
+        //
+        // Databases cap the number of bind parameters per statement (e.g. MSSQL: 2100), so the
+        // frontier is split into chunks of at most jpaInParametersLimitThreshold parent ids and
+        // one query is issued per chunk (i.e. a single query for frontiers within the threshold).
+        // The query is "select distinct", but a child shared by parents in different chunks would
+        // be returned once per chunk, hence the distinct() on the child ids.
+        List<List<String>> roleIdChunks = CollectionUtil.partition(parentRoleIds, jpaInParametersLimitThreshold);
+        return roleIdChunks.stream()
+                .flatMap(parentRoleIdsChunk -> {
+                    return closing(em.createNamedQuery("getChildRolesFromParentIds", RoleEntity.class)
+                            .setParameter("parentRoleIds", parentRoleIdsChunk)
+                            .getResultStream());
+                })
+                .map(RoleEntity::getId)
+                .distinct()
+                .map(roleId -> session.roles().getRoleById(realm, roleId))
+                .filter(Objects::nonNull);
+    }
+
+    @Override
     public GroupModel getGroupById(RealmModel realm, String id) {
         GroupEntity groupEntity = em.find(GroupEntity.class, id);
         if (groupEntity == null) return null;
@@ -734,14 +775,30 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public Stream<GroupModel> getGroupsByRoleStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
-        TypedQuery<GroupEntity> query = em.createNamedQuery("groupsInRole", GroupEntity.class);
-        query.setParameter("roleId", role.getId());
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<String> queryBuilder = builder.createQuery(String.class);
+        Root<GroupEntity> root = queryBuilder.from(GroupEntity.class);
 
-        Stream<GroupEntity> results = paginateQuery(query, firstResult, maxResults).getResultStream();
+        queryBuilder.select(root.get("id"));
 
-        return closing(results
-                .map(g -> (GroupModel) new GroupAdapter(session, realm, em, g))
-                .sorted(GroupModel.COMPARE_BY_NAME));
+        Subquery<String> roleMappingSubquery = queryBuilder.subquery(String.class);
+        Root<GroupRoleMappingEntity> roleMappingRoot = roleMappingSubquery.from(GroupRoleMappingEntity.class);
+        roleMappingSubquery.select(roleMappingRoot.get("group").get("id"));
+        roleMappingSubquery.where(builder.equal(roleMappingRoot.get("roleId"), role.getId()));
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        predicates.add(root.get("id").in(roleMappingSubquery));
+        predicates.add(builder.equal(root.get("realm"), realm.getId()));
+        predicates.add(builder.equal(root.get("type"), Type.REALM.intValue()));
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, realm, builder, queryBuilder, root));
+
+        queryBuilder.where(predicates.toArray(new Predicate[0]));
+        queryBuilder.orderBy(builder.asc(root.get("name")));
+
+        return closing(paginateQuery(em.createQuery(queryBuilder), firstResult, maxResults).getResultStream()
+                .map(g -> session.groups().getGroupById(realm, g))
+                .filter(Objects::nonNull));
     }
 
     @Override
@@ -1253,6 +1310,21 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
                                                 .setParameter("protocol", protocol);
         return query.getResultStream()
                     .map(entity -> new ClientScopeAdapter(realm, em, session, entity));
+    }
+
+    @Override
+    public Stream<ClientScopeModel> getClientScopesByProtocolForUpdate(RealmModel realm, String protocol) {
+        RealmEntity realmEntity = em.find(RealmEntity.class, realm.getId(), LockModeType.PESSIMISTIC_WRITE);
+        if (realmEntity == null) {
+            return Stream.empty();
+        }
+
+        TypedQuery<ClientScopeEntity> query = em.createNamedQuery("getClientScopesByProtocol", ClientScopeEntity.class)
+                .setParameter("realm", realm.getId())
+                .setParameter("protocol", protocol)
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE);
+        return query.getResultStream()
+                .map(entity -> new ClientScopeAdapter(realm, em, session, entity));
     }
 
     /**

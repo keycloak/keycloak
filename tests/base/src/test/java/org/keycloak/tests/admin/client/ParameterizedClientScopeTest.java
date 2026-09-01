@@ -13,6 +13,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.tests.oauth.ParameterizedScopeBuilder;
 import org.keycloak.tests.utils.matchers.Matchers;
 
 import org.junit.jupiter.api.Assertions;
@@ -206,19 +207,14 @@ public class ParameterizedClientScopeTest extends AbstractClientScopeTest {
     }
 
     private ClientScopeRepresentation parameterizedScopeRep(String name, String type, String regexp) {
-        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
-        scopeRep.setName(name);
-        scopeRep.setProtocol("openid-connect");
-        HashMap<String, String> attrs = new HashMap<>();
-        attrs.put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
+        ParameterizedScopeBuilder builder = ParameterizedScopeBuilder.create(name);
         if (type != null) {
-            attrs.put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, type);
+            builder.parameterizedScopeType(type);
         }
         if (regexp != null) {
-            attrs.put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, regexp);
+            builder.regexp(regexp);
         }
-        scopeRep.setAttributes(attrs);
-        return scopeRep;
+        return builder.build();
     }
 
     public static class ParameterizedClientScopeServerConfig implements KeycloakServerConfig {

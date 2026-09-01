@@ -116,6 +116,16 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
     @Override
     protected Response tokenExchange() {
+        AuthenticationManager.AuthResult authResult = processSubjectToken();
+        return exchangeClientToClient(authResult.user(), authResult.session(), authResult.token(), true);
+    }
+
+    protected AuthenticationManager.AuthResult processSubjectToken() {
+        if (!OAuth2Constants.ACCESS_TOKEN_TYPE.equals(context.getParams().getSubjectTokenType())) {
+            event.detail(Details.REASON, "subject_token_type invalid");
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid subject token type", Response.Status.BAD_REQUEST);
+        }
 
         String subjectToken = context.getParams().getSubjectToken();
 
@@ -133,6 +143,19 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         UserSessionModel tokenSession = authResult.session();
         AccessToken token = authResult.token();
 
+        validateSenderConstrainedToken(token);
+
+        event.user(tokenUser);
+        event.detail(Details.USERNAME, tokenUser.getUsername());
+        if (token.getSessionId() != null) {
+            event.session(tokenSession);
+        }
+        event.detail(Details.SUBJECT_TOKEN_CLIENT_ID, token.getIssuedFor());
+
+        return authResult;
+    }
+
+    protected void validateSenderConstrainedToken(AccessToken token) {
         if (isSenderConstrainedToken(token)) {
             // Reject sender-constrained tokens (RFC 7800) as subject_token if client does not match the authorized parties claim
             if (!token.getIssuedFor().equals(client.getClientId())) {
@@ -169,15 +192,6 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
                 }
             }
         }
-
-        event.user(tokenUser);
-        event.detail(Details.USERNAME, tokenUser.getUsername());
-        if (token.getSessionId() != null) {
-            event.session(tokenSession);
-        }
-        event.detail(Details.SUBJECT_TOKEN_CLIENT_ID, token.getIssuedFor());
-
-        return exchangeClientToClient(tokenUser, tokenSession, token, true);
     }
 
     @Override

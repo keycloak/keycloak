@@ -10,6 +10,7 @@ import org.keycloak.tests.keys.GeneratedRsaKeyProviderTest;
 import org.keycloak.tests.keys.JavaKeystoreKeyProviderTest;
 import org.keycloak.tests.oauth.AuthorizationCodeTest;
 import org.keycloak.tests.policy.PasswordPolicyTest;
+import org.keycloak.tests.saml.SamlClientTest;
 import org.keycloak.tests.transactions.TransactionsTest;
 
 import org.junit.platform.suite.api.SelectClasses;
@@ -27,7 +28,8 @@ import org.junit.platform.suite.api.Suite;
         TransactionsTest.class,
         MutualTLSClientTest.class,
         LoginTest.class,
-        AuthorizationCodeTest.class
+        AuthorizationCodeTest.class,
+        SamlClientTest.class
 })
 public class JDKTestSuite {
 }

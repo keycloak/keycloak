@@ -10,11 +10,11 @@ import org.keycloak.organization.utils.Organizations;
 import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.metadata.DefaultSubjects;
 import org.keycloak.ssf.subject.ComplexSubjectId;
-import org.keycloak.ssf.subject.OpaqueSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
 import org.keycloak.ssf.subject.SubjectNotFoundException;
 import org.keycloak.ssf.subject.SubjectResolution;
 import org.keycloak.ssf.subject.SubjectResolver;
+import org.keycloak.ssf.subject.UriSubjectId;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.resources.AddSubjectRequest;
 import org.keycloak.ssf.transmitter.resources.RemoveSubjectRequest;
@@ -414,7 +414,7 @@ public class SubjectManagementService {
      * via {@link org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper#buildSubjectForReceiver
      * buildSubjectForReceiver} so it honors the receiver's configured
      * {@code ssf.userSubjectFormat}. For {@code org-alias} the result
-     * is a {@link ComplexSubjectId} with only a {@code tenant} facet
+     * is a {@link ComplexSubjectId} with only a {@code tenant} subject member
      * (so the emitter routes it as an org-scoped event).
      *
      * <p>Throws {@link SsfException} with an operator-friendly message
@@ -433,9 +433,11 @@ public class SubjectManagementService {
                     .buildSubjectForReceiver(stream, userRes.user().getId());
         }
         if (resolution instanceof SubjectResolution.Organization orgRes) {
+            // Self-describing alias URN (urn:keycloak:org:alias:<alias>)
+            // rather than an opaque id
             ComplexSubjectId complex = new ComplexSubjectId();
-            OpaqueSubjectId tenant = new OpaqueSubjectId();
-            tenant.setId(orgRes.organization().getAlias());
+            UriSubjectId tenant = new UriSubjectId();
+            tenant.setUri(SubjectResolver.ORG_URN_ALIAS_PREFIX + orgRes.organization().getAlias());
             complex.setTenant(tenant);
             return complex;
         }

@@ -34,14 +34,13 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.BrowserSecurityHeaders;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel.RequiredAction;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.services.managers.AuthenticationSessionManager;
+import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectHttpClient;
@@ -73,6 +72,7 @@ import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.oauth.ParameterizedScopeBuilder;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -1056,14 +1056,10 @@ public class LoginTest {
     @Test
     @DatabaseTest
     public void loginSuccessfulWithDynamicScope() {
-        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
-        clientScope.setName("dynamic");
-        clientScope.setAttributes(new HashMap<>() {{
-            put(ClientScopeModel.IS_PARAMETERIZED_SCOPE, "true");
-            put(ClientScopeModel.PARAMETERIZED_SCOPE_REGEXP, "dynamic:*");
-            put(ClientScopeModel.PARAMETERIZED_SCOPE_TYPE, "string");
-        }});
-        clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        ClientScopeRepresentation clientScope = ParameterizedScopeBuilder.create("dynamic")
+                .parameterizedScopeType("string")
+                .regexp("dynamic:*")
+                .build();
         Response response = managedRealm.admin().clientScopes().create(clientScope);
         String scopeId = ApiUtil.getCreatedId(response);
         response.close();
@@ -1129,7 +1125,11 @@ public class LoginTest {
         assertTrue(authSessionId.length() >= 24);
         assertNotNull(signature);
 
-        runOnServer.run(session-> assertNotNull(session.authenticationSessions().getRootAuthenticationSession(session.getContext().getRealm(), authSessionId)));
+        var managedRealmId = managedRealm.getId();
+        runOnServer.run(session-> {
+            RealmModel realm = session.realms().getRealm(managedRealmId);
+            assertNotNull(session.authenticationSessions().getRootAuthenticationSession(realm, authSessionId));
+        });
     }
 
     @Test
@@ -1146,6 +1146,60 @@ public class LoginTest {
 
         errorPage.assertCurrent();
         assertThat(errorPage.getError(), containsString("Account is disabled"));
+    }
+
+    @Test
+    public void loginMaxLengthUsername() {
+        oauth.openLoginForm();
+        loginPage.fillLogin("a".repeat(Validation.MAX_USERNAME_LENGTH + 1), "invalid");
+        loginPage.submit();
+
+        loginPage.assertCurrent();
+
+        assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
+
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .userId(null)
+                .sessionId(null)
+                .error(Errors.USER_NOT_FOUND)
+                .withoutDetails(Details.USERNAME);
+    }
+
+    @Test
+    public void loginExactMaxLengthUsername() {
+        oauth.openLoginForm();
+        loginPage.fillLogin("a".repeat(Validation.MAX_USERNAME_LENGTH), "invalid");
+        loginPage.submit();
+
+        loginPage.assertCurrent();
+
+        assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
+
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .userId(null)
+                .sessionId(null)
+                .error(Errors.USER_NOT_FOUND)
+                .details(Details.USERNAME, "a".repeat(Validation.MAX_USERNAME_LENGTH));
+    }
+
+    @Test
+    public void loginWhitespaceOnlyUsername() {
+        oauth.openLoginForm();
+        loginPage.fillLogin("   ", "invalid");
+        loginPage.submit();
+
+        loginPage.assertCurrent();
+
+        assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
+
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .userId(null)
+                .sessionId(null)
+                .error(Errors.USER_NOT_FOUND)
+                .withoutDetails(Details.USERNAME);
     }
 
     static class DynamicScopeServerConfig implements KeycloakServerConfig {
