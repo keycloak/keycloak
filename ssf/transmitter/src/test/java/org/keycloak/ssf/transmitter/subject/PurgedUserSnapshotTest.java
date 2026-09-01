@@ -232,6 +232,22 @@ class PurgedUserSnapshotTest {
     }
 
     @Test
+    void blankEmail_isNotIndexed() {
+        // lookupBySubject rejects a blank EmailSubjectId before it looks, so indexing
+        // one would park the snapshot under a key nothing can ask for. The id index is
+        // unaffected either way — it stays the one that matters.
+        lenient().when(user.getEmail()).thenReturn("   ");
+        lenient().when(user.getAttributes()).thenReturn(Map.of(UserModel.USERNAME, List.of("purged")));
+        recaptureAsIs();
+
+        assertNotNull(PurgedUserSnapshot.lookup(session, realm, USER_ID));
+
+        EmailSubjectId blank = new EmailSubjectId();
+        blank.setEmail("   ");
+        assertNull(PurgedUserSnapshot.lookupBySubject(session, realm, blank));
+    }
+
+    @Test
     void discard_removesBothIndexes() {
         PurgedUserSnapshot.discard(session, realm, USER_ID);
 
