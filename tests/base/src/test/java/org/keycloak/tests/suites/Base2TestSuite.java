@@ -14,6 +14,7 @@ import org.junit.platform.suite.api.Suite;
         "org.keycloak.tests.cookies",
         "org.keycloak.tests.cors",
         "org.keycloak.tests.db",
+        "org.keycloak.tests.docker",
         "org.keycloak.tests.error",
         "org.keycloak.tests.exportimport",
         "org.keycloak.tests.events",
