@@ -387,11 +387,12 @@ describe("ExecutionList", () => {
       const resolved = list.resolveDropTarget("3", "2", "into");
 
       expect(resolved).not.toBeNull();
-      expect(resolved!.kind).toBe("level-change");
-      const levelChange = resolved!.change as LevelChange;
-      expect(levelChange.parent?.id).toBe("2");
-      expect(levelChange.oldIndex).toBe(1);
-      expect(levelChange.newIndex).toBe(1);
+      expect(resolved!.kind).toBe("reorder");
+      const reorderChange = resolved!.change as IndexChange;
+      expect(reorderChange.oldIndex).toBe(0);
+      expect(reorderChange.newIndex).toBe(1);
+      expect(resolved!.preview.mode).toBe("drop-into");
+      expect(resolved!.preview.targetParentId).toBe("2");
     });
 
     it("drop-into current parent from last child position is a no-op index", () => {
@@ -404,10 +405,10 @@ describe("ExecutionList", () => {
       const resolved = list.resolveDropTarget("6", "4", "into");
 
       expect(resolved).not.toBeNull();
-      const levelChange = resolved!.change as LevelChange;
-      expect(levelChange.parent?.id).toBe("4");
-      expect(levelChange.oldIndex).toBe(1);
-      expect(levelChange.newIndex).toBe(1);
+      expect(resolved!.kind).toBe("reorder");
+      const reorderChange = resolved!.change as IndexChange;
+      expect(reorderChange.oldIndex).toBe(1);
+      expect(reorderChange.newIndex).toBe(1);
     });
 
     it("reorders at same level when dropping after a row", () => {
