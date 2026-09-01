@@ -14,6 +14,7 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -37,6 +39,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -229,6 +233,29 @@ class PurgedUserSnapshotTest {
         recaptureAsIs();
 
         assertTrue(PurgedUserSnapshot.lookup(session, realm, USER_ID).isLocalRemovalOnly());
+    }
+
+    @Test
+    void organizationsOf_resolvesAliasesOncePerSnapshot() {
+        // The subject gate asks three questions per receiving stream, so re-resolving
+        // on every call multiplies alias lookups by streams. Organizations are enabled
+        // only for this test; the shared fixture leaves them off.
+        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+        lenient().when(orgProvider.isEnabled()).thenReturn(true);
+        OrganizationModel org = mock(OrganizationModel.class);
+        lenient().when(orgProvider.getByAlias("acme")).thenReturn(org);
+        lenient().when(orgProvider.getByMember(any())).thenAnswer(invocation -> Stream.of(org));
+        lenient().when(orgProvider.isManagedMember(any(), any())).thenReturn(false);
+        lenient().when(org.getAlias()).thenReturn("acme");
+        recaptureAsIs();
+
+        PurgedUserSnapshot snapshot = PurgedUserSnapshot.lookup(session, realm, USER_ID);
+        List<OrganizationModel> first = PurgedUserSnapshot.organizationsOf(session, snapshot);
+        List<OrganizationModel> second = PurgedUserSnapshot.organizationsOf(session, snapshot);
+
+        assertEquals(List.of(org), first);
+        assertSame(first, second, "the resolved list is memoized on the snapshot");
+        verify(orgProvider, times(1)).getByAlias("acme");
     }
 
     @Test
