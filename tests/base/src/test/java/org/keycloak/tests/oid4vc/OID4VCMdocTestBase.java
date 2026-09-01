@@ -54,14 +54,16 @@ public abstract class OID4VCMdocTestBase extends OID4VCIssuerTestBase {
     public static class VCTestServerWithMdocEnabled implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.OID4VC_MDOC);
+            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.OID4VC_MDOC)
+                    .spiOption("keys", "java-keystore", "keystores-path", MdocTestSigningKey.keystoresBaseDir());
         }
     }
 
     public static class VCTestServerWithPreAuthCodeAndMdocEnabled implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER, Profile.Feature.OID4VC_VCI_PREAUTH_CODE, Profile.Feature.OID4VC_MDOC);
+            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER, Profile.Feature.OID4VC_VCI_PREAUTH_CODE, Profile.Feature.OID4VC_MDOC)
+                    .spiOption("keys", "java-keystore", "keystores-path", MdocTestSigningKey.keystoresBaseDir());
         }
     }
 

@@ -312,6 +312,7 @@ public abstract class OID4VCIssuerTestBase {
         oauth.client(client.getClientId(), client.getSecret());
         enableVerifiableCredentialEvents();
         ensureHaipCompliantSdJwtSigningConfiguration();
+        ensureMdocCompliantSigningConfiguration();
 
         wallet = new OID4VCBasicWallet(keycloak, oauth);
     }
@@ -588,6 +589,40 @@ public abstract class OID4VCIssuerTestBase {
                 200
         );
         components.add(provider).close();
+    }
+
+    /**
+     * Persistently add an ES256 signing key with a CA issued certificate, as mdoc issuance rejects
+     * the self signed certificates of generated realm keys.
+     */
+    protected void ensureMdocCompliantSigningConfiguration() {
+        if (!runOnServer.fetch(session -> Profile.isFeatureEnabled(Profile.Feature.OID4VC_MDOC), Boolean.class)) {
+            return;
+        }
+        final String providerName = "mdoc-signing-key-provider";
+        var components = testRealm.admin().components();
+        if (!components.query(testRealm.getId(), KeyProvider.class.getName(), providerName).isEmpty()) {
+            return;
+        }
+
+        ComponentRepresentation component = new ComponentRepresentation();
+        component.setProviderType(KeyProvider.class.getName());
+        component.setName(providerName);
+        component.setId(UUID.randomUUID().toString());
+        component.setProviderId("java-keystore");
+        component.setConfig(new MultivaluedHashMap<>(Map.of(
+                "keystore", List.of(MdocTestSigningKey.keyStorePath()),
+                "keystorePassword", List.of(MdocTestSigningKey.PASSWORD),
+                "keystoreType", List.of("PKCS12"),
+                "keyAlias", List.of(MdocTestSigningKey.KEY_ALIAS),
+                "keyPassword", List.of(MdocTestSigningKey.PASSWORD),
+                "algorithm", List.of(Algorithm.ES256),
+                "keyUse", List.of(KeyUse.SIG.name()),
+                "priority", List.of("300"),
+                "enabled", List.of("true"),
+                "active", List.of("true")
+        )));
+        components.add(component).close();
     }
 
     protected ClientPolicyRepresentation getClientPolicy(String policyName) {
