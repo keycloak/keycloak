@@ -513,6 +513,16 @@ describe("ExecutionList", () => {
       expect(resolved!.preview.mode).toBe("reorder-before");
     });
 
+    it("returns null when dropping a subflow into its own descendant", () => {
+      const list = new ExecutionList(list2Data);
+      const subflow2 = list.expandableList.find((ex) => ex.id === "2")!;
+      subflow2.isCollapsed = false;
+      const subflow4 = subflow2.executionList!.find((ex) => ex.id === "4")!;
+      subflow4.isCollapsed = false;
+
+      expect(list.resolveDropTarget("2", "4", "into")).toBeNull();
+    });
+
     it("returns null for into on non-subflow", () => {
       const list = new ExecutionList(list2Data);
       expect(list.resolveDropTarget("1", "1", "into")).toBeNull();

@@ -871,6 +871,30 @@ export default function FlowDetails() {
     );
   };
 
+  const restoreExecutionConfig = async (
+    executionId: string,
+    config: AuthenticatorConfigRepresentation,
+  ) => {
+    if (!config.id) {
+      return;
+    }
+
+    await adminClient.authenticationManagement.createConfig({
+      id: executionId,
+      alias: config.alias,
+      config: config.config,
+    });
+  };
+
+  const findExecutionByFlowId = async (parentFlow: string, flowId: string) => {
+    const executions = await adminClient.authenticationManagement.getExecutions(
+      {
+        flow: parentFlow,
+      },
+    );
+    return executions.find((execution) => execution.flowId === flowId);
+  };
+
   const executeChange = async (
     ex: AuthenticationFlowRepresentation | ExpandableExecution,
     change: LevelChange | IndexChange,
@@ -895,18 +919,44 @@ export default function FlowDetails() {
         }
         if ("authenticationFlow" in ex && ex.authenticationFlow) {
           const executionFlow = ex as ExpandableExecution;
+          const parentFlow = change.parent?.displayName! || flow?.alias!;
+          const flowModel = executionFlow.flowId
+            ? await adminClient.authenticationManagement.getFlow({
+                flowId: executionFlow.flowId,
+              })
+            : undefined;
+          const flowType = flowModel?.providerId || "basic-flow";
+          const flowProvider =
+            flowType === "form-flow"
+              ? executionFlow.providerId
+              : (executionFlow.providerId ?? "basic-flow");
+          if (!flowProvider) {
+            throw new Error("Missing form-flow provider while moving subflow");
+          }
           const result =
             await adminClient.authenticationManagement.addFlowToFlow({
-              flow: change.parent?.displayName! || flow?.alias!,
+              flow: parentFlow,
               alias: executionFlow.displayName!,
               description: executionFlow.description!,
-              provider: ex.providerId!,
-              type: "basic-flow",
+              provider: flowProvider,
+              type: flowType,
             });
-          id = result.id!;
+          const flowExecution = await findExecutionByFlowId(
+            parentFlow,
+            result.id!,
+          );
+          if (!flowExecution?.id) {
+            throw new Error("Moved subflow execution was not created");
+          }
+          id = flowExecution.id;
+          await restoreExecutionConfig(id, config);
 
           if (executionFlow.executionList?.length) {
-            const parentForChildren = { ...executionFlow, id: result.id };
+            const parentForChildren = {
+              ...executionFlow,
+              id,
+              flowId: result.id,
+            };
             for (const [i, child] of executionFlow.executionList.entries()) {
               await executeChange(
                 child,
@@ -925,17 +975,8 @@ export default function FlowDetails() {
               flow: change.parent?.displayName! || flow?.alias!,
               provider: ex.providerId!,
             });
-
-          if (config.id) {
-            const newConfig = {
-              id: result.id,
-              alias: config.alias,
-              config: config.config,
-            };
-            await adminClient.authenticationManagement.createConfig(newConfig);
-          }
-
           id = result.id!;
+          await restoreExecutionConfig(id, config);
         }
 
         if (originalRequirement) {
