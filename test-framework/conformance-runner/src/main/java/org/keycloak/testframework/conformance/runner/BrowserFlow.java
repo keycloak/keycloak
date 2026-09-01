@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.conformance.runner;
+package org.keycloak.testframework.conformance.runner;
 
 import java.util.List;
 

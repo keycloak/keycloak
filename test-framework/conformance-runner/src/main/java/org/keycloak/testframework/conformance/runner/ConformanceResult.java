@@ -15,17 +15,16 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.conformance.containers;
+package org.keycloak.testframework.conformance.runner;
 
-import java.util.List;
-
-import org.keycloak.testframework.TestFrameworkExtension;
-import org.keycloak.testframework.injection.Supplier;
-
-public class ConformanceTestFrameworkExtension implements TestFrameworkExtension {
-
-    @Override
-    public List<Supplier<?, ?>> suppliers() {
-        return List.of(new OpenIdConformanceSuiteSupplier());
-    }
+/**
+ * Terminal results a module can finish with. Modules that capture an error page snapshot finish with REVIEW.
+ */
+public enum ConformanceResult {
+    PASSED,
+    WARNING,
+    FAILED,
+    REVIEW,
+    SKIPPED,
+    UNKNOWN
 }

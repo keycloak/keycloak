@@ -34,13 +34,13 @@ import org.keycloak.keys.JavaKeystoreKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.testframework.conformance.OpenIdConformanceSuite;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.conformance.ConformanceSigningKey;
-import org.keycloak.tests.conformance.containers.OpenIdConformanceSuite;
 
 public class VpConformanceRealmConfig implements RealmConfig {
 
