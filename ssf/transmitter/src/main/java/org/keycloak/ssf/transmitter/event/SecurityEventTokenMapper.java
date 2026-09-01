@@ -429,6 +429,23 @@ public class SecurityEventTokenMapper {
         try {
             String userId = userEvent.getUserId();
 
+            // A federated user under a READ_ONLY / UNSYNCED provider reports a
+            // successful deletion while the authoritative store keeps the account, so
+            // the account was never purged and receivers must not be told it was.
+            // See PurgedUserSnapshot.isLocalRemovalOnly.
+            // Resolved defensively: the context realm is set on every path that emits,
+            // but an NPE here would be swallowed by the catch below and turn every
+            // purge into a silent "error generating" null.
+            RealmModel contextRealm = session != null && session.getContext() != null
+                    ? session.getContext().getRealm()
+                    : null;
+            PurgedUserSnapshot snapshot = PurgedUserSnapshot.lookup(session, contextRealm, userId);
+            if (snapshot != null && snapshot.isLocalRemovalOnly()) {
+                log.debugf("Skipping account-purged for user %s: the removal only dropped Keycloak's "
+                        + "local copy and the account still exists in its federated store", userId);
+                return null;
+            }
+
             SsfSecurityEventToken eventToken = newSecurityEventToken(stream);
             eventToken.setTxn(UUID.randomUUID().toString());
             eventToken.setSubjectId(composeUserSubject(eventToken, userId, stream));

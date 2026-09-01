@@ -158,7 +158,7 @@ class PurgedUserSnapshotsTest {
     }
 
     private PurgedUserSnapshot snapshot(String userId) {
-        return new PurgedUserSnapshot(null, null, userId, null, List.of());
+        return new PurgedUserSnapshot(null, null, userId, null, List.of(), false);
     }
 
     /**
