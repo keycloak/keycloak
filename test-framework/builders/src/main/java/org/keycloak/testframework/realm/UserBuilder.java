@@ -19,7 +19,7 @@ public class UserBuilder extends Builder<UserRepresentation> {
     }
 
     public static UserBuilder create() {
-        return new UserBuilder(new UserRepresentation()).enabled(true);
+        return new UserBuilder(new UserRepresentation()).enabled(true).serviceAccount(false);
     }
 
     public static UserBuilder create(String username) {
@@ -135,6 +135,11 @@ public class UserBuilder extends Builder<UserRepresentation> {
 
     public UserBuilder serviceAccountId(String serviceAccountClientId) {
         rep.setServiceAccountClientId(serviceAccountClientId);
+        return this;
+    }
+
+    public UserBuilder serviceAccount(Boolean serviceAccount) {
+        rep.setServiceAccount(serviceAccount);
         return this;
     }
 
