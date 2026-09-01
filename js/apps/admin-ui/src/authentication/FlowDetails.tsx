@@ -790,7 +790,7 @@ export default function FlowDetails() {
         change.oldIndex === change.newIndex &&
         resolved.kind === "reorder") ||
       (change instanceof LevelChange &&
-        change.oldIndex === change.newIndex &&
+        dragged.index === change.newIndex &&
         resolved.kind === "level-change" &&
         currentParent?.id === change.parent?.id);
 
