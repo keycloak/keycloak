@@ -452,6 +452,17 @@ NOTE: This optimization is not available when using XA datasources (`+--transact
 
 You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--async-commit=false+`
 
+=== Oracle OCI (thick) driver
+
+{project_name} sets a socket read timeout on every acquired database connection to prevent long hanging threads.
+The Oracle OCI (thick) driver (`jdbc:oracle:oci:` and `jdbc:oracle:oci8:` URL schemes) does not support this JDBC feature (`Connection.setNetworkTimeout()`).
+{project_name} detects OCI connections and skips the socket timeout configuration automatically.
+
+Timeouts for OCI connections are governed by `sqlnet.ora` and TNS descriptor parameters such as `CONNECT_TIMEOUT`, `TRANSPORT_CONNECT_TIMEOUT`, and `EXPIRE_TIME`.
+Consult the Oracle documentation for details.
+
+The standard Oracle Thin driver (`jdbc:oracle:thin:`) supports `setNetworkTimeout()` and is not affected by this limitation.
+
 == Using Database Vendors with XA transaction support
 {project_name} uses non-XA transactions and the appropriate database drivers by default.
 
