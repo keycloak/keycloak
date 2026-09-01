@@ -417,6 +417,32 @@ public class OrganizationRoleTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testOrganizationRoleMembersUseDirectMappings() {
+        OrganizationRepresentation organization = createOrganization("direct-role-members");
+        OrganizationResource organizationResource = realm.admin().organizations().get(organization.getId());
+        RoleRepresentation parent = createOrganizationRole(organizationResource, "direct-role-parent");
+        RoleRepresentation child = createOrganizationRole(organizationResource, "direct-role-child");
+        OrganizationRoleResource parentResource = organizationResource.roles().get(parent.getId());
+        OrganizationRoleResource childResource = organizationResource.roles().get(child.getId());
+        parentResource.addComposites(List.of(child));
+
+        MemberRepresentation member = addMember(organizationResource, "direct-role-member@example.org");
+        UserRepresentation user = realm.admin().users().get(member.getId()).toRepresentation();
+        parentResource.addUserMembers(List.of(user));
+
+        assertThat(parentResource.getUserMembers().stream().map(UserRepresentation::getId).toList(), contains(user.getId()));
+        assertTrue(childResource.getUserMembers().isEmpty());
+        assertThat(childResource.getAvailableUserMembers(null, null, true, 0, 10).stream()
+                .map(UserRepresentation::getId).toList(), contains(user.getId()));
+
+        childResource.addUserMembers(List.of(user));
+        assertThat(childResource.getUserMembers().stream().map(UserRepresentation::getId).toList(), contains(user.getId()));
+
+        childResource.deleteUserMembers(List.of(user));
+        assertTrue(childResource.getUserMembers().isEmpty());
+    }
+
+    @Test
     public void testAdminUiRoleMappingsFilterOrganizationRoles() {
         OrganizationRepresentation organization = createOrganization("admin-ui-role-mappings");
         OrganizationResource organizationResource = realm.admin().organizations().get(organization.getId());

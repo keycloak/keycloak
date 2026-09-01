@@ -281,9 +281,6 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
     }
 
     private OrganizationModel getOrganizationContainer() {
-        if (!Organizations.isEnabled(session)) {
-            return null;
-        }
         OrganizationEntity entity = em.find(OrganizationEntity.class, role.getOrganizationId());
         if (entity == null || !realm.getId().equals(entity.getRealmId())) {
             return null;

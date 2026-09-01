@@ -409,7 +409,7 @@ public class OrganizationRoleResource extends RoleResource {
         int max = maxResults == null ? Constants.DEFAULT_MAX_RESULTS : maxResults;
 
         return paginatedStream(session.getProvider(OrganizationProvider.class).getMembersStream(organization, filters, exact, null, null)
-                .filter(user -> !user.hasRole(role))
+                .filter(user -> !user.hasDirectRole(role))
                 .filter(auth.users()::canManage), first, max)
                 .map(user -> toUserRepresentation(user, briefRep));
     }

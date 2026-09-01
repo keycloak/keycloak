@@ -202,7 +202,7 @@ public interface OrganizationProvider extends Provider {
      */
     default Stream<UserModel> getRoleMembersStream(OrganizationModel organization, RoleModel role, String search, Integer first, Integer max) {
         Stream<UserModel> roleMembers = getMembersStream(organization, search, false, null, null)
-                .filter(user -> user.hasRole(role));
+                .filter(user -> user.hasDirectRole(role));
 
         // Copied over from StreamsUtil from server-spi-private which is not available here
         if (first != null && first > 0) {

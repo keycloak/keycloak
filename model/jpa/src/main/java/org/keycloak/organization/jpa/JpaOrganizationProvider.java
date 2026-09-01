@@ -486,7 +486,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
         GroupModel group = getOrganizationGroup(organization);
         Stream<UserModel> roleMembers = userProvider.getGroupMembersStream(getRealm(), group, search, false, null, null)
-                .filter(user -> user.hasRole(role));
+                .filter(user -> user.hasDirectRole(role));
         return paginatedStream(roleMembers, first, max);
     }
 

@@ -35,7 +35,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 /**
- * @since Keycloak server 26.7.
+ * @since Keycloak server 26.8.0
  */
 public interface OrganizationRoleResource {
 

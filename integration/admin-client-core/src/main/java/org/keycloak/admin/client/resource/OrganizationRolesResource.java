@@ -32,7 +32,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.representations.idm.RoleRepresentation;
 
 /**
- * @since Keycloak server 26.7.
+ * @since Keycloak server 26.8.0
  */
 public interface OrganizationRolesResource {
 

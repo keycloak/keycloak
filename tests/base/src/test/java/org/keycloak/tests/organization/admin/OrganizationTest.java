@@ -665,6 +665,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
                 .organizationsEnabled(true)
                 .build();
         RealmResource realmRes = adminClient.realms().realm(realmRep.getRealm());
+        boolean realmRemoved = false;
 
         try {
             realmRep.setEnabled(true);
@@ -686,8 +687,25 @@ public class OrganizationTest extends AbstractOrganizationTest {
             try (Response response = realmRes.organizations().get(orgs.get(0).getId()).identityProviders().addIdentityProvider(broker.getAlias())) {
                 assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
             }
-        } finally {
+
+            RealmRepresentation updatedRealm = realmRes.toRepresentation();
+            updatedRealm.setOrganizationsEnabled(false);
+            realmRes.update(updatedRealm);
             realmRes.remove();
+            realmRemoved = true;
+        } finally {
+            if (!realmRemoved) {
+                try {
+                    RealmRepresentation cleanupRealm = realmRes.toRepresentation();
+                    cleanupRealm.setOrganizationsEnabled(true);
+                    realmRes.update(cleanupRealm);
+                } catch (NotFoundException ignored) {
+                }
+                try {
+                    realmRes.remove();
+                } catch (NotFoundException ignored) {
+                }
+            }
         }
     }
 

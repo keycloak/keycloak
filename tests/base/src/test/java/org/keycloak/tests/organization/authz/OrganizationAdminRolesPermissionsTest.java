@@ -735,6 +735,16 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
                 fail("Expected ForbiddenException");
             } catch (ForbiddenException expected) {}
 
+            // organization roles expose organization-scoped data and require view-organizations too
+            try {
+                queryOrgsResource.organizations().get(orgId).roles().list();
+                fail("Expected ForbiddenException");
+            } catch (ForbiddenException expected) {}
+            try {
+                queryOrgsResource.organizations().get(orgId).roles().count(null);
+                fail("Expected ForbiddenException");
+            } catch (ForbiddenException expected) {}
+
             // write operations should fail
             try (Response response = queryOrgsResource.organizations().create(createRepresentation("anotherOrg", "anotherOrg.org"))) {
                 assertThat(response.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
