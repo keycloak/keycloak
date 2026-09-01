@@ -132,6 +132,11 @@ public class PKCEEnforcerExecutor implements ClientPolicyExecutorProvider<PKCEEn
         String codeChallengeMethod = request.getCodeChallengeMethod();
         String pkceCodeChallengeMethod = OIDCAdvancedConfigWrapper.fromClientModel(client).getPkceCodeChallengeMethod();
 
+        // PKCE applies only to response types that issue an authorization code
+        if (parsedResponseType == null || !parsedResponseType.hasResponseType(OIDCResponseType.CODE)) {
+            return;
+        }
+
         // check whether code challenge method is specified
         if (codeChallengeMethod == null) {
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Missing parameter: code_challenge_method");
