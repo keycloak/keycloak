@@ -39,5 +39,10 @@ jobs:
           DEPLOY_SSH_KEY: ${{ runner.temp }}/ssh/hzt-infra
           DEPLOY_KNOWN_HOSTS: ${{ runner.temp }}/ssh/known_hosts
           KEYCLOAK_HOSTNAME: ${{ vars.KEYCLOAK_HOSTNAME }}
+          POSTGRES_DB: ${{ vars.POSTGRES_DB }}
+          POSTGRES_USER: ${{ vars.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          KEYCLOAK_BOOTSTRAP_ADMIN_USERNAME: ${{ vars.KEYCLOAK_BOOTSTRAP_ADMIN_USERNAME }}
+          KEYCLOAK_BOOTSTRAP_ADMIN_PASSWORD: ${{ secrets.KEYCLOAK_BOOTSTRAP_ADMIN_PASSWORD }}
           DEPLOY_REVISION: ${{ github.sha }}
         run: scripts/deploy-hzt-infra.sh

@@ -9,6 +9,11 @@ required_variables=(
   DEPLOY_SSH_KEY
   DEPLOY_KNOWN_HOSTS
   KEYCLOAK_HOSTNAME
+  POSTGRES_DB
+  POSTGRES_USER
+  POSTGRES_PASSWORD
+  KEYCLOAK_BOOTSTRAP_ADMIN_USERNAME
+  KEYCLOAK_BOOTSTRAP_ADMIN_PASSWORD
 )
 
 for variable_name in "${required_variables[@]}"; do
@@ -28,6 +33,20 @@ if [[ ! "$KEYCLOAK_HOSTNAME" =~ ^[A-Za-z0-9.-]+$ ]]; then
   exit 1
 fi
 
+for identifier in POSTGRES_DB POSTGRES_USER KEYCLOAK_BOOTSTRAP_ADMIN_USERNAME; do
+  if [[ ! "${!identifier}" =~ ^[A-Za-z0-9._-]+$ ]]; then
+    echo "${identifier} contains unsupported characters" >&2
+    exit 1
+  fi
+done
+
+for secret_name in POSTGRES_PASSWORD KEYCLOAK_BOOTSTRAP_ADMIN_PASSWORD; do
+  if [[ "${!secret_name}" == *$'\n'* || "${!secret_name}" == *$'\r'* ]]; then
+    echo "${secret_name} must be a single-line value" >&2
+    exit 1
+  fi
+done
+
 ssh_options=(
   -i "$DEPLOY_SSH_KEY"
   -o BatchMode=yes
@@ -38,6 +57,23 @@ ssh_options=(
 
 remote_host="${DEPLOY_USER}@${DEPLOY_HOST}"
 deploy_revision="${DEPLOY_REVISION:-unknown}"
+local_environment_file="$(mktemp)"
+trap 'rm -f "$local_environment_file"' EXIT
+chmod 600 "$local_environment_file"
+
+printf 'POSTGRES_DB=%s\nPOSTGRES_USER=%s\nPOSTGRES_PASSWORD=%s\nKC_DB=postgres\nKC_DB_URL=jdbc:postgresql://hzt-infra-postgres:5432/%s\nKC_DB_USERNAME=%s\nKC_DB_PASSWORD=%s\nKC_BOOTSTRAP_ADMIN_USERNAME=%s\nKC_BOOTSTRAP_ADMIN_PASSWORD=%s\nKC_HOSTNAME=https://%s\nKC_HTTP_ENABLED=true\nKC_PROXY_HEADERS=xforwarded\nKC_HEALTH_ENABLED=true\nKC_METRICS_ENABLED=true\n' \
+  "$POSTGRES_DB" \
+  "$POSTGRES_USER" \
+  "$POSTGRES_PASSWORD" \
+  "$POSTGRES_DB" \
+  "$POSTGRES_USER" \
+  "$POSTGRES_PASSWORD" \
+  "$KEYCLOAK_BOOTSTRAP_ADMIN_USERNAME" \
+  "$KEYCLOAK_BOOTSTRAP_ADMIN_PASSWORD" \
+  "$KEYCLOAK_HOSTNAME" > "$local_environment_file"
+
+ssh "${ssh_options[@]}" "$remote_host" "install -d -m 700 '$DEPLOY_PATH'"
+scp "${ssh_options[@]}" "$local_environment_file" "${remote_host}:${DEPLOY_PATH}/.env.next"
 
 ssh "${ssh_options[@]}" "$remote_host" bash -s -- \
   "$DEPLOY_PATH" "$KEYCLOAK_HOSTNAME" "$deploy_revision" <<'REMOTE_SCRIPT'
@@ -50,10 +86,13 @@ environment_file="${deploy_path}/.env"
 network_name="hzt-infra"
 bootstrap_secret_present=false
 
-if [[ ! -s "$environment_file" ]]; then
-  echo "Missing server environment file: ${environment_file}" >&2
+if [[ ! -s "${environment_file}.next" ]]; then
+  echo "Missing uploaded environment file: ${environment_file}.next" >&2
   exit 1
 fi
+
+chmod 600 "${environment_file}.next"
+mv -f "${environment_file}.next" "$environment_file"
 
 if ! command -v docker >/dev/null 2>&1; then
   echo "Docker is not installed" >&2
