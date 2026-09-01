@@ -130,8 +130,8 @@ public class Profile {
 
         TRANSIENT_USERS("Transient users for brokering", Type.EXPERIMENTAL),
 
-        LOGIN_FAILURES_V1("In-memory login failures", Type.DEPRECATED, 1, FeatureUpdatePolicy.ROLLING),
-        LOGIN_FAILURES_V2("Persistent login failures", Type.DEFAULT, 2, FeatureUpdatePolicy.ROLLING),
+        LOGIN_FAILURES_V1("In-memory login failures", Type.DEPRECATED, 1, FeatureUpdatePolicy.SHUTDOWN),
+        LOGIN_FAILURES_V2("Persistent login failures", Type.DEFAULT, 2, FeatureUpdatePolicy.SHUTDOWN),
 
         MULTI_SITE("Multi-site support", Type.DISABLED_BY_DEFAULT, FeatureUpdatePolicy.SHUTDOWN),
 
