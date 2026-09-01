@@ -14,8 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.keycloak.testsuite.account.custom;
+package org.keycloak.tests.account.custom;
 
 import java.util.List;
 import java.util.function.Function;
@@ -24,47 +23,41 @@ import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
- *
- * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
+ * Shared helpers for custom account auth-flow tests.
  */
 public abstract class AbstractCustomAccountManagementTest extends AbstractAccountManagementTest {
 
     private AuthenticationManagementResource authMgmtResource;
-    
-    @Override
-    public void setDefaultPageUriParameters() {
-        super.setDefaultPageUriParameters();
-    }
-    
-    @Before
+
+    @BeforeEach
     public void beforeTest() {
         authMgmtResource = testRealmResource().flows();
-        createAppClientInRealm(testRealmResource().toRepresentation().getRealm());
     }
-    
+
     protected AuthenticationManagementResource getAuthMgmtResource() {
         return authMgmtResource;
     }
 
     protected void updateRequirement(String flowAlias, String provider, AuthenticationExecutionModel.Requirement requirement) {
         AuthenticationExecutionInfoRepresentation exec = getExecution(flowAlias, provider);
-        
+
         exec.setRequirement(requirement.name());
         authMgmtResource.updateExecutions(flowAlias, exec);
     }
 
-    protected void updateRequirement(String flowAlias, AuthenticationExecutionModel.Requirement requirement, Function<AuthenticationExecutionInfoRepresentation, Boolean> filterFunc){
+    protected void updateRequirement(String flowAlias, AuthenticationExecutionModel.Requirement requirement,
+            Function<AuthenticationExecutionInfoRepresentation, Boolean> filterFunc) {
         List<AuthenticationExecutionInfoRepresentation> executionReps = authMgmtResource.getExecutions(flowAlias);
-        AuthenticationExecutionInfoRepresentation exec =  executionReps.stream().filter(filterFunc::apply).findFirst().orElse(null);
+        AuthenticationExecutionInfoRepresentation exec = executionReps.stream().filter(filterFunc::apply).findFirst().orElse(null);
         if (exec != null) {
             exec.setRequirement(requirement.name());
             authMgmtResource.updateExecutions(flowAlias, exec);
         }
     }
-    
+
     protected AuthenticationExecutionInfoRepresentation getExecution(String flowAlias, String provider) {
         List<AuthenticationExecutionInfoRepresentation> executionReps = authMgmtResource.getExecutions(flowAlias);
 
@@ -75,5 +68,4 @@ public abstract class AbstractCustomAccountManagementTest extends AbstractAccoun
         }
         return null;
     }
-
 }
