@@ -512,7 +512,10 @@ public class PurgedUserSnapshot extends AbstractInMemoryUserAdapter {
                         resolved.add(org);
                     }
                 }
-                return resolved;
+                // Unmodifiable because it is memoized: a caller mutating the returned
+                // list would otherwise change later subject-gate verdicts in the same
+                // request. The live branch below already returns an immutable list.
+                return List.copyOf(resolved);
             }
             return orgProvider.getByMember(user).toList();
         });
