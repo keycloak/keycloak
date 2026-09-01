@@ -162,6 +162,17 @@ export class ExecutionList {
     return undefined;
   }
 
+  #isDescendantOf(ancestorId: string, nodeId: string): boolean {
+    let current = this.#findParentOf(nodeId);
+    while (current?.id) {
+      if (current.id === ancestorId) {
+        return true;
+      }
+      current = this.#findParentOf(current.id);
+    }
+    return false;
+  }
+
   #getParentFromVisualOrder(
     level: number,
     visualIndex: number,
@@ -254,6 +265,9 @@ export class ExecutionList {
     const dragged = this.#findInTree(draggedId);
     const hover = visualOrder[hoverIndex];
     if (!dragged || draggedId === hoverId) {
+      return null;
+    }
+    if (this.#isDescendantOf(draggedId, hoverId)) {
       return null;
     }
 
