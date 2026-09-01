@@ -32,6 +32,7 @@ import org.keycloak.representations.idm.SynchronizationResultRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
+import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestCleanup;
@@ -159,6 +160,48 @@ public class LDAPUserProfileValidationTest {
         Assertions.assertEquals(0, result.getAdded(), "The rejected user should not be counted as added.");
         Assertions.assertTrue(managedRealm.admin().users().search(username, true).isEmpty(),
                 "The user should not exist in the local database.");
+    }
+
+    @Test
+    public void testRenamingExistingUserToInvalidUsernameStillResolves() {
+        final String originalUsername = "renamemevaliduser";
+        final String invalidUsername = "renamemeinvalid<em>user";
+
+        runOnServer.run(addLdapUser(originalUsername, "Valid", "User", "rename-user@example.org"));
+
+        // Import the user once so it exists locally, linked to this LDAP entry by its (immutable) UUID
+        List<UserRepresentation> found = managedRealm.admin().users().search(originalUsername, true);
+        Assertions.assertEquals(1, found.size(), "Sanity check: user should have been imported with a valid username.");
+
+        // Rename the same LDAP entry (same UUID) to a username that would fail User Profile validation
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            LDAPObject ldapUser = ldapProvider.loadLDAPUserByUsername(realm, originalUsername);
+            String usernameLdapAttribute = ldapProvider.getLdapIdentityStore().getConfig().getUsernameLdapAttribute();
+            ldapUser.setSingleAttribute(usernameLdapAttribute, invalidUsername);
+            ldapProvider.getLdapIdentityStore().update(ldapUser);
+        });
+
+        // Re-resolving the renamed user (e.g. as part of authentication) re-imports the already-existing local user.
+        // User Profile validation intentionally does not apply on this path (see LDAPStorageProvider#importUserFromLDAP):
+        // doImportUser() has already applied the rename directly to the persisted user by the time validation would
+        // run, so rejecting here could not be undone - it would only leave that user corrupted, not prevent anything.
+        Boolean resolved = runOnServer.fetch(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            return ldapProvider.getUserByUsername(realm, invalidUsername) != null;
+        }, Boolean.class);
+
+        Assertions.assertTrue(resolved, "The renamed user should still resolve, instead of being rejected after already being mutated.");
+
+        runOnServer.run(session -> {
+                RealmModel realm = session.getContext().getRealm();
+                UserModel user = session.users().getUserByUsername(realm, invalidUsername);
+                Assertions.assertNotNull(user, "Local user should exist with the updated username");
+            });
     }
 
     private static RunOnServer addLdapUser(String username, String firstName, String lastName, String email) {
