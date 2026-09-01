@@ -25,7 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 import org.keycloak.representations.idm.oid4vc.VerifiableCredentialOfferActionConfig;
-import org.keycloak.testframework.conformance.OpenIdConformanceSuite;
+import org.keycloak.testframework.conformance.OpenIdConformanceServer;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -36,6 +36,11 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import static org.keycloak.constants.OID4VCIConstants.VERIFIABLE_CREDENTIAL_OFFER_PROVIDER_ID;
+import static org.keycloak.tests.conformance.vci.VciConformanceRealmUtil.APP_CLIENT;
+import static org.keycloak.tests.conformance.vci.VciConformanceRealmUtil.CREDENTIAL_CONFIGURATION_ID;
+import static org.keycloak.tests.conformance.vci.VciConformanceRealmUtil.HOLDER;
+import static org.keycloak.tests.conformance.vci.VciConformanceRealmUtil.PASSWORD;
+import static org.keycloak.tests.conformance.vci.VciConformanceRealmUtil.REALM;
 
 /**
  * Creates a credential offer through the {@code verifiable_credential_offer} application initiated action, the
@@ -53,7 +58,7 @@ final class VciAiaCredentialOffer {
     }
 
     static String createOfferUri() {
-        URI keycloakUri = OpenIdConformanceSuite.KEYCLOAK_BASE_URI;
+        URI keycloakUri = OpenIdConformanceServer.KEYCLOAK_BASE_URI;
 
         ChromeOptions options = new ChromeOptions();
         options.addArguments(
@@ -71,8 +76,8 @@ final class VciAiaCredentialOffer {
 
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
             wait.until(ExpectedConditions.presenceOfElementLocated(By.id("username")));
-            driver.findElement(By.id("username")).sendKeys(VciConformanceRealmConfig.HOLDER);
-            driver.findElement(By.id("password")).sendKeys(VciConformanceRealmConfig.PASSWORD);
+            driver.findElement(By.id("username")).sendKeys(HOLDER);
+            driver.findElement(By.id("password")).sendKeys(PASSWORD);
             driver.findElement(By.id("kc-login")).click();
 
             WebElement offerLink = wait.until(
@@ -90,13 +95,13 @@ final class VciAiaCredentialOffer {
 
     private static String authorizationUrl(URI keycloakUri) {
         VerifiableCredentialOfferActionConfig actionConfig = new VerifiableCredentialOfferActionConfig();
-        actionConfig.setCredentialConfigurationId(VciConformanceRealmConfig.CREDENTIAL_CONFIGURATION_ID);
+        actionConfig.setCredentialConfigurationId(CREDENTIAL_CONFIGURATION_ID);
         actionConfig.setPreAuthorized(false);
 
-        String realmBase = keycloakUri + "/realms/" + VciConformanceRealmConfig.REALM;
+        String realmBase = keycloakUri + "/realms/" + REALM;
         try {
             return realmBase + "/protocol/openid-connect/auth"
-                    + "?client_id=" + VciConformanceRealmConfig.APP_CLIENT
+                    + "?client_id=" + APP_CLIENT
                     + "&redirect_uri=" + encode(realmBase + "/account/")
                     + "&response_type=code&scope=openid"
                     + "&kc_action=" + encode(VERIFIABLE_CREDENTIAL_OFFER_PROVIDER_ID + ":" + actionConfig.asEncodedParameter());
