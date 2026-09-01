@@ -47,6 +47,8 @@ import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
+import static org.keycloak.tests.conformance.vci.VciConformanceRealmUtil.REALM;
+
 // Not using org.keycloak.common.util.CertificateUtils as its leaf certificates are CA capable, which strict
 // trust chain validation rejects for an issuer signing certificate
 final class VciTestSigningKey {
@@ -79,7 +81,7 @@ final class VciTestSigningKey {
                     new Certificate[] { leafCertificate, caCertificate });
 
             Path keyStorePath = Files.createTempFile(
-                    ConformanceSigningKey.realmKeystoreDir(VciConformanceRealmConfig.REALM),
+                    ConformanceSigningKey.realmKeystoreDir(REALM),
                     "keycloak-oid4vci-conformance-signing", ".p12");
             try (OutputStream output = Files.newOutputStream(keyStorePath)) {
                 keyStore.store(output, PASSWORD.toCharArray());

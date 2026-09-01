@@ -26,6 +26,8 @@ import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 
+import static org.keycloak.tests.conformance.vp.VpConformanceRealmConfig.TEST_PLAN;
+
 /**
  * The verifier rejects a key binding JWT carrying the wrong nonce, presented as an encrypted
  * {@code direct_post.jwt} response.
@@ -39,7 +41,7 @@ public class VerifierEncryptedInvalidKbJwtNonceTest extends AbstractVpConformanc
     @Override
     protected Stream<ConformanceModuleVariant> moduleVariants() {
         return discoverModuleVariants(
-                "oid4vp-1final-verifier-test-plan",
+                TEST_PLAN,
                 Map.of(
                         "vp_profile", "plain_vp",
                         "credential_format", "sd_jwt_vc",

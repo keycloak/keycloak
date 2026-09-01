@@ -26,6 +26,8 @@ import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 
+import static org.keycloak.tests.conformance.vp.VpConformanceRealmConfig.TEST_PLAN;
+
 /**
  * The verifier rejects a credential with an invalid issuer signature.
  */
@@ -38,7 +40,7 @@ public class VerifierInvalidCredentialSignatureTest extends AbstractVpConformanc
     @Override
     protected Stream<ConformanceModuleVariant> moduleVariants() {
         return discoverModuleVariants(
-                "oid4vp-1final-verifier-test-plan",
+                TEST_PLAN,
                 Map.of(
                         "vp_profile", "plain_vp",
                         "credential_format", "sd_jwt_vc",
