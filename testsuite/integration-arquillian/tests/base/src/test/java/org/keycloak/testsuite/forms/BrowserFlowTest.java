@@ -3,6 +3,7 @@ package org.keycloak.testsuite.forms;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import org.keycloak.admin.client.resource.RealmResource;
@@ -37,6 +38,7 @@ import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.auth.page.login.OneTimeCode;
 import org.keycloak.testsuite.authentication.SetUserAttributeAuthenticatorFactory;
 import org.keycloak.testsuite.broker.SocialLoginTest;
@@ -57,8 +59,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB;
@@ -686,6 +692,71 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
                 // Activate this new flow
                 .defineAsBrowserFlow()
         );
+    }
+
+    @Test
+    @IgnoreBrowserDriver(value = { ChromeDriver.class, FirefoxDriver.class }, negate = true)
+    public void testShiftEnterDoesNotSubmitLoginForms() {
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
+        assertShiftEnterIsPrevented();
+
+        String newFlowAlias = "browser - separate username and password";
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
+                .selectFlow(newFlowAlias)
+                .inForms(forms -> forms
+                        .clear()
+                        .addAuthenticatorExecution(Requirement.REQUIRED, UsernameFormFactory.PROVIDER_ID)
+                        .addAuthenticatorExecution(Requirement.REQUIRED, PasswordFormFactory.PROVIDER_ID))
+                .defineAsBrowserFlow());
+
+        try {
+            oauth.openLoginForm();
+            loginUsernameOnlyPage.assertCurrent();
+            assertShiftEnterIsPrevented();
+
+            WebElement username = driver.findElement(By.cssSelector("#kc-form-login #username"));
+            username.sendKeys("test-user@localhost", Keys.ENTER);
+            WaitUtils.waitForPageToLoad();
+            passwordPage.assertCurrent();
+        } finally {
+            revertFlows(newFlowAlias);
+        }
+    }
+
+    private void assertShiftEnterIsPrevented() {
+        JavascriptExecutor javascriptExecutor = (JavascriptExecutor) driver;
+        boolean shiftEnterDefaultAllowed = (Boolean) javascriptExecutor.executeScript("""
+                return document.querySelector('#kc-form-login #username').dispatchEvent(new KeyboardEvent('keydown', {
+                    key: 'Enter',
+                    shiftKey: true,
+                    bubbles: true,
+                    cancelable: true
+                }));
+                """);
+        Assertions.assertFalse(shiftEnterDefaultAllowed);
+
+        String currentWindow = driver.getWindowHandle();
+        String currentUrl = driver.getCurrentUrl();
+        Set<String> windowHandles = driver.getWindowHandles();
+        try {
+            driver.findElement(By.cssSelector("#kc-form-login #username"))
+                    .sendKeys(Keys.chord(Keys.SHIFT, Keys.ENTER));
+            WaitUtils.pause(250);
+
+            Assertions.assertEquals(windowHandles, driver.getWindowHandles());
+            Assertions.assertEquals(currentUrl, driver.getCurrentUrl());
+            Assertions.assertTrue(driver.findElement(By.id("kc-login")).isEnabled());
+        } finally {
+            driver.getWindowHandles().stream()
+                    .filter(windowHandle -> !windowHandles.contains(windowHandle))
+                    .forEach(windowHandle -> {
+                        driver.switchTo().window(windowHandle);
+                        driver.close();
+                    });
+            driver.switchTo().window(currentWindow);
+        }
     }
 
     @Test

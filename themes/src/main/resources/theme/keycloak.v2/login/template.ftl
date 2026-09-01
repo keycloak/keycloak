@@ -99,6 +99,7 @@
         </#list>
     </#if>
     <script type="module" src="${url.resourcesPath}/js/passwordVisibility.js"></script>
+    <script type="module" src="${url.resourcesPath}/js/preventShiftEnter.js"></script>
     <script type="module">
         <#outputformat "JavaScript">
         import { startSessionPolling } from ${(url.resourcesPath + "/js/authChecker.js")?c};
