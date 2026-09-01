@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import org.keycloak.events.Details;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventType;
@@ -309,9 +310,13 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
         }
         OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
         String receiverClientId = client.getClientId();
-        return orgProvider.getByMember(user)
-                .anyMatch(org -> transmitter.subjectInclusionResolver()
-                        .isOrganizationNotified(session, org, receiverClientId));
+        // As the system, not as the acting admin — see
+        // PurgedUserSnapshot.organizationsOf. The stream is consumed inside the
+        // scope, so the suppression still applies when the query runs.
+        return AdminPermissionsSchema.runWithoutAuthorization(session, () ->
+                orgProvider.getByMember(user)
+                        .anyMatch(org -> transmitter.subjectInclusionResolver()
+                                .isOrganizationNotified(session, org, receiverClientId)));
     }
 
     protected boolean shouldIgnoreEvent(Event event) {
