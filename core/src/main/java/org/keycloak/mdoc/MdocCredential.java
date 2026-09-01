@@ -218,10 +218,13 @@ public class MdocCredential {
         if (certificateChain == null || certificateChain.isEmpty()) {
             throw new MdocException("mDoc signing key is missing certificate chain");
         }
-        // ISO/IEC 18013 part 5 excludes the trust anchor from x5chain
+        // ISO/IEC 18013 part 5 requires a CA issued signing certificate and keeps the trust anchor out of x5chain
         List<X509Certificate> chain = new ArrayList<>(certificateChain);
         try {
-            while (chain.size() > 1 && CertificateUtils.isSelfSigned(chain.get(chain.size() - 1))) {
+            if (CertificateUtils.isSelfSigned(chain.get(0))) {
+                throw new MdocException("mDoc signing certificate must not be self signed");
+            }
+            while (CertificateUtils.isSelfSigned(chain.get(chain.size() - 1))) {
                 chain.remove(chain.size() - 1);
             }
         } catch (GeneralSecurityException e) {

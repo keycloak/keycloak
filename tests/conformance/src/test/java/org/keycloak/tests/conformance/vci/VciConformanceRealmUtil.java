@@ -291,7 +291,7 @@ public final class VciConformanceRealmUtil {
     }
 
     // mDoc claims are organised into namespaces, so every mapper pins the example namespace
-    private List<ProtocolMapperRepresentation> mdocProtocolMappers() {
+    private static List<ProtocolMapperRepresentation> mdocProtocolMappers() {
         return List.of(
                 mdocMapper("did-mapper", "oid4vc-subject-id-mapper", "id", "did"),
                 mdocMapper("given-name-mapper", "oid4vc-user-attribute-mapper", "given_name", "firstName"),

@@ -21,6 +21,7 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -46,6 +47,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public abstract class MdocCredentialCreationAndSigningTest {
@@ -61,15 +63,15 @@ public abstract class MdocCredentialCreationAndSigningTest {
     @Test
     public void shouldCreateSignedMdocCredentialWithHolderBinding() throws Exception {
         KeyPair issuerKeyPair = KeyUtils.generateEcKeyPair(EC_KEY_SECP256R1);
-        X509Certificate issuerCertificate = selfSignedCertificate(issuerKeyPair);
+        IssuerCertificates certificates = issuerCertificates(issuerKeyPair);
         MdocCredential credential = mdocCredential();
         credential.addKeyBinding(proofJwk());
 
         MdocIssuerSignedDocument document = credential.signAsIssuerSignedDocument(
-                new ECDSASignatureSignerContext(issuerKey(issuerKeyPair, issuerCertificate))
+                new ECDSASignatureSignerContext(issuerKey(issuerKeyPair, certificates))
         );
 
-        assertIssuedCredential(document, issuerCertificate);
+        assertIssuedCredential(document, certificates.leafCertificate);
         assertNotNull(document.getMobileSecurityObject().get("deviceKeyInfo"));
         assertIssuerAuthSignature(document, issuerKeyPair.getPublic());
     }
@@ -77,15 +79,27 @@ public abstract class MdocCredentialCreationAndSigningTest {
     @Test
     public void shouldCreateSignedMdocCredentialWithoutHolderBinding() throws Exception {
         KeyPair issuerKeyPair = KeyUtils.generateEcKeyPair(EC_KEY_SECP256R1);
-        X509Certificate issuerCertificate = selfSignedCertificate(issuerKeyPair);
+        IssuerCertificates certificates = issuerCertificates(issuerKeyPair);
 
         MdocIssuerSignedDocument document = mdocCredential().signAsIssuerSignedDocument(
-                new ECDSASignatureSignerContext(issuerKey(issuerKeyPair, issuerCertificate))
+                new ECDSASignatureSignerContext(issuerKey(issuerKeyPair, certificates))
         );
 
-        assertIssuedCredential(document, issuerCertificate);
+        assertIssuedCredential(document, certificates.leafCertificate);
         assertNull(document.getMobileSecurityObject().get("deviceKeyInfo"));
         assertIssuerAuthSignature(document, issuerKeyPair.getPublic());
+    }
+
+    @Test
+    public void shouldRejectSelfSignedSigningCertificate() throws Exception {
+        KeyPair issuerKeyPair = KeyUtils.generateEcKeyPair(EC_KEY_SECP256R1);
+        KeyWrapper issuerKey = issuerKey(issuerKeyPair, null);
+        issuerKey.setCertificate(
+                (X509Certificate) CertificateUtils.generateV1SelfSignedCertificate(issuerKeyPair, "issuer-key"));
+
+        assertThrows(MdocException.class, () -> mdocCredential().signAsIssuerSignedDocument(
+                new ECDSASignatureSignerContext(issuerKey)
+        ));
     }
 
     private static MdocCredential mdocCredential() {
@@ -114,7 +128,7 @@ public abstract class MdocCredentialCreationAndSigningTest {
                 .ec(proofKeyPair.getPublic(), KeyUse.SIG);
     }
 
-    private static KeyWrapper issuerKey(KeyPair issuerKeyPair, X509Certificate issuerCertificate) {
+    private static KeyWrapper issuerKey(KeyPair issuerKeyPair, IssuerCertificates certificates) {
         KeyWrapper issuerKey = new KeyWrapper();
         issuerKey.setAlgorithm(Algorithm.ES256);
         issuerKey.setUse(KeyUse.SIG);
@@ -122,12 +136,32 @@ public abstract class MdocCredentialCreationAndSigningTest {
         issuerKey.setKid("issuer-key");
         issuerKey.setPrivateKey(issuerKeyPair.getPrivate());
         issuerKey.setPublicKey(issuerKeyPair.getPublic());
-        issuerKey.setCertificate(issuerCertificate);
+        if (certificates != null) {
+            issuerKey.setCertificate(certificates.leafCertificate);
+            issuerKey.setCertificateChain(
+                    Arrays.asList(certificates.leafCertificate, certificates.caCertificate));
+        }
         return issuerKey;
     }
 
-    private static X509Certificate selfSignedCertificate(KeyPair keyPair) throws Exception {
-        return (X509Certificate) CertificateUtils.generateV1SelfSignedCertificate(keyPair, "issuer-key");
+    private static final class IssuerCertificates {
+
+        private final X509Certificate leafCertificate;
+        private final X509Certificate caCertificate;
+
+        private IssuerCertificates(X509Certificate leafCertificate, X509Certificate caCertificate) {
+            this.leafCertificate = leafCertificate;
+            this.caCertificate = caCertificate;
+        }
+    }
+
+    private static IssuerCertificates issuerCertificates(KeyPair issuerKeyPair) throws Exception {
+        KeyPair caKeyPair = KeyUtils.generateEcKeyPair(EC_KEY_SECP256R1);
+        X509Certificate caCertificate =
+                (X509Certificate) CertificateUtils.generateV1SelfSignedCertificate(caKeyPair, "issuer-ca");
+        X509Certificate leafCertificate = CertificateUtils.generateV3Certificate(
+                issuerKeyPair, caKeyPair.getPrivate(), caCertificate, "issuer-key");
+        return new IssuerCertificates(leafCertificate, caCertificate);
     }
 
     private static void assertIssuedCredential(MdocIssuerSignedDocument document, X509Certificate issuerCertificate)
