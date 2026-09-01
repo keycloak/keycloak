@@ -10,9 +10,11 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
@@ -110,7 +112,27 @@ public class OID4VCUtil {
             throw new IllegalStateException("Issued credential is expired");
         }
 
+        checkIssuedCredentialNotBefore(session, user, expectedClient, issuedCredential);
+
         return issuedCredential;
+    }
+
+    private static void checkIssuedCredentialNotBefore(KeycloakSession session, UserModel user, ClientModel client, IssuedVerifiableCredentialModel issuedCredential) {
+        Long issuedAt = issuedCredential.getIssuedAt();
+        if (issuedAt == null) {
+            throw new IllegalStateException("Issued credential issue time not present");
+        }
+
+        RealmModel realm = client.getRealm();
+        int notBefore = Math.max(realm.getNotBefore(), client.getNotBefore());
+        int userNotBefore = LightweightUserAdapter.isLightweightUser(user)
+                ? (int) (((LightweightUserAdapter) user).getCreatedTimestamp() / 1000L)
+                : session.users().getNotBeforeOfUser(realm, user);
+        notBefore = Math.max(notBefore, userNotBefore);
+
+        if ((issuedAt / 1000L) < notBefore) {
+            throw new IllegalStateException("Issued credential is stale");
+        }
     }
 
     public static List<IssuedVerifiableCredentialModel> getIssuedVerifiableCredentialsByUserAndClient(KeycloakSession session, UserModel user, ClientModel client) {
