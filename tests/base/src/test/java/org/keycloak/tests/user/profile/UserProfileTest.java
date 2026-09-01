@@ -17,7 +17,7 @@
  *
  */
 
-package org.keycloak.testsuite.user.profile;
+package org.keycloak.tests.user.profile;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -48,6 +48,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.AbstractUserRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
@@ -58,13 +59,15 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.representations.userprofile.config.UPGroup;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientScopeBuilder;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
-import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.ModelTest;
-import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
-import org.keycloak.testsuite.util.KeycloakModelUtils;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.tests.utils.LegacyRealmConfig;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.userprofile.AttributeGroupMetadata;
 import org.keycloak.userprofile.Attributes;
 import org.keycloak.userprofile.UserProfile;
@@ -83,7 +86,7 @@ import org.keycloak.validate.validators.LengthValidator;
 import org.keycloak.validate.validators.UriValidator;
 
 import org.hamcrest.Matchers;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
 
 import static java.util.Optional.ofNullable;
@@ -105,22 +108,21 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@KeycloakIntegrationTest
 public class UserProfileTest extends AbstractUserProfileTest {
 
-    protected static final String ATT_ADDRESS = "address";
+    @InjectRealm(config = UserProfileRealmConfig.class)
+    ManagedRealm managedRealm;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-        super.configureTestRealm(testRealm);
-        testRealm.setClientScopes(new ArrayList<>());
-        testRealm.getClientScopes().add(ClientScopeBuilder.create().name("customer").protocol("openid-connect").build());
-        testRealm.getClientScopes().add(ClientScopeBuilder.create().name("client-a").protocol("openid-connect").build());
-        testRealm.getClientScopes().add(ClientScopeBuilder.create().name("some-optional-scope").protocol("openid-connect").build());
-        ClientRepresentation client = KeycloakModelUtils.createClient(testRealm, "client-a");
-        client.setDefaultClientScopes(List.of("customer"));
-        client.setOptionalClientScopes(Collections.singletonList("some-optional-scope"));
-        KeycloakModelUtils.createClient(testRealm, "client-b");
+    protected RunOnServerClient runOnServer() {
+        return runOnServer;
     }
+
+    protected static final String ATT_ADDRESS = "address";
 
     @Test
     public void testIdempotentProfile() {
@@ -335,10 +337,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testAttributeValidation);
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailAsUsernameValidation);
         getTestingClient().server(TEST_REALM_NAME).run((KeycloakSession session) -> testNonAsciiEmailValidator(session, false));
-        try (RealmAttributeUpdater updater = new RealmAttributeUpdater(managedRealm.admin())
-                .setSmtpServer(EmailSenderProvider.CONFIG_ALLOW_UTF8, Boolean.TRUE.toString()).update()) {
-            getTestingClient().server(TEST_REALM_NAME).run((KeycloakSession session) -> testNonAsciiEmailValidator(session, true));
-        }
+        getTestingClient().server(TEST_REALM_NAME).run((KeycloakSession session) -> testNonAsciiEmailValidator(session, true));
     }
 
     private static void failValidationWhenEmptyAttributes(KeycloakSession session) {
@@ -441,6 +440,11 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     private static void testNonAsciiEmailValidator(KeycloakSession session, boolean success) {
+        RealmModel realm = session.getContext().getRealm();
+        Map<String, String> smtpConfig = realm.getSmtpConfig() == null ? new HashMap<>() : new HashMap<>(realm.getSmtpConfig());
+        smtpConfig.put(EmailSenderProvider.CONFIG_ALLOW_UTF8, Boolean.toString(success));
+        realm.setSmtpConfig(smtpConfig);
+
         Map<String, Object> attributes = new HashMap<>();
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
         List<ValidationError> errors = new ArrayList<>();
@@ -1207,8 +1211,11 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     @Test
-    @ModelTest(realmName = "test")
-    public void testPersonNameProhibitedCharsValidator(KeycloakSession session) {
+    public void testPersonNameProhibitedCharsValidator() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testPersonNameProhibitedCharsValidator);
+    }
+
+    private static void testPersonNameProhibitedCharsValidator(KeycloakSession session) {
         UserProfileProvider provider = getUserProfileProvider(session);
         UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
 
@@ -1264,8 +1271,11 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     @Test
-    @ModelTest(realmName = "test")
-    public void testUriValidator(KeycloakSession session) {
+    public void testUriValidator() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testUriValidator);
+    }
+
+    private static void testUriValidator(KeycloakSession session) {
         UserProfileProvider provider = getUserProfileProvider(session);
         UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
 
@@ -1570,8 +1580,11 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     @Test
-    @ModelTest(realmName=TEST_REALM_NAME)
-    public void testEmailRequired(KeycloakSession session) {
+    public void testEmailRequired() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailRequired);
+    }
+
+    private static void testEmailRequired(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
 
         Map<String, Object> attributes = new HashMap<>();
@@ -1818,10 +1831,12 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     @Test
-    @ModelTest
-    public void testRequiredByClientScope(KeycloakSession session) {
-        RealmModel realm = session.realms().getRealmByName("test");
-        session.getContext().setRealm(realm);
+    public void testRequiredByClientScope() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testRequiredByClientScope);
+    }
+
+    private static void testRequiredByClientScope(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
         UserProfileProvider provider = getUserProfileProvider(session);
         UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.addOrReplaceAttribute(new UPAttribute(ATT_ADDRESS, new UPAttributePermissions(Set.of(), Set.of(ROLE_USER)), new UPAttributeRequired(Set.of(), Set.of("client-a"))));
@@ -1874,10 +1889,12 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     @Test
-    @ModelTest
-    public void testRequiredByOptionalClientScope(KeycloakSession session) {
-        RealmModel realm = session.realms().getRealmByName("test");
-        session.getContext().setRealm(realm);
+    public void testRequiredByOptionalClientScope() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testRequiredByOptionalClientScope);
+    }
+
+    private static void testRequiredByOptionalClientScope(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
 
         UserProfileProvider provider = getUserProfileProvider(session);
         UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
@@ -2309,11 +2326,11 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     @Test
     public void testEmailAttributeInUpdateEmailContext() {
-        AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, true);
+        setRequiredActionEnabled(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, true);
         try {
             getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailAttributeInUpdateEmailContext);
         } finally {
-            AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, false);
+            setRequiredActionEnabled(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, false);
         }
     }
 
@@ -2399,11 +2416,11 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     @Test
     public void testEmailAnnotationsInAccountContext() {
-        AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, true);
+        setRequiredActionEnabled(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, true);
         try {
             getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailAnnotationsInAccountContext);
         } finally {
-            AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, false);
+            setRequiredActionEnabled(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, false);
         }
     }
 
@@ -2474,11 +2491,11 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     @Test
     public void testEmailFieldHiddenWhenEmptyAndReadOnlyWithUpdateEmailEnabled() {
-        AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, true);
+        setRequiredActionEnabled(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, true);
         try {
             getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailFieldHiddenWhenEmptyAndReadOnlyWithUpdateEmailEnabled);
         } finally {
-            AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, false);
+            setRequiredActionEnabled(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, false);
         }
     }
 
@@ -2668,5 +2685,36 @@ public class UserProfileTest extends AbstractUserProfileTest {
         component.setConfig(new MultivaluedHashMap<>());
         realm.updateComponent(component);
         provider.create(UserProfileContext.USER_API, Map.of());
+    }
+
+    private static void setRequiredActionEnabled(RealmResource realmResource, RequiredAction requiredAction, boolean enabled) {
+        RequiredActionProviderRepresentation rep = realmResource.flows().getRequiredAction(requiredAction.name());
+        rep.setEnabled(enabled);
+        realmResource.flows().updateRequiredAction(requiredAction.name(), rep);
+    }
+
+    private static ClientRepresentation createClient(RealmRepresentation realm, String name) {
+        ClientRepresentation client = new ClientRepresentation();
+        client.setName(name);
+        client.setClientId(name);
+        client.setClientAuthenticatorType(org.keycloak.models.utils.KeycloakModelUtils.getDefaultClientAuthenticatorType());
+        client.setFullScopeAllowed(true);
+        realm.getClients().add(client);
+        return client;
+    }
+
+    private static class UserProfileRealmConfig extends LegacyRealmConfig {
+
+        @Override
+        public void configureTestRealm(RealmRepresentation testRealm) {
+            testRealm.setClientScopes(new ArrayList<>());
+            testRealm.getClientScopes().add(ClientScopeBuilder.create().name("customer").protocol("openid-connect").build());
+            testRealm.getClientScopes().add(ClientScopeBuilder.create().name("client-a").protocol("openid-connect").build());
+            testRealm.getClientScopes().add(ClientScopeBuilder.create().name("some-optional-scope").protocol("openid-connect").build());
+            ClientRepresentation client = createClient(testRealm, "client-a");
+            client.setDefaultClientScopes(List.of("customer"));
+            client.setOptionalClientScopes(Collections.singletonList("some-optional-scope"));
+            createClient(testRealm, "client-b");
+        }
     }
 }
