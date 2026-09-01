@@ -802,14 +802,14 @@ public class LDAPStorageProvider implements UserStorageProvider,
             }
             doImportUser(realm, imported, ldapUser);
 
-            // Only validate brand-new local users. If existingLocalUser is set, doImportUser() above just applied
-            // the new LDAP values (e.g. a renamed username) directly onto that already-persisted user - there is no
-            // clean way to undo that here, so rejecting at this point would leave it partially updated with invalid
-            // data instead of actually preventing anything.
-            if (existingLocalUser == null && !isUserProfileValid(realm, imported, ldapUser)) {
-                if (model.isImportEnabled()) {
-                    userProvider.removeUser(realm, imported);
-                }
+            // Only validate brand-new local users created in import mode. If existingLocalUser is set,
+            // doImportUser() above just applied the new LDAP values (e.g. a renamed username) directly onto
+            // that already-persisted user - there is no clean way to undo that here, so rejecting at this
+            // point would leave it partially updated with invalid data instead of actually preventing anything.
+            // Likewise, when import is disabled, imported is the live LDAP-backed adapter used for lookup/auth,
+            // so returning null here would break non-import flows rather than rejecting a local user creation.
+            if (model.isImportEnabled() && existingLocalUser == null && !isUserProfileValid(realm, imported, ldapUser)) {
+                userProvider.removeUser(realm, imported);
                 return null;
             }
         } catch (ModelDuplicateException e) {
