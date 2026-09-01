@@ -78,7 +78,7 @@ export const MapperList = ({
     }, []);
 
     return list.sort((a, b) => a.priority - b.priority);
-  }, [mapperList, mapperTypes]);
+  }, [mapperList, mapperTypes, deletingMapperId]);
 
   const [addMapperDialogOpen, setAddMapperDialogOpen] = useState(false);
   const [filter, setFilter] = useState(model.protocolMappers);

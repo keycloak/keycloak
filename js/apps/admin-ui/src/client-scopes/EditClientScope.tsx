@@ -220,7 +220,7 @@ export default function EditClientScope() {
         };
       });
       addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
-      return false;
+      return true;
     } catch (error) {
       addError("mappingDeletedError", error);
       return false;

@@ -76,7 +76,7 @@ export default function AddMapper() {
 
   const waitForMapperToBeAvailable = async (mapperId?: string) => {
     if (!mapperId) {
-      return;
+      return false;
     }
 
     for (let attempt = 0; attempt < MAPPER_SYNC_RETRIES; attempt++) {
@@ -86,7 +86,7 @@ export default function AddMapper() {
           id: mapperId,
         });
         if (mapper?.id === mapperId) {
-          return;
+          return true;
         }
       } catch {
         // The mapper can still be in-flight right after creation.
@@ -94,6 +94,8 @@ export default function AddMapper() {
 
       await sleep(MAPPER_SYNC_DELAY_MS);
     }
+
+    return false;
   };
 
   const save = async (idpMapper: IdentityProviderMapperRepresentation) => {
@@ -128,10 +130,12 @@ export default function AddMapper() {
           alias: alias!,
         });
 
-        await waitForMapperToBeAvailable(createdMapper.id);
+        const mapperAvailable = await waitForMapperToBeAvailable(
+          createdMapper.id,
+        );
         addAlert(t("mapperCreateSuccess"), AlertVariant.success);
 
-        if (createdMapper.id) {
+        if (createdMapper.id && mapperAvailable) {
           void navigate(
             toIdentityProviderEditMapper({
               realm,
