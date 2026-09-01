@@ -31,7 +31,7 @@
 
             <@buttons.loginButton />
         </form>
-        <script>
+        <script nonce="${nonce.value}">
             <#outputformat "JavaScript">
             function toggleOTP(index, value) {
                 // select the clicked OTP credential

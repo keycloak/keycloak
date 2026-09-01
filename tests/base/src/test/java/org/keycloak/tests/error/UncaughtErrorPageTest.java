@@ -43,6 +43,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest(config = CustomProvidersServerConfig.class)
 class UncaughtErrorPageTest {
@@ -172,6 +173,27 @@ class UncaughtErrorPageTest {
 
         errorPage.assertCurrent();
         assertThat("error page message", errorPage.getError(), is("Client not found."));
+    }
+
+    @Test
+    void errorPageInlineScriptsContainNonces() {
+        oauth.realm("master");
+        oauth.client("nosuch");
+        oauth.openLoginForm();
+
+        errorPage.assertCurrent();
+
+        var inlineScriptsWithoutNonce = errorPage.getInlineScriptsWithoutNonce();
+
+        assertTrue(
+                inlineScriptsWithoutNonce.isEmpty(),
+                String.format("Page contains %d scripts without nonce: %s",
+                        inlineScriptsWithoutNonce.size(),
+                        inlineScriptsWithoutNonce.stream()
+                                .map(s -> s.getAttribute("outerHTML"))
+                                .toList()
+                )
+        );
     }
 
     @Test

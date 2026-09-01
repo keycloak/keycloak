@@ -13,7 +13,7 @@
         </#list>
         </ul>
         <#if logout.logoutRedirectUri?has_content>
-            <script>
+            <script nonce="${nonce.value}">
                 <#outputformat "JavaScript">
                 function readystatechange(event) {
                     if (document.readyState=='complete') {
