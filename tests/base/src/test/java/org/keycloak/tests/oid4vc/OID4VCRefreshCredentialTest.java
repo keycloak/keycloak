@@ -13,6 +13,9 @@ import org.keycloak.admin.client.resource.UserVerifiableCredentialResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
@@ -20,6 +23,9 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
+import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
 import org.keycloak.sdjwt.IssuerSignedJWT;
@@ -108,6 +114,7 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
 
     @AfterEach
     void resetTestState() {
+        resetUserNotBefore();
         timeOffSet.set(0);
     }
 
@@ -321,6 +328,73 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
         assertNull(refreshResponse.getAccessToken());
         assertEquals(INVALID_GRANT, refreshResponse.getError());
         assertEquals("Token is not active", refreshResponse.getErrorDescription());
+    }
+
+    @Test
+    public void testRefreshFailsWhenUserLoggedOut() {
+        issueCredential();
+
+        timeOffSet.set(10);
+        user.admin().logout();
+
+        assertRefreshFailsForStaleIssuedCredential();
+    }
+
+    @Test
+    public void testIssuedCredentialInvalidatedByRealmLogoutAll() {
+        IssuedVerifiableCredentialRepresentation issuedCredential = issueCredential();
+        RealmRepresentation realmRep = testRealm.admin().toRepresentation();
+        int originalRealmNotBefore = realmRep.getNotBefore() != null ? realmRep.getNotBefore() : 0;
+
+        try {
+            timeOffSet.set(10);
+            testRealm.admin().logoutAll();
+
+            assertIssuedCredentialRejectedAsStale(issuedCredential.getId());
+            assertRefreshFailsForStaleToken();
+        } finally {
+            realmRep = testRealm.admin().toRepresentation();
+            realmRep.setNotBefore(originalRealmNotBefore);
+            testRealm.admin().update(realmRep);
+        }
+    }
+
+    @Test
+    public void testIssuedCredentialInvalidatedByRealmNotBefore() {
+        IssuedVerifiableCredentialRepresentation issuedCredential = issueCredential();
+        int staleNotBefore = Time.currentTime() + 10;
+
+        testRealm.updateWithCleanup(realm -> realm.notBefore(staleNotBefore));
+
+        assertIssuedCredentialRejectedAsStale(issuedCredential.getId());
+    }
+
+    @Test
+    public void testIssuedCredentialInvalidatedByClientNotBefore() {
+        IssuedVerifiableCredentialRepresentation issuedCredential = issueCredential();
+        ClientRepresentation clientRep = managedClient.admin().toRepresentation();
+        int originalClientNotBefore = clientRep.getNotBefore() != null ? clientRep.getNotBefore() : 0;
+
+        try {
+            clientRep.setNotBefore(Time.currentTime() + 10);
+            managedClient.admin().update(clientRep);
+
+            assertIssuedCredentialRejectedAsStale(issuedCredential.getId());
+        } finally {
+            clientRep = managedClient.admin().toRepresentation();
+            clientRep.setNotBefore(originalClientNotBefore);
+            managedClient.admin().update(clientRep);
+        }
+    }
+
+    @Test
+    public void testIssuedCredentialInvalidatedByUserNotBefore() {
+        IssuedVerifiableCredentialRepresentation issuedCredential = issueCredential();
+
+        timeOffSet.set(10);
+        user.admin().logout();
+
+        assertIssuedCredentialRejectedAsStale(issuedCredential.getId());
     }
 
     /**
@@ -776,5 +850,65 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Credential scope not found:" + credentialScopeName))
                 .getId();
+    }
+
+    private IssuedVerifiableCredentialRepresentation issueCredential() {
+        AccessTokenResponse tokenResponse = authzCodeFlow();
+        assertTrue(tokenResponse.isSuccess(), "Access token exchange should succeed");
+
+        CredentialResponse credResponse = wallet.credentialRequest(ctx, tokenResponse.getAccessToken())
+                .credentialIdentifier(ctx.getAuthorizedCredentialIdentifier())
+                .send().getCredentialResponse();
+        assertSuccessfulCredentialResponse(credResponse);
+
+        List<IssuedVerifiableCredentialRepresentation> issuedCredentials = user.admin().verifiableCredentials().getIssuedCredentials();
+        assertEquals(1, issuedCredentials.size(), "Single issued credential should be stored");
+        return issuedCredentials.get(0);
+    }
+
+    private void assertRefreshFailsForStaleIssuedCredential() {
+        AccessTokenResponse refreshResponse = wallet.refreshRequest(ctx).send();
+        assertFalse(refreshResponse.isSuccess(), "Refresh token exchange should fail");
+        assertNull(refreshResponse.getAccessToken());
+        assertEquals(INVALID_REQUEST, refreshResponse.getError());
+        assertEquals("Issued credential is stale", refreshResponse.getErrorDescription());
+    }
+
+    private void assertRefreshFailsForStaleToken() {
+        AccessTokenResponse refreshResponse = wallet.refreshRequest(ctx).send();
+        assertFalse(refreshResponse.isSuccess(), "Refresh token exchange should fail");
+        assertNull(refreshResponse.getAccessToken());
+        assertEquals(INVALID_GRANT, refreshResponse.getError());
+        assertEquals("Stale token", refreshResponse.getErrorDescription());
+    }
+
+    private void assertIssuedCredentialRejectedAsStale(String issuedCredentialId) {
+        String realmName = testRealm.getName();
+        String userId = user.getId();
+        String clientId = managedClient.getId();
+        String credentialConfigurationId = ctx.getCredentialConfigurationId();
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            UserModel userModel = session.users().getUserById(realm, userId);
+            ClientModel clientModel = realm.getClientById(clientId);
+            CredentialScopeModel credentialScopeModel = CredentialScopeUtils.findCredentialScopeModelByConfigurationId(
+                    realm, () -> clientModel.getClientScopes(false).values().stream(), credentialConfigurationId);
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+                    OID4VCUtil.checkIssuedVerifiableCredential(session, userModel, issuedCredentialId, credentialScopeModel, clientModel));
+            assertEquals("Issued credential is stale", exception.getMessage());
+        });
+    }
+
+    private void resetUserNotBefore() {
+        String realmName = testRealm.getName();
+        String userId = user.getId();
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            UserModel userModel = session.users().getUserById(realm, userId);
+            session.users().setNotBeforeForUser(realm, userModel, 0);
+        });
     }
 }
