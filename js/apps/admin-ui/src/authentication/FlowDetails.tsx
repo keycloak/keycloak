@@ -896,7 +896,9 @@ export default function FlowDetails() {
     return executions.find((execution) => execution.flowId === flowId);
   };
 
-  const snapshotContainsMaskedSecrets = (snapshot: ExecutionMoveSnapshot) => {
+  const snapshotContainsMaskedSecrets = (
+    snapshot: ExecutionMoveSnapshot,
+  ): boolean => {
     const currentConfigValues = Object.values(snapshot.config.config || {});
     if (currentConfigValues.includes(MASKED_SECRET_VALUE)) {
       return true;
