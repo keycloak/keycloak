@@ -217,12 +217,11 @@ public class SubjectSubscriptionFilter {
         if (userTombstone != null && now - userTombstone < graceSeconds) {
             return true;
         }
-        return PurgedUserSnapshot.organizationsOf(session, user).stream()
-                .anyMatch(org -> {
-                    Long orgTombstone = SsfNotifyAttributes.getRemovedAtForOrganization(org, receiverClientId);
-                    return orgTombstone != null
-                            && now - orgTombstone < graceSeconds;
-                });
+        return PurgedUserSnapshot.anyOrganizationMatches(session, user, org -> {
+            Long orgTombstone = SsfNotifyAttributes.getRemovedAtForOrganization(org, receiverClientId);
+            return orgTombstone != null
+                    && now - orgTombstone < graceSeconds;
+        });
     }
 
     /**
@@ -301,6 +300,11 @@ public class SubjectSubscriptionFilter {
         if (user != null) {
             return user;
         }
+        if (preferSnapshot) {
+            // Already asked above, and nothing between the two calls captures a
+            // snapshot, so the answer cannot have changed.
+            return null;
+        }
         // Non-purge events still fall back to a snapshot: the subject may name a user
         // deleted earlier in this same request, and evaluating it as unresolvable
         // would drop the event under default_subjects=NONE.
@@ -316,8 +320,8 @@ public class SubjectSubscriptionFilter {
      * "is the user excluded *via* one of their orgs" question.
      */
     protected boolean isOrganizationExcluded(UserModel user, String receiverClientId, KeycloakSession session) {
-        return PurgedUserSnapshot.organizationsOf(session, user).stream()
-                .anyMatch(org -> subjectInclusionResolver.isOrganizationExcluded(session, org, receiverClientId));
+        return PurgedUserSnapshot.anyOrganizationMatches(session, user,
+                org -> subjectInclusionResolver.isOrganizationExcluded(session, org, receiverClientId));
     }
 
     /**
@@ -325,7 +329,7 @@ public class SubjectSubscriptionFilter {
      * per the {@link #subjectInclusionResolver}.
      */
     protected boolean isOrganizationNotified(UserModel user, String receiverClientId, KeycloakSession session) {
-        return PurgedUserSnapshot.organizationsOf(session, user).stream()
-                .anyMatch(org -> subjectInclusionResolver.isOrganizationNotified(session, org, receiverClientId));
+        return PurgedUserSnapshot.anyOrganizationMatches(session, user,
+                org -> subjectInclusionResolver.isOrganizationNotified(session, org, receiverClientId));
     }
 }

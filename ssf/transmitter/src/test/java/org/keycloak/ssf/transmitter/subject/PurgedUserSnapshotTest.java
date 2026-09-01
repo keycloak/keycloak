@@ -259,6 +259,30 @@ class PurgedUserSnapshotTest {
     }
 
     @Test
+    void anyOrganizationMatches_answersFromTheMemoForSnapshots() {
+        // The gate asks three of these per stream. Passing the predicate in keeps a
+        // live user short-circuiting; for a snapshot it must reuse the memoized list
+        // rather than re-resolving every alias per question.
+        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+        lenient().when(orgProvider.isEnabled()).thenReturn(true);
+        OrganizationModel org = mock(OrganizationModel.class);
+        lenient().when(org.getAlias()).thenReturn("acme");
+        lenient().when(orgProvider.getByAlias("acme")).thenReturn(org);
+        lenient().when(orgProvider.getByMember(any())).thenAnswer(invocation -> Stream.of(org));
+        lenient().when(orgProvider.isManagedMember(any(), any())).thenReturn(false);
+        recaptureAsIs();
+
+        PurgedUserSnapshot snapshot = PurgedUserSnapshot.lookup(session, realm, USER_ID);
+
+        assertTrue(PurgedUserSnapshot.anyOrganizationMatches(session, snapshot, candidate -> true));
+        assertFalse(PurgedUserSnapshot.anyOrganizationMatches(session, snapshot, candidate -> false));
+        assertTrue(PurgedUserSnapshot.anyOrganizationMatches(session, snapshot,
+                candidate -> "acme".equals(candidate.getAlias())));
+
+        verify(orgProvider, times(1)).getByAlias("acme");
+    }
+
+    @Test
     void blankEmail_isNotIndexed() {
         // lookupBySubject rejects a blank EmailSubjectId before it looks, so indexing
         // one would park the snapshot under a key nothing can ask for. The id index is
