@@ -22,12 +22,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import org.keycloak.representations.idm.AbstractUserRepresentation;
 import org.keycloak.userprofile.AttributeChangeListener;
 import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.Attributes;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.ValidationException;
-import org.keycloak.representations.idm.AbstractUserRepresentation;
 import org.keycloak.validate.ValidationError;
 
 import org.junit.jupiter.api.Assertions;
