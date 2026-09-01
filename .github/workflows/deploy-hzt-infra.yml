@@ -1,0 +1,43 @@
+name: Deploy hzt-infra
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-hzt-infra-prod
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy Keycloak 26.7.3
+    runs-on: ubuntu-latest
+    environment: prod
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ vars.SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d "${RUNNER_TEMP}/ssh"
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "${RUNNER_TEMP}/ssh/hzt-infra"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "${RUNNER_TEMP}/ssh/known_hosts"
+          chmod 600 "${RUNNER_TEMP}/ssh/hzt-infra" "${RUNNER_TEMP}/ssh/known_hosts"
+
+      - name: Deploy
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+          DEPLOY_SSH_KEY: ${{ runner.temp }}/ssh/hzt-infra
+          DEPLOY_KNOWN_HOSTS: ${{ runner.temp }}/ssh/known_hosts
+          KEYCLOAK_HOSTNAME: ${{ vars.KEYCLOAK_HOSTNAME }}
+          DEPLOY_REVISION: ${{ github.sha }}
+        run: scripts/deploy-hzt-infra.sh
