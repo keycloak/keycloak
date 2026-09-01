@@ -12,6 +12,7 @@ import {
 import { clickTableRowItem, clickTableToolbarItem } from "../utils/table.ts";
 import { login } from "../utils/login.ts";
 import {
+  OID4VCI_MDOC_SERVER_FEATURE,
   OID4VCI_PROTOCOL,
   skipIfOID4VCIFeatureDisabled,
   skipIfOID4VCIMdocFeatureDisabled,
@@ -397,7 +398,34 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     ).toBeVisible();
   });
 
-  test("should only show supported format options (dc+sd-jwt and jwt_vc)", async ({
+  test("should only show supported non-mdoc format options when mdoc is disabled", async ({
+    page,
+  }) => {
+    // eslint-disable-next-line playwright/no-skipped-test -- This test covers the server-side provider-gated branch.
+    test.skip(
+      await adminClient.isFeatureEnabled(OID4VCI_MDOC_SERVER_FEATURE),
+      "mDoc feature is enabled.",
+    );
+
+    await using testBed = await createTestBed({
+      verifiableCredentialsEnabled: true,
+    });
+    await createClientScopeAndSelectProtocolAndFormat(page, testBed);
+
+    await page.locator("#kc-vc-format").click();
+
+    await expect(
+      page.getByRole("option", { name: "SD-JWT VC (dc+sd-jwt)" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("option", { name: "JWT VC (jwt_vc_json)" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("option", { name: "ISO mDoc (mso_mdoc)" }),
+    ).toHaveCount(0);
+  });
+
+  test("should only show supported format options (dc+sd-jwt and jwt_vc_json)", async ({
     page,
   }) => {
     await using testBed = await createTestBed({
@@ -894,7 +922,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await createClientScopeAndSelectProtocolAndFormat(
       page,
       testBed,
-      "ISO mDoc (mso_mdoc)",
+      "SD-JWT VC (dc+sd-jwt)",
     );
 
     await page.getByTestId("name").fill(`oid4vci-mdoc-${Date.now()}`);
@@ -904,11 +932,24 @@ test.describe("OID4VCI Client Scope Functionality", () => {
       page.getByTestId("attributes.vc.binding_required"),
     );
 
-    await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("jwk");
+    await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("cose_key");
     await page
       .getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES)
       .fill("jwt");
 
+    await assertSaveButtonIsDisabled(page);
+    await expect(
+      page.getByText(
+        "Unsupported binding method(s): cose_key. Allowed values: jwk",
+      ),
+    ).toBeVisible();
+
+    await selectVCFormat(page, "ISO mDoc (mso_mdoc)");
+    await expect(page.getByText("Unsupported binding method(s)")).toHaveCount(
+      0,
+    );
+
+    await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("jwk");
     await assertSaveButtonIsDisabled(page);
     await expect(
       page.getByText(

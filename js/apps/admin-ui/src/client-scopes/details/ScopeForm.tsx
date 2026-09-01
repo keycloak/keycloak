@@ -97,7 +97,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const { t, i18n } = useTranslation();
   const { adminClient } = useAdminClient();
   const form = useForm<ClientScopeDefaultOptionalType>({ mode: "onChange" });
-  const { control, handleSubmit, setValue, formState } = form;
+  const { control, handleSubmit, setValue, trigger, formState } = form;
   const { isDirty, isValid } = formState;
   const { realm, realmRepresentation } = useRealm();
 
@@ -206,12 +206,18 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     control,
     name: "protocol",
   });
+  const vcFormatFieldName =
+    convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.vc.format",
+    );
+  const cryptoBindingMethodsFieldName =
+    convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.vc.cryptographic_binding_methods_supported",
+    );
 
   const selectedFormat = useWatch({
     control,
-    name: convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-      "attributes.vc.format",
-    ),
+    name: vcFormatFieldName,
     defaultValue: clientScope?.attributes?.["vc.format"] ?? VC_FORMAT_SD_JWT,
   });
   const selectedTokenJwsType = useWatch({
@@ -235,8 +241,10 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       : ALLOWED_CRYPTO_BINDING_METHODS_JSON;
   const allowedCryptoBindingMethodsText =
     allowedCryptoBindingMethods.join(", ");
-  const credentialBuilderProviders =
-    serverInfo.providers.credentialBuilder.providers;
+  const credentialBuilderProviders = useMemo(
+    () => serverInfo.providers?.["credentialBuilder"]?.providers ?? {},
+    [serverInfo.providers],
+  );
   const vcFormatOptions = useMemo(() => {
     const availableProviderFormats = Object.keys(credentialBuilderProviders);
     const fallbackFormats = [
@@ -307,6 +315,12 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     defaultValue:
       clientScope?.attributes?.["vc.key_attestations_required"] ?? "false",
   });
+
+  useEffect(() => {
+    if (bindingRequired === "true") {
+      void trigger(cryptoBindingMethodsFieldName);
+    }
+  }, [bindingRequired, cryptoBindingMethodsFieldName, selectedFormat, trigger]);
 
   const isSigningKeySelected = useWatch({
     control,
@@ -684,9 +698,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             />
             <SelectControl
               id="kc-vc-format"
-              name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-                "attributes.vc.format",
-              )}
+              name={vcFormatFieldName}
               label={t("supportedFormats")}
               labelIcon={t("supportedFormatsHelp")}
               controller={{ defaultValue: VC_FORMAT_SD_JWT }}
@@ -781,9 +793,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             {bindingRequired === "true" && (
               <>
                 <TextControl
-                  name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-                    "attributes.vc.cryptographic_binding_methods_supported",
-                  )}
+                  name={cryptoBindingMethodsFieldName}
                   label={t("cryptographicBindingMethodsSupported")}
                   labelIcon={t("cryptographicBindingMethodsSupportedHelp")}
                   rules={{
