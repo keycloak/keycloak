@@ -56,7 +56,7 @@ public class AuthAttachmentRegisterTest extends AbstractWebAuthnVirtualTest {
     @Test
     public void authenticatorAttachmentPlatform() {
         managedRealm.updateWithCleanup(r ->
-                r.webAuthn(isPasswordless(), wAuthN -> wAuthN
+                r.webAuthn(isPasswordless(), builder -> builder
                         .authenticatorAttachment(AuthenticatorAttachment.PLATFORM.getValue())
                         .userVerificationRequirement(UserVerificationRequirement.DISCOURAGED.getValue())
                         .timeout(3)
@@ -94,7 +94,7 @@ public class AuthAttachmentRegisterTest extends AbstractWebAuthnVirtualTest {
 
     private void assertAuthenticatorAttachment(boolean shouldSuccess, AuthenticatorAttachment attachment) {
         managedRealm.updateWithCleanup(r ->
-                r.webAuthn(isPasswordless(), WAuthN -> WAuthN.authenticatorAttachment(attachment.getValue()))
+                r.webAuthn(isPasswordless(), builder -> builder.authenticatorAttachment(attachment.getValue()))
         );
 
         WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());

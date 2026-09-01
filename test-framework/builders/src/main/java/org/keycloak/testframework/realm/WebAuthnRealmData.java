@@ -41,14 +41,6 @@ public class WebAuthnRealmData {
         return isPasswordless ? realm.getWebAuthnPolicyPasswordlessAuthenticatorAttachment() : realm.getWebAuthnPolicyAuthenticatorAttachment();
     }
 
-    /**
-     * @deprecated Use {@link #getResidentKey()} instead.
-     */
-    @Deprecated
-    public String getRequireResidentKey() {
-        return isPasswordless ? realm.getWebAuthnPolicyPasswordlessRequireResidentKey() : realm.getWebAuthnPolicyRequireResidentKey();
-    }
-
     public String getResidentKey() {
         return isPasswordless ? realm.getWebAuthnPolicyPasswordlessResidentKey() : realm.getWebAuthnPolicyResidentKey();
     }
@@ -108,15 +100,6 @@ public class WebAuthnRealmData {
 
         public Builder authenticatorAttachment(String attachment) {
             setProperty(attachment, realm::setWebAuthnPolicyAuthenticatorAttachment, realm::setWebAuthnPolicyPasswordlessAuthenticatorAttachment);
-            return this;
-        }
-
-        /**
-         * @deprecated Use {@link #residentKey(String)} instead.
-         */
-        @Deprecated
-        public Builder requireResidentKey(String requirement) {
-            setProperty(requirement, realm::setWebAuthnPolicyRequireResidentKey, realm::setWebAuthnPolicyPasswordlessRequireResidentKey);
             return this;
         }
 
