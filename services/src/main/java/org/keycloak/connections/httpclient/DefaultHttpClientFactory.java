@@ -21,13 +21,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.EnvUtil;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.truststore.TruststoreProvider;
@@ -57,7 +60,7 @@ import static org.keycloak.utils.StringUtil.isBlank;
  * }
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultHttpClientFactory implements HttpClientFactory {
+public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentDependentProviderFactory {
 
     private static final Logger logger = Logger.getLogger(DefaultHttpClientFactory.class);
     private static final String configScope = "keycloak.connectionsHttpClient.default.";
@@ -140,6 +143,40 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                     throw new IOException("No content returned from HTTP call");
                 }
                 return body;
+            }
+
+            @Override
+            public InputStream getInputStream(String uri, Map<String, String> headers) throws IOException {
+                HttpGet request = new HttpGet(uri);
+                if (headers != null) {
+                    headers.forEach(request::setHeader);
+                }
+                HttpResponse response = httpClient.execute(request);
+                InputStream body = inputStreamResponseHandler.handleResponse(response);
+                if (body == null) {
+                    throw new IOException("No content returned from HTTP call");
+                }
+                return body;
+            }
+
+            @Override
+            public byte[] postBinary(String uri, byte[] body, Map<String, String> headers) throws IOException {
+                HttpPost request = new HttpPost(uri);
+                if (headers != null) {
+                    headers.forEach(request::setHeader);
+                }
+                request.setEntity(EntityBuilder.create().setBinary(body).build());
+                try (CloseableHttpResponse response = httpClient.execute(request)) {
+                    try {
+                        if (response.getStatusLine().getStatusCode() < 200 || response.getStatusLine().getStatusCode() >= 300) {
+                            throw new IOException("HTTP " + response.getStatusLine().getStatusCode()
+                                    + " from " + uri);
+                        }
+                        return EntityUtils.toByteArray(response.getEntity());
+                    } finally {
+                        EntityUtils.consumeQuietly(response.getEntity());
+                    }
+                }
             }
 
             @Override
@@ -454,6 +491,11 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                 .defaultValue("0.5")
                 .add()
                 .build();
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return Profile.isFeatureEnabled(Profile.Feature.HTTP_CLIENT);
     }
 
     private boolean getBooleanConfigWithSysPropFallback(String key, boolean defaultValue) {

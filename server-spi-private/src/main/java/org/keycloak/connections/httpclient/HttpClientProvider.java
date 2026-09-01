@@ -19,25 +19,29 @@ package org.keycloak.connections.httpclient;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 
 import org.keycloak.provider.Provider;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public interface HttpClientProvider extends Provider {
     /**
-     * Returns the {@code CloseableHttpClient} that can be freely used.
-     * <p>
-     * <b>The returned {@code HttpClient} instance must never be {@code close()}d by the caller.</b>
-     * <p>
-     * Closing the {@code HttpClient} instance is responsibility of this provider. However,
-     * the objects created via the returned {@code HttpClient} need to be closed properly
-     * by the code that instantiated them.
-     * @return 
+     * @deprecated Use {@link org.keycloak.http.simple.SimpleHttp#create(org.keycloak.models.KeycloakSession)} for
+     * general HTTP calls, or the provider helper methods ({@link #getString}, {@link #getInputStream},
+     * {@link #postText}, {@link #postBinary}) for simple operations. This method exposes an Apache HTTP Client type
+     * and will be removed when the Apache dependency is dropped.
      */
+    @Deprecated(since = "27.0", forRemoval = true)
     CloseableHttpClient getHttpClient();
 
     /**
@@ -75,6 +79,55 @@ public interface HttpClientProvider extends Provider {
      * @throws IOException On network errors, no content being returned or a non-2xx HTTP status code.
      */
     InputStream getInputStream(String uri) throws IOException;
+
+    /**
+     * Retrieve the contents of a URL as an InputStream, sending additional HTTP headers with the request.
+     * Use this when cache-control or other custom headers are required (e.g., CRL downloads).
+     *
+     * @param uri URI with data to receive.
+     * @param headers additional HTTP headers to include in the request.
+     * @return Body of the response as an InputStream. The caller is required to close it.
+     * @throws IOException On network errors, no content being returned or a non-2xx HTTP status code.
+     */
+    @SuppressWarnings("deprecation")
+    default InputStream getInputStream(String uri, Map<String, String> headers) throws IOException {
+        HttpGet get = new HttpGet(uri);
+        if (headers != null) {
+            headers.forEach(get::setHeader);
+        }
+        HttpResponse response = getHttpClient().execute(get);
+        if (response.getEntity() == null) {
+            throw new IOException("No content returned from HTTP call");
+        }
+        return response.getEntity().getContent();
+    }
+
+    /**
+     * Send a binary POST request and return the response body as a byte array.
+     * Use this for binary protocols (e.g., OCSP) where request and response are not text-based.
+     *
+     * @param uri URI to POST to.
+     * @param body the binary request body.
+     * @param headers HTTP headers to include (e.g., Content-Type, Accept).
+     * @return response body as byte array.
+     * @throws IOException On network errors or a non-2xx HTTP status code.
+     */
+    @SuppressWarnings("deprecation")
+    default byte[] postBinary(String uri, byte[] body, Map<String, String> headers) throws IOException {
+        HttpPost post = new HttpPost(uri);
+        if (headers != null) {
+            headers.forEach(post::setHeader);
+        }
+        post.setEntity(new ByteArrayEntity(body));
+        try (CloseableHttpResponse response =
+                     (CloseableHttpResponse) getHttpClient().execute(post)) {
+            int status = response.getStatusLine().getStatusCode();
+            if (status < 200 || status >= 300) {
+                throw new IOException("HTTP " + status + " from " + uri);
+            }
+            return EntityUtils.toByteArray(response.getEntity());
+        }
+    }
 
     /**
      * Helper method.

@@ -74,10 +74,6 @@ import org.keycloak.truststore.TruststoreProvider;
 import org.keycloak.utils.CRLUtils;
 import org.keycloak.utils.OCSPProvider;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY_MODE_ANY;
@@ -385,16 +381,11 @@ public class CertificateValidator {
             try {
                 logger.debugf("Loading CRL from %s", remoteURI.toString());
 
-                CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
-                HttpGet get = new HttpGet(remoteURI);
-                get.setHeader("Pragma", "no-cache");
-                get.setHeader("Cache-Control", "no-cache, no-store");
-                try (CloseableHttpResponse response = httpClient.execute(get)) {
-                    try (InputStream content = response.getEntity().getContent()) {
-                        return loadFromStream(cf, content);
-                    } finally {
-                        EntityUtils.consumeQuietly(response.getEntity());
-                    }
+                try (InputStream content = session.getProvider(HttpClientProvider.class)
+                        .getInputStream(remoteURI.toString(), Map.of(
+                                "Pragma", "no-cache",
+                                "Cache-Control", "no-cache, no-store"))) {
+                    return loadFromStream(cf, content);
                 }
             }
             catch(IOException ex) {
