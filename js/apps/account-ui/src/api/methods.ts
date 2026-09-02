@@ -99,20 +99,20 @@ export async function deleteConsent(
   if (!response.ok) {
     throw await parseResponse(response);
   }
+  return response;
 }
 
 export async function deleteSession(
   context: KeycloakContext<BaseEnvironment>,
   id?: string,
 ) {
-  const response = await request(
-    `/sessions${id ? `/${id}` : ""}`,
-    context,
-    { method: "DELETE" },
-  );
+  const response = await request(`/sessions${id ? `/${id}` : ""}`, context, {
+    method: "DELETE",
+  });
   if (!response.ok) {
     throw await parseResponse(response);
   }
+  return response;
 }
 
 export async function deleteApplicationSessions(
@@ -127,6 +127,7 @@ export async function deleteApplicationSessions(
   if (!response.ok) {
     throw await parseResponse(response);
   }
+  return response;
 }
 
 export async function getCredentials({ signal, context }: CallOptions) {
