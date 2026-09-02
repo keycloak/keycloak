@@ -326,22 +326,35 @@ public interface OrganizationProvider extends Provider {
     GroupModel getOrganizationGroup(OrganizationModel organization);
 
     /**
-     * Associate the given {@link IdentityProviderModel} with the given {@link OrganizationModel}.
+     * Associates the given {@link IdentityProviderModel} with the given {@link OrganizationModel}
+     * using default config (autoMembership=true, membershipType=UNMANAGED).
+     *
+     * <p>A single identity provider can be linked to multiple organizations, if the identity provider is
+     * already associated with this organization, the call is rejected. If it is associated with a different
+     * organization, the new link is created alongside the existing one.
      *
      * @param organization the organization
-     * @param identityProvider the identityProvider
-     * @return {@code true} if the identityProvider was associated with the organization. Otherwise, returns {@code false}
+     * @param identityProvider the identity provider
+     * @return {@code true} if the identity provider was associated with the organization. Otherwise, returns {@code false}
      */
     boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider);
 
     /**
+     * Returns all identity providers associated with the given organization.
+     *
+     * <p>Because the IdP-to-org relationship is many-to-many, the returned providers may also be linked
+     * to other organizations.
+     *
      * @param organization the organization
-     * @return Stream of the identity providers associated with the given {@code organization}. Never returns {@code null}.
+     * @return a stream of identity providers associated with the given {@code organization}; never {@code null}
      */
     Stream<IdentityProviderModel> getIdentityProviders(OrganizationModel organization);
 
     /**
-     * Removes the link between the given {@link OrganizationModel} and the identity provider associated with it if such a link exists.
+     * Removes the link between the given {@link OrganizationModel} and the given {@link IdentityProviderModel}.
+     *
+     * <p>Only the association is removed — the identity provider itself is not deleted from the realm and may
+     * remain linked to other organizations.
      *
      * @param organization the organization
      * @param identityProvider the identity provider
