@@ -17,7 +17,7 @@
  *
  */
 
-package org.keycloak.testsuite.user.profile;
+package org.keycloak.tests.user.profile;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -32,12 +32,12 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.util.JsonSerialization;
@@ -45,7 +45,15 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public abstract class AbstractUserProfileTest extends AbstractTestRealmKeycloakTest {
+public abstract class AbstractUserProfileTest {
+
+    protected static final String TEST_REALM_NAME = "test";
+
+    protected abstract RunOnServerClient runOnServer();
+
+    protected TestingClientAdapter getTestingClient() {
+        return new TestingClientAdapter(runOnServer());
+    }
 
     protected static void configureAuthenticationSession(KeycloakSession session) {
         Set<String> scopes = new HashSet<>();
@@ -289,7 +297,30 @@ public abstract class AbstractUserProfileTest extends AbstractTestRealmKeycloakT
         };
     }
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
+    protected static class TestingClientAdapter {
+
+        private final RunOnServerClient runOnServer;
+
+        protected TestingClientAdapter(RunOnServerClient runOnServer) {
+            this.runOnServer = runOnServer;
+        }
+
+        public ServerAdapter server(String realmName) {
+            return new ServerAdapter(runOnServer);
+        }
     }
+
+    protected static class ServerAdapter {
+
+        private final RunOnServerClient runOnServer;
+
+        protected ServerAdapter(RunOnServerClient runOnServer) {
+            this.runOnServer = runOnServer;
+        }
+
+        public void run(RunOnServer action) {
+            runOnServer.run(action);
+        }
+    }
+
 }
