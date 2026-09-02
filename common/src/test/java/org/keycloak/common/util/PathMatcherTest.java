@@ -84,6 +84,101 @@ public class PathMatcherTest {
     }
 
     @Test
+    public void testAbsoluteUriSchemeAndAuthorityPreserved() {
+        PathMatcher<String> matcher = createMatcher("https://my.domain/example", "/*");
+        Assertions.assertEquals("https://my.domain/example", matcher.matches("https://my.domain/example"));
+    }
+
+    @Test
+    public void testAbsoluteUriWithPortPreserved() {
+        PathMatcher<String> matcher = createMatcher("https://my.domain:8080/example", "/*");
+        Assertions.assertEquals("https://my.domain:8080/example", matcher.matches("https://my.domain:8080/example"));
+    }
+
+    @Test
+    public void testAbsoluteUriMatchesTemplate() {
+        PathMatcher<String> matcher = createMatcher("https://my.domain/example/{module-name}", "/*");
+        Assertions.assertEquals("https://my.domain/example/{module-name}", matcher.matches("https://my.domain/example/one"));
+    }
+
+    @Test
+    public void testAbsoluteUriMatchesWildcard() {
+        PathMatcher<String> matcher = createMatcher("https://my.domain/example/*", "/other");
+        Assertions.assertEquals("https://my.domain/example/*", matcher.matches("https://my.domain/example/one"));
+    }
+
+    @Test
+    public void testAbsoluteUriMatrixParamsStripped() {
+        PathMatcher<String> matcher = createMatcher("https://my.domain/api/admin", "/*");
+        Assertions.assertEquals("https://my.domain/api/admin", matcher.matches("https://my.domain/api/admin;x=1"));
+    }
+
+    @Test
+    public void testAbsoluteUriDotSegmentsResolved() {
+        PathMatcher<String> matcher = createMatcher("https://my.domain/api/admin", "/*");
+        Assertions.assertEquals("https://my.domain/api/admin", matcher.matches("https://my.domain/api/foo/../admin"));
+    }
+
+    @Test
+    public void testAbsoluteUriDoubleSlashesInPathCollapsed() {
+        PathMatcher<String> matcher = createMatcher("https://my.domain/api/admin", "/*");
+        Assertions.assertEquals("https://my.domain/api/admin", matcher.matches("https://my.domain/api//admin"));
+    }
+
+    @Test
+    public void testAbsoluteUriTrailingSlashStripped() {
+        PathMatcher<String> matcher = createMatcher("https://my.domain/api/admin", "/*");
+        Assertions.assertEquals("https://my.domain/api/admin", matcher.matches("https://my.domain/api/admin/"));
+    }
+
+    @Test
+    public void testQueryStringDropped() {
+        PathMatcher<String> matcher = createMatcher("/api/admin", "/*");
+        Assertions.assertEquals("/api/admin", matcher.matches("/api/admin?x=1"));
+    }
+
+    @Test
+    public void testFragmentDropped() {
+        PathMatcher<String> matcher = createMatcher("/api/admin", "/*");
+        Assertions.assertEquals("/api/admin", matcher.matches("/api/admin#section"));
+    }
+
+    @Test
+    public void testQueryStringNotSplicedAcrossMatrixParam() {
+        PathMatcher<String> matcher = createMatcher("/api/admin", "/*");
+        Assertions.assertEquals("/api/admin", matcher.matches("/api/admin;x=1?redirect=/evil"));
+    }
+
+    @Test
+    public void testAbsoluteUriQueryStringDropped() {
+        PathMatcher<String> matcher = createMatcher("https://my.domain/api/admin", "/*");
+        Assertions.assertEquals("https://my.domain/api/admin", matcher.matches("https://my.domain/api/admin?x=1"));
+    }
+
+    @Test
+    public void testQueryWithNestedSchemeAndSlashesDropped() {
+        // a query value containing its own "://" and "//" must not leak into, or be confused with, the kept prefix
+        PathMatcher<String> matcher = createMatcher("https://host/path", "/*");
+        Assertions.assertEquals("https://host/path", matcher.matches("https://host/path?x=https://a//b"));
+    }
+
+    @Test
+    public void testMalformedQueryDoesNotCorruptSchemeAndAuthority() {
+        // a malformed %-escape in the (discarded) query must not poison the scheme/authority syntax probe and
+        // fall through to mangling "https://" as if it were plain path content
+        PathMatcher<String> matcher = createMatcher("https://my.domain/api/admin", "/*");
+        Assertions.assertEquals("https://my.domain/api/admin", matcher.matches("https://my.domain/api/admin?bad=%"));
+    }
+
+    @Test
+    public void testEncodedQuestionMarkNotTreatedAsDelimiter() {
+        // %3F is not a literal '?', so it must not be truncated as a query delimiter - it survives as part of
+        // the path and gets decoded normally by the existing single-decode pass, same as any other %-octet
+        PathMatcher<String> matcher = createMatcher("/api/search?foo", "/*");
+        Assertions.assertEquals("/api/search?foo", matcher.matches("/api/search%3Ffoo"));
+    }
+
+    @Test
     public void testRootPathPreserved() {
         PathMatcher<String> matcher = createMatcher("/", "/api/admin");
         Assertions.assertEquals("/", matcher.matches("/"));
@@ -125,6 +220,30 @@ public class PathMatcherTest {
     public void testUriWithNoPathReturnsNoMatch() {
         PathMatcher<String> matcher = createMatcher("/api/admin", "/*");
         Assertions.assertNull(matcher.matches("foo:bar"));
+    }
+
+    @Test
+    public void testMalformedAbsoluteUriReturnsNoMatch() {
+        // a string that looks like an absolute URI (contains "://") but fails to parse as one must be rejected
+        // outright, not fall back to treating the raw "scheme://" text as a plain path
+        PathMatcher<String> matcher = createMatcher("/api/admin", "/*");
+        Assertions.assertNull(matcher.matches("https://[not-ipv6]/api/admin"));
+    }
+
+    @Test
+    public void testAuthorityLessAbsoluteUriReturnsNoMatch() {
+        // "https:///api/admin" has a recognized scheme but the empty authority comes back as null (not "") -
+        // must be rejected outright, not fall back to treating "https://" as plain path content
+        PathMatcher<String> matcher = createMatcher("/api/admin", "/*");
+        Assertions.assertNull(matcher.matches("https:///api/admin"));
+    }
+
+    @Test
+    public void testIncidentalSchemeSeparatorInRelativePathStillNormalized() {
+        // "://" embedded in an ordinary relative path (no recognized scheme, since it doesn't start with one) is
+        // not an absolute URI at all - it must still fall through to plain path normalization, not be rejected
+        PathMatcher<String> matcher = createMatcher("/api/redirect-to-https:/example.com", "/other");
+        Assertions.assertEquals("/api/redirect-to-https:/example.com", matcher.matches("/api/redirect-to-https://example.com"));
     }
 
     @Test
