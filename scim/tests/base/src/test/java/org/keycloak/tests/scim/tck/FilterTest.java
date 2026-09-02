@@ -827,12 +827,12 @@ public class FilterTest extends AbstractScimTest {
     }
 
     @Test
-    public void testFilterByMetaTimestamps() {
+    public void testFilterByMetaTimestamps() throws InterruptedException {
         Instant before = Instant.now();
-
+        Thread.sleep(1); // Ensure createdTimestamp is strictly after 'before' to satisfy the gt filter
         User user = createUser("bob");
         final String userName = user.getUserName();
-
+        Thread.sleep(1); // Ensure 'after' is strictly after createdTimestamp to satisfy the lt filter
         Instant after = Instant.now();
 
         // filter by meta.created gt <before> — should include the user
@@ -872,15 +872,15 @@ public class FilterTest extends AbstractScimTest {
     }
 
     @Test
-    public void testFilterGroupsByMetaTimestamps() {
+    public void testFilterGroupsByMetaTimestamps() throws InterruptedException {
         Instant before = Instant.now();
-
+        Thread.sleep(1); // Ensure createdTimestamp is strictly after 'before' to satisfy the gt filter
         Group group = new Group();
         group.setDisplayName(KeycloakModelUtils.generateId());
         group = client.groups().create(group);
         groupIdsToRemove.add(group.getId());
         String displayName = group.getDisplayName();
-
+        Thread.sleep(1); // Ensure 'after' is strictly after createdTimestamp to satisfy the lt filter
         Instant after = Instant.now();
 
         // filter by meta.created gt <before> — should include the group
