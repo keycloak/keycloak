@@ -103,29 +103,29 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
     public void testGetByDomain() {
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel acme = orgProvider.getByDomainName("orga.org");
+            OrganizationModel acme = orgProvider.getByDomainName("orga.org").findFirst().orElse(null);
             assertNotNull(acme);
             acme.setDomains(Set.of(new OrganizationDomainModel("acme.org")));
         });
 
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel acme = orgProvider.getByDomainName("orga.org");
+            OrganizationModel acme = orgProvider.getByDomainName("orga.org").findFirst().orElse(null);
             assertNull(acme);
-            acme = orgProvider.getByDomainName("acme.org");
+            acme = orgProvider.getByDomainName("acme.org").findFirst().orElse(null);
             assertNotNull(acme);
         });
 
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel acme = orgProvider.getByDomainName("acme.org");
+            OrganizationModel acme = orgProvider.getByDomainName("acme.org").findFirst().orElse(null);
             assertNotNull(acme);
             orgProvider.remove(acme);
         });
 
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel acme = orgProvider.getByDomainName("acme.org");
+            OrganizationModel acme = orgProvider.getByDomainName("acme.org").findFirst().orElse(null);
             assertNull(acme);
         });
     }
@@ -134,12 +134,12 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
     public void testGetByMember() {
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel orga = orgProvider.getByDomainName("orga.org");
+            OrganizationModel orga = orgProvider.getByDomainName("orga.org").findFirst().orElse(null);
             RealmModel realm = session.getContext().getRealm();
             UserModel member = session.users().addUser(realm, "member");
             member.setEnabled(true);
             orgProvider.addMember(orga, member);
-            OrganizationModel orgb = orgProvider.getByDomainName("orgb.org");
+            OrganizationModel orgb = orgProvider.getByDomainName("orgb.org").findFirst().orElse(null);
             orgProvider.addMember(orgb, member);
         });
         runOnServer.run(session -> {
@@ -151,7 +151,7 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
         });
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel orga = orgProvider.getByDomainName("orga.org");
+            OrganizationModel orga = orgProvider.getByDomainName("orga.org").findFirst().orElse(null);
             orgProvider.remove(orga);
         });
         runOnServer.run(session -> {
@@ -165,7 +165,7 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
             RealmModel realm = session.getContext().getRealm();
             UserModel member = session.users().getUserByUsername(realm, "member");
-            OrganizationModel orgb = orgProvider.getByDomainName("orgb.org");
+            OrganizationModel orgb = orgProvider.getByDomainName("orgb.org").findFirst().orElse(null);
             orgProvider.removeMember(orgb, member);
         });
         runOnServer.run(session -> {
@@ -181,17 +181,17 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
     public void testGetByMemberId() {
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel orga = orgProvider.getByDomainName("orga.org");
+            OrganizationModel orga = orgProvider.getByDomainName("orga.org").findFirst().orElse(null);
             RealmModel realm = session.getContext().getRealm();
             UserModel member = session.users().addUser(realm, "member");
             member.setEnabled(true);
             orgProvider.addMember(orga, member);
-            OrganizationModel orgb = orgProvider.getByDomainName("orgb.org");
+            OrganizationModel orgb = orgProvider.getByDomainName("orgb.org").findFirst().orElse(null);
             orgProvider.addMember(orgb, member);
         });
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel org = orgProvider.getByDomainName("orga.org");
+            OrganizationModel org = orgProvider.getByDomainName("orga.org").findFirst().orElse(null);
             RealmModel realm = session.getContext().getRealm();
             UserModel member = session.users().getUserByUsername(realm, "member");
             UserModel memberOf = orgProvider.getMemberById(org, member.getId());
@@ -199,23 +199,23 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
         });
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel org = orgProvider.getByDomainName("orga.org");
+            OrganizationModel org = orgProvider.getByDomainName("orga.org").findFirst().orElse(null);
             RealmModel realm = session.getContext().getRealm();
             UserModel member = session.users().getUserByUsername(realm, "member");
             orgProvider.removeMember(org, member);
         });
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel orga = orgProvider.getByDomainName("orga.org");
+            OrganizationModel orga = orgProvider.getByDomainName("orga.org").findFirst().orElse(null);
             RealmModel realm = session.getContext().getRealm();
             UserModel member = session.users().getUserByUsername(realm, "member");
             assertNull(orgProvider.getMemberById(orga, member.getId()));
-            OrganizationModel orgb = orgProvider.getByDomainName("orgb.org");
+            OrganizationModel orgb = orgProvider.getByDomainName("orgb.org").findFirst().orElse(null);
             assertNotNull(orgProvider.getMemberById(orgb, member.getId()));
         });
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel orgb = orgProvider.getByDomainName("orgb.org");
+            OrganizationModel orgb = orgProvider.getByDomainName("orgb.org").findFirst().orElse(null);
             RealmModel realm = session.getContext().getRealm();
             UserModel member = session.users().getUserByUsername(realm, "member");
             assertEquals(1, orgProvider.getByMember(member).count());
@@ -233,7 +233,7 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
     public void testMembersCount() {
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel orgb = orgProvider.getByDomainName("orgb.org");
+            OrganizationModel orgb = orgProvider.getByDomainName("orgb.org").findFirst().orElse(null);
             RealmModel realm = session.getContext().getRealm();
             UserModel member = session.users().addUser(realm, "member");
             member.setEnabled(true);
@@ -261,7 +261,7 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
         // addMember invalidates cached members count
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel orgb = orgProvider.getByDomainName("orgb.org");
+            OrganizationModel orgb = orgProvider.getByDomainName("orgb.org").findFirst().orElse(null);
             RealmModel realm = session.getContext().getRealm();
 
             String cachedKey = cacheKeyOrgMemberCount(realm, orgb);
@@ -281,7 +281,7 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
         // removeMember invalidates cached members count
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel orgb = orgProvider.getByDomainName("orgb.org");
+            OrganizationModel orgb = orgProvider.getByDomainName("orgb.org").findFirst().orElse(null);
             RealmModel realm = session.getContext().getRealm();
 
             String cachedKey = cacheKeyOrgMemberCount(realm, orgb);
@@ -301,7 +301,7 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
         // remove user from the realm invalidates cached members count
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel orgb = orgProvider.getByDomainName("orgb.org");
+            OrganizationModel orgb = orgProvider.getByDomainName("orgb.org").findFirst().orElse(null);
             RealmModel realm = session.getContext().getRealm();
 
             String cachedKey = cacheKeyOrgMemberCount(realm, orgb);
@@ -578,14 +578,14 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
         // 2. Look up by mixed-case domain (simulates login with user@CaSe.Org) to populate the cache
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel org = orgProvider.getByDomainName(domainMixed);
+            OrganizationModel org = orgProvider.getByDomainName(domainMixed).findFirst().orElse(null);
             assertNotNull(org, "Mixed-case domain lookup should find the organization");
         });
 
         // 3. Delete the org
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel org = orgProvider.getByDomainName(domainLower);
+            OrganizationModel org = orgProvider.getByDomainName(domainLower).findFirst().orElse(null);
             assertNotNull(org);
             orgProvider.remove(org);
         });
@@ -604,7 +604,7 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
         // findAny() on a null element throws NPE.
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel org = orgProvider.getByDomainName(domainMixed);
+            OrganizationModel org = orgProvider.getByDomainName(domainMixed).findFirst().orElse(null);
             assertNotNull(org, "Mixed-case domain lookup should find the recreated organization");
         });
     }
@@ -627,14 +627,14 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
         //    under the wildcard org (both should resolve via the wildcard).
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel org = orgProvider.getByDomainName(childA);
+            OrganizationModel org = orgProvider.getByDomainName(childA).findFirst().orElse(null);
             assertNotNull(org);
             assertEquals(wildcardOrgAlias, org.getAlias());
-            org = orgProvider.getByDomainName(childB);
+            org = orgProvider.getByDomainName(childB).findFirst().orElse(null);
             assertNotNull(org);
             assertEquals(wildcardOrgAlias, org.getAlias());
             // Also the bare base domain must match the wildcard.
-            org = orgProvider.getByDomainName("wildcard.org");
+            org = orgProvider.getByDomainName("wildcard.org").findFirst().orElse(null);
             assertNotNull(org);
             assertEquals(wildcardOrgAlias, org.getAlias());
         });
@@ -644,18 +644,18 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
         //    resolving to the wildcard org.
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel org = orgProvider.getByDomainName(wildcard);
+            OrganizationModel org = orgProvider.getByDomainName(wildcard).findFirst().orElse(null);
             assertNotNull(org);
             org.setDomains(Set.of(new OrganizationDomainModel("unrelated.org")));
         });
 
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            assertNull(orgProvider.getByDomainName(childA), "Cached child lookup must be invalidated after the wildcard is replaced");
-            assertNull(orgProvider.getByDomainName(childB), "Cached nested-child lookup must be invalidated after the wildcard is replaced");
-            assertNull(orgProvider.getByDomainName("wildcard.org"), "Cached base-domain lookup must be invalidated after the wildcard is replaced");
+            assertNull(orgProvider.getByDomainName(childA).findFirst().orElse(null), "Cached child lookup must be invalidated after the wildcard is replaced");
+            assertNull(orgProvider.getByDomainName(childB).findFirst().orElse(null), "Cached nested-child lookup must be invalidated after the wildcard is replaced");
+            assertNull(orgProvider.getByDomainName("wildcard.org").findFirst().orElse(null), "Cached base-domain lookup must be invalidated after the wildcard is replaced");
             // the new domain still resolves correctly
-            OrganizationModel org = orgProvider.getByDomainName("unrelated.org");
+            OrganizationModel org = orgProvider.getByDomainName("unrelated.org").findFirst().orElse(null);
             assertNotNull(org);
             assertEquals(wildcardOrgAlias, org.getAlias());
         });
@@ -664,14 +664,14 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
         //    is invalidated as well.
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel org = orgProvider.getByDomainName("unrelated.org");
+            OrganizationModel org = orgProvider.getByDomainName("unrelated.org").findFirst().orElse(null);
             assertNotNull(org);
             orgProvider.remove(org);
         });
 
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            assertNull(orgProvider.getByDomainName("unrelated.org"));
+            assertNull(orgProvider.getByDomainName("unrelated.org").findFirst().orElse(null));
         });
     }
 
@@ -690,7 +690,7 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
 
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel org = orgProvider.getByDomainName(exactDomain);
+            OrganizationModel org = orgProvider.getByDomainName(exactDomain).findFirst().orElse(null);
             assertNotNull(org);
             assertEquals(wildcardOrgAlias, org.getAlias());
         });
@@ -705,12 +705,12 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
 
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel org = orgProvider.getByDomainName(exactDomain);
+            OrganizationModel org = orgProvider.getByDomainName(exactDomain).findFirst().orElse(null);
             assertNotNull(org);
             assertEquals(exactOrgAlias, org.getAlias(), "Exact domain must win over the previously cached wildcard resolution");
 
             // sibling subdomain still resolves to the wildcard org
-            OrganizationModel sibling = orgProvider.getByDomainName("sibling.precedence.org");
+            OrganizationModel sibling = orgProvider.getByDomainName("sibling.precedence.org").findFirst().orElse(null);
             assertNotNull(sibling);
             assertEquals(wildcardOrgAlias, sibling.getAlias());
         });
@@ -718,14 +718,14 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
         // Removing the exact-domain org must invalidate its cached lookup so the wildcard takes over again.
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel org = orgProvider.getByDomainName(exactDomain);
+            OrganizationModel org = orgProvider.getByDomainName(exactDomain).findFirst().orElse(null);
             assertNotNull(org);
             orgProvider.remove(org);
         });
 
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel org = orgProvider.getByDomainName(exactDomain);
+            OrganizationModel org = orgProvider.getByDomainName(exactDomain).findFirst().orElse(null);
             assertNotNull(org);
             assertEquals(wildcardOrgAlias, org.getAlias(), "After removing the exact-domain org, resolution must fall back to the wildcard org");
         });
@@ -750,7 +750,7 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
             for (int i = 0; i <= DOMAIN_NAMES_CACHE_MAX_SIZE; i++) {
-                OrganizationModel org = orgProvider.getByDomainName("sub" + i + ".bounded.test.org");
+                OrganizationModel org = orgProvider.getByDomainName("sub" + i + ".bounded.test.org").findFirst().orElse(null);
                 assertNotNull(org);
             }
         });
@@ -776,7 +776,7 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
             // The CachedOrganization's domainNames map must be bounded to exactly MAX_DOMAIN_NAMES entries
             // (sub1 … sub100) after the two evictions.
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel org = orgProvider.getByDomainName("sub100.bounded.test.org");
+            OrganizationModel org = orgProvider.getByDomainName("sub100.bounded.test.org").findFirst().orElse(null);
             assertNotNull(org);
             CachedOrganization cachedOrg = realmCache.getCache().get(org.getId(), CachedOrganization.class);
             assertNotNull(cachedOrg);
@@ -827,7 +827,7 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
         //    scenario that exercises the synchronized LRU map under real concurrency.
         runOnServer.run(session -> {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            assertNotNull(orgProvider.getByDomainName("warmup.concurrent.bounded.test.org"));
+            assertNotNull(orgProvider.getByDomainName("warmup.concurrent.bounded.test.org").findFirst().orElse(null));
         });
 
         // 3. Fire all threads at the same instant via a start-gate latch.  Each thread runs its
@@ -851,7 +851,7 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
                         KeycloakModelUtils.runJobInTransaction(factory, s -> {
                             s.getContext().setRealm(s.realms().getRealm(realmId));
                             OrganizationProvider op = s.getProvider(OrganizationProvider.class);
-                            assertNotNull(op.getByDomainName(domain),
+                            assertNotNull(op.getByDomainName(domain).findFirst().orElse(null),
                                     "getByDomainName must resolve the org for domain: " + domain);
                         });
                     } catch (Throwable t) {
