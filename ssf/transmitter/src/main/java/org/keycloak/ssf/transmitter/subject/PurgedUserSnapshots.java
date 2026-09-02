@@ -93,7 +93,18 @@ class PurgedUserSnapshots {
 
     /** Indexes {@code snapshot} under both keys. {@code emailKey} is null when the user had no email. */
     void put(String idKey, String emailKey, PurgedUserSnapshot snapshot) {
-        byId.put(idKey, snapshot);
+        PurgedUserSnapshot previous = byId.put(idKey, snapshot);
+        if (previous != null) {
+            // Replacing an id drops the snapshot it replaced from the email index too.
+            // Otherwise a re-capture under a different (or newly absent) address would
+            // leave the old key pointing at a stale snapshot, and discard — which clears
+            // only the current snapshot's key — could never reach it. Keeping the two
+            // indexes in step is the reason this class exists, so put() should not be a
+            // way for them to diverge. Identity rather than key, because the email key
+            // format lives in PurgedUserSnapshot; the scan is bounded by
+            // MAX_SNAPSHOTS_PER_SESSION.
+            byEmail.values().removeIf(candidate -> candidate == previous);
+        }
         if (emailKey != null) {
             byEmail.put(emailKey, snapshot);
         }
