@@ -25,14 +25,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import io.micrometer.core.instrument.Metrics;
-import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.configuration.cache.StatisticsConfigurationBuilder;
-import org.infinispan.configuration.global.ShutdownHookBehavior;
-import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
-import org.infinispan.configuration.parsing.ParserRegistry;
-import org.infinispan.metrics.config.MicrometerMeterRegisterConfigurationBuilder;
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.config.CachingOptions;
@@ -51,10 +43,21 @@ import org.keycloak.spi.infinispan.CacheEmbeddedConfigProviderFactory;
 import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
 import org.keycloak.spi.infinispan.impl.Util;
 
+import io.micrometer.core.instrument.Metrics;
+import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.configuration.cache.StatisticsConfigurationBuilder;
+import org.infinispan.configuration.global.ShutdownHookBehavior;
+import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
+import org.infinispan.configuration.parsing.ParserRegistry;
+import org.infinispan.metrics.config.MicrometerMeterRegisterConfigurationBuilder;
+import org.jboss.logging.Logger;
+
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ALL_CACHES_NAME;
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_MAX_COUNT_CACHES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NUM_OWNERS;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_MAX_COUNT_CACHES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_CACHE_NAMES;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_MAX_COUNT_CACHES;
+import static org.keycloak.spi.infinispan.impl.embedded.CacheConfigurator.addExpirationConfiguration;
 import static org.keycloak.spi.infinispan.impl.embedded.JGroupsConfigurator.createJGroupsProperties;
 
 /**
@@ -66,7 +69,7 @@ import static org.keycloak.spi.infinispan.impl.embedded.JGroupsConfigurator.crea
  * They have access to the {@link ConfigurationBuilderHolder}, and they can modify it as needed for their custom
  * providers.
  */
-public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedConfigProviderFactory, CacheEmbeddedConfigProvider {
+public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedConfigProviderFactory {
 
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -82,14 +85,19 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
     public static final String SITE_NAME = "siteName";
     public static final String MACHINE_NAME = "machineName";
     public static final String RACK_NAME = "rackName";
+    public static final String CLUSTER_NAME = "clusterName";
 
-    private volatile ConfigurationBuilderHolder builderHolder;
     private volatile Config.Scope keycloakConfig;
 
     @Override
     public CacheEmbeddedConfigProvider create(KeycloakSession session) {
-        lazyInit(session.getKeycloakSessionFactory());
-        return this;
+        return () -> {
+            try {
+                return createConfiguration(session.getKeycloakSessionFactory());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
 
     @Override
@@ -99,12 +107,6 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        lazyInit(factory);
-    }
-
-    @Override
-    public ConfigurationBuilderHolder configuration() {
-        return builderHolder;
     }
 
     @Override
@@ -122,39 +124,24 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
         var builder = ProviderConfigurationBuilder.create();
         Util.copyFromOption(builder, CONFIG, "file", ProviderConfigProperty.STRING_TYPE, CachingOptions.CACHE_CONFIG_FILE, false);
         Util.copyFromOption(builder, HISTOGRAMS, "enabled", ProviderConfigProperty.BOOLEAN_TYPE, CachingOptions.CACHE_METRICS_HISTOGRAMS_ENABLED, false);
-        Stream.concat(Arrays.stream(LOCAL_CACHE_NAMES), Arrays.stream(CLUSTERED_MAX_COUNT_CACHES))
+        Stream.concat(Arrays.stream(LOCAL_MAX_COUNT_CACHES), Arrays.stream(CLUSTERED_MAX_COUNT_CACHES))
                 .forEach(name -> Util.copyFromOption(builder, CacheConfigurator.maxCountConfigKey(name), "max-count", ProviderConfigProperty.INTEGER_TYPE, CachingOptions.maxCountOption(name), false));
         Arrays.stream(CLUSTERED_CACHE_NUM_OWNERS)
                 .forEach(name -> builder.property()
                         .name(CacheConfigurator.numOwnerConfigKey(name))
-                        .helpText("Sets the number of owners for the %s distributed cache. It defines the number of copies of your data in the cluster.".formatted(name))
+                        .helpText("Sets the number of owners for the %s distributed cache. Each entry is replicated to this many nodes in the cluster.".formatted(name))
                         .label("owners")
                         .type(ProviderConfigProperty.INTEGER_TYPE)
                         .add());
         createTopologyProperties(builder);
         createJGroupsProperties(builder);
+        addExpirationConfiguration(builder);
         return builder.build();
     }
 
     @Override
     public Set<Class<? extends Provider>> dependsOn() {
         return Set.of(JGroupsCertificateProvider.class);
-    }
-
-    private void lazyInit(KeycloakSessionFactory factory) {
-        if (builderHolder != null) {
-            return;
-        }
-        synchronized (this) {
-            if (builderHolder != null) {
-                return;
-            }
-            try {
-                builderHolder = createConfiguration(factory);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 
     protected ConfigurationBuilderHolder createConfiguration(KeycloakSessionFactory factory) throws IOException {
@@ -170,13 +157,13 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
 
     private static ConfigurationBuilderHolder configureSingleSiteWithVolatileSessions(ConfigurationBuilderHolder holder, Config.Scope keycloakConfig, KeycloakSessionFactory factory) {
         singleSiteConfiguration(keycloakConfig, holder, factory);
-        CacheConfigurator.configureSessionsCachesForVolatileSessions(holder);
+        CacheConfigurator.configureSessionsCachesForVolatileSessions(keycloakConfig, holder);
         return holder;
     }
 
     private static ConfigurationBuilderHolder configureSingleSiteWithPersistentSessions(ConfigurationBuilderHolder holder, Config.Scope keycloakConfig, KeycloakSessionFactory factory) {
         singleSiteConfiguration(keycloakConfig, holder, factory);
-        CacheConfigurator.configureSessionsCachesForPersistentSessions(holder);
+        CacheConfigurator.configureSessionsCachesForPersistentSessions(keycloakConfig, holder);
         return holder;
     }
 
@@ -221,13 +208,13 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
     private static void singleSiteConfiguration(Config.Scope config, ConfigurationBuilderHolder holder, KeycloakSessionFactory factory) {
         logger.debug("Configuring Infinispan for single-site deployment");
         CacheConfigurator.checkCachesExist(holder, Arrays.stream(ALL_CACHES_NAME));
-        CacheConfigurator.configureCacheMaxCount(config, holder, Arrays.stream(CLUSTERED_MAX_COUNT_CACHES));
         CacheConfigurator.configureNumOwners(config, holder);
         CacheConfigurator.validateWorkCacheConfiguration(holder);
         CacheConfigurator.ensureMinimumOwners(holder);
         if (JGroupsConfigurator.isClustered(holder)) {
             KeycloakModelUtils.runJobInTransaction(factory, session -> JGroupsConfigurator.configureJGroups(config, holder, session));
         }
+        CacheConfigurator.configureLocalCachesExpiration(holder, config);
         configureMetrics(config, holder);
     }
 
@@ -240,8 +227,8 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
                     .meterRegistry(Metrics.globalRegistry);
             builder.cacheContainer().statistics(true);
             builder.metrics()
-                    .namesAsTags(true)
-                    .histograms(keycloakConfig.getBoolean(HISTOGRAMS, Boolean.FALSE));
+                    .histograms(keycloakConfig.getBoolean(HISTOGRAMS, Boolean.FALSE))
+                    .legacy(true);
             holder.getNamedConfigurationBuilders()
                     .values()
                     .stream()
@@ -252,26 +239,33 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
 
     private static void createTopologyProperties(ProviderConfigurationBuilder builder) {
         builder.property()
+                .name(CLUSTER_NAME)
+                .helpText("Defines the name of the cluster. Only nodes with the same cluster name can discover each other and form a cluster. As invalidation of caches between clusters will not work, this will usually lead to stale data and incorrect behavior. Use only together with the `stateless` feature.")
+                .label("name")
+                .defaultValue("ISPN")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add();
+        builder.property()
                 .name(NODE_NAME)
-                .helpText("Sets the name of the current node. This is a friendly name to make logs, etc. make more sense.")
+                .helpText("Sets a human-readable name for this node, used in log messages and management tools.")
                 .label("name")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add();
         builder.property()
                 .name(SITE_NAME)
-                .helpText("The name of the site (availability zone) where this instance runs. It can be set if running Keycloak in different availability zones. Infinispan takes into consideration this value to keep the backup data spread between different sites.")
+                .helpText("Identifies the site or availability zone of this instance. When set, Infinispan distributes data replicas across different sites to improve fault tolerance.")
                 .label("name")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add();
         builder.property()
                 .name(MACHINE_NAME)
-                .helpText("The name of the physical machine where this instance runs. It can be set if multiple Keycloak instances are running in the same physical machines. Infinispan takes into consideration this value to keep the backup data spread between different machines.")
+                .helpText("Identifies the physical machine of this instance. When set, Infinispan distributes data replicas across different machines to improve fault tolerance.")
                 .label("name")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add();
         builder.property()
                 .name(RACK_NAME)
-                .helpText("The name of the rack where this instance runs. It can be set if multiple Keycloak instances are running in the same physical rack. Infinispan takes into consideration this value to keep the backup data spread between different racks.")
+                .helpText("Identifies the rack of this instance. When set, Infinispan distributes data replicas across different racks to improve fault tolerance.")
                 .label("name")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add();

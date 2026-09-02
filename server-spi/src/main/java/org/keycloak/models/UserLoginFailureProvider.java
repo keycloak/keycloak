@@ -52,4 +52,9 @@ public interface UserLoginFailureProvider extends Provider {
      */
     void removeAllUserLoginFailures(RealmModel realm);
 
+    /**
+     * This is called when the realm settings change in relation to the brute force timeouts.
+     */
+    default void updateWithLatestRealmSettings(RealmModel realm) {};
+
 }

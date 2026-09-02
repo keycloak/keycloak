@@ -3,6 +3,7 @@ import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/s
 import { type Page, expect } from "@playwright/test";
 import { clickRowKebabItem, getRowByCellText } from "../utils/table.ts";
 import { confirmModal } from "../utils/modal.ts";
+import { selectClient } from "../utils/form.ts";
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation.js";
 
 export async function goToAuthorizationTab(page: Page) {
@@ -21,12 +22,6 @@ export async function clickAuthenticationSaveButton(page: Page) {
   await page.getByTestId("authenticationSettings-save").click();
 }
 
-export async function assertDefaultResource(page: Page) {
-  await expect(page.getByTestId("name-column-Default Resource")).toHaveText(
-    "Default Resource",
-  );
-}
-
 export async function assertResource(page: Page, name: string) {
   await expect(getRowByCellText(page, name)).toBeVisible();
 }
@@ -35,8 +30,28 @@ export async function createResource(
   page: Page,
   resource: ResourceRepresentation,
 ) {
-  await page.getByTestId("createResource").click();
+  await page
+    .locator(
+      '[data-testid="createResource"], [data-testid="no-resources-empty-action"]',
+    )
+    .click();
   await fillForm(page, resource);
+}
+
+export async function assertEmptyStateNotVisible(page: Page) {
+  await expect(page.getByTestId("empty-state")).toBeHidden();
+}
+
+export async function assertTableIsPopulated(page: Page) {
+  await expect(page.locator("tbody tr").first()).toBeVisible();
+}
+
+export async function assertRowNotVisible(page: Page, name: string) {
+  await expect(page.getByText(name, { exact: true })).toBeHidden();
+}
+
+export async function clickNextPage(page: Page) {
+  await page.getByLabel("Go to next page").first().click();
 }
 
 export async function fillForm(
@@ -81,7 +96,11 @@ export async function createPolicy(
   type: string,
   policy: { [key: string]: string },
 ) {
-  await page.getByTestId("createPolicy").click();
+  await page
+    .locator(
+      '[data-testid="createPolicy"], [data-testid="no-policies-empty-action"]',
+    )
+    .click();
   await page.getByRole("gridcell", { name: type, exact: true }).click();
   await fillForm(page, policy);
 }
@@ -92,9 +111,7 @@ export async function deletePolicy(page: Page, policyName: string) {
 }
 
 export async function inputClient(page: Page, clientName: string) {
-  await page.getByLabel("Type to filter").click();
-  await page.getByLabel("Type to filter").fill(clientName);
-  await page.getByRole("option", { name: clientName }).click();
+  await selectClient(page, clientName);
 }
 
 export async function goToPermissionsSubTab(page: Page) {
@@ -106,7 +123,13 @@ export async function createPermission(
   type: string,
   permission: PolicyRepresentation,
 ) {
-  await page.getByTestId("permissionCreateDropdown").click();
+  const dropdown = page.getByTestId("permissionCreateDropdown");
+  const hasDropdown = (await dropdown.count()) > 0;
+
+  if (hasDropdown) {
+    await dropdown.click();
+  }
+
   await page.getByTestId(`create-${type}`).click();
   await fillForm(page, permission);
 }
@@ -114,6 +137,25 @@ export async function createPermission(
 export async function selectResource(page: Page, resourceName: string) {
   await page.locator("#resources").getByLabel("Menu toggle").click();
   await page.getByRole("option", { name: resourceName }).click();
+}
+
+export async function goToEvaluateSubTab(page: Page) {
+  await page.getByTestId("authorizationEvaluate").click();
+}
+
+export function getEvaluateResourceKeyInput(page: Page, rowIndex = 0) {
+  return page
+    .locator(`#resources\\.${rowIndex}\\.key`)
+    .getByRole("combobox", { name: "Select or type a key" });
+}
+
+// The evaluate form renders several selects, so option queries have to be
+// scoped to the key select rather than run against the whole page.
+export function getEvaluateResourceKeyOptions(page: Page, rowIndex = 0) {
+  return page
+    .locator(".kc-attribute-key-selectable")
+    .nth(rowIndex)
+    .getByRole("option");
 }
 
 export async function goToExportSubTab(page: Page) {

@@ -16,12 +16,12 @@
  */
 package org.keycloak.dom.saml.v2.metadata;
 
-import org.keycloak.dom.xmlsec.w3.xmldsig.SignatureType;
-
-import javax.xml.datatype.Duration;
-import javax.xml.datatype.XMLGregorianCalendar;
 import java.util.ArrayList;
 import java.util.List;
+import javax.xml.datatype.Duration;
+import javax.xml.datatype.XMLGregorianCalendar;
+
+import org.keycloak.dom.xmlsec.w3.xmldsig.SignatureType;
 
 /**
  * <p>

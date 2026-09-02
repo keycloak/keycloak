@@ -16,8 +16,6 @@
  */
 package org.keycloak.models;
 
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 /**
  * Thrown when data can't be retrieved for the model.

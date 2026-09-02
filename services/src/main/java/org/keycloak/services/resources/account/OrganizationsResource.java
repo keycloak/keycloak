@@ -23,6 +23,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationDomainModel;
@@ -53,7 +54,7 @@ public class OrganizationsResource {
     public Response getOrganizations() {
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
         return Cors.builder().auth()
-                .allowedOrigins(auth.getToken())
+                .checkAllowedOrigins(auth.getToken())
                 .add(Response.ok(session.getProvider(OrganizationProvider.class)
                         .getByMember(user)
                         .map(this::toRepresentation))

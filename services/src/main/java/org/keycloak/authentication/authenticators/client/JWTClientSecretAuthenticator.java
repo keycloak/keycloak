@@ -16,26 +16,31 @@
  */
 package org.keycloak.authentication.authenticators.client;
 
-import jakarta.ws.rs.core.Response;
-import org.keycloak.authentication.AuthenticationFlowError;
-import org.keycloak.authentication.ClientAuthenticationFlowContext;
-import org.keycloak.crypto.ClientSignatureVerifierProvider;
-import org.keycloak.models.AuthenticationExecutionModel.Requirement;
-import org.keycloak.models.ClientModel;
-import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
-import org.keycloak.protocol.oidc.OIDCConfigAttributes;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.representations.JsonWebToken;
-import org.keycloak.services.ServicesLogger;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.crypto.ClientSignatureVerifierProvider;
+import org.keycloak.events.Details;
+import org.keycloak.models.AuthenticationExecutionModel.Requirement;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSecretConstants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.JsonWebToken;
+import org.keycloak.services.ServicesLogger;
 
 import static org.keycloak.models.TokenManager.DEFAULT_VALIDATOR;
 
@@ -53,8 +58,24 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
+        context.attempted();
+
         try {
-            JWTClientValidator validator = new JWTClientValidator(context, this::verifySignature, getId());
+            ClientAssertionState clientAssertionState = context.getState(ClientAssertionState.class, ClientAssertionState.supplier());
+            JsonWebToken jwt = clientAssertionState.getToken();
+
+            if (jwt != null) {
+                // Ignore for client assertions signed by third-parties
+                if (!Objects.equals(jwt.getIssuer(), jwt.getSubject())) {
+                    return;
+                }
+
+                if (clientAssertionState.getClient() == null) {
+                    clientAssertionState.setClient(context.getRealm().getClientByClientId(jwt.getSubject()));
+                }
+            }
+
+            JWTClientSecretValidator validator = new JWTClientSecretValidator(context, this::verifySignature, getId());
             if (!validator.validate()) return;
 
             context.success();
@@ -95,12 +116,16 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
                 if (signatureProvider.isAsymmetricAlgorithm()) {
                     throw new RuntimeException("Algorithm is not symmetric");
                 }
-            }, JsonWebToken.class);
+            }, JsonWebToken.class, false);
             signatureValid = jwt != null;
             //try authenticate with client rotated secret
             if (!signatureValid && wrapper.hasRotatedSecret() && !wrapper.isClientRotatedSecretExpired()) {
-                jwt = context.getSession().tokens().decodeClientJWT(validator.getClientAssertion(), wrapper.toRotatedClientModel(), JsonWebToken.class);
+                jwt = context.getSession().tokens().decodeClientJWT(validator.getClientAssertion(),
+                        wrapper.toRotatedClientModel(context.getSession()), JsonWebToken.class);
                 signatureValid = jwt != null;
+                if (signatureValid) {
+                    context.getEvent().detail(Details.CLIENT_AUTH_DETAIL, ClientSecretConstants.CLIENT_ROTATED_EVENT_DETAIL);
+                }
             }
         } catch (Exception e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;
@@ -124,7 +149,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
     }
 
     @Override
-    public Map<String, Object> getAdapterConfiguration(ClientModel client) {
+    public Map<String, Object> getAdapterConfiguration(KeycloakSession session, ClientModel client) {
         // e.g. client adapter's keycloak.json
         // "credentials": {
         //   "secret-jwt": {
@@ -133,7 +158,8 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
         //   }
         // }
         Map<String, Object> props = new HashMap<>();
-        props.put("secret", client.getSecret());
+        String secret = client.getSecret();
+        props.put("secret", session.vault().getStringSecret(secret).get().orElse(secret));
         String algorithm = client.getAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG);
         if (algorithm != null) {
             props.put("algorithm", algorithm);
@@ -161,13 +187,18 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
     }
 
     @Override
+    public boolean supportsClientAssertion() {
+        return true;
+    }
+
+    @Override
     public String getId() {
         return PROVIDER_ID;
     }
 
     @Override
     public String getDisplayType() {
-        return "Signed Jwt with Client Secret";
+        return "Signed JWT with Client Secret";
     }
 
     @Override

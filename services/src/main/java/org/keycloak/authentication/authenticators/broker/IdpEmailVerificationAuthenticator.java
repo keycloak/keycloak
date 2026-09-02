@@ -17,7 +17,15 @@
 
 package org.keycloak.authentication.authenticators.broker;
 
-import org.jboss.logging.Logger;
+import java.net.URI;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilderException;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -43,12 +51,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import java.net.URI;
-import java.util.Objects;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import java.util.concurrent.TimeUnit;
-import jakarta.ws.rs.core.*;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -58,6 +61,8 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
     private static Logger logger = Logger.getLogger(IdpEmailVerificationAuthenticator.class);
 
     public static final String VERIFY_ACCOUNT_IDP_USERNAME = "VERIFY_ACCOUNT_IDP_USERNAME";
+
+    public static final String IDP_LINK_CONFIRMATION_EMAIL_KEY = "IDP_LINK_CONFIRMATION_EMAIL_KEY";
 
     @Override
     protected void authenticateImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
@@ -92,8 +97,8 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
         UserModel existingUser = getExistingUser(session, realm, authSession);
 
         // Do not allow resending e-mail by simple page refresh
-        if (! Objects.equals(authSession.getAuthNote(Constants.VERIFY_EMAIL_KEY), existingUser.getEmail())) {
-            authSession.setAuthNote(Constants.VERIFY_EMAIL_KEY, existingUser.getEmail());
+        if (! Objects.equals(authSession.getAuthNote(IDP_LINK_CONFIRMATION_EMAIL_KEY), existingUser.getEmail())) {
+            authSession.setAuthNote(IDP_LINK_CONFIRMATION_EMAIL_KEY, existingUser.getEmail());
             sendVerifyEmail(session, context, existingUser, brokerContext);
         } else {
             showEmailSentPage(context, brokerContext);
@@ -105,7 +110,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
         logger.debugf("Re-sending email requested for user, details follow");
 
         // This will allow user to re-send email again
-        context.getAuthenticationSession().removeAuthNote(Constants.VERIFY_EMAIL_KEY);
+        context.getAuthenticationSession().removeAuthNote(IDP_LINK_CONFIRMATION_EMAIL_KEY);
 
         authenticateImpl(context, serializedCtx, brokerContext);
     }
@@ -139,7 +144,7 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
         String authSessionEncodedId = AuthenticationSessionCompoundId.fromAuthSession(authSession).getEncodedId();
         IdpVerifyAccountLinkActionToken token = new IdpVerifyAccountLinkActionToken(
           existingUser.getId(), existingUser.getEmail(), absoluteExpirationInSecs, authSessionEncodedId,
-          brokerContext.getUsername(), brokerContext.getIdpConfig().getAlias(), authSession.getClient().getClientId()
+          brokerContext.getUsername(), brokerContext.getBrokerUserId(), brokerContext.getIdpConfig().getAlias(), authSession.getClient().getClientId()
         );
         UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo),
                 authSession.getClient().getClientId(), authSession.getTabId(), AuthenticationProcessor.getClientData(session, authSession));

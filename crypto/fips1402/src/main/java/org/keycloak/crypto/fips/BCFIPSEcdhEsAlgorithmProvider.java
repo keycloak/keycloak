@@ -38,6 +38,17 @@ import java.security.spec.ECPoint;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
 
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.jose.jwe.JWEHeader;
+import org.keycloak.jose.jwe.JWEHeader.JWEHeaderBuilder;
+import org.keycloak.jose.jwe.JWEKeyStorage;
+import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
+import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
+import org.keycloak.jose.jwk.ECPublicJWK;
+import org.keycloak.jose.jwk.JWKUtil;
+
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.KeyUnwrapper;
@@ -54,16 +65,6 @@ import org.bouncycastle.crypto.fips.FipsEC;
 import org.bouncycastle.crypto.fips.FipsKDF;
 import org.bouncycastle.crypto.fips.FipsKDF.AgreementKDFPRF;
 import org.bouncycastle.jcajce.spec.ECDomainParameterSpec;
-import org.keycloak.common.util.Base64Url;
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.KeyType;
-import org.keycloak.jose.jwe.JWEHeader;
-import org.keycloak.jose.jwe.JWEHeader.JWEHeaderBuilder;
-import org.keycloak.jose.jwe.JWEKeyStorage;
-import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
-import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
-import org.keycloak.jose.jwk.ECPublicJWK;
-import org.keycloak.jose.jwk.JWKUtil;
 
 /**
  * ECDH Ephemeral Static Algorithm Provider.

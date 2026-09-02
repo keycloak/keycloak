@@ -17,15 +17,16 @@
 
 package org.keycloak.jose.jwk;
 
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.keycloak.common.util.PemUtils;
+
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.keycloak.common.util.PemUtils;
-
-import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -182,7 +183,7 @@ public class JWK {
     @JsonIgnore
     public <T> T getOtherClaim(String claimName, Class<T> claimType) {
         Object o = getOtherClaims().get(claimName);
-        return o == null ? null : claimType.cast(o);
+        return claimType.isInstance(o) ? claimType.cast(o) : null;
     }
 
 }

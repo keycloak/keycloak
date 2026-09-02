@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.util;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -24,14 +23,13 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 
 import jakarta.ws.rs.core.Response;
 
-import org.jboss.logging.Logger;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.JavaAlgorithm;
@@ -46,6 +44,8 @@ import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.TestContext;
+
+import org.jboss.logging.Logger;
 
 public class TokenSignatureUtil {
     private static Logger log = Logger.getLogger(TokenSignatureUtil.class);
@@ -171,8 +171,8 @@ public class TokenSignatureUtil {
             if (rep.getKid().equals(activeKid)) {
                 X509EncodedKeySpec publicKeySpec = null;
                 try {
-                    publicKeySpec = new X509EncodedKeySpec(Base64.decode(rep.getPublicKey()));
-                } catch (IOException e1) {
+                    publicKeySpec = new X509EncodedKeySpec(Base64.getMimeDecoder().decode(rep.getPublicKey()));
+                } catch (IllegalArgumentException e1) {
                     e1.printStackTrace();
                 }
                 KeyFactory kf = null;

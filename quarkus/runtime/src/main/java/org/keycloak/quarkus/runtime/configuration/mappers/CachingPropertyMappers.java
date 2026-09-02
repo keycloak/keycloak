@@ -1,10 +1,8 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
-
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +11,7 @@ import java.util.function.BooleanSupplier;
 
 import org.keycloak.common.Profile;
 import org.keycloak.config.CachingOptions;
+import org.keycloak.config.CachingOptions.Mechanism;
 import org.keycloak.config.Option;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.quarkus.runtime.Environment;
@@ -21,8 +20,10 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.utils.StringUtil;
 
 import com.google.common.base.CaseFormat;
-
 import io.smallrye.config.ConfigSourceInterceptorContext;
+
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 final class CachingPropertyMappers implements PropertyMapperGrouping {
 
@@ -36,6 +37,10 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
     public List<PropertyMapper<?>> getPropertyMappers() {
         List<PropertyMapper<?>> staticMappers = List.of(
                 fromOption(CachingOptions.CACHE)
+                        .transformer(
+                                (value, context) -> org.keycloak.common.util.Environment.isNonServerMode()
+                                        ? Mechanism.local.name()
+                                        : Optional.ofNullable(value).orElse(Mechanism.ispn.name()))
                         .paramLabel("type")
                         .build(),
                 fromOption(CachingOptions.CACHE_STACK)
@@ -57,7 +62,11 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
                         .transformer(CachingPropertyMappers::resolveConfigFile)
                         .validator(s -> {
                             if (!Files.exists(Paths.get(resolveConfigFile(s, null)))) {
-                                throw new PropertyException("Cache config file '%s' does not exist in the conf directory".formatted(s));
+                                if (Path.of(s).isAbsolute()) {
+                                    throw new PropertyException("Cache config file '%s' does not exist".formatted(s));
+                                } else {
+                                    throw new PropertyException("Cache config file '%s' does not exist in the conf directory".formatted(s));
+                                }
                             }
                         })
                         .paramLabel("file")
@@ -66,10 +75,10 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
                         .to("kc.spi-cache-embedded--default--config-mutate")
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED)
-                        .to("kc.spi-jgroups-mtls--default--enabled")
+                        .to("kc.spi-jgroups-mtls--default--activated")
                         .isEnabled(CachingPropertyMappers::getDefaultMtlsEnabled, "a TCP based cache-stack is used")
                         .build(),
-                fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE.withRuntimeSpecificDefault(getDefaultKeystorePathValue()))
+                fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE.withRuntimeSpecificDefault(getConfPathValue("cache-mtls-keystore.p12")))
                         .paramLabel("file")
                         .to("kc.spi-jgroups-mtls--default--keystore-file")
                         .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
@@ -82,7 +91,7 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
                         .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
                         .validator(value -> checkOptionPresent(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE))
                         .build(),
-                fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE.withRuntimeSpecificDefault(getDefaultTruststorePathValue()))
+                fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE.withRuntimeSpecificDefault(getConfPathValue("cache-mtls-truststore.p12")))
                         .paramLabel("file")
                         .to("kc.spi-jgroups-mtls--default--truststore-file")
                         .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
@@ -204,39 +213,17 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
     }
 
     private static String resolveConfigFile(String value, ConfigSourceInterceptorContext context) {
-        String homeDir = Environment.getHomeDir();
-
-        return homeDir == null ?
-                value :
-                homeDir + (homeDir.endsWith(File.separator) ? "" : File.separator) + "conf" + File.separator + value;
+        Path p = Path.of(value);
+        if (p.isAbsolute()) {
+            return p.toString();
+        } else {
+            return Environment.getHomeDir().map(f -> Paths.get(f, "conf", value).toString()).orElse(null);
+        }
     }
 
-    private static String getDefaultKeystorePathValue() {
-        String homeDir = Environment.getHomeDir();
-
-        if (homeDir != null) {
-            File file = Paths.get(homeDir, "conf", "cache-mtls-keystore.p12").toFile();
-
-            if (file.exists()) {
-                return file.getAbsolutePath();
-            }
-        }
-
-        return null;
-    }
-
-    private static String getDefaultTruststorePathValue() {
-        String homeDir = Environment.getHomeDir();
-
-        if (homeDir != null) {
-            File file = Paths.get(homeDir, "conf", "cache-mtls-truststore.p12").toFile();
-
-            if (file.exists()) {
-                return file.getAbsolutePath();
-            }
-        }
-
-        return null;
+    private static String getConfPathValue(String file) {
+        return Environment.getHomeDir().map(f -> Paths.get(f, "conf", file).toFile()).filter(File::exists)
+                .map(File::getAbsolutePath).orElse(null);
     }
 
     private static PropertyMapper<?> maxCountOpt(String cacheName, BooleanSupplier isEnabled, String enabledWhen) {

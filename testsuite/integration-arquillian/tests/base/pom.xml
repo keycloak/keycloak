@@ -54,14 +54,13 @@
             <artifactId>keycloak-tests-utils-shared</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-builders</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-util-embedded-ldap</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.bouncycastle</groupId>
-                    <artifactId>bcprov-jdk15on</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -70,9 +69,9 @@
             <type>test-jar</type>
         </dependency>
         <dependency>
-            <groupId>commons-configuration</groupId>
-            <artifactId>commons-configuration</artifactId>
-            <version>1.10</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-configuration2</artifactId>
+            <version>2.15.1</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -89,8 +88,36 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.jboss.spec.javax.xml.bind</groupId>
+            <artifactId>jboss-jaxb-api_2.3_spec</artifactId>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-engine</artifactId>
+            <version>1.10.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-commons</artifactId>
+            <version>1.10.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>5.10.3</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <version>5.10.3</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -304,7 +331,7 @@
                                     <includes>
                                         <include>wildfly-config.xml</include>
                                         <include>password-blacklists/**</include>
-                                        <include>log4j.properties</include>
+                                        <include>logging.properties</include>
                                         <include>vault/**</include>
                                         <include>firefox-cookies-prefs.js</include>
                                     </includes>
@@ -395,6 +422,12 @@
                                             <ORACLE_PASSWORD>${keycloak.connectionsJpa.password}</ORACLE_PASSWORD>
                                             <APP_USER>${keycloak.connectionsJpa.user}</APP_USER>
                                             <APP_USER_PASSWORD>${keycloak.connectionsJpa.password}</APP_USER_PASSWORD>
+
+                                            <!-- EnterpriseDB -->
+                                            <PGPORT>${docker.database.port}</PGPORT>
+                                            <PGDATABASE>${keycloak.connectionsJpa.database}</PGDATABASE>
+                                            <PGUSER>${keycloak.connectionsJpa.user}</PGUSER>
+                                            <PGPASSWORD>${keycloak.connectionsJpa.password}</PGPASSWORD>
                                         </env>
                                         <cmd>${docker.database.cmd}</cmd>
                                         <wait>
@@ -454,7 +487,7 @@
             <properties>
                 <app.server>wildfly</app.server> <!--in case the profile is called directly-->
                 <app.server.skip.unpack>false</app.server.skip.unpack>
-                <wildfly.core.version>${tests.wildfly.core.version}</wildfly.core.version>
+                <wildfly.core.version>${upstream.wildfly.core.version}</wildfly.core.version>
             </properties>
             <dependencies>
                 <dependency>
@@ -467,14 +500,7 @@
                 <dependency>
                     <groupId>org.wildfly.core</groupId>
                     <artifactId>wildfly-cli</artifactId>
-                    <scope>test</scope>
                     <version>${wildfly.core.version}</version>
-                </dependency>
-                <!-- FIXME: Override in order to prevent NoClassDefFoundError: org/jboss/threads/AsyncFuture in ClientContainerController -->
-                <dependency>
-                    <groupId>org.jboss.threads</groupId>
-                    <artifactId>jboss-threads</artifactId>
-                    <version>2.4.0.Final</version>
                 </dependency>
             </dependencies>
             <build>
@@ -498,7 +524,7 @@
                 <app.server>eap8</app.server>
                 <app.server.skip.unpack>false</app.server.skip.unpack>
                 <app.server.artifactId>integration-arquillian-servers-app-server-jboss-galleon</app.server.artifactId>
-                <wildfly.core.version>${tests.wildfly.core.version}</wildfly.core.version>
+                <wildfly.core.version>${eap8.wildfly.core.version}</wildfly.core.version>
             </properties>
             <dependencies>
                 <dependency>
@@ -511,14 +537,7 @@
                 <dependency>
                     <groupId>org.wildfly.core</groupId>
                     <artifactId>wildfly-cli</artifactId>
-                    <scope>test</scope>
                     <version>${wildfly.core.version}</version>
-                </dependency>
-                <!-- FIXME: Override in order to prevent NoClassDefFoundError: org/jboss/threads/AsyncFuture in ClientContainerController -->
-                <dependency>
-                    <groupId>org.jboss.threads</groupId>
-                    <artifactId>jboss-threads</artifactId>
-                    <version>2.4.0.Final</version>
                 </dependency>
             </dependencies>
             <build>
@@ -727,7 +746,6 @@
                 <surefire.memory.Xmx>2048m</surefire.memory.Xmx>
                 <surefire.memory.metaspace>512m</surefire.memory.metaspace>
                 <surefire.memory.metaspace.max>1024m</surefire.memory.metaspace.max>
-                <junit-vintage-engine.version>5.9.3</junit-vintage-engine.version>
             </properties>
             <dependencies>
                 <dependency>
@@ -745,13 +763,11 @@
                 <dependency>
                     <groupId>org.junit.vintage</groupId>
                     <artifactId>junit-vintage-engine</artifactId>
-                    <version>${junit-vintage-engine.version}</version>
                     <scope>test</scope>
                 </dependency>
                 <dependency>
                     <groupId>net.bytebuddy</groupId>
                     <artifactId>byte-buddy</artifactId>
-                    <version>${byte-buddy.version}</version>
                 </dependency>
             </dependencies>
         </profile>

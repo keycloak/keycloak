@@ -18,20 +18,23 @@
 
 package org.keycloak.testsuite.broker;
 
-import org.hamcrest.Matchers;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Rule;
-import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.EventType;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginExpiredPage;
 
-import static org.hamcrest.MatcherAssert.assertThat;
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests related to OIDC "state" parameter used in the OIDC AuthenticationResponse sent by the IDP to the SP endpoint
@@ -39,9 +42,6 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class KcOidcBrokerStateParameterTest extends AbstractInitializedBaseBrokerTest {
-
-    @Page
-    protected AppPage appPage;
 
     @Page
     protected LoginExpiredPage loginExpiredPage;
@@ -69,16 +69,13 @@ public class KcOidcBrokerStateParameterTest extends AbstractInitializedBaseBroke
 
         // Test that only loginEvent happened on consumer side. There should *not* be request sent to provider realm codeToToken endpoint (Assert that event is not there)
         String consumerRealmId = realmsResouce().realm(bc.consumerRealmName()).toRepresentation().getId();
-        events.expect(EventType.IDENTITY_PROVIDER_LOGIN_ERROR)
-                .clearDetails()
-                .session((String) null)
-                .realm(consumerRealmId)
-                .user((String) null)
-                .client((String) null)
-                .error("identity_provider_login_failure")
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.IDENTITY_PROVIDER_LOGIN_ERROR)
+                .sessionId(null)
+                .userId(null)
+                .clientId(null)
+                .error("identity_provider_login_failure");
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
     }
 
 
@@ -96,23 +93,21 @@ public class KcOidcBrokerStateParameterTest extends AbstractInitializedBaseBroke
         driver.navigate().to(consumerEndpointUrl);
 
         // Test that only loginEvent happened on consumer side. There should *not* be request sent to provider realm codeToToken endpoint (Assert that event is not there)
-        events.expect(EventType.IDENTITY_PROVIDER_LOGIN_ERROR)
-                .clearDetails()
-                .session((String) null)
-                .realm(consumerRealmId)
-                .user((String) null)
-                .client((String) null)
-                .error("invalidRequestMessage")
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.IDENTITY_PROVIDER_LOGIN_ERROR)
+                .sessionId(null)
+                .userId(null)
+                .clientId(null)
+                .error("invalidRequestMessage");
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
     }
 
 
     @Test
     public void testCorrectStateParameterButIncorrectCode() {
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         waitForPage(driver, "sign in to", true);
         loginPage.clickSocial(bc.getIDPAlias());
@@ -135,23 +130,17 @@ public class KcOidcBrokerStateParameterTest extends AbstractInitializedBaseBroke
         driver.navigate().to(consumerEndpointUrl);
 
         // Check that loginError on consumer side was triggered. Also CodeToToken request was sent to the "provider", but failed due the incorrect code
-        events.expect(EventType.CODE_TO_TOKEN_ERROR)
-                .clearDetails()
-                .session((String) null)
-                .realm(providerRealmId)
-                .user((String) null)
-                .client("brokerapp")
-                .error("invalid_code")
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.CODE_TO_TOKEN_ERROR)
+                .sessionId(null)
+                .userId(null)
+                .clientId("brokerapp")
+                .error("invalid_code");
 
-        events.expect(EventType.IDENTITY_PROVIDER_LOGIN_ERROR)
-                .clearDetails()
-                .session((String) null)
-                .realm(consumerRealmId)
-                .user((String) null)
-                .client("broker-app")
-                .error("identity_provider_login_failure")
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.IDENTITY_PROVIDER_LOGIN_ERROR)
+                .sessionId(null)
+                .userId(null)
+                .clientId("broker-app")
+                .error("identity_provider_login_failure");
 
         // Re-send the request to same URL. There should *not* be additional
         // request sent to provider realm codeToToken endpoint due the "state" already used on consumer side (Assert that CodeToToken event is not there)
@@ -159,7 +148,7 @@ public class KcOidcBrokerStateParameterTest extends AbstractInitializedBaseBroke
         driver.navigate().to(consumerEndpointUrl);
         loginExpiredPage.assertCurrent();
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
 
     }
 

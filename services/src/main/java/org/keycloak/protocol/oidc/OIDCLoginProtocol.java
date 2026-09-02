@@ -16,14 +16,20 @@
  */
 package org.keycloak.protocol.oidc;
 
+import java.io.IOException;
+import java.net.URI;
+import java.util.Optional;
+
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
-import org.jboss.logging.Logger;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenIdGenerator;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.common.util.SecretGenerator;
@@ -44,6 +50,9 @@ import org.keycloak.protocol.ClientData;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
+import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
+import org.keycloak.protocol.oidc.endpoints.request.RequestUriType;
+import org.keycloak.protocol.oidc.par.endpoints.request.AuthzEndpointParParser;
 import org.keycloak.protocol.oidc.utils.LogoutUtil;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
@@ -63,9 +72,7 @@ import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.Optional;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.approveOAuth2DeviceAuthorization;
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.denyOAuth2DeviceAuthorization;
@@ -80,6 +87,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String LOGIN_PROTOCOL = Constants.OIDC_PROTOCOL;
     public static final String STATE_PARAM = "state";
     public static final String SCOPE_PARAM = "scope";
+    public static final String RESOURCE_PARAM = OAuth2Constants.RESOURCE;
     public static final String CODE_PARAM = "code";
     public static final String RESPONSE_TYPE_PARAM = "response_type";
     public static final String GRANT_TYPE_PARAM = "grant_type";
@@ -96,6 +104,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String CLAIMS_PARAM = "claims";
     public static final String ACR_PARAM = "acr_values";
     public static final String ID_TOKEN_HINT = "id_token_hint";
+    public static final String CONSENT_NOTE = "session_consent";
 
     public static final String LOGOUT_STATE_PARAM = "OIDC_LOGOUT_STATE_PARAM";
     public static final String LOGOUT_REDIRECT_URI = "OIDC_LOGOUT_REDIRECT_URI";
@@ -118,6 +127,13 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String CLIENT_SECRET_JWT = "client_secret_jwt";
     public static final String PRIVATE_KEY_JWT = "private_key_jwt";
     public static final String TLS_CLIENT_AUTH = "tls_client_auth";
+    public static final String ATTEST_JWT_CLIENT_AUTH = "attest_jwt_client_auth";
+
+    /**
+     * This is just for legacy setups which expect an unencoded, non-RFC6749 compliant client secret send from Keycloak to an IdP.
+     */
+    @Deprecated(since = "26.5", forRemoval = true)
+    public static final String CLIENT_SECRET_BASIC_UNENCODED = "client_secret_basic_unencoded";
 
     // https://tools.ietf.org/html/rfc7636#section-4.3
     public static final String CODE_CHALLENGE_PARAM = "code_challenge";
@@ -230,9 +246,13 @@ public class OIDCLoginProtocol implements LoginProtocol {
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(clientSession.getClient());
         if (!clientConfig.isExcludeSessionStateFromAuthResponse()) {
             redirectUri.addParam(OAuth2Constants.SESSION_STATE, userSession.getId());
+        } else {
+            logger.warn("Using deprecated switch 'Exclude session state from authentication response'. The switch might be removed in future Keycloak versions. Please update your application to handle session_state parameter correctly");
         }
         if (!clientConfig.isExcludeIssuerFromAuthResponse()) {
             redirectUri.addParam(OAuth2Constants.ISSUER, clientSession.getNote(OIDCLoginProtocol.ISSUER));
+        } else {
+            logMessageForDeprecatedExcludeIssuerSwitch();
         }
 
         String nonce = authSession.getClientNote(OIDCLoginProtocol.NONCE_PARAM);
@@ -251,9 +271,11 @@ public class OIDCLoginProtocol implements LoginProtocol {
         String code = null;
         if (responseType.hasResponseType(OIDCResponseType.CODE)) {
             OAuth2Code codeData = new OAuth2Code(SecretGenerator.getInstance().generateSecureID(),
+                authSession.getClient().getId(),
                 Time.currentTime() + userSession.getRealm().getAccessCodeLifespan(),
                 nonce,
                 authSession.getClientNote(OAuth2Constants.SCOPE),
+                authSession.getClientNote(OAuth2Constants.RESOURCE),
                 authSession.getClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM),
                 authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_PARAM),
                 authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM),
@@ -299,6 +321,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 redirectUri.addParam(OAuth2Constants.ERROR_DESCRIPTION, cpe.getError());
                 if (!clientConfig.isExcludeIssuerFromAuthResponse()) {
                     redirectUri.addParam(OAuth2Constants.ISSUER, clientSession.getNote(OIDCLoginProtocol.ISSUER));
+                } else {
+                    logMessageForDeprecatedExcludeIssuerSwitch();
                 }
                 return buildRedirectUri(redirectUri, authSession, userSession, clientSessionCtx, cpe, null);
             }
@@ -397,9 +421,15 @@ public class OIDCLoginProtocol implements LoginProtocol {
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(session.getContext().getClient());
         if (!clientConfig.isExcludeIssuerFromAuthResponse()) {
             redirectUri.addParam(OAuth2Constants.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+        } else {
+            logMessageForDeprecatedExcludeIssuerSwitch();
         }
 
         return redirectUri;
+    }
+
+    public static void logMessageForDeprecatedExcludeIssuerSwitch() {
+        logger.warn("Using deprecated switch 'Exclude issuer from authentication response'. The switch might be removed in future Keycloak versions. Please update your application to handle iss parameter correctly");
     }
 
     @Override
@@ -426,7 +456,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
             checker.checkResponseType();
             checker.checkRedirectUri();
         } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
-            ex.throwAsErrorPageException(null);
+            checker.throwAsErrorPageException(null, ex);
         }
 
         setupResponseTypeAndMode(clientData.getResponseType(), clientData.getResponseMode());
@@ -442,6 +472,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 return new OAuth2ErrorRepresentation(OAuthErrorException.ACCESS_DENIED, "User cancelled application-initiated action.");
             case CANCELLED_BY_USER:
             case CONSENT_DENIED:
+            case LOA_INVALID:
                 return new OAuth2ErrorRepresentation(OAuthErrorException.ACCESS_DENIED, errorMessage);
             case PASSIVE_INTERACTION_REQUIRED:
                 return new OAuth2ErrorRepresentation(OAuthErrorException.INTERACTION_REQUIRED, null);
@@ -563,7 +594,19 @@ public class OIDCLoginProtocol implements LoginProtocol {
     }
 
     @Override
-    public void close() {
+    public void authenticationComplete(AuthenticationSessionModel authSession) {
+        // Authorization servers that enforce one-time use of request_uri values do so at the point of authorization,
+        // not at the point of visiting the authorization endpoint
+        String requestUri = authSession.getAuthNote(Constants.AUTHORIZATION_REQUEST_URI);
+        RequestUriType requestUriType = Optional.ofNullable(requestUri)
+                .map(AuthorizationEndpointRequestParserProcessor::getRequestUriType)
+                .orElse(null);
+        if (requestUriType == RequestUriType.PAR && AuthzEndpointParParser.removeRequestObject(session, requestUri) == null) {
+            throw new AuthenticationFlowException("PAR not found, not issued or used multiple times.", AuthenticationFlowError.INTERNAL_ERROR);
+        }
+    }
 
+    @Override
+    public void close() {
     }
 }

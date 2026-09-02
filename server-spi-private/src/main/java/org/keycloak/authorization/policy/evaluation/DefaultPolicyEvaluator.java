@@ -23,7 +23,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision;
@@ -45,10 +44,6 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
 
     @Override
     public void evaluate(ResourcePermission permission, AuthorizationProvider authorizationProvider, EvaluationContext executionContext, Decision decision, Map<Policy, Map<Object, Decision.Effect>> decisionCache) {
-        StoreFactory storeFactory = authorizationProvider.getStoreFactory();
-        PolicyStore policyStore = storeFactory.getPolicyStore();
-        ResourceStore resourceStore = storeFactory.getResourceStore();
-
         ResourceServer resourceServer = permission.getResourceServer();
         PolicyEnforcementMode enforcementMode = resourceServer.getPolicyEnforcementMode();
 
@@ -80,6 +75,9 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
         }
 
         if (PolicyEnforcementMode.PERMISSIVE.equals(enforcementMode)) {
+            if (resource != null && resource.isOwnerManagedAccess()) {
+                return;
+            }
             grantAndComplete(permission, authorizationProvider, executionContext, decision);
         }
     }
@@ -133,15 +131,17 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
 
     protected Consumer<Policy> createPolicyEvaluator(ResourcePermission permission, AuthorizationProvider authorizationProvider, EvaluationContext executionContext, Decision decision, AtomicBoolean verified, Map<Policy, Map<Object, Decision.Effect>> decisionCache) {
         return parentPolicy -> {
-            PolicyProvider policyProvider = authorizationProvider.getProvider(parentPolicy.getType());
+            if (parentPolicy != null) {
+                PolicyProvider policyProvider = authorizationProvider.getProvider(parentPolicy.getType());
 
-            if (policyProvider == null) {
-                throw new RuntimeException("Unknown parentPolicy provider for type [" + parentPolicy.getType() + "].");
+                if (policyProvider == null) {
+                    throw new RuntimeException("Unknown parentPolicy provider for type [" + parentPolicy.getType() + "].");
+                }
+
+                policyProvider.evaluate(new DefaultEvaluation(permission, executionContext, parentPolicy, decision, authorizationProvider, decisionCache));
+
+                verified.compareAndSet(false, true);
             }
-
-            policyProvider.evaluate(new DefaultEvaluation(permission, executionContext, parentPolicy, decision, authorizationProvider, decisionCache));
-
-            verified.compareAndSet(false, true);
         };
     }
 }

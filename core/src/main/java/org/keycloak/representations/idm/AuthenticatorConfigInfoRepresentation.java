@@ -62,4 +62,3 @@ public class AuthenticatorConfigInfoRepresentation {
         this.properties = properties;
     }
 }
-

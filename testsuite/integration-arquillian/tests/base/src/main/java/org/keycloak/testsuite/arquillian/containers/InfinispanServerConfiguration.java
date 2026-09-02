@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.arquillian.containers;
 
 import java.io.File;
+
 import org.apache.commons.validator.routines.IntegerValidator;
 import org.jboss.arquillian.container.spi.ConfigurationException;
 import org.jboss.arquillian.container.spi.client.container.ContainerConfiguration;

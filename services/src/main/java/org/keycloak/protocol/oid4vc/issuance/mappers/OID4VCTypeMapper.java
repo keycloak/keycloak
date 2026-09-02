@@ -17,19 +17,21 @@
 
 package org.keycloak.protocol.oid4vc.issuance.mappers;
 
-import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.ProtocolMapper;
-import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
-import org.keycloak.provider.ProviderConfigProperty;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.provider.ProviderConfigProperty;
+
+import static org.keycloak.VCFormat.MSO_MDOC;
 
 /**
  * Allows to add types to the credential subject
@@ -63,9 +65,15 @@ public class OID4VCTypeMapper extends OID4VCMapper {
      */
     @Override
     public boolean includeInMetadata() {
-        return Optional.ofNullable(mapperModel.getConfig().get(CredentialScopeModel.INCLUDE_IN_METADATA))
+        return Optional.ofNullable(mapperModel.getConfig().get(CredentialScopeModel.VC_INCLUDE_IN_METADATA))
                        .map(Boolean::parseBoolean)
                        .orElse(false);
+    }
+
+    @Override
+    public boolean supportsCredentialFormat(String credentialFormat) {
+        // mDoc uses the configured document type, not a VC-level JSON type member.
+        return !MSO_MDOC.equals(credentialFormat);
     }
 
     @Override
@@ -73,8 +81,8 @@ public class OID4VCTypeMapper extends OID4VCMapper {
         return List.of("type");
     }
 
-    public void setClaimsForCredential(VerifiableCredential verifiableCredential,
-                                       UserSessionModel userSessionModel) {
+    public void setClaim(VerifiableCredential verifiableCredential,
+                         UserSessionModel userSessionModel) {
         // remove duplicates
         Set<String> types = new HashSet<>();
         if (verifiableCredential.getType() != null) {
@@ -85,7 +93,7 @@ public class OID4VCTypeMapper extends OID4VCMapper {
     }
 
     @Override
-    public void setClaimsForSubject(Map<String, Object> claims, UserSessionModel userSessionModel) {
+    public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel) {
         // nothing to do for the mapper.
     }
 

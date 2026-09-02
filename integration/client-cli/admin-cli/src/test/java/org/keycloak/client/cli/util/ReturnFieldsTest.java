@@ -18,7 +18,6 @@ package org.keycloak.client.cli.util;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.client.cli.util.ReturnFields;
 
 /**
  * @author <a href="mailto:marko.strukelj@gmail.com">Marko Strukelj</a>

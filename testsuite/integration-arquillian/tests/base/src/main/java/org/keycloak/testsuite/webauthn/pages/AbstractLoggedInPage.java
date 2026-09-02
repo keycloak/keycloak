@@ -17,18 +17,20 @@
 
 package org.keycloak.testsuite.webauthn.pages;
 
-import org.jboss.arquillian.graphene.page.Page;
+import java.util.LinkedList;
+
 import org.keycloak.testsuite.webauthn.pages.fragments.ContentAlert;
 import org.keycloak.testsuite.webauthn.pages.fragments.ContinueCancelModal;
 import org.keycloak.testsuite.webauthn.pages.fragments.LoggedInPageHeader;
-import org.keycloak.testsuite.webauthn.pages.fragments.Sidebar;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-import java.util.LinkedList;
-
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -38,9 +40,6 @@ public abstract class AbstractLoggedInPage extends AbstractAccountPage {
 
     @FindBy(xpath = "//*[@data-testid='page-header']")
     private LoggedInPageHeader header;
-
-    @FindBy(id = "page-sidebar")
-    private Sidebar sidebar;
 
     @Page
     private ContentAlert alert;
@@ -71,6 +70,12 @@ public abstract class AbstractLoggedInPage extends AbstractAccountPage {
     public abstract String getPageId();
 
     /**
+     * Title of the account page translated into english. For example "Signing in" or "Device activity".
+     * @return The translated page title
+     */
+    public abstract String getTranslatedPageTitle();
+
+    /**
      * In case the page is placed is a subpage, i.e. placed in a subsection. See content.json in themes module for IDs.
      *
      * @return parent page ID
@@ -79,28 +84,18 @@ public abstract class AbstractLoggedInPage extends AbstractAccountPage {
         return null;
     }
 
-    /**
-     * This should simulate a user navigating to this page using links in the nav bar. It assume that user is logged in
-     * and at some Account Console page (not Welcome Screen), i.e. that the nav bar is visible.
-     */
     public void navigateToUsingSidebar() {
-        if (sidebar.isCollapsed()) {
-            sidebar.expand();
-        }
+        final String dataTestId = String.join("/", hashPath);
+        clickLink(driver.findElement(By.xpath("//*[@data-testid='" + dataTestId + "']")));
+        waitForPageTitle();
+    }
 
-        if (getParentPageId() != null) {
-            sidebar().clickSubNav(getParentPageId(), getPageId());
-        } else {
-            sidebar().clickNav(getPageId());
-        }
+    public void waitForPageTitle() {
+        waitUntilElement(By.xpath("//*[@data-testid='page-heading']")).text().equalTo(getTranslatedPageTitle());
     }
 
     public LoggedInPageHeader header() {
         return header;
-    }
-
-    public Sidebar sidebar() {
-        return sidebar;
     }
 
     public ContentAlert alert() {

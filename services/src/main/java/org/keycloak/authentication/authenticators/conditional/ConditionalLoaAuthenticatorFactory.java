@@ -18,6 +18,7 @@
 package org.keycloak.authentication.authenticators.conditional;
 
 import java.util.List;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowCallbackFactory;
 import org.keycloak.authentication.Authenticator;

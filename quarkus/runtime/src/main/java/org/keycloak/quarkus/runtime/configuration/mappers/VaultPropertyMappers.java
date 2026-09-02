@@ -1,10 +1,10 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import java.util.List;
+
 import org.keycloak.config.VaultOptions;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
-
-import java.util.List;
 
 final class VaultPropertyMappers implements PropertyMapperGrouping {
 
@@ -25,6 +25,7 @@ final class VaultPropertyMappers implements PropertyMapperGrouping {
                 fromOption(VaultOptions.VAULT_PASS)
                         .to("kc.spi-vault--keystore--pass")
                         .paramLabel("pass")
+                        .isMasked(true)
                         .build(),
                 fromOption(VaultOptions.VAULT_TYPE)
                         .to("kc.spi-vault--keystore--type")

@@ -42,7 +42,7 @@ public class DefaultTokenContextEncoderProvider implements TokenContextEncoderPr
     }
 
     @Override
-    public AccessTokenContext getTokenContextFromClientSessionContext(ClientSessionContext clientSessionContext, String rawTokenId) {
+    public AccessTokenContext getTokenContextFromClientSessionContext(ClientSessionContext clientSessionContext, String rawTokenId, boolean isOffline) {
         AccessTokenContext.SessionType sessionType;
         UserSessionModel userSession = clientSessionContext.getClientSession().getUserSession();
         if (userSession.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT) {
@@ -53,7 +53,7 @@ public class DefaultTokenContextEncoderProvider implements TokenContextEncoderPr
                 sessionType = AccessTokenContext.SessionType.TRANSIENT;
             }
         } else {
-            sessionType = clientSessionContext.isOfflineTokenRequested() ? AccessTokenContext.SessionType.OFFLINE : AccessTokenContext.SessionType.ONLINE;
+            sessionType = isOffline ? AccessTokenContext.SessionType.OFFLINE : AccessTokenContext.SessionType.ONLINE;
         }
 
         boolean useLightweightToken = AbstractOIDCProtocolMapper.getShouldUseLightweightToken(session);

@@ -16,22 +16,44 @@
  */
 package org.keycloak.protocol.oidc.rar;
 
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.ClientSessionContext;
-import org.keycloak.provider.Provider;
-
 import java.util.List;
+
+import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.provider.Provider;
+import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 
 /**
  * Provider interface for processing authorization_details parameter in OAuth2/OIDC authorization and token requests.
  * This follows the RAR (Rich Authorization Requests) specification and allows different
  * implementations to handle various types of authorization details.
  * The authorization_details parameter can be used in both authorization requests and token requests
- * as specified in the OpenID for Verifiable Credential Issuance specification.
+ * (as specified for example in the OpenID for Verifiable Credential Issuance specification).
  *
  * @author <a href="mailto:Forkim.Akwichek@adorsys.com">Forkim Akwichek</a>
  */
-public interface AuthorizationDetailsProcessor extends Provider {
+public interface AuthorizationDetailsProcessor<ADR extends AuthorizationDetailsJSONRepresentation> extends Provider {
+
+    /**
+     * Checks if this processor should be regarded as supported in the running context.
+     */
+    boolean isSupported();
+
+    /**
+     * @return supported type of authorization_details "type" claim, which this processor is able to process. This should usually correspond with the "providerId" of
+     * the {@link AuthorizationDetailsProcessorFactory}, which created this processor
+     */
+    String getSupportedType();
+
+    /**
+     * @return supported Java type of {@link AuthorizationDetailsJSONRepresentation} subclass, which this processor can create in the token response
+     */
+    Class<ADR> getSupportedResponseJavaType();
+
+    /**
+     * Validates an authorization detail against supported credentials and other constraints.
+     */
+    ADR validateAuthorizationDetail(AuthorizationDetailsJSONRepresentation authzDetail) throws InvalidAuthorizationDetailsException;
 
     /**
      * Processes the authorization_details parameter and returns a response if this processor
@@ -39,11 +61,72 @@ public interface AuthorizationDetailsProcessor extends Provider {
      *
      * @param userSession                   the user session
      * @param clientSessionCtx              the client session context
-     * @param authorizationDetailsParameter the raw authorization_details parameter value
-     * @return authorization details response if this processor can handle the parameter,
-     * null if the parameter is incompatible with this processor
+     * @param authorizationDetailsMember the authorization_details member (usually one member from the list) sent in the "authorization_details" request parameter
+     * @return authorization details response if this processor can handle the parameter, null if the parameter is incompatible with this processor
      */
-    List<AuthorizationDetailsResponse> process(UserSessionModel userSession,
-                                               ClientSessionContext clientSessionCtx,
-                                               String authorizationDetailsParameter);
+    ADR process(UserSessionModel userSession,
+                ClientSessionContext clientSessionCtx,
+                AuthorizationDetailsJSONRepresentation authorizationDetailsMember) throws InvalidAuthorizationDetailsException;
+
+    /**
+     * Method is invoked in cases when authorization_details parameter is missing in the request. It allows processor to
+     * generate authorization details response in such a case
+     *
+     * @param userSession      the user session
+     * @param clientSessionCtx the client session context
+     * @return authorization details response if this processor can handle current request in case that authorization_details parameter was not provided
+     */
+    List<ADR> handleMissingAuthorizationDetails(UserSessionModel userSession,
+                                                ClientSessionContext clientSessionCtx) throws InvalidAuthorizationDetailsException;
+
+    /**
+     * Method is invoked when authorization_details was used in the authorization request but is missing from the token request.
+     * This method should process the stored authorization_details and ensure they are returned in the token response.
+     *
+     * @param userSession       the user session
+     * @param clientSessionCtx  the client session context
+     * @param storedAuthDetailsMember the parsed member (usually one member of the list) from the authorization_details parameter that were stored during the authorization request
+     * @return authorization details response if this processor can handle the stored authorization_details, null if the processor cannot handle the stored authorization_details
+     */
+    ADR processStoredAuthorizationDetails(UserSessionModel userSession,
+                                          ClientSessionContext clientSessionCtx,
+                                          AuthorizationDetailsJSONRepresentation storedAuthDetailsMember) throws InvalidAuthorizationDetailsException;
+
+    /**
+     * Hook method called after authorization_details are processed and before the token response is created.
+     * This allows authorization details processors to perform post-processing actions (e.g., creating state objects).
+     *
+     * @param userSession      the user session
+     * @param clientSessionCtx the client session context
+     * @param authorizationDetailsResponse The response object of the proper type, which is supposed to be processed by this processor.
+     */
+    void afterAuthorizationDetailsProcessed(UserSessionModel userSession,
+                                            ClientSessionContext clientSessionCtx,
+                                            ADR authorizationDetailsResponse);
+
+
+    /**
+     * Sanitize authorization details before they are sent as part of the Token Response
+     * https://github.com/keycloak/keycloak/issues/50079
+     *
+     * @param authzDetail The typed authorization detail
+     * @return A sanitized clone of the authorization detail
+     */
+    default ADR sanitizeBeforeSendingTokenResponse(ADR authzDetail) {
+        return authzDetail;
+    }
+
+    /**
+     * @param authzDetailsResponse all the authorizationDetails. May contain also authorizationDetails entries, with different "type" than the type understandable by this processor
+     * @return sublist of the list provided by "authDetailsResponse" parameter, which will contain just the authorizationDetails of the corresponding type of this processor.
+     */
+    default List<ADR> getSupportedAuthorizationDetails(List<AuthorizationDetailsJSONRepresentation> authzDetailsResponse) {
+        if (authzDetailsResponse == null) {
+            return null;
+        }
+        return authzDetailsResponse.stream()
+                .filter(authDetailsResponse -> getSupportedType().equals(authDetailsResponse.getType()))
+                .map(authDetailsResponse -> authDetailsResponse.asSubtype(getSupportedResponseJavaType()))
+                .toList();
+    }
 }

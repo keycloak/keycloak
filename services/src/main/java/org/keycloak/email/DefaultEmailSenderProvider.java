@@ -17,7 +17,27 @@
 
 package org.keycloak.email;
 
-import org.jboss.logging.Logger;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+import java.util.Map;
+import java.util.Properties;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+
+import jakarta.mail.Address;
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.Multipart;
+import jakarta.mail.Session;
+import jakarta.mail.Transport;
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeBodyPart;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMultipart;
+import jakarta.mail.internet.MimeUtility;
+
 import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
@@ -26,25 +46,7 @@ import org.keycloak.truststore.JSSETruststoreConfigurator;
 import org.keycloak.utils.EmailValidationUtil;
 import org.keycloak.utils.SMTPUtil;
 
-import jakarta.mail.Address;
-import jakarta.mail.MessagingException;
-import jakarta.mail.Multipart;
-import jakarta.mail.Session;
-import jakarta.mail.Message;
-import jakarta.mail.Transport;
-import jakarta.mail.internet.AddressException;
-import jakarta.mail.internet.InternetAddress;
-import jakarta.mail.internet.MimeBodyPart;
-import jakarta.mail.internet.MimeMultipart;
-import jakarta.mail.internet.MimeMessage;
-import jakarta.mail.internet.MimeUtility;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-import java.util.Date;
-import java.util.Map;
-import java.util.Properties;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.utils.StringUtil.isNotBlank;
 
@@ -101,9 +103,13 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
     public void validate(Map<String, String> config) throws EmailException {
         // just static configuration checking here, not really testing email
         checkFromAddress(config.get("from"), isAllowUTF8(config));
+        String replyTo = config.get("replyTo");
+        if (isNotBlank(replyTo)) {
+            checkReplyToAddress(replyTo, isAllowUTF8(config));
+        }
     }
 
-    private Properties buildEmailProperties(Map<String, String> config, String from) throws EmailException {
+    Properties buildEmailProperties(Map<String, String> config, String from) throws EmailException {
         Properties props = new Properties();
 
         if (config.containsKey("host")) {
@@ -140,9 +146,9 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             setupTruststore(props);
         }
 
-        props.setProperty("mail.smtp.timeout", "10000");
-        props.setProperty("mail.smtp.connectiontimeout", "10000");
-        props.setProperty("mail.smtp.writetimeout", "10000");
+        props.setProperty("mail.smtp.timeout", config.getOrDefault("timeout", "10000"));
+        props.setProperty("mail.smtp.connectiontimeout", config.getOrDefault("connectionTimeout", "10000"));
+        props.setProperty("mail.smtp.writetimeout", config.getOrDefault("writeTimeout", "10000"));
 
         String envelopeFrom = config.get("envelopeFrom");
         if (isNotBlank(envelopeFrom)) {
@@ -174,7 +180,8 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             msg.setReplyTo(new Address[]{toInternetAddress(from, fromDisplayName)});
 
             if (isNotBlank(replyTo)) {
-                msg.setReplyTo(new Address[]{toInternetAddress(replyTo, replyToDisplayName)});
+                final String convertedReplyTo = checkReplyToAddress(replyTo, isAllowUTF8(config));
+                msg.setReplyTo(new Address[]{toInternetAddress(convertedReplyTo, replyToDisplayName)});
             }
 
             msg.setHeader("To", address);
@@ -257,12 +264,21 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
     }
 
     private static String checkFromAddress(String from, boolean allowutf8) throws EmailException {
-        final String covertedFrom = convertEmail(from, allowutf8);
-        if (from == null) {
+        final String convertedFrom = convertEmail(from, allowutf8);
+        if (convertedFrom == null) {
             throw new EmailException(String.format("Invalid sender address '%s'. If the address contains UTF-8 characters in the local part please ensure the SMTP server supports the SMTPUTF8 extension and enable 'Allow UTF-8' in the email realm configuration.",
                     from));
         }
-        return covertedFrom;
+        return convertedFrom;
+    }
+
+    private static String checkReplyToAddress(String replyTo, boolean allowutf8) throws EmailException {
+        final String convertedReplyTo = convertEmail(replyTo, allowutf8);
+        if (convertedReplyTo == null) {
+            throw new EmailException(String.format("Invalid reply-to address '%s'. If the address contains UTF-8 characters in the local part please ensure the SMTP server supports the SMTPUTF8 extension and enable 'Allow UTF-8' in the email realm configuration.",
+                    replyTo));
+        }
+        return convertedReplyTo;
     }
 
     private static String convertEmail(String email, boolean allowutf8) throws EmailException {

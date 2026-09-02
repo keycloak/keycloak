@@ -16,8 +16,6 @@
  */
 package org.keycloak.crypto.elytron.test;
 
-import static org.junit.Assert.assertArrayEquals;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.KeyPair;
@@ -28,17 +26,19 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.security.auth.x500.X500Principal;
 
-import org.junit.Test;
 import org.keycloak.crypto.elytron.ElytronCertificateUtilsProvider;
+
+import org.junit.Test;
 import org.wildfly.security.x500.GeneralName;
 import org.wildfly.security.x500.cert.CRLDistributionPoint;
 import org.wildfly.security.x500.cert.CRLDistributionPoint.DistributionPointName;
 import org.wildfly.security.x500.cert.CRLDistributionPoint.FullNameDistributionPointName;
 import org.wildfly.security.x500.cert.CRLDistributionPointsExtension;
 import org.wildfly.security.x500.cert.X509CertificateBuilder;
+
+import static org.junit.Assert.assertArrayEquals;
 
 /**
  * @author <a href="mailto:david.anderson@redhat.com">David Anderson</a>

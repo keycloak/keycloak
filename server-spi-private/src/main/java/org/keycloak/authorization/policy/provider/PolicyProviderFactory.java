@@ -34,6 +34,14 @@ public interface PolicyProviderFactory<R extends AbstractPolicyRepresentation> e
 
     String getGroup();
 
+    default String getDescription() {
+        return null;
+    }
+
+    default String getCode() {
+        return null;
+    }
+
     default boolean isInternal() {
         return false;
     }

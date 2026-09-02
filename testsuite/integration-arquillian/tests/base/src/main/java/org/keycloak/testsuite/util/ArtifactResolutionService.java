@@ -1,5 +1,23 @@
 package org.keycloak.testsuite.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+
+import jakarta.xml.ws.Endpoint;
+import jakarta.xml.ws.Provider;
+import jakarta.xml.ws.Service;
+import jakarta.xml.ws.ServiceMode;
+import jakarta.xml.ws.WebServiceProvider;
+import jakarta.xml.ws.http.HTTPBinding;
+
 import org.keycloak.dom.saml.v2.protocol.ArtifactResolveType;
 import org.keycloak.dom.saml.v2.protocol.ArtifactResponseType;
 import org.keycloak.protocol.saml.SamlProtocolUtils;
@@ -10,24 +28,8 @@ import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
-import org.w3c.dom.Document;
 
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
-import jakarta.xml.ws.Endpoint;
-import jakarta.xml.ws.Provider;
-import jakarta.xml.ws.Service;
-import jakarta.xml.ws.ServiceMode;
-import jakarta.xml.ws.WebServiceProvider;
-import jakarta.xml.ws.http.HTTPBinding;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
+import org.w3c.dom.Document;
 
 /**
  * This class simulates a service provider's (clients's) Artifact Resolution Service. It is a webservice provider

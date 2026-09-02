@@ -1,6 +1,7 @@
 package org.keycloak.admin.ui.rest.model;
 
 import java.util.Map;
+
 import org.keycloak.representations.idm.UserRepresentation;
 
 public class BruteUser extends UserRepresentation {

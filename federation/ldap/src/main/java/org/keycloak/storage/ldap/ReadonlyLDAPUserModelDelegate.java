@@ -17,8 +17,6 @@
 
 package org.keycloak.storage.ldap;
 
-import static org.keycloak.storage.ldap.LDAPStorageProvider.INTERNAL_ATTRIBUTES;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -26,6 +24,8 @@ import java.util.stream.Collectors;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.storage.ReadOnlyException;
+
+import static org.keycloak.storage.ldap.LDAPStorageProvider.INTERNAL_ATTRIBUTES;
 
 /**
  * Will be good to get rid of this class and use ReadOnlyUserModelDelegate, but it can't be done now due the backwards compatibility.
@@ -70,7 +70,7 @@ public class ReadonlyLDAPUserModelDelegate extends UserModelDelegate {
 
     @Override
     public void setSingleAttribute(String name, String value) {
-        setAttribute(name, List.of(value));
+        setAttribute(name, value != null ? List.of(value) : null);
     }
 
     @Override

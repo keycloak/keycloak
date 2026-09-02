@@ -17,21 +17,28 @@
 
 package org.keycloak.models.workflow;
 
-import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.cache.UserCache;
+import org.keycloak.storage.UserStoragePrivateUtil;
+import org.keycloak.storage.UserStorageUtil;
 
-import java.util.List;
+import org.jboss.logging.Logger;
 
 public class DeleteUserStepProvider implements WorkflowStepProvider {
 
+    public static final String PROPAGATE_TO_SP = "propagate-to-provider";
+
     private final KeycloakSession session;
+    private final ComponentModel stepModel;
     private final Logger log = Logger.getLogger(DeleteUserStepProvider.class);
 
     public DeleteUserStepProvider(KeycloakSession session, ComponentModel model) {
         this.session = session;
+        this.stepModel = model;
     }
 
     @Override
@@ -39,18 +46,38 @@ public class DeleteUserStepProvider implements WorkflowStepProvider {
     }
 
     @Override
-    public void run(List<String> ids) {
+    public void run(WorkflowExecutionContext context) {
         RealmModel realm = session.getContext().getRealm();
+        UserModel user = session.users().getUserById(realm, context.getResourceId());
 
-        for (String id : ids) {
-            UserModel user = session.users().getUserById(realm, id);
-
-            if (user == null) {
-                continue;
-            }
-
-            log.debugv("Deleting user {0} ({1})", user.getUsername(), user.getId());
-            session.users().removeUser(realm, user);
+        if (user == null) {
+            return;
         }
+
+        UserManager userManager = new UserManager(session);
+        if (!user.isFederated() || stepModel.get(PROPAGATE_TO_SP, false)) {
+          log.debugv("Deleting user {0} ({1})", user.getUsername(), user.getId());
+          userManager.removeUser(realm, user);
+          return;
+        }
+
+        // delete the local user only
+        userManager.removeUser(realm, user, UserStoragePrivateUtil.userLocalStorage(session));
+        log.debugv("Deleting federated user {0} ({1}) from local storage only", user.getUsername(), user.getId());
+        UserCache userCache = UserStorageUtil.userCache(session);
+        // if cache is enabled, evict the user from cache
+        if (userCache != null) {
+            userCache.evict(realm, user);
+        }
+    }
+
+    @Override
+    public String getNotificationMessage() {
+        return "accountDeleteNotificationBody";
+    }
+
+    @Override
+    public String getNotificationSubject() {
+        return "accountDeleteNotificationSubject";
     }
 }

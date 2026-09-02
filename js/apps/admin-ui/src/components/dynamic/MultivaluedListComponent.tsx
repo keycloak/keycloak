@@ -1,4 +1,5 @@
 import {
+  FormErrorText,
   HelpItem,
   KeycloakSelect,
   SelectVariant,
@@ -9,13 +10,28 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import type { ComponentProps } from "./components";
 
-function stringToMultiline(value?: string): string[] {
-  return typeof value === "string" && value.length > 0 ? value.split("##") : [];
+const DEFAULT_MULTILINE_SEPARATOR = "##";
+
+function stringToMultiline(
+  value?: string,
+  separator: string = DEFAULT_MULTILINE_SEPARATOR,
+): string[] {
+  return typeof value === "string" && value.length > 0
+    ? value.split(separator)
+    : [];
 }
 
-function toStringValue(formValue: string[]): string {
-  return formValue.join("##");
+function toStringValue(
+  formValue: string[],
+  separator: string = DEFAULT_MULTILINE_SEPARATOR,
+): string {
+  return formValue.join(separator);
 }
+
+export type MultiValuedListComponentProps = ComponentProps & {
+  stringifySeparator?: string;
+  variant?: `${SelectVariant}`;
+};
 
 export const MultiValuedListComponent = ({
   name,
@@ -25,12 +41,32 @@ export const MultiValuedListComponent = ({
   options,
   isDisabled = false,
   stringify,
+  stringifySeparator,
   required,
   convertToName,
-}: ComponentProps) => {
+  onSearch,
+  variant = SelectVariant.typeaheadMulti,
+}: MultiValuedListComponentProps) => {
   const { t } = useTranslation();
-  const { control } = useFormContext();
+  const {
+    control,
+    formState: { errors },
+  } = useFormContext();
   const [open, setOpen] = useState(false);
+
+  function setSearch(value: string) {
+    if (onSearch) {
+      onSearch(value);
+    }
+  }
+
+  const convertedName = convertToName(name!);
+
+  const getError = () => {
+    return convertedName
+      .split(".")
+      .reduce((record: any, key) => record?.[key], errors);
+  };
 
   return (
     <FormGroup
@@ -40,52 +76,78 @@ export const MultiValuedListComponent = ({
       isRequired={required}
     >
       <Controller
-        name={convertToName(name!)}
+        name={convertedName}
         control={control}
         defaultValue={
-          stringify ? defaultValue || "" : defaultValue ? [defaultValue] : []
+          stringify || variant !== SelectVariant.typeaheadMulti
+            ? defaultValue || ""
+            : defaultValue
+              ? [defaultValue]
+              : []
         }
+        rules={{
+          required: { value: required || false, message: t("required") },
+        }}
         render={({ field }) => (
-          <KeycloakSelect
-            toggleId={name}
-            data-testid={name}
-            isDisabled={isDisabled}
-            chipGroupProps={{
-              numChips: 3,
-              expandedText: t("hide"),
-              collapsedText: t("showRemaining"),
-            }}
-            variant={SelectVariant.typeaheadMulti}
-            typeAheadAriaLabel="Select"
-            onToggle={(isOpen) => setOpen(isOpen)}
-            selections={
-              stringify ? stringToMultiline(field.value) : field.value
-            }
-            onSelect={(v) => {
-              const option = v.toString();
-              const values = stringify
-                ? stringToMultiline(field.value)
-                : field.value;
-              let newValue;
-              if (values.includes(option)) {
-                newValue = values.filter((item: string) => item !== option);
-              } else {
-                newValue = [...values, option];
+          <>
+            <KeycloakSelect
+              toggleId={name}
+              data-testid={name}
+              isDisabled={isDisabled}
+              chipGroupProps={{
+                numChips: 3,
+                expandedText: t("hide"),
+                collapsedText: t("showRemaining"),
+              }}
+              variant={variant}
+              typeAheadAriaLabel={t("choose")}
+              onToggle={setOpen}
+              selections={
+                stringify && variant === SelectVariant.typeaheadMulti
+                  ? stringToMultiline(field.value, stringifySeparator)
+                  : field.value
               }
-              field.onChange(stringify ? toStringValue(newValue) : newValue);
-            }}
-            onClear={() => {
-              field.onChange(stringify ? "" : []);
-            }}
-            isOpen={open}
-            aria-label={t(label!)}
-          >
-            {options?.map((option) => (
-              <SelectOption key={option} value={option}>
-                {option}
-              </SelectOption>
-            ))}
-          </KeycloakSelect>
+              onSelect={(v) => {
+                const option = v.toString();
+                if (variant === SelectVariant.typeaheadMulti) {
+                  const values = stringify
+                    ? stringToMultiline(field.value, stringifySeparator)
+                    : field.value;
+                  let newValue;
+                  if (values.includes(option)) {
+                    newValue = values.filter((item: string) => item !== option);
+                  } else if (option !== "") {
+                    newValue = [...values, option];
+                  } else {
+                    newValue = values;
+                  }
+                  field.onChange(
+                    stringify
+                      ? toStringValue(newValue, stringifySeparator)
+                      : newValue,
+                  );
+                } else {
+                  field.onChange(option);
+                }
+              }}
+              onClear={() => {
+                field.onChange(
+                  stringify || variant !== SelectVariant.typeaheadMulti
+                    ? ""
+                    : [],
+                );
+              }}
+              onFilter={setSearch}
+              isOpen={open}
+            >
+              {options?.map((option) => (
+                <SelectOption key={option} value={option}>
+                  {option}
+                </SelectOption>
+              ))}
+            </KeycloakSelect>
+            {getError() && <FormErrorText message={getError().message} />}
+          </>
         )}
       />
     </FormGroup>

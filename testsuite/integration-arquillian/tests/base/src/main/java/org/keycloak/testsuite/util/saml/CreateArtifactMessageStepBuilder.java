@@ -1,5 +1,19 @@
 package org.keycloak.testsuite.util.saml;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedList;
+import java.util.List;
+
+import org.keycloak.protocol.saml.ArtifactResolver;
+import org.keycloak.protocol.saml.DefaultSamlArtifactResolver;
+import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.testsuite.util.SamlClient;
+import org.keycloak.testsuite.util.SamlClientBuilder;
+
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -11,19 +25,6 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.jboss.logging.Logger;
-import org.keycloak.protocol.saml.ArtifactResolver;
-import org.keycloak.protocol.saml.DefaultSamlArtifactResolver;
-import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.testsuite.util.SamlClient;
-import org.keycloak.testsuite.util.SamlClientBuilder;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
-import java.util.LinkedList;
-import java.util.List;
 
 public class CreateArtifactMessageStepBuilder implements SamlClient.Step {
 

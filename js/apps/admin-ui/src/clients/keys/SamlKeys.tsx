@@ -42,6 +42,7 @@ type KeyMapping = {
   name: string;
   title: string;
   key: string;
+  regenerateKey: string;
   relatedKeys: string[];
 };
 
@@ -53,12 +54,14 @@ const KEYS_MAPPING: { [key in KeyTypes]: KeyMapping } = {
     name: convertAttributeNameToForm("attributes.saml.client.signature"),
     title: "signingKeysConfig",
     key: "clientSignature",
+    regenerateKey: "reGenerateSigning",
     relatedKeys: [],
   },
   "saml.encryption": {
     name: convertAttributeNameToForm("attributes.saml.encrypt"),
     title: "encryptionKeysConfig",
     key: "encryptAssertions",
+    regenerateKey: "reGenerateEncryption",
     relatedKeys: [
       convertAttributeNameToForm("attributes.saml.encryption.algorithm"),
       convertAttributeNameToForm("attributes.saml.encryption.keyAlgorithm"),
@@ -164,7 +167,10 @@ const KeySection = ({
           <Card isFlat>
             <CardBody className="kc-form-panel__body">
               <Form isHorizontal>
-                <Certificate keyInfo={keyInfo} />
+                <Certificate
+                  helpTextKey={`saml${key}CertificateHelp`}
+                  keyInfo={keyInfo}
+                />
                 <ActionGroup>
                   <Button
                     variant="secondary"
@@ -214,19 +220,26 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
   const generate = async (attr: KeyTypes) => {
     const index = KEYS.indexOf(attr);
     try {
-      const info = [...(keyInfo || [])];
-      info[index] = await adminClient.clients.generateKey({
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      const generatedKey = await adminClient.clients.generateKey({
         id: clientId,
         attr,
       });
 
-      setKeyInfo(info);
       saveAs(
-        new Blob([info[index].privateKey!], {
+        new Blob([generatedKey.privateKey!], {
           type: "application/octet-stream",
         }),
         "private.key",
       );
+
+      const serverInfo = await adminClient.clients.getKeyInfo({
+        id: clientId,
+        attr,
+      });
+      const info = [...(keyInfo || [])];
+      info[index] = serverInfo;
+      setKeyInfo(info);
 
       addAlert(t("generateSuccess"), AlertVariant.success);
     } catch (error) {
@@ -253,9 +266,12 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
     },
   });
 
+  const regenerateKey = selectedType
+    ? KEYS_MAPPING[selectedType].regenerateKey
+    : "";
   const [toggleReGenerateDialog, ReGenerateConfirm] = useConfirmDialog({
-    titleKey: "reGenerateSigning",
-    messageKey: "reGenerateSigningExplain",
+    titleKey: regenerateKey,
+    messageKey: regenerateKey + "Explain",
     continueButtonLabel: "yes",
     cancelButtonLabel: "no",
     onConfirm: async () => {
@@ -269,6 +285,7 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
         <SamlKeysDialog
           id={clientId}
           attr={isChanged}
+          localeKey={key}
           onClose={() => {
             setIsChanged(undefined);
             for (const key of KEYS_MAPPING[selectedType!].relatedKeys) {

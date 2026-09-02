@@ -1,7 +1,6 @@
 import { type Page, expect } from "@playwright/test";
 import {
   assertSelectValue,
-  clickCancelButton,
   clickSaveButton,
   selectItem,
 } from "../utils/form.ts";
@@ -54,7 +53,6 @@ export async function addMappersByConfiguration(page: Page, mappers: string[]) {
     await page.getByTestId("name").fill(mapperName);
     await clickSaveButton(page);
     await assertNotificationMessage(page, "Mapping successfully created");
-    await clickCancelButton(page);
   }
 }
 

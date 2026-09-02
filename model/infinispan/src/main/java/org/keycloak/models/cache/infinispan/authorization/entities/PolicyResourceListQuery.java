@@ -25,7 +25,7 @@ public class PolicyResourceListQuery extends PolicyListQuery implements InResour
 
     private final String resourceId;
 
-    public PolicyResourceListQuery(Long revision, String id, String resourceId, Set<String> policies, String serverId) {
+    public PolicyResourceListQuery(long revision, String id, String resourceId, Set<String> policies, String serverId) {
         super(revision, id, policies, serverId);
         this.resourceId = resourceId;
     }

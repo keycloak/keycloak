@@ -16,10 +16,10 @@
  */
 package org.keycloak.credential;
 
+import java.util.stream.Stream;
+
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

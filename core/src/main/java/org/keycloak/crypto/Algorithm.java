@@ -54,4 +54,8 @@ public interface Algorithm {
     String ECDH_ES_A128KW = CryptoConstants.ECDH_ES_A128KW;
     String ECDH_ES_A192KW = CryptoConstants.ECDH_ES_A192KW;
     String ECDH_ES_A256KW = CryptoConstants.ECDH_ES_A256KW;
+
+    String ML_DSA_44 =  "ML-DSA-44";
+    String ML_DSA_65 =  "ML-DSA-65";
+    String ML_DSA_87 =  "ML-DSA-87";
 }

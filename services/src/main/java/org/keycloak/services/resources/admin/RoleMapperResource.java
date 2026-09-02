@@ -16,6 +16,55 @@
  */
 package org.keycloak.services.resources.admin;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.common.ClientConnection;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelIllegalStateException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.RoleMapperModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.representations.idm.ClientMappingsRepresentation;
+import org.keycloak.representations.idm.MappingsRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.resources.KeycloakOpenAPI;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.storage.ReadOnlyException;
+
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
@@ -27,50 +76,6 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
-
-import jakarta.ws.rs.NotFoundException;
-import org.keycloak.common.ClientConnection;
-import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelException;
-import org.keycloak.models.ModelIllegalStateException;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
-import org.keycloak.models.RoleMapperModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.representations.idm.ClientMappingsRepresentation;
-import org.keycloak.representations.idm.MappingsRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
-import org.keycloak.storage.ReadOnlyException;
-
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Base resource for managing users
@@ -141,7 +146,7 @@ public class RoleMapperResource {
 
         final AtomicReference<ClientMappingsRepresentation> mappings = new AtomicReference<>();
 
-        roleMapper.getRoleMappingsStream().forEach(roleMapping -> {
+        roleMapper.getRoleMappingsStream().filter(roleMapping -> auth.roles().canView(roleMapping)).forEach(roleMapping -> {
             RoleContainerModel container = roleMapping.getContainer();
             if (container instanceof RealmModel) {
                 realmRolesRepresentation.add(ModelToRepresentation.toBriefRepresentation(roleMapping));
@@ -208,11 +213,24 @@ public class RoleMapperResource {
     })
     public Stream<RoleRepresentation> getCompositeRealmRoleMappings(@Parameter(description = "if false, return roles with their attributes") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         viewPermission.require();
-
         Function<RoleModel, RoleRepresentation> toBriefRepresentation = briefRepresentation ?
                 ModelToRepresentation::toBriefRepresentation : ModelToRepresentation::toRepresentation;
-        return realm.getRolesStream()
-                .filter(roleMapper::hasRole)
+        Set<RoleModel> deepMappings;
+        if (roleMapper instanceof GroupModel group) {
+            // GroupModel.hasRole() (the semantics this endpoint previously relied on)
+            // walks the parent-group chain, but RoleUtils.getDeepRoleMappings() only
+            // expands a group's own direct mappings. Walk the chain explicitly here
+            // to preserve parent-group role inheritance for the group endpoint.
+            Set<RoleModel> directMappings = new HashSet<>();
+            for (GroupModel current = group; current != null; current = current.getParent()) {
+                directMappings.addAll(current.getRoleMappingsStream().collect(Collectors.toSet()));
+            }
+            deepMappings = RoleUtils.expandCompositeRoles(directMappings);
+        } else {
+            deepMappings = RoleUtils.getDeepRoleMappings(roleMapper);
+        }
+        return deepMappings.stream()
+                .filter(r -> RoleUtils.isRealmRole(r, realm))
                 .map(toBriefRepresentation);
     }
 

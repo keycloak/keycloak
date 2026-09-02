@@ -18,25 +18,28 @@
 package org.keycloak.it.cli.dist;
 
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
+import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
+import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
+import org.keycloak.it.utils.RawKeycloakDistribution;
+import org.keycloak.representations.idm.RealmRepresentation;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.keycloak.it.junit5.extension.CLIResult;
-import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.utils.KeycloakDistribution;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DistributionTest(defaultOptions = "--db=dev-file")
 @RawDistOnly(reason = "Containers are immutable")
@@ -45,14 +48,15 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 public class ImportDistTest {
 
     @Test
-    void testImport(KeycloakDistribution dist) throws IOException {
-        CLIResult cliResult = dist.run("build");
+    void testImport(KeycloakRunner runner) throws IOException {
+        CLIResult cliResult = runner.run("build");
 
         File dir = new File("target");
 
-        cliResult = dist.run("export", "--realm=master", "--dir=" + dir.getAbsolutePath());
+        cliResult = runner.run("export", "--realm=master", "--dir=" + dir.getAbsolutePath());
         cliResult.assertMessage("Export of realm 'master' requested.");
         cliResult.assertMessage("Export finished successfully");
+        cliResult.assertNoMessage("local_addr");
 
         // add a placeholder into the realm
         ObjectMapper mapper = new ObjectMapper();
@@ -61,64 +65,54 @@ public class ImportDistTest {
         node.put("enabled", "${REALM_ENABLED}");
         mapper.writer().writeValue(file, node);
 
-        dist.setEnvVar("REALM_ENABLED", "true");
-        cliResult = dist.run("import", "--dir=" + dir.getAbsolutePath());
+        runner.setEnvVar("REALM_ENABLED", "true");
+        runner.setEnvVar("KC_HOSTNAME_STRICT", "false");
+        runner.setEnvVar("KC_CACHE", "ispn");
+        cliResult = runner.run("import", "--dir=" + dir.getAbsolutePath());
         cliResult.assertMessage("Realm 'master' imported");
         cliResult.assertMessage("Import finished successfully");
         cliResult.assertNoMessage("Changes detected in configuration");
         cliResult.assertNoMessage("Listening on: http");
+        cliResult.assertNoMessage("local_addr");
 
-        cliResult = dist.run("import");
+        cliResult = runner.run("import");
         cliResult.assertError("Must specify either --dir or --file options.");
     }
 
+    @StopServer(Mode.MANUAL)
     @Test
-    void testImportLargeUserCount(KeycloakDistribution dist) throws Exception {
-        File dir = new File("target");
+    void testImportNewRealm(KeycloakRunner runner) throws IOException {
+        runner.setEnvVar("MY_SECRET", "admin123");
 
-        CLIResult cliResult = dist.run("export", "--realm=master", "--dir=" + dir.getAbsolutePath());
-        cliResult.assertMessage("Export of realm 'master' requested.");
-        cliResult.assertMessage("Export finished successfully");
+        RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
+        CLIResult result = rawDist.kc("bootstrap-admin", "service", "--db=dev-file", "--client-id=admin", "--client-secret:env=MY_SECRET");
 
-        createUserFile(dir.getAbsolutePath());
+        assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
 
-        ExecutorService ex = Executors.newFixedThreadPool(1);
-        Future<CLIResult> result = ex.submit(() -> dist.run("import", "--dir=" + dir.getAbsolutePath()));
-        try {
-            cliResult = result.get(20, TimeUnit.SECONDS);
-            cliResult.assertMessage("Realm 'master' imported");
-            cliResult.assertMessage("Import finished successfully");
-            cliResult.assertMessage("master-users-0.json");
-        } finally {
-            ex.shutdownNow();
-        }
-    }
+        result = runner.run("start-dev", "--db-url-properties=;AUTO_SERVER=TRUE;DB_CLOSE_ON_EXIT=TRUE");
 
-    void createUserFile(String dir) throws IOException {
-        FileWriter writer = new FileWriter(dir + "/master-users-0.json");
-        writer.write("{\n" + "  \"realm\" : \"master\",\n" + "  \"users\" : [\n");
+        File file = new File("target/realm.json");
 
-        for (int i = 0; i < 10000; i++) {
-            if (i > 0) {
-                writer.write("\n,");
-            }
-            writer.write("{\n"
-                    + "    \"id\" : \""+UUID.randomUUID()+"\",\n"
-                    + "    \"username\" : \"bob"+i+"\",\n"
-                    + "    \"emailVerified\" : false,\n"
-                    + "    \"createdTimestamp\" : 1741358612691,\n"
-                    + "    \"enabled\" : true,\n"
-                    + "    \"totp\" : false,\n"
-                    + "    \"credentials\" : [ ],\n"
-                    + "    \"disableableCredentialTypes\" : [ ],\n"
-                    + "    \"requiredActions\" : [ ],\n"
-                    + "    \"realmRoles\" : [ ],\n"
-                    + "    \"notBefore\" : 0,\n"
-                    + "    \"groups\" : [ ]\n"
-                    + "  }");
+        RealmRepresentation newRealm=new RealmRepresentation();
+        newRealm.setRealm("anotherRealm");
+        newRealm.setId("anotherRealm");
+        newRealm.setEnabled(true);
+
+        ObjectMapper mapper = new ObjectMapper();
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            mapper.writeValue(fos, newRealm);
         }
 
-        writer.write(" ]\n" + "}");
-        writer.close();
+        CLIResult adminResult = rawDist.kcadm("get", "realms", "--server", "http://localhost:8080", "--realm", "master", "--client", "admin", "--secret", "admin123");
+        assertEquals(0, adminResult.exitCode());
+        assertFalse(adminResult.getOutput().contains("anotherRealm"));
+
+        var cliResult = rawDist.kc("import", "--db-url-properties=;AUTO_SERVER=TRUE;DB_CLOSE_ON_EXIT=TRUE", "--file=" + file.getAbsolutePath());
+        cliResult.assertMessage("Realm 'anotherRealm' imported");
+
+        adminResult = rawDist.kcadm("get", "realms", "--server", "http://localhost:8080", "--realm", "master", "--client", "admin", "--secret", "admin123");
+
+        assertEquals(0, adminResult.exitCode());
+        assertTrue(adminResult.getOutput().contains("anotherRealm"));
     }
 }

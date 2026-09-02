@@ -16,7 +16,12 @@
  */
 package org.keycloak.testsuite.saml;
 
-import org.junit.Test;
+import java.nio.charset.StandardCharsets;
+
+import jakarta.ws.rs.core.Response;
+import jakarta.xml.soap.MessageFactory;
+import jakarta.xml.soap.SOAPMessage;
+
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
@@ -24,26 +29,35 @@ import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
+import org.keycloak.protocol.saml.profile.ecp.SamlEcpProfileService;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 
-import jakarta.ws.rs.core.Response;
-import jakarta.xml.soap.MessageFactory;
-import jakarta.xml.soap.SOAPMessage;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.ContentType;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.junit.Test;
+
+import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
+import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
+import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
+import static org.keycloak.testsuite.util.SamlClient.Binding.SOAP;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
-import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
-import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
-import static org.keycloak.testsuite.util.SamlClient.Binding.SOAP;
+import static org.junit.Assert.assertNotNull;
 
 public class SOAPBindingTest extends AbstractSamlTest {
 
@@ -252,8 +266,9 @@ public class SOAPBindingTest extends AbstractSamlTest {
                     try {
                         MessageFactory messageFactory = MessageFactory.newInstance();
                         SOAPMessage soapMessage = messageFactory.createMessage(null, response.getEntity().getContent());
-                        String faultDetail = soapMessage.getSOAPBody().getFault().getDetail().getValue();
-                        assertThat(faultDetail, is(equalTo("Client is not allowed to use ECP profile.")));
+                        String faultString = soapMessage.getSOAPPart().getEnvelope().getBody().getFault().getFaultString();
+                        assertThat(faultString, is(equalTo(SamlEcpProfileService.AUTHN_REQUEST_CANNOT_BE_PROCESSED)));
+                        assertThat(soapMessage.getSOAPPart().getEnvelope().getBody().getFault().getDetail(), is(nullValue()));
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -291,5 +306,72 @@ public class SOAPBindingTest extends AbstractSamlTest {
         });
 
 
+    }
+
+    @Test
+    public void soapBindingErrorHandlingEmptyBody() throws Exception {
+        String soapEndpoint = String.valueOf(getAuthServerSamlEndpoint(REALM_NAME));
+        HttpPost post = new HttpPost(soapEndpoint);
+        post.setEntity(new ByteArrayEntity("".getBytes(StandardCharsets.UTF_8), ContentType.APPLICATION_SOAP_XML));
+        try (CloseableHttpClient client = HttpClientBuilder.create().build();
+             CloseableHttpResponse response = client.execute(post)) {
+
+            // Before the fix, this returned Content-Type: application/json via KeycloakErrorHandler
+            // instead of a SOAP fault, because the exception from Soap.extractSoapMessage() was not caught.
+            assertThat(response.getStatusLine().getStatusCode(), is(equalTo(500)));
+            assertThat(response.getFirstHeader("Content-Type").getValue(), containsString("text/xml"));
+
+            // Verify response contains SOAP fault
+            MessageFactory messageFactory = MessageFactory.newInstance();
+            SOAPMessage soapMessage = messageFactory.createMessage(null, response.getEntity().getContent());
+            assertThat(soapMessage.getSOAPBody().getFault(), notNullValue());
+        }
+    }
+
+    @Test
+    public void soapBindingErrorHandlingMalformedXml() throws Exception {
+        String soapEndpoint = String.valueOf(getAuthServerSamlEndpoint(REALM_NAME));
+        String malformedXml = "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+                              "<soap:Body>" +
+                              "<malformed>This is not valid SOAP</malformed>";
+        HttpPost post = new HttpPost(soapEndpoint);
+        post.setEntity(new ByteArrayEntity(malformedXml.getBytes(StandardCharsets.UTF_8), ContentType.APPLICATION_SOAP_XML));
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().build();
+             CloseableHttpResponse response = client.execute(post)) {
+
+            assertThat(response.getStatusLine().getStatusCode(), is(equalTo(500)));
+            assertNotNull(response.getFirstHeader("Content-Type"));
+            assertThat(response.getFirstHeader("Content-Type").getValue(), containsString("text/xml"));
+
+            // Verify response contains SOAP fault
+            MessageFactory messageFactory = MessageFactory.newInstance();
+            SOAPMessage soapMessage = messageFactory.createMessage(null, response.getEntity().getContent());
+            assertThat(soapMessage.getSOAPBody().getFault(), notNullValue());
+        }
+    }
+
+    @Test
+    public void soapBindingErrorHandlingInvalidSamlContent() throws Exception {
+        String soapEndpoint = String.valueOf(getAuthServerSamlEndpoint(REALM_NAME));
+        String validSoapWithInvalidSaml = "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+                                          "<soap:Body>" +
+                                          "<NotASamlRequest>Invalid SAML content</NotASamlRequest>" +
+                                          "</soap:Body>" +
+                                          "</soap:Envelope>";
+        HttpPost post = new HttpPost(soapEndpoint);
+        post.setEntity(new ByteArrayEntity(validSoapWithInvalidSaml.getBytes(StandardCharsets.UTF_8), ContentType.APPLICATION_SOAP_XML));
+        post.setHeader("Authorization", "Basic YmJ1cmtlOmJidXJrZQ==");
+        try (CloseableHttpClient client = HttpClientBuilder.create().build();
+             CloseableHttpResponse response = client.execute(post)) {
+
+            assertThat(response.getStatusLine().getStatusCode(), is(equalTo(500)));
+            assertThat(response.getFirstHeader("Content-Type").getValue(), containsString("text/xml"));
+
+            // Verify response contains SOAP fault
+            MessageFactory messageFactory = MessageFactory.newInstance();
+            SOAPMessage soapMessage = messageFactory.createMessage(null, response.getEntity().getContent());
+            assertThat(soapMessage.getSOAPBody().getFault(), notNullValue());
+        }
     }
 }

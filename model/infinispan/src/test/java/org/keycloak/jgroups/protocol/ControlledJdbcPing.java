@@ -17,11 +17,14 @@
 
 package org.keycloak.jgroups.protocol;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.jgroups.Address;
 import org.jgroups.View;
 import org.jgroups.protocols.PingData;
+import org.jgroups.util.UUID;
 
 /**
  * A controllable KEYCLOAK_JDBC_PING2 where we can overwrite the view, the data returned from the database, and simulate exceptions.
@@ -40,8 +43,27 @@ public class ControlledJdbcPing extends KEYCLOAK_JDBC_PING2 {
     }
 
     public void setPingData(List<Address> coordinators) {
+        setPingData(coordinators, Map.of());
+    }
+
+    public void setPingData(List<Address> coordinators, Map<Address, Integer> addressCount) {
         this.pingData = coordinators.stream()
-                .map(address -> new PingData(address, true).coord(true))
+                .flatMap(address -> {
+                    ArrayList<PingData> partition = new ArrayList<>();
+                    PingData coord = new PingData(address, true).coord(true);
+                    partition.add(coord);
+                    ArrayList<Address> members = new ArrayList<>();
+                    members.add(address);
+                    if (addressCount.containsKey(address)) {
+                        for (int i = 0; i < addressCount.get(address); i++) {
+                            UUID a = new UUID(UUID.randomUUID());
+                            partition.add(new PingData(a, true));
+                            members.add(a);
+                        }
+                    }
+                    coord.mbrs(members);
+                    return partition.stream();
+                })
                 .toList();
     }
 

@@ -1,21 +1,18 @@
 package org.keycloak.testsuite.actions;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Before;
-import org.junit.Test;
 import org.keycloak.locale.LocaleSelectorProvider;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.RegisterPage;
 
-public class AppInitiatedRegistrationTest extends AbstractTestRealmKeycloakTest {
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-    @Page
-    protected AppPage appPage;
+public class AppInitiatedRegistrationTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected RegisterPage registerPage;
@@ -26,7 +23,7 @@ public class AppInitiatedRegistrationTest extends AbstractTestRealmKeycloakTest 
 
     @Before
     public void before() {
-        ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        AdminApiUtil.removeUserByUsername(managedRealm.admin(), "test-user@localhost");
     }
 
     @Test
@@ -39,10 +36,10 @@ public class AppInitiatedRegistrationTest extends AbstractTestRealmKeycloakTest 
         registerPage.assertCurrent();
         registerPage.register("first", "last", "test-user@localhost", "test-user", "test","test");
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
-        UserRepresentation user = testRealm().users().searchByEmail("test-user@localhost", true).get(0);
+        UserRepresentation user = managedRealm.admin().users().searchByEmail("test-user@localhost", true).get(0);
         // ensure that the locale was set on the user
-        Assert.assertEquals("en", user.getAttributes().get("locale").get(0));
+        Assertions.assertEquals("en", user.getAttributes().get("locale").get(0));
     }
 }

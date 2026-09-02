@@ -3,6 +3,8 @@ import { FunctionComponent } from "react";
 
 import { BooleanComponent } from "./BooleanComponent";
 import { ClientSelectComponent } from "./ClientSelectComponent";
+import { ClaimDisplayComponent } from "./ClaimDisplayComponent";
+import { IdentityProviderMultiSelectComponent } from "./IdentityProviderMultiSelectComponent";
 import { FileComponent } from "./FileComponent";
 import { GroupComponent } from "./GroupComponent";
 import { ListComponent } from "./ListComponent";
@@ -24,6 +26,7 @@ export type ComponentProps = Omit<ConfigPropertyRepresentation, "type"> & {
   isNew?: boolean;
   stringify?: boolean;
   convertToName: (name: string) => string;
+  onSearch?: (search: string) => void;
 };
 
 export type NumberComponentProps = ComponentProps & {
@@ -44,11 +47,13 @@ type ComponentType =
   | "Group"
   | "MultivaluedList"
   | "ClientList"
+  | "IdentityProviderMultiList"
   | "UserProfileAttributeList"
   | "MultivaluedString"
   | "File"
   | "Password"
-  | "Url";
+  | "Url"
+  | "ClaimDisplay";
 
 export const COMPONENTS: {
   [index in ComponentType]: FunctionComponent<ComponentProps>;
@@ -64,12 +69,14 @@ export const COMPONENTS: {
   Map: MapComponent,
   Group: GroupComponent,
   ClientList: ClientSelectComponent,
+  IdentityProviderMultiList: IdentityProviderMultiSelectComponent,
   UserProfileAttributeList: UserProfileAttributeListComponent,
   MultivaluedList: MultiValuedListComponent,
   MultivaluedString: MultiValuedStringComponent,
   File: FileComponent,
   Password: PasswordComponent,
   Url: UrlComponent,
+  ClaimDisplay: ClaimDisplayComponent,
 } as const;
 
 export const isValidComponentType = (value: string): value is ComponentType =>

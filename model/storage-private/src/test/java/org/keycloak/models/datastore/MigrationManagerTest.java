@@ -17,19 +17,21 @@
 
 package org.keycloak.models.datastore;
 
-import org.junit.Test;
 import org.keycloak.migration.ModelVersion;
 
-import static org.hamcrest.MatcherAssert.assertThat;
+import org.junit.Test;
+
 import static org.keycloak.storage.datastore.DefaultMigrationManager.RHSSO_VERSION_7_0_KEYCLOAK_VERSION;
 import static org.keycloak.storage.datastore.DefaultMigrationManager.RHSSO_VERSION_7_1_KEYCLOAK_VERSION;
 import static org.keycloak.storage.datastore.DefaultMigrationManager.RHSSO_VERSION_7_2_KEYCLOAK_VERSION;
 import static org.keycloak.storage.datastore.DefaultMigrationManager.RHSSO_VERSION_7_3_KEYCLOAK_VERSION;
 import static org.keycloak.storage.datastore.DefaultMigrationManager.RHSSO_VERSION_7_4_KEYCLOAK_VERSION;
 import static org.keycloak.storage.datastore.DefaultMigrationManager.convertRHSSOVersionToKeycloakVersion;
+
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

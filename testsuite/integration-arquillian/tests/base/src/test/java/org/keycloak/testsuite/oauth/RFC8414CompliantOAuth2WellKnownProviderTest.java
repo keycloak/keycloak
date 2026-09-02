@@ -17,12 +17,13 @@
 
 package org.keycloak.testsuite.oauth;
 
+import java.net.URI;
+
 import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.protocol.oauth2.OAuth2WellKnownProviderFactory;
 import org.keycloak.services.resources.ServerMetadataResource;
 import org.keycloak.testsuite.oidc.AbstractWellKnownProviderTest;
-
-import java.net.URI;
 
 public class RFC8414CompliantOAuth2WellKnownProviderTest extends AbstractWellKnownProviderTest {
 
@@ -31,7 +32,7 @@ public class RFC8414CompliantOAuth2WellKnownProviderTest extends AbstractWellKno
     }
 
     protected URI getOIDCDiscoveryUri(UriBuilder builder) {
-        return ServerMetadataResource.wellKnownOAuthProviderUrl(builder).build(this.getWellKnownProviderId(), "test");
+        return ServerMetadataResource.wellKnownProviderUrl(builder).build(this.getWellKnownProviderId(), "test");
     }
 
 }

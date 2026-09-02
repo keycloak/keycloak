@@ -20,10 +20,11 @@ package org.keycloak.quarkus.runtime;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.jboss.logging.Logger;
 
 import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
+
+import org.jboss.logging.Logger;
 import picocli.CommandLine;
 
 public final class Messages {
@@ -45,7 +46,7 @@ public final class Messages {
     }
 
     public static String devProfileNotAllowedError(String cmd) {
-        return String.format("You can not '%s' the server in %s mode. Please re-build the server first, using 'kc.sh build' for the default production mode.%n", cmd, Environment.getKeycloakModeFromProfile(org.keycloak.common.util.Environment.DEV_PROFILE_VALUE));
+        return String.format("You can not '%s' the server in %s mode. Please re-build the server first, using '%s build' for the default production mode.%n", cmd, Environment.getKeycloakModeFromProfile(org.keycloak.common.util.Environment.DEV_PROFILE_VALUE), Environment.getCommand());
     }
 
     public static String optimizedUsedForFirstStartup() {

@@ -52,7 +52,7 @@ import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog"
 import { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
-import { DEFAULT_LOCALE, i18n } from "../../i18n/i18n";
+import { DEFAULT_LOCALE } from "../../i18n/constants";
 import { localeToDisplayName } from "../../util";
 import { AddTranslationModal } from "../AddTranslationModal";
 
@@ -86,7 +86,7 @@ export const RealmOverrides = ({
 }: RealmOverridesProps) => {
   const { adminClient } = useAdminClient();
 
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [addTranslationModalOpen, setAddTranslationModalOpen] = useState(false);
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [translations, setTranslations] = useState<[string, string][]>([]);
@@ -319,7 +319,6 @@ export const RealmOverrides = ({
         },
         value,
       );
-      await i18n.reloadResources();
 
       addAlert(t("updateTranslationSuccess"), AlertVariant.success);
       setTableRows(newRows);

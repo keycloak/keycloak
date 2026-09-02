@@ -133,7 +133,11 @@ public class KeycloakIndexSchemaUtil {
 
     private static void updateSchemaAndReIndexCache(RemoteCacheManagerAdmin admin, String cacheName) {
         admin.updateIndexSchema(cacheName);
-        admin.reindexCache(cacheName);
+        try {
+            admin.reindexCache(cacheName);
+        } catch (Exception e) {
+            logger.warnf(e, "Exception while waiting for the re-index of cache '%s'. While re-indexing is in progress, the query results may not be accurate.", cacheName);
+        }
     }
 
     /**

@@ -133,6 +133,7 @@ describe("Identity providers", () => {
       { alias: currentIdpAlias, id: idpMapperId! },
       {
         id: idpMapperId,
+        name: "firstName",
         identityProviderAlias: currentIdpAlias,
         identityProviderMapper: "saml-user-attribute-idp-mapper",
         config: {

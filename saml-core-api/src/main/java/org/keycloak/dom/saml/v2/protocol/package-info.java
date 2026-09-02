@@ -19,4 +19,3 @@
  * Package containing the classes for the protocol of SAMLv2
  */
 package org.keycloak.dom.saml.v2.protocol;
-

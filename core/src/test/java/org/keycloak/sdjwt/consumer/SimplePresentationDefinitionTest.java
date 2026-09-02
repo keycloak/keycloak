@@ -17,13 +17,14 @@
 
 package org.keycloak.sdjwt.consumer;
 
+import org.keycloak.common.VerificationException;
+import org.keycloak.sdjwt.SdJwtUtils;
+import org.keycloak.sdjwt.TestUtils;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
-import org.keycloak.common.VerificationException;
-import org.keycloak.sdjwt.SdJwtUtils;
-import org.keycloak.sdjwt.TestUtils;
 
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;

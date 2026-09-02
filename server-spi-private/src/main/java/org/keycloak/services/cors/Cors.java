@@ -17,6 +17,8 @@
 
 package org.keycloak.services.cors;
 
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import jakarta.ws.rs.core.Response;
@@ -35,7 +37,14 @@ public interface Cors extends Provider {
 
     long DEFAULT_MAX_AGE = TimeUnit.HOURS.toSeconds(1);
     String DEFAULT_ALLOW_METHODS = "GET, HEAD, OPTIONS";
-    String DEFAULT_ALLOW_HEADERS = "Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, DPoP";
+    Set<String> DEFAULT_ALLOW_HEADERS = Set.of(
+            "Origin",
+            "Accept",
+            "X-Requested-With",
+            "Content-Type",
+            "Access-Control-Request-Method",
+            "Access-Control-Request-Headers",
+            "DPoP");
 
     String ORIGIN_HEADER = "Origin";
     String AUTHORIZATION_HEADER = "Authorization";
@@ -62,11 +71,17 @@ public interface Cors extends Provider {
 
     Cors allowAllOrigins();
 
-    Cors allowedOrigins(KeycloakSession session, ClientModel client);
+    /**
+     * Sets the allowed origins from the client's configured web origins and checks the
+     * incoming Origin header against them. Throws {@link jakarta.ws.rs.ForbiddenException}
+     * (HTTP 403) on a mismatch so the request stops before any side effects. Preflight and
+     * same-origin requests pass through without a check.
+     */
+    Cors checkAllowedOrigins(KeycloakSession session, ClientModel client);
 
-    Cors allowedOrigins(AccessToken token);
+    Cors checkAllowedOrigins(AccessToken token);
 
-    Cors allowedOrigins(String... allowedOrigins);
+    Cors checkAllowedOrigins(List<String> allowedOrigins);
 
     Cors allowedMethods(String... allowedMethods);
 

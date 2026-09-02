@@ -2,7 +2,6 @@ package org.keycloak.compatibility;
 
 import java.util.Map;
 
-import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.migration.ModelVersion;
 
@@ -34,11 +33,10 @@ public class KeycloakCompatibilityMetadataProvider implements CompatibilityMetad
     public CompatibilityResult isCompatible(Map<String, String> other) {
         CompatibilityResult equalComparison = CompatibilityMetadataProvider.super.isCompatible(other);
 
-        // If V2 feature is enabled, we consider versions upgradable in a rolling way if the other is a previous micro release
-        if (!Util.isNotCompatible(equalComparison) || !Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V2)) {
+        // We consider versions upgradable in a rolling way if the other is a previous micro release
+        if (!Util.isNotCompatible(equalComparison)) {
             return equalComparison;
         }
-
 
         // We need to make sure the previous version is not null
         String otherVersion = other.get(VERSION_KEY);

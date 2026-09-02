@@ -20,7 +20,7 @@ Roles assigned to the user can be defined in the Role mappings as described in <
 * In case that a role is a <<_composite-roles,composite role>>, the child roles of the composite role are also applied. In the token, the list of the roles is expanded and would contain all the roles.
 
 * In case that the authenticated user is not a normal user, but a <<_service_accounts,Service account>>, which represents a client, then the service account roles are used. The service account roles are defined
-in the tab *Service accounts roles* of the particular client.
+in the tab *Service account roles* of the particular client.
 
 == Role protocol mappers
 

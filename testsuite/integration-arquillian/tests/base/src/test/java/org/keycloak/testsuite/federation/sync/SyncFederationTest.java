@@ -17,27 +17,28 @@
 
 package org.keycloak.testsuite.federation.sync;
 
-import org.jboss.logging.Logger;
-import org.junit.Assert;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.storage.managers.UserStorageSyncManager;
+import org.keycloak.storage.StoreSyncEvent;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
-import org.keycloak.timer.TimerProvider;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
+import org.jboss.logging.Logger;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.runners.MethodSorters;
 
 /**
  * Test with Dummy providers
@@ -94,12 +95,12 @@ public class SyncFederationTest extends AbstractAuthTest {
             sleep(1800);
 
             // Cancel timer
-            UserStorageSyncManager.notifyToRefreshPeriodicSync(session, appRealm, dummyModel, true);
+            StoreSyncEvent.fire(session, appRealm, dummyModel, true);
             log.infof("Notified sync manager about cancel periodic sync");
 
             // This sync is here just to ensure that we have lock (doublecheck that periodic sync, which was possibly triggered before canceling timer is finished too)
             while (true) {
-                SynchronizationResult result = UserStorageSyncManager.syncChangedUsers(session.getKeycloakSessionFactory(), appRealm.getId(), dummyModel);
+                SynchronizationResult result = UserStoragePrivateUtil.runPeriodicSync(session.getKeycloakSessionFactory(), dummyModel);
                 if (result.isIgnored()) {
                     log.infof("Still waiting for lock before periodic sync is finished", result.toString());
                     sleep(1000);
@@ -113,14 +114,14 @@ public class SyncFederationTest extends AbstractAuthTest {
 
             // Assert that DummyUserFederationProviderFactory.syncChangedUsers was invoked at least 2 times (once periodically and once for us)
             int newChanged = dummyFedFactory.getChangedSyncCounter();
-            Assert.assertEquals(full, dummyFedFactory.getFullSyncCounter());
-            Assert.assertTrue("Assertion failed. newChanged=" + newChanged + ", changed=" + changed, newChanged > (changed + 1));
+            Assertions.assertEquals(full, dummyFedFactory.getFullSyncCounter());
+            Assertions.assertTrue(newChanged > (changed + 1), "Assertion failed. newChanged=" + newChanged + ", changed=" + changed);
 
             // Assert that dummy provider won't be invoked anymore
             sleep(1800);
-            Assert.assertEquals(full, dummyFedFactory.getFullSyncCounter());
+            Assertions.assertEquals(full, dummyFedFactory.getFullSyncCounter());
             int newestChanged = dummyFedFactory.getChangedSyncCounter();
-            Assert.assertEquals("Assertion failed. newChanged=" + newChanged + ", newestChanged=" + newestChanged, newChanged, newestChanged);
+            Assertions.assertEquals(newChanged, newestChanged, "Assertion failed. newChanged=" + newChanged + ", newestChanged=" + newestChanged);
         });
 
         // remove dummyProvider
@@ -131,8 +132,43 @@ public class SyncFederationTest extends AbstractAuthTest {
         });
     }
 
+    @Test
+    public void testForceManualSync() {
+        // Enable timer for SyncDummyUserFederationProvider
+        testingClient.server().run(session -> {
+            RealmModel appRealm = session.realms().getRealmByName(AuthRealm.TEST);
+            UserStorageProviderModel model = new UserStorageProviderModel();
 
-    private static final UserStorageProviderModel findDummyProviderModel(RealmModel realm) {
+            model.setProviderId(DummyUserFederationProviderFactory.PROVIDER_NAME);
+            model.setPriority(1);
+            model.setName("test-sync-dummy");
+            model.setFullSyncPeriod(1);
+            model.setLastSync(0);
+
+            appRealm.addComponentModel(model);
+        });
+
+        testingClient.server().run(session -> {
+            RealmModel appRealm = session.realms().getRealmByName(AuthRealm.TEST);
+            UserStorageProviderModel dummyModel = findDummyProviderModel(appRealm);
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+
+            sleep(dummyModel.getFullSyncPeriod() * 2L);
+            session.getContext().setRealm(appRealm);
+            SynchronizationResult result = UserStoragePrivateUtil.runFullSync(sessionFactory, dummyModel);
+            Assertions.assertFalse(result.isIgnored());
+        });
+
+        // remove dummyProvider
+        testingClient.server().run(session -> {
+            RealmModel appRealm = session.realms().getRealmByName(AuthRealm.TEST);
+            session.getContext().setRealm(appRealm);
+            UserStorageProviderModel dummyModel = findDummyProviderModel(appRealm);
+            appRealm.removeComponent(dummyModel);
+        });
+    }
+
+    private static UserStorageProviderModel findDummyProviderModel(RealmModel realm) {
         return realm.getComponentsStream()
                 .filter(component -> Objects.equals(component.getName(), "test-sync-dummy"))
                 .map(UserStorageProviderModel::new)
@@ -181,18 +217,15 @@ public class SyncFederationTest extends AbstractAuthTest {
             KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
             DummyUserFederationProviderFactory dummyFedFactory = (DummyUserFederationProviderFactory) sessionFactory.getProviderFactory(UserStorageProvider.class, DummyUserFederationProviderFactory.PROVIDER_NAME);
 
-            // Assert that after some period was DummyUserFederationProvider triggered
-            UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
-
             // Assert that dummy provider wasn't invoked anymore
             sleep(1800);
 
             int full = state.get("full");
             int changed = state.get("changed");
 
-            Assert.assertEquals(full, dummyFedFactory.getFullSyncCounter());
+            Assertions.assertEquals(full, dummyFedFactory.getFullSyncCounter());
             int newChanged = dummyFedFactory.getChangedSyncCounter();
-            Assert.assertEquals("Assertion failed. changed=" + changed + ", newChanged=" + newChanged, changed, newChanged);
+            Assertions.assertEquals(changed, newChanged, "Assertion failed. changed=" + changed + ", newChanged=" + newChanged);
         });
 
         // Re-enable periodic sync for changed users
@@ -212,16 +245,15 @@ public class SyncFederationTest extends AbstractAuthTest {
             DummyUserFederationProviderFactory dummyFedFactory = (DummyUserFederationProviderFactory) sessionFactory.getProviderFactory(UserStorageProvider.class, DummyUserFederationProviderFactory.PROVIDER_NAME);
 
             // Assert that after some period was DummyUserFederationProvider triggered
-            UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
             sleep(1800);
 
             // Cancel timer
-            usersSyncManager.notifyToRefreshPeriodicSync(session, appRealm, dummyModel, true);
+            StoreSyncEvent.fire(session, appRealm, dummyModel, true);
             log.infof("Notified sync manager about cancel periodic sync");
 
             // This sync is here just to ensure that we have lock (doublecheck that periodic sync, which was possibly triggered before canceling timer is finished too)
             while (true) {
-                SynchronizationResult result = usersSyncManager.syncChangedUsers(session.getKeycloakSessionFactory(), appRealm.getId(), dummyModel);
+                SynchronizationResult result = UserStoragePrivateUtil.runPeriodicSync(session.getKeycloakSessionFactory(), dummyModel);
                 if (result.isIgnored()) {
                     log.infof("Still waiting for lock before periodic sync is finished", result.toString());
                     sleep(1000);
@@ -235,15 +267,15 @@ public class SyncFederationTest extends AbstractAuthTest {
 
             // Assert that DummyUserFederationProviderFactory.syncChangedUsers was invoked at least 1 time
             int newChanged = dummyFedFactory.getChangedSyncCounter();
-            Assert.assertEquals(full, dummyFedFactory.getFullSyncCounter());
+            Assertions.assertEquals(full, dummyFedFactory.getFullSyncCounter());
             log.info("Asserting. newChanged=" + newChanged + " > changed=" + changed);
-            Assert.assertTrue("Assertion failed. newChanged=" + newChanged + ", changed=" + changed, newChanged > (changed + 1));
+            Assertions.assertTrue(newChanged > (changed + 1), "Assertion failed. newChanged=" + newChanged + ", changed=" + changed);
 
             // Assert that dummy provider won't be invoked anymore
             sleep(1800);
-            Assert.assertEquals(full, dummyFedFactory.getFullSyncCounter());
+            Assertions.assertEquals(full, dummyFedFactory.getFullSyncCounter());
             int newestChanged = dummyFedFactory.getChangedSyncCounter();
-            Assert.assertEquals("Assertion failed. newChanged=" + newChanged + ", newestChanged=" + newestChanged, newChanged, newestChanged);
+            Assertions.assertEquals(newChanged, newestChanged, "Assertion failed. newChanged=" + newChanged + ", newestChanged=" + newestChanged);
         });
 
 
@@ -257,7 +289,7 @@ public class SyncFederationTest extends AbstractAuthTest {
 
 
     @Test
-    public void test03ConcurrentSync() throws Exception {
+    public void test03ConcurrentSync() {
         // Enable timer for SyncDummyUserFederationProvider
         testingClient.server().run(session -> {
             SyncDummyUserFederationProviderFactory.restartLatches();
@@ -279,21 +311,16 @@ public class SyncFederationTest extends AbstractAuthTest {
         testingClient.server().run(session -> {
             RealmModel appRealm = session.realms().getRealmByName(AuthRealm.TEST);
             UserStorageProviderModel dummyModel = findDummyProviderModel(appRealm);
-
             KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-
-            // bootstrap periodic sync
-            UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
-            usersSyncManager.bootstrapPeriodic(sessionFactory, session.getProvider(TimerProvider.class));
 
             // Wait and then trigger sync manually. Assert it will be ignored
             try {
                 SyncDummyUserFederationProviderFactory.latchStarted.await(20000, TimeUnit.MILLISECONDS);
-                SynchronizationResult syncResult = usersSyncManager.syncChangedUsers(sessionFactory, appRealm.getId(), dummyModel);
-                Assert.assertTrue(syncResult.isIgnored());
+                SynchronizationResult syncResult = UserStoragePrivateUtil.runPeriodicSync(sessionFactory, dummyModel);
+                Assertions.assertTrue(syncResult.isIgnored());
 
                 // Cancel timer
-                usersSyncManager.notifyToRefreshPeriodicSync(session, appRealm, dummyModel, true);
+                StoreSyncEvent.fire(session, appRealm, dummyModel, true);
 
                 // Signal to factory to finish waiting
                 SyncDummyUserFederationProviderFactory.latchWait.countDown();
@@ -303,7 +330,7 @@ public class SyncFederationTest extends AbstractAuthTest {
 
                 // This sync is here just to ensure that we have lock (doublecheck that periodic sync, which was possibly triggered before canceling timer is finished too)
                 while (true) {
-                    SynchronizationResult result = usersSyncManager.syncChangedUsers(session.getKeycloakSessionFactory(), appRealm.getId(), dummyModel);
+                    SynchronizationResult result = UserStoragePrivateUtil.runPeriodicSync(session.getKeycloakSessionFactory(), dummyModel);
                     if (result.isIgnored()) {
                         log.infof("Still waiting for lock before periodic sync is finished: %s", result.toString());
                         sleep(1000);
@@ -344,17 +371,17 @@ public class SyncFederationTest extends AbstractAuthTest {
             RealmModel appRealm = session.realms().getRealmByName(AuthRealm.TEST);
             UserStorageProviderModel dummyModel = findDummyProviderModel(appRealm);
             KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-            SynchronizationResult syncResult = UserStorageSyncManager.syncAllUsers(sessionFactory, appRealm.getId(), dummyModel);
-            Assert.assertTrue(syncResult.isIgnored());
-            syncResult = UserStorageSyncManager.syncChangedUsers(sessionFactory, appRealm.getId(), dummyModel);
-            Assert.assertTrue(syncResult.isIgnored());
+            SynchronizationResult syncResult = UserStoragePrivateUtil.runFullSync(sessionFactory, dummyModel);
+            Assertions.assertTrue(syncResult.isIgnored());
+            syncResult = UserStoragePrivateUtil.runPeriodicSync(sessionFactory, dummyModel);
+            Assertions.assertTrue(syncResult.isIgnored());
         });
 
         // assert the last sync is not updated
         testingClient.server().run(session -> {
             RealmModel appRealm = session.realms().getRealmByName(AuthRealm.TEST);
             UserStorageProviderModel dummyModel = findDummyProviderModel(appRealm);
-            Assert.assertEquals(0, dummyModel.getLastSync());
+            Assertions.assertEquals(0, dummyModel.getLastSync());
         });
 
         // remove provider
@@ -385,17 +412,17 @@ public class SyncFederationTest extends AbstractAuthTest {
             RealmModel appRealm = session.realms().getRealmByName(AuthRealm.TEST);
             UserStorageProviderModel dummyModel = findDummyProviderModel(appRealm);
             KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-            SynchronizationResult syncResult = UserStorageSyncManager.syncAllUsers(sessionFactory, appRealm.getId(), dummyModel);
-            Assert.assertTrue(syncResult.isIgnored());
-            syncResult = UserStorageSyncManager.syncChangedUsers(sessionFactory, appRealm.getId(), dummyModel);
-            Assert.assertTrue(syncResult.isIgnored());
+            SynchronizationResult syncResult = UserStoragePrivateUtil.runFullSync(sessionFactory, dummyModel);
+            Assertions.assertTrue(syncResult.isIgnored());
+            syncResult = UserStoragePrivateUtil.runPeriodicSync(sessionFactory, dummyModel);
+            Assertions.assertTrue(syncResult.isIgnored());
         });
 
         // assert the last sync is not updated
         testingClient.server().run(session -> {
             RealmModel appRealm = session.realms().getRealmByName(AuthRealm.TEST);
             UserStorageProviderModel dummyModel = findDummyProviderModel(appRealm);
-            Assert.assertEquals(0, dummyModel.getLastSync());
+            Assertions.assertEquals(0, dummyModel.getLastSync());
         });
 
         // remove provider

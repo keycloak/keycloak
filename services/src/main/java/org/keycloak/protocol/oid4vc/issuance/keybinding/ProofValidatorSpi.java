@@ -47,4 +47,3 @@ public class ProofValidatorSpi implements Spi {
         return ProofValidatorFactory.class;
     }
 }
-

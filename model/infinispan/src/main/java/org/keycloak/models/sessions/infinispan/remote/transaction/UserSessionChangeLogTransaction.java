@@ -17,12 +17,13 @@
 
 package org.keycloak.models.sessions.infinispan.remote.transaction;
 
-import io.reactivex.rxjava3.core.Maybe;
 import org.keycloak.models.sessions.infinispan.changes.remote.remover.query.UserSessionQueryConditionalRemover;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.Updater;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.UpdaterFactory;
 import org.keycloak.models.sessions.infinispan.changes.remote.updater.user.UserSessionUpdater;
 import org.keycloak.models.sessions.infinispan.entities.RemoteUserSessionEntity;
+
+import io.reactivex.rxjava3.core.Maybe;
 
 /**
  * Syntactic sugar for

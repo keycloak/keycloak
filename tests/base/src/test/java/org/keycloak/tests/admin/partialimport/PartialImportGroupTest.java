@@ -16,8 +16,10 @@
  */
 package org.keycloak.tests.admin.partialimport;
 
-import org.junit.jupiter.api.Test;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.suites.DatabaseTest;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for the partial import endpoint in admin client.  Also tests the
@@ -43,8 +45,15 @@ public class PartialImportGroupTest extends AbstractPartialImportTest {
     }
 
     @Test
+    @DatabaseTest
     public void testAddGroupsOverwrite() {
         addGroups();
         testOverwrite();
+    }
+
+    @Test
+    public void testAddSingleGroupOverwrite() {
+        addGroups(1);
+        testOverwrite(1);
     }
 }

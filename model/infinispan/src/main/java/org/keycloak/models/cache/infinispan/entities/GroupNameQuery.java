@@ -23,7 +23,7 @@ public class GroupNameQuery extends AbstractRevisioned implements InRealm {
     private final String realm;
     private final String groupId;
 
-    public GroupNameQuery(Long revisioned, String id, String groupId, RealmModel realm) {
+    public GroupNameQuery(long revisioned, String id, String groupId, RealmModel realm) {
         super(revisioned, id);
         this.realm = realm.getId();
         this.groupId = groupId;

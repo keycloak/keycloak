@@ -17,18 +17,19 @@
 
 package org.keycloak.models.jpa.session;
 
+import java.util.stream.Stream;
+
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Root;
+
 import org.keycloak.common.util.Time;
 import org.keycloak.models.jpa.entities.RevokedTokenEntity;
 import org.keycloak.models.session.RevokedToken;
 import org.keycloak.models.session.RevokedTokenPersisterProvider;
-
-import java.util.stream.Stream;
 
 /**
  * @author Alexander Schwartz

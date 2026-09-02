@@ -1,5 +1,5 @@
 {
   "name":"lax",
   "client-profiles":"keycloak-default-client-profiles",
-  "client-policies":null
+  "client-policies":"keycloak-lax-client-policies"
 }

@@ -19,9 +19,12 @@ package org.keycloak.models.jpa.converter;
 
 import java.io.IOException;
 import java.util.Map;
+
 import jakarta.persistence.AttributeConverter;
-import org.jboss.logging.Logger;
+
 import org.keycloak.util.JsonSerialization;
+
+import org.jboss.logging.Logger;
 
 public class MapStringConverter implements AttributeConverter<Map<String, String>, String> {
     private static final Logger logger = Logger.getLogger(MapStringConverter.class);

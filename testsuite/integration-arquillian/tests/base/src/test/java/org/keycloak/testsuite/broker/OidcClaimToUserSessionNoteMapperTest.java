@@ -1,11 +1,9 @@
 package org.keycloak.testsuite.broker;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.junit.Before;
-import org.junit.Test;
 import org.keycloak.admin.client.CreatedResponseUtil;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
@@ -28,10 +26,13 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 import com.google.common.collect.ImmutableMap;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProviderMapperTest {
 
@@ -140,6 +141,7 @@ public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProvid
                 .client("broker-app", consumerClientRep.getSecret())
                 .redirectUri(getAuthServerRoot() + "realms/" + bc.consumerRealmName() + "/app");
         AuthorizationEndpointResponse authzResponse = doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
+        Assertions.assertTrue(authzResponse.isSuccess());
 
         String code = authzResponse.getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);

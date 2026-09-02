@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 public class GuideParser {
 
     private final Pattern TEMPLATE_IMPORT_PATTERN = Pattern.compile("<#import \"/templates/guide.adoc\" as (?<importName>[^ ]*)>");
-    private final Pattern GUIDE_ELEMENT_PATTERN = Pattern.compile("(?<key>priority|title|summary|tileVisible)=(\\\"(?<valueString>[^\\\"]*)\\\"|(?<valueInt>[\\d]*))");
+    private final Pattern GUIDE_ELEMENT_PATTERN = Pattern.compile("(?<key>priority|title|summary|tileVisible|levelOffset)=(\\\"(?<valueString>[^\\\"]*)\\\"|(?<valueInt>[\\d]*))");
 
     /**
      * Parses a FreeMarker template to retrieve Guide attributes
@@ -77,8 +77,13 @@ public class GuideParser {
                     break;
                 case "priority":
                     guide.setPriority(Integer.parseInt(attributeMatcher.group("valueInt")));
+                    break;
                 case "tileVisible":
                     guide.setTileVisible(Boolean.parseBoolean(attributeMatcher.group("valueString")));
+                    break;
+                case "levelOffset":
+                    guide.setLevelOffset(Integer.parseInt(attributeMatcher.group("valueInt")));
+                    break;
             }
         }
     }

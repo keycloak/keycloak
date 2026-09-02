@@ -17,11 +17,13 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
+import org.keycloak.VCFormat;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
-import org.keycloak.protocol.oid4vc.model.Format;
+import org.keycloak.protocol.oid4vc.model.CredentialDefinition;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 
-import java.net.URI;
 
 /**
  * Builds verifiable credentials for the LDP_VC format.
@@ -36,7 +38,13 @@ public class LDCredentialBuilder implements CredentialBuilder {
 
     @Override
     public String getSupportedFormat() {
-        return Format.LDP_VC;
+        return VCFormat.LDP_VC;
+    }
+
+    @Override
+    public void contributeToMetadata(SupportedCredentialConfiguration credentialConfig, CredentialScopeModel credentialScope) {
+        CredentialDefinition credentialDefinition = CredentialDefinition.parse(credentialScope);
+        credentialConfig.setCredentialDefinition(credentialDefinition);
     }
 
     @Override

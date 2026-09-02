@@ -1,5 +1,19 @@
 package org.keycloak.it.cli.dist;
 
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.keycloak.common.Profile;
+import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
+import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
+import org.keycloak.quarkus.runtime.cli.command.Build;
+import org.keycloak.quarkus.runtime.cli.command.Start;
+import org.keycloak.quarkus.runtime.cli.command.StartDev;
+
 import io.quarkus.test.junit.main.Launch;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Tag;
@@ -7,24 +21,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
-import org.keycloak.common.Profile;
-import org.keycloak.it.junit5.extension.CLIResult;
-import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.utils.KeycloakDistribution;
-import org.keycloak.quarkus.runtime.cli.command.Build;
-import org.keycloak.quarkus.runtime.cli.command.Start;
-import org.keycloak.quarkus.runtime.cli.command.StartDev;
 
-import java.util.Arrays;
-import java.util.Set;
-import java.util.stream.Collectors;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
-@DistributionTest
+@DistributionTest(stopServer = Mode.BEFORE_BOOTSTRAP)
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Tag(DistributionTest.SMOKE)
@@ -44,12 +47,12 @@ public class FeaturesDistTest {
             .collect(Collectors.joining(", "));
 
     @Test
-    public void testEnableOnBuild(KeycloakDistribution dist) {
-        CLIResult cliResult = dist.run(Build.NAME, "--db=dev-file", "--features=preview");
+    public void testEnableOnBuild(KeycloakRunner runner) {
+        CLIResult cliResult = runner.run(Build.NAME, "--db=dev-file", "--features=preview");
         cliResult.assertBuild();
         assertPreviewFeaturesEnabled(cliResult);
 
-        cliResult = dist.run(Start.NAME, "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG);
+        cliResult = runner.run(Start.NAME, "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG);
         assertPreviewFeaturesEnabled(cliResult);
     }
 
@@ -89,19 +92,19 @@ public class FeaturesDistTest {
 
     @Test
     @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({StartDev.NAME, "--features=token-exchange,admin-fine-grained-authz:v1"})
+    @Launch({StartDev.NAME, "--features=token-exchange,scripts"})
     public void testEnableMultipleFeatures(CLIResult cliResult) {
         cliResult.assertStartedDevMode();
-        cliResult.assertMessage("Preview features enabled: admin-fine-grained-authz:v1, token-exchange:v1");
+        cliResult.assertMessage("Preview features enabled: scripts:v1, token-exchange:v1");
         cliResult.assertNoMessage("recovery-codes");
     }
 
     @Test
     @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({StartDev.NAME, "--features=\"token-exchange,admin-fine-grained-authz:v1\""})
+    @Launch({StartDev.NAME, "--features=\"token-exchange,scripts\""})
     public void testWinEnableMultipleFeatures(CLIResult cliResult) {
         cliResult.assertStartedDevMode();
-        cliResult.assertMessage("Preview features enabled: admin-fine-grained-authz:v1, token-exchange:v1");
+        cliResult.assertMessage("Preview features enabled: scripts:v1, token-exchange:v1");
         cliResult.assertNoMessage("recovery-codes");
     }
 

@@ -16,12 +16,14 @@
  */
 package org.keycloak.federation.sssd.impl;
 
+import org.freedesktop.dbus.connections.impl.DBusConnection;
+import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder;
+import org.freedesktop.sssd.infopipe.InfoPipe;
 import org.jboss.logging.Logger;
 
 /**
- * <p>Class to detect if SSSD is available in the system. As keycloak uses
- * the native java implementation (jdk >= 16 needed) the default implementation
- * for previous versions always returns false.</p>
+ * <p>Class to detect if SSSD is available in the system. Working
+ * version for the native java transport.</p>
  *
  * @author rmartinc
  */
@@ -34,7 +36,18 @@ public class AvailabilityChecker {
      * @return true if SSSD is available, null otherwise
      */
     public static boolean isAvailable() {
-        logger.debug("SSSD is not available for this version of java (jdk >= 16 needed). Federation provider will be disabled.");
-        return false;
+        boolean sssdAvailable = false;
+        try (DBusConnection connection = DBusConnectionBuilder.forSystemBus().build()) {
+            InfoPipe infoPipe = connection.getRemoteObject(InfoPipe.BUSNAME, InfoPipe.OBJECTPATH, InfoPipe.class);
+
+            if (infoPipe.ping("PING") == null || infoPipe.ping("PING").isEmpty()) {
+                logger.debug("SSSD is not available in your system. Federation provider will be disabled.");
+            } else {
+                sssdAvailable = true;
+            }
+        } catch (Exception e) {
+            logger.debug("SSSD is not available in your system. Federation provider will be disabled.", e);
+        }
+        return sssdAvailable;
     }
 }

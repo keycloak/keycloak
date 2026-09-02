@@ -1,14 +1,15 @@
 package org.keycloak.config;
 
-import com.google.common.base.CaseFormat;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.google.common.base.CaseFormat;
+
 public class Option<T> {
     private final Class<T> type;
+    private final Class<?> componentType;
     private final String key;
     private final OptionCategory category;
     private final boolean hidden;
@@ -20,10 +21,12 @@ public class Option<T> {
     private final boolean caseInsensitiveExpectedValues;
     private final DeprecatedMetadata deprecatedMetadata;
     private final Set<String> connectedOptions;
+    private String wildcardKey;
+    private final boolean synthetic;
 
     public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description,
                   Optional<T> defaultValue, List<String> expectedValues, boolean strictExpectedValues, boolean caseInsensitiveExpectedValues,
-                  DeprecatedMetadata deprecatedMetadata, Set<String> connectedOptions) {
+                  DeprecatedMetadata deprecatedMetadata, Set<String> connectedOptions, String wildcardKey, Class<?> componentType, boolean synthetic) {
         this.type = type;
         this.key = key;
         this.category = category;
@@ -36,6 +39,9 @@ public class Option<T> {
         this.caseInsensitiveExpectedValues = caseInsensitiveExpectedValues;
         this.deprecatedMetadata = deprecatedMetadata;
         this.connectedOptions = connectedOptions;
+        this.wildcardKey = wildcardKey;
+        this.componentType = componentType;
+        this.synthetic = synthetic;
     }
 
     public Class<T> getType() {
@@ -95,9 +101,25 @@ public class Option<T> {
     /**
      * Get connected options that have a certain relationship with the current option.
      * Usually when the current option is set, the connected options should be set as well.
+     * <br>
+     * Not currently meaningful for non-wildcard options
      */
     public Set<String> getConnectedOptions() {
-        return connectedOptions;
+        return connectedOptions; // return the set directly for ease of mutability
+    }
+
+    /**
+     * Get sibling option name that is able to use a named key - like using wildcards
+     * Useful mainly for references in docs
+     * f.e. {@code db-username} has wildcard option {@code db-username-<datasource>}
+     */
+    public Optional<String> getWildcardKey() {
+        return Optional.ofNullable(wildcardKey);
+    }
+
+    // used for setting the named key implicitly
+    void setWildcardKey(String wildcardKey) {
+        this.wildcardKey = wildcardKey;
     }
 
     public OptionBuilder<T> toBuilder() {
@@ -109,10 +131,14 @@ public class Option<T> {
                 .expectedValues(expectedValues)
                 .strictExpectedValues(strictExpectedValues)
                 .caseInsensitiveExpectedValues(caseInsensitiveExpectedValues)
-                .deprecatedMetadata(deprecatedMetadata);
+                .deprecatedMetadata(deprecatedMetadata)
+                .wildcardKey(wildcardKey);
 
         if (hidden) {
             builder.hidden();
+        }
+        if (synthetic) {
+            builder.synthetic();
         }
         return builder;
     }
@@ -150,5 +176,13 @@ public class Option<T> {
      */
     public static String transformEnumValue(String value) {
         return CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_HYPHEN, value);
+    }
+
+    public Class<?> getComponentType() {
+        return componentType;
+    }
+
+    public boolean isSynthetic() {
+        return synthetic;
     }
 }

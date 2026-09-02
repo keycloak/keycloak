@@ -17,11 +17,11 @@
 
 package org.keycloak.common.util;
 
-import org.keycloak.common.constants.GenericConstants;
-
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+
+import org.keycloak.common.constants.GenericConstants;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

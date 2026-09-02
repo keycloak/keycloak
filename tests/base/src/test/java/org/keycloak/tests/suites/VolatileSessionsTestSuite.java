@@ -1,17 +1,38 @@
 package org.keycloak.tests.suites;
 
-import org.junit.platform.suite.api.AfterSuite;
-import org.junit.platform.suite.api.BeforeSuite;
-import org.junit.platform.suite.api.SelectClasses;
-import org.junit.platform.suite.api.Suite;
 import org.keycloak.common.Profile;
 import org.keycloak.testframework.injection.SuiteSupport;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
-import org.keycloak.tests.admin.ClientTest;
+import org.keycloak.tests.admin.client.SessionTest;
+import org.keycloak.tests.admin.concurrency.ConcurrentLoginTest;
+import org.keycloak.tests.model.UserSessionProviderOfflineTest;
+import org.keycloak.tests.model.UserSessionProviderTest;
+import org.keycloak.tests.oauth.RefreshTokenTimeoutsTest;
+import org.keycloak.tests.session.LastSessionRefreshUnitTest;
+import org.keycloak.tests.session.SessionTimeoutValidationTest;
+import org.keycloak.tests.sessionlimits.KcOidcUserSessionLimitsBrokerTest;
+import org.keycloak.tests.sessionlimits.KcSamlUserSessionLimitsBrokerTest;
+import org.keycloak.tests.sessionlimits.UserSessionLimitsTest;
+
+import org.junit.platform.suite.api.AfterSuite;
+import org.junit.platform.suite.api.BeforeSuite;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
 @Suite
-@SelectClasses(ClientTest.class)
+@SelectClasses({
+        SessionTest.class,
+        ConcurrentLoginTest.class,
+        RefreshTokenTimeoutsTest.class,
+        UserSessionProviderTest.class,
+        UserSessionProviderOfflineTest.class,
+        UserSessionLimitsTest.class,
+        KcOidcUserSessionLimitsBrokerTest.class,
+        KcSamlUserSessionLimitsBrokerTest.class,
+        SessionTimeoutValidationTest.class,
+        LastSessionRefreshUnitTest.class,
+})
 public class VolatileSessionsTestSuite {
 
     @BeforeSuite

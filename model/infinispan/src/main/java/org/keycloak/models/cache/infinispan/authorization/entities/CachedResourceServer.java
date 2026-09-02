@@ -32,7 +32,7 @@ public class CachedResourceServer extends AbstractRevisioned {
     private final PolicyEnforcementMode policyEnforcementMode;
     private final DecisionStrategy decisionStrategy;
 
-    public CachedResourceServer(Long revision, ResourceServer resourceServer) {
+    public CachedResourceServer(long revision, ResourceServer resourceServer) {
         super(revision, resourceServer.getId());
         this.allowRemoteResourceManagement = resourceServer.isAllowRemoteResourceManagement();
         this.policyEnforcementMode = resourceServer.getPolicyEnforcementMode();

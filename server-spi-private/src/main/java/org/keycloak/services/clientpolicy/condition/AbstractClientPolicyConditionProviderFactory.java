@@ -17,7 +17,6 @@
 
 package org.keycloak.services.clientpolicy.condition;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.Config.Scope;

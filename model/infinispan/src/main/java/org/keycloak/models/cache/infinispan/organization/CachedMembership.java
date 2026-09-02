@@ -27,7 +27,7 @@ public class CachedMembership extends AbstractRevisioned implements InRealm {
     private final boolean managed;
     private final boolean isMember;
 
-    public CachedMembership(Long revision, String key, RealmModel realm, boolean managed, boolean isMember) {
+    public CachedMembership(long revision, String key, RealmModel realm, boolean managed, boolean isMember) {
         super(revision, key);
         this.realm = realm.getId();
         this.managed = managed;

@@ -16,16 +16,16 @@
  */
 package org.keycloak.client.admin.cli.operations;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.List;
+
 import org.keycloak.client.cli.util.Headers;
 import org.keycloak.client.cli.util.HeadersBody;
 import org.keycloak.client.cli.util.HeadersBodyStatus;
 import org.keycloak.client.cli.util.HttpUtil;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.util.JsonSerialization;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.List;
 
 import static org.keycloak.client.cli.util.HttpUtil.composeResourceUrl;
 import static org.keycloak.client.cli.util.HttpUtil.doDeleteJSON;

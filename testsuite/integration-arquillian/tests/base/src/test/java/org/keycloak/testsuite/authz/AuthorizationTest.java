@@ -16,10 +16,6 @@
  */
 package org.keycloak.testsuite.authz;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -27,10 +23,6 @@ import java.util.UUID;
 
 import jakarta.ws.rs.core.Response;
 
-import org.jetbrains.annotations.NotNull;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
@@ -43,16 +35,23 @@ import org.keycloak.representations.AccessToken.Authorization;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
-import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Permission;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
-import org.keycloak.testsuite.util.RolesBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
+
+import org.jetbrains.annotations.NotNull;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -60,24 +59,25 @@ import org.keycloak.testsuite.util.UserBuilder;
 public class AuthorizationTest extends AbstractAuthzTest {
 
     private AuthzClient authzClient;
+    private PolicyRepresentation grantPolicy;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(RealmBuilder.create().name("authz-test")
-                .roles(RolesBuilder.create().realmRole(RoleBuilder.create().name("uma_authorization").build()))
-                .user(UserBuilder.create().username("marta").password("password").addRoles("uma_authorization"))
-                .user(UserBuilder.create().username("kolo").password("password"))
-                .client(ClientBuilder.create().clientId("resource-server-test")
+                .realmRoles("uma_authorization")
+                .users(UserBuilder.create().username("marta").password("password").realmRoles("uma_authorization"))
+                .users(UserBuilder.create().username("kolo").password("password"))
+                .clients(ClientBuilder.create().clientId("resource-server-test")
                     .secret("secret")
                     .authorizationServicesEnabled(true)
                     .redirectUris("http://localhost/resource-server-test")
                     .defaultRoles("uma_protection")
-                    .directAccessGrants())
-                .client(ClientBuilder.create().clientId("test-client")
+                    .directAccessGrantsEnabled())
+                .clients(ClientBuilder.create().clientId("test-client")
                     .secret("secret")
                     .authorizationServicesEnabled(true)
                     .redirectUris("http://localhost/test-client")
-                    .directAccessGrants())
+                    .directAccessGrantsEnabled())
                 .build());
     }
 
@@ -85,18 +85,7 @@ public class AuthorizationTest extends AbstractAuthzTest {
     public void configureAuthorization() throws Exception {
         ClientResource client = getClient();
         AuthorizationResource authorization = client.authorization();
-
-        JSPolicyRepresentation policy = new JSPolicyRepresentation();
-
-        policy.setName("Grant Policy");
-        policy.setType("script-scripts/default-policy.js");
-
-        authorization.policies().js().create(policy).close();
-
-        policy = new JSPolicyRepresentation();
-
-        policy.setName("Deny Policy");
-        policy.setType("script-scripts/always-deny-policy.js");
+        grantPolicy = createAlwaysGrantPolicy(authorization);
     }
 
     @After
@@ -113,11 +102,11 @@ public class AuthorizationTest extends AbstractAuthzTest {
     public void testResourceWithSameNameDifferentOwner() throws JWSInputException {
         ResourceRepresentation koloResource = createResource("Resource A", "kolo", "Scope A", "Scope B");
 
-        createResourcePermission(koloResource, "Grant Policy");
+        createResourcePermission(koloResource, grantPolicy.getName());
 
         ResourceRepresentation martaResource = createResource("Resource A", "marta", "Scope A", "Scope B");
 
-        createResourcePermission(martaResource, "Grant Policy");
+        createResourcePermission(martaResource, grantPolicy.getName());
 
         assertNotEquals(koloResource.getId(), martaResource.getId());
 
@@ -148,11 +137,11 @@ public class AuthorizationTest extends AbstractAuthzTest {
     public void testResourceServerWithSameNameDifferentOwner() {
         ResourceRepresentation koloResource = createResource("Resource A", "kolo", "Scope A", "Scope B");
 
-        createResourcePermission(koloResource, "Grant Policy");
+        createResourcePermission(koloResource, grantPolicy.getName());
 
         ResourceRepresentation serverResource = createResource("Resource A", null, "Scope A", "Scope B");
 
-        createResourcePermission(serverResource, "Grant Policy");
+        createResourcePermission(serverResource, grantPolicy.getName());
 
         AuthorizationRequest request = new AuthorizationRequest();
 

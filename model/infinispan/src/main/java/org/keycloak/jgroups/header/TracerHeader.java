@@ -17,9 +17,6 @@
 
 package org.keycloak.jgroups.header;
 
-import org.jgroups.Header;
-import org.jgroups.util.Util;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -27,6 +24,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+
+import org.jgroups.Header;
+import org.jgroups.util.Util;
 
 /**
  * Header which carries an OpenTelemetry {@link io.opentelemetry.api.trace.Span} between requests and responses

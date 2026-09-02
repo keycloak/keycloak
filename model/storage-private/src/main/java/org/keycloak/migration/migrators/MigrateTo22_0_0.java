@@ -19,7 +19,6 @@
 
 package org.keycloak.migration.migrators;
 
-import org.jboss.logging.Logger;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.KeycloakSession;
@@ -27,6 +26,8 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -59,7 +60,7 @@ public class MigrateTo22_0_0 extends RealmMigration {
         if (httpChallenge == null) return;
 
         try {
-            KeycloakModelUtils.deepDeleteAuthenticationFlow(session, realm, httpChallenge, () -> {}, () -> {});
+            KeycloakModelUtils.deepDeleteAuthenticationFlow(session, realm, httpChallenge, () -> {}, () -> {}, httpChallenge.isBuiltIn());
             LOG.debugf("Removed '%s' authentication flow in realm '%s'", HTTP_CHALLENGE_FLOW, realm.getName());
         } catch (ModelException me) {
             LOG.errorf("Authentication flow '%s' is in use in realm '%s' and cannot be removed. Please update your deployment to avoid using this flow before migration to latest Keycloak",

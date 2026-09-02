@@ -33,16 +33,42 @@ import org.keycloak.representations.idm.authorization.ResourceType;
  */
 public interface PartialEvaluationPolicyProvider {
 
+    enum Outcome {
+
+        /**
+         * The evaluation resulted in a GRANT
+         */
+        GRANT,
+
+        /**
+         * The evaluation resulted in a DENY
+         */
+        DENY,
+
+        /**
+         * The evaluation should be skipped and the next policy should be evaluated. It is up
+         * to the caller to interpret a {@code SKIP} as a {@code SKIP}, a {@code GRANT}, a {@code DENY}, or
+         * just ignore the policy evaluation.
+         */
+        SKIP,
+
+        /**
+         * The policy could not be evaluated because and should be unconditionally denied without applying logic inversion.
+         */
+        FORCE_DENY
+    }
+
     /**
      * Returns a list of {@link Policy} instances representing the permissions that apply to a given {@code subject} when
      * partially evaluating the realm resources that can be accessed.
      *
-     * @param session the session
-     * @param resourceType the type of the resource
-     * @param subject the subject
+     * @param session           the session
+     * @param resourceType      the type of the resource
+     * @param groupResourceType
+     * @param subject           the subject
      * @return the permissions that apply to the given {@code subject}
      */
-    Stream<Policy> getPermissions(KeycloakSession session, ResourceType resourceType, UserModel subject);
+    Stream<Policy> getPermissions(KeycloakSession session, ResourceType resourceType, ResourceType groupResourceType, UserModel subject);
 
     /**
      * If partial evaluation is supported for the given {@code policy}.
@@ -61,4 +87,8 @@ public interface PartialEvaluationPolicyProvider {
      * @return {@code true} if access is granted. Otherwise, returns {@code false}
      */
     boolean evaluate(KeycloakSession session, Policy policy, UserModel subject);
+
+    default Outcome evaluateOutcome(KeycloakSession session, Policy policy, UserModel subject) {
+        return evaluate(session, policy, subject) ? Outcome.GRANT : Outcome.DENY;
+    }
 }

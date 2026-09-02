@@ -1,8 +1,8 @@
 package org.keycloak.testframework.conditions;
 
-import org.keycloak.testframework.database.TestDatabase;
-
 import java.lang.annotation.Annotation;
+
+import org.keycloak.testframework.database.TestDatabase;
 
 class DisabledForDatabasesCondition extends AbstractDisabledForSupplierCondition {
 

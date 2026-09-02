@@ -17,7 +17,6 @@
 
 package org.keycloak.migration.migrators;
 
-import org.jboss.logging.Logger;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
@@ -29,6 +28,8 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
+
+import org.jboss.logging.Logger;
 
 
 /**

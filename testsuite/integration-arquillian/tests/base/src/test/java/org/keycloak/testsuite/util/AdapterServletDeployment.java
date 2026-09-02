@@ -16,15 +16,10 @@
  */
 package org.keycloak.testsuite.util;
 
-import org.apache.commons.io.IOUtils;
-import org.jboss.shrinkwrap.api.Archive;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-
-import java.io.IOException;
 import java.net.URL;
-import java.nio.charset.Charset;
+
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 
 /**
  * Expects a structure like adapter-test directory

@@ -34,9 +34,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.hamcrest.Matchers;
-import org.infinispan.commons.CacheException;
-import org.junit.Test;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -54,6 +51,10 @@ import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
+
+import org.hamcrest.Matchers;
+import org.infinispan.commons.CacheException;
+import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -281,6 +282,8 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
     @Test
     @RequireProvider(UserSessionPersisterProvider.class)
     public void testLazyClientSessionStatsFetching() {
+        // Disable test until https://github.com/infinispan/infinispan/issues/16761 is fixed
+        assumeTrue("Run only if Embedded Infinispan is used for storing/caching sessions.", InfinispanUtils.isEmbeddedInfinispan());
         List<String> clientIds = withRealm(realmId, (session, realm) -> IntStream.range(0, 5)
                 .mapToObj(cid -> session.clients().addClient(realm, "client-" + cid))
                 .map(ClientModel::getId)

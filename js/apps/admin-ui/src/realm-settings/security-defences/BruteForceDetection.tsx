@@ -59,7 +59,7 @@ export const BruteForceDetection = ({
     convertToFormValues(realm, setValue);
     setIsBruteForceModeUpdated(false);
   };
-  useEffect(setupForm, []);
+  useEffect(setupForm, [realm]);
 
   const bruteForceMode = (() => {
     if (!form.getValues("bruteForceProtected")) {
@@ -140,6 +140,15 @@ export const BruteForceDetection = ({
               labelIcon={t("failureFactorHelp")}
               controller={{
                 defaultValue: 0,
+                rules: { required: t("required"), min: 0 },
+              }}
+            />
+            <NumberControl
+              name="maxSecondaryAuthFailures"
+              label={t("maxSecondaryAuthFailures")}
+              labelIcon={t("maxSecondaryAuthFailuresHelp")}
+              controller={{
+                defaultValue: 100,
                 rules: { required: t("required"), min: 0 },
               }}
             />

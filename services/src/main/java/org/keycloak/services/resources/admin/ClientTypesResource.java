@@ -26,19 +26,20 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.client.clienttype.ClientTypeException;
+import org.keycloak.client.clienttype.ClientTypeManager;
+import org.keycloak.models.RealmModel;
+import org.keycloak.representations.idm.ClientTypesRepresentation;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.KeycloakOpenAPI;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.models.RealmModel;
-import org.keycloak.representations.idm.ClientTypesRepresentation;
-import org.keycloak.services.ErrorResponse;
-import org.keycloak.client.clienttype.ClientTypeException;
-import org.keycloak.client.clienttype.ClientTypeManager;
-import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

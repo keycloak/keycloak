@@ -19,12 +19,8 @@
 package org.keycloak.services.clientpolicy;
 
 
-import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -32,10 +28,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.jboss.logging.Logger;
+
 import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.JsonConfigComponentModel;
+import org.keycloak.json.RawJsonValue;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -55,6 +52,9 @@ import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvide
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.FileUtils;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.jboss.logging.Logger;
 
 /**
  * Utilities for treating client policies/profiles
@@ -139,7 +139,8 @@ public class ClientPoliciesUtil {
         List<ClientPolicyExecutorProvider> executors = new ArrayList<>();
         if (profileRep.getExecutors() != null) {
             for (ClientPolicyExecutorRepresentation executorRep : profileRep.getExecutors()) {
-                ClientPolicyExecutorProvider provider = getExecutorProvider(session, realm, executorRep.getExecutorProviderId(), executorRep.getConfiguration());
+                ClientPolicyExecutorProvider provider = getExecutorProvider(session, realm, executorRep.getExecutorProviderId(),
+                        RawJsonValue.unwrap(JsonNode.class, executorRep.getConfiguration()));
                 executors.add(provider);
             }
         }
@@ -341,8 +342,10 @@ public class ClientPoliciesUtil {
         Set<String> providerSet = session.listProviderIds(ClientPolicyExecutorProvider.class);
         if (providerSet != null && providerSet.contains(executorProviderId)) {
             if (Objects.nonNull(session.getContext().getRealm())){
-                ClientPolicyExecutorProvider provider = getExecutorProvider(session, session.getContext().getRealm(), executorProviderId, executorRep.getConfiguration());
-                ClientPolicyExecutorConfigurationRepresentation configuration =  (ClientPolicyExecutorConfigurationRepresentation) JsonSerialization.mapper.convertValue(executorRep.getConfiguration(), provider.getExecutorConfigurationClass());
+                ClientPolicyExecutorProvider provider = getExecutorProvider(session, session.getContext().getRealm(), executorProviderId,
+                        RawJsonValue.unwrap(JsonNode.class, executorRep.getConfiguration()));
+                ClientPolicyExecutorConfigurationRepresentation configuration =  (ClientPolicyExecutorConfigurationRepresentation) JsonSerialization.mapper.convertValue(
+                        RawJsonValue.unwrap(JsonNode.class, executorRep.getConfiguration()), provider.getExecutorConfigurationClass());
                 return configuration.validateConfig();
             } else {
                 return true;
@@ -418,11 +421,16 @@ public class ClientPoliciesUtil {
             policyModel.setName(policyRep.getName());
             policyModel.setDescription(policyRep.getDescription());
             policyModel.setEnable(true);
+            ClientPolicyMode mode = policyRep.getMode() == null
+                    ? ClientPolicyMode.DEFAULT
+                    : Enum.valueOf(ClientPolicyMode.class, policyRep.getMode().toUpperCase());
+            policyModel.setMode(mode);
 
             List<ClientPolicyConditionProvider> conditions = new ArrayList<>();
             if (policyRep.getConditions() != null) {
                 for (ClientPolicyConditionRepresentation conditionRep : policyRep.getConditions()) {
-                    ClientPolicyConditionProvider provider = getConditionProvider(session, realm, conditionRep.getConditionProviderId(), conditionRep.getConfiguration());
+                    ClientPolicyConditionProvider provider = getConditionProvider(session, realm, conditionRep.getConditionProviderId(),
+                            RawJsonValue.unwrap(JsonNode.class, conditionRep.getConfiguration()));
                     conditions.add(provider);
                 }
             }
@@ -519,6 +527,16 @@ public class ClientPoliciesUtil {
             policyRep.setName(proposedPolicyRep.getName());
             policyRep.setDescription(proposedPolicyRep.getDescription());
             policyRep.setEnabled(proposedPolicyRep.isEnabled() != null ? proposedPolicyRep.isEnabled() : Boolean.FALSE);
+
+            // Check if mode is valid
+            try {
+                if (proposedPolicyRep.getMode() != null) {
+                    Enum.valueOf(ClientPolicyMode.class, proposedPolicyRep.getMode());
+                }
+                policyRep.setMode(proposedPolicyRep.getMode());
+            } catch (IllegalArgumentException iae) {
+                throw new ClientPolicyException("Policy " + proposedPolicyRep.getName() + " has invalid mode");
+            }
 
             policyRep.setConditions(new ArrayList<>());
             if (proposedPolicyRep.getConditions() != null) {

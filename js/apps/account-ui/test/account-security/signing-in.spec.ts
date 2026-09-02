@@ -6,10 +6,10 @@ import { createTestBed } from "../support/testbed.ts";
 
 test.describe("Signing in", () => {
   test("shows password and OTP credentials", async ({ page }) => {
-    const realm = await createTestBed();
+    await using testBed = await createTestBed();
 
     // Log in and navigate to the signing in section.
-    await login(page, realm);
+    await login(page, testBed.realm);
     await page.getByTestId("accountSecurity").click();
     await page.getByTestId("account-security/signing-in").click();
 
@@ -38,17 +38,17 @@ test.describe("Signing in", () => {
   test("allows setting a password credential if none exists", async ({
     page,
   }) => {
-    const realm = await createTestBed();
-    const user = await findUserByUsername(realm, DEFAULT_USER.username);
+    await using testBed = await createTestBed();
+    const user = await findUserByUsername(testBed.realm, DEFAULT_USER.username);
 
     // Log in and delete the password credential of the user.
-    await login(page, realm);
+    await login(page, testBed.realm);
     const credentials = await adminClient.users.getCredentials({
-      realm,
+      realm: testBed.realm,
       id: user.id as string,
     });
     await adminClient.users.deleteCredential({
-      realm,
+      realm: testBed.realm,
       id: user.id as string,
       credentialId: credentials[0].id as string,
     });

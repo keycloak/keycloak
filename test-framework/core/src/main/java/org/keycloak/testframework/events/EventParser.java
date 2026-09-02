@@ -1,10 +1,10 @@
 package org.keycloak.testframework.events;
 
-import org.keycloak.events.Event;
-import org.keycloak.events.EventType;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import org.keycloak.events.Event;
+import org.keycloak.events.EventType;
 
 public class EventParser {
 

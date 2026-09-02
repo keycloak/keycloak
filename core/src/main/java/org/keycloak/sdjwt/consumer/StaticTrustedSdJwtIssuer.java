@@ -17,10 +17,10 @@
 
 package org.keycloak.sdjwt.consumer;
 
+import java.util.List;
+
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.sdjwt.IssuerSignedJWT;
-
-import java.util.List;
 
 /**
  * A trusted Issuer for running SD-JWT VP verification.

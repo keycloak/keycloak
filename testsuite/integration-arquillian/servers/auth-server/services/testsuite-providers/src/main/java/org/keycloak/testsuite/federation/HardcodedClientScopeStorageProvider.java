@@ -19,6 +19,7 @@ package org.keycloak.testsuite.federation;
 import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Stream;
+
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;

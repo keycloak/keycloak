@@ -17,6 +17,13 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
@@ -25,13 +32,6 @@ import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Maps user group membership
@@ -50,7 +50,7 @@ public class GroupMembershipMapper extends AbstractOIDCProtocolMapper implements
         property1.setLabel("Full group path");
         property1.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         property1.setDefaultValue("true");
-        property1.setHelpText("Include full path to group i.e. /top/level1/level2, false will just specify the group name");
+        property1.setHelpText("Include full path to group i.e. /top/level1/level2, false will just specify the group name. Make sure to enable this setting if your realm has a group hierarchy with duplicated group names.");
         configProperties.add(property1);
 
         OIDCAttributeMapperHelper.addIncludeInTokensConfig(configProperties, GroupMembershipMapper.class);

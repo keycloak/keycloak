@@ -41,11 +41,6 @@ public class OAuthClientConfig {
         return clientSecret;
     }
 
-    public OAuthClientConfig clientId(String clientId) {
-        this.clientId = clientId;
-        return this;
-    }
-
     public OAuthClientConfig client(String clientId) {
         this.clientId = clientId;
         this.clientSecret = null;

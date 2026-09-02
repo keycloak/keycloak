@@ -16,29 +16,30 @@
  */
 package org.keycloak.models;
 
-import static org.keycloak.common.util.UriUtils.parseQueryParameters;
-
-import jakarta.ws.rs.core.MultivaluedHashMap;
-
-import org.jboss.resteasy.reactive.common.jaxrs.UriBuilderImpl;
-import org.keycloak.urls.HostnameProvider;
-import org.keycloak.urls.UrlType;
-
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.PathSegment;
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
+import jakarta.enterprise.context.ContextNotActiveException;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.PathSegment;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
+
+import org.keycloak.urls.HostnameProvider;
+import org.keycloak.urls.UrlType;
+
+import org.jboss.resteasy.reactive.common.jaxrs.UriBuilderImpl;
+
+import static org.keycloak.common.util.UriUtils.parseQueryParameters;
+
+/**
+ * Contrary to the {@link UriInfo} javadocs, most methods throw {@link ContextNotActiveException}, not {@link IllegalStateException}, if there is no active request.
+ */
 public class KeycloakUriInfo implements UriInfo {
 
     private final UriInfo delegate;
-    private final String hostname;
-    private final String scheme;
-    private final int port;
-    private final String contextPath;
 
     private URI absolutePath;
     private URI requestURI;
@@ -48,22 +49,11 @@ public class KeycloakUriInfo implements UriInfo {
         this.delegate = delegate;
 
         HostnameProvider hostnameProvider = session.getProvider(HostnameProvider.class);
-        this.scheme = hostnameProvider.getScheme(delegate, type);
-        this.hostname = hostnameProvider.getHostname(delegate, type);
-        this.port = hostnameProvider.getPort(delegate, type);
-        this.contextPath = hostnameProvider.getContextPath(delegate, type);
+        baseURI = hostnameProvider.getBaseUri(delegate, type);
     }
 
     public UriInfo getDelegate() {
         return delegate;
-    }
-
-    private UriBuilder initUriBuilder(UriBuilder b) {
-        b.scheme(scheme);
-        b.host(hostname);
-        b.port(port);
-        b.replacePath(contextPath);
-        return b;
     }
 
     @Override
@@ -94,9 +84,6 @@ public class KeycloakUriInfo implements UriInfo {
 
     @Override
     public URI getBaseUri() {
-        if (baseURI == null) {
-            baseURI = initUriBuilder(delegate.getBaseUriBuilder()).build();
-        }
         return baseURI;
     }
 

@@ -20,6 +20,15 @@ package org.keycloak.models.sessions.infinispan.changes;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
+
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.connections.infinispan.InfinispanUtil;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.sessions.infinispan.CacheDecorators;
+import org.keycloak.models.sessions.infinispan.SessionAffinityService;
+import org.keycloak.models.sessions.infinispan.SessionFunction;
+import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
 import org.infinispan.Cache;
 import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
@@ -27,12 +36,6 @@ import org.infinispan.commons.util.concurrent.CompletableFutures;
 import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.infinispan.util.concurrent.ActionSequencer;
 import org.jboss.logging.Logger;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.connections.infinispan.InfinispanUtil;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.sessions.infinispan.CacheDecorators;
-import org.keycloak.models.sessions.infinispan.SessionFunction;
-import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 
 /**
  * Utility methods for embedded and change-log based transaction
@@ -46,15 +49,29 @@ public class InfinispanChangesUtils {
                                                                                  String cacheName,
                                                                                  SessionFunction<V> lifespanFunction,
                                                                                  SessionFunction<V> maxIdleFunction) {
+        return createWithCache(session, cacheName, lifespanFunction, maxIdleFunction, null);
+    }
+
+    public static <K, V extends SessionEntity> CacheHolder<K, V> createWithCache(KeycloakSession session,
+                                                                                 String cacheName,
+                                                                                 SessionFunction<V> lifespanFunction,
+                                                                                 SessionFunction<V> maxIdleFunction,
+                                                                                 Supplier<K> keyGenerator) {
         var connections = session.getProvider(InfinispanConnectionProvider.class);
         var cache = connections.<K, SessionEntityWrapper<V>>getCache(cacheName);
         var sequencer = new ActionSequencer(connections.getExecutor(cacheName + "Replace"), false, null);
-        return new CacheHolder<>(cache, sequencer, lifespanFunction, maxIdleFunction);
+        return new CacheHolder<>(cache, sequencer, lifespanFunction, maxIdleFunction, SessionAffinityService.create(cache, keyGenerator));
     }
 
     public static <K, V extends SessionEntity> CacheHolder<K, V> createWithoutCache(SessionFunction<V> lifespanFunction,
                                                                                     SessionFunction<V> maxIdleFunction) {
-        return new CacheHolder<>(null, null, lifespanFunction, maxIdleFunction);
+        return new CacheHolder<>(null, null, lifespanFunction, maxIdleFunction, null);
+    }
+
+    public static <K, V extends SessionEntity> CacheHolder<K, V> createWithoutCache(SessionFunction<V> lifespanFunction,
+                                                                                    SessionFunction<V> maxIdleFunction,
+                                                                                    Supplier<K> keyGenerator) {
+        return new CacheHolder<>(null, null, lifespanFunction, maxIdleFunction, keyGenerator);
     }
 
     public static <K, V extends SessionEntity> void runOperationInCluster(

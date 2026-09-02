@@ -2,7 +2,6 @@ package org.keycloak.authorization.policy.provider.client;
 
 import java.util.function.BiFunction;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
@@ -11,6 +10,8 @@ import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
+
+import org.jboss.logging.Logger;
 
 public class ClientPolicyProvider implements PolicyProvider {
 
@@ -31,7 +32,7 @@ public class ClientPolicyProvider implements PolicyProvider {
         for (String client : representation.getClients()) {
             ClientModel clientModel = realm.getClientById(client);
             if (clientModel != null) {
-                if (context.getAttributes().containsValue("kc.client.id", clientModel.getClientId())) {
+                if (context.getAttributes().containsValue(EvaluationContext.CLIENT_ID_ATTRIBUTE, clientModel.getClientId())) {
                     evaluation.grant();
                     logger.debugf("Client policy %s matched with client %s and was granted", evaluation.getPolicy().getName(), clientModel.getClientId());
                     return;

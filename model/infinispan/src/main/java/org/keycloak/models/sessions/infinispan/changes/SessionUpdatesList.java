@@ -81,4 +81,9 @@ public class SessionUpdatesList<S extends SessionEntity> {
     public UserSessionModel.SessionPersistenceState getPersistenceState() {
         return persistenceState;
     }
+
+    public void addAndExecute(SessionUpdateTask<S> task) {
+        add(task);
+        task.runUpdate(getEntityWrapper().getEntity());
+    }
 }

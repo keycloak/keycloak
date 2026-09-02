@@ -19,12 +19,13 @@ package org.keycloak.authorization.client;
 
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.apache.http.client.HttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.keycloak.protocol.oidc.client.authentication.ClientCredentialsProvider;
 import org.keycloak.protocol.oidc.client.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.representations.adapters.config.AdapterConfig;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.HttpClients;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

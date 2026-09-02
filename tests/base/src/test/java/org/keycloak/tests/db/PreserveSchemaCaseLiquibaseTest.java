@@ -2,20 +2,24 @@ package org.keycloak.tests.db;
 
 import org.keycloak.testframework.annotations.InjectTestDatabase;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.database.DatabaseConfig;
 import org.keycloak.testframework.conditions.DisabledForDatabases;
+import org.keycloak.testframework.database.DatabaseConfig;
 import org.keycloak.testframework.database.DatabaseConfigBuilder;
+import org.keycloak.testframework.database.EnterpriseDbTestDatabase;
 import org.keycloak.testframework.database.PostgresTestDatabase;
 import org.keycloak.testframework.database.TestDatabase;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.tests.suites.DatabaseTest;
 
 @KeycloakIntegrationTest(config = PreserveSchemaCaseLiquibaseTest.PreserveSchemaCaseServerConfig.class)
+// Remotely running databases do not support running SQL init scripts.
 // MSSQL does not support setting the default schema per session.
 // TiDb does not support setting the default schema per session.
 // Oracle image does not support configuring user/databases with '-'
-@DisabledForDatabases({ "mssql", "oracle", "tidb" })
+@DisabledForDatabases({ "remote", "mssql", "oracle", "tidb" })
+@DatabaseTest
 public class PreserveSchemaCaseLiquibaseTest extends AbstractDBSchemaTest {
 
     @InjectTestDatabase(config = PreserveSchemaCaseDatabaseConfig.class, lifecycle = LifeCycle.CLASS)
@@ -36,7 +40,7 @@ public class PreserveSchemaCaseLiquibaseTest extends AbstractDBSchemaTest {
     private static class PreserveSchemaCaseDatabaseConfig implements DatabaseConfig {
         @Override
         public DatabaseConfigBuilder configure(DatabaseConfigBuilder database) {
-            if (dbType().equals(PostgresTestDatabase.NAME)) {
+            if (dbType().equals(PostgresTestDatabase.NAME) || dbType().equals(EnterpriseDbTestDatabase.NAME)) {
                 return database.initScript("org/keycloak/tests/db/preserve-schema-case-liquibase-postgres.sql");
             }
             return database.database("keycloak-t");

@@ -6,7 +6,6 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
@@ -16,10 +15,9 @@ import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.PSSParameterSpec;
 
-import org.junit.Test;
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.crypto.KeyWrapper;
+
+import org.junit.Test;
 
 public class ElytronSignatureAlgTest {
 

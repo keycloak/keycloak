@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { switchOn } from "../utils/form.ts";
@@ -67,6 +67,12 @@ test.describe.serial("OIDC identity provider test", () => {
     await assertPkceMethodExists(page);
 
     await clickSaveButton(page);
+    await expect(page.getByText("Required field")).toBeVisible();
+
+    await switchOn(page, "#config\\.useJwksUrl");
+    await assertJwksUrlExists(page, true);
+    await clickSaveButton(page);
+
     await assertNotificationMessage(page, "Provider successfully updated");
   });
 });
@@ -87,17 +93,27 @@ test.describe.serial("Edit OIDC Provider", () => {
   test("should add OIDC mapper of type Attribute Importer", async ({
     page,
   }) => {
+    const mapperName = "OIDC Attribute Importer";
     await goToMappersTab(page);
-    await addMapper(page, "oidc-user-attribute", "OIDC Attribute Importer");
+    await addMapper(page, "oidc-user-attribute", mapperName);
     await clickSaveMapper(page);
-    await assertNotificationMessage(page, "Mapper created successfully.");
+    await expect(
+      page.getByRole("row", {
+        name: new RegExp(mapperName, "i"),
+      }),
+    ).toBeVisible();
   });
 
   test("should add OIDC mapper of type Claim To Role", async ({ page }) => {
+    const mapperName = "OIDC Claim to Role";
     await goToMappersTab(page);
-    await addMapper(page, "oidc-role", "OIDC Claim to Role");
+    await addMapper(page, "oidc-role", mapperName);
     await clickSaveMapper(page);
-    await assertNotificationMessage(page, "Mapper created successfully.");
+    await expect(
+      page.getByRole("row", {
+        name: new RegExp(mapperName, "i"),
+      }),
+    ).toBeVisible();
   });
 
   test("should cancel the addition of the OIDC mapper", async ({ page }) => {

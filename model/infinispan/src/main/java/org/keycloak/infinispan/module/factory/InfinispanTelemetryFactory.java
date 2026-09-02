@@ -1,8 +1,9 @@
 package org.keycloak.infinispan.module.factory;
 
-import io.opentelemetry.api.OpenTelemetry;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;
+
+import io.opentelemetry.api.OpenTelemetry;
 import org.infinispan.factories.AbstractComponentFactory;
 import org.infinispan.factories.AutoInstantiableFactory;
 import org.infinispan.factories.annotations.DefaultFactoryFor;

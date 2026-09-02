@@ -17,6 +17,12 @@
 
 package org.keycloak.authentication.authenticators.directgrant;
 
+import java.util.LinkedList;
+import java.util.List;
+
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.CredentialValidator;
@@ -30,11 +36,6 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -51,7 +52,7 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator implements Cre
                 context.attempted();
             } else if (context.getExecution().isRequired()) {
                 context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-                Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
+                Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Invalid user credentials");
                 context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             }
             return;
@@ -72,7 +73,7 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator implements Cre
                 context.getEvent().user(context.getUser());
             }
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
+            Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Invalid user credentials");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
@@ -80,12 +81,12 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator implements Cre
         if (!valid) {
             context.getEvent().user(context.getUser());
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
+            Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Invalid user credentials");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
 
-        context.success();
+        context.success(OTPCredentialModel.TYPE);
     }
 
     @Override
@@ -116,7 +117,7 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator implements Cre
 
     @Override
     public String getReferenceCategory() {
-        return null;
+        return OTPCredentialModel.TYPE;
     }
 
     @Override

@@ -10,9 +10,11 @@ import {
   CredentialContainer,
   DeviceRepresentation,
   Group,
+  IssuedUserVerifiableCredentialRepresentation,
   LinkedAccountRepresentation,
   Permission,
   UserRepresentation,
+  UserVerifiableCredentialRepresentation,
 } from "./representations";
 import { request } from "./request";
 
@@ -89,7 +91,9 @@ export async function deleteConsent(
   context: KeycloakContext<BaseEnvironment>,
   id: string,
 ) {
-  return request(`/applications/${id}/consent`, context, { method: "DELETE" });
+  return request(`/applications/${encodeURIComponent(id)}/consent`, context, {
+    method: "DELETE",
+  });
 }
 
 export async function deleteSession(
@@ -152,4 +156,55 @@ export async function getGroups({ signal, context }: CallOptions) {
 export async function getUserOrganizations({ signal, context }: CallOptions) {
   const response = await request("/organizations", context, { signal });
   return parseResponse<OrganizationRepresentation[]>(response);
+}
+
+export async function getVerifiableCredentials({
+  signal,
+  context,
+}: CallOptions): Promise<UserVerifiableCredentialRepresentation[]> {
+  const response = await request("/verifiable-credentials", context, {
+    signal,
+  });
+  return parseResponse<UserVerifiableCredentialRepresentation[]>(response);
+}
+
+export async function deleteVerifiableCredential(
+  context: KeycloakContext<BaseEnvironment>,
+  credentialScopeName: string,
+): Promise<void> {
+  const response = await request(
+    `/verifiable-credentials/${credentialScopeName}`,
+    context,
+    { method: "DELETE" },
+  );
+  if (!response.ok) {
+    const error = await parseResponse(response);
+    throw error;
+  }
+}
+
+export async function getIssuedVerifiableCredentials({
+  signal,
+  context,
+}: CallOptions): Promise<IssuedUserVerifiableCredentialRepresentation[]> {
+  const response = await request("/issued-verifiable-credentials", context, {
+    signal,
+  });
+  return parseResponse<IssuedUserVerifiableCredentialRepresentation[]>(
+    response,
+  );
+}
+
+export async function revokeIssuedVerifiableCredential(
+  context: KeycloakContext<BaseEnvironment>,
+  issuedVerifiableCredentialId: string,
+): Promise<void> {
+  const response = await request(
+    `/issued-verifiable-credentials/${issuedVerifiableCredentialId}`,
+    context,
+    { method: "DELETE" },
+  );
+  if (!response.ok) {
+    throw await parseResponse(response);
+  }
 }

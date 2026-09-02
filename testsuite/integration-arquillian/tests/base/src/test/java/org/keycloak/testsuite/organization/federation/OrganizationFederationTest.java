@@ -17,10 +17,12 @@
 
 package org.keycloak.testsuite.organization.federation;
 
-import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.List;
+import java.util.stream.Stream;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.OrganizationModel;
@@ -29,18 +31,17 @@ import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.federation.UserPropertyFileStorageFactory;
 import org.keycloak.testsuite.federation.ldap.AbstractLDAPTest;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
-import org.keycloak.testsuite.runonserver.RunOnServer;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.List;
-import java.util.stream.Stream;
+import org.apache.commons.io.FileUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class OrganizationFederationTest extends AbstractOrganizationTest {
 
@@ -54,11 +55,11 @@ public class OrganizationFederationTest extends AbstractOrganizationTest {
 
     @After
     public void onAfter() {
-        List<UserRepresentation> users = testRealm().users().search("member");
+        List<UserRepresentation> users = managedRealm.admin().users().search("member");
 
         if (!users.isEmpty()) {
             UserRepresentation member = users.get(0);
-            testRealm().users().get(member.getId()).remove();
+            managedRealm.admin().users().get(member.getId()).remove();
         }
     }
 

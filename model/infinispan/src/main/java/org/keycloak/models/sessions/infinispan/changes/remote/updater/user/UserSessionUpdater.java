@@ -33,7 +33,7 @@ public class UserSessionUpdater extends BaseUpdater<String, RemoteUserSessionEnt
     private final boolean offline;
     private RealmModel realm;
     private UserModel user;
-    private Map<String, AuthenticatedClientSessionModel> clientSessions;
+    private AuthenticatedClientSessionMapping clientSessions;
     private SessionPersistenceState persistenceState = SessionPersistenceState.PERSISTENT;
 
     private UserSessionUpdater(String cacheKey, RemoteUserSessionEntity cacheValue, long version, boolean offline, UpdaterState initialState) {
@@ -79,7 +79,7 @@ public class UserSessionUpdater extends BaseUpdater<String, RemoteUserSessionEnt
     public Expiration computeExpiration() {
         long maxIdle = SessionTimeouts.getUserSessionMaxIdleMs(realm, isOffline(), getValue().isRememberMe(), getValue().getLastSessionRefresh());
         long lifespan = SessionTimeouts.getUserSessionLifespanMs(realm, isOffline(), getValue().isRememberMe(), getValue().getStarted());
-        return new Expiration(maxIdle, lifespan);
+        return new Expiration(SessionTimeouts.IMMORTAL_FLAG, SessionTimeouts.calculateEffectiveSessionLifespan(maxIdle, lifespan));
     }
 
     @Override
@@ -205,7 +205,8 @@ public class UserSessionUpdater extends BaseUpdater<String, RemoteUserSessionEnt
         this.user = user;
         changes.clear();
         notesUpdater.clear();
-        clientSessions.clear();
+        clientSessions.onUserSessionRestart();
+        resetState();
         addAndApplyChange(userSessionEntity -> userSessionEntity.restart(realm.getId(), user.getId(), loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId));
     }
 
@@ -232,7 +233,7 @@ public class UserSessionUpdater extends BaseUpdater<String, RemoteUserSessionEnt
      * @param user             The {@link UserModel} associated to this user session.
      * @param clientSessions   The {@link Map} associated to this use session.
      */
-    public synchronized void initialize(SessionPersistenceState persistenceState, RealmModel realm, UserModel user, Map<String, AuthenticatedClientSessionModel> clientSessions) {
+    public synchronized void initialize(SessionPersistenceState persistenceState, RealmModel realm, UserModel user, AuthenticatedClientSessionMapping clientSessions) {
         this.realm = Objects.requireNonNull(realm);
         this.user = Objects.requireNonNull(user);
         this.persistenceState = Objects.requireNonNull(persistenceState);

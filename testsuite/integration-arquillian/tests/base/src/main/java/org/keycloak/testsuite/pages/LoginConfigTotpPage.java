@@ -17,7 +17,7 @@
 package org.keycloak.testsuite.pages;
 
 import org.keycloak.testsuite.util.UIUtils;
-import org.openqa.selenium.By;
+
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -36,7 +36,7 @@ public class LoginConfigTotpPage extends LogoutSessionsPage {
     @FindBy(id = "userLabel")
     private WebElement totpLabelInput;
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(id = "saveTOTPBtn")
     private WebElement submitButton;
 
     @FindBy(name = "cancel-aia")
@@ -80,13 +80,9 @@ public class LoginConfigTotpPage extends LogoutSessionsPage {
         return totpSecret.getAttribute("value");
     }
 
-    public boolean isCurrent() {
-        try {
-            driver.findElement(By.id("totp"));
-            return true;
-        } catch (Throwable t) {
-            return false;
-        }
+    @Override
+    public String getExpectedPageId() {
+        return "login-login-config-totp";
     }
 
     public void clickManual() {

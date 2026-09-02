@@ -16,14 +16,13 @@
  */
 package org.keycloak.authorization.jpa.store;
 
-import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.jpa.entities.ResourceEntity;
-import org.keycloak.authorization.model.Resource;
-import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.model.Scope;
-import org.keycloak.authorization.store.ResourceStore;
-import org.keycloak.authorization.store.StoreFactory;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.FlushModeType;
@@ -34,13 +33,15 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
+
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.jpa.entities.ResourceEntity;
+import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.store.ResourceStore;
+import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
@@ -94,7 +95,11 @@ public class JPAResourceStore implements ResourceStore {
         }
 
         ResourceEntity entity = entityManager.find(ResourceEntity.class, id);
-        if (entity == null) return null;
+
+        if (entity == null || (resourceServer != null && !resourceServer.getId().equals(entity.getResourceServer()))) {
+            return null;
+        }
+
         return new ResourceAdapter(entity, entityManager, provider.getStoreFactory());
     }
 
@@ -185,7 +190,8 @@ public class JPAResourceStore implements ResourceStore {
                     break;
                 case NAME:
                 case TYPE:
-                    predicates.add(builder.like(builder.lower(root.get(filterOption.getName())), "%" + value[0].toLowerCase() + "%"));
+                    String escapedValue = value[0].toLowerCase().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_").replace("*", "%");
+                    predicates.add(builder.like(builder.lower(root.get(filterOption.getName())), "%" + escapedValue + "%", '\\'));
                     break;
                 case EXACT_NAME:
                     predicates.add(builder.equal(builder.lower(root.get(filterOption.getName())), value[0].toLowerCase()));

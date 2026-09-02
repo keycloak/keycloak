@@ -39,6 +39,8 @@ public class Messages {
 
     public static final String ORG_NOT_FOUND = "orgNotFoundMessage";
 
+    public static final String ORG_DISABLED = "orgDisabledMessage";
+
     public static final String ORG_MEMBER_ALREADY = "orgMemberAlready";
 
     public static final String INVALID_ORG_INVITE = "invalidOrgInviteMessage";
@@ -95,6 +97,8 @@ public class Messages {
 
     public static final String EMAIL_EXISTS = "emailExistsMessage";
 
+    public static final String EMAIL_VERIFICATION_PENDING = "emailVerificationPending";
+
     public static final String FEDERATED_IDENTITY_EXISTS = "federatedIdentityExistsMessage";
 
     public static final String FEDERATED_IDENTITY_UNAVAILABLE = "federatedIdentityUnavailableMessage";
@@ -139,6 +143,8 @@ public class Messages {
 
     public static final String ACCOUNT_UPDATED = "accountUpdatedMessage";
 
+    public static final String ACCOUNT_UPDATED_TITLE = "accountUpdatedTitle";
+
     public static final String ACCOUNT_PASSWORD_UPDATED = "accountPasswordUpdatedMessage";
 
     public static final String NO_ACCESS = "noAccessMessage";
@@ -176,6 +182,8 @@ public class Messages {
 
     public static final String IDENTITY_PROVIDER_ALREADY_LINKED = "identityProviderAlreadyLinkedMessage";
 
+    public static final String IDENTITY_PROVIDER_ALREADY_LINKED_TO_CURRENT_USER = "identityProviderAlreadyLinkedToCurrentUserMessage";
+
     public static final String INSUFFICIENT_PERMISSION = "insufficientPermissionMessage";
 
     public static final String COULD_NOT_PROCEED_WITH_AUTHENTICATION_REQUEST = "couldNotProceedWithAuthenticationRequestMessage";
@@ -202,6 +210,8 @@ public class Messages {
 
     public static final String STALE_VERIFY_EMAIL_LINK = "staleEmailVerificationLink";
 
+    public static final String EMAIL_VERIFICATION_CANCELLED = "emailVerificationCancelled";
+
     public static final String STALE_INVITE_ORG_LINK = "staleInviteOrgLink";
 
     public static final String IDENTITY_PROVIDER_UNEXPECTED_ERROR = "identityProviderUnexpectedErrorMessage";
@@ -220,6 +230,12 @@ public class Messages {
 
     public static final String IDENTITY_PROVIDER_LINK_SUCCESS = "identityProviderLinkSuccess";
 
+    public static final String IDENTITY_PROVIDER_LINK_SUCCESS_HEADER = "identityProviderLinkSuccessHeader";
+
+    public static final String IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY = "identityProviderLinkConfirmedAlreadyMessage";
+
+    public static final String IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY_HEADER = "identityProviderLinkConfirmedAlreadyMessageHeader";
+
     public static final String CONFIRM_ACCOUNT_LINKING = "confirmAccountLinking";
 
     public static final String CONFIRM_ACCOUNT_LINKING_BODY = "confirmAccountLinkingBody";
@@ -229,6 +245,8 @@ public class Messages {
     public static final String CONFIRM_EMAIL_ADDRESS_VERIFICATION_HEADER = "confirmEmailAddressVerificationHeader";
 
     public static final String CONFIRM_EXECUTION_OF_ACTIONS = "confirmExecutionOfActions";
+
+    public static final String CONFIRM_CLAIM_CREDENTIAL = "credentialOfferTitle";
 
     public static final String STALE_CODE = "staleCodeMessage";
 
@@ -323,6 +341,22 @@ public class Messages {
     public static final String WEBAUTHN_ERROR_REGISTER_VERIFICATION = "webauthn-error-register-verification";
     public static final String WEBAUTHN_ERROR_USER_NOT_FOUND = "webauthn-error-user-not-found";
 
+    // WebAuthn Error — specific localizable cases
+    public static final String WEBAUTHN_ERROR_REGISTRATION_NOT_ALLOWED_AAGUID = "webauthn-error-registration-not-allowed-aaguid";
+    public static final String WEBAUTHN_ERROR_REGISTRATION_AAGUID_ATTESTATION_REQUIRED = "webauthn-error-registration-aaguid-attestation-required";
+    public static final String WEBAUTHN_ERROR_REGISTRATION_ATTACHMENT_MISMATCH = "webauthn-error-registration-attachment-mismatch";
+    public static final String WEBAUTHN_ERROR_API_NOT_ALLOWED = "webauthn-error-api-not-allowed";
+    public static final String WEBAUTHN_ERROR_API_INVALID_STATE = "webauthn-error-api-invalid-state";
+    public static final String WEBAUTHN_ERROR_API_SECURITY = "webauthn-error-api-security";
+    public static final String WEBAUTHN_ERROR_UNSUPPORTED_BROWSER = "webauthn-unsupported-browser-text";
+    public static final String WEBAUTHN_ERROR_DUPLICATED_DEVICE = "webauthn-error-duplicated-device";
+    public static final String WEBAUTHN_ERROR_USER_NOT_PRESENT = "webauthn-error-user-not-present";
+    public static final String WEBAUTHN_ERROR_USER_NOT_VERIFIED = "webauthn-error-user-not-verified";
+    public static final String WEBAUTHN_ERROR_BAD_ORIGIN = "webauthn-error-bad-origin";
+    public static final String WEBAUTHN_ERROR_BAD_RPID = "webauthn-error-bad-rpid";
+    public static final String WEBAUTHN_ERROR_BAD_CHALLENGE = "webauthn-error-bad-challenge";
+    public static final String WEBAUTHN_ERROR_BAD_SIGNATURE = "webauthn-error-bad-signature";
+
     // Conditions in Conditional Flow
     public static final String ACCESS_DENIED = "access-denied";
 
@@ -344,4 +378,10 @@ public class Messages {
     public static final String CONFIRM_ORGANIZATION_MEMBERSHIP = "organization.confirm-membership";
     public static final String CONFIRM_ORGANIZATION_MEMBERSHIP_TITLE = "organization.confirm-membership.title";
     public static final String REGISTER_ORGANIZATION_MEMBER = "organization.member.register.title";
+
+   // Client sessions
+    public static final String CLIENT_IDLE_REMEMBERME = "clientIdleExceedsRealmRememberMeIdle";
+    public static final String CLIENT_IDLE = "clientSessionIdleTimeoutExceedsRealm";
+    public static final String CLIENT_MAXLIFE_SPAN = "clientSessionMaxLifespanExceedsRealm";
+    public static final String CLIENT_MAXLIFESPAN_REMEMBERME = "clientSessionMaxLifespanExceedsRealmRememberMeMaxSpan";
 }

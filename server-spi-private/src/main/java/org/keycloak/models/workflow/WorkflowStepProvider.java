@@ -17,11 +17,39 @@
 
 package org.keycloak.models.workflow;
 
-import java.util.List;
 import org.keycloak.provider.Provider;
 
+/**
+ * Defines a provider interface for executing workflow steps.
+ * </p>
+ * Implementations of this interface represent individual steps that can be executed
+ * as part of a workflow. Each step can perform specific actions and optionally provide
+ * custom notification messages when users need to be informed about the step's execution.
+ */
 public interface WorkflowStepProvider extends Provider {
 
-    void run(List<String> resourceIds);
+    /**
+     * Runs this workflow step.
+     *
+     * @param context the workflow execution context
+     */
+    void run(WorkflowExecutionContext context);
 
+    /**
+     * Returns the message or the text that should be used as the subject of the email when notifying the user about this step.
+     *
+     * @return the notification subject, or {@code null} if the default subject should be used
+     */
+    default String getNotificationSubject() {
+        return null;
+    }
+
+    /**
+     * Returns the message or the text that should be used as the body of the email when notifying the user about this step.
+     *
+     * @return the notification body, or {@code null} if the default subject should be used
+     */
+    default String getNotificationMessage() {
+        return null;
+    }
 }

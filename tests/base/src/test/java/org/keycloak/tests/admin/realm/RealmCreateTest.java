@@ -1,21 +1,5 @@
 package org.keycloak.tests.admin.realm;
 
-import com.google.common.collect.ImmutableSet;
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.NotFoundException;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.models.AdminRoles;
-import org.keycloak.models.Constants;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.UserConfigBuilder;
-import org.keycloak.tests.utils.Assert;
-import org.keycloak.util.JsonSerialization;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -23,6 +7,25 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.NotFoundException;
+
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.tests.suites.DatabaseTest;
+import org.keycloak.tests.utils.Assert;
+import org.keycloak.util.JsonSerialization;
+
+import com.google.common.collect.ImmutableSet;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -76,7 +79,7 @@ public class RealmCreateTest extends AbstractRealmTest {
         RealmRepresentation rep = new RealmRepresentation();
         rep.setRealm(realmNameWithSpaces);
         rep.setEnabled(Boolean.TRUE);
-        rep.setUsers(Collections.singletonList(UserConfigBuilder.create()
+        rep.setUsers(Collections.singletonList(UserBuilder.create()
                 .username("new-realm-admin")
                 .name("new-realm-admin", "new-realm-admin")
                 .email("new-realm-admin@keycloak.org")
@@ -150,6 +153,7 @@ public class RealmCreateTest extends AbstractRealmTest {
     }
 
     @Test
+    @DatabaseTest
     public void createRealmFromJson() throws IOException {
         RealmRepresentation rep = JsonSerialization.readValue(getClass().getResourceAsStream("testrealm.json"), RealmRepresentation.class);
         adminClient.realms().create(rep);

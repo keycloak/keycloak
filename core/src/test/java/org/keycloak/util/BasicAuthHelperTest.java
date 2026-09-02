@@ -2,7 +2,8 @@ package org.keycloak.util;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 public class BasicAuthHelperTest {
 
@@ -48,5 +49,13 @@ public class BasicAuthHelperTest {
         String[] actual = BasicAuthHelper.parseHeader(header);
 
         assertArrayEquals(new String[] {username, password}, actual);
+    }
+
+    @Test
+    public void testNull() {
+        assertArrayEquals(new String[]{"user", ""}, BasicAuthHelper.parseHeader(BasicAuthHelper.createHeader("user", null)));
+        assertArrayEquals(new String[]{"", "password"}, BasicAuthHelper.parseHeader(BasicAuthHelper.createHeader(null, "password")));
+        assertArrayEquals(new String[]{"user", ""}, BasicAuthHelper.RFC6749.parseHeader(BasicAuthHelper.RFC6749.createHeader("user", null)));
+        assertArrayEquals(new String[]{"", "password"}, BasicAuthHelper.RFC6749.parseHeader(BasicAuthHelper.RFC6749.createHeader(null, "password")));
     }
 }

@@ -19,6 +19,7 @@ package org.keycloak.authentication;
 
 import java.util.Collections;
 import java.util.Set;
+
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ConfiguredProvider;

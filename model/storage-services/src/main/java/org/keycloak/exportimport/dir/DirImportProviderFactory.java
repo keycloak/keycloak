@@ -17,6 +17,9 @@
 
 package org.keycloak.exportimport.dir;
 
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.Config;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ImportProvider;
@@ -26,9 +29,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
-
-import java.util.List;
-import java.util.Map;
 
 import static org.keycloak.exportimport.ExportImportConfig.DEFAULT_STRATEGY;
 

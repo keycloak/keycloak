@@ -17,19 +17,20 @@
 
 package org.keycloak.testsuite.organization.broker;
 
-import org.junit.Test;
+import java.util.List;
+
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
-import java.util.List;
+import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class OrganizationOIDCBrokerSelfRegistrationTest extends AbstractBrokerSelfRegistrationTest {
 
     @Test
     public void testMaskedSecretInIDPRepresentation() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         List<IdentityProviderRepresentation> identityProviders = organization.identityProviders().getIdentityProviders();
 
         String maskedSecret = "**********";

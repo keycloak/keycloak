@@ -1,10 +1,10 @@
 package org.keycloak.common.profile;
 
-import org.keycloak.common.Profile;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.keycloak.common.Profile;
 
 public class CommaSeparatedListProfileConfigResolver implements ProfileConfigResolver {
 

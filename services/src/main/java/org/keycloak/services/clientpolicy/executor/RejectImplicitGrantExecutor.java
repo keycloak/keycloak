@@ -18,6 +18,7 @@
 package org.keycloak.services.clientpolicy.executor;
 
 import jakarta.ws.rs.core.MultivaluedMap;
+
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
@@ -90,7 +91,7 @@ public class RejectImplicitGrantExecutor implements ClientPolicyExecutorProvider
                 break;
             case AUTHORIZATION_REQUEST:
                 AuthorizationRequestContext authorizationRequestContext = (AuthorizationRequestContext)context;
-                executeOnAuthorizationRequest(authorizationRequestContext.getparsedResponseType(),
+                executeOnAuthorizationRequest(authorizationRequestContext.getParsedResponseType(),
                     authorizationRequestContext.getAuthorizationEndpointRequest(),
                     authorizationRequestContext.getRedirectUri());
                 return;

@@ -110,13 +110,19 @@ To build the source do a build:
 pnpm build
 ```
 
-Start the Keycloak server:
+Start the Keycloak server in development mode using port 8180. See the instructions in the [Keycloak server app](../../apps/keycloak-server/README.md).
 
 ```bash
-pnpm server:start
+cd ../../apps/keycloak-server
+pnpm start --http-port 8180
 ```
 
-If you started your container manually make sure there is an admin user named 'admin' with password 'admin'.
+If you started your container manually make sure there is an admin user named `admin` with password `admin`, the server is started in development mode using port 8180 and the required features are enabled.
+
+```bash
+./kc.sh start-dev --http-port 8180 --features transient-users,oid4vc-vci,declarative-ui,quick-theme,spiffe,kubernetes-service-accounts,workflows,client-auth-federated,jwt-authorization-grant
+```
+
 Then start the tests with:
 
 ```bash

@@ -1,5 +1,5 @@
-import { Page, expect } from "@playwright/test";
-import { goToRealm, goToRealms } from "../utils/sidebar";
+import { type Page, expect } from "@playwright/test";
+import { goToRealm, goToRealms } from "../utils/sidebar.ts";
 
 function getCurrentRealmItem(page: Page) {
   return page.getByTestId("currentRealm");

@@ -18,8 +18,6 @@
 
 package org.keycloak.authorization.fgap.evaluation;
 
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
-
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -38,6 +36,8 @@ import org.keycloak.authorization.policy.evaluation.PolicyEvaluator;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
+
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
 
 /**
  * A {@link PolicyEvaluator} specific for evaluating permisions in the context of the {@link org.keycloak.common.Profile.Feature#ADMIN_FINE_GRAINED_AUTHZ_V2} feature.

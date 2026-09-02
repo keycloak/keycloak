@@ -17,19 +17,18 @@
 
 package org.keycloak.tests.admin;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.methods.RequestBuilder;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
-import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
@@ -37,6 +36,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
 import org.keycloak.cookie.CookieType;
+import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
@@ -44,6 +44,10 @@ import org.keycloak.models.ImpersonationSessionNote;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -56,19 +60,20 @@ import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.events.EventMatchers;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.TestApp;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectTestApp;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.CredentialBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
@@ -77,30 +82,30 @@ import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.LoginPage;
-import org.keycloak.tests.utils.admin.ApiUtil;
-import org.keycloak.testsuite.util.CredentialBuilder;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.openqa.selenium.Cookie;
-import org.openqa.selenium.WebDriver;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 
-/**
- * Tests Undertow Adapter
- *
- * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
- */
 @KeycloakIntegrationTest(config = ImpersonationTest.ImpersonationTestServerConfig.class)
 public class ImpersonationTest {
 
@@ -129,13 +134,18 @@ public class ImpersonationTest {
     KeycloakUrls keycloakUrls;
 
     @InjectWebDriver
-    WebDriver driver;
+    ManagedWebDriver driver;
 
     @InjectPage
     LoginPage loginPage;
 
     @InjectEvents(ref = "test-events", realmRef = "test")
     Events events;
+
+    @AfterEach
+    public void afterEach() {
+        managedRealm.admin().users().get(managedUser.getId()).logout();
+    }
 
     @Test
     public void testImpersonateByMasterAdmin() {
@@ -146,28 +156,27 @@ public class ImpersonationTest {
     @Test
     public void testImpersonateByMasterImpersonator() {
         String userId;
-        try (Response response = masterRealm.admin().users().create(UserConfigBuilder.create().username("master-impersonator").build())) {
+        try (Response response = masterRealm.admin().users().create(UserBuilder.create().username("master-impersonator").build())) {
             userId = ApiUtil.getCreatedId(response);
         }
+        masterRealm.cleanup().add(r -> r.users().delete(userId).close());
 
         UserResource user = masterRealm.admin().users().get(userId);
-        user.resetPassword(CredentialBuilder.create().password("password").build());
+        user.resetPassword(CredentialBuilder.password("password").build());
 
-        ClientResource testRealmClient = ApiUtil.findClientByClientId(masterRealm.admin(), managedRealm.getName() + "-realm");
+        ClientResource testRealmClient = AdminApiUtil.findClientByClientId(masterRealm.admin(), managedRealm.getName() + "-realm");
 
         List<RoleRepresentation> roles = new LinkedList<>();
-        roles.add(ApiUtil.findClientRoleByName(testRealmClient, AdminRoles.VIEW_USERS).toRepresentation());
-        roles.add(ApiUtil.findClientRoleByName(testRealmClient, AdminRoles.IMPERSONATION).toRepresentation());
+        roles.add(AdminApiUtil.findClientRoleByName(testRealmClient, AdminRoles.VIEW_USERS).toRepresentation());
+        roles.add(AdminApiUtil.findClientRoleByName(testRealmClient, AdminRoles.IMPERSONATION).toRepresentation());
 
         user.roles().clientLevel(testRealmClient.toRepresentation().getId()).add(roles);
 
         testSuccessfulImpersonation("master-impersonator", Config.getAdminRealm());
-
-        masterRealm.admin().users().get(userId).remove();
     }
 
     @Test
-    public void testImpersongetServiceAccountUserateByTestImpersonator() {
+    public void testImpersonateByTestImpersonator() {
         testSuccessfulImpersonation("impersonator", managedRealm.getName());
     }
 
@@ -197,16 +206,15 @@ public class ImpersonationTest {
     }
 
     @Test
-    public void testImpersonateByMastertBadImpersonator() {
+    public void testImpersonateByMasterBadImpersonator() {
         String userId;
-        try (Response response = masterRealm.admin().users().create(UserConfigBuilder.create().username("master-bad-impersonator").build())) {
+        try (Response response = masterRealm.admin().users().create(UserBuilder.create().username("master-bad-impersonator").build())) {
             userId = ApiUtil.getCreatedId(response);
         }
-        masterRealm.admin().users().get(userId).resetPassword(CredentialBuilder.create().password("password").build());
+        masterRealm.cleanup().add(r -> r.users().delete(userId).close());
+        masterRealm.admin().users().get(userId).resetPassword(CredentialBuilder.password("password").build());
 
         testForbiddenImpersonation("master-bad-impersonator", Config.getAdminRealm());
-
-        masterRealm.admin().users().get(userId).remove();
     }
 
 
@@ -219,64 +227,121 @@ public class ImpersonationTest {
 
         // Impersonate and get SSO cookie. Setup that cookie for webDriver
         for (Cookie cookie : testSuccessfulImpersonation("realm-admin", managedRealm.getName())) {
-            driver.manage().addCookie(cookie);
+            driver.cookies().add(cookie);
         }
 
         // Open the URL again - should be directly redirected to the app due the SSO login
         oauth.openLoginForm();
 
         //KEYCLOAK-12783
-        Assertions.assertTrue(Objects.requireNonNull(driver.getCurrentUrl()).contains(testApp.getRedirectionUri()));
+        assertThat(driver.getCurrentUrl(), containsString(testApp.getRedirectionUri()));
+    }
+
+    @Test
+    public void testImpersonationTokenContainsActClaim() {
+        AccessTokenResponse tokenResponse = impersonateAndGetTokenResponse("realm-admin", managedRealm.getName());
+        Map<String, Object> act = assertActClaimInTokens(tokenResponse, "realm-admin");
+
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.assertSuccess(loginEvent)
+                .type(EventType.LOGIN)
+                .userId(managedUser.getId())
+                .details(Details.IMPERSONATOR, "realm-admin")
+                .details(Details.IMPERSONATOR_ID, (String) act.get("sub"));
+
+        EventRepresentation codeToTokenEvent = events.poll();
+        EventAssertion.assertSuccess(codeToTokenEvent)
+                .type(EventType.CODE_TO_TOKEN)
+                .userId(managedUser.getId())
+                .details(Details.IMPERSONATOR, "realm-admin")
+                .details(Details.IMPERSONATOR_ID, (String) act.get("sub"));
+    }
+
+    @Test
+    public void testActClaimCannotBeOverriddenByMapper() {
+        String mapperId;
+        try (Response response = oauth.clientResource().getProtocolMappers().createMapper(
+                ModelToRepresentation.toRepresentation(
+                        HardcodedClaim.create("act-override-mapper", "act",
+                                "{\"sub\": \"fake-id\", \"preferred_username\": \"fake-user\"}", "JSON",
+                                true, true, false)))) {
+            mapperId = ApiUtil.getCreatedId(response);
+        }
+        managedRealm.cleanup().add(r -> {
+            String clientId = oauth.clientResource().toRepresentation().getId();
+            r.clients().get(clientId).getProtocolMappers().delete(mapperId);
+        });
+
+        AccessTokenResponse tokenResponse = impersonateAndGetTokenResponse("realm-admin", managedRealm.getName());
+        Map<String, Object> act = assertActClaimInTokens(tokenResponse, "realm-admin");
+        assertThat((String) act.get("sub"), is(not("fake-id")));
     }
 
     // KEYCLOAK-17655
     @Test
     public void testImpersonationBySameRealmServiceAccount() throws Exception {
         // Create test client service account
-        ClientRepresentation clientApp = ClientConfigBuilder.create()
+        ClientRepresentation clientApp = ClientBuilder.create()
                 .clientId("service-account-cl")
                 .secret("password")
                 .serviceAccountsEnabled(true)
                 .build();
         clientApp.setServiceAccountsEnabled(true);
-        managedRealm.admin().clients().create(clientApp);
+        String clientId;
+        try (Response response = managedRealm.admin().clients().create(clientApp)) {
+            clientId = ApiUtil.getCreatedId(response);
+        }
+        managedRealm.cleanup().add(r -> r.clients().get(clientId).remove());
 
-        UserRepresentation user = ApiUtil.findClientByClientId(managedRealm.admin(), "service-account-cl").getServiceAccountUser();
+        UserRepresentation user = AdminApiUtil.findClientByClientId(managedRealm.admin(), "service-account-cl").getServiceAccountUser();
         user.setServiceAccountClientId("service-account-cl");
 
         // add impersonation roles
-        ApiUtil.assignClientRoles(managedRealm.admin(), user.getId(), Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.IMPERSONATION);
+        AdminApiUtil.assignClientRoles(managedRealm.admin(), user.getId(), Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.IMPERSONATION);
 
         // Impersonation
         testSuccessfulServiceAccountImpersonation(user, managedRealm.getName());
 
         // test impersonation over the service account fails
         testBadRequestImpersonation("impersonator", managedRealm.getName(), user.getId(), managedRealm.getName(), "Service accounts cannot be impersonated");
-
-        // Remove test client
-        ApiUtil.findClientByClientId(managedRealm.admin(), "service-account-cl").remove();
     }
     @Test
     public void testImpersonationByMasterRealmServiceAccount() throws Exception {
         // Create test client service account
-        ClientRepresentation clientApp = ClientConfigBuilder.create()
+        ClientRepresentation clientApp = ClientBuilder.create()
                 .clientId("service-account-cl")
                 .secret("password")
                 .serviceAccountsEnabled(true)
                 .build();
-        masterRealm.admin().clients().create(clientApp);
+        String clientId;
+        try (Response response = masterRealm.admin().clients().create(clientApp)) {
+            clientId = ApiUtil.getCreatedId(response);
+        }
+        masterRealm.cleanup().add(r -> r.clients().get(clientId).remove());
 
-        UserRepresentation user = ApiUtil.findClientByClientId(masterRealm.admin(), "service-account-cl").getServiceAccountUser();
+        UserRepresentation user = AdminApiUtil.findClientByClientId(masterRealm.admin(), "service-account-cl").getServiceAccountUser();
         user.setServiceAccountClientId("service-account-cl");
 
         // add impersonation roles
-        ApiUtil.assignRealmRoles(masterRealm.admin(), user.getId(), "admin");
+        AdminApiUtil.assignRealmRoles(masterRealm.admin(), user.getId(), "admin");
 
         // Impersonation
         testSuccessfulServiceAccountImpersonation(user, masterRealm.getName());
+    }
 
-        // Remove test client
-        ApiUtil.findClientByClientId(masterRealm.admin(), "service-account-cl").remove();
+    private AccessTokenResponse impersonateAndGetTokenResponse(String admin, String adminRealm) {
+        driver.open(keycloakUrls.getBase());
+        events.skipAll();
+
+        for (Cookie cookie : testSuccessfulImpersonation(admin, adminRealm)) {
+            driver.cookies().add(cookie);
+        }
+
+        oauth.openLoginForm();
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        Assertions.assertTrue(tokenResponse.isSuccess(), tokenResponse.getError());
+        return tokenResponse;
     }
 
     // Return the SSO cookie from the impersonated session
@@ -288,27 +353,52 @@ public class ImpersonationTest {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> assertActClaimInTokens(AccessTokenResponse tokenResponse, String expectedUsername) {
+        AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken(), AccessToken.class);
+        Map<String, Object> act = (Map<String, Object>) accessToken.getOtherClaims().get("act");
+        assertThat(act, notNullValue());
+        assertThat((String) act.get("preferred_username"), is(expectedUsername));
+        assertThat((String) act.get("sub"), notNullValue());
+
+        IDToken idToken = oauth.verifyToken(tokenResponse.getIdToken(), IDToken.class);
+        Map<String, Object> idTokenAct = (Map<String, Object>) idToken.getOtherClaims().get("act");
+        assertThat(idTokenAct, notNullValue());
+        assertThat((String) idTokenAct.get("preferred_username"), is(expectedUsername));
+        assertThat((String) idTokenAct.get("sub"), notNullValue());
+
+        return act;
+    }
+
+    private Set<Cookie> extractIdentityCookies(BasicCookieStore cookieStore) {
+        return cookieStore.getCookies().stream()
+                .filter(c -> c.getName().startsWith(CookieType.IDENTITY.getName()))
+                .map(c -> new Cookie(c.getName(), c.getValue(), c.getDomain(), c.getPath(), c.getExpiryDate(), c.isSecure(), true))
+                .collect(Collectors.toSet());
+    }
+
     private Set<Cookie> impersonate(Keycloak adminClient, String admin, String adminRealm) {
         BasicCookieStore cookieStore = new BasicCookieStore();
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build()) {
 
             HttpUriRequest req = RequestBuilder.post()
-                    .setUri(keycloakUrls.getBase() + "/admin/realms/test/users/" + managedUser.getId() + "/impersonation")
+                    .setUri(keycloakUrls.getBase() + "/admin/realms/" + managedRealm.getName() + "/users/" + managedUser.getId() + "/impersonation")
                     .addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + adminClient.tokenManager().getAccessTokenString())
                     .build();
 
             HttpResponse res = httpClient.execute(req);
             String resBody = EntityUtils.toString(res.getEntity());
 
-            Assertions.assertNotNull(resBody);
-            Assertions.assertTrue(resBody.contains("redirect"));
+            assertThat(resBody, notNullValue());
+            assertThat(resBody, containsString("redirect"));
 
             EventRepresentation event = events.poll();
-            Assertions.assertEquals(event.getType(), EventType.IMPERSONATE.toString());
-            MatcherAssert.assertThat(event.getSessionId(), EventMatchers.isUUID());
-            Assertions.assertEquals(event.getUserId(), managedUser.getId());
-            Assertions.assertTrue(event.getDetails().values().stream().anyMatch(f -> f.equals(admin)));
-            Assertions.assertTrue(event.getDetails().values().stream().anyMatch(f -> f.equals(adminRealm)));
+            EventAssertion.assertSuccess(event)
+                    .type(EventType.IMPERSONATE)
+                    .sessionId(event.getSessionId())
+                    .userId(managedUser.getId())
+                    .details("impersonator", admin)
+                    .details("impersonator_realm", adminRealm);
 
             String testRealm = managedRealm.getName();
             // Fetch user session notes
@@ -316,23 +406,22 @@ public class ImpersonationTest {
             final UserSessionNotesHolder notesHolder = runOnServer.fetch(session -> {
                 final RealmModel realm = session.realms().getRealmByName(testRealm);
                 final UserModel user = session.users().getUserById(realm, userId);
-                final UserSessionModel userSession = session.sessions().getUserSessionsStream(realm, user).filter(u -> u.getNotes().containsValue(admin)).findFirst().get();
+                final UserSessionModel userSession = session.sessions().getUserSessionsStream(realm, user)
+                        .filter(u -> u.getNotes().containsValue(admin))
+                        .findFirst()
+                        .orElseThrow(() -> new IllegalStateException("No user session found with admin: " + admin));
                 return new UserSessionNotesHolder(userSession.getNotes());
             }, UserSessionNotesHolder.class);
 
             // Check impersonation details
             final Map<String, String> notes = notesHolder.getNotes();
-            Assertions.assertNotNull(notes.get(ImpersonationSessionNote.IMPERSONATOR_ID.toString()));
-            Assertions.assertEquals(admin, notes.get(ImpersonationSessionNote.IMPERSONATOR_USERNAME.toString()));
+            assertThat(notes.get(ImpersonationSessionNote.IMPERSONATOR_ID.toString()), notNullValue());
+            assertThat(notes.get(ImpersonationSessionNote.IMPERSONATOR_USERNAME.toString()), is(admin));
 
-            Set<Cookie> cookies = cookieStore.getCookies().stream()
-                    .filter(c -> c.getName().startsWith(CookieType.IDENTITY.getName()))
-                    .map(c -> new Cookie(c.getName(), c.getValue(), c.getDomain(), c.getPath(), c.getExpiryDate(), c.isSecure(), true))
-                    .collect(Collectors.toSet());
+            Set<Cookie> cookies = extractIdentityCookies(cookieStore);
 
-            Assertions.assertNotNull(cookies);
-            MatcherAssert.assertThat(cookies, is(not(empty())));
-            httpClient.close();
+            assertThat(cookies, notNullValue());
+            assertThat(cookies, not(empty()));
 
             return cookies;
         } catch (IOException e) {
@@ -345,7 +434,7 @@ public class ImpersonationTest {
             client.realms().realm(managedRealm.getName()).users().get(managedUser.getId()).impersonate();
             Assertions.fail("Expected ClientErrorException wasn't thrown.");
         } catch (ClientErrorException e) {
-            MatcherAssert.assertThat(e.getMessage(), containsString("403 Forbidden"));
+            assertThat(e.getMessage(), containsString("403 Forbidden"));
         }
     }
 
@@ -355,9 +444,9 @@ public class ImpersonationTest {
             client.realms().realm(impersonatedRealm).users().get(impersonatedId).impersonate();
             Assertions.fail("Expected ClientErrorException wasn't thrown.");
         } catch (ClientErrorException e) {
-            Assertions.assertEquals(Response.Status.BAD_REQUEST, e.getResponse().getStatusInfo());
+            assertThat(e.getResponse().getStatus(), is(Response.Status.BAD_REQUEST.getStatusCode()));
             ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
-            Assertions.assertEquals(errorExpected, error.getErrorMessage());
+            assertThat(error.getErrorMessage(), is(errorExpected));
         }
     }
 
@@ -386,8 +475,7 @@ public class ImpersonationTest {
         // - since for master testing event listener is not installed
         if (!realm.equals("master")) {
             EventRepresentation e = events.poll();
-            Assertions.assertEquals(EventType.LOGIN.toString(), e.getType(), "Event type");
-            Assertions.assertEquals(clientId, e.getClientId(), "Client ID");
+            EventAssertion.assertSuccess(e).type(EventType.LOGIN).clientId(e.getClientId());
         }
         return client;
     }
@@ -418,23 +506,20 @@ public class ImpersonationTest {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build()) {
 
             HttpUriRequest req = RequestBuilder.post()
-                    .setUri(keycloakUrls.getBase() + "/admin/realms/test/users/" + managedUser.getId() + "/impersonation")
+                    .setUri(keycloakUrls.getBase() + "/admin/realms/" + managedRealm.getName() + "/users/" + managedUser.getId() + "/impersonation")
                     .addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + adminClient.tokenManager().getAccessTokenString())
                     .build();
 
             HttpResponse res = httpClient.execute(req);
             String resBody = EntityUtils.toString(res.getEntity());
 
-            Assertions.assertNotNull(resBody);
-            Assertions.assertTrue(resBody.contains("redirect"));
-            Set<Cookie> cookies = cookieStore.getCookies().stream()
-                    .filter(c -> c.getName().startsWith(CookieType.IDENTITY.getName()))
-                    .map(c -> new Cookie(c.getName(), c.getValue(), c.getDomain(), c.getPath(), c.getExpiryDate(), c.isSecure(), true))
-                    .collect(Collectors.toSet());
+            assertThat(resBody, notNullValue());
+            assertThat(resBody, containsString("redirect"));
 
-            Assertions.assertNotNull(cookies);
-            MatcherAssert.assertThat(cookies, is(not(empty())));
-            httpClient.close();
+            Set<Cookie> cookies = extractIdentityCookies(cookieStore);
+
+            assertThat(cookies, notNullValue());
+            assertThat(cookies, not(empty()));
 
             return cookies;
         } catch (IOException e) {
@@ -473,23 +558,23 @@ public class ImpersonationTest {
     private static class ImpersonationTestRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder config) {
-            config.addClient("myclient").clientId("myclient")
-                    .publicClient(true).directAccessGrantsEnabled(true);
+        public RealmBuilder configure(RealmBuilder config) {
+            config.clients(ClientBuilder.create("myclient").clientId("myclient")
+                    .publicClient(true).directAccessGrantsEnabled(true));
 
-            config.addUser("realm-admin")
+            config.users(UserBuilder.create("realm-admin")
                     .password("password").name("My", "Test Admin")
                     .email("my-test-admin@email.org").emailVerified(true)
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
-            config.addUser("impersonator")
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
+            config.users(UserBuilder.create("impersonator")
                     .password("password").name("My", "Test Impersonator")
                     .email("my-test-impersonator@email.org").emailVerified(true)
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.IMPERSONATION)
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_USERS);
-            config.addUser("bad-impersonator")
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_USERS));
+            config.users(UserBuilder.create("bad-impersonator")
                     .password("password").name("My", "Test Bad Impersonator")
                     .email("my-test-bad-impersonator@email.org").emailVerified(true)
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_USERS);
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_USERS));
 
             return config;
         }
@@ -498,7 +583,7 @@ public class ImpersonationTest {
     private static class TestUserConfig implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder user) {
+        public UserBuilder configure(UserBuilder user) {
             user.username("test-user");
             user.password("password");
             user.name("My", "Test");

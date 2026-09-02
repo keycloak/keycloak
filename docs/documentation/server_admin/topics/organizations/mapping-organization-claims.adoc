@@ -38,6 +38,12 @@ The `organization` scope is requested using different formats:
 |Description
 | `organization` | Maps to a single organization if the user is a member of a single organization.
 Otherwise, if a member of multiple organizations, the user will be prompted to select an organization when authenticating to the realm.
-| `organization:<alias>` | Maps to a single organization with the given alias.
+| `organization:<alias>` | Maps to a specific organization with the given alias.
+Multiple organizations can be requested by specifying multiple scopes, for example `organization:org-a organization:org-b`.
+If any of the aliases does not match an existing organization or the user is not a member, the request will be rejected.
 | `organization:*` | Maps to all organizations the user is a member of.
 |===
+
+NOTE: Mixing different scope formats (for example, `organization` with `organization:org-a`, or `organization:org-a` with `organization:*`) is not allowed and will result in an error.
+
+For details on including organization groups in tokens, see <<_managing_groups_,Managing groups>>.

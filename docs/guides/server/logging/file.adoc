@@ -1,0 +1,83 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
+<#import "/templates/options.adoc" as opts>
+
+<@tmpl.guide
+title="File logging"
+summary="Store logs into a file"
+tileVisible="false"
+levelOffset=2 >
+
+As an alternative to logging to the console, you can use structured/unstructured logging to a file stored in the filesystem.
+The more specific file handler configuration mentioned below will only take effect when the file logging is enabled.
+
+== Enable file logging
+Logging to a file is disabled by default. To enable it, enter the following command:
+
+<@kc.start parameters="--log=\"console,file\""/>
+
+A log file named `keycloak.log` is created inside the `data/log` directory of your {project_name} installation.
+
+== Configuring the location and name of the log file
+
+To change where the log file is created and the file name, perform these steps:
+
+. Create a writable directory to store the log file.
++
+If the directory is not writable, {project_name} starts correctly, but it issues an error and no log file is created.
+
+. Enter this command:
++
+<@kc.start parameters="--log=\"console,file\" --log-file=<path-to>/<your-file.log>"/>
+
+== Configuring the file handler format
+To configure a different logging format for the file log handler, enter the following command:
+
+<@kc.start parameters="--log-file-format=\"<pattern>\""/>
+
+See <@links.server id="logging-console" anchor="console-log-format"/> for more information and a table of the available pattern configuration.
+
+== Configuring the file log level
+Log level for file log handler can be specified by `--log-file-level` property as follows:
+
+<@kc.start parameters="--log-file-level=warn"/>
+
+For more information, see <@links.server id="logging" anchor="specify-log-level-each-handler"/>.
+
+== Log file rotation
+
+By default, log file rotation is enabled. The log file is rotated when its size exceeds 10 MB, and up to 5 backup files are kept.
+The log file is also rotated on server start by default.
+
+To disable log file rotation entirely, use the following configuration:
+
+<@kc.start parameters="--log=\"console,file\" --log-file-rotation-enabled=false"/>
+
+=== Configure rotation settings
+
+To change the maximum log file size before rotation:
+
+<@kc.start parameters="--log=\"console,file\" --log-file-rotation-max-file-size=50M"/>
+
+To change the number of backup files to keep:
+
+<@kc.start parameters="--log=\"console,file\" --log-file-rotation-max-backup-index=3"/>
+
+To disable rotation on server start, while keeping size-based rotation:
+
+<@kc.start parameters="--log=\"console,file\" --log-file-rotation-rotate-on-boot=false"/>
+
+To enable time-based rotation (e.g. daily), set a date-time format suffix:
+
+<@kc.start parameters="--log=\"console,file\" --log-file-rotation-file-suffix=.yyyy-MM-dd"/>
+
+<@opts.printRelevantOptions includedOptions="log-file-*" excludedOptions="log-file-async*">
+
+== Asynchronous
+<@opts.includeOptions includedOptions="log-file-async*"/>
+
+</@opts.printRelevantOptions>
+
+</@tmpl.guide>

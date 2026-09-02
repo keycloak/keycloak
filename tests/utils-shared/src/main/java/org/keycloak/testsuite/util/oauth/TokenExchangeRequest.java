@@ -1,17 +1,20 @@
 package org.keycloak.testsuite.util.oauth;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.keycloak.OAuth2Constants;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.util.TokenUtil;
+
+import org.apache.http.client.methods.CloseableHttpResponse;
 
 public class TokenExchangeRequest extends AbstractHttpPostRequest<TokenExchangeRequest, AccessTokenResponse> {
 
     private final String subjectToken;
     private final String subjectTokenType;
+    private String actorToken;
+    private String actorTokenType;
     private String requestedTokenType;
     private String requestedSubject;
     private List<String> audience;
@@ -47,6 +50,21 @@ public class TokenExchangeRequest extends AbstractHttpPostRequest<TokenExchangeR
         return this;
     }
 
+    public TokenExchangeRequest dpopProof(String dpopProof) {
+        header(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
+        return this;
+    }
+
+    public TokenExchangeRequest actorToken(String actorToken) {
+        this.actorToken = actorToken;
+        return this;
+    }
+
+    public TokenExchangeRequest actorTokenType(String actorTokenType) {
+        this.actorTokenType = actorTokenType;
+        return this;
+    }
+
     protected void initRequest() {
         parameter(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
 
@@ -59,6 +77,14 @@ public class TokenExchangeRequest extends AbstractHttpPostRequest<TokenExchangeR
 
         if (requestedSubject != null) {
             parameter(OAuth2Constants.REQUESTED_SUBJECT, requestedSubject);
+        }
+
+        if (actorToken != null) {
+            parameter(OAuth2Constants.ACTOR_TOKEN, actorToken);
+        }
+
+        if (actorTokenType != null) {
+            parameter(OAuth2Constants.ACTOR_TOKEN_TYPE, actorTokenType);
         }
 
         if (audience != null) {

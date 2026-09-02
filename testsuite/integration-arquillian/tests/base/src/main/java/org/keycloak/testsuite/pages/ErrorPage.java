@@ -16,9 +16,10 @@
  */
 package org.keycloak.testsuite.pages;
 
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.UIUtils;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+
+import org.jboss.arquillian.test.api.ArquillianResource;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -52,8 +53,9 @@ public class ErrorPage extends LanguageComboboxAwarePage {
         }
     }
 
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver) != null && PageUtils.getPageTitle(driver).equals("We are sorry...");
+    @Override
+    public String getExpectedPageId() {
+        return "login-error";
     }
 
 }

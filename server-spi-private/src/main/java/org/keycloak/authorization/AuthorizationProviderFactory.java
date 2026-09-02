@@ -20,12 +20,28 @@ package org.keycloak.authorization;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ProviderFactory;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public interface AuthorizationProviderFactory extends ProviderFactory<AuthorizationProvider> {
+
+    ProviderConfigProperty JPA_IN_PARAMETERS_LIMIT_THRESHOLD = ProviderConfigurationBuilder.create()
+            .property()
+            .name("jpaInParametersLimitThreshold")
+            .label("JPA IN parameters limit threshold")
+            .helpText("The maximum number of JPA IN clause bind parameters before switching to literal values. "
+                    + "Set this to stay below the prepared-statement parameter limit of the database (e.g., 65,535 for PostgreSQL).")
+            .type(ProviderConfigProperty.INTEGER_TYPE)
+            .defaultValue(32 * 1000)
+            .add()
+            .build()
+            .get(0);
+
+    <C> C getConfig(ProviderConfigProperty config);
 
     AuthorizationProvider create(KeycloakSession session, RealmModel realm);
 }

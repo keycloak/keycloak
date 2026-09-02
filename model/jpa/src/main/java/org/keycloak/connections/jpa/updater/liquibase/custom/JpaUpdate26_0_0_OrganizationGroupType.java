@@ -40,5 +40,3 @@ public class JpaUpdate26_0_0_OrganizationGroupType extends CustomKeycloakTask {
     }
 
 }
-
-

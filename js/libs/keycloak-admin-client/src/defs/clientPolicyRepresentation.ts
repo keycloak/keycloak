@@ -7,6 +7,7 @@ export default interface ClientPolicyRepresentation {
   conditions?: ClientPolicyConditionRepresentation[];
   description?: string;
   enabled?: boolean;
+  mode?: string;
   name?: string;
   profiles?: string[];
 }

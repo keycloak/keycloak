@@ -1,14 +1,15 @@
 package org.keycloak.testsuite.forms;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Test;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.LoginPage;
-
 import org.keycloak.theme.ThemeSelectorProvider;
-import static org.junit.Assert.assertEquals;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ThemeSelectorTest extends AbstractTestRealmKeycloakTest {
 
@@ -23,27 +24,27 @@ public class ThemeSelectorTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void clientOverride() {
-        loginPage.open();
+        oauth.openLoginForm();
         assertEquals(System.getProperty(PROPERTY_LOGIN_THEME_DEFAULT, SYSTEM_DEFAULT_LOGIN_THEME), detectTheme());
 
-        ClientRepresentation rep = testRealm().clients().findByClientId("test-app").get(0);
+        ClientRepresentation rep = managedRealm.admin().clients().findByClientId("test-app").get(0);
 
         try {
             rep.getAttributes().put("login_theme", "base");
-            testRealm().clients().get(rep.getId()).update(rep);
+            managedRealm.admin().clients().get(rep.getId()).update(rep);
 
-            loginPage.open();
+            oauth.openLoginForm();
             assertEquals("base", detectTheme());
 
             // assign a theme that does not exist, should use the default keycloak
             rep.getAttributes().put("login_theme", "unavailable-theme");
-            testRealm().clients().get(rep.getId()).update(rep);
+            managedRealm.admin().clients().get(rep.getId()).update(rep);
 
-            loginPage.open();
+            oauth.openLoginForm();
             assertEquals(SYSTEM_DEFAULT_LOGIN_THEME, detectTheme());
         } finally {
             rep.getAttributes().put("login_theme", "");
-            testRealm().clients().get(rep.getId()).update(rep);
+            managedRealm.admin().clients().get(rep.getId()).update(rep);
         }
     }
 

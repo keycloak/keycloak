@@ -16,16 +16,16 @@
  */
 package org.keycloak.client.cli.common;
 
+import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.URL;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.client.cli.config.ConfigData;
 import org.keycloak.client.cli.config.RealmConfigData;
 import org.keycloak.client.cli.util.AuthUtil;
 import org.keycloak.representations.AccessTokenResponse;
-
-import java.io.File;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.net.URL;
 
 import static org.keycloak.client.cli.util.AuthUtil.getAuthTokens;
 import static org.keycloak.client.cli.util.AuthUtil.getAuthTokensByJWT;
@@ -226,6 +226,7 @@ public class BaseConfigCredentialsCmd extends BaseAuthOptionsCmd {
         out.println("                            otherwise defaults to keystore password)");
         out.println("    --alias ALIAS           Alias of the key inside a keystore (defaults to the value of ClientId)");
         out.println("    --status                Checks the validity of the existing connection (Note: It does not update the config)");
+        printExtraOptions(out);
         out.println();
         out.println();
         out.println("Examples:");
@@ -260,5 +261,8 @@ public class BaseConfigCredentialsCmd extends BaseAuthOptionsCmd {
         out.println();
         out.println("Use '" + getCommand() + " help' for general information and a list of commands");
         return sb.toString();
+    }
+
+    protected void printExtraOptions(PrintWriter out) {
     }
 }

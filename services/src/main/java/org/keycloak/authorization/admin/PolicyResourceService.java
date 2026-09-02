@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -30,9 +31,8 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
-import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
@@ -47,9 +47,11 @@ import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentati
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
-import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.util.JsonSerialization;
+
+import org.jboss.resteasy.reactive.NoCache;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -63,6 +65,9 @@ public class PolicyResourceService {
     private final AdminEventBuilder adminEvent;
 
     public PolicyResourceService(Policy policy, ResourceServer resourceServer, AuthorizationProvider authorization, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+        if (policy == null || !policy.getResourceServer().equals(resourceServer)) {
+            throw new NotFoundException();
+        }
         this.policy = policy;
         this.resourceServer = resourceServer;
         this.authorization = authorization;
@@ -87,6 +92,8 @@ public class PolicyResourceService {
 
         representation.setId(policy.getId());
 
+        AdminPermissionsSchema.SCHEMA.throwExceptionIfResourceTypeOrScopesNotProvided(
+                authorization.getKeycloakSession(), resourceServer, representation);
         RepresentationToModel.toModel(representation, authorization, policy);
 
 

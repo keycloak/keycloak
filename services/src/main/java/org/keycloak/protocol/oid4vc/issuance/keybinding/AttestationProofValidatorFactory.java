@@ -17,13 +17,12 @@
 
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
-import org.keycloak.jose.jwk.JWK;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.model.ProofType;
 
-import java.util.Map;
-
 /**
+ * Factory for creating AttestationProofValidator instances with configurable trusted keys.
+ *
  * @author <a href="mailto:Rodrick.Awambeng@adorsys.com">Rodrick Awambeng</a>
  */
 public class AttestationProofValidatorFactory implements ProofValidatorFactory {
@@ -34,11 +33,8 @@ public class AttestationProofValidatorFactory implements ProofValidatorFactory {
     }
 
     @Override
-    public ProofValidator create(KeycloakSession session) {
-        // TODO: Load trusted keys from config, DB, or env
-        Map<String, JWK> trustedKeys = Map.of(); // empty for now
-
-        AttestationKeyResolver resolver = new StaticAttestationKeyResolver(trustedKeys);
+    public AttestationProofValidator create(KeycloakSession session) {
+        AttestationKeyResolver resolver = new TrustedAttestationKeyResolver(session);
         return new AttestationProofValidator(session, resolver);
     }
 }

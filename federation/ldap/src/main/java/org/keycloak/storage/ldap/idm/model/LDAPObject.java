@@ -17,8 +17,6 @@
 
 package org.keycloak.storage.ldap.idm.model;
 
-import org.jboss.logging.Logger;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

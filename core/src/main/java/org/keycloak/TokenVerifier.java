@@ -17,21 +17,6 @@
 
 package org.keycloak;
 
-import org.keycloak.common.VerificationException;
-import org.keycloak.exceptions.TokenNotActiveException;
-import org.keycloak.exceptions.TokenSignatureInvalidException;
-import org.keycloak.jose.jws.AlgorithmType;
-import org.keycloak.jose.jws.JWSHeader;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.JWSInputException;
-import org.keycloak.crypto.SignatureVerifierContext;
-import org.keycloak.jose.jws.crypto.HMACProvider;
-import org.keycloak.jose.jws.crypto.RSAProvider;
-import org.keycloak.representations.JsonWebToken;
-import org.keycloak.util.TokenUtil;
-
-import javax.crypto.SecretKey;
-
 import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
 import java.util.Arrays;
@@ -40,6 +25,21 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.crypto.SecretKey;
+
+import org.keycloak.common.VerificationException;
+import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.exceptions.TokenNotActiveException;
+import org.keycloak.exceptions.TokenSignatureInvalidException;
+import org.keycloak.jose.jws.AlgorithmType;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.jose.jws.crypto.ECDSAProvider;
+import org.keycloak.jose.jws.crypto.HMACProvider;
+import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.representations.JsonWebToken;
+import org.keycloak.util.TokenUtil;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -249,7 +249,7 @@ public class TokenVerifier<T extends JsonWebToken> {
      * <ul>
      * <li>Realm URL (JWT issuer field: {@code iss}) has to be defined and match realm set via {@link #realmUrl(java.lang.String)} method</li>
      * <li>Subject (JWT subject field: {@code sub}) has to be defined</li>
-     * <li>Token type (JWT type field: {@code typ}) has to be {@code Bearer}. The type can be set via {@link #tokenType(java.lang.String)} method</li>
+     * <li>Token type (JWT type field: {@code typ}) has to be {@code Bearer}. The type can be set via {@link #tokenType(List)} method</li>
      * <li>Token has to be active, ie. both not expired and not used before its validity (JWT issuer fields: {@code exp} and {@code nbf})</li>
      * </ul>
      * @return This token verifier.
@@ -441,15 +441,23 @@ public class TokenVerifier<T extends JsonWebToken> {
             }
         } else {
             AlgorithmType algorithmType = getHeader().getAlgorithm().getType();
-
             if (null == algorithmType) {
                 throw new VerificationException("Unknown or unsupported token algorithm");
-            } else switch (algorithmType) {
+            }
+            switch (algorithmType) {
                 case RSA:
                     if (publicKey == null) {
                         throw new VerificationException("Public key not set");
                     }
                     if (!RSAProvider.verify(jws, publicKey)) {
+                        throw new TokenSignatureInvalidException(token, "Invalid token signature");
+                    }
+                    break;
+                case ECDSA:
+                    if (publicKey == null) {
+                        throw new VerificationException("Public key not set");
+                    }
+                    if (!ECDSAProvider.verify(jws, publicKey)) {
                         throw new TokenSignatureInvalidException(token, "Invalid token signature");
                     }
                     break;

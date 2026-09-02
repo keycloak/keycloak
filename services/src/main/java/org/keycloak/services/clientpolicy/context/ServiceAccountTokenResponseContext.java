@@ -22,13 +22,12 @@ import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ServiceAccountTokenResponseContext implements ClientPolicyContext {
+public class ServiceAccountTokenResponseContext implements ClientPolicyClientSessionContext {
 
     private final MultivaluedMap<String, String> params;
     private final AuthenticatedClientSessionModel clientSession;
@@ -51,6 +50,7 @@ public class ServiceAccountTokenResponseContext implements ClientPolicyContext {
         return params;
     }
 
+    @Override
     public AuthenticatedClientSessionModel getClientSession() {
         return clientSession;
     }

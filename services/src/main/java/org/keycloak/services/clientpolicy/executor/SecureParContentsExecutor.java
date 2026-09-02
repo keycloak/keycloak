@@ -18,18 +18,17 @@
 package org.keycloak.services.clientpolicy.executor;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.jboss.logging.Logger;
+import jakarta.ws.rs.core.MultivaluedMap;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.constants.AdapterConstants;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
@@ -37,13 +36,14 @@ import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest
 import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestObjectParser;
 import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestParser;
 import org.keycloak.protocol.oidc.endpoints.request.RequestUriType;
-import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
+import org.keycloak.protocol.oidc.par.clientpolicy.context.PushedAuthorizationRequestContext;
+import org.keycloak.protocol.oidc.par.endpoints.request.AuthzEndpointParParser;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext;
 
-import jakarta.ws.rs.core.MultivaluedMap;
+import org.jboss.logging.Logger;
 
 /** 
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -51,7 +51,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
 public class SecureParContentsExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfigurationRepresentation> {
 
     protected final KeycloakSession session;
-    private static final Logger logger = Logger.getLogger(SecureParContentsExecutor.class);
+    private static final Logger log = Logger.getLogger(SecureParContentsExecutor.class);
 
     public SecureParContentsExecutor(KeycloakSession session) {
         this.session = session;
@@ -65,44 +65,57 @@ public class SecureParContentsExecutor implements ClientPolicyExecutorProvider<C
     @Override
     public void executeOnEvent(ClientPolicyContext context) throws ClientPolicyException {
         switch (context.getEvent()) {
-            case PRE_AUTHORIZATION_REQUEST:
+            case PUSHED_AUTHORIZATION_REQUEST -> {
+                PushedAuthorizationRequestContext parAuthorizationRequestContext = (PushedAuthorizationRequestContext)context;
+                checkParAuthorizationRequest(parAuthorizationRequestContext);
+            }
+            case PRE_AUTHORIZATION_REQUEST -> {
                 PreAuthorizationRequestContext preAuthorizationRequestContext = (PreAuthorizationRequestContext)context;
-                checkValidParContents(preAuthorizationRequestContext);
-                break;
-            default:
-                return;
+                checkPreAuthorizationRequest(preAuthorizationRequestContext);
+            }
         }
     }
 
-    private void checkValidParContents(PreAuthorizationRequestContext preAuthorizationRequestContext) throws ClientPolicyException {
-        MultivaluedMap<String, String> requestParametersFromQuery = preAuthorizationRequestContext.getRequestParameters();
-        String requestUri = requestParametersFromQuery.getFirst(OIDCLoginProtocol.REQUEST_URI_PARAM);
-        if (requestUri == null) {
-            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "request_uri not included.");
+    private void checkParAuthorizationRequest(PushedAuthorizationRequestContext context) throws ClientPolicyException {
+        // FAPI 2.0: For authorization-endpoint flows, ASs “shall require the redirect_uri parameter in pushed authorization requests”
+        // and clients must send only client_id and request_uri to the authorization endpoint afterward.
+        AuthorizationEndpointRequest request = context.getRequest();
+        if (request.getRedirectUri() == null) {
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "PAR is required to have a 'redirect_uri' parameter");
         }
-        if (requestUri != null && AuthorizationEndpointRequestParserProcessor.getRequestUriType(requestUri) != RequestUriType.PAR) {
+    }
+
+    private void checkPreAuthorizationRequest(PreAuthorizationRequestContext context) throws ClientPolicyException {
+        MultivaluedMap<String, String> requestParametersFromQuery = context.getRequestParameters();
+        String requestUri = requestParametersFromQuery.getFirst(OIDCLoginProtocol.REQUEST_URI_PARAM);
+        if (requestUri == null || AuthorizationEndpointRequestParserProcessor.getRequestUriType(requestUri) != RequestUriType.PAR) {
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "PAR request_uri not included.");
         }
 
-        String key = requestUri.substring(ParEndpoint.REQUEST_URI_PREFIX_LENGTH);
-        SingleUseObjectProvider singleUseStore = session.singleUseObjects();
-        Map<String, String> requestParametersFromPAR = singleUseStore.get(key);
+        Map<String, String> requestParametersFromPAR = AuthzEndpointParParser.getRequestObject(session, requestUri);
         if (requestParametersFromPAR == null) {
-            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "PAR not found. not issued or used multiple times.");
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST_URI, "PAR not found, not issued or used multiple times.");
         }
 
-        Set<String> requestParametersNameFromPAR = new HashSet<>();
+        Set<String> requestParameterKeysFromPAR;
         if (requestParametersFromPAR.containsKey(OIDCLoginProtocol.REQUEST_PARAM)) {
             // if PAR request includes request object (JAR), parsing the request is needed.
-            requestParametersNameFromPAR = getParRetrievedRequestParameters(requestParametersFromPAR, preAuthorizationRequestContext.getClientId());
+            requestParameterKeysFromPAR = getParRetrievedRequestParameters(requestParametersFromPAR, context.getClientId());
         } else {
-            requestParametersNameFromPAR = requestParametersFromPAR.keySet();
+            requestParameterKeysFromPAR = requestParametersFromPAR.keySet();
         }
 
-        for (String queryParamName : requestParametersFromQuery.keySet()) {
-            if (!requestParametersNameFromPAR.contains(queryParamName) && !OIDCLoginProtocol.REQUEST_URI_PARAM.equals(queryParamName)) {
-                singleUseStore.remove(key);
-                throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "PAR request did not include necessary parameters");
+        List<String> requestParameterKeysFromQuery = requestParametersFromQuery.keySet().stream()
+                .filter(it -> !it.equals(OIDCLoginProtocol.REQUEST_URI_PARAM))
+                .toList();
+
+        // FAPI says only parameters inside the request object should be used
+        //
+        for (String queryParam : requestParameterKeysFromQuery) {
+            if (!requestParameterKeysFromPAR.contains(queryParam)) {
+                AuthzEndpointParParser.removeRequestObject(session, requestUri);
+                log.warnf("PAR request did not include query parameter: %s", queryParam);
+                throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST_OBJECT, "PAR request did not include query parameter");
             }
         }
     }
@@ -125,7 +138,7 @@ public class SecureParContentsExecutor implements ClientPolicyExecutorProvider<C
         AuthorizationEndpoint.performActionOnParameters(request, (paramName, paramValue) -> {if (paramValue != null) parRetrievedRequest.add(paramName);});
         if (request.getClientId() != null) parRetrievedRequest.add(OIDCLoginProtocol.CLIENT_ID_PARAM);
         if (request.getResponseType() != null) parRetrievedRequest.add(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
-        if (request.getRedirectUriParam() != null) parRetrievedRequest.add(OIDCLoginProtocol.REDIRECT_URI_PARAM);
+        if (request.getRedirectUri() != null) parRetrievedRequest.add(OIDCLoginProtocol.REDIRECT_URI_PARAM);
         if (request.getMaxAge() != null) parRetrievedRequest.add(OIDCLoginProtocol.MAX_AGE_PARAM);
         if (request.getUiLocales() != null) parRetrievedRequest.add(OAuth2Constants.UI_LOCALES_PARAM);
         for (String additionalParam : request.getAdditionalReqParams().keySet()) {

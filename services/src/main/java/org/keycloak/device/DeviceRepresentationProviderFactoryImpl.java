@@ -2,12 +2,15 @@ package org.keycloak.device;
 
 import java.util.List;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import org.keycloak.Config;
+import org.keycloak.cache.LocalCache;
+import org.keycloak.cache.LocalCacheConfiguration;
+import org.keycloak.cache.LocalCacheProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+
 import ua_parser.Client;
 import ua_parser.Parser;
 
@@ -18,10 +21,10 @@ public class DeviceRepresentationProviderFactoryImpl implements DeviceRepresenta
     // The max user agent size is 512 bytes and it will take 1024 bytes per cache entry.
     // Using 2MB for caching.
     private static final int DEFAULT_CACHE_SIZE = 2048;
-
-    private volatile LoadingCache<String, Client> cache;
-
     public static final String PROVIDER_ID = "deviceRepresentation";
+
+    private LocalCacheConfiguration<String, Client> cacheConfig;
+    private LocalCache<String, Client> cache;
 
     @Override
     public String getId() {
@@ -30,10 +33,19 @@ public class DeviceRepresentationProviderFactoryImpl implements DeviceRepresenta
 
     @Override
     public void init(Config.Scope config) {
-        cache = Caffeine.newBuilder()
-                .maximumSize(config.getInt(CACHE_SIZE, DEFAULT_CACHE_SIZE))
-                .softValues()
-                .build(UA_PARSER::parse);
+        cacheConfig = LocalCacheConfiguration.<String, Client>builder()
+              .name("userAgent")
+              .maxSize(config.getInt(CACHE_SIZE, DEFAULT_CACHE_SIZE))
+              .loader(UA_PARSER::parse)
+              .build();
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+        try (KeycloakSession session = factory.create()) {
+            cache = session.getProvider(LocalCacheProvider.class).create(cacheConfig);
+            cacheConfig = null;
+        }
     }
 
     @Override
@@ -51,5 +63,13 @@ public class DeviceRepresentationProviderFactoryImpl implements DeviceRepresenta
                 .defaultValue(DEFAULT_CACHE_SIZE)
                 .add()
                 .build();
+    }
+
+    @Override
+    public void close() {
+        if (cache != null) {
+            cache.close();
+            cache = null;
+        }
     }
 }

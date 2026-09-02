@@ -66,9 +66,26 @@ public interface Updater<K, V> extends BiFunction<K, V, V> {
     boolean isReadOnly();
 
     /**
+     * @return {@code true} if the entity is expired.
+     */
+    boolean isExpired();
+
+    /**
+     * @return {@code true} if the entity is not valid and cannot be viewed/accessed from the transaction.
+     */
+    default boolean isInvalid() {
+        return isExpired() || isDeleted();
+    }
+
+    /**
      * Marks the entity as deleted.
      */
     void markDeleted();
+
+    /**
+     * Marks the entity as expired when loading from the Infinispan cache.
+     */
+    void markExpired();
 
     /**
      * @return {@code true} if the entity is transient and shouldn't be stored in the Infinispan cache.

@@ -17,26 +17,35 @@
 
 package org.keycloak.authentication;
 
-import org.jboss.logging.Logger;
-import org.keycloak.authentication.authenticators.conditional.ConditionalAuthenticator;
-import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.AuthenticationFlowModel;
-import org.keycloak.models.Constants;
-import org.keycloak.models.UserModel;
-import org.keycloak.services.ServicesLogger;
-import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.sessions.CommonClientSessionModel;
-import org.keycloak.utils.StringUtil;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
-import java.util.*;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
+import org.keycloak.authentication.authenticators.conditional.ConditionalAuthenticator;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.services.ServicesLogger;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.CommonClientSessionModel;
+import org.keycloak.utils.StringUtil;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -89,11 +98,27 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
             MultivaluedMap<String, String> inputData = processor.getRequest().getDecodedFormParameters();
             String authExecId = inputData.getFirst(Constants.AUTHENTICATION_EXECUTION);
 
+            // User clicked on "switch organization" link
+            if (inputData.containsKey("switchOrganization")) {
+                logger.trace("User clicked on link 'Switch Organization'");
+                AuthenticationSessionModel authSession = processor.getAuthenticationSession();
+                // preserve the username so the user doesn't have to re-enter it after flow reset
+                String attemptedUsername = authSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
+                if (attemptedUsername != null) {
+                    authSession.setClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, attemptedUsername);
+                }
+                authSession.removeClientNote(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+                // clear the cached organization from the session context so it is re-evaluated after flow reset
+                processor.getSession().getContext().setOrganization(null);
+                processor.resetFlow();
+                return processor.authenticate();
+            }
+
             // User clicked on "try another way" link
             if (inputData.containsKey("tryAnotherWay")) {
                 logger.trace("User clicked on link 'Try Another Way'");
 
-                processor.getAuthenticationSession().setAuthNote(AuthenticationProcessor.AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED, "true");
+                processor.getAuthenticationSession().setAuthNote(AuthenticationProcessor.AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED, model.getId());
                 return createSelectAuthenticatorsScreen(model);
             }
 
@@ -237,15 +262,17 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
     @Override
     public Response processFlow() {
         logger.debugf("processFlow: %s", flow.getAlias());
-
-        if (Boolean.parseBoolean(processor.getAuthenticationSession().getAuthNote(AuthenticationProcessor.AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED))) {
-            logger.tracef("Refreshed page on authentication selector screen");
+        String selector = processor.getAuthenticationSession().getAuthNote(AuthenticationProcessor.AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED);
+        if (selector != null) {
             String lastExecutionId = processor.getAuthenticationSession().getAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
-            if (lastExecutionId != null) {
+            if (selector.equalsIgnoreCase(lastExecutionId)) {
+                logger.tracef("Refreshed page on authentication selector screen");
                 AuthenticationExecutionModel executionModel = processor.getRealm().getAuthenticationExecutionById(lastExecutionId);
                 if (executionModel != null) {
                     return createSelectAuthenticatorsScreen(executionModel);
                 }
+            } else {
+                processor.getAuthenticationSession().removeAuthNote(AuthenticationProcessor.AUTHENTICATION_SELECTOR_SCREEN_DISPLAYED);
             }
         }
 
@@ -510,7 +537,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 return null;
             case FAILED:
                 logger.debugv("authenticator FAILED: {0}", execution.getAuthenticator());
-                processor.logFailure();
+                processor.logFailure(execution.getAuthenticator());
                 setExecutionStatus(execution, AuthenticationSessionModel.ExecutionStatus.FAILED);
                 if (result.getChallenge() != null) {
                     return sendChallenge(result, execution);
@@ -526,7 +553,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 return sendChallenge(result, execution);
             case FAILURE_CHALLENGE:
                 logger.debugv("authenticator FAILURE_CHALLENGE: {0}", execution.getAuthenticator());
-                processor.logFailure();
+                processor.logFailure(execution.getAuthenticator());
                 setExecutionStatus(execution, AuthenticationSessionModel.ExecutionStatus.CHALLENGED);
                 return sendChallenge(result, execution);
             case ATTEMPTED:

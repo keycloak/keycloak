@@ -25,28 +25,12 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.ProviderManagerRegistry;
 import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.themes.QuarkusJarThemeProviderFactory;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
-import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
 
 public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionFactory {
-
-    public static QuarkusKeycloakSessionFactory getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = new QuarkusKeycloakSessionFactory();
-        }
-
-        return INSTANCE;
-    }
-
-    public static void setInstance(QuarkusKeycloakSessionFactory instance) {
-        INSTANCE = instance;
-    }
-
-    private static QuarkusKeycloakSessionFactory INSTANCE;
 
     public QuarkusKeycloakSessionFactory(
             Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories,
@@ -54,7 +38,6 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
             Map<String, ProviderFactory> preConfiguredProviders,
             List<ClasspathThemeProviderFactory.ThemesRepresentation> themes) {
         this.provider = defaultProviders;
-        serverStartupTimestamp = System.currentTimeMillis();
         spis = factories.keySet();
 
         for (Spi spi : spis) {
@@ -77,17 +60,6 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
                 }
             }
         }
-    }
-
-    private QuarkusKeycloakSessionFactory() {
-    }
-
-    @Override
-    public void init() {
-        initProviderFactories();
-        AdminPermissions.registerListener(this);
-        // make the session factory ready for hot deployment
-        ProviderManagerRegistry.SINGLETON.setDeployer(this);
     }
 
     private ProviderFactory lookupProviderFactory(Class<? extends ProviderFactory> factoryClazz) {

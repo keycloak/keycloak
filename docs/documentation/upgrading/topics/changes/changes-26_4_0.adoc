@@ -4,10 +4,87 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== `acr_values` request parameter is not forwarded automatically to identity providers
+
+The `acr_values` request parameter is no longer automatically forwarded to OpenID Connect identity providers during authentication.
+This change enhances security by preventing unintended disclosure of authentication context information to external IDPs.
+
+If you are relying on the `acr_values` parameter to be propagated to an identity provider, you must now explicitly set `acr_values` request parameter
+to the `Forwarded query parameters` setting in the identity provider configuration.
+
+=== Configuration changes for additional datasources
+
+In previous releases, the only possible way to configure additional datasources was using raw Quarkus properties that are generally considered unsupported. At the same time, adding additional datasources was supported which led to unclear situation.
+
+To provide a supported and user-friendly way to configure additional datasources, we introduced new dedicated server options for that. Configuring additional datasources using the original approach via the Quarkus properties is considered **unsupported** starting with this release.
+
+Check the following examples on how to migrate your configuration:
+
+==== 1. Use new {project_name} options (preferred)
+The supported way to configure additional datasources is by using the new configuration options.
+
+You can migrate from this configuration in `conf/quarkus.properties`:
+
+[source,properties]
+----
+quarkus.datasource.user-store.db-kind=postgresql
+quarkus.datasource.user-store.username=my-username
+quarkus.datasource.user-store.jdbc.url=jdbc:postgresql://my-remote-postgres:5432/user-store
+quarkus.datasource.user-store.jdbc.transactions=xa
+----
+
+to this configuration in `conf/keycloak.conf`:
+
+[source,properties]
+----
+db-kind-user-store=postgres
+db-username-user-store=my-username
+db-url-full-user-store=jdbc:postgresql://my-remote-postgres:5432/user-store
+# transactions XA is enabled by default for datasources
+----
+
+For more information about the datasource options, check the link:https://www.keycloak.org/server/db#multiple-datasources[Configure multiple datasources] guide.
+
+==== 2. Remove quoting in `quarkus.properties` (unsupported)
+If you are not able to migrate to the {project_name} datasource options right now, remove the additional datasource name quoting to avoid a clash of the datasource options mapping to prevent any issue.
+
+It means that you should migrate your configuration in `conf/quarkus.properties`:
+[source,properties]
+----
+quarkus.datasource."user-store".db-kind=postgresql
+quarkus.datasource."user-store".username=my-username
+----
+
+to a version without the quotation:
+
+[source,properties]
+----
+quarkus.datasource.user-store.db-kind=postgresql
+quarkus.datasource.user-store.username=my-username
+----
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+
+=== Supported Databases Versions
+
+The supported version of each database is now shown in link:{databaseguide_link}[{databaseguide_name}].
+
+It is not a supported configuration if the underlying database specific Hibernate dialect allows the use of a version that differs from those shown.
+
+From 26.3 to 26.4 the support changed as follows:
+
+[cols="1,1,1"]
+|===
+|Database |Minimum support |Dialect minimum
+
+|MariaDB | 10.4 (LTS) -> 10.6 (LTS) | 10.4 (LTS) -> 10.6 (LTS)
+|PostgreSQL | Remained 13.x | 12.x -> 13.x
+|Amazon Aurora PostgreSQL | Remained 15.x | 12.x -> 13.x
+|Microsoft SQLServer | Remained 2019 | 2012 -> 2014
+|===
 
 === Usage of the `exact` request parameter when searching users by attributes
 
@@ -32,6 +109,18 @@ Starting with this release, and when using the original PostgreSQL driver, {proj
 
 You can override this behavior by setting your own value for `targetServerType` in the DB URL or additional properties.
 
+=== Bouncy Castle libraries updated to 2.1.x
+
+If you are running {project_name} in FIPS 140-2 mode, note to update your Bouncy Castle libraries to the versions listed in the release documentation.
+
+With the upgrade to Bouncy Castle 2.1.x, EdDSA is now supported in FIPS 140-2 mode.
+
+=== Creating remote caches automatically on the first startup
+
+When using remote caches, {project_name} now automatically creates the necessary caches during startup if they do not already exist on the {jdgserver_name} server.
+
+For a multi-cluster setup, it is still recommended to create the caches using Cache CRs in advance to verify the correct initialization of the caches and to avoid start-up errors while the caches are present in only one of the sites.
+
 === MySQL and MariaDB wait_timeout validation
 
 In order to prevent connections being closed unexpectedly by the database server, it is necessary to ensure that the {project_name}
@@ -52,9 +141,9 @@ You can still add custom caches without setting this option.
 When upgrading an existing deployment, remove all default cache configurations from your existing `conf/cache-ispn.xml`
 and use the `+--cache-...+` options to make changes for example to the cache sizes.
 
-=== RFC8414 compliant lookup of metadata
+=== RFC 8414 compliant lookup of metadata
 
-{project_name} now exposes an RFC8414-compliant endpoint at the root URL level `/.well-known/` to allow clients to discover OAuth 2.0 Authorization Server Metadata and other well-known providers by the issuer URL.
+{project_name} now exposes an RFC 8414 compliant endpoint at the root URL level `/.well-known/` to allow clients to discover OAuth 2.0 Authorization Server Metadata and other well-known providers by the issuer URL.
 
 As an example, OAuth 2.0 Authorization Server Metadata information was exposed by this URL:
 
@@ -205,8 +294,8 @@ If you have an SMTP server configured for your realm, perform the following migr
 === Aligning the count of users with the actual number of users returned from searches
 
 When searching for users in the Admin Console or by the User API, the count of users returned from the
-`/admin/realms/{realm}/users/count` endpoint is now aligned with the actual number of users returned when executing
-searches by `/admin/realms/{realm}/users`.
+`+/admin/realms/{realm}/users/count+` endpoint is now aligned with the actual number of users returned when executing
+searches by `+/admin/realms/{realm}/users+`.
 
 If you are relying on the users count endpoint, make sure to review your clients so that they expect the users count
 to be aligned with the actual number of users returned from searches.
@@ -217,13 +306,51 @@ The Welcome Page creates regular Admin users instead of temporary ones.
 
 === Fine-grained admin permissions: new `reset-password` scope for Users
 
-The fine-grained admin permissions (FGAP) feature now includes a new scope: `reset-password`. This scope allows for specific permissions to be granted to administrators to reset a user's password without granting them broader`manage` scope.
+The fine-grained admin permissions (FGAP) feature now includes a new scope: `reset-password`. This scope allows for specific permissions to be granted to administrators to reset a user's password without granting them broader `manage` scope.
 
 By default, a user with the existing, broader `manage` scope for the `USERS` resource type will implicitly have permission to reset a user's password. The system checks for the explicit `reset-password` scope first. If that permission is not found, it falls back to checking if the administrator has the `manage` scope. This ensures that existing administrators with the `manage` scope continue to have the ability to reset passwords without any changes to their permissions.
 
 This implicit fallback mechanism ensures a smooth upgrade process for deployments already using fine-grained permissions. The fallback will be deprecated and removed in a future releases, so it is recommended to review and update administrator permissions to use the new `reset-password` scope where appropriate.
 
 For more information about fine-grained admin permissions, see link:{adminguide_finegrained_link}[{adminguide_finegrained_name}].
+
+=== Re-created indexes on the `CLIENT_ATTRIBUTES` and `GROUP_ATTRIBUTE` tables
+
+In some previous versions of {project_name}, the EnterpriseDB (EDB) was considered unsupported. This has now changed and
+EDB Advanced is supported starting with this release. If the EDB JDBC driver was used for connecting to EDB in previous versions,
+some invalid schema changes were applied to the database. To mitigate this, some indexes are automatically re-created during
+the schema migration to this version. **This affects you if you are using a Postgres database (including EDB), regardless if you
+used EDB with previous releases.**
+
+This affects indexes on the `CLIENT_ATTRIBUTES` and `GROUP_ATTRIBUTE` tables. If those tables contain more than 300000 entries,
+{project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement
+on the console during migration to be applied manually after {project_name}'s startup.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
+=== Errors when searching users from LDAP will not fail the request anymore and local users will be returned
+
+Until now, failures when searching for users from an LDAP user federation provider caused the whole request to fail and no users were returned.
+In this release, if an error occurs during the search, local users will still be returned and the error will be logged at the `ERROR` level,
+so that administrators can investigate the root cause of the problem and fix any issue with their LDAP configuration or connectivity
+with the LDAP server.
+
+This change improves the resilience of the system when there are temporary issues with the LDAP server, ensuring that local users can still be accessed even if the LDAP search fails.
+If a local user is linked to a failing LDAP provider, the user will be marked as disabled and read-only until the LDAP server is available again.
+
+=== The `serverinfo` endpoint only returns the system info for administrators in the administrator realm
+
+Starting with this version, the `serverinfo` endpoint, which is used by the admin console to obtain some general information of the {project_name} installation, will only return the system information for administrators in the administration (master) realm. This change was done for security reasons.
+
+If, for whatever reason, an administrator in a common realm needs to access the `systemInfo`, `cpuInfo` or `memoryInfo` fields of the `serverinfo` response, you need to create and assign a new *view-system* role to that admin user:
+
+. In the affected realm, select the management client *realm-management*, and, in the *Roles* tab, create a new role called *view-system*.
+. In *Users* select the administrator account, and, in the *Role mapping* tab, assign the just created *view-system* client role to the admin user.
+
+The previous workaround is marked as deprecated and it can be removed in a future version of {project_name}.
+
+=== Refactoring to `SimpleHttp`
+
+The `SimpleHttp` util in the `server-spi-private` module was refactored and moved to the `org.keycloak.http.simple` package.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
@@ -241,6 +368,12 @@ The Typescript code `ConsentScopeRepresentation` for the Account Console already
 The options `+--spi-user-sessions--infinispan--offline-session-cache-entry-lifespan-override+` and `+--spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override+` are now deprecated for removal.
 
 As an alternative, use the `cache-embedded-offline-sessions-max-count` and `cache-embedded-offline-client-sessions-max-count` options to limit the memory usage if the default of 10,000 cache offline user and client sessions does not work in your scenario.
+
+=== Timestamp in the AuthenticatedClientSessionModel
+
+The timestamp of the last refresh token update of OpenID Connect clients is currently available via `AuthenticatedClientSessionModel#getTimestamp()` and `AuthenticatedClientSessionModel#setTimestamp()`.
+
+This is now deprecated for removal without a replacement.
 
 === Passkeys Conditional UI Authenticator requires a feature
 
@@ -263,11 +396,4 @@ You should also review the other methods that are deprecated for removal in this
 === Simplified API for AuthenticatedClientSessionModel
 
 The `clientId` note in the authenticated client session is an internal note present only when using the embedded caches, and is now deprecated for removal. Instead, use the `getClient()` method.
-
-// ------------------------ Removed features ------------------------ //
-== Removed features
-
-The following features have been removed from this release.
-
-=== <TODO>
 

@@ -17,25 +17,18 @@
 
 package org.keycloak.storage;
 
-import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
-import static org.keycloak.utils.StreamsUtil.distinctByKey;
-import static org.keycloak.utils.StreamsUtil.paginatedStream;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.opentelemetry.api.trace.StatusCode;
-import org.jboss.logging.Logger;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.reflections.Types;
@@ -52,25 +45,28 @@ import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
+import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
+import org.keycloak.models.utils.StorageUnavailableUserModelDelegate;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.datastore.DefaultDatastoreProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
-import org.keycloak.storage.managers.UserStorageSyncManager;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserBulkUpdateProvider;
 import org.keycloak.storage.user.UserCountMethodsProvider;
@@ -84,6 +80,13 @@ import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
 import org.keycloak.utils.StreamsUtil;
 import org.keycloak.utils.StringUtil;
+
+import io.opentelemetry.api.trace.StatusCode;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
+import static org.keycloak.utils.StreamsUtil.distinctByKey;
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -110,10 +113,6 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
     /**
      * Allows a UserStorageProvider to proxy and/or synchronize an imported user.
-     *
-     * @param realm
-     * @param user
-     * @return
      */
     protected UserModel validateUser(RealmModel realm, UserModel user) {
         if (user == null) {
@@ -163,13 +162,18 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             return user;
         }
 
-        UserModel validated = validator.validate(realm, user);
+        try {
+            UserModel validated = validator.validate(realm, user);
 
-        if (validated == null) {
-            return deleteFederatedUser(realm, user);
+            if (validated == null) {
+                return deleteFederatedUser(realm, user);
+            }
+
+            return validated;
+        } catch (Exception e) {
+            logger.warnf(e, "User storage provider %s failed during federated user validation", model.getName());
+            return new StorageUnavailableUserModelDelegate(user, ignore -> new ReadOnlyException("The user is read-only. The user storage provider '" + model.getName() + "' is currently unavailable. Check the server logs for more details."));
         }
-
-        return validated;
     }
 
     private ReadOnlyUserModelDelegate deleteFederatedUser(RealmModel realm, UserModel user) {
@@ -213,7 +217,8 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     private static <T> Stream<T> getCredentialProviders(KeycloakSession session, Class<T> type) {
         return session.getKeycloakSessionFactory().getProviderFactoriesStream(CredentialProvider.class)
                 .filter(f -> Types.supports(type, f, CredentialProviderFactory.class))
-                .map(f -> (T) session.getProvider(CredentialProvider.class, f.getId()));
+                .map(f -> session.getProvider(CredentialProvider.class, f.getId()))
+                .map(type::cast);
     }
 
     @Override
@@ -226,7 +231,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         CredentialValidationOutput result = null;
         for (CredentialAuthentication credentialAuthentication : credentialAuthenticationStream
                 .filter(credentialAuthentication -> credentialAuthentication.supportsCredentialAuthenticationFor(input.getType()))
-                .collect(Collectors.toList())) {
+                .toList()) {
             CredentialValidationOutput validationOutput = session.getProvider(TracingProvider.class).trace(credentialAuthentication.getClass(), "authenticate",
                     span -> {
                         CredentialValidationOutput output = credentialAuthentication.authenticate(realm, input);
@@ -296,109 +301,133 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @FunctionalInterface
-    interface PaginatedQuery {
+    protected interface PaginatedQuery {
         Stream<UserModel> query(Object provider, Integer firstResult, Integer maxResults);
     }
 
     @FunctionalInterface
-    interface CountQuery {
+    protected interface CountQuery {
         int query(Object provider, Integer firstResult, Integer maxResult);
     }
 
     protected Stream<UserModel> query(PaginatedQuery pagedQuery, RealmModel realm, Integer firstResult, Integer maxResults) {
-        return query(pagedQuery, ((provider, first, max) -> (int) pagedQuery.query(provider, first, max).count()), realm, firstResult, maxResults);
+        return query(pagedQuery, ((provider, first, max) -> (int) pagedQuery.query(provider, first, max).count()), realm, firstResult, maxResults, true);
     }
 
-    protected Stream<UserModel> query(PaginatedQuery pagedQuery, CountQuery countQuery, RealmModel realm, Integer firstResult, Integer maxResults) {
-        if (maxResults != null && maxResults == 0) return Stream.empty();
-
-        Stream<Object> providersStream = Stream.concat(Stream.of((Object) localStorage()), getEnabledStorageProviders(realm, UserQueryMethodsProvider.class));
-
-        UserFederatedStorageProvider federatedStorageProvider = getFederatedStorage();
-        if (federatedStorageProvider != null) {
-            providersStream = Stream.concat(providersStream, Stream.of(federatedStorageProvider));
+    protected Stream<UserModel> query(PaginatedQuery pagedQuery, CountQuery countQuery, RealmModel realm, Integer firstResult, Integer maxResults, boolean requiresFederatedStorage) {
+        if (maxResults != null && maxResults == 0) {
+            return Stream.empty();
         }
 
-        final AtomicInteger currentFirst;
-        final AtomicBoolean needsAdditionalFirstResultFiltering = new AtomicBoolean(false);
+        var storageProviders = getEnabledStorageProviders(realm, UserQueryMethodsProvider.class).toList();
 
-        if (firstResult == null || firstResult <= 0) { // We don't want to skip any users so we don't need to do firstResult filtering
-            currentFirst = new AtomicInteger(0);
-        } else {
-            // This is an optimization using count query to skip querying users if we can use count method to determine how many users can be provided by each provider
-            AtomicBoolean droppingProviders = new AtomicBoolean(true);
-            currentFirst = new AtomicInteger(firstResult);
-
-            providersStream = providersStream
-                .filter(provider -> { // This is basically dropWhile
-                    if (!droppingProviders.get()) return true; // We have already gathered enough users to pass firstResult number in previous providers, we can take all following providers
-
-                    if (!(provider instanceof UserCountMethodsProvider)) {
-                        logger.tracef("We encountered a provider (%s) that does not implement count queries therefore we can't say how many users it can provide.", provider.getClass().getSimpleName());
-                        // for this reason we need to start querying this provider and all following providers
-                        droppingProviders.set(false);
-                        needsAdditionalFirstResultFiltering.set(true);
-                        return true; // don't filter out this provider because we are unable to say how many users it can provide
-                    }
-
-                    long expectedNumberOfUsersForProvider = countQueryWithGracefulDegradation(provider, countQuery, 0, currentFirst.get() + 1); // check how many users we can obtain from this provider
-                    logger.tracef("This provider (%s) is able to return %d users.", provider.getClass().getSimpleName(), expectedNumberOfUsersForProvider);
-
-                    if (expectedNumberOfUsersForProvider == currentFirst.get()) { // This provider provides exactly the amount of users we need for passing firstResult, we can set currentFirst to 0 and drop this provider
-                        currentFirst.set(0);
-                        droppingProviders.set(false);
-                        return false;
-                    }
-
-                    if (expectedNumberOfUsersForProvider > currentFirst.get()) { // If we can obtain enough enough users from this provider to fulfill our need we can stop dropping providers
-                        droppingProviders.set(false);
-                        return true; // don't filter out this provider because we are going to return some users from it
-                    }
-
-                    logger.tracef("This provider (%s) cannot provide enough users to pass firstResult so we are going to filter it out and change "
-                            + "firstResult for next provider: %d - %d = %d", provider.getClass().getSimpleName(),
-                            currentFirst.get(), expectedNumberOfUsersForProvider, currentFirst.get() - expectedNumberOfUsersForProvider);
-                    currentFirst.set((int) (currentFirst.get() - expectedNumberOfUsersForProvider));
-                    return false;
-                })
-                // collecting stream of providers to ensure the filtering (above) is evaluated before we move forward to actual querying
-                .collect(Collectors.toList()).stream();
+        if (firstResult == null || firstResult <= 0) {
+            // we don't have a first result set, so we start from the beginning and go through all providers.
+            var providers = Stream.concat(Stream.of(localStorage()), concatExternalWithFederated(storageProviders, 0, requiresFederatedStorage));
+            return queryProviders(providers, pagedQuery, 0, maxResults, false);
         }
 
-        if (needsAdditionalFirstResultFiltering.get() && currentFirst.get() > 0) {
-            logger.tracef("In the providerStream there is a provider that does not support count queries and we need to skip some users.");
-            // we need to make sure, we skip firstResult users from this or the following providers
-            if (maxResults == null || maxResults < 0) {
-                return paginatedStream(providersStream
-                        .flatMap(provider -> queryWithGracefulDegradation(provider, pagedQuery, null, null)), currentFirst.get(), null);
-            } else {
-                final AtomicInteger currentMax = new AtomicInteger(currentFirst.get() + maxResults);
-
-                return paginatedStream(providersStream
-                    .flatMap(provider -> queryWithGracefulDegradation(provider, pagedQuery, null, currentMax.get()))
-                    .peek(userModel -> {
-                        currentMax.updateAndGet(i -> i > 0 ? i - 1 : i);
-                    }), currentFirst.get(), maxResults);
+        if (storageProviders.isEmpty()) {
+            if (requiresFederatedStorage) {
+                // we need to count the database.
+                return queryLocalAndFederatedStorage(pagedQuery, countQuery, firstResult, maxResults);
             }
+            // fast path, stream from the database only without counting anything.
+            return queryLocalStorage(pagedQuery, firstResult, maxResults);
         }
 
-        // Actual user querying
+        var localStorage = localStorage();
+        var count = countQueryWithGracefulDegradation(localStorage, countQuery, 0, firstResult + 1);
+
+        if (count > firstResult) {
+            // we need some users from the database
+            var providers = Stream.concat(Stream.of(localStorage()), concatExternalWithFederated(storageProviders, 0, requiresFederatedStorage));
+            return queryProviders(providers, pagedQuery, firstResult, maxResults, false);
+        }
+
+        if (count == firstResult) {
+            // we have the exact users in the database
+            // we don't need to count anything else, and we start from the first external storage provider.
+            var providers = concatExternalWithFederated(storageProviders, 0, requiresFederatedStorage);
+            return queryProviders(providers, pagedQuery, 0, maxResults, false);
+        }
+
+        // we need to count the external providers
+        firstResult -= count;
+        int lastProviderToCount = requiresFederatedStorage ?
+                storageProviders.size():
+                storageProviders.size() - 1;
+        int startIdx = 0;
+
+        for (; startIdx < lastProviderToCount; ++startIdx) {
+            var provider = storageProviders.get(startIdx);
+            if (!(provider instanceof UserCountMethodsProvider)) {
+                assert firstResult > 0;
+                Stream<?> providers = concatExternalWithFederated(storageProviders, startIdx, requiresFederatedStorage);
+                return queryProviders(providers, pagedQuery, firstResult, maxResults, true);
+            }
+            count = countQueryWithGracefulDegradation(storageProviders.get(startIdx), countQuery, 0, firstResult + 1);
+            if (count > firstResult) {
+                // we start on this provider as we need some users from it.
+                break;
+            }
+            if (count == firstResult) {
+                // exact users required to offset, start querying the next provider.
+                startIdx++;
+                firstResult = 0;
+                break;
+            }
+            firstResult -= count;
+        }
+
+        var providers = concatExternalWithFederated(storageProviders, startIdx, requiresFederatedStorage);
+        return queryProviders(providers, pagedQuery, firstResult, maxResults, false);
+    }
+
+    private Stream<UserModel> queryLocalAndFederatedStorage(PaginatedQuery pagedQuery, CountQuery countQuery, int firstResult, Integer maxResults) {
+        assert firstResult > 0;
+        var localStorage = localStorage();
+        // check how many users we can obtain from the local provider
+        var count = countQueryWithGracefulDegradation(localStorage, countQuery, 0, firstResult + 1);
+
+        if (count <= firstResult) {
+            // local provider does not have enough user to skip the first users, querying the federated provider only.
+            return queryProviders(Stream.of(getFederatedStorage()), pagedQuery, firstResult - count, maxResults, false);
+        }
+
+        return queryProviders(Stream.of(localStorage, getFederatedStorage()), pagedQuery, firstResult, maxResults, false);
+    }
+
+    private Stream<UserModel> queryLocalStorage(PaginatedQuery pagedQuery, int firstResult, Integer maxResults) {
+        assert firstResult > 0;
+        return queryWithGracefulDegradation(localStorage(), pagedQuery, firstResult, maxResults);
+    }
+
+    private static Stream<UserModel> queryProviders(Stream<?> providersStream, PaginatedQuery pagedQuery, int offset, Integer maxResults, boolean useStreamSkip) {
+        var firstResults = useStreamSkip ? new AtomicInteger(0) : new AtomicInteger(offset);
         if (maxResults == null || maxResults < 0) {
-            // No maxResult set, we want all users
-            return providersStream
-                    .flatMap(provider -> queryWithGracefulDegradation(provider, pagedQuery, currentFirst.getAndSet(0), null));
-        } else {
-            final AtomicInteger currentMax = new AtomicInteger(maxResults);
-
-            // Query users with currentMax variable counting how many users we return
-            return providersStream
-                    .filter(provider -> currentMax.get() != 0) // If we reach currentMax == 0, we can skip querying all following providers
-                    .flatMap(provider -> queryWithGracefulDegradation(provider, pagedQuery, currentFirst.getAndSet(0), currentMax.get()))
-                    .peek(userModel -> {
-                        currentMax.updateAndGet(i -> i > 0 ? i - 1 : i);
-                    });
+            var users = providersStream
+                    .flatMap(provider -> queryWithGracefulDegradation(provider, pagedQuery, firstResults.getAndSet(0), null));
+            return useStreamSkip ? users.skip(offset) : users;
         }
 
+        var currentMax = useStreamSkip ?
+                new AtomicInteger(offset + maxResults) :
+                new AtomicInteger(maxResults);
+
+        // Query users with currentMax variable counting how many users we return
+        var users = providersStream
+                .filter(provider -> currentMax.get() != 0) // If we reach currentMax == 0, we can skip querying all following providers
+                .flatMap(provider -> queryWithGracefulDegradation(provider, pagedQuery, firstResults.getAndSet(0), currentMax.get()))
+                .peek(userModel -> currentMax.updateAndGet(i -> i > 0 ? i - 1 : i));
+        return useStreamSkip ? users.skip(offset).limit(maxResults) : users.limit(maxResults);
+    }
+
+    private Stream<?> concatExternalWithFederated(List<?> externalStorage, int startIdx, boolean requiresFederatedStorage) {
+        Stream<?> providers = externalStorage.subList(startIdx, externalStorage.size()).stream();
+        return requiresFederatedStorage ?
+                Stream.concat(providers, Stream.of(getFederatedStorage())) :
+                providers;
     }
 
     /**
@@ -406,7 +435,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
      * If the provider throws an exception, logs the error and returns an empty stream
      * to allow other providers to continue functioning.
      */
-    private Stream<UserModel> queryWithGracefulDegradation(Object provider, PaginatedQuery pagedQuery, 
+    private static Stream<UserModel> queryWithGracefulDegradation(Object provider, PaginatedQuery pagedQuery,
                                                           Integer firstResult, Integer maxResults) {
         try {
             return pagedQuery.query(provider, firstResult, maxResults);
@@ -559,7 +588,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
                     }
                     return 0;
                 },
-                realm, firstResult, maxResults);
+                realm, firstResult, maxResults, true);
 
         return importValidation(realm, results);
     }
@@ -688,7 +717,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             }
             return 0;
         }
-        , realm, firstResult, maxResults);
+                , realm, firstResult, maxResults, false);
         return importValidation(realm, results);
     }
 
@@ -770,7 +799,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
     @Override
     public void addFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel socialLink) {
-        if (StorageId.isLocalStorage(user)) {
+        if (StorageId.isLocalStorage(user.getId())) {
             localStorage().addFederatedIdentity(realm, user, socialLink);
         } else {
             getFederatedStorage().addFederatedIdentity(realm, user.getId(), socialLink);
@@ -801,7 +830,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
     @Override
     public void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
-        if (StorageId.isLocalStorage(federatedUser)) {
+        if (StorageId.isLocalStorage(federatedUser.getId())) {
             localStorage().updateFederatedIdentity(realm, federatedUser, federatedIdentityModel);
         } else {
             getFederatedStorage().updateFederatedIdentity(realm, federatedUser.getId(), federatedIdentityModel);
@@ -811,7 +840,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     @Override
     public boolean removeFederatedIdentity(RealmModel realm, UserModel user, String socialProvider) {
         FederatedIdentityModel federatedIdentityModel;
-        if (StorageId.isLocalStorage(user)) {
+        if (StorageId.isLocalStorage(user.getId())) {
             UserProvider localStorage = localStorage();
             federatedIdentityModel = localStorage.getFederatedIdentity(realm, user, socialProvider);
             localStorage.removeFederatedIdentity(realm, user, socialProvider);
@@ -905,8 +934,105 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
+    public UserVerifiableCredentialModel addVerifiableCredential(String userId, UserVerifiableCredentialModel credentialModel) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().addVerifiableCredential(userId, credentialModel);
+        } else {
+            return getFederatedStorage().addVerifiableCredential(userId, credentialModel);
+        }
+    }
+
+    @Override
+    public UserVerifiableCredentialModel updateVerifiableCredential(String userId, String clientScopeId) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().updateVerifiableCredential(userId, clientScopeId);
+        } else {
+            return getFederatedStorage().updateVerifiableCredential(userId, clientScopeId);
+        }
+    }
+
+    @Override
+    public boolean removeVerifiableCredential(String userId, String clientScopeId) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().removeVerifiableCredential(userId, clientScopeId);
+        } else {
+            return getFederatedStorage().removeVerifiableCredential(userId, clientScopeId);
+        }
+    }
+
+    @Override
+    public Stream<UserVerifiableCredentialModel> getVerifiableCredentialsByUser(String userId) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().getVerifiableCredentialsByUser(userId);
+        } else {
+            return getFederatedStorage().getVerifiableCredentialsByUser(userId);
+        }
+    }
+
+    @Override
+    public UserVerifiableCredentialModel getVerifiableCredentialById(String id) {
+        UserVerifiableCredentialModel credentialModel = localStorage().getVerifiableCredentialById(id);
+        if (credentialModel == null) {
+            return getFederatedStorage().getVerifiableCredentialById(id);
+        }
+        return credentialModel;
+    }
+
+    @Override
+    public UserVerifiableCredentialModel getVerifiableCredentialByClientScope(String userId, String clientScopeId) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().getVerifiableCredentialByClientScope(userId, clientScopeId);
+        } else {
+            return getFederatedStorage().getVerifiableCredentialByClientScope(userId, clientScopeId);
+        }
+    }
+
+    @Override
+    public IssuedVerifiableCredentialModel addIssuedVerifiableCredential(IssuedVerifiableCredentialModel issuedVc) {
+        if (StorageId.isLocalStorage(issuedVc.getUserId())) {
+            return localStorage().addIssuedVerifiableCredential(issuedVc);
+        } else {
+            return getFederatedStorage().addIssuedVerifiableCredential(issuedVc);
+        }
+    }
+
+    @Override
+    public Stream<IssuedVerifiableCredentialModel> getIssuedVerifiableCredentialsStreamByUser(String userId) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().getIssuedVerifiableCredentialsStreamByUser(userId);
+        } else {
+            return getFederatedStorage().getIssuedVerifiableCredentialsStreamByUser(userId);
+        }
+    }
+
+    @Override
+    public boolean removeIssuedVerifiableCredential(String credentialId) {
+        if (localStorage().removeIssuedVerifiableCredential(credentialId)) {
+            return true;
+        }
+        if (getFederatedStorage() != null) {
+            return getFederatedStorage().removeIssuedVerifiableCredential(credentialId);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean removeIssuedVerifiableCredential(String userId, String credentialId) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().removeIssuedVerifiableCredential(userId, credentialId);
+        }
+        return getFederatedStorage() != null && getFederatedStorage().removeIssuedVerifiableCredential(userId, credentialId);
+    }
+
+    @Override
+    public void removeExpiredIssuedVerifiableCredentials() {
+        localStorage().removeExpiredIssuedVerifiableCredentials();
+        if (getFederatedStorage() != null) getFederatedStorage().removeExpiredIssuedVerifiableCredentials();
+    }
+
+    @Override
     public void setNotBeforeForUser(RealmModel realm, UserModel user, int notBefore) {
-        if (StorageId.isLocalStorage(user)) {
+        if (StorageId.isLocalStorage(user.getId())) {
             localStorage().setNotBeforeForUser(realm, user, notBefore);
         } else {
             getFederatedStorage().setNotBeforeForUser(realm, user.getId(), notBefore);
@@ -915,7 +1041,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
     @Override
     public int getNotBeforeOfUser(RealmModel realm, UserModel user) {
-        if (StorageId.isLocalStorage(user)) {
+        if (StorageId.isLocalStorage(user.getId())) {
             return localStorage().getNotBeforeOfUser(realm, user);
         } else {
             return getFederatedStorage().getNotBeforeOfUser(realm, user.getId());
@@ -942,7 +1068,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     @Override
     public Stream<FederatedIdentityModel> getFederatedIdentitiesStream(RealmModel realm, UserModel user) {
         if (user == null) throw new IllegalStateException("Federated user no longer valid");
-        Stream<FederatedIdentityModel> stream = StorageId.isLocalStorage(user) ?
+        Stream<FederatedIdentityModel> stream = StorageId.isLocalStorage(user.getId()) ?
                 localStorage().getFederatedIdentitiesStream(realm, user) : Stream.empty();
         if (getFederatedStorage() != null)
             stream = Stream.concat(stream, getFederatedStorage().getFederatedIdentitiesStream(user.getId(), realm));
@@ -952,7 +1078,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     @Override
     public FederatedIdentityModel getFederatedIdentity(RealmModel realm, UserModel user, String socialProvider) {
         if (user == null) throw new IllegalStateException("Federated user no longer valid");
-        if (StorageId.isLocalStorage(user)) {
+        if (StorageId.isLocalStorage(user.getId())) {
             FederatedIdentityModel model = localStorage().getFederatedIdentity(realm, user, socialProvider);
             if (model != null) return model;
         }
@@ -989,8 +1115,18 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (!component.getProviderType().equals(UserStorageProvider.class.getName())) return;
         localStorage().preRemove(realm, component);
         if (getFederatedStorage() != null) getFederatedStorage().preRemove(realm, component);
-        UserStorageSyncManager.notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(component), true);
+        // enlistAfterCompletion(..) as we need to ensure that the realm is updated with the final settings
+        session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+            @Override
+            protected void commitImpl() {
+                StoreSyncEvent.fire(session, realm, component, true);
+            }
 
+            @Override
+            protected void rollbackImpl() {
+                // NOOP
+            }
+        });
     }
 
     @Override
@@ -1011,14 +1147,14 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
     @Override
     public void onCreate(KeycloakSession session, RealmModel realm, ComponentModel model) {
-        ComponentFactory factory = ComponentUtil.getComponentFactory(session, model);
+        ComponentFactory<?, ?> factory = ComponentUtil.getComponentFactory(session, model);
         if (!(factory instanceof UserStorageProviderFactory)) return;
 
         // enlistAfterCompletion(..) as we need to ensure that the realm is available in the system
         session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
             @Override
             protected void commitImpl() {
-                UserStorageSyncManager.notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(model), false);
+                StoreSyncEvent.fire(session, realm, model, false);
             }
 
             @Override
@@ -1030,25 +1166,39 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
     @Override
     public void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel oldModel, ComponentModel newModel) {
-        ComponentFactory factory = ComponentUtil.getComponentFactory(session, newModel);
-        if (!(factory instanceof UserStorageProviderFactory)) return;
-        UserStorageProviderModel old = new UserStorageProviderModel(oldModel);
-        UserStorageProviderModel newP= new UserStorageProviderModel(newModel);
-        if (old.getChangedSyncPeriod() != newP.getChangedSyncPeriod() || old.getFullSyncPeriod() != newP.getFullSyncPeriod()
-                || old.isImportEnabled() != newP.isImportEnabled()) {
-            UserStorageSyncManager.notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(newModel), false);
+        ComponentFactory<?, ?> factory = ComponentUtil.getComponentFactory(session, newModel);
+
+        if (!(factory instanceof UserStorageProviderFactory)) {
+            return;
         }
 
+        UserStorageProviderModel previous = new UserStorageProviderModel(oldModel);
+        UserStorageProviderModel actual= new UserStorageProviderModel(newModel);
+
+        if (isSyncSettingsUpdated(previous, actual)) {
+            // enlistAfterCompletion(..) as we need to ensure that the realm is updated with the final settings
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    StoreSyncEvent.fire(session, realm, actual, false);
+                }
+
+                @Override
+                protected void rollbackImpl() {
+                    // NOOP
+                }
+            });
+        }
     }
 
     @Override
     public void onCache(RealmModel realm, CachedUserModel user, UserModel delegate) {
-        if (StorageId.isLocalStorage(user)) {
+        if (StorageId.isLocalStorage(user.getId())) {
             if (UserStoragePrivateUtil.userLocalStorage(session) instanceof OnUserCache) {
                 ((OnUserCache)UserStoragePrivateUtil.userLocalStorage(session)).onCache(realm, user, delegate);
             }
         } else {
-            OnUserCache provider = getStorageProviderInstance(realm, StorageId.resolveProviderId(user), OnUserCache.class);
+            OnUserCache provider = getStorageProviderInstance(realm, StorageId.providerId(user.getId()), OnUserCache.class);
             if (provider != null ) {
                 provider.onCache(realm, user, delegate);
             }
@@ -1071,6 +1221,11 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         return Collections.emptyList();
     }
 
+    @Override
+    public UserCredentialManager getUserCredentialManager(UserModel user) {
+        return new org.keycloak.credential.UserCredentialManager(session, session.getContext().getRealm(), user);
+    }
+
     private boolean isReadOnlyOrganizationMember(UserModel delegate) {
         if (delegate == null) {
             return false;
@@ -1082,14 +1237,16 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
         OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
 
-        if (organizationProvider.count() == 0) {
+        if (!organizationProvider.hasOrganizations()) {
             return false;
         }
 
-        // check if provider is enabled and user is managed member of a disabled organization OR provider is disabled and user is managed member
-        return organizationProvider.getByMember(delegate)
-                .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
-                        (!organizationProvider.isEnabled() && org.isManaged(delegate)));
+        // disable FGAP filtering for this system-level check to avoid infinite recursion:
+        // getByMember -> applyAuthorizationFilters -> getPredicates -> getUser -> getUserById -> validateUser -> isReadOnlyOrganizationMember -> ...
+        return AdminPermissionsSchema.runWithoutAuthorization(session, () ->
+                organizationProvider.getByMember(delegate)
+                        .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
+                                (!organizationProvider.isEnabled() && org.isManaged(delegate))));
     }
 
     private void publishUserPreRemovedEvent(RealmModel realm, UserModel user) {
@@ -1133,8 +1290,24 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     private UserModel tryResolveFederatedUser(RealmModel realm, Function<UserLookupProvider, UserModel> loader) {
-        return mapEnabledStorageProvidersWithTimeout(realm, UserLookupProvider.class, loader)
-                .findFirst()
-                .orElse(null);
+        return mapEnabledStorageProvidersWithTimeout(realm, UserLookupProvider.class, provider -> {
+            try {
+                return loader.apply(provider);
+            } catch (StorageUnavailableException e) {
+                logger.warnf(e, "User storage provider %s is unavailable. " +
+                             "Continuing with other providers for graceful degradation.",
+                             provider.getClass().getSimpleName());
+                return null;
+            }
+        })
+        .findFirst()
+        .orElse(null);
+    }
+
+    private boolean isSyncSettingsUpdated(UserStorageProviderModel previous, UserStorageProviderModel actual) {
+        return previous.getChangedSyncPeriod() != actual.getChangedSyncPeriod()
+                || previous.getFullSyncPeriod() != actual.getFullSyncPeriod()
+                || previous.isImportEnabled() != actual.isImportEnabled()
+                || previous.isEnabled() != actual.isEnabled();
     }
 }

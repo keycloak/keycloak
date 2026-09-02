@@ -1,17 +1,17 @@
 name: Setup PNPM
-description: Sets up Node.js and runs PNPM so dependencies are installed.
+description: Sets up Node.js, enables Wireit and PNPM caching, and installs dependencies.
 
 inputs:
   node-version:
     description: Node.js version
     required: false
-    default: "22"
+    default: "24"
 
 runs:
   using: composite
   steps:
     - name: Set up Node.js
-      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       with:
         node-version: ${{ inputs.node-version }}
         check-latest: true

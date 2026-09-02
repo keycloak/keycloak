@@ -1,6 +1,7 @@
 name: Task
 description: Any tasks that are not directly adding a new feature, enhancement or fixing a bug
 labels: ["kind/task"]
+type: task
 body:
   - type: textarea
     id: description

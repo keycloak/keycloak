@@ -23,7 +23,7 @@ The following `Batch` CR takes a site offline as described in the operational pr
 
 [source,yaml,subs="+attributes"]
 ----
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Batch
 metadata:
   name: take-offline

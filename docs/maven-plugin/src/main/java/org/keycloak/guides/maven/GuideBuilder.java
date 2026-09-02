@@ -9,10 +9,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
 
-import org.apache.maven.plugin.logging.Log;
 import org.keycloak.common.Version;
 
 import freemarker.template.TemplateException;
+import org.apache.maven.plugin.logging.Log;
 
 public class GuideBuilder {
 
@@ -21,13 +21,14 @@ public class GuideBuilder {
     private final Path targetDir;
     private final Log log;
 
-    public GuideBuilder(Path srcDir, Path targetDir, Log log, Properties properties) throws IOException {
+    public GuideBuilder(Path srcDir, Path targetDir, Log log, Properties properties,
+            Path docFile, Path cliExamplesFile, Path jsExamplesFile) throws IOException {
         this.srcDir = srcDir;
         this.targetDir = targetDir;
         this.log = log;
 
         Map<String, Object> globalAttributes = new HashMap<>();
-        globalAttributes.put("ctx", new Context(srcDir));
+        globalAttributes.put("ctx", new Context(srcDir, docFile, cliExamplesFile, jsExamplesFile));
         globalAttributes.put("version", Version.VERSION);
         globalAttributes.put("properties", properties);
 

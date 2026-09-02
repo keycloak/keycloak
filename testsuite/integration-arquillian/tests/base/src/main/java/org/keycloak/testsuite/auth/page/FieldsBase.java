@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.auth.page;
 
 import org.keycloak.testsuite.page.Form;
+
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 

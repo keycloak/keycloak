@@ -48,7 +48,9 @@ public interface Errors {
     String USERNAME_IN_USE = "username_in_use";
     String EMAIL_IN_USE = "email_in_use";
     String EMAIL_ALREADY_VERIFIED = "email_already_verified";
+    String IDENTITY_PROVIDER_LINK_CONFIRMED_ALREADY = "identity_provider_link_confirmed_already";
     String ORG_NOT_FOUND = "org_not_found";
+    String ORG_DISABLED = "org_disabled";
     String USER_ORG_MEMBER_ALREADY = "user_org_member_already";
 
     String INVALID_REDIRECT_URI = "invalid_redirect_uri";
@@ -61,6 +63,7 @@ public interface Errors {
     String INVALID_SAML_LOGOUT_RESPONSE = "invalid_logout_response";
     String INVALID_SAML_ARTIFACT = "invalid_artifact";
     String INVALID_SAML_ARTIFACT_RESPONSE = "invalid_artifact_response";
+    String INVALID_SCOPE = "invalid_scope";
     String SAML_TOKEN_NOT_FOUND = "saml_token_not_found";
     String INVALID_SIGNATURE = "invalid_signature";
     String INVALID_REGISTRATION = "invalid_registration";
@@ -68,6 +71,8 @@ public interface Errors {
     String INVALID_FORM = "invalid_form";
     String INVALID_CONFIG = "invalid_config";
     String EXPIRED_CODE = "expired_code";
+    String MISSING_TX_CODE = "missing_tx_code";
+    String INVALID_TX_CODE = "invalid_tx_code";
     String INVALID_INPUT = "invalid_input";
     String COOKIE_NOT_FOUND = "cookie_not_found";
     String ALREADY_LOGGED_IN = "already_logged_in";
@@ -104,6 +109,9 @@ public interface Errors {
 
     String INVALID_DPOP_PROOF = "invalid_dpop_proof";
 
+    // https://datatracker.ietf.org/doc/html/rfc9396#name-authorization-error-respons
+    String INVALID_AUTHORIZATION_DETAILS = "invalid_authorization_details";
+
     String NOT_LOGGED_IN = "not_logged_in";
     String UNKNOWN_IDENTITY_PROVIDER = "unknown_identity_provider";
     String ILLEGAL_ORIGIN = "illegal_origin";
@@ -122,6 +130,7 @@ public interface Errors {
     String INVALID_OAUTH2_USER_CODE = "invalid_oauth2_user_code";
     String SLOW_DOWN = "slow_down";
     String GENERIC_AUTHENTICATION_ERROR= "generic_authentication_error";
+    String GENERIC= "generic";
 
     String CREDENTIAL_NOT_FOUND = "credential_not_found";
     String MISSING_CREDENTIAL_ID = "missing_credential_id";

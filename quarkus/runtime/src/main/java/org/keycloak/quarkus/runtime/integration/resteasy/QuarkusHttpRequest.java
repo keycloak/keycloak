@@ -21,19 +21,16 @@ import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.Objects;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSession;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.UriInfo;
 
-import org.jboss.resteasy.reactive.common.util.QuarkusMultivaluedHashMap;
-import org.jboss.resteasy.reactive.server.core.ResteasyReactiveRequestContext;
-import org.jboss.resteasy.reactive.server.core.multipart.FormData;
-import org.jboss.resteasy.reactive.server.multipart.FormValue;
 import org.keycloak.config.ProxyOptions;
 import org.keycloak.http.FormPartValue;
 import org.keycloak.http.HttpRequest;
@@ -42,6 +39,10 @@ import org.keycloak.quarkus.runtime.integration.jaxrs.EmptyMultivaluedMap;
 import org.keycloak.services.FormPartValueImpl;
 
 import io.vertx.ext.web.RoutingContext;
+import org.jboss.resteasy.reactive.common.util.QuarkusMultivaluedHashMap;
+import org.jboss.resteasy.reactive.server.core.ResteasyReactiveRequestContext;
+import org.jboss.resteasy.reactive.server.core.multipart.FormData;
+import org.jboss.resteasy.reactive.server.multipart.FormValue;
 
 public final class QuarkusHttpRequest implements HttpRequest {
 
@@ -53,23 +54,16 @@ public final class QuarkusHttpRequest implements HttpRequest {
     private MultivaluedMap<String, String> decodedFormParameters;
 
     public <R> QuarkusHttpRequest(ResteasyReactiveRequestContext context) {
-        this.context = context;
+        this.context = Objects.requireNonNull(context);
     }
 
     @Override
     public String getHttpMethod() {
-        if (context == null) {
-            return null;
-        }
         return context.getMethod();
     }
 
     @Override
     public MultivaluedMap<String, String> getDecodedFormParameters() {
-        if (context == null) {
-            return null;
-        }
-
         if (decodedFormParameters == null) {
             FormData parameters = context.getFormData();
 
@@ -97,9 +91,6 @@ public final class QuarkusHttpRequest implements HttpRequest {
 
     @Override
     public MultivaluedMap<String, FormPartValue> getMultiPartFormParameters() {
-        if (context == null) {
-            return null;
-        }
         FormData formData = context.getFormData();
 
         if (formData == null) {
@@ -135,9 +126,6 @@ public final class QuarkusHttpRequest implements HttpRequest {
 
     @Override
     public HttpHeaders getHttpHeaders() {
-        if (context == null) {
-            return null;
-        }
         return context.getHttpHeaders();
     }
 
@@ -166,9 +154,6 @@ public final class QuarkusHttpRequest implements HttpRequest {
 
     @Override
     public UriInfo getUri() {
-        if (context == null) {
-            return null;
-        }
         return context.getUriInfo();
     }
 

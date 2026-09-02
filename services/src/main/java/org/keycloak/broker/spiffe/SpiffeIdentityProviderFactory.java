@@ -1,15 +1,16 @@
 package org.keycloak.broker.spiffe;
 
+import java.util.Map;
+
 import org.keycloak.Config;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
+import org.keycloak.broker.provider.ClientAssertionIdentityProviderFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
-import java.util.Map;
-
-public class SpiffeIdentityProviderFactory extends AbstractIdentityProviderFactory<SpiffeIdentityProvider> implements EnvironmentDependentProviderFactory {
+public class SpiffeIdentityProviderFactory extends AbstractIdentityProviderFactory<SpiffeIdentityProvider> implements EnvironmentDependentProviderFactory, ClientAssertionIdentityProviderFactory {
 
     public static final String PROVIDER_ID = "spiffe";
 
@@ -41,6 +42,11 @@ public class SpiffeIdentityProviderFactory extends AbstractIdentityProviderFacto
     @Override
     public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.SPIFFE);
+    }
+
+    @Override
+    public ClientAssertionStrategy getClientAssertionStrategy() {
+        return new SpiffeClientAssertionStrategy();
     }
 
 }

@@ -1,64 +1,89 @@
 package org.keycloak.models.workflow.conditions;
 
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.workflow.WorkflowConditionProvider;
-import org.keycloak.models.workflow.WorkflowEvent;
-import org.keycloak.models.workflow.WorkflowInvalidStateException;
-import org.keycloak.models.workflow.ResourceType;
+import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.models.workflow.ResourceType;
+import org.keycloak.models.workflow.WorkflowConditionProvider;
+import org.keycloak.models.workflow.WorkflowExecutionContext;
+import org.keycloak.models.workflow.WorkflowInvalidStateException;
+import org.keycloak.utils.StringUtil;
 
 public class RoleWorkflowConditionProvider implements WorkflowConditionProvider {
 
-    private final List<String> expectedRoles;
+    private final String expectedRole;
     private final KeycloakSession session;
 
-    public RoleWorkflowConditionProvider(KeycloakSession session, List<String> expectedRoles) {
+    public RoleWorkflowConditionProvider(KeycloakSession session, String expectedRole) {
         this.session = session;
-        this.expectedRoles = expectedRoles;
+        this.expectedRole = expectedRole;
     }
 
     @Override
-    public boolean evaluate(WorkflowEvent event) {
-        if (!ResourceType.USERS.equals(event.getResourceType())) {
-            return false;
-        }
+    public ResourceType getSupportedResourceType() {
+        return ResourceType.USERS;
+    }
 
-        String userId = event.getResourceId();
+    @Override
+    public boolean evaluate(WorkflowExecutionContext context) {
+        validate();
+
         RealmModel realm = session.getContext().getRealm();
-        UserModel user = session.users().getUserById(realm, userId);
+        UserModel user = session.users().getUserById(realm, context.getResourceId());
 
         if (user == null) {
             return false;
         }
 
         Set<RoleModel> roles = user.getRoleMappingsStream().collect(Collectors.toSet());
+        RoleModel role = getRole(expectedRole, realm);
+        return role != null && RoleUtils.hasRole(roles, role);
+    }
 
-        for (String name : expectedRoles) {
-            RoleModel expectedRole = getRole(name, realm);
+    @Override
+    public Predicate toPredicate(CriteriaBuilder cb, CriteriaQuery<String> query, Root<?> path) {
+        validate();
 
-            if (expectedRole == null || !RoleUtils.hasRole(roles, expectedRole)) {
-                return false;
-            }
+        RoleModel role = getRole(expectedRole, session.getContext().getRealm());
+        if (role == null) {
+            return cb.disjunction(); // always false
         }
 
-        return true;
+        Subquery<Integer> subquery = query.subquery(Integer.class);
+        Root<UserRoleMappingEntity> from = subquery.from(UserRoleMappingEntity.class);
+
+        subquery.select(cb.literal(1));
+        subquery.where(
+                cb.and(
+                        cb.equal(from.get("user").get("id"), path.get("id")),
+                        cb.equal(from.get("roleId"), role.getId())
+                )
+        );
+
+        return cb.exists(subquery);
     }
 
     @Override
     public void validate() throws WorkflowInvalidStateException {
-        expectedRoles.forEach(id -> {
-            if (session.roles().getRoleById(session.getContext().getRealm(), id) == null) {
-                throw new WorkflowInvalidStateException(String.format("Role with id %s does not exist.", id));
-            }
-        });
+        if (StringUtil.isBlank(expectedRole)) {
+            throw new WorkflowInvalidStateException("workflowConditionRoleNotSet");
+        }
+        if (getRole(expectedRole, session.getContext().getRealm()) == null) {
+            throw new WorkflowInvalidStateException("workflowConditionRoleNotFound", expectedRole);
+        }
     }
 
     private RoleModel getRole(String expectedRole, RealmModel realm) {

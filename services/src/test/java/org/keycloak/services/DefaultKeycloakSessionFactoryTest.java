@@ -1,9 +1,9 @@
 package org.keycloak.services;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -12,11 +12,12 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 import org.keycloak.vault.VaultProvider;
 
-import static org.junit.Assert.assertFalse;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import static org.junit.Assert.assertFalse;
 
 public class DefaultKeycloakSessionFactoryTest {
 

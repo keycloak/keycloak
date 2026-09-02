@@ -41,7 +41,7 @@
   </#if>
 </#macro>
 
-<#macro input name label value="" required=false autocomplete="off" fieldName=name error=kcSanitize(messagesPerField.get(fieldName))?no_esc autofocus=false>
+<#macro input name label value="" required=false autocomplete="off" fieldName=name error=messagesPerField.get(fieldName) autofocus=false>
   <@group name=name label=label error=error required=required>
     <span class="${properties.kcInputClass} <#if error?has_content>${properties.kcError}</#if>">
         <input id="${name}" name="${name}" value="${value}" type="text" autocomplete="${autocomplete}" <#if autofocus>autofocus</#if>
@@ -52,7 +52,7 @@
   </@group>
 </#macro>
 
-<#macro password name label value="" required=false forgotPassword=false fieldName=name error=kcSanitize(messagesPerField.get(fieldName))?no_esc autocomplete="off" autofocus=false>
+<#macro password name label value="" required=false forgotPassword=false fieldName=name error=messagesPerField.get(fieldName) autocomplete="off" autofocus=false>
   <@group name=name label=label error=error required=required>
     <div class="${properties.kcInputGroup}">
       <div class="${properties.kcInputGroupItemClass} ${properties.kcFill}">
@@ -65,9 +65,9 @@
       <div class="${properties.kcInputGroupItemClass}">
         <button class="${properties.kcFormPasswordVisibilityButtonClass}" type="button" aria-label="${msg('showPassword')}"
                 aria-controls="${name}" data-password-toggle
-                data-icon-show="fa-eye fas" data-icon-hide="fa-eye-slash fas"
+                data-icon-show="${properties.kcFormPasswordVisibilityIconShow}" data-icon-hide="${properties.kcFormPasswordVisibilityIconHide}"
                 data-label-show="${msg('showPassword')}" data-label-hide="${msg('hidePassword')}" id="${name}-show-password">
-            <i class="fa-eye fas" aria-hidden="true"></i>
+            <i class="${properties.kcFormPasswordVisibilityIconShow}" aria-hidden="true"></i>
         </button>
       </div>
     </div>

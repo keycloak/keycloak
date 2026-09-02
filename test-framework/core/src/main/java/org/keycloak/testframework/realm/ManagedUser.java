@@ -1,16 +1,18 @@
 package org.keycloak.testframework.realm;
 
+import java.util.Optional;
+
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.injection.ManagedTestResource;
 
-import java.util.Optional;
-
-public class ManagedUser {
+public class ManagedUser extends ManagedTestResource {
 
     private final UserRepresentation createdRepresentation;
-
     private final UserResource userResource;
+
+    private ManagedUserCleanup cleanup;
 
     public ManagedUser(UserRepresentation createdRepresentation, UserResource userResource) {
         this.createdRepresentation = createdRepresentation;
@@ -23,6 +25,10 @@ public class ManagedUser {
 
     public String getUsername() {
         return createdRepresentation.getUsername();
+    }
+
+    public String getEmail() {
+        return createdRepresentation.getEmail();
     }
 
     public String getPassword() {
@@ -38,4 +44,36 @@ public class ManagedUser {
         return password.map(CredentialRepresentation::getValue).orElse(null);
     }
 
+    public void updateWithCleanup(UserUpdate... updates) {
+        UserRepresentation rep = admin().toRepresentation();
+        cleanup().resetToOriginalRepresentation(rep);
+
+        UserBuilder configBuilder = UserBuilder.update(rep);
+        for (ManagedUser.UserUpdate update : updates) {
+            configBuilder = update.update(configBuilder);
+        }
+
+        admin().update(configBuilder.build());
+    }
+
+    public ManagedUserCleanup cleanup() {
+        if (cleanup == null) {
+            cleanup = new ManagedUserCleanup();
+        }
+        return cleanup;
+    }
+
+    @Override
+    public void runCleanup() {
+        if (cleanup != null) {
+            cleanup.runCleanupTasks(userResource);
+            cleanup = null;
+        }
+    }
+
+    public interface UserUpdate {
+
+        UserBuilder update(UserBuilder user);
+
+    }
 }

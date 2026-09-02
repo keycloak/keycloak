@@ -17,11 +17,8 @@
 
 package org.keycloak.testsuite.client.resources;
 
-import org.jboss.resteasy.reactive.NoCache;
-import org.keycloak.jose.jwk.JSONWebKeySet;
-import org.keycloak.protocol.oidc.grants.ciba.endpoints.ClientNotificationEndpointRequest;
-import org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutor;
-import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
+import java.util.List;
+import java.util.Map;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -33,8 +30,12 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
-import java.util.List;
-import java.util.Map;
+import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.protocol.oidc.grants.ciba.endpoints.ClientNotificationEndpointRequest;
+import org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutor;
+import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
+
+import org.jboss.resteasy.reactive.NoCache;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -18,6 +18,7 @@
 package org.keycloak.services.clientpolicy.executor;
 
 import java.net.URI;
+
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;

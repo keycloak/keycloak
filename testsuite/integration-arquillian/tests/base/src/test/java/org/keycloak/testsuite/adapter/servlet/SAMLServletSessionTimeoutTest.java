@@ -1,9 +1,9 @@
 package org.keycloak.testsuite.adapter.servlet;
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.Test;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import javax.xml.datatype.XMLGregorianCalendar;
+
 import org.keycloak.common.Profile;
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
@@ -21,17 +21,19 @@ import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
-import javax.xml.datatype.XMLGregorianCalendar;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.graphene.page.Page;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.Test;
 
+import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_NAME;
+import static org.keycloak.testsuite.util.Matchers.bodyHC;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_NAME;
-import static org.keycloak.testsuite.util.Matchers.bodyHC;
 
 
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)

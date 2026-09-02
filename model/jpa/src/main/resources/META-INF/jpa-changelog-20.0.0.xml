@@ -18,6 +18,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
     <changeSet author="keycloak" id="20.0.0-12964-supported-dbs">
+        <validCheckSum>9:e5f243877199fd96bcc842f27a1656ac</validCheckSum>
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
             <or>
                 <dbms type="mysql"/>
@@ -36,6 +37,19 @@
         <modifySql dbms="oracle">
             <replace replace="VALUE(255)" with="SUBSTR(VALUE, 1, 250)" />
         </modifySql>
+    </changeSet>
+
+    <changeSet author="keycloak" id="20.0.0-12964-supported-dbs-edb-migration">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <dbms type="postgresql"/>
+            <changeSetExecuted id="20.0.0-12964-supported-dbs" author="keycloak" changeLogFile="META-INF/jpa-changelog-20.0.0.xml"/>
+            <indexExists tableName="GROUP_ATTRIBUTE" indexName="IDX_GROUP_ATT_BY_NAME_VALUE" />
+        </preConditions>
+        <dropIndex tableName="GROUP_ATTRIBUTE" indexName="IDX_GROUP_ATT_BY_NAME_VALUE" />
+        <createIndex tableName="GROUP_ATTRIBUTE" indexName="IDX_GROUP_ATT_BY_NAME_VALUE">
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="(value::varchar(250))" valueComputed="(value::varchar(250))" />
+        </createIndex>
     </changeSet>
 
     <changeSet author="keycloak" id="20.0.0-12964-unsupported-dbs">

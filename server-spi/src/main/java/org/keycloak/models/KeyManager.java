@@ -17,19 +17,18 @@
 
 package org.keycloak.models;
 
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.keys.SecretKeyMetadata;
-import org.keycloak.keys.RsaKeyMetadata;
-
-import javax.crypto.SecretKey;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.crypto.SecretKey;
+
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.keys.RsaKeyMetadata;
+import org.keycloak.keys.SecretKeyMetadata;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -39,6 +38,22 @@ public interface KeyManager {
     KeyWrapper getActiveKey(RealmModel realm, KeyUse use, String algorithm);
 
     KeyWrapper getKey(RealmModel realm, String kid, KeyUse use, String algorithm);
+
+    /**
+     * Returns the key for the given kid regardless of the key status, so unlike
+     * {@link #getKey(RealmModel, String, KeyUse, String)} it also returns disabled keys. Useful for
+     * features that reserve a dedicated realm key which should not serve regular realm signing.
+     */
+    default KeyWrapper getKeyIncludingDisabled(RealmModel realm, String kid, KeyUse use, String algorithm) {
+        if (kid == null) {
+            return null;
+        }
+        return getKeysStream(realm)
+                .filter(key -> kid.equals(key.getKid()) && use.equals(key.getUse())
+                        && algorithm.equals(key.getAlgorithmOrDefault()))
+                .findFirst()
+                .orElse(null);
+    }
 
     /**
      * Returns all {@code KeyWrapper} for the given realm.

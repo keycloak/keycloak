@@ -16,17 +16,20 @@
  */
 package org.keycloak.testsuite.util;
 
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.UserResource;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-
-import jakarta.ws.rs.core.Response;
-import java.util.Optional;
+import org.keycloak.testframework.realm.CredentialBuilder;
+import org.keycloak.testframework.realm.FederatedIdentityBuilder;
 
 public class AccountHelper {
 
@@ -54,7 +57,7 @@ public class AccountHelper {
     public static boolean updatePassword(RealmResource realm, String username, String password) {
         UserResource user = getUserResource(realm, username);
 
-        CredentialRepresentation credentialRepresentation = CredentialBuilder.create().password(password).build();
+        CredentialRepresentation credentialRepresentation = CredentialBuilder.password(password).build();
 
         try {
             user.resetPassword(credentialRepresentation);

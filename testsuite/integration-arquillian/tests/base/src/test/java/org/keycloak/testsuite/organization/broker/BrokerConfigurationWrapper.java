@@ -17,16 +17,16 @@
 
 package org.keycloak.testsuite.organization.broker;
 
-import static org.keycloak.testsuite.AbstractTestRealmKeycloakTest.TEST_REALM_NAME;
-
 import java.util.List;
 
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.broker.BrokerConfiguration;
-import org.keycloak.testsuite.util.UserBuilder;
+
+import static org.keycloak.testsuite.AbstractTestRealmKeycloakTest.TEST_REALM_NAME;
 
 public class BrokerConfigurationWrapper implements BrokerConfiguration {
 

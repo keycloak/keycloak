@@ -16,11 +16,11 @@
  */
 package org.keycloak.saml;
 
-import org.keycloak.dom.saml.v2.protocol.AuthnContextComparisonType;
-import org.keycloak.dom.saml.v2.protocol.RequestedAuthnContextType;
-
 import java.util.LinkedList;
 import java.util.List;
+
+import org.keycloak.dom.saml.v2.protocol.AuthnContextComparisonType;
+import org.keycloak.dom.saml.v2.protocol.RequestedAuthnContextType;
 
 public class SAML2RequestedAuthnContextBuilder {
     private final RequestedAuthnContextType requestedAuthnContextType;

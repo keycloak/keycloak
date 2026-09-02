@@ -17,7 +17,12 @@
 
 package org.keycloak.authentication.forms;
 
+import java.util.List;
+import java.util.function.Consumer;
+
 import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowException;
@@ -27,8 +32,6 @@ import org.keycloak.authentication.FormContext;
 import org.keycloak.authentication.ValidationContext;
 import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
 import org.keycloak.authentication.requiredactions.TermsAndConditions;
-import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
@@ -38,11 +41,13 @@ import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.OrganizationInvitationModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.organization.InvitationManager;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -50,14 +55,12 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.userprofile.Attributes;
+import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
-import org.keycloak.userprofile.UserProfile;
 
-import jakarta.ws.rs.core.MultivaluedMap;
-import java.util.List;
-import java.util.function.Consumer;
+import static org.keycloak.services.managers.AuthenticationManager.NEW_USER_REGISTERED;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -150,6 +153,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
 
         UserProfile profile = getOrCreateUserProfile(context, formData);
         UserModel user = profile.create();
+        context.getAuthenticationSession().setAuthNote(NEW_USER_REGISTERED, "true");
 
         addOrganizationMember(context, user);
 
@@ -288,7 +292,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
     }
 
     private boolean validateOrganizationInvitation(ValidationContext context, MultivaluedMap<String, String> formData, String email) {
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (Organizations.isEnabled(context.getSession())) {
             Consumer<List<FormMessage>> error = messages -> {
                 context.error(Errors.INVALID_TOKEN);
                 context.validationError(formData, messages);
@@ -297,7 +301,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
             InviteOrgActionToken token;
 
             try {
-                token = Organizations.parseInvitationToken(context.getHttpRequest());
+                token = Organizations.parseInvitationToken(context.getSession(), context.getHttpRequest());
             } catch (VerificationException e) {
                 error.accept(List.of(new FormMessage("Unexpected error parsing the invitation token")));
                 return false;
@@ -316,12 +320,26 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
                 return false;
             }
 
+            if (!organization.isEnabled()) {
+                error.accept(List.of(new FormMessage("The organization is not available at this time.")));
+                return false;
+            }
+
             // make sure the organization is set to the session so that UP org-related validators can run
             session.getContext().setOrganization(organization);
             session.setAttribute(InviteOrgActionToken.class.getName(), token);
 
             if (token.isExpired() || !token.getActionId().equals(InviteOrgActionToken.TOKEN_TYPE)) {
                 error.accept(List.of(new FormMessage("The provided token is not valid or has expired.")));
+                return false;
+            }
+
+            // Validate that the invitation still exists in the database
+            InvitationManager invitationManager = provider.getInvitationManager();
+            OrganizationInvitationModel invitation = invitationManager.getById(token.getId());
+
+            if (invitation == null || invitation.isExpired()) {
+                error.accept(List.of(new FormMessage("The invitation has expired or is no longer valid.")));
                 return false;
             }
 
@@ -335,7 +353,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
     }
 
     private void addOrganizationMember(FormContext context, UserModel user) {
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (Organizations.isEnabled(context.getSession())) {
             InviteOrgActionToken token = (InviteOrgActionToken) context.getSession().getAttribute(InviteOrgActionToken.class.getName());
 
             if (token != null) {
@@ -343,8 +361,19 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
                 OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
                 OrganizationModel orgModel = provider.getById(token.getOrgId());
                 provider.addManagedMember(orgModel, user);
-                context.getEvent().detail(Details.ORG_ID, orgModel.getId());
                 context.getAuthenticationSession().setRedirectUri(token.getRedirectUri());
+
+                // Delete the invitation since it has been used
+                InvitationManager invitationManager = provider.getInvitationManager();
+                invitationManager.remove(token.getId());
+
+                context.getEvent()
+                    .clone()
+                    .event(EventType.INVITE_ORG)
+                    .user(user)
+                    .detail(Details.USERNAME, user.getUsername())
+                    .detail(Details.ORG_ID, orgModel.getId())
+                    .success();
             }
         }
     }

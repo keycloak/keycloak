@@ -16,9 +16,6 @@
  */
 package org.keycloak.client.cli.config;
 
-import org.keycloak.client.cli.util.IoUtil;
-import org.keycloak.util.JsonSerialization;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,6 +26,9 @@ import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import org.keycloak.client.cli.util.IoUtil;
+import org.keycloak.util.JsonSerialization;
 
 import static org.keycloak.client.cli.util.IoUtil.printErr;
 

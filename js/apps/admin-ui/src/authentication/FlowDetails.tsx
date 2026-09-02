@@ -167,7 +167,7 @@ export default function FlowDetails() {
       }
       refresh();
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
-    } catch (error: any) {
+    } catch (error) {
       addError("updateFlowError", error);
     }
   };
@@ -182,7 +182,7 @@ export default function FlowDetails() {
       );
       refresh();
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
-    } catch (error: any) {
+    } catch (error) {
       addError("updateFlowError", error);
     }
   };
@@ -262,7 +262,7 @@ export default function FlowDetails() {
         await adminClient.authenticationManagement.deleteFlow({
           flowId: flow!.id!,
         });
-        navigate(toAuthentication({ realm }));
+        void navigate(toAuthentication({ realm }));
         addAlert(t("deleteFlowSuccess"), AlertVariant.success);
       } catch (error) {
         addError("deleteFlowError", error);
@@ -318,7 +318,7 @@ export default function FlowDetails() {
           flowAlias={flow?.alias!}
           onClose={(usedBy) => {
             toggleBindFlow();
-            navigate(
+            void navigate(
               toFlow({
                 realm,
                 id: id!,
@@ -425,6 +425,10 @@ export default function FlowDetails() {
                 }}
                 onDrop={(source, dest) => {
                   if (dest) {
+                    if (source.index === dest.index) {
+                      return false;
+                    }
+
                     const dragged = executionList.findExecution(source.index)!;
                     const order = executionList.order().map((ex) => ex.id!);
                     setLiveText(

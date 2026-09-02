@@ -17,7 +17,6 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
@@ -25,6 +24,8 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenRefreshResponseContext;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -52,7 +53,7 @@ public class SuppressRefreshTokenRotationExecutor implements ClientPolicyExecuto
             case TOKEN_REFRESH_RESPONSE:
                 TokenRefreshResponseContext tokenRefreshResponseContext = (TokenRefreshResponseContext)context;
                 TokenManager.AccessTokenResponseBuilder builder = tokenRefreshResponseContext.getAccessTokenResponseBuilder();
-                builder.refreshToken(null); // drop rotated refresh token before building a response of a token refresh request
+                builder.removeRefreshToken(); // drop rotated refresh token before building a response of a token refresh request
                 logger.trace("A rorated refresh token was suppressed.");
                 break;
             default :

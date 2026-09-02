@@ -17,11 +17,11 @@
 
 package org.keycloak.services.resources.admin.fgap;
 
+import jakarta.ws.rs.ForbiddenException;
+
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.services.resources.admin.AdminAuth;
-
-import jakarta.ws.rs.ForbiddenException;
 
 
 /**

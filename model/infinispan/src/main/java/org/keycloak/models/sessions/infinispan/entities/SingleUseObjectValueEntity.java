@@ -20,11 +20,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import org.keycloak.marshalling.Marshalling;
+import org.keycloak.models.SingleUseObjectValueModel;
+
 import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.infinispan.protostream.annotations.ProtoTypeId;
-import org.keycloak.marshalling.Marshalling;
-import org.keycloak.models.SingleUseObjectValueModel;
 
 /**
  * @author hmlnarik
@@ -62,4 +63,16 @@ public class SingleUseObjectValueEntity implements SingleUseObjectValueModel {
         return String.format("SingleUseObjectValueEntity [ notes=%s ]", notes.toString());
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+
+        SingleUseObjectValueEntity that = (SingleUseObjectValueEntity) o;
+        return notes.equals(that.notes);
+    }
+
+    @Override
+    public int hashCode() {
+        return notes.hashCode();
+    }
 }

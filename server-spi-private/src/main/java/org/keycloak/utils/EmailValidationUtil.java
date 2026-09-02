@@ -3,6 +3,7 @@ package org.keycloak.utils;
 import java.net.IDN;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import org.keycloak.Config;
 
 import static java.util.regex.Pattern.CASE_INSENSITIVE;

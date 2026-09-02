@@ -16,11 +16,11 @@
  */
 package org.keycloak.scripting;
 
-import org.keycloak.models.ScriptModel;
-
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
+
+import org.keycloak.models.ScriptModel;
 
 /**
  * Wraps a {@link ScriptModel} and makes it {@link Invocable}.

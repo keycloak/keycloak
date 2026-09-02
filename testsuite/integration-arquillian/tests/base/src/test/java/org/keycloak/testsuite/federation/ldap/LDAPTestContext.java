@@ -38,7 +38,11 @@ public class LDAPTestContext {
     }
 
     public static LDAPTestContext init(KeycloakSession session, String providerName) {
-        RealmModel testRealm = session.realms().getRealmByName(AbstractLDAPTest.TEST_REALM_NAME);
+        return init(session, AbstractLDAPTest.TEST_REALM_NAME, providerName);
+    }
+
+    public static LDAPTestContext init(KeycloakSession session, String realmName, String providerName) {
+        RealmModel testRealm = session.realms().getRealmByName(realmName);
         ComponentModel ldapCompModel = LDAPTestUtils.getLdapProviderModel(testRealm, providerName);
         UserStorageProviderModel ldapModel = new UserStorageProviderModel(ldapCompModel);
         LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);

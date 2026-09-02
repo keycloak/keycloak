@@ -16,6 +16,16 @@
  */
 package org.keycloak.services;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.stream.Stream;
+
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
 import org.keycloak.cluster.ClusterProvider;
@@ -31,15 +41,7 @@ import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
 import org.keycloak.provider.InvalidationHandler.ObjectType;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
-import java.util.stream.Stream;
+
 import org.jboss.logging.Logger;
 
 /**

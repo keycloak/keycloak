@@ -33,7 +33,11 @@ import {
 import { FormAccess } from "../../../components/form/FormAccess";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";
 import { useRealm } from "../../../context/realm-context/RealmContext";
-import { convertFormValuesToObject, convertToFormValues } from "../../../util";
+import {
+  beerify,
+  convertFormValuesToObject,
+  convertToFormValues,
+} from "../../../util";
 import { useParams } from "../../../utils/useParams";
 import { toUserFederationLdap } from "../../routes/UserFederationLdap";
 import { UserFederationLdapMapperParams } from "../../routes/UserFederationLdapMapper";
@@ -101,7 +105,7 @@ export default function LdapMapperDetails() {
     try {
       if (mapperId === "new") {
         await adminClient.components.create(map);
-        navigate(
+        void navigate(
           toUserFederationLdap({ realm, id: mapper.parentId!, tab: "mappers" }),
         );
       } else {
@@ -153,7 +157,7 @@ export default function LdapMapperDetails() {
           id: mapping!.id!,
         });
         addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
-        navigate(toUserFederationLdap({ id, realm, tab: "mappers" }));
+        void navigate(toUserFederationLdap({ id, realm, tab: "mappers" }));
       } catch (error) {
         addError("mappingDeletedError", error);
       }
@@ -164,6 +168,21 @@ export default function LdapMapperDetails() {
     control: form.control,
     name: "providerId",
   });
+
+  const config = useWatch({
+    control: form.control,
+    name: "config",
+  });
+
+  const mapper = components?.find((c) => c.id === mapperType);
+
+  const realmRolesValue = config?.[beerify("use.realm.roles.mapping")];
+  const isRealmMapping =
+    realmRolesValue === undefined || realmRolesValue === "true";
+  const visibleProperties =
+    mapperType === "role-ldap-mapper" && isRealmMapping
+      ? (mapper?.properties ?? []).filter((p) => p.name !== "client.id")
+      : (mapper?.properties ?? []);
 
   const selectItems = () =>
     (components || [])
@@ -179,7 +198,6 @@ export default function LdapMapperDetails() {
   }
 
   const isNew = mapperId === "new";
-  const mapper = components.find((c) => c.id === mapperType);
 
   return (
     <>
@@ -311,7 +329,7 @@ export default function LdapMapperDetails() {
             )}
 
             {!!mapperType && (
-              <DynamicComponents properties={mapper?.properties!} />
+              <DynamicComponents properties={visibleProperties} />
             )}
             <ActionGroup>
               <Button
@@ -326,8 +344,8 @@ export default function LdapMapperDetails() {
                 variant="link"
                 onClick={() =>
                   isNew
-                    ? navigate(-1)
-                    : navigate(
+                    ? void navigate(-1)
+                    : void navigate(
                         `/${realm}/user-federation/ldap/${
                           mapping!.parentId
                         }/mappers`,

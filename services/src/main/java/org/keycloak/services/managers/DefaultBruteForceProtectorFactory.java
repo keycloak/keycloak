@@ -18,6 +18,8 @@
 package org.keycloak.services.managers;
 
 import java.util.List;
+import java.util.Optional;
+
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -51,7 +53,7 @@ public class DefaultBruteForceProtectorFactory implements BruteForceProtectorFac
 
     @Override
     public void close() {
-        protector.shutdown();
+        Optional.ofNullable(protector).ifPresent(DefaultBruteForceProtector::shutdown);
     }
 
     @Override

@@ -17,9 +17,14 @@
 
 package org.keycloak.protocol.oid4vc.issuance.mappers;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.commons.collections4.ListUtils;
-import org.jboss.logging.Logger;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperContainerModel;
@@ -35,14 +40,8 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.util.JsonSerialization;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.jboss.logging.Logger;
 
 /**
  * Adds the users roles to the credential subject
@@ -93,9 +92,12 @@ public class OID4VCTargetRoleMapper extends OID4VCMapper {
 
 	@Override
 	public List<String> getMetadataAttributePath() {
-		return ListUtils.union(getAttributePrefix(),
-				List.of(Optional.ofNullable(mapperModel.getConfig().get(CLAIM_NAME))
-						.orElse(DEFAULT_CLAIM_NAME)));
+		return getMetadataAttributePath(getClaimName(DEFAULT_CLAIM_NAME));
+	}
+
+	@Override
+	protected List<String> getClaimLookupPath() {
+		return getClaimLookupPath(getClaimName(DEFAULT_CLAIM_NAME));
 	}
 
 	@Override
@@ -142,16 +144,15 @@ public class OID4VCTargetRoleMapper extends OID4VCMapper {
 	}
 
 	@Override
-	public void setClaimsForCredential(VerifiableCredential verifiableCredential,
-									   UserSessionModel userSessionModel) {
+	public void setClaim(VerifiableCredential verifiableCredential,
+						 UserSessionModel userSessionModel) {
 		// nothing to do for the mapper.
 	}
 
 	@Override
-	public void setClaimsForSubject(Map<String, Object> claims,
-									UserSessionModel userSessionModel) {
-		List<String> attributePath = getMetadataAttributePath();
-		String propertyName = attributePath.get(attributePath.size() - 1);
+	public void setClaim(Map<String, Object> claims,
+						 UserSessionModel userSessionModel) {
+		String propertyName = getClaimName(DEFAULT_CLAIM_NAME);
 		String client = mapperModel.getConfig().get(CLIENT_CONFIG_KEY);
 		ClientModel clientModel = userSessionModel.getRealm().getClientByClientId(client);
 		if (clientModel == null) {

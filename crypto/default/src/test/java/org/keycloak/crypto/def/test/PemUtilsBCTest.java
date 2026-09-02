@@ -1,9 +1,10 @@
 package org.keycloak.crypto.def.test;
 
-import org.junit.Assume;
-import org.junit.Before;
 import org.keycloak.common.util.Environment;
 import org.keycloak.util.PemUtilsTest;
+
+import org.junit.Assume;
+import org.junit.Before;
 
 public class PemUtilsBCTest extends PemUtilsTest {
 
@@ -14,4 +15,3 @@ public class PemUtilsBCTest extends PemUtilsTest {
     }
 
 }
-

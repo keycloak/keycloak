@@ -16,15 +16,6 @@
  */
 package org.keycloak.keys;
 
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64;
-import org.keycloak.common.util.CertificateUtils;
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.component.ComponentModel;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.models.RealmModel;
-
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -32,8 +23,18 @@ import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
+
+import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.models.RealmModel;
+
+import org.jboss.logging.Logger;
 
 public class GeneratedEcdhKeyProvider extends AbstractEcKeyProvider {
     private static final Logger logger = Logger.getLogger(GeneratedEcdhKeyProvider.class);
@@ -53,11 +54,11 @@ public class GeneratedEcdhKeyProvider extends AbstractEcKeyProvider {
                                               .orElse(false);
 
         try {
-            PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(Base64.decode(privateEcdhKeyBase64Encoded));
+            PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(Base64.getMimeDecoder().decode(privateEcdhKeyBase64Encoded));
             KeyFactory kf = KeyFactory.getInstance("EC");
             PrivateKey decodedPrivateKey = kf.generatePrivate(privateKeySpec);
 
-            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.decode(publicEcdhKeyBase64Encoded));
+            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getMimeDecoder().decode(publicEcdhKeyBase64Encoded));
             PublicKey decodedPublicKey = kf.generatePublic(publicKeySpec);
 
             KeyPair keyPair = new KeyPair(decodedPublicKey, decodedPrivateKey);
@@ -69,7 +70,7 @@ public class GeneratedEcdhKeyProvider extends AbstractEcKeyProvider {
             {
                 selfSignedCertificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, realm.getName());
                 model.getConfig().put(Attributes.CERTIFICATE_KEY,
-                                      List.of(Base64.encodeBytes(selfSignedCertificate.getEncoded())));
+                                      List.of(Base64.getEncoder().encodeToString(selfSignedCertificate.getEncoded())));
             }
 
             return createKeyWrapper(keyPair, ecdhAlgorithm, KeyUse.ENC, selfSignedCertificate);

@@ -17,16 +17,21 @@
 
 package org.keycloak.protocol;
 
+import java.util.Map;
+
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.WebApplicationException;
+
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
-
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -64,5 +69,58 @@ public interface LoginProtocolFactory extends ProviderFactory<LoginProtocol> {
     /**
      * Add default values to {@link ClientScopeRepresentation}s that refer to the specific login-protocol
      */
-    void addClientScopeDefaults(ClientScopeRepresentation clientModel);
+    void addClientScopeDefaults(ClientScopeRepresentation clientScope);
+
+    /**
+     * Invoked during client-scope creation or update to add additional validation hooks specific to target protocol. May throw errorResponseException in case
+     *
+     * @param session Keycloak session
+     * @param clientScope client scope to create or update
+     * @throws WebApplicationException or some of it's subclass if validation fails
+     */
+    default void validateClientScope(KeycloakSession session, ClientScopeRepresentation clientScope) throws WebApplicationException {
+    }
+
+    /**
+     * Test if the clientScope is valid for particular client. Usually called during protocol requests
+     */
+    default boolean isValidClientScope(KeycloakSession session, ClientModel client, ClientScopeModel clientScope) {
+        return true;
+    }
+
+    /**
+     * Validates whether a client scope can be assigned as Default or Optional to a client or realm.
+     * This method is called before assigning a client scope to ensure protocol-specific restrictions are enforced.
+     *
+     * @param session      the Keycloak session
+     * @param clientScope  the client scope to be assigned
+     * @param defaultScope true if assigning as Default scope, false if Optional
+     * @param realm        the realm where the assignment is happening
+     * @param realmLevel   true if the scope is assigned as a realm default/optional client scope (affecting all
+     *                     clients of the matching protocol), false if it is assigned to a specific client
+     * @throws BadRequestException if the assignment is not allowed
+     */
+    default void validateClientScopeAssignment(KeycloakSession session, ClientScopeModel clientScope, boolean defaultScope, RealmModel realm, boolean realmLevel) {
+        // Default implementation: no validation (allows all assignments)
+        // Protocol-specific implementations can override to enforce restrictions
+    }
+
+    /**
+     * Returns whether this protocol can be used as a client protocol.
+     *
+     * @return true if the protocol can be used for clients, false otherwise
+     */
+    default boolean allowAsClientProtocol() {
+        return true;
+    }
+
+    /**
+     * Callback method invoked when consent of specified user is being revoked for the specified client
+     *
+     * @param session Keycloak session
+     * @param client Client
+     * @param user user
+     */
+    default void onConsentRevoked(KeycloakSession session, ClientModel client, UserModel user) {
+    }
 }

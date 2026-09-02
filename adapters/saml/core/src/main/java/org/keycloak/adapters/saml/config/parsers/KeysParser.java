@@ -17,15 +17,13 @@
 
 package org.keycloak.adapters.saml.config.parsers;
 
-import org.keycloak.adapters.saml.config.Key;
-import org.keycloak.adapters.saml.config.SP;
-import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.util.StaxParserUtil;
-
 import java.util.LinkedList;
 import java.util.List;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.events.StartElement;
+
+import org.keycloak.adapters.saml.config.Key;
+import org.keycloak.saml.common.exceptions.ParsingException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

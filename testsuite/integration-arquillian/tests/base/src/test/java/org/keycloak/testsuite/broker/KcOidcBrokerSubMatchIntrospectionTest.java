@@ -1,17 +1,18 @@
 package org.keycloak.testsuite.broker;
 
-import org.junit.Ignore;
-import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.testsuite.util.ClientBuilder;
-
 import java.util.ArrayList;
 import java.util.List;
 
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
+
+import org.junit.Ignore;
+
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 public class KcOidcBrokerSubMatchIntrospectionTest extends AbstractBrokerTest {
 
@@ -51,11 +52,12 @@ public class KcOidcBrokerSubMatchIntrospectionTest extends AbstractBrokerTest {
 
     @Override
     public void testLogInAsUserInIDP() {
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         oauth.realm(bc.consumerRealmName());
-        oauth.clientId("consumer-client");
+        oauth.client("consumer-client");
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());

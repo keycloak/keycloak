@@ -17,8 +17,10 @@
 
 package org.keycloak.testsuite.oauth;
 
-import org.junit.Test;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.testsuite.util.KeyUtils;
+
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -33,6 +35,26 @@ public class ClientAuthEdDSASignedJWTTest extends AbstractClientAuthSignedJWTTes
     @Test
     public void testCodeToTokenRequestSuccessEd25519usingJwks() throws Exception {
         testCodeToTokenRequestSuccess(Algorithm.EdDSA, Algorithm.Ed25519, false);
+    }
+
+    @Test
+    public void testUploadCertificatePemEd25519() throws Exception {
+        testUploadCertificatePEM(KeyUtils.generateEdDSAKey(Algorithm.Ed25519), Algorithm.EdDSA, Algorithm.Ed25519);
+    }
+
+    @Test
+    public void testUploadCertificatePemEd448() throws Exception {
+        testUploadCertificatePEM(KeyUtils.generateEdDSAKey(Algorithm.Ed448), Algorithm.EdDSA, Algorithm.Ed448);
+    }
+
+    @Test
+    public void testUploadPublicKeyPemEd25519() throws Exception {
+        testUploadPublicKeyPem(KeyUtils.generateEdDSAKey(Algorithm.Ed25519), Algorithm.EdDSA, Algorithm.Ed25519);
+    }
+
+    @Test
+    public void testUploadPublicKeyPemEd448() throws Exception {
+        testUploadPublicKeyPem(KeyUtils.generateEdDSAKey(Algorithm.Ed448), Algorithm.EdDSA, Algorithm.Ed448);
     }
 
     @Override

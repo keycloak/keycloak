@@ -16,6 +16,8 @@
 
 package org.keycloak;
 
+import java.util.List;
+
 public interface WebAuthnConstants {
 
     // Interface binded by FreeMarker template between UA and RP
@@ -37,7 +39,11 @@ public interface WebAuthnConstants {
     String RP_ID = "rpId";
     String ATTESTATION_CONVEYANCE_PREFERENCE = "attestationConveyancePreference";
     String AUTHENTICATOR_ATTACHMENT = "authenticatorAttachment";
+    String AUTHENTICATOR_ATTACHMENT_PLATFORM = "platform";
+    String AUTHENTICATOR_ATTACHMENT_CROSS_PLATFORM = "cross-platform";
+    List<String> SUPPORTED_AUTHENTICATOR_ATTACHMENTS = List.of(AUTHENTICATOR_ATTACHMENT_PLATFORM, AUTHENTICATOR_ATTACHMENT_CROSS_PLATFORM);
     String REQUIRE_RESIDENT_KEY = "requireResidentKey";
+    String RESIDENT_KEY = "residentKey";
     String USER_VERIFICATION_REQUIREMENT = "userVerificationRequirement";
     String CREATE_TIMEOUT = "createTimeout";
     String EXCLUDE_CREDENTIAL_IDS = "excludeCredentialIds";
@@ -46,6 +52,7 @@ public interface WebAuthnConstants {
     String USER_VERIFICATION = "userVerification";
     String TRANSPORTS = "transports";
     String ENABLE_WEBAUTHN_CONDITIONAL_UI = "enableWebAuthnConditionalUI";
+    String MEDIATION = "mediation";
 
     String IS_SET_RETRY = "isSetRetry";
     String SHOULD_DISPLAY_AUTHENTICATORS = "shouldDisplayAuthenticators";

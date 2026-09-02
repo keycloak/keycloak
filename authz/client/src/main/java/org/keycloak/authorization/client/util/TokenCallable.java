@@ -18,7 +18,6 @@ package org.keycloak.authorization.client.util;
 
 import java.util.concurrent.Callable;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.common.util.Time;
@@ -27,6 +26,8 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.util.JsonSerialization;
+
+import org.jboss.logging.Logger;
 
 public class TokenCallable implements Callable<String> {
 

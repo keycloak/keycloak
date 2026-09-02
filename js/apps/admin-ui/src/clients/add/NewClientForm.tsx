@@ -32,7 +32,7 @@ const NewClientFooter = (newClientForm: any) => {
     if (!(await trigger())) {
       return;
     }
-    onNext?.();
+    onNext();
   };
 
   return (
@@ -89,7 +89,9 @@ export default function NewClientForm() {
         clientId: client.clientId?.trim(),
       });
       addAlert(t("createClientSuccess"), AlertVariant.success);
-      navigate(toClient({ realm, clientId: newClient.id, tab: "settings" }));
+      void navigate(
+        toClient({ realm, clientId: newClient.id, tab: "settings" }),
+      );
     } catch (error) {
       addError("createClientError", error);
     } finally {
@@ -104,9 +106,10 @@ export default function NewClientForm() {
       <PageSection variant="light">
         <FormProvider {...form}>
           <Wizard
-            onClose={() => navigate(toClients({ realm }))}
+            onClose={() => void navigate(toClients({ realm }))}
             navAriaLabel={`${title} steps`}
             onSave={save}
+            isProgressive
             footer={<NewClientFooter {...form} />}
           >
             <WizardStep

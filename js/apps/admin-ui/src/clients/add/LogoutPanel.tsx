@@ -122,7 +122,7 @@ export const LogoutPanel = ({
               name={convertAttributeNameToForm<FormFields>(
                 "attributes.backchannel.logout.session.required",
               )}
-              defaultValue="true"
+              defaultValue="false"
               control={control}
               render={({ field }) => (
                 <Switch
@@ -166,6 +166,17 @@ export const LogoutPanel = ({
             />
           </FormGroup>
         </>
+      )}
+      {protocol === "openid-connect" && (
+        <DefaultSwitchControl
+          name={convertAttributeNameToForm<FormFields>(
+            "attributes.logout.confirmation.enabled",
+          )}
+          defaultValue="false"
+          label={t("logoutConfirmation")}
+          labelIcon={t("logoutConfirmationHelp")}
+          stringify
+        />
       )}
       <FixedButtonsGroup
         name="settings"

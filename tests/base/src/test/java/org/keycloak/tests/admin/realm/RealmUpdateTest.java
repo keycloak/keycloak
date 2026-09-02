@@ -1,8 +1,14 @@
 package org.keycloak.tests.admin.realm;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import jakarta.ws.rs.BadRequestException;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -13,14 +19,11 @@ import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.userprofile.UserProfileProvider;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
@@ -56,6 +59,7 @@ public class RealmUpdateTest extends AbstractRealmTest {
     }
 
     @Test
+    @DatabaseTest
     public void renameRealm() {
         String OLD = "old";
         String NEW = "new";
@@ -160,6 +164,7 @@ public class RealmUpdateTest extends AbstractRealmTest {
     }
 
     @Test
+    @DatabaseTest
     public void updateRealm() {
         // first change
         RealmRepresentation rep = managedRealm.admin().toRepresentation();
@@ -285,5 +290,64 @@ public class RealmUpdateTest extends AbstractRealmTest {
         assertEquals(expected.isEventsEnabled(), actual.isEventsEnabled());
         assertEquals(expected.isAdminEventsEnabled(), actual.isAdminEventsEnabled());
         assertEquals(expected.isAdminEventsDetailsEnabled(), actual.isAdminEventsDetailsEnabled());
+    }
+
+    @Test
+    public void testRealmClientSessionTimeoutValidation() {
+        RealmRepresentation rep = managedRealm.admin().toRepresentation();
+        // Remember-Me Disabled
+        rep.setRememberMe(false);
+        rep.setSsoSessionIdleTimeout(300);
+        rep.setSsoSessionMaxLifespan(600);
+
+        // Invalid: client idle > realm idle
+        rep.setClientSessionIdleTimeout(400);
+        rep.setClientSessionMaxLifespan(500);
+
+        try {
+            managedRealm.admin().update(rep);
+            Assertions.fail("Expected validation error for client idle timeout");
+        } catch (Exception e) {
+            assertEquals("HTTP 400 Bad Request", e.getMessage());
+        }
+
+        // Fix idle, break max lifespan
+        rep.setClientSessionIdleTimeout(200);
+        rep.setClientSessionMaxLifespan(700);
+
+        try {
+            managedRealm.admin().update(rep);
+            Assertions.fail("Expected validation error for client max lifespan");
+        } catch (Exception e) {
+            assertEquals("HTTP 400 Bad Request", e.getMessage());
+        }
+        // Remember-Me Enabled
+        rep = managedRealm.admin().toRepresentation();
+        rep.setRememberMe(true);
+        rep.setSsoSessionIdleTimeout(300);
+        rep.setSsoSessionIdleTimeoutRememberMe(500);
+        rep.setSsoSessionMaxLifespan(600);
+        rep.setSsoSessionMaxLifespanRememberMe(900);
+
+        // Invalid: exceeds allowed remember-me idle
+        rep.setClientSessionIdleTimeout(550);
+        rep.setClientSessionMaxLifespan(800);
+
+        try {
+            managedRealm.admin().update(rep);
+            Assertions.fail("Expected validation error for remember-me idle timeout");
+        } catch (Exception e) {
+            assertEquals("HTTP 400 Bad Request", e.getMessage());
+        }
+        // Fix idle, break max lifespan
+        rep.setClientSessionIdleTimeout(300);
+        rep.setClientSessionMaxLifespan(950);
+
+        try {
+            managedRealm.admin().update(rep);
+            Assertions.fail("Expected validation error for remember-me max lifespan");
+        } catch (Exception e) {
+            assertEquals("HTTP 400 Bad Request", e.getMessage());
+        }
     }
 }

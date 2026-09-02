@@ -15,4 +15,28 @@ public class RoleMapper {
         clientRole.setClient(clientModel.getClientId());
         return clientRole;
     }
+
+    public static EffectiveRole convertToEffectiveRole(RoleModel roleModel, RealmModel realm) {
+        if (roleModel.isClientRole()) {
+            ClientModel clientModel = realm.getClientById(roleModel.getContainerId());
+            if (clientModel == null) {
+                throw new IllegalArgumentException("Could not find referenced client");
+            }
+            return new EffectiveRole(
+                    roleModel.getId(),
+                    roleModel.getName(),
+                    roleModel.getDescription(),
+                    true,
+                    clientModel.getClientId(),
+                    clientModel.getId()
+            );
+        } else {
+            return new EffectiveRole(
+                    roleModel.getId(),
+                    roleModel.getName(),
+                    roleModel.getDescription(),
+                    false
+            );
+        }
+    }
 }

@@ -22,7 +22,6 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.util.FindFile;
 import org.keycloak.models.KeycloakSession;
@@ -32,6 +31,8 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.wellknown.WellKnownProvider;
 import org.keycloak.wellknown.WellKnownProviderFactory;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

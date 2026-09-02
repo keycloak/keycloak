@@ -46,6 +46,11 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-core</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-remote-providers</artifactId>
             <scope>compile</scope>
         </dependency>
@@ -59,7 +64,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-client-tests</artifactId>
+            <artifactId>keycloak-admin-client-internal</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

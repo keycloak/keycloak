@@ -16,12 +16,12 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.constants;
 
-import org.keycloak.dom.saml.v2.assertion.AttributeType;
-
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+
+import org.keycloak.dom.saml.v2.assertion.AttributeType;
 
 /**
  * X500 SAML Profile Constants Adapted from

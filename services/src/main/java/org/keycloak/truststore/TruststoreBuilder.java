@@ -17,10 +17,6 @@
 
 package org.keycloak.truststore;
 
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.KeystoreUtil;
-import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -35,6 +31,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
+import org.keycloak.common.util.KeystoreUtil.TruststoreFormat;
+
+import org.jboss.logging.Logger;
+
 /**
  * Builds a system-wide truststore from the given config options.
  */
@@ -47,32 +50,87 @@ public class TruststoreBuilder {
     public static final String DUMMY_PASSWORD = "keycloakchangeit"; // fips length compliant dummy password
     static final String PKCS12 = "PKCS12";
 
+    private static final String KUBERNETES_CA_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
+    private static final String SERVICE_CA_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt";
+
     private static final Logger LOGGER = Logger.getLogger(TruststoreBuilder.class);
 
-    public static void setSystemTruststore(String[] truststores, boolean trustStoreIncludeDefault, String dataDir) {
-        KeyStore truststore = createMergedTruststore(truststores, trustStoreIncludeDefault);
+    public static void setSystemTruststore(String[] truststores,
+                                           boolean trustStoreIncludeDefault,
+                                           String dataDir) {
+        setSystemTruststore(truststores, trustStoreIncludeDefault, dataDir, null);
+    }
+
+    public static void setSystemTruststore(String[] truststores,
+                                           boolean trustStoreIncludeDefault,
+                                           String dataDir,
+                                           TruststoreFormat preferredTruststoreType) {
+        TruststoreFormat truststoreType = preferredTruststoreType == null
+                ? getPreferredGeneratedTrustStoreType()
+                : preferredTruststoreType;
+        KeyStore truststore = createMergedTruststore(truststores, trustStoreIncludeDefault, truststoreType);
 
         // save with a dummy password just in case some logic that uses the system properties needs to have one
-        File file = saveTruststore(truststore, dataDir, DUMMY_PASSWORD.toCharArray());
+        File file = saveTruststore(truststore, truststoreType, dataDir, DUMMY_PASSWORD.toCharArray());
 
         // finally update the system properties
         System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY, file.getAbsolutePath());
-        System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY, PKCS12);
+        System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY, truststoreType.name());
         System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY, DUMMY_PASSWORD);
     }
 
+    /**
+     * Include the Kubernetes and/or OpenShift service CA truststore paths if enabled and the files exist.
+     * Uses the default well-known Kubernetes service account paths.
+     *
+     * @param trustStores the existing truststore paths
+     */
+    public static void includeKubernetesTrustStorePaths(List<String> trustStores) {
+        includeKubernetesTrustStorePaths(trustStores, KUBERNETES_CA_PATH, SERVICE_CA_PATH);
+    }
+
+    /**
+     * Include the Kubernetes and/or OpenShift service CA truststore paths if enabled and the files exist.
+     *
+     * @param trustStores the existing truststore paths
+     * @param kubernetesCaPath path to the Kubernetes service account CA certificate
+     * @param serviceCaPath path to the OpenShift service CA certificate
+     */
+    public static void includeKubernetesTrustStorePaths(List<String> trustStores, String kubernetesCaPath, String serviceCaPath) {
+        File kubernetesCA = new File(kubernetesCaPath);
+        if (kubernetesCA.exists() && kubernetesCA.isFile()) {
+            trustStores.add(kubernetesCaPath);
+        }
+
+        File serviceCA = new File(serviceCaPath);
+        if (serviceCA.exists() && serviceCA.isFile()) {
+            trustStores.add(serviceCaPath);
+        }
+    }
+
     static File saveTruststore(KeyStore truststore, String dataDir, char[] password) {
-        File file = new File(dataDir, "keycloak-truststore.p12");
+        return saveTruststore(truststore, TruststoreFormat.PKCS12, dataDir, password);
+    }
+
+    static File saveTruststore(KeyStore truststore, TruststoreFormat truststoreType, String dataDir, char[] password) {
+        File file = new File(dataDir, "keycloak-truststore." + truststoreType.getPrimaryExtension());
         file.getParentFile().mkdirs();
         try (FileOutputStream fos = new FileOutputStream(file)) {
-            // this should inhibit the use of encryption in storing the certs
-            // it's of course not concurrency safe, but it should only be run at startup
-            String oldValue = System.setProperty(CERT_PROTECTION_ALGORITHM_KEY, "NONE");
-            truststore.store(fos, password);
-            if (oldValue != null) {
-                System.setProperty(CERT_PROTECTION_ALGORITHM_KEY, oldValue);
+            if (truststoreType == TruststoreFormat.PKCS12) {
+                // this should inhibit the use of encryption in storing the certs
+                // it's of course not concurrency safe, but it should only be run at startup
+                String oldValue = System.setProperty(CERT_PROTECTION_ALGORITHM_KEY, "NONE");
+                try {
+                    truststore.store(fos, password);
+                } finally {
+                    if (oldValue != null) {
+                        System.setProperty(CERT_PROTECTION_ALGORITHM_KEY, oldValue);
+                    } else {
+                        System.getProperties().remove(CERT_PROTECTION_ALGORITHM_KEY);
+                    }
+                }
             } else {
-                System.getProperties().remove(CERT_PROTECTION_ALGORITHM_KEY);
+                truststore.store(fos, password);
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to save truststore: " + file.getAbsolutePath(), e);
@@ -81,7 +139,11 @@ public class TruststoreBuilder {
     }
 
     static KeyStore createMergedTruststore(String[] truststores, boolean trustStoreIncludeDefault) {
-        KeyStore truststore = createPkcs12KeyStore();
+        return createMergedTruststore(truststores, trustStoreIncludeDefault, getPreferredGeneratedTrustStoreType());
+    }
+
+    static KeyStore createMergedTruststore(String[] truststores, boolean trustStoreIncludeDefault, TruststoreFormat truststoreType) {
+        KeyStore truststore = createTrustStore(truststoreType);
 
         if (trustStoreIncludeDefault) {
             includeDefaultTruststore(truststore);
@@ -90,7 +152,7 @@ public class TruststoreBuilder {
         List<String> discoveredFiles = new ArrayList<>();
         mergeFiles(truststores, truststore, true, discoveredFiles);
         if (!discoveredFiles.isEmpty()) {
-            LOGGER.infof("Found the following truststore files under directories specified in the truststore paths %s",
+            LOGGER.infof("Found the following truststore files in the truststore paths %s",
                     discoveredFiles);
         }
         return truststore;
@@ -105,10 +167,8 @@ public class TruststoreBuilder {
                 var format = KeystoreUtil.getKeystoreFormat(file).orElse(null);
                 if (format == KeystoreFormat.PKCS12) {
                     mergeTrustStore(truststore, file, loadStore(file, PKCS12, null));
-                    if (!topLevel) {
-                        discoveredFiles.add(f.getAbsolutePath());
-                    }
-                } else if (mergePemFile(truststore, file, topLevel) && !topLevel) {
+                    discoveredFiles.add(f.getAbsolutePath());
+                } else if (mergePemFile(truststore, file, topLevel)) {
                     discoveredFiles.add(f.getAbsolutePath());
                 }
             }
@@ -116,15 +176,29 @@ public class TruststoreBuilder {
     }
 
     static KeyStore createPkcs12KeyStore() {
+        return createTrustStore(TruststoreFormat.PKCS12);
+    }
+
+    static KeyStore createGeneratedTrustStore() {
+        return createTrustStore(getPreferredGeneratedTrustStoreType());
+    }
+
+    static KeyStore createTrustStore(TruststoreFormat truststoreType) {
+        if (!truststoreType.isJavaTrustStore()) {
+            throw new IllegalArgumentException(truststoreType.name() + " is not a Java KeyStore truststore format");
+        }
         try {
-            KeyStore truststore = KeyStore.getInstance(PKCS12);
+            KeyStore truststore = CryptoIntegration.getProvider().getTrustStore(truststoreType);
             truststore.load(null, null);
             return truststore;
         } catch (Exception e) {
-            throw new RuntimeException("Failed to initialize truststore: cannot create a PKCS12 keystore", e);
+            throw new RuntimeException("Failed to initialize truststore: cannot create a " + truststoreType + " keystore", e);
         }
     }
 
+    static TruststoreFormat getPreferredGeneratedTrustStoreType() {
+        return CryptoIntegration.getProvider().getPreferredGeneratedTrustStoreType();
+    }
 
     /**
      * Include the default truststore, if it can be found.
@@ -192,7 +266,7 @@ public class TruststoreBuilder {
         }
     }
 
-    private static boolean mergePemFile(KeyStore truststore, String file, boolean isPem) {
+    static boolean mergePemFile(KeyStore truststore, String file, boolean isPem) {
         try (FileInputStream pemInputStream = new FileInputStream(file)) {
             CertificateFactory certFactory = CertificateFactory.getInstance("X509");
             boolean loadedAny = false;

@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { clickSelectRow } from "./table";
+import { clickSelectRow } from "./table.ts";
 
 export type RoleType = "client" | "roles";
 const rolePickTableName = "Role list";

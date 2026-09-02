@@ -17,6 +17,8 @@
  */
 package org.keycloak.testsuite.client;
 
+import java.util.Collections;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
@@ -34,13 +36,12 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 
-import java.util.Collections;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test for the FAPI 2 specifications (still implementer's draft):
@@ -90,7 +91,11 @@ public abstract class AbstractFAPI2Test extends AbstractFAPITest {
         assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Try to register client with "client-x509" - should pass
-        clientUUID = createClientByAdmin("client-x509", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID));
+        clientUUID = createClientByAdmin("client-x509", (ClientRepresentation clientRep) -> {
+            clientRep.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
+            clientRep.getAttributes().put(X509ClientAuthenticator.ATTR_SUBJECT_DN, "CN=localhost");
+            clientRep.getAttributes().put(X509ClientAuthenticator.ATTR_CA_SUBJECT_DN, "CN=ca");
+        });
         client = getClientByAdmin(clientUUID);
         assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 

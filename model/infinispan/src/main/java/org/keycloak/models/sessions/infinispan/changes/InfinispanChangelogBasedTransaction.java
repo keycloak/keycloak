@@ -24,10 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import org.infinispan.Cache;
-import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
-import org.infinispan.commons.util.concurrent.CompletionStages;
-import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -36,6 +32,11 @@ import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.transaction.DatabaseUpdate;
 import org.keycloak.models.sessions.infinispan.transaction.NonBlockingTransaction;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
+
+import org.infinispan.Cache;
+import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
+import org.infinispan.commons.util.concurrent.CompletionStages;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -57,23 +58,22 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
     @Override
     public void addTask(K key, SessionUpdateTask<V> task) {
         SessionUpdatesList<V> myUpdates = updates.get(key);
-        if (myUpdates == null) {
-            // Lookup entity from cache
-            SessionEntityWrapper<V> wrappedEntity = cacheHolder.cache().get(key);
-            if (wrappedEntity == null) {
-                logger.tracef("Not present cache item for key %s", key);
-                return;
-            }
-
-            RealmModel realm = kcSession.realms().getRealm(wrappedEntity.getEntity().getRealmId());
-
-            myUpdates = new SessionUpdatesList<>(realm, wrappedEntity);
-            updates.put(key, myUpdates);
+        if (myUpdates != null) {
+            myUpdates.addAndExecute(task);
+            return;
         }
+        lookupAndAndExecuteTask(key, task);
+    }
 
-        // Run the update now, so reader in same transaction can see it (TODO: Rollback may not work correctly. See if it's an issue..)
-        task.runUpdate(myUpdates.getEntityWrapper().getEntity());
-        myUpdates.add(task);
+    @Override
+    public void restartEntity(K key, SessionUpdateTask<V> restartTask) {
+        SessionUpdatesList<V> myUpdates = updates.get(key);
+        if (myUpdates != null) {
+            myUpdates.getUpdateTasks().clear();
+            myUpdates.addAndExecute(restartTask);
+            return;
+        }
+        lookupAndAndExecuteTask(key, restartTask);
     }
 
 
@@ -90,8 +90,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
 
         if (task != null) {
             // Run the update now, so reader in same transaction can see it
-            task.runUpdate(entity);
-            myUpdates.add(task);
+            myUpdates.addAndExecute(task);
         }
     }
 
@@ -168,7 +167,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
             long lifespanMs = cacheHolder.lifespanFunction().apply(realm, sessionUpdates.getClient(), sessionWrapper.getEntity());
             long maxIdleTimeMs = cacheHolder.maxIdleFunction().apply(realm, sessionUpdates.getClient(), sessionWrapper.getEntity());
 
-            MergedUpdate<V> merged = MergedUpdate.computeUpdate(updateTasks, sessionWrapper, lifespanMs, maxIdleTimeMs);
+            MergedUpdate<V> merged = MergedUpdate.computeUpdate(updateTasks, sessionWrapper, computeLifespan(maxIdleTimeMs, lifespanMs), computeMaxIdle(maxIdleTimeMs, lifespanMs));
 
             if (merged != null) {
                 // Now run the operation in our cluster
@@ -187,6 +186,11 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
      */
     public Cache<K, SessionEntityWrapper<V>> getCache() {
         return cacheHolder.cache();
+    }
+
+    public K generateKey() {
+        assert cacheHolder.keyGenerator() != null;
+        return cacheHolder.keyGenerator().get();
     }
 
     /**
@@ -212,7 +216,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
             // exists in transaction, avoid cache operation
             return updatesList.getEntityWrapper().getEntity();
         }
-        SessionEntityWrapper<V> existing = cacheHolder.cache().putIfAbsent(key, session, lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS);
+        SessionEntityWrapper<V> existing = cacheHolder.cache().putIfAbsent(key, session, computeLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS, computeMaxIdle(maxIdle, lifespan), TimeUnit.MILLISECONDS);
         if (existing == null) {
             // keep track of the imported session for updates
             updates.put(key, new SessionUpdatesList<>(realmModel, session));
@@ -259,7 +263,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
                 //nothing to import, already expired
                 return;
             }
-            var future = cacheHolder.cache().putIfAbsentAsync(key, session, lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS);
+            var future = cacheHolder.cache().putIfAbsentAsync(key, session, computeLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS, computeMaxIdle(maxIdle, lifespan), TimeUnit.MILLISECONDS);
             // write result into concurrent hash map because the consumer is invoked in a different thread each time.
             stage.dependsOn(future.thenAccept(existing -> allSessions.put(key, existing == null ? session : existing)));
         });
@@ -268,4 +272,28 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
         allSessions.forEach((key, wrapper) -> updates.put(key, new SessionUpdatesList<>(realmModel, wrapper)));
     }
 
+    private void lookupAndAndExecuteTask(K key, SessionUpdateTask<V> task) {
+        // Lookup entity from cache
+        SessionEntityWrapper<V> wrappedEntity = cacheHolder.cache().get(key);
+        if (wrappedEntity == null) {
+            logger.tracef("Not present cache item for key %s", key);
+            return;
+        }
+
+        RealmModel realm = kcSession.realms().getRealm(wrappedEntity.getEntity().getRealmId());
+
+        SessionUpdatesList<V> myUpdates = new SessionUpdatesList<>(realm, wrappedEntity);
+        updates.put(key, myUpdates);
+
+        // Run the update now, so reader in same transaction can see it (TODO: Rollback may not work correctly. See if it's an issue..)
+        myUpdates.addAndExecute(task);
+    }
+
+    protected long computeLifespan(long maxIdle, long lifespan) {
+        return lifespan;
+    }
+
+    protected long computeMaxIdle(long maxIdle, long lifespan) {
+        return maxIdle;
+    }
 }

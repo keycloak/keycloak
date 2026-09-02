@@ -19,10 +19,11 @@ package org.keycloak.models.sessions.infinispan.remote.transaction;
 
 import java.util.function.Consumer;
 
-import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.sessions.infinispan.transaction.DatabaseUpdate;
 import org.keycloak.models.sessions.infinispan.transaction.NonBlockingTransaction;
+
+import org.infinispan.commons.util.concurrent.AggregateCompletionStage;
 
 /**
  * A {@link KeycloakTransaction} implementation that wraps all the user and client session transactions.

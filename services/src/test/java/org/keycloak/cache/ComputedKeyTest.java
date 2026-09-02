@@ -1,9 +1,9 @@
 package org.keycloak.cache;
 
+import java.util.Map;
+
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
-
-import java.util.Map;
 
 public class ComputedKeyTest {
 

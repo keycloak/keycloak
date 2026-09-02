@@ -16,9 +16,6 @@
  */
 package org.keycloak.sdjwt.sdjwtvp;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -31,8 +28,10 @@ import org.keycloak.sdjwt.SdJwtUtils;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * This class will try to test conformity to the spec by comparing json objects.
@@ -47,7 +46,7 @@ import com.fasterxml.jackson.databind.JsonNode;
  * the spec, i had to produce
  * the same print. This is by no way reliable enough to be used to test
  * conformity to the spec.
- * 
+ *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
 public class TestCompareSdJwt {
@@ -64,12 +63,12 @@ public class TestCompareSdJwt {
     }
 
     private static void compareIssuerSignedJWT(IssuerSignedJWT e, IssuerSignedJWT a)
-            throws JsonMappingException, JsonProcessingException {
+            throws JsonProcessingException {
 
         assertEquals(e.getPayload(), a.getPayload());
 
-        List<String> expectedJwsStrings = Arrays.asList(e.toJws().split("\\."));
-        List<String> actualJwsStrings = Arrays.asList(a.toJws().split("\\."));
+        List<String> expectedJwsStrings = Arrays.asList(e.getJws().split("\\."));
+        List<String> actualJwsStrings = Arrays.asList(a.getJws().split("\\."));
 
         // compare json content of header
         assertEquals(toJsonNode(expectedJwsStrings.get(0)), toJsonNode(actualJwsStrings.get(0)));

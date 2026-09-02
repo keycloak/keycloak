@@ -17,33 +17,29 @@
 
 package org.keycloak.connections.infinispan;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import org.infinispan.client.hotrod.RemoteCacheManager;
-import org.infinispan.commons.configuration.io.ConfigurationWriter;
-import org.infinispan.commons.io.StringBuilderWriter;
-import org.infinispan.commons.util.Version;
-import org.infinispan.configuration.cache.Configuration;
-import org.infinispan.factories.GlobalComponentRegistry;
-import org.infinispan.configuration.parsing.ParserRegistry;
-import org.infinispan.health.CacheHealth;
-import org.infinispan.manager.DefaultCacheManager;
-import org.infinispan.manager.EmbeddedCacheManager;
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.config.CachingOptions;
+import org.keycloak.common.Profile;
+import org.keycloak.common.util.DurationConverter;
+import org.keycloak.config.HttpOptions;
 import org.keycloak.connections.infinispan.remote.RemoteInfinispanConnectionProvider;
+import org.keycloak.connections.infinispan.shutdown.ShutdownManager;
+import org.keycloak.connections.infinispan.shutdown.TopologyChangeCacheListener;
 import org.keycloak.infinispan.health.ClusterHealth;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.marshalling.KeycloakIndexSchemaUtil;
@@ -64,9 +60,25 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
+import org.keycloak.services.resources.ShutdownDelayInitiatedEvent;
 import org.keycloak.spi.infinispan.CacheEmbeddedConfigProvider;
 import org.keycloak.spi.infinispan.CacheRemoteConfigProvider;
 import org.keycloak.spi.infinispan.impl.embedded.CacheConfigurator;
+
+import org.infinispan.client.hotrod.RemoteCacheManager;
+import org.infinispan.commons.configuration.io.ConfigurationWriter;
+import org.infinispan.commons.io.StringBuilderWriter;
+import org.infinispan.commons.util.Version;
+import org.infinispan.configuration.cache.Configuration;
+import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
+import org.infinispan.configuration.parsing.ParserRegistry;
+import org.infinispan.factories.GlobalComponentRegistry;
+import org.infinispan.health.CacheHealth;
+import org.infinispan.manager.DefaultCacheManager;
+import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.remoting.transport.Transport;
+import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
@@ -77,6 +89,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.L
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanUtil.setTimeServiceToKeycloakTime;
 import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory.REALM_CLEAR_CACHE_EVENTS;
 import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory.REALM_INVALIDATION_EVENTS;
@@ -88,6 +101,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     private static final ReadWriteLock READ_WRITE_LOCK = new ReentrantReadWriteLock();
     private static final Logger logger = Logger.getLogger(DefaultInfinispanConnectionProviderFactory.class);
+    private static final String SHUTDOWN_TIMEOUT = "shutdownTimeout";
 
     private Config.Scope config;
 
@@ -95,6 +109,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     private volatile RemoteCacheManager remoteCacheManager;
     private volatile InfinispanConnectionProvider connectionProvider;
     private volatile ClusterHealth clusterHealth;
+    private volatile ShutdownManager shutdownManager;
 
     @Override
     public InfinispanConnectionProvider create(KeycloakSession session) {
@@ -130,6 +145,10 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     @Override
     public void close() {
         logger.debug("Closing provider");
+        if (shutdownManager != null) {
+            shutdownManager.onShutdown();
+            shutdownManager = null;
+        }
         runWithWriteLockOnCacheManager(() -> {
             if (cacheManager != null) {
                 cacheManager.stop();
@@ -169,20 +188,75 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             this.cacheManager = createEmbeddedCacheManager(keycloakSession);
             injectKeycloakTimeService(cacheManager);
             var topologyInfo = new TopologyInfo(cacheManager);
-            logger.infof(topologyInfo.toString());
+            var nodeInfo = NodeInfo.of(cacheManager);
+            logger.info(nodeInfo.printInfo());
+
+            addShutdownListeners();
 
             this.remoteCacheManager = createRemoteCacheManager(keycloakSession);
             this.connectionProvider = InfinispanUtils.isRemoteInfinispan() ?
-                    new RemoteInfinispanConnectionProvider(cacheManager, remoteCacheManager, topologyInfo) :
-                    new DefaultInfinispanConnectionProvider(cacheManager, topologyInfo);
+                    new RemoteInfinispanConnectionProvider(cacheManager, remoteCacheManager, topologyInfo, nodeInfo) :
+                    new DefaultInfinispanConnectionProvider(cacheManager, topologyInfo, nodeInfo);
 
             clusterHealth = GlobalComponentRegistry.componentOf(cacheManager, ClusterHealth.class);
             return connectionProvider;
         }
     }
 
+    private void addShutdownListeners() {
+        var sm = new ShutdownManager(getShutdownDelay().toMillis(), getShutdownTimeout().toMillis());
+        for (var name : CLUSTERED_CACHE_NAMES) {
+            if (!cacheManager.cacheConfigurationExists(name)) {
+                logger.debugf("Cache '%s' not defined; skipping the shutdown listener", name);
+                continue;
+            }
+            var cache = cacheManager.getCache(name);
+            if (cache == null ){
+                logger.debugf("Cache '%s' not defined; skipping the shutdown listener", name);
+                return;
+            }
+            var cacheConfig = cache.getCacheConfiguration();
+            if (!cacheConfig.clustering().cacheMode().isClustered() || cacheConfig.clustering().cacheMode().isReplicated() || cacheConfig.clustering().cacheMode().isInvalidation()) {
+                // local or replicated caches, we don't need to care about the state transfer.
+                logger.debugf("Cache '%s' uses mode '%s' and no data loss risk exists; skipping the shutdown listener", name, cacheConfig.clustering().cacheMode());
+                continue;
+            }
+            if (!cacheConfig.clustering().stateTransfer().fetchInMemoryState()) {
+                // state transfer disabled, we can skip this cache
+                logger.debugf("Cache '%s' has state transfer disabled; skipping the shutdown listener", name);
+                continue;
+            }
+            var listener = TopologyChangeCacheListener.waitForStableTopology(cache);
+            sm.addListener(listener);
+        }
+        shutdownManager = sm;
+    }
+
+    private Duration getShutdownTimeout() {
+        return convertDurationAndEnsureGreaterOrEqualsThanZero(config.get(SHUTDOWN_TIMEOUT));
+    }
+
+    private Duration getShutdownDelay() {
+        return convertDurationAndEnsureGreaterOrEqualsThanZero(config.root().get(HttpOptions.SHUTDOWN_DELAY.getKey()));
+    }
+
+    private static Duration convertDurationAndEnsureGreaterOrEqualsThanZero(String value) {
+        var duration = DurationConverter.parseDuration(value);
+        if (duration == null || duration.isZero() || duration.isNegative()) {
+            return Duration.ZERO;
+        }
+        return duration;
+    }
+
     protected EmbeddedCacheManager createEmbeddedCacheManager(KeycloakSession session) {
         var holder = session.getProvider(CacheEmbeddedConfigProvider.class).configuration();
+
+        // remove clustered caches
+        if (Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
+            Arrays.stream(CLUSTERED_CACHE_NAMES)
+                    .filter(Predicate.not(WORK_CACHE_NAME::equals))
+                    .forEach(holder.getNamedConfigurationBuilders()::remove);
+        }
 
         StringBuilderWriter sw = new StringBuilderWriter();
         ParserRegistry parser = new ParserRegistry();
@@ -193,12 +267,29 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             logger.debugf("Infinispan configuration:\n%s", sw);
         }
 
-        var cm = new DefaultCacheManager(holder, true);
+        var cm = getDefaultCacheManager(session, holder);
+        if (cm.getCacheManagerConfiguration().metrics().enabled()) {
+            var transport = GlobalComponentRegistry.componentOf(cm, Transport.class);
+            if (transport != null) {
+                // we miss some messages stats (aka state transfer) by enabling this late.
+                // but here works for all stacks, including custom ones by users.
+                ((JGroupsTransport) transport).getChannel().getProtocolStack().getTransport().enableStats(true);
+            }
+        }
         cm.getCache(KEYS_CACHE_NAME, true);
         cm.getCache(CRL_CACHE_NAME, true);
 
         logger.debugv("Using container managed Infinispan cache container, lookup={0}", cm);
         return cm;
+    }
+
+    private static DefaultCacheManager getDefaultCacheManager(KeycloakSession session, ConfigurationBuilderHolder holder) {
+        // This disables the JTA transaction context to avoid binding all JDBC_PING2 interactions to the current transaction
+        DefaultCacheManager[] _cm = new DefaultCacheManager[1];
+        //noinspection resource
+        KeycloakModelUtils.suspendJtaTransaction(session.getKeycloakSessionFactory(), () ->
+                _cm[0] = new DefaultCacheManager(holder, true));
+        return _cm[0];
     }
 
     protected RemoteCacheManager createRemoteCacheManager(KeycloakSession session) {
@@ -289,6 +380,8 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     public void onEvent(ProviderEvent event) {
         if (event instanceof PostMigrationEvent pme) {
             KeycloakModelUtils.runJobInTransaction(pme.getFactory(), this::registerSystemWideListeners);
+        } else if (event instanceof ShutdownDelayInitiatedEvent se) {
+            Optional.ofNullable(shutdownManager).ifPresent(sm -> sm.onShutdownStarted(se.timestamp()));
         }
     }
 
@@ -314,6 +407,16 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     @Override
     public boolean isClusterHealthSupported() {
         return clusterHealth.isSupported();
+    }
+
+    @Override
+    public boolean isCoordinator() {
+        return cacheManager.isCoordinator();
+    }
+
+    @Override
+    public boolean isCoordinatorSupported() {
+        return true;
     }
 
     private void addEmbeddedOperationalInfo(Map<String, String> info) {

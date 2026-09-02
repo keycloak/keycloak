@@ -17,15 +17,15 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Mappings UserModel property (the property name of a getter method) to an ID Token claim.  Token claim name can be a full qualified nested object name,

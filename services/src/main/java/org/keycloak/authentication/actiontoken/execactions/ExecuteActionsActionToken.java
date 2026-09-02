@@ -16,10 +16,12 @@
  */
 package org.keycloak.authentication.actiontoken.execactions;
 
-import org.keycloak.authentication.actiontoken.DefaultActionToken;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.LinkedList;
 import java.util.List;
+
+import org.keycloak.authentication.actiontoken.DefaultActionToken;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  *

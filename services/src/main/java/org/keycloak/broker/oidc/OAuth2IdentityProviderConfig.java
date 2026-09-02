@@ -16,7 +16,7 @@
  */
 package org.keycloak.broker.oidc;
 
-import static org.keycloak.common.util.UriUtils.checkUrl;
+import java.util.Arrays;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.enums.SslRequired;
@@ -25,7 +25,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.IDToken;
 
-import java.util.Arrays;
+import static org.keycloak.common.util.UriUtils.checkUrl;
 
 /**
  * @author Pedro Igor
@@ -123,6 +123,10 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
 
     public boolean isBasicAuthentication(){
         return getClientAuthMethod().equals(OIDCLoginProtocol.CLIENT_SECRET_BASIC);
+    }
+
+    public boolean isBasicAuthenticationUnencoded(){
+        return getClientAuthMethod().equals(OIDCLoginProtocol.CLIENT_SECRET_BASIC_UNENCODED);
     }
 
     public boolean isUiLocales() {

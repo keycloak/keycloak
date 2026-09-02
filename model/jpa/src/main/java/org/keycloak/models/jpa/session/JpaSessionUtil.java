@@ -1,0 +1,66 @@
+/*
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.keycloak.models.jpa.session;
+
+import java.util.Objects;
+
+import org.keycloak.models.session.PersistentAuthenticatedClientSessionAdapter;
+import org.keycloak.storage.StorageId;
+
+public final class JpaSessionUtil {
+
+    private JpaSessionUtil() {}
+
+    public static String offlineToString(boolean offline) {
+        return offline ? "1" : "0";
+    }
+
+    public static boolean offlineFromString(String offlineStr) {
+        return "1".equals(offlineStr);
+    }
+
+    public static boolean isExternalClient(PersistentClientSessionEntity entity) {
+        return !entity.getExternalClientId().equals(PersistentClientSessionEntity.LOCAL);
+    }
+
+    public static String getExternalClientId(PersistentClientSessionEntity entity) {
+        return new StorageId(entity.getClientStorageProvider(), entity.getExternalClientId()).getId();
+    }
+
+    public static String getClientId(PersistentClientSessionEntity entity) {
+        return isExternalClient(entity) ? getExternalClientId(entity) : entity.getClientId();
+    }
+
+    /**
+     * Extracts the client ID from a UserSessionIdAndClientSessionId record.
+     * Handles both internal clients (stored in clientSessionId) and external clients
+     * (stored via clientStorageProvider and externalClientId).
+     *
+     * @param sessions the session ID record containing client information
+     * @return the client UUID, or null if no client session exists
+     */
+    public static String getClientId(UserSessionIdAndClientSessionId sessions) {
+        return Objects.equals(sessions.clientSessionId(), PersistentClientSessionEntity.EXTERNAL) ?
+                new StorageId(sessions.clientStorageProvider(), sessions.externalClientId()).getId() :
+                sessions.clientSessionId();
+    }
+
+    public static boolean hasClient(PersistentAuthenticatedClientSessionAdapter clientSession) {
+        return clientSession.getClient() != null;
+    }
+}

@@ -17,39 +17,46 @@
 
 package org.keycloak.models.jpa;
 
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
-import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationStorageProvider;
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.jpa.entities.GroupAttributeEntity;
-import org.keycloak.models.jpa.entities.GroupEntity;
-import org.keycloak.models.jpa.entities.GroupRoleMappingEntity;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.RoleUtils;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
+
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationStorageProvider;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.jpa.entities.GroupAttributeEntity;
+import org.keycloak.models.jpa.entities.GroupEntity;
+import org.keycloak.models.jpa.entities.GroupRoleMappingEntity;
+import org.keycloak.models.jpa.entities.OrganizationEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.storage.UserStoragePrivateUtil;
 
 import static java.util.Optional.ofNullable;
+
 import static org.keycloak.common.util.CollectionUtil.collectionEquals;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
+import static org.keycloak.utils.StringUtil.isBlank;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -85,6 +92,9 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     @Override
     public void setName(String name) {
+        if (isBlank(name)) {
+            throw new ModelException("Group name cannot be null or empty");
+        }
         group.setName(name);
         fireGroupUpdatedEvent();
     }
@@ -98,6 +108,26 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
     public void setDescription(String description) {
         group.setDescription(description);
         fireGroupUpdatedEvent();
+    }
+
+    @Override
+    public Long getCreatedTimestamp() {
+        return group.getCreatedTimestamp();
+    }
+
+    @Override
+    public void setCreatedTimestamp(Long timestamp) {
+        group.setCreatedTimestamp(timestamp);
+    }
+
+    @Override
+    public Long getLastModifiedTimestamp() {
+        return group.getLastModifiedTimestamp();
+    }
+
+    @Override
+    public void setLastModifiedTimestamp(Long timestamp) {
+        group.setLastModifiedTimestamp(timestamp);
     }
 
     @Override
@@ -163,7 +193,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         List<Predicate> predicates = new ArrayList<>();
 
         predicates.add(builder.equal(root.get("realm"), realm.getId()));
-        predicates.add(builder.equal(root.get("type"), Type.REALM.intValue()));
+        predicates.add(builder.equal(root.get("type"), group.getType()));
         predicates.add(builder.equal(root.get("parentId"), group.getId()));
 
         search = search == null ? "" : search;
@@ -171,10 +201,16 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         if (Boolean.TRUE.equals(exact)) {
             predicates.add(builder.like(root.get("name"), search));
         } else {
-            predicates.add(builder.like(builder.lower(root.get("name")), builder.lower(builder.literal("%" + search + "%"))));
+            search = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+            search = search.replace("*", "%");
+            if (search.isEmpty() || search.charAt(search.length() - 1) != '%') search += "%";
+
+            predicates.add(builder.like(builder.lower(root.get("name")), search.toLowerCase(), '\\'));
         }
 
-        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, (PartialEvaluationStorageProvider) UserStoragePrivateUtil.userLocalStorage(session), realm, builder, queryBuilder, root));
+        if (Type.REALM.intValue() == group.getType()) {
+            predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, (PartialEvaluationStorageProvider) UserStoragePrivateUtil.userLocalStorage(session), realm, builder, queryBuilder, root));
+        }
 
         queryBuilder.where(predicates.toArray(new Predicate[0]));
         queryBuilder.orderBy(builder.asc(root.get("name")));
@@ -197,9 +233,12 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         List<Predicate> predicates = new ArrayList<>();
 
         predicates.add(builder.equal(root.get("realm"), realm.getId()));
-        predicates.add(builder.equal(root.get("type"), Type.REALM.intValue()));
+        predicates.add(builder.equal(root.get("type"), group.getType()));
         predicates.add(builder.equal(root.get("parentId"), group.getId()));
-        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, (PartialEvaluationStorageProvider) UserStoragePrivateUtil.userLocalStorage(session), realm, builder, queryBuilder, root));
+
+        if (Type.REALM.intValue() == group.getType()) {
+            predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, (PartialEvaluationStorageProvider) UserStoragePrivateUtil.userLocalStorage(session), realm, builder, queryBuilder, root));
+        }
 
         queryBuilder.where(predicates.toArray(new Predicate[0]));
 
@@ -308,6 +347,17 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         return parent != null && parent.hasRole(role);
     }
 
+    @Override
+    public boolean hasDirectRole(RoleModel role) {
+        TypedQuery<GroupRoleMappingEntity> query = getGroupRoleMappingEntityTypedQuery(role);
+        GroupRoleMappingEntity membership = query.getSingleResultOrNull();
+        // Avoid keeping it in the persistence context, as the group might be detached for example in a bulk delete
+        if (membership != null) {
+            em.detach(membership);
+        }
+        return membership != null;
+    }
+
     protected TypedQuery<GroupRoleMappingEntity> getGroupRoleMappingEntityTypedQuery(RoleModel role) {
         TypedQuery<GroupRoleMappingEntity> query = em.createNamedQuery("groupHasRole", GroupRoleMappingEntity.class);
         query.setParameter("group", getEntity());
@@ -365,6 +415,24 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
     @Override
     public Type getType() {
         return Type.valueOf(group.getType());
+    }
+
+    @Override
+    public OrganizationModel getOrganization() {
+        OrganizationEntity organization = group.getOrganization();
+        if (organization == null) return null;
+
+        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+        if (orgProvider == null) return null;
+
+        // Temporarily set session realm context to group's realm to avoid realm mismatch
+        RealmModel currentRealm = session.getContext().getRealm();
+        try {
+            session.getContext().setRealm(realm);
+            return orgProvider.getById(organization.getId());
+        } finally {
+            session.getContext().setRealm(currentRealm);
+        }
     }
 
     @Override

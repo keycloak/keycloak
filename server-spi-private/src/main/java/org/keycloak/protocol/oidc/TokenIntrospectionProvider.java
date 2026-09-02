@@ -17,10 +17,10 @@
  */
 package org.keycloak.protocol.oidc;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.events.EventBuilder;
 import org.keycloak.provider.Provider;
-
-import jakarta.ws.rs.core.Response;
 
 /**
  * Provides introspection for a determined OAuth2 token type.

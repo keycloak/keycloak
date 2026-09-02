@@ -17,19 +17,21 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
-
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 
-import io.quarkus.runtime.configuration.ConfigUtils;
-import io.smallrye.config.ConfigValue;
-import io.smallrye.config.SmallRyeConfig;
-
 import org.keycloak.config.Option;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.utils.StringUtil;
 
+import io.quarkus.runtime.configuration.ConfigUtils;
+import io.smallrye.config.ConfigValue;
+import io.smallrye.config.DotEnvConfigSourceProvider;
+import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.SysPropConfigSource;
+
+import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
 /**
@@ -51,10 +53,16 @@ public final class Configuration {
         return getOptionalBooleanValue(NS_KEYCLOAK_PREFIX + option.getKey()).orElse(false);
     }
 
+    /**
+     * Return true if the value is not derived (meaning that the config source name is set)
+     * and the config source is something that a user can change the values in
+     */
     public static boolean isUserModifiable(ConfigValue configValue) {
-        // This could check as low as SysPropConfigSource DEFAULT_ORDINAL, which is 400
-        // for now we won't validate these as it's not expected for the user to specify options via system properties
-        return configValue.getConfigSourceOrdinal() >= KeycloakPropertiesConfigSource.PROPERTIES_FILE_ORDINAL;
+        return configValue.getConfigSourceName() != null && !isDefault(configValue);
+    }
+
+    public static boolean isDefault(ConfigValue configValue) {
+        return configValue.getConfigSourceOrdinal() <= PropertyMapper.DEFAULT_VALUE_ORDINAL;
     }
 
     public static boolean isSet(Option<?> option) {
@@ -95,13 +103,21 @@ public final class Configuration {
 
     public static synchronized SmallRyeConfig getConfig() {
         if (config == null) {
-            config = ConfigUtils.emptyConfigBuilder().addDiscoveredSources().build();
+            // we're manually adding the default sources to have control over the EnvConfigSource
+            config = ConfigUtils.emptyConfigBuilder().setAddDefaultSources(false).setAddPropertiesSources(true)
+                    .addDiscoveredSources()
+                    .withCustomizers(new ConfigBuilderCustomizer())
+                    .withSources(new SysPropConfigSource())
+                    .withSources(new DotEnvConfigSourceProvider()
+                            .getConfigSources(Thread.currentThread().getContextClassLoader()))
+                    .build();
         }
         return config;
     }
 
     public static void resetConfig() {
         config = null;
+        KeycloakConfigSourceProvider.reload();
     }
 
     /**

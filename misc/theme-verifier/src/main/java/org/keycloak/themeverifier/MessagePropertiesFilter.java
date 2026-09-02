@@ -16,9 +16,9 @@
  */
 package org.keycloak.themeverifier;
 
-import org.apache.commons.io.filefilter.AbstractFileFilter;
-
 import java.io.File;
+
+import org.apache.commons.io.filefilter.AbstractFileFilter;
 
 public class MessagePropertiesFilter extends AbstractFileFilter {
     public static MessagePropertiesFilter INSTANCE = new MessagePropertiesFilter();

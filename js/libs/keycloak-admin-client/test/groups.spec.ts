@@ -5,8 +5,8 @@ import { KeycloakAdminClient } from "../src/client.js";
 import type ClientRepresentation from "../src/defs/clientRepresentation.js";
 import type GroupRepresentation from "../src/defs/groupRepresentation.js";
 import type RoleRepresentation from "../src/defs/roleRepresentation.js";
+import type { SubGroupQuery } from "../src/resources/groups.js";
 import { credentials } from "./constants.js";
-import { SubGroupQuery } from "../src/resources/groups.js";
 
 const expect = chai.expect;
 
@@ -39,6 +39,17 @@ describe("Groups", () => {
     expect(group).to.be.null;
   });
 
+  it("create group with attributes", async () => {
+    const group = await kcAdminClient.groups.create({
+      name: "basic-group",
+      attributes: {
+        accessLevel: ["internal"],
+        project: ["alpha"],
+      },
+    });
+    expect(group.id).to.be.ok;
+  });
+
   it("list groups", async () => {
     const groups = await kcAdminClient.groups.find();
     expect(groups).to.be.ok;
@@ -46,7 +57,7 @@ describe("Groups", () => {
 
   it("count groups", async () => {
     const result = await kcAdminClient.groups.count();
-    expect(result.count).to.eq(1);
+    expect(result.count).to.eq(2);
   });
 
   it("count groups with filter", async () => {
@@ -79,6 +90,17 @@ describe("Groups", () => {
     expect(group).to.include({
       name: "another-group-name",
     });
+  });
+
+  it("crete sub-group", async () => {
+    const subGroupId = await kcAdminClient.groups.createChildGroup(
+      { id: currentGroup.id! },
+      {
+        name: "child-group",
+        description: "child-group",
+      },
+    );
+    expect(subGroupId).to.be.ok;
   });
 
   it("list subgroups", async () => {

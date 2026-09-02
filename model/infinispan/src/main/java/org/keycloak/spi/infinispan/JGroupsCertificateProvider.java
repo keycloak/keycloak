@@ -18,11 +18,10 @@
 package org.keycloak.spi.infinispan;
 
 import java.time.Duration;
-
-import org.keycloak.provider.Provider;
-
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
+
+import org.keycloak.provider.Provider;
 
 /**
  * A {@link Provider} for the TLS certificate for JGroups communication.

@@ -17,7 +17,6 @@
 package org.keycloak.crypto;
 
 import java.nio.charset.StandardCharsets;
-
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -33,7 +32,8 @@ public class ClientMacSignatureVerifierContext extends MacSignatureVerifierConte
 
     private static KeyWrapper getKey(KeycloakSession session, ClientModel client, String algorithm) throws VerificationException {
         if (algorithm == null) algorithm = Algorithm.HS256;
-        String clientSecretString = client.getSecret();
+        String secretRef = client.getSecret();
+        String clientSecretString = session.vault().getStringSecret(secretRef).get().orElse(secretRef);
         SecretKey clientSecret = new SecretKeySpec(clientSecretString.getBytes(StandardCharsets.UTF_8), JavaAlgorithm.getJavaAlgorithm(algorithm));
         KeyWrapper key = new KeyWrapper();
         key.setSecretKey(clientSecret);

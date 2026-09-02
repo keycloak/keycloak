@@ -1,9 +1,5 @@
 package org.keycloak.testsuite.cli.exec;
 
-import org.keycloak.client.cli.util.OsUtil;
-import org.keycloak.testsuite.cli.OsArch;
-import org.keycloak.testsuite.cli.OsUtils;
-
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -16,6 +12,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import org.keycloak.client.cli.util.OsUtil;
+import org.keycloak.testsuite.cli.OsArch;
+import org.keycloak.testsuite.cli.OsUtils;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>

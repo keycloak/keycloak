@@ -17,8 +17,13 @@
 
 package org.keycloak.tests.admin.authentication;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
@@ -27,12 +32,8 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.utils.KerberosUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -158,12 +159,14 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         addExecExport(flow, null, false, "client-jwt", false, null, ALTERNATIVE, 20);
         addExecExport(flow, null, false, "client-secret-jwt", false, null, ALTERNATIVE, 30);
         addExecExport(flow, null, false, "client-x509", false, null, ALTERNATIVE, 40);
+        addExecExport(flow, null, false, "federated-jwt", false, null, ALTERNATIVE, 50);
 
         execs = new LinkedList<>();
         addExecInfo(execs, "Client Id and Secret", "client-secret", false, 0, 0, ALTERNATIVE, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 10);
-        addExecInfo(execs, "Signed Jwt", "client-jwt", false, 0, 1, ALTERNATIVE, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 20);
-        addExecInfo(execs, "Signed Jwt with Client Secret", "client-secret-jwt", false, 0, 2, ALTERNATIVE, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 30);
+        addExecInfo(execs, "Signed JWT", "client-jwt", false, 0, 1, ALTERNATIVE, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 20);
+        addExecInfo(execs, "Signed JWT with Client Secret", "client-secret-jwt", false, 0, 2, ALTERNATIVE, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 30);
         addExecInfo(execs, "X509 Certificate", "client-x509", false, 0, 3, ALTERNATIVE, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 40);
+        addExecInfo(execs, "Signed JWT - Federated", "federated-jwt", false, 0, 4, ALTERNATIVE, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED}, 50);
         expected.add(new FlowExecutions(flow, execs));
 
         flow = newFlow("direct grant", "OpenID Connect Resource Owner Grant", "basic-flow", true, true);
@@ -219,7 +222,7 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         execs = new LinkedList<>();
         addExecInfo(execs, "registration form", "registration-page-form", false, 0, 0, REQUIRED, true, new String[]{REQUIRED, DISABLED}, 10);
         addExecInfo(execs, "Registration User Profile Creation", "registration-user-creation", false, 1, 0, REQUIRED, null, new String[]{REQUIRED, DISABLED}, 20);
-        addExecInfo(execs, "Password Validation", "registration-password-action", false, 1, 1, REQUIRED, null, new String[]{REQUIRED, DISABLED}, 50);
+        addExecInfo(execs, "Password Validation", "registration-password-action", true, 1, 1, REQUIRED, null, new String[]{REQUIRED, DISABLED}, 50);
         addExecInfo(execs, "reCAPTCHA", "registration-recaptcha-action", true, 1, 2, DISABLED, null, new String[]{REQUIRED, DISABLED}, 60);
         addExecInfo(execs, "Terms and conditions", "registration-terms-and-conditions", false, 1, 3, DISABLED, null, new String[]{REQUIRED, DISABLED}, 70);
         expected.add(new FlowExecutions(flow, execs));

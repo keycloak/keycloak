@@ -17,7 +17,6 @@
 
 package org.keycloak.authentication.authenticators.conditional;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowCallback;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -32,10 +31,12 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
+import org.jboss.logging.Logger;
+
 public class ConditionalLoaAuthenticator implements ConditionalAuthenticator, AuthenticationFlowCallback {
     public static final String LEVEL = "loa-condition-level";
     public static final String MAX_AGE = "loa-max-age";
-    public static final int DEFAULT_MAX_AGE = 36000; // 10 days
+    public static final int DEFAULT_MAX_AGE = 36000; // 10 hours
 
     // Only for backwards compatibility with Keycloak 17
     @Deprecated

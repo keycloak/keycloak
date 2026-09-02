@@ -17,11 +17,9 @@
 package org.keycloak.testsuite.broker;
 
 import java.io.Closeable;
-import jakarta.ws.rs.core.Response;
-import org.hamcrest.Matchers;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import org.junit.Test;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
@@ -29,13 +27,18 @@ import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
+import org.keycloak.testsuite.util.SamlClient;
+import org.keycloak.testsuite.util.SamlClientBuilder;
+
+import org.hamcrest.Matchers;
+import org.junit.Test;
+import org.w3c.dom.Document;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
-import org.keycloak.testsuite.util.SamlClient;
-import org.keycloak.testsuite.util.SamlClientBuilder;
-import org.w3c.dom.Document;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  *
@@ -64,7 +67,7 @@ public class KcSamlBrokerAllowedClockSkewTest extends AbstractInitializedBaseBro
 
           .login().user(bc.getUserLogin(), bc.getUserPassword()).build()
 
-          .addStep(() -> KcSamlBrokerAllowedClockSkewTest.this.setTimeOffset(-30)) // offset to the past to invalidate the request
+          .addStep(() -> KcSamlBrokerAllowedClockSkewTest.this.timeOffSet.set(-30)) // offset to the past to invalidate the request
           .processSamlResponse(SamlClient.Binding.POST)    // Response from producer IdP should fail
             .build()
             .execute(hr -> assertThat(hr, statusCodeIsHC(Response.Status.BAD_REQUEST)));
@@ -90,7 +93,7 @@ public class KcSamlBrokerAllowedClockSkewTest extends AbstractInitializedBaseBro
 
               .login().user(bc.getUserLogin(), bc.getUserPassword()).build()
 
-              .addStep(() -> KcSamlBrokerAllowedClockSkewTest.this.setTimeOffset(-30)) // offset to the past but inside the clock skew
+              .addStep(() -> KcSamlBrokerAllowedClockSkewTest.this.timeOffSet.set(-30)) // offset to the past but inside the clock skew
               .processSamlResponse(SamlClient.Binding.POST)    // Response from producer IdP expired but valid with the clock skew
                 .build()
 

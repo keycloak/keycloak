@@ -16,9 +16,10 @@
  */
 package org.keycloak.protocol.oid4vc.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
+import java.util.Objects;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Represents a claims description object as used in authorization details.
@@ -29,10 +30,13 @@ import java.util.List;
  */
 public class ClaimsDescription {
 
-    @JsonProperty("path")
+    public static final String PATH = "path";
+    public static final String MANDATORY = "mandatory";
+
+    @JsonProperty(PATH)
     private List<Object> path;
 
-    @JsonProperty("mandatory")
+    @JsonProperty(MANDATORY)
     private Boolean mandatory;
 
     public ClaimsDescription() {
@@ -64,5 +68,18 @@ public class ClaimsDescription {
      */
     public boolean isMandatory() {
         return mandatory != null ? mandatory : false;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ClaimsDescription that = (ClaimsDescription) o;
+        return Objects.equals(path, that.path) && Objects.equals(mandatory, that.mandatory);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(path, mandatory);
     }
 }

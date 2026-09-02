@@ -1,7 +1,5 @@
 package org.keycloak.broker.saml.mappers;
 
-import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ATTRIBUTE_FORMAT_BASIC;
-
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,7 +22,7 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import org.jboss.logging.Logger;
+
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.saml.SAMLEndpoint;
@@ -44,7 +42,11 @@ import org.keycloak.protocol.saml.mappers.SamlMetadataDescriptorUpdater;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.StringUtil;
+
+import org.jboss.logging.Logger;
 import org.w3c.dom.Document;
+
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ATTRIBUTE_FORMAT_BASIC;
 
 public class XPathAttributeMapper extends AbstractIdentityProviderMapper implements SamlMetadataDescriptorUpdater {
 
@@ -65,10 +67,10 @@ public class XPathAttributeMapper extends AbstractIdentityProviderMapper impleme
     private static final ThreadLocal<XPathFactory> XPATH_FACTORY = ThreadLocal.withInitial(() -> {
         final XPathFactory xPathFactory = XPathFactory.newInstance();
         xPathFactory.setXPathVariableResolver(variableName -> {
-            throw new RuntimeException("resolveVariable for variable " + variableName + " not supported");
+            throw new UnsupportedOperationException("resolveVariable for variable " + variableName + " not supported");
         });
         xPathFactory.setXPathFunctionResolver((functionName, arity) -> {
-            throw new RuntimeException("resolveFunction for function " + functionName + " not supported");
+            throw new UnsupportedOperationException("resolveFunction for function " + functionName + " not supported");
         });
         return xPathFactory;
     });
@@ -212,7 +214,7 @@ public class XPathAttributeMapper extends AbstractIdentityProviderMapper impleme
                 });
                 Document document = DocumentUtil.getDocument(new StringReader(xml));
                 return xPath.compile(attributeXPath).evaluate(document, XPathConstants.STRING);
-            } catch (XPathExpressionException e) {
+            } catch (XPathExpressionException|UnsupportedOperationException e) {
                 LOGGER.warn("Unparsable element will be ignored", e);
                 return "";
             } catch (Exception e) {

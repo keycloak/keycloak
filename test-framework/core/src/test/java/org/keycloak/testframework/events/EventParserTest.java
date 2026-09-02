@@ -1,8 +1,9 @@
 package org.keycloak.testframework.events;
 
+import org.keycloak.events.Event;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.keycloak.events.Event;
 
 public class EventParserTest {
 

@@ -17,10 +17,14 @@
 
 package org.keycloak.tests.admin.event;
 
-import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -42,21 +46,19 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
-import org.keycloak.tests.utils.admin.ApiUtil;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -70,6 +72,7 @@ import static org.hamcrest.Matchers.is;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 @KeycloakIntegrationTest
+@DatabaseTest
 public class AdminEventTest {
 
     @InjectRealm(attachTo = "master", ref = "master")
@@ -95,7 +98,7 @@ public class AdminEventTest {
     }
 
     private String createUser(String username) {
-        UserRepresentation user = UserConfigBuilder.create()
+        UserRepresentation user = UserBuilder.create()
                 .username(username)
                 .email(username + "@foo.com")
                 .name("foo", "bar")
@@ -427,7 +430,7 @@ public class AdminEventTest {
         Assertions.assertNull(eventUserRep.getCredentials());
 
         UserRepresentation userRep = user.toRepresentation();
-        userRep = UserConfigBuilder.update(userRep).password("password").build();
+        userRep = UserBuilder.update(userRep).password("password").build();
         user.update(userRep);
         events = events();
         eventUserRep = JsonSerialization.readValue(events.get(0).getRepresentation(), UserRepresentation.class);
@@ -437,7 +440,7 @@ public class AdminEventTest {
     private static class AdminEventRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             return realm.eventsEnabled(true)
                     .adminEventsEnabled(true)
                     .adminEventsDetailsEnabled(false);

@@ -1,0 +1,24 @@
+[id="handling-failures_{context}"]
+
+[[_handling_failures_]]
+=  Handling failures
+[role="_abstract"]
+
+The workflows engine keeps track of the execution process by storing the step that should run in a state table. If
+the step fails to run, either due to an error in the step execution or because of a timeout, the error is logged, an event
+is fired, and the state table remains unchanged. This effectively means that the step will be retried the next time the workflow
+execution task runs.
+
+In this initial version there's no limit to the number of retries, so a workflow execution can get stuck until the administrator
+intervenes and either fixes the issue that is preventing the step from running successfully or uses the API to cancel the workflow
+execution or to migrate the resource to a different workflow/step. Thus, it is important that admins monitor the workflow execution
+logs and check for any errors that may occur repeatedly.
+
+NOTE: The state table is used even for immediate steps (i.e. steps that are supposed to run immediately after the previous step).
+This means that if an immediate step fails, the workflow execution will be retried later, and the failed step will be retried as well,
+behaving as if it were a scheduled step. This is to ensure that the workflow execution process is consistent and that all steps are
+retried in the same way, regardless of their configuration. This also ensures the workflow will be resumed in case of server restarts or crashes.
+
+Future versions of the workflows engine will include more features to handle failures, such as the ability to configure a maximum number
+of retries for each step, as well as the ability to define custom error handling logic for specific steps, like skip the step or cancel
+the workflow execution.

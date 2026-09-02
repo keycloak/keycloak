@@ -1,0 +1,2 @@
+org.keycloak.tests.providers.rest.ErrorTestingRealmResourceProviderFactory
+org.keycloak.tests.providers.rest.CookieTestingRealmResourceProviderFactory

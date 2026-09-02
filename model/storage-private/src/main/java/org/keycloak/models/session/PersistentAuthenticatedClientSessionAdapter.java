@@ -17,8 +17,12 @@
 
 package org.keycloak.models.session;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -27,12 +31,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -239,7 +239,9 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
     @Override
     public Map<String, String> getNotes() {
         PersistentClientSessionData entity = getData();
-        if (entity.getNotes() == null || entity.getNotes().isEmpty()) return Collections.emptyMap();
+        if (entity.getNotes() == null) {
+            entity.setNotes(new HashMap<>());
+        }
         return entity.getNotes();
     }
 

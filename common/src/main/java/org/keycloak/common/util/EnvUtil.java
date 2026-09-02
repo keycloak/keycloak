@@ -46,11 +46,9 @@ public final class EnvUtil {
             String envVar = matcher.group(1);
             String envVal = System.getProperty(envVar);
             if (envVal == null) envVal = "NOT-SPECIFIED";
-            matcher.appendReplacement(buf, envVal.replace("\\", "\\\\"));
+            matcher.appendReplacement(buf, Matcher.quoteReplacement(envVal));
         }
         matcher.appendTail(buf);
         return buf.toString();
     }
 }
-
-

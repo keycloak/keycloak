@@ -93,4 +93,7 @@ public abstract class BaseGlobalOptionsCmd implements Runnable {
         return value ? "true" : null;
     }
 
+    protected void configureCommandLine(CommandLine cli) {
+    }
+
 }

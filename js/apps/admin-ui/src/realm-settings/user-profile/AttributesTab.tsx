@@ -62,41 +62,46 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
         (attribute) => attribute.name === attributeToDelete,
       )?.displayName;
 
-      // Remove the the `${}` from translationsToDelete string
-      const formattedTranslationsToDelete = translationsToDelete?.substring(
-        2,
-        translationsToDelete.length - 1,
-      );
+      // Only a `${...}` display name refers to a translation key. Without one
+      // there is nothing to delete, and passing an empty key would target the
+      // endpoint that removes every message of the locale.
+      const formattedTranslationsToDelete =
+        translationsToDelete?.startsWith("${") &&
+        translationsToDelete.endsWith("}")
+          ? translationsToDelete.slice(2, -1)
+          : undefined;
 
       try {
-        await Promise.all(
-          combinedLocales.map(async (locale) => {
-            try {
-              const response =
-                await adminClient.realms.getRealmLocalizationTexts({
-                  realm,
-                  selectedLocale: locale,
-                });
-
-              if (response) {
-                await adminClient.realms.deleteRealmLocalizationTexts({
-                  realm,
-                  selectedLocale: locale,
-                  key: formattedTranslationsToDelete,
-                });
-
-                const updatedData =
-                  await adminClient.realms.getRealmLocalizationTexts({
+        if (formattedTranslationsToDelete) {
+          await Promise.all(
+            combinedLocales.map(async (locale) => {
+              try {
+                const response =
+                  (await adminClient.realms.getRealmLocalizationTexts({
                     realm,
                     selectedLocale: locale,
+                  })) as Record<string, string> | undefined;
+
+                if (response) {
+                  await adminClient.realms.deleteRealmLocalizationTexts({
+                    realm,
+                    selectedLocale: locale,
+                    key: formattedTranslationsToDelete,
                   });
-                setTableData([updatedData]);
+
+                  const updatedData =
+                    await adminClient.realms.getRealmLocalizationTexts({
+                      realm,
+                      selectedLocale: locale,
+                    });
+                  setTableData([updatedData]);
+                }
+              } catch {
+                console.error(`Error removing translations for ${locale}`);
               }
-            } catch {
-              console.error(`Error removing translations for ${locale}`);
-            }
-          }),
-        );
+            }),
+          );
+        }
 
         const updatedAttributes = config.attributes.filter(
           (attribute) => attribute.name !== attributeToDelete,
@@ -140,7 +145,7 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
     attributes.splice(newIndex, 0, movedAttribute);
 
     await save(
-      { attributes, groups },
+      { ...config, attributes, groups },
       {
         successMessageKey: "updatedUserProfileSuccess",
         errorMessageKey: "updatedUserProfileError",
@@ -234,7 +239,7 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
           {
             title: t("edit"),
             onClick: (_key, _idx, component) => {
-              navigate(
+              void navigate(
                 toAttribute({
                   realm,
                   attributeName: component.name,

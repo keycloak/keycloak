@@ -17,11 +17,17 @@
 
 package org.keycloak.services.resteasy;
 
-import org.jboss.resteasy.core.ResteasyContext;
+import java.util.Optional;
+
+import jakarta.servlet.http.HttpServletRequest;
+
+import org.keycloak.common.ClientConnection;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.DefaultKeycloakContext;
+
+import org.jboss.resteasy.core.ResteasyContext;
 
 public class ResteasyKeycloakContext extends DefaultKeycloakContext {
 
@@ -30,13 +36,18 @@ public class ResteasyKeycloakContext extends DefaultKeycloakContext {
     }
 
     @Override
-    protected HttpRequest createHttpRequest() {
-        return new HttpRequestImpl(ResteasyContext.getContextData(org.jboss.resteasy.spi.HttpRequest.class));
+    protected Optional<HttpRequest> createHttpRequest() {
+        return Optional.ofNullable(ResteasyContext.getContextData(org.jboss.resteasy.spi.HttpRequest.class)).map(HttpRequestImpl::new);
     }
 
     @Override
-    protected HttpResponse createHttpResponse() {
-        return new HttpResponseImpl(ResteasyContext.getContextData(org.jboss.resteasy.spi.HttpResponse.class));
+    protected Optional<HttpResponse> createHttpResponse() {
+        return Optional.ofNullable(ResteasyContext.getContextData(org.jboss.resteasy.spi.HttpResponse.class)).map(HttpResponseImpl::new);
+    }
+
+    @Override
+    protected Optional<ClientConnection> createClientConnection() {
+        return Optional.ofNullable(ResteasyContext.getContextData(HttpServletRequest.class)).map(ClientConnectionImpl::new);
     }
 
 }

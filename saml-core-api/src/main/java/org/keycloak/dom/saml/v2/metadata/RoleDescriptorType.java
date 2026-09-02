@@ -16,13 +16,13 @@
  */
 package org.keycloak.dom.saml.v2.metadata;
 
-import org.w3c.dom.Element;
-
-import javax.xml.datatype.Duration;
-import javax.xml.datatype.XMLGregorianCalendar;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import javax.xml.datatype.Duration;
+import javax.xml.datatype.XMLGregorianCalendar;
+
+import org.w3c.dom.Element;
 
 /**
  * <p>

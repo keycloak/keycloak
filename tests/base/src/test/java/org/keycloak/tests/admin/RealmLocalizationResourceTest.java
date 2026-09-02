@@ -17,19 +17,21 @@
 
 package org.keycloak.tests.admin;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import jakarta.ws.rs.NotFoundException;
-import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.hamcrest.CoreMatchers;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -45,7 +47,7 @@ public class RealmLocalizationResourceTest {
     private static class RealmLocaleConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             RealmRepresentation rep = realm.build();
             rep.setDefaultLocale("en");
             rep.setLocalizationTexts(Map.of("en", Map.of("key-a", "text-a_en", "key-b", "text-b_en"), "de", Map.of("key-a", "text-a_de")));

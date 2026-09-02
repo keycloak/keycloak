@@ -17,6 +17,24 @@
 
 package org.keycloak.connections.jpa.updater.liquibase;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
+import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
+import org.keycloak.connections.jpa.updater.liquibase.conn.KeycloakLiquibase;
+import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
+import org.keycloak.connections.jpa.updater.liquibase.conn.MySQLCustomChangeLogHistoryService;
+import org.keycloak.connections.jpa.util.JpaUtils;
+import org.keycloak.models.KeycloakSession;
+
 import liquibase.Contexts;
 import liquibase.LabelExpression;
 import liquibase.Liquibase;
@@ -41,23 +59,6 @@ import liquibase.structure.core.Column;
 import liquibase.structure.core.Table;
 import liquibase.util.StreamUtil;
 import org.jboss.logging.Logger;
-import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
-import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
-import org.keycloak.connections.jpa.updater.liquibase.conn.CustomChangeLogHistoryService;
-import org.keycloak.connections.jpa.updater.liquibase.conn.KeycloakLiquibase;
-import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
-import org.keycloak.connections.jpa.util.JpaUtils;
-import org.keycloak.models.KeycloakSession;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -214,6 +215,13 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
         // in org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockService.init() called indirectly from
         // KeycloakApplication constructor (search for waitForLock() call). Hence it is not included in the creation script.
 
+        // For MySQL, add primary key to DATABASECHANGELOG table (handled by MySQLCustomChangeLogHistoryService at runtime)
+        ChangeLogHistoryService changeLogHistoryService = ChangeLogHistoryServiceFactory.getInstance().getChangeLogService(database);
+        if (changeLogHistoryService instanceof MySQLCustomChangeLogHistoryService customChangeLogHistoryService) {
+            loggingExecutor.comment("Add primary key to DATABASECHANGELOG table for MySQL");
+            loggingExecutor.execute(customChangeLogHistoryService.getAddDatabaseChangeLogPKStatement());
+        }
+
         executorService.setExecutor(LiquibaseConstants.JDBC_EXECUTOR, database, oldTemplate);
     }
 
@@ -253,6 +261,8 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
             }
         } catch (LiquibaseException e) {
             throw new RuntimeException("Failed to validate database", e);
+        } finally {
+            ThreadLocalSessionContext.removeCurrentSession();
         }
 
         return Status.VALID;
@@ -283,7 +293,7 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
 
     private void resetLiquibaseServices(KeycloakLiquibase liquibase) {
         liquibase.resetServices();
-        ChangeLogHistoryServiceFactory.getInstance().register(new CustomChangeLogHistoryService());
+        ChangeLogHistoryServiceFactory.getInstance().register(new MySQLCustomChangeLogHistoryService());
     }
 
     private List<ChangeSet> getLiquibaseUnrunChangeSets(Liquibase liquibase) throws LiquibaseException {

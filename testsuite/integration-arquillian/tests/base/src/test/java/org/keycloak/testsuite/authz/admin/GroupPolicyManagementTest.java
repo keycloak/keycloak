@@ -16,20 +16,12 @@
  */
 package org.keycloak.testsuite.authz.admin;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
-import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.GroupPoliciesResource;
 import org.keycloak.admin.client.resource.GroupPolicyResource;
@@ -41,8 +33,15 @@ import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
-import org.keycloak.testsuite.util.GroupBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testframework.realm.GroupBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
+
+import org.junit.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -51,23 +50,15 @@ public class GroupPolicyManagementTest extends AbstractPolicyManagementTest {
 
     @Override
     protected RealmBuilder createTestRealm() {
-        return super.createTestRealm().group(GroupBuilder.create().name("Group A")
-                .subGroups(Arrays.asList("Group B", "Group D").stream().map(name -> {
-                    if ("Group B".equals(name)) {
-                        return GroupBuilder.create().name(name).subGroups(Arrays.asList("Group C", "Group E").stream().map(name1 -> GroupBuilder.create().name(name1).build()).collect(Collectors.toList())).build();
-                    }
-                    return GroupBuilder.create().name(name).build();
-                }).collect(Collectors.toList()))
-                .build()).group(GroupBuilder.create().name("Group F").build())
-                .group(GroupBuilder.create().name("Group G").build())
-                .group(GroupBuilder.create().name("Group H")
-                        .subGroups(Arrays.asList("Group I", "Group J").stream().map(name -> {
-                            if ("Group I".equals(name)) {
-                                return GroupBuilder.create().name(name).subGroups(Arrays.asList("Group K", "Group L").stream().map(name1 -> GroupBuilder.create().name(name1).build()).collect(Collectors.toList())).build();
-                            }
-                            return GroupBuilder.create().name(name).build();
-                        }).collect(Collectors.toList()))
-                        .build());
+        return super.createTestRealm()
+                .groups(GroupBuilder.create().name("Group A").subGroups(
+                    GroupBuilder.create("Group B").subGroups("Group C", "Group E"),
+                    GroupBuilder.create("Group D")))
+                .groups(GroupBuilder.create().name("Group F"))
+                .groups(GroupBuilder.create().name("Group G"))
+                .groups(GroupBuilder.create().name("Group H").subGroups(
+                    GroupBuilder.create("Group I").subGroups("Group K", "Group L"),
+                    GroupBuilder.create("Group J")));
     }
 
     @Test

@@ -17,11 +17,12 @@
 
 package org.keycloak.protocol.oid4vc.issuance.signing;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.JwtCredentialBody;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
+
+import org.jboss.logging.Logger;
 
 /**
  * {@link CredentialSigner} implementing the JWT_VC format. It returns the signed JWT-Credential as a String.

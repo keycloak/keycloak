@@ -16,11 +16,11 @@
  */
 package org.keycloak.dom.xmlsec.w3.xmlenc;
 
-import org.keycloak.dom.xmlsec.w3.xmldsig.TransformType;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import org.keycloak.dom.xmlsec.w3.xmldsig.TransformType;
 
 /**
  * <p>

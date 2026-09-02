@@ -17,22 +17,6 @@
 
 package org.keycloak.protocol.saml;
 
-
-
-import org.apache.xml.security.encryption.EncryptedData;
-import org.apache.xml.security.encryption.EncryptedKey;
-import org.apache.xml.security.encryption.EncryptionMethod;
-import org.apache.xml.security.exceptions.XMLSecurityException;
-import org.apache.xml.security.keys.KeyInfo;
-import org.apache.xml.security.keys.content.KeyName;
-import org.keycloak.common.util.DerUtils;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
-
-import java.security.Key;
 import java.security.PrivateKey;
 import java.util.LinkedList;
 import java.util.List;
@@ -40,6 +24,19 @@ import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
+
+import org.apache.xml.security.encryption.EncryptedData;
+import org.apache.xml.security.encryption.EncryptedKey;
+import org.apache.xml.security.encryption.EncryptionMethod;
+import org.apache.xml.security.exceptions.XMLSecurityException;
+import org.apache.xml.security.keys.KeyInfo;
+import org.apache.xml.security.keys.content.KeyName;
 
 /**
  * This implementation locates the decryption keys within realm keys.
@@ -154,14 +151,7 @@ public class SAMLDecryptionKeysLocator implements XMLEncryptionUtil.DecryptionKe
         return keysStream
                 .map(KeyWrapper::getPrivateKey)
                 .filter(Objects::nonNull)
-                .map(Key::getEncoded)
-                .map(encoded -> {
-                    try {
-                        return DerUtils.decodePrivateKey(encoded);
-                    } catch (Exception e) {
-                        throw new RuntimeException("Could not decode private key.", e);
-                    }
-                })
+                .map(PrivateKey.class::cast)
                 .collect(Collectors.toList());
     }
 }

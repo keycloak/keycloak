@@ -1,10 +1,11 @@
 package org.keycloak.infinispan.module.configuration.global;
 
+import org.keycloak.models.KeycloakSessionFactory;
+
 import org.infinispan.commons.configuration.Builder;
 import org.infinispan.commons.configuration.Combine;
 import org.infinispan.commons.configuration.attributes.AttributeSet;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
-import org.keycloak.models.KeycloakSessionFactory;
 
 public class KeycloakConfigurationBuilder implements Builder<KeycloakConfiguration> {
 

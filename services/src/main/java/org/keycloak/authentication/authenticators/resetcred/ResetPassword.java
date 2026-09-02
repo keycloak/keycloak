@@ -18,8 +18,6 @@
 package org.keycloak.authentication.authenticators.resetcred;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
-import org.keycloak.authentication.requiredactions.UpdatePassword;
-import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 
@@ -39,7 +37,8 @@ public class ResetPassword extends AbstractSetRequiredActionAuthenticator {
                         configuredFor(context))) {
             context.getAuthenticationSession().addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
         }
-        context.success();
+        // send password category to force brute-force reset for temporary lockout
+        context.success(PasswordCredentialModel.TYPE);
     }
 
     protected boolean configuredFor(AuthenticationFlowContext context) {

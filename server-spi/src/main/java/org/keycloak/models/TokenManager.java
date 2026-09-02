@@ -57,18 +57,25 @@ public interface TokenManager {
     /**
      *
      *
-     * @param token
-     * @param client
-     * @param clazz
-     * @param <T>
-     * @return
+     * @param token JWT token, which might be signed or encrypted by the keys of specified client. It cannot use "alg: none" in the header
+     * @param client client, whose keys/secret might be used to decrypt the token or verify it's signatures
+     * @param clazz class, which the provided token would be cast to
+     * @return decoded java object from the provided token. If it returns null, then signature validation failed or provided token was not valid
      */
     default <T> T decodeClientJWT(String token, ClientModel client, Class<T> clazz) {
-        return decodeClientJWT(token, client, DEFAULT_VALIDATOR, clazz);
+        return decodeClientJWT(token, client, DEFAULT_VALIDATOR, clazz, false);
     }
 
+    /**
+     * @param token JWT token, which might be signed or encrypted by the keys of specified client. It can use "alg: none" in the header just if parameter "allowAlgorithmNone" is true
+     * @param client client, whose keys/secret might be used to decrypt the token or verify it's signatures
+     * @param jwtValidator Additional validator
+     * @param clazz class, which the provided token would be cast to
+     * @param allowAlgorithmNone Whether the token using "alg: none" is allowed or not. If this parameter is false and "alg: none" is used, the {@link IllegalArgumentException} will be thrown
+     * @return decoded java object from the provided token. If it returns null, then signature validation failed or provided token was not valid
+     */
     <T> T decodeClientJWT(String token, ClientModel client, BiConsumer<JOSE, ClientModel> jwtValidator,
-            Class<T> clazz);
+            Class<T> clazz, boolean allowAlgorithmNone);
 
     String encodeAndEncrypt(Token token);
     String cekManagementAlgorithm(TokenCategory category);

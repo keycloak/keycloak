@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Specifications implemented"
-priority=130
+priority=160
 summary="List of specifications and standards implemented by {project_name}.">
 
 This {section} presents a list of specifications and standards that {project_name} currently implements. The standards are separated in different sections and, in each one, a table is shown with the following four columns:
@@ -17,7 +17,7 @@ This {section} presents a list of specifications and standards that {project_nam
 ** If this column is empty means that {project_name} does not pass any external conformance tests for the spec. Only common project integration tests are executed. Maybe the authority does not provide a conformance tests suite or {project_name} is not interested in passing them.
 * *Comments*: A generic column that can contain details of the implementation or the status. For example parts that are not covered yet or specific behaviors out of the spec.
 
-== OpenID Connect
+== OpenID
 
 [%autowidth,options="header"]
 |===
@@ -33,7 +33,9 @@ This {section} presents a list of specifications and standards that {project_nam
 |link:https://openid.net/specs/oauth-v2-multiple-response-types-1_0.html[OAuth 2.0 Multiple Response Type Encoding Practices]|Supported|Certified (18.0.0)|
 |link:https://openid.net/specs/oauth-v2-form-post-response-mode-1_0.html[OAuth 2.0 Form Post Response Mode]|Supported|Certified (18.0.0)|
 |link:https://openid.net/specs/openid-connect-prompt-create-1_0.html[Initiating User Registration via OpenID Connect 1.0]|Supported||
-|link:https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-16.html[OpenID for Verifiable Credential Issuance] (OID4VCI)|Experimental||
+|link:https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-16.html[OpenID for Verifiable Credential Issuance] (OID4VCI)|Experimental|| See link:{adminguide_link}#_oid4vci[Configuring {project_name} as a Verifiable Credential Issuer]
+|link:https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-00[OAuth Client ID Metadata Document]|Experimental|| See <@links.securingapps id="mcp-authz-server" />.
+|link:https://openid.net/specs/authorization-api-1_0.html[OpenID AuthZEN Authorization API 1.0]|Experimental|| See <@links.securingapps id="authzen-authorization" />.
 |===
 
 == OAuth
@@ -58,7 +60,8 @@ This {section} presents a list of specifications and standards that {project_nam
 |link:https://datatracker.ietf.org/doc/html/rfc8693[OAuth 2.0 Token Exchange (RFC 8693)]|Supported (see comments)||Token exchange V2 only supports the internal to internal use-case, so the specification is only partially supported now. See <@links.securingapps id="token-exchange" /> for more information.
 |link:https://datatracker.ietf.org/doc/html/rfc9101[The OAuth 2.0 Authorization Framework: JWT-Secured Authorization Request (JAR) (RFC 9101)]|Supported||
 |link:https://datatracker.ietf.org/doc/html/rfc9207[OAuth 2.0 Authorization Server Issuer Identification (RFC 9207)]|Supported||
-|link:https://datatracker.ietf.org/doc/html/rfc9449[OAuth 2.0 Demonstrating Proof of Possession (DPoP) (RFC 9449)]|Preview||
+|link:https://datatracker.ietf.org/doc/html/rfc9449[OAuth 2.0 Demonstrating Proof of Possession (DPoP) (RFC 9449)]|Supported||
+|link:https://datatracker.ietf.org/doc/html/draft-ietf-oauth-identity-chaining/[OAuth Identity and Authorization Chaining Across Domains] (Draft)|Supported||Combines Token Exchange (RFC 8693) and JWT Authorization Grant (RFC 7523) to enable cross-domain resource access while preserving user identity. See <@links.securingapps id="oauth-identity-authorization-chaining-across-domains" />.
 |===
 
 == Financial-grade API (FAPI)
@@ -71,7 +74,7 @@ This {section} presents a list of specifications and standards that {project_nam
 |link:https://openid.net/specs/oauth-v2-jarm.html[Financial-grade API: JWT Secured Authorization Response Mode for OAuth 2.0 (JARM)]|Supported|Certified (15.0.2)|
 |link:https://openid.net/specs/openid-financial-api-ciba.html[Financial-grade API: Client Initiated Backchannel Authentication Profile] (Draft)|Supported|Certified (15.0.2)|
 |link:https://openid.net/specs/fapi-security-profile-2_0-final.html[FAPI 2.0 Security Profile]|Supported|Passed|
-|link:https://openid.bitbucket.io/fapi/fapi-2_0-message-signing.html[FAPI 2.0 Message Signing] (Draft)|Supported|Passed|
+|link:https://openid.net/specs/fapi-message-signing-2_0-final.html[FAPI 2.0 Message Signing]|Supported|Passed|
 |===
 
 == Security Assertion Markup Language (SAML)
@@ -102,6 +105,15 @@ This {section} presents a list of specifications and standards that {project_nam
 |https://datatracker.ietf.org/doc/html/rfc7518[JSON Web Algorithms (JWA) (RFC 7518)]|Supported||
 |link:https://tools.ietf.org/html/rfc7519[JSON Web Token (RFC 7519)]|Supported||
 |link:https://www.rfc-editor.org/rfc/rfc8037.html[CFRG Elliptic Curve Diffie-Hellman (ECDH) and Signatures in JSON Object Signing and Encryption (JOSE) (RFC 8037)]|Supported||
+|===
+
+== System for Cross-domain Identity Management (SCIM)
+
+[%autowidth,options="header"]
+|===
+|Specification|Status|Conformity|Comments
+|link:https://datatracker.ietf.org/doc/html/rfc7643[System for Cross-domain Identity Management: Core Schema (RFC 7643)]|Tech Preview||Supports User and Group resource types, including the Enterprise User extension (Section 4.3).
+|link:https://datatracker.ietf.org/doc/html/rfc7644[System for Cross-domain Identity Management: Protocol (RFC 7644)]|Tech Preview||Supports CRUD operations, filtering, pagination, PATCH, and schema discovery. Bulk operations are not yet supported.
 |===
 
 == Misc

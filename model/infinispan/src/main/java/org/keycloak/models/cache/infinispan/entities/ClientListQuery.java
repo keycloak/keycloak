@@ -1,9 +1,9 @@
 package org.keycloak.models.cache.infinispan.entities;
 
-import org.keycloak.models.RealmModel;
-
 import java.util.HashSet;
 import java.util.Set;
+
+import org.keycloak.models.RealmModel;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -13,13 +13,13 @@ public class ClientListQuery extends AbstractRevisioned implements ClientQuery {
     private final Set<String> clients;
     private final String realm;
 
-    public ClientListQuery(Long revisioned, String id, RealmModel realm, Set<String> clients) {
+    public ClientListQuery(long revisioned, String id, RealmModel realm, Set<String> clients) {
         super(revisioned, id);
         this.realm = realm.getId();
         this.clients = clients;
     }
 
-    public ClientListQuery(Long revisioned, String id, RealmModel realm, String client) {
+    public ClientListQuery(long revisioned, String id, RealmModel realm, String client) {
         super(revisioned, id);
         this.realm = realm.getId();
         this.clients = new HashSet<>();

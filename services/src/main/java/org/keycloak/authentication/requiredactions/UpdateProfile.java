@@ -17,9 +17,12 @@
 
 package org.keycloak.authentication.requiredactions;
 
-import static java.util.Optional.ofNullable;
+import java.util.List;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
@@ -35,16 +38,13 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.validation.Validation;
-import org.keycloak.userprofile.UserProfileContext;
-import org.keycloak.userprofile.ValidationException;
-import org.keycloak.userprofile.UserProfile;
-import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.EventAuditingAttributeChangeListener;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.userprofile.ValidationException;
 
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-
-import java.util.List;
+import static java.util.Optional.ofNullable;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -80,14 +80,13 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
             UserProfileProvider provider = context.getSession().getProvider(UserProfileProvider.class);
             UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, formData, user);
 
+            if (isForceEmailVerification) {
+                user.addRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL);
+            }
+
             profile.update(false, new EventAuditingAttributeChangeListener(profile, event));
 
             context.success();
-
-            if (isForceEmailVerification && !realm.isVerifyEmail()) {
-                user.addRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL);
-                UpdateEmail.forceEmailVerification(context.getSession());
-            }
         } catch (ValidationException pve) {
             List<FormMessage> errors = Validation.getFormErrorsFromValidation(pve.getErrors());
 

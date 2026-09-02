@@ -17,6 +17,12 @@
 
 package org.keycloak.protocol.saml.installation;
 
+import java.net.URI;
+
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.Config;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -26,11 +32,6 @@ import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.saml.SamlClient;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.services.resources.RealmsResource;
-
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import java.net.URI;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -58,7 +59,7 @@ public class KeycloakSamlClientInstallation implements ClientInstallationProvide
                 buffer.append("            <Key signing=\"true\">\n");
                 buffer.append("                <PrivateKeyPem>\n");
                 if (samlClient.getClientSigningPrivateKey() == null) {
-                    buffer.append("                    PRIVATE KEY NOT SET UP OR KNOWN\n");
+                    buffer.append("                    PRIVATE KEY NOT STORED ON SERVER - REPLACE WITH YOUR OWN PRIVATE KEY\n");
                 } else {
                     buffer.append("                    ").append(samlClient.getClientSigningPrivateKey()).append("\n");
                 }
@@ -76,7 +77,7 @@ public class KeycloakSamlClientInstallation implements ClientInstallationProvide
                 buffer.append("            <Key encryption=\"true\">\n");
                 buffer.append("                <PrivateKeyPem>\n");
                 if (samlClient.getClientEncryptingPrivateKey() == null) {
-                    buffer.append("                    PRIVATE KEY NOT SET UP OR KNOWN\n");
+                    buffer.append("                    PRIVATE KEY NOT STORED ON SERVER - REPLACE WITH YOUR OWN PRIVATE KEY\n");
                 } else {
                     buffer.append("                    ").append(samlClient.getClientEncryptingPrivateKey()).append("\n");
                 }

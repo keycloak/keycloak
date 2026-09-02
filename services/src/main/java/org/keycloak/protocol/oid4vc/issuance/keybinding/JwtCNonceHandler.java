@@ -18,10 +18,24 @@
 
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
 import jakarta.annotation.Nullable;
+
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.Base64;
+import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.common.util.Time;
+import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
@@ -29,40 +43,32 @@ import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.constants.Oid4VciConstants;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.model.JwtCNonce;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.saml.RandomSecret;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Random;
+import org.jboss.logging.Logger;
 
 /**
  * @author Pascal Knüppel
  */
 public class JwtCNonceHandler implements CNonceHandler {
 
-    public static final String SOURCE_ENDPOINT = Oid4VciConstants.SOURCE_ENDPOINT;
+    public static final String SOURCE_ENDPOINT = OID4VCIConstants.SOURCE_ENDPOINT;
 
     public static final int NONCE_DEFAULT_LENGTH = 50;
 
     public static final int NONCE_LENGTH_RANDOM_OFFSET = 15;
 
-    private static final Logger logger = LoggerFactory.getLogger(JwtCNonceHandler.class);
+    private static final long CONSUMED_NONCE_CACHE_CLOCK_SKEW_SECONDS = 60;
+
+    private static final Logger logger = Logger.getLogger(JwtCNonceHandler.class);
 
     private final KeycloakSession keycloakSession;
 
@@ -78,13 +84,13 @@ public class JwtCNonceHandler implements CNonceHandler {
         RealmModel realm = keycloakSession.getContext().getRealm();
         final String issuer = OID4VCIssuerWellKnownProvider.getIssuer(keycloakSession.getContext());
         // TODO discussion about the attribute name to use
-        final Integer nonceLifetimeMillis = realm.getAttribute(Oid4VciConstants.C_NONCE_LIFETIME_IN_SECONDS, 60);
+        final Integer nonceLifetimeSeconds = realm.getAttribute(OID4VCIConstants.C_NONCE_LIFETIME_IN_SECONDS, 60);
         audiences = Optional.ofNullable(audiences).orElseGet(Collections::emptyList);
-        final Instant now = Instant.now();
-        final long expiresAt = now.plus(nonceLifetimeMillis, ChronoUnit.SECONDS).getEpochSecond();
-        final int nonceLength = NONCE_DEFAULT_LENGTH + new Random().nextInt(NONCE_LENGTH_RANDOM_OFFSET);
+        final long nowSeconds = Time.currentTime();
+        final long expiresAt = nowSeconds + nonceLifetimeSeconds;
+        final int nonceLength = NONCE_DEFAULT_LENGTH + SecretGenerator.nextInt(NONCE_LENGTH_RANDOM_OFFSET);
         // this generated value itself is basically just a salt-value for the generated token, which itself is the nonce.
-        final String strongSalt = Base64.encodeBytes(RandomSecret.createRandomSecret(nonceLength));
+        final String strongSalt = Base64.getEncoder().encodeToString(RandomSecret.createRandomSecret(nonceLength));
 
         JsonWebToken jwtCNonce = new JwtCNonce().salt(strongSalt)
                                                 .issuer(issuer)
@@ -103,9 +109,19 @@ public class JwtCNonceHandler implements CNonceHandler {
     @Override
     public void verifyCNonce(String cNonce, List<String> audiences, @Nullable Map<String, Object> additionalDetails)
             throws VerificationException {
-        if (cNonce == null) {
+        verifyCNonceAndGetToken(cNonce, audiences, additionalDetails);
+    }
+
+    @Override
+    public JsonWebToken verifyCNonceAndGetToken(String cNonce, List<String> audiences, @Nullable Map<String, Object> additionalDetails)
+            throws VerificationException {
+        if (cNonce == null || cNonce.trim().isEmpty()) {
             throw new VerificationException("c_nonce is required");
         }
+
+        // Reject already consumed nonces
+        ensureCNonceNotYetConsumed(cNonce);
+
         TokenVerifier<JsonWebToken> verifier = TokenVerifier.create(cNonce, JsonWebToken.class);
         KeycloakContext keycloakContext = keycloakSession.getContext();
         List<TokenVerifier.Predicate<JsonWebToken>> verifiers = //
@@ -142,7 +158,7 @@ public class JwtCNonceHandler implements CNonceHandler {
                                             if (exp == null) {
                                                 throw new VerificationException("c_nonce has no expiration time");
                                             }
-                                            long now = Instant.now().getEpochSecond();
+                                            long now = Time.currentTime();
                                             if (exp < now) {
                                                 String message = String.format(
                                                         "c_nonce not valid: %s(exp) < %s(now)",
@@ -167,7 +183,83 @@ public class JwtCNonceHandler implements CNonceHandler {
                                                                                  signingKey.getAlgorithm())
                                                                     .verifier(signingKey);
         verifier.verifierContext(signatureVerifier);
-        verifier.verify(); // throws a VerificationException on failure
+        return verifier.verify().getToken();
+    }
+
+    @Override
+    public boolean supportsCNonceTokenRetrieval() {
+        return true;
+    }
+
+    @Override
+    public void ensureCNonceNotYetConsumed(String cNonce) throws VerificationException {
+        if (keycloakSession.singleUseObjects().contains(getCNonceSingleUseObjectKey(cNonce))) {
+            throw new VerificationException("c_nonce has already been used");
+        }
+    }
+
+    @Override
+    public void consumeCNonce(String cNonce) throws VerificationException {
+        if (cNonce == null || cNonce.trim().isEmpty()) {
+            throw new VerificationException("c_nonce is required");
+        }
+
+        try {
+            TokenVerifier<JsonWebToken> verifier = TokenVerifier.create(cNonce, JsonWebToken.class);
+            SignatureVerifierContext signatureVerifier = keycloakSession.getProvider(SignatureProvider.class,
+                                                                                     signingKey.getAlgorithm())
+                                                                        .verifier(signingKey);
+            verifier.verifierContext(signatureVerifier);
+            JsonWebToken cNonceToken = verifier.verify().getToken();
+            consumeCNonce(cNonce, cNonceToken);
+        } catch (VerificationException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new VerificationException(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void consumeCNonce(String cNonce, JsonWebToken cNonceToken) throws VerificationException {
+        if (cNonce == null || cNonce.trim().isEmpty()) {
+            throw new VerificationException("c_nonce is required");
+        }
+        if (cNonceToken == null) {
+            throw new VerificationException("c_nonce token is required");
+        }
+
+        Long exp = cNonceToken.getExp();
+        if (exp == null) {
+            throw new VerificationException("c_nonce has no expiration time");
+        }
+
+        long now = Time.currentTime();
+        long expiresIn = exp - now + CONSUMED_NONCE_CACHE_CLOCK_SKEW_SECONDS;
+        if (expiresIn <= 0) {
+            String message = String.format(
+                    "c_nonce not valid: %s(exp) < %s(now)",
+                    exp,
+                    now);
+            throw new VerificationException(message);
+        }
+
+        SingleUseObjectProvider singleUseStore = keycloakSession.singleUseObjects();
+        String key = getCNonceSingleUseObjectKey(cNonce);
+        boolean firstInsertion = singleUseStore.putIfAbsent(key, expiresIn);
+        if (!firstInsertion) {
+            throw new VerificationException("c_nonce has already been used");
+        }
+    }
+
+    @Override
+    public boolean supportsCNonceConsumption() {
+        return true;
+    }
+
+    private static String getCNonceSingleUseObjectKey(String cNonce) {
+        String hash = HashUtils.sha256UrlEncodedHash(cNonce.trim(), StandardCharsets.UTF_8);
+        String fqcn = JwtCNonceHandler.class.getName().toLowerCase(Locale.ROOT);
+        return fqcn + "." + hash;
     }
 
     protected boolean checkAttributeEquality(String key, Object object, Object actualValue) throws VerificationException {
@@ -188,7 +280,7 @@ public class JwtCNonceHandler implements CNonceHandler {
         try {
             signingKey = keycloakSession.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.ES256);
         } catch (RuntimeException ex) {
-            logger.debug("Failed to find active ES256 signing key for realm {}. Falling back to RSA...",
+            logger.debugf("Failed to find active ES256 signing key for realm %s. Falling back to RSA...",
                          realm.getName());
             logger.debug(ex.getMessage(), ex);
             // use RSA only as fallback since the preferred algorithm by OpenID4VC is elliptic curve

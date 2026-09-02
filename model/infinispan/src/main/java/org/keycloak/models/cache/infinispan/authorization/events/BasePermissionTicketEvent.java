@@ -19,8 +19,9 @@ package org.keycloak.models.cache.infinispan.authorization.events;
 
 import java.util.Objects;
 
-import org.infinispan.protostream.annotations.ProtoField;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
+
+import org.infinispan.protostream.annotations.ProtoField;
 
 abstract class BasePermissionTicketEvent extends InvalidationEvent implements AuthorizationCacheInvalidationEvent {
 

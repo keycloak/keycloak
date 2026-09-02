@@ -1,13 +1,13 @@
 package org.keycloak.forms.login.freemarker.model;
 
+import java.util.Optional;
+
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
 import org.keycloak.models.utils.RecoveryAuthnCodesUtils;
-
-import java.util.Optional;
 
 public class RecoveryAuthnCodeInputLoginBean {
 

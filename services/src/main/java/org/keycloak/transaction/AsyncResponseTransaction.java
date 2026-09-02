@@ -1,13 +1,13 @@
 package org.keycloak.transaction;
 
+import jakarta.ws.rs.container.AsyncResponse;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.messages.Messages;
-
-import jakarta.ws.rs.container.AsyncResponse;
-import jakarta.ws.rs.core.Response;
 
 /**
  * When using {@link AsyncResponse#resume(Object)} directly in the code, the response is returned before all changes 
@@ -52,7 +52,11 @@ public class AsyncResponseTransaction implements KeycloakTransaction {
 
     @Override
     public void rollback() {
-        responseToFinishInTransaction.resume(ErrorPage.error(session, null, Response.Status.INTERNAL_SERVER_ERROR, Messages.INTERNAL_SERVER_ERROR));
+        // Preserve the original error response on rollback — the caller already chose the appropriate status.
+        // For success responses, override with 500 since the state they depend on was not committed.
+        responseToFinishInTransaction.resume(responseToSend.getStatus() >= 400
+                ? responseToSend
+                : ErrorPage.error(session, null, Response.Status.INTERNAL_SERVER_ERROR, Messages.INTERNAL_SERVER_ERROR));
     }
 
     @Override

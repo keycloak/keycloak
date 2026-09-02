@@ -17,15 +17,6 @@
 
 package org.keycloak.protocol;
 
-import org.keycloak.models.ClientSessionContext;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
-import org.keycloak.services.util.DPoPUtil;
-
 import java.lang.reflect.Method;
 import java.util.AbstractMap;
 import java.util.Comparator;
@@ -34,6 +25,18 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.services.util.DPoPUtil;
+import org.keycloak.services.util.MtlsHoKTokenUtil;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -162,8 +165,13 @@ public class ProtocolMapperUtils {
                         .filter(Objects::nonNull)
                         .filter(filter);
 
-        if (OIDCLoginProtocol.LOGIN_PROTOCOL.equals(ctx.getClientSession().getClient().getProtocol())) {
+        ClientModel client = ctx.getClientSession().getClient();
+        if (OIDCLoginProtocol.LOGIN_PROTOCOL.equals(client.getProtocol())) {
             protocolMapperStream = Stream.concat(protocolMapperStream, DPoPUtil.getTransientProtocolMapper());
+
+            if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseMtlsHokToken()) {
+                protocolMapperStream = Stream.concat(protocolMapperStream, MtlsHoKTokenUtil.getTransientProtocolMapper());
+            }
         }
 
         return protocolMapperStream.sorted(Comparator.comparing(ProtocolMapperUtils::compare));

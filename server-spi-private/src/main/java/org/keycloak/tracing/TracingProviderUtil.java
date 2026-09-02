@@ -17,9 +17,10 @@
 
 package org.keycloak.tracing;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.utils.KeycloakSessionUtil;
+
+import org.jboss.logging.Logger;
 
 public class TracingProviderUtil {
 

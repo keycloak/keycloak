@@ -1,9 +1,5 @@
 package org.keycloak.tests.forms;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -12,15 +8,19 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.openqa.selenium.WebDriver;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+
 
 /**
  * Test for default configuration of OIDC login protocol factory
@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class AuthzEndpointRequestParserTest {
 
     @InjectWebDriver
-    WebDriver driver;
+    ManagedWebDriver driver;
 
     @InjectRealm
     ManagedRealm realm;
@@ -94,8 +94,7 @@ public class AuthzEndpointRequestParserTest {
         loginPage.fillLogin("test-user", "password");
         loginPage.submit();
 
-        assertTrue(driver.getPageSource().contains("Happy days"));
-        // String currentUrl = driver.getCurrentUrl();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         String state = oauth.parseLoginResponse().getState();
         Assertions.assertEquals(stateExpected, state);
 
@@ -106,7 +105,7 @@ public class AuthzEndpointRequestParserTest {
     private static class TestUserConfig implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder user) {
+        public UserBuilder configure(UserBuilder user) {
             user.username("test-user");
             user.password("password");
             user.name("My", "Test");

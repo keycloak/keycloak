@@ -17,10 +17,10 @@
 
 package org.keycloak.models;
 
-import static org.keycloak.models.AdminRoles.IMPERSONATION;
-
 import org.keycloak.Config;
 import org.keycloak.models.utils.KeycloakModelUtils;
+
+import static org.keycloak.models.AdminRoles.IMPERSONATION;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

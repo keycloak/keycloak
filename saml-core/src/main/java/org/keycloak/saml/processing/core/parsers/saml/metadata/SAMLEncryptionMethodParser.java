@@ -1,13 +1,13 @@
 package org.keycloak.saml.processing.core.parsers.saml.metadata;
 
+import java.math.BigInteger;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.events.StartElement;
+
 import org.keycloak.dom.xmlsec.w3.xmlenc.EncryptionMethodType;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.StaxParserUtil;
-
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.events.StartElement;
-import java.math.BigInteger;
 
 import static org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLMetadataQNames.ENCRYPTION_METHOD;
 

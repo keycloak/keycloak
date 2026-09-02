@@ -18,16 +18,35 @@
 package org.keycloak.spi.infinispan.impl.embedded;
 
 import java.lang.invoke.MethodHandles;
+import java.time.Duration;
 import java.util.Arrays;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+import org.keycloak.Config;
+import org.keycloak.common.Profile;
+import org.keycloak.common.util.DurationConverter;
+import org.keycloak.config.CachingOptions;
+import org.keycloak.config.OptionsUtil;
+import org.keycloak.marshalling.Marshalling;
+import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
+import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
+import org.keycloak.models.sessions.infinispan.entities.RemoteAuthenticatedClientSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.RemoteUserSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+
 import org.infinispan.commons.dataconversion.MediaType;
+import org.infinispan.commons.util.TimeQuantity;
 import org.infinispan.configuration.cache.AbstractStoreConfiguration;
 import org.infinispan.configuration.cache.BackupConfiguration;
 import org.infinispan.configuration.cache.BackupFailurePolicy;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.configuration.cache.ExpirationConfiguration;
 import org.infinispan.configuration.cache.HashConfiguration;
 import org.infinispan.configuration.cache.HashConfigurationBuilder;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
@@ -36,13 +55,6 @@ import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.EmbeddedTransactionManagerLookup;
 import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.config.CachingOptions;
-import org.keycloak.marshalling.Marshalling;
-import org.keycloak.models.sessions.infinispan.entities.LoginFailureEntity;
-import org.keycloak.models.sessions.infinispan.entities.RemoteAuthenticatedClientSessionEntity;
-import org.keycloak.models.sessions.infinispan.entities.RemoteUserSessionEntity;
-import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ALL_CACHES_NAME;
@@ -53,6 +65,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.A
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NUM_OWNERS;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_MAX_COUNT_CACHES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CRL_CACHE_DEFAULT_MAX;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CRL_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.KEYS_CACHE_DEFAULT_MAX;
@@ -84,9 +97,12 @@ public final class CacheConfigurator {
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
     private static final String MAX_COUNT_SUFFIX = "MaxCount";
+    private static final String LIFESPAN_SUFFIX = "Lifespan";
     private static final String OWNER_SUFFIX = "Owners";
     private static final int STATE_TRANSFER_CHUNK_SIZE = 16;
     private static final int MIN_NUM_OWNERS_REMOTE_CACHE = 2;
+    private static final long DEFAULT_LIFESPAN = Duration.ofHours(1).toMillis();
+    private static final int DISABLED_LIFESPAN = -1;
 
     private CacheConfigurator() {
     }
@@ -122,7 +138,7 @@ public final class CacheConfigurator {
     public static void applyDefaultConfiguration(ConfigurationBuilderHolder holder, boolean warnMutate) {
         var configs = holder.getNamedConfigurationBuilders();
         boolean userProvidedConfig = false;
-        boolean clustered = holder.getGlobalConfigurationBuilder().transport().getTransport() != null;
+        boolean clustered = isClustered(holder);
         for (var name : ALL_CACHES_NAME) {
             var config = configs.get(name);
             if (config == null) {
@@ -169,7 +185,7 @@ public final class CacheConfigurator {
         if (cacheBuilder == null) {
             throw cacheNotFound(WORK_CACHE_NAME);
         }
-        if (holder.getGlobalConfigurationBuilder().cacheContainer().transport().getTransport() == null) {
+        if (!isClustered(holder)) {
             // non-clustered, Keycloak started in dev mode?
             return;
         }
@@ -206,7 +222,18 @@ public final class CacheConfigurator {
             if (builder == null) {
                 throw cacheNotFound(name);
             }
-            setMemoryMaxCount(keycloakConfig, name, builder);
+            var maxCount = keycloakConfig.getLong(maxCountConfigKey(name));
+            if (maxCount != null) {
+                if (maxCount < 0) {
+                    // Prevent users setting an unbounded max-count for any cache that already has a default max-count defined
+                    maxCount = builder.memory().maxCount();
+                    if (maxCount > -1)
+                        logger.infof("Ignoring unbounded max-count for cache '%s', reverting to default max of %d entries.", name, maxCount);
+                } else {
+                    logger.debugf("Overwriting max-count for cache '%s' to %s entries", name, maxCount);
+                }
+                builder.memory().maxCount(maxCount);
+            }
         }
     }
 
@@ -217,13 +244,15 @@ public final class CacheConfigurator {
      * @throws IllegalStateException if an Infinispan cache from the provided {@code caches} stream is not defined in
      *                               the {@code holder}. This could indicate a missing or incorrect configuration.
      */
-    public static void configureSessionsCachesForPersistentSessions(ConfigurationBuilderHolder holder) {
+    public static void configureSessionsCachesForPersistentSessions(Config.Scope keycloakConfig, ConfigurationBuilderHolder holder) {
         logger.debug("Configuring session cache (persistent user sessions)");
-        for (var name : Arrays.asList(USER_SESSION_CACHE_NAME, CLIENT_SESSION_CACHE_NAME, OFFLINE_USER_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME)) {
+        var sessionCaches = Set.of(USER_SESSION_CACHE_NAME, CLIENT_SESSION_CACHE_NAME, OFFLINE_USER_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME);
+        for (var name : CLUSTERED_MAX_COUNT_CACHES) {
             var builder = holder.getNamedConfigurationBuilders().get(name);
             if (builder == null) {
                 throw cacheNotFound(name);
             }
+            setMemoryMaxCount(keycloakConfig, name, builder);
             if (builder.memory().maxCount() == -1) {
                 logger.infof("Persistent user sessions enabled and no memory limit found in configuration. Setting max entries for %s to %d entries.", name, SESSIONS_CACHE_DEFAULT_MAX);
                 builder.memory().maxCount(SESSIONS_CACHE_DEFAULT_MAX);
@@ -233,6 +262,11 @@ public final class CacheConfigurator {
              While a `remove` is forwarded to the backup owner regardless if the key exists on the primary owner, a `computeIfPresent` is not, and it would leave a backup owner with an outdated key.
              With the number of owners set to `1`, there will be no backup owners, so this is the setting to choose with persistent sessions enabled to ensure consistent data in the caches. */
             builder.clustering().hash().numOwners(1);
+            if (sessionCaches.contains(name)) {
+                configureSessionExpirationReaper(builder);
+                // Disable state-transfer to reduce the overhead of new nodes joining
+                builder.clustering().stateTransfer().fetchInMemoryState(false);
+            }
         }
     }
 
@@ -243,13 +277,15 @@ public final class CacheConfigurator {
      * @throws IllegalStateException if an Infinispan cache from the provided {@code caches} stream is not defined in
      *                               the {@code holder}. This could indicate a missing or incorrect configuration.
      */
-    public static void configureSessionsCachesForVolatileSessions(ConfigurationBuilderHolder holder) {
+    public static void configureSessionsCachesForVolatileSessions(Config.Scope keycloakConfig, ConfigurationBuilderHolder holder) {
         logger.debug("Configuring session cache (volatile user sessions)");
         for (var name : Arrays.asList(USER_SESSION_CACHE_NAME, CLIENT_SESSION_CACHE_NAME)) {
             var builder = holder.getNamedConfigurationBuilders().get(name);
             if (builder == null) {
                 throw cacheNotFound(name);
             }
+
+            setMemoryMaxCount(keycloakConfig, name, builder);
             if (builder.memory().maxCount() != -1) {
                 logger.infof("Persistent user sessions disabled and memory limit is set. Ignoring cache limits to avoid losing sessions for cache %s.", name);
                 builder.memory().maxCount(-1);
@@ -260,15 +296,18 @@ public final class CacheConfigurator {
                 logger.infof("Persistent user sessions disabled with number of owners set to default value 1 for cache %s and no shared persistence store configured. Setting num_owners=2 to avoid data loss.", name);
                 builder.clustering().hash().numOwners(2);
             }
+            configureSessionExpirationReaper(builder);
         }
 
-        for (var name : Arrays.asList( OFFLINE_USER_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME)) {
+        for (var name : Arrays.asList(OFFLINE_USER_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME)) {
             var builder = holder.getNamedConfigurationBuilders().get(name);
             if (builder == null) {
                 throw cacheNotFound(name);
             }
+
+            setMemoryMaxCount(keycloakConfig, name, builder);
             if (builder.memory().maxCount() == -1) {
-                logger.infof("Offline sessions should have a max count set to avoid excessive memory usage. Setting a default cache limit of %d for cache %s.", name, SESSIONS_CACHE_DEFAULT_MAX);
+                logger.infof("Offline sessions should have a max count set to avoid excessive memory usage. Setting a default cache limit of %d for cache %s.", SESSIONS_CACHE_DEFAULT_MAX, name);
                 builder.memory().maxCount(SESSIONS_CACHE_DEFAULT_MAX);
             }
             if (builder.clustering().hash().attributes().attribute(HashConfiguration.NUM_OWNERS).get() != 1 &&
@@ -277,6 +316,9 @@ public final class CacheConfigurator {
                 logger.infof("Setting a memory limit implies to have exactly one owner. Setting num_owners=1 to avoid data loss.", name);
                 builder.clustering().hash().numOwners(1);
             }
+            configureSessionExpirationReaper(builder);
+            // Disable state-transfer to reduce the overhead of new nodes joining
+            builder.clustering().stateTransfer().fetchInMemoryState(false);
         }
     }
 
@@ -344,27 +386,68 @@ public final class CacheConfigurator {
     public static ConfigurationBuilder getRemoteCacheConfiguration(String cacheName, Config.Scope config, String[] sites) {
         return switch (cacheName) {
             case CLIENT_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME ->
-                    remoteCacheConfigurationBuilder(cacheName, config, sites, RemoteAuthenticatedClientSessionEntity.class);
+                    remoteCacheConfigurationBuilder(cacheName, config, sites, RemoteAuthenticatedClientSessionEntity.class, InfinispanUserSessionProviderFactory.getExpirationPeriod(TimeUnit.MILLISECONDS));
             case USER_SESSION_CACHE_NAME, OFFLINE_USER_SESSION_CACHE_NAME ->
-                    remoteCacheConfigurationBuilder(cacheName, config, sites, RemoteUserSessionEntity.class);
+                    remoteCacheConfigurationBuilder(cacheName, config, sites, RemoteUserSessionEntity.class, InfinispanUserSessionProviderFactory.getExpirationPeriod(TimeUnit.MILLISECONDS));
             case AUTHENTICATION_SESSIONS_CACHE_NAME ->
-                    remoteCacheConfigurationBuilder(cacheName, config, sites, RootAuthenticationSessionEntity.class);
+                    remoteCacheConfigurationBuilder(cacheName, config, sites, RootAuthenticationSessionEntity.class, ExpirationConfiguration.WAKEUP_INTERVAL.getDefaultValue());
             case LOGIN_FAILURE_CACHE_NAME ->
-                    remoteCacheConfigurationBuilder(cacheName, config, sites, LoginFailureEntity.class);
-            case ACTION_TOKEN_CACHE, WORK_CACHE_NAME -> remoteCacheConfigurationBuilder(cacheName, config, sites, null);
+                    remoteCacheConfigurationBuilder(cacheName, config, sites, LoginFailureEntity.class, ExpirationConfiguration.WAKEUP_INTERVAL.getDefaultValue());
+            case ACTION_TOKEN_CACHE, WORK_CACHE_NAME -> remoteCacheConfigurationBuilder(cacheName, config, sites, null, ExpirationConfiguration.WAKEUP_INTERVAL.getDefaultValue());
             default -> null;
         };
     }
 
+    /**
+     * Configures the entry lifespan for the local caches (realm, user, and authorization).
+     * <p>
+     * When the {@link Profile.Feature#STATELESS} feature is enabled, the default lifespan is set to
+     * {@link #DEFAULT_LIFESPAN} milliseconds; otherwise, entries are immortal by default.
+     *
+     * @param holder The {@link ConfigurationBuilderHolder} where the caches are configured.
+     * @param config The Keycloak configuration, which may provide per-cache lifespan overrides.
+     * @throws IllegalStateException if a cache is not defined in the {@code holder}.
+     */
+    public static void configureLocalCachesExpiration(ConfigurationBuilderHolder holder, Config.Scope config) {
+        var defaultLifespan = Profile.isFeatureEnabled(Profile.Feature.STATELESS) ? DEFAULT_LIFESPAN : DISABLED_LIFESPAN;
+        Stream.of(AUTHORIZATION_CACHE_NAME, REALM_CACHE_NAME, USER_CACHE_NAME)
+                .forEach(name -> setExpiration(holder, config, name, defaultLifespan));
+    }
+
+    /**
+     * Adds the lifespan configuration properties for the local caches (realm, user, and authorization) to the given
+     * provider configuration builder.
+     *
+     * @param builder The {@link ProviderConfigurationBuilder} to add the properties to.
+     */
+    public static void addExpirationConfiguration(ProviderConfigurationBuilder builder) {
+        Stream.of(AUTHORIZATION_CACHE_NAME, REALM_CACHE_NAME, USER_CACHE_NAME)
+                .forEach(name -> builder.property()
+                        .name(CacheConfigurator.lifespanConfigKey(name))
+                        .helpText("Sets the lifespan of stored objects for cache %s. A zero or negative value makes the entries immortal, i.e., they never expire. %s".formatted(name, OptionsUtil.DURATION_DESCRIPTION))
+                        .label("lifespan")
+                        .type(ProviderConfigProperty.STRING_TYPE)
+                        .add());
+    }
+
     // private methods below
 
-    private static ConfigurationBuilder remoteCacheConfigurationBuilder(String name, Config.Scope config, String[] sites, Class<?> indexedEntity) {
+    private static void configureSessionExpirationReaper(ConfigurationBuilder builder) {
+        builder.expiration().enableReaper().wakeUpInterval(InfinispanUserSessionProviderFactory.getExpirationPeriod(TimeUnit.MILLISECONDS));
+    }
+
+    private static ConfigurationBuilder remoteCacheConfigurationBuilder(String name, Config.Scope config, String[] sites, Class<?> indexedEntity, long expirationWakeupPeriodMillis) {
+        return remoteCacheConfigurationBuilder(name, config, sites, indexedEntity, TimeQuantity.valueOf(expirationWakeupPeriodMillis));
+    }
+
+    private static ConfigurationBuilder remoteCacheConfigurationBuilder(String name, Config.Scope config, String[] sites, Class<?> indexedEntity, TimeQuantity expirationWakeupPeriod) {
         var builder = new ConfigurationBuilder();
         builder.clustering().cacheMode(CacheMode.DIST_SYNC);
         builder.clustering().hash().numOwners(Math.max(MIN_NUM_OWNERS_REMOTE_CACHE, config.getInt(numOwnerConfigKey(name), MIN_NUM_OWNERS_REMOTE_CACHE)));
         builder.clustering().stateTransfer().chunkSize(STATE_TRANSFER_CHUNK_SIZE);
         builder.encoding().mediaType(MediaType.APPLICATION_PROTOSTREAM);
         builder.statistics().enable();
+        builder.expiration().enableReaper().wakeUpInterval(expirationWakeupPeriod.longValue());
 
         if (indexedEntity != null) {
             builder.indexing().enable().addIndexedEntities(Marshalling.protoEntity(indexedEntity));
@@ -401,15 +484,24 @@ public final class CacheConfigurator {
     }
 
     private static void setMemoryMaxCount(Config.Scope keycloakConfig, String name, ConfigurationBuilder builder) {
-        var maxCount = keycloakConfig.getInt(maxCountConfigKey(name));
+        var maxCount = keycloakConfig.getLong(maxCountConfigKey(name));
         if (maxCount != null) {
-            logger.debugf("Overwriting max-count for cache '%s' to %s entries", name, maxCount);
             builder.memory().maxCount(maxCount);
         }
     }
 
     public static String maxCountConfigKey(String name) {
         return name + MAX_COUNT_SUFFIX;
+    }
+
+    /**
+     * Returns the SPI configuration key for the lifespan of the given cache.
+     *
+     * @param name The cache name.
+     * @return The configuration key, e.g. {@code "realmLifespan"}.
+     */
+    public static String lifespanConfigKey(String name) {
+        return name + LIFESPAN_SUFFIX;
     }
 
     public static String numOwnerConfigKey(String name) {
@@ -465,8 +557,14 @@ public final class CacheConfigurator {
         switch (cacheName) {
             // Distributed Caches
             case CLIENT_SESSION_CACHE_NAME:
-            case USER_SESSION_CACHE_NAME:
             case OFFLINE_CLIENT_SESSION_CACHE_NAME:
+                // Groups keys by user session ID.
+                if (clustered) {
+                    builder.clustering().hash().groups()
+                            .enabled()
+                            .addGrouper(ClientSessionKeyGrouper.INSTANCE);
+                }
+            case USER_SESSION_CACHE_NAME:
             case OFFLINE_USER_SESSION_CACHE_NAME:
                 if (clustered) {
                     builder.clustering().cacheMode(CacheMode.DIST_SYNC).hash().numOwners(1);
@@ -506,5 +604,21 @@ public final class CacheConfigurator {
             default:
                 return null;
         }
+    }
+
+    private static boolean isClustered(ConfigurationBuilderHolder holder) {
+        return holder.getGlobalConfigurationBuilder().transport().getTransport() != null;
+    }
+
+    private static void setExpiration(ConfigurationBuilderHolder holder, Config.Scope config, String cacheName, long defaultLifespan) {
+        var builder = holder.getNamedConfigurationBuilders().get(cacheName);
+        if (builder == null) {
+            throw cacheNotFound(cacheName);
+        }
+        var lifespan = Optional.ofNullable(DurationConverter.parseDuration(config.get(lifespanConfigKey(cacheName))))
+                .map(Duration::toMillis)
+                .map(value -> value <= 0 ? DISABLED_LIFESPAN : value)
+                .orElse(defaultLifespan);
+        builder.expiration().lifespan(lifespan, TimeUnit.MILLISECONDS);
     }
 }

@@ -16,8 +16,13 @@
  */
 package org.keycloak.keys;
 
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.Base64;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
+
+import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -27,10 +32,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.interfaces.ECPublicKey;
-import java.security.spec.X509EncodedKeySpec;
+import org.jboss.logging.Logger;
 
 public abstract class AbstractGeneratedEcKeyProviderFactory<T extends KeyProvider>
         extends AbstractEcKeyProviderFactory<T> {
@@ -101,9 +103,9 @@ public abstract class AbstractGeneratedEcKeyProviderFactory<T extends KeyProvide
     protected void generateKeys(ComponentModel model, String ecInNistRep) {
         KeyPair keyPair;
         try {
-            keyPair = generateEcKeyPair(convertECDomainParmNistRepToSecRep(ecInNistRep));
-            model.put(getEcPrivateKeyKey(), Base64.encodeBytes(keyPair.getPrivate().getEncoded()));
-            model.put(getEcPublicKeyKey(), Base64.encodeBytes(keyPair.getPublic().getEncoded()));
+            keyPair = KeyUtils.generateEcKeyPair(convertECDomainParmNistRepToSecRep(ecInNistRep));
+            model.put(getEcPrivateKeyKey(), Base64.getEncoder().encodeToString(keyPair.getPrivate().getEncoded()));
+            model.put(getEcPublicKeyKey(), Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
             model.put(getEcEllipticCurveKey(), ecInNistRep);
         } catch (Throwable t) {
             throw new ComponentValidationException("Failed to generate EC keys", t);
@@ -113,7 +115,7 @@ public abstract class AbstractGeneratedEcKeyProviderFactory<T extends KeyProvide
     protected String getCurveFromPublicKey(String publicEcKeyBase64Encoded) {
         try {
             KeyFactory kf = KeyFactory.getInstance("EC");
-            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.decode(publicEcKeyBase64Encoded));
+            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getMimeDecoder().decode(publicEcKeyBase64Encoded));
             ECPublicKey ecKey = (ECPublicKey) kf.generatePublic(publicKeySpec);
             return "P-" + ecKey.getParams().getCurve().getField().getFieldSize();
         } catch (Throwable t) {

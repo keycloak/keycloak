@@ -17,13 +17,26 @@
 
 package org.keycloak.authentication.authenticators.resetcred;
 
-import org.keycloak.models.DefaultActionTokenKey;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+
+import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.Config;
-import org.keycloak.authentication.*;
+import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.AuthenticationFlowException;
+import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionToken;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.common.util.Time;
-import org.keycloak.credential.*;
+import org.keycloak.credential.CredentialModel;
+import org.keycloak.credential.CredentialProvider;
+import org.keycloak.credential.PasswordCredentialProvider;
+import org.keycloak.credential.PasswordCredentialProviderFactory;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Details;
@@ -32,6 +45,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.DefaultActionTokenKey;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -46,10 +60,6 @@ import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.StorageId;
 
-import java.util.*;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
-import java.util.concurrent.TimeUnit;
 import org.jboss.logging.Logger;
 
 /**
@@ -140,8 +150,14 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
 
     @Override
     public void action(AuthenticationFlowContext context) {
-        context.getUser().setEmailVerified(true);
-        context.success();
+        UserModel user = context.getUser();
+        String actionTokenUserId = context.getAuthenticationSession().getAuthNote(DefaultActionTokenKey.ACTION_TOKEN_USER_ID);
+        if (user != null && user.getId().equals(actionTokenUserId)) {
+            context.success();
+        } else {
+            // not called via action token or any other weird situation
+            context.failure(AuthenticationFlowError.INVALID_USER);
+        }
     }
 
     @Override

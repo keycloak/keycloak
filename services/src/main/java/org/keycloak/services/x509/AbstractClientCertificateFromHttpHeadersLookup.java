@@ -18,15 +18,15 @@
 
 package org.keycloak.services.x509;
 
-import org.apache.http.client.methods.HttpHead;
-import org.jboss.logging.Logger;
-import org.keycloak.http.HttpRequest;
-import org.keycloak.common.util.PemException;
-
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.keycloak.common.util.PemException;
+import org.keycloak.http.HttpRequest;
+
+import org.jboss.logging.Logger;
 
 /**
  *
@@ -133,16 +133,18 @@ public abstract class AbstractClientCertificateFromHttpHeadersLookup implements 
 
     protected void buildChain(HttpRequest httpRequest, List<X509Certificate> chain, X509Certificate cert) {
         chain.add(cert);
-        // Get the certificate of the client certificate chain
+        addCertificateChainFromIndexedHeaders(httpRequest, chain);
+    }
+
+    protected void addCertificateChainFromIndexedHeaders(HttpRequest httpRequest, List<X509Certificate> chain) {
         for (int i = 0; i < certificateChainLength; i++) {
             try {
-                String s = String.format("%s_%s", sslCertChainHttpHeaderPrefix, i);
-                cert = getCertificateFromHttpHeader(httpRequest, s);
+                String headerName = String.format("%s_%s", sslCertChainHttpHeaderPrefix, i);
+                X509Certificate cert = getCertificateFromHttpHeader(httpRequest, headerName);
                 if (cert != null) {
                     chain.add(cert);
                 }
-            }
-            catch(GeneralSecurityException e) {
+            } catch (GeneralSecurityException e) {
                 logger.warn(e.getMessage(), e);
             }
         }

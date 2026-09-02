@@ -17,20 +17,21 @@
 
 package org.keycloak.testsuite.webauthn.utils;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
-import org.keycloak.testsuite.webauthn.pages.AbstractLoggedInPage;
-import org.keycloak.testsuite.webauthn.pages.SigningInPage;
 import org.keycloak.testsuite.pages.DeleteCredentialPage;
-import java.time.LocalDateTime;
-import java.util.List;
+import org.keycloak.testsuite.webauthn.pages.AbstractLoggedInPage;
+import org.keycloak.testsuite.webauthn.pages.DeviceActivityPage;
+import org.keycloak.testsuite.webauthn.pages.SigningInPage;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
 
 /**
  * Helper class for SigningIn page
@@ -64,18 +65,25 @@ public class SigningInPageUtils {
         assertThat("Update button visible", userCredential.isUpdateBtnDisplayed(), is(not(removable)));
     }
 
-    public static void testSetUpLink(RealmResource realmResource, SigningInPage.CredentialType credentialType, String requiredActionProviderId) {
+    public static void testSetUpLink(RealmResource realmResource, SigningInPage.CredentialType credentialType,
+            String requiredActionProviderId, DeviceActivityPage deviceActivityPage) {
         assertThat("Set up link for \"" + credentialType.getType() + "\" is not visible", credentialType.isSetUpLinkVisible(), is(true));
 
-        RequiredActionProviderRepresentation requiredAction = new RequiredActionProviderRepresentation();
+        RequiredActionProviderRepresentation requiredAction = realmResource.flows().getRequiredAction(requiredActionProviderId);
         requiredAction.setEnabled(false);
         realmResource.flows().updateRequiredAction(requiredActionProviderId, requiredAction);
 
-        refreshPageAndWaitForLoad();
+        try {
+            deviceActivityPage.navigateToUsingSidebar();
+            credentialType.navigateToUsingSidebar();
 
-        assertThat("Set up link for \"" + credentialType.getType() + "\" is visible", credentialType.isSetUpLinkVisible(), is(false));
-        assertThat("Title for \"" + credentialType.getType() + "\" is visible", credentialType.isTitleVisible(), is(false));
-        assertThat("Set up link for \"" + credentialType.getType() + "\" is visible", credentialType.isNotSetUpLabelVisible(), is(false));
+            assertThat("Set up link for \"" + credentialType.getType() + "\" is visible", credentialType.isSetUpLinkVisible(), is(false));
+            assertThat("Title for \"" + credentialType.getType() + "\" is visible", credentialType.isTitleVisible(), is(false));
+            assertThat("Set up link for \"" + credentialType.getType() + "\" is visible", credentialType.isNotSetUpLabelVisible(), is(false));
+        } finally {
+            requiredAction.setEnabled(true);
+            realmResource.flows().updateRequiredAction(requiredActionProviderId, requiredAction);
+        }
     }
 
     public static void testRemoveCredential(AbstractLoggedInPage accountPage, DeleteCredentialPage deleteCredentialPage, SigningInPage.UserCredential userCredential) {

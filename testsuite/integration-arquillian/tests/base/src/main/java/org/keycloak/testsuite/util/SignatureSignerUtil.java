@@ -1,12 +1,12 @@
 package org.keycloak.testsuite.util;
 
+import java.security.PrivateKey;
+
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.AsymmetricSignatureSignerContext;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.ServerECDSASignatureSignerContext;
 import org.keycloak.crypto.SignatureSignerContext;
-
-import java.security.PrivateKey;
 
 public class SignatureSignerUtil {
 

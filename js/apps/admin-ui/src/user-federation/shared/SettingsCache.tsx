@@ -3,7 +3,6 @@ import {
   SelectControl,
   SelectControlOption,
 } from "@keycloak/keycloak-ui-shared";
-import { isEqual } from "lodash-es";
 import { UseFormReturn, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { FormAccess } from "../../components/form/FormAccess";
@@ -16,6 +15,13 @@ export type SettingsCacheProps = {
   unWrap?: boolean;
 };
 
+const getValue = (value: string | string[] | undefined) => {
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+  return value;
+};
+
 const CacheFields = ({ form }: { form: UseFormReturn }) => {
   const { t } = useTranslation();
 
@@ -23,6 +29,8 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
     control: form.control,
     name: "config.cachePolicy",
   });
+
+  const cachePolicy = getValue(cachePolicyType);
 
   const hourOptions: SelectControlOption[] = [];
   let hourDisplay = "";
@@ -65,7 +73,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
           "NO_CACHE",
         ]}
       />
-      {isEqual(cachePolicyType, ["EVICT_WEEKLY"]) ? (
+      {cachePolicy === "EVICT_WEEKLY" ? (
         <SelectControl
           id="kc-eviction-day"
           name="config.evictionDay[0]"
@@ -86,34 +94,33 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
           ]}
         />
       ) : null}
-      {isEqual(cachePolicyType, ["EVICT_DAILY"]) ||
-      isEqual(cachePolicyType, ["EVICT_WEEKLY"]) ? (
+      {cachePolicy === "EVICT_DAILY" || cachePolicy === "EVICT_WEEKLY" ? (
         <>
           <SelectControl
             id="kc-eviction-hour"
-            name="config.evictionHour"
+            name="config.evictionHour[0]"
             label={t("evictionHour")}
             labelIcon={t("evictionHourHelp")}
             controller={{
-              defaultValue: ["0"],
+              defaultValue: "0",
             }}
             aria-label={t("selectEvictionHour")}
             options={hourOptions}
           />
           <SelectControl
             id="kc-eviction-minute"
-            name="config.evictionMinute"
+            name="config.evictionMinute[0]"
             label={t("evictionMinute")}
             labelIcon={t("evictionMinuteHelp")}
             controller={{
-              defaultValue: ["0"],
+              defaultValue: "0",
             }}
             aria-label={t("selectEvictionMinute")}
             options={minuteOptions}
           />
         </>
       ) : null}
-      {isEqual(cachePolicyType, ["MAX_LIFESPAN"]) ? (
+      {cachePolicy === "MAX_LIFESPAN" ? (
         <NumberControl
           data-testid="kerberos-cache-lifespan"
           name="config.maxLifespan[0]"

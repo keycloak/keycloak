@@ -16,8 +16,10 @@
  */
 package org.keycloak.authentication.authenticators.browser;
 
-import jakarta.ws.rs.core.Response;
 import java.util.function.Function;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
@@ -45,9 +47,9 @@ public class WebAuthnConditionalUIAuthenticator extends WebAuthnPasswordlessAuth
     }
 
     @Override
-    protected Response createErrorResponse(AuthenticationFlowContext context, final String errorCase) {
+    protected Response createErrorResponse(AuthenticationFlowContext context, final String errorCase, Object... parameters) {
         // the passkey failed, show error and maintain passkeys
-        context.form().setError(errorCase, "");
+        context.form().setError(errorCase, parameters);
         context.form().setAttribute(WebAuthnConstants.ENABLE_WEBAUTHN_CONDITIONAL_UI, Boolean.TRUE);
 
         AuthenticatorUtils.setupReauthenticationInUsernamePasswordFormError(context);

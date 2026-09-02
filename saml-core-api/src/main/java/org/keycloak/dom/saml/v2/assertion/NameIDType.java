@@ -16,9 +16,10 @@
  */
 package org.keycloak.dom.saml.v2.assertion;
 
+import java.net.URI;
+
 import org.keycloak.common.util.StringSerialization;
 import org.keycloak.common.util.StringSerialization.Deserializer;
-import java.net.URI;
 
 /**
  * Represents a NameIDType

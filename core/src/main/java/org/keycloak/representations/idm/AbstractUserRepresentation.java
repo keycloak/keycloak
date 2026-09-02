@@ -24,9 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.keycloak.json.StringListMap;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import org.keycloak.json.StringListMapDeserializer;
 
 public abstract class AbstractUserRepresentation {
 
@@ -42,7 +42,7 @@ public abstract class AbstractUserRepresentation {
     protected String lastName;
     protected String email;
     protected Boolean emailVerified;
-    @JsonDeserialize(using = StringListMapDeserializer.class)
+    @StringListMap
     protected Map<String, List<String>> attributes;
     private UserProfileMetadata userProfileMetadata;
     protected Boolean enabled;

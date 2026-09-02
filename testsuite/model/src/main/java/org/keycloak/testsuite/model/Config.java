@@ -16,17 +16,17 @@
  */
 package org.keycloak.testsuite.model;
 
-import org.keycloak.Config.ConfigProvider;
-import org.keycloak.Config.Scope;
-import org.keycloak.Config.SystemPropertiesScope;
-import org.keycloak.common.util.StringPropertyReplacer;
-import org.keycloak.common.util.SystemEnvProperties;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
+
+import org.keycloak.Config.ConfigProvider;
+import org.keycloak.Config.Scope;
+import org.keycloak.Config.SystemPropertiesScope;
+import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.common.util.SystemEnvProperties;
 
 /**
  *
@@ -121,10 +121,10 @@ public class Config implements ConfigProvider {
         }
 
         @Override
-        public String get(String key, String defaultValue) {
+        public String get(String key) {
             String v = replaceProperties(getConfig().get(prefix + key));
             if (v == null || v.isEmpty()) {
-                v = System.getProperty("keycloak." + prefix + key, defaultValue);
+                v = System.getProperty("keycloak." + prefix + key);
             }
             return v != null && ! v.isEmpty() ? v : null;
         }

@@ -17,66 +17,79 @@
 
 package org.keycloak.models.workflow;
 
-import java.util.List;
+import java.util.Comparator;
+import java.util.stream.Stream;
+
 import org.keycloak.provider.Provider;
+import org.keycloak.representations.workflows.WorkflowRepresentation;
+import org.keycloak.utils.StringUtil;
 
 public interface WorkflowProvider extends Provider {
 
     /**
-     * Finds all resources that are eligible for the first action of a workflow.
+     * Returns a {@link ResourceTypeSelector} for the specified resource type.
      *
-     * @return A list of eligible resource IDs.
+     * @param type     the resource type.
+     * @return the corresponding {@link ResourceTypeSelector}.
      */
-    List<String> getEligibleResourcesForInitialStep();
+    ResourceTypeSelector getResourceTypeSelector(ResourceType type);
+
+    Workflow toModel(WorkflowRepresentation representation);
 
     /**
-     * Checks if the provider supports resources of the specified type.
+     * Returns the {@link Workflow} with the given id, or {@code null} if no such workflow exists.
      *
-     * @param type the resource type.
-     * @return {@code true} if the provider supports the specified type; {@code false} otherwise.
+     * @param id the workflow id.
+     * @return the workflow, or {@code null} if not found.
      */
-    boolean supports(ResourceType type);
+    Workflow getWorkflow(String id);
+
+    void removeWorkflow(Workflow workflow);
+
+    Stream<Workflow> getWorkflows();
+
+    default Stream<Workflow> getWorkflows(String search, Boolean exact, Integer first, Integer max) {
+        return getWorkflows().sorted(Comparator.comparing(Workflow::getName))
+                .filter(workflow -> {
+                    if (StringUtil.isBlank(search)) {
+                        return true;
+                    }
+                    return Boolean.TRUE.equals(exact) ? workflow.getName().equals(search) : workflow.getName().toLowerCase().contains(search.toLowerCase());
+                })
+                .skip(first).limit(max);
+    }
+
+    Stream<WorkflowRepresentation> getScheduledWorkflowsByResource(String resourceId);
+
+    WorkflowRepresentation toRepresentation(Workflow workflow);
+
+    void updateWorkflow(Workflow workflow, WorkflowRepresentation rep);
+
+    void activate(Workflow workflow, ResourceType type, String resourceId);
+
+    void deactivate(Workflow workflow, String resourceId);
+
+    void submit(WorkflowEvent event);
+
+    void runScheduledSteps();
+
+    void activateForAllEligibleResources(Workflow workflow);
 
     /**
-     * Indicates whether the workflow supports being activated for a resource based on the event or not. If {@code true}, the
-     * workflow will be activated for the resource. For scheduled workflows, this means the first action will be scheduled. For
-     * immediate workflows, this means all actions will be executed right away.
+     * Migrates scheduled resources from one workflow step to another. The destination step might be a step in the same
+     * workflow or a step in a different workflow.
+     * <br/>
+     * If the resources are being migrated to a different workflow, the following conditions must be met:
+     * <ul>
+     *     <li>the source and destination workflows must support the same resource type;</li>
+     *     <li>all resources must satisfy the activation conditions of the destination workflow.</li>
+     * </ul>
+     * The process behaves exactly as if the resources were being activated for the first time in the destination workflow,
+     * except that the first step to be processed is the specified destination step. So, if the step is a scheduled step,
+     * the resources will be scheduled accordingly. If the step is not a scheduled step, it will run immediately.
      *
-     * At the very least, implementations should validate the event's resource type and operation to ensure the workflow will
-     * only be activated on expected operations being performed on the expected type.
-     *
-     * @param event a {@link WorkflowEvent} containing details of the event that was triggered such as operation
-     *              (CREATE, LOGIN, etc.), the resource type, and the resource id.
-     * @return {@code true} if the workflow can be activated based on the received event; {@code false} otherwise.
+     * @param stepIdFrom the id of the step to migrate from.
+     * @param stepIdTo the id of the step to migrate to.
      */
-    boolean activateOnEvent(WorkflowEvent event);
-
-    /**
-     * Indicates whether the workflow supports being reset (i.e. go back to the first action) based on the event received or not.
-     * By default, this method returns false as most workflows won't support this kind of flow, but specific workflows such
-     * as one based on a resource's last updated time, or last used time, can signal that they expect the process to start
-     * over once the timestamp they are based on is updated.
-     *
-     * At the very least, implementations should validate the event's resource type and operation to ensure the workflow will
-     * only be reset on expected operations being performed on the expected type.
-     *
-     * @param event a {@link WorkflowEvent} containing details of the event that was triggered such as operation
-     *              (CREATE, LOGIN, etc.), the resource type, and the resource id.
-     * @return {@code true} if the workflow supports resetting the flow based on the received event; {@code false} otherwise.
-     */
-    boolean resetOnEvent(WorkflowEvent event);
-
-    /**
-     * Indicates whether the workflow supports being deactivated for a resource based on the event or not. If {@code true}, the
-     * workflow will be deactivated for the resource, meaning any existing scheduled actions will be removed and no further
-     * actions will be executed.
-     *
-     * At the very least, implementations should validate the event's resource type and operation to ensure the workflow will
-     * only be deactivated on expected operations being performed on the expected type.
-     *
-     * @param event a {@link WorkflowEvent} containing details of the event that was triggered such as operation
-     *              (CREATE, LOGIN, etc.), the resource type, and the resource id.
-     * @return {@code true} if the workflow can be deactivated based on the received event; {@code false} otherwise.
-     */
-    boolean deactivateOnEvent(WorkflowEvent event);
+    void migrateScheduledResources(String stepIdFrom, String stepIdTo);
 }

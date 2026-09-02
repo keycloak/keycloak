@@ -17,6 +17,17 @@
 
 package org.keycloak.services.resources.admin;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Stream;
+
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
@@ -27,14 +38,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.core.UriInfo;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Stream;
+import static org.keycloak.utils.StringUtil.isBlank;
 
 /**
  * @resource Roles
@@ -61,6 +65,9 @@ public abstract class RoleResource {
     protected void updateRole(RoleRepresentation rep, RoleModel role, RealmModel realm,
             KeycloakSession session) {
         String newName = rep.getName();
+        if (isBlank(newName)) {
+            throw new BadRequestException("role has no name");
+        }
         String previousName = role.getName();
         if (!Objects.equals(previousName, newName)) {
             role.setName(newName);
@@ -133,24 +140,27 @@ public abstract class RoleResource {
         adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo).representation(roles).success();
     }
 
-    protected Stream<RoleRepresentation> getRealmRoleComposites(RoleModel role) {
+    protected Stream<RoleRepresentation> getRealmRoleComposites(AdminPermissionEvaluator auth, RoleModel role) {
         return role.getCompositesStream()
                 .filter(composite -> composite.getContainer() instanceof RealmModel)
+                .filter(composite -> auth.roles().canView(composite))
                 .map(ModelToRepresentation::toBriefRepresentation);
     }
 
-    protected Stream<RoleRepresentation> getClientRoleComposites(ClientModel app, RoleModel role) {
+    protected Stream<RoleRepresentation> getClientRoleComposites(AdminPermissionEvaluator auth, ClientModel app, RoleModel role) {
         return role.getCompositesStream()
                 .filter(composite -> Objects.equals(composite.getContainer(), app))
+                .filter(composite -> auth.roles().canView(composite))
                 .map(ModelToRepresentation::toBriefRepresentation);
     }
 
-    protected void deleteComposites(AdminEventBuilder adminEvent, UriInfo uriInfo, List<RoleRepresentation> roles, RoleModel role) {
+    protected void deleteComposites(AdminPermissionEvaluator auth, AdminEventBuilder adminEvent, UriInfo uriInfo, List<RoleRepresentation> roles, RoleModel role) {
         for (RoleRepresentation rep : roles) {
             RoleModel composite = realm.getRoleById(rep.getId());
             if (composite == null) {
                 throw new NotFoundException("Could not find composite role");
             }
+            auth.roles().requireMapComposite(composite);
             role.removeCompositeRole(composite);
         }
 

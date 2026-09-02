@@ -1,11 +1,11 @@
 package org.keycloak.representations.docker;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 /**

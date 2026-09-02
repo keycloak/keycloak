@@ -1,17 +1,5 @@
 package org.keycloak.testsuite.util;
 
-import org.apache.http.client.RedirectStrategy;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultRedirectStrategy;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.KeystoreUtil;
-
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -21,6 +9,19 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.KeystoreUtil;
+
+import org.apache.http.client.RedirectStrategy;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultRedirectStrategy;
+import org.apache.http.impl.client.HttpClientBuilder;
 
 /**
  * Utilities for Holder of key mechanism and other Mutual TLS tests.
@@ -45,6 +46,8 @@ public class MutualTLSUtils {
     // like "jurisdictionCountryName", "businessCategory", "serialNumber" . These OIDs are used by OpenBanking Brasil
     public static final String OBB_KEYSTOREPATH = System.getProperty("obb.client.certificate.keystore");
     public static final String OBB_KEYSTOREPASSWORD = System.getProperty("obb.client.certificate.keystore.passphrase");
+
+    public static final String CA_CERTIFICATE_SUBJECT_DN = "EMAILADDRESS=contact@keycloak.org, CN=Keycloak CA, OU=Keycloak, O=Red Hat, L=Boston, ST=MA, C=US";
 
     public static CloseableHttpClient newCloseableHttpClientWithDefaultKeyStoreAndTrustStore() {
         return newCloseableHttpClient(DEFAULT_KEYSTOREPATH, DEFAULT_KEYSTOREPASSWORD, DEFAULT_TRUSTSTOREPATH, DEFAULT_TRUSTSTOREPASSWORD);

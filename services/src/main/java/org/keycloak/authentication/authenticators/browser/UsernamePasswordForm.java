@@ -17,22 +17,24 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.AuthenticationFlowContext;
-import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
-import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
-import jakarta.ws.rs.core.MultivaluedHashMap;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
+import static org.keycloak.authentication.authenticators.resetcred.ResetCredentialChooseUser.RESET_CREDENTIAL_USER_CHOSEN;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -87,6 +89,7 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
         MultivaluedMap<String, String> formData = new MultivaluedHashMap<>();
         String loginHint = context.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
 
+        clearUserIfComingFromResetPassword(context);
         String rememberMeUsername = AuthenticationManager.getRememberMeUsername(context.getSession());
 
         if (context.getUser() != null) {
@@ -119,6 +122,13 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
         context.challenge(challengeResponse);
     }
 
+    private void clearUserIfComingFromResetPassword(AuthenticationFlowContext context) {
+        if ("true".equals(context.getAuthenticationSession().getAuthNote(RESET_CREDENTIAL_USER_CHOSEN))) {
+            context.clearUser();
+            context.getAuthenticationSession().removeAuthNote(RESET_CREDENTIAL_USER_CHOSEN);
+        }
+    }
+
     @Override
     public boolean requiresUser() {
         return false;
@@ -126,7 +136,6 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
 
     protected Response challenge(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
         LoginFormsProvider forms = context.form();
-
         if (!formData.isEmpty()) forms.setFormData(formData);
 
         return forms.createLoginUsernamePassword();

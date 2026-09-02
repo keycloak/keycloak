@@ -38,10 +38,11 @@ public class DPoPBindEnforcerExecutorFactory  implements ClientPolicyExecutorPro
             AUTO_CONFIGURE, "Auto-configure", "If On, then the during client creation or update, the configuration of the client will be auto-configured to use DPoP bind token", ProviderConfigProperty.BOOLEAN_TYPE, false);
 
     private static final ProviderConfigProperty ENFORCE_AUTHORIZATION_CODE_BINDING_TO_DPOP_KEY = new ProviderConfigProperty(
-            ENFORCE_AUTHORIZATION_CODE_BINDING_TO_DPOP, "Enforce Authorization Code binding to DPoP key", "If On, then there is enforced authorization code binding to DPoP key. This means that parameter 'dpop_jkt' will be required in the OIDC/OAuth2 authentication requests and will be verified during token request if it matches DPoP proof. When this is false, it is still possible to use 'dpop_jkt' parameter, but it will not be required", ProviderConfigProperty.BOOLEAN_TYPE, false);
+            ENFORCE_AUTHORIZATION_CODE_BINDING_TO_DPOP, "Enforce Authorization Code binding to DPoP key", "If On, then there is enforced authorization code binding to DPoP key. This means that parameter 'dpop_jkt' will be required in the OIDC/OAuth2 authentication requests and will be verified during token request if it matches DPoP proof. When this is false, it is still possible to use 'dpop_jkt' parameter, " +
+            "which would be checked in the token request later, but 'dpop_jkt' parameter will not be required", ProviderConfigProperty.BOOLEAN_TYPE, false);
 
     private static final ProviderConfigProperty ALLOW_ONLY_REFRESH_BINDING_PROPERTY = new ProviderConfigProperty(
-            ALLOW_ONLY_REFRESH_BINDING, "Bind only refresh token for public client", "If On and the client is public the DPoP binding is enforced only for refresh token, this option is ignored if the DPoP is enforced in client settings or if the client is not public",
+            ALLOW_ONLY_REFRESH_BINDING, "Bind only refresh token for public client", "If On and the client is public the DPoP binding is enforced only for refresh token. This option is ignored if the DPoP is enforced in client settings or if the client is not public",
             ProviderConfigProperty.BOOLEAN_TYPE, false);
 
 

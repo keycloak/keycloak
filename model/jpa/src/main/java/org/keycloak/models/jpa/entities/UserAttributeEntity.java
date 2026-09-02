@@ -17,8 +17,6 @@
 
 package org.keycloak.models.jpa.entities;
 
-import org.hibernate.annotations.Nationalized;
-
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
 import jakarta.persistence.Column;
@@ -30,7 +28,10 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
+
 import org.keycloak.storage.jpa.JpaHashUtils;
+
+import org.hibernate.annotations.Nationalized;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

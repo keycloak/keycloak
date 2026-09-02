@@ -16,11 +16,11 @@
  */
 package org.keycloak.crl;
 
-import org.keycloak.provider.Provider;
-
 import java.security.GeneralSecurityException;
 import java.security.cert.X509CRL;
 import java.util.concurrent.Callable;
+
+import org.keycloak.provider.Provider;
 
 /**
  * Crl Storage Provider interface

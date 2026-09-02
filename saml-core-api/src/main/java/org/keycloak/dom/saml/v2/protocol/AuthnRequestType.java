@@ -16,12 +16,12 @@
  */
 package org.keycloak.dom.saml.v2.protocol;
 
+import java.net.URI;
+import javax.xml.datatype.XMLGregorianCalendar;
+
 import org.keycloak.dom.saml.v2.assertion.ConditionsType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
-
-import javax.xml.datatype.XMLGregorianCalendar;
-import java.net.URI;
 
 /**
  * <p>

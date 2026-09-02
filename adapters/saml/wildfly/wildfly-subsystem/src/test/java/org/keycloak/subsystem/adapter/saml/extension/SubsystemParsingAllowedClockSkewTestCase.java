@@ -16,8 +16,6 @@
  */
 package org.keycloak.subsystem.adapter.saml.extension;
 
-import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
-
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -36,11 +34,13 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.model.test.ModelTestUtils;
+import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;

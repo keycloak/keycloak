@@ -17,13 +17,12 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Represents a credentials issuer according to the OID4VCI Credentials Issuer Metadata
@@ -32,6 +31,7 @@ import java.util.Map;
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CredentialIssuer {
 
     @JsonProperty("credential_issuer")
@@ -48,9 +48,6 @@ public class CredentialIssuer {
 
     @JsonProperty("authorization_servers")
     private List<String> authorizationServers;
-
-    @JsonProperty("notification_endpoint")
-    private String notificationEndpoint;
 
     @JsonProperty("batch_credential_issuance")
     private BatchCredentialIssuance batchCredentialIssuance;
@@ -112,15 +109,6 @@ public class CredentialIssuer {
         return this;
     }
 
-    public String getNotificationEndpoint() {
-        return notificationEndpoint;
-    }
-
-    public CredentialIssuer setNotificationEndpoint(String notificationEndpoint) {
-        this.notificationEndpoint = notificationEndpoint;
-        return this;
-    }
-
     public BatchCredentialIssuance getBatchCredentialIssuance() {
         return batchCredentialIssuance;
     }
@@ -138,7 +126,8 @@ public class CredentialIssuer {
         if (credentialsSupported == null) {
             throw new IllegalArgumentException("credentialsSupported cannot be null");
         }
-        this.credentialsSupported = Collections.unmodifiableMap(new HashMap<>(credentialsSupported));
+        credentialsSupported.forEach((k, v) -> v.setId(k));
+        this.credentialsSupported = Map.copyOf(credentialsSupported);
         return this;
     }
 

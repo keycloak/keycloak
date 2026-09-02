@@ -16,15 +16,15 @@
  */
 package org.keycloak.authentication.actiontoken;
 
-import org.keycloak.TokenVerifier;
-import org.keycloak.TokenVerifier.Predicate;
-import org.keycloak.representations.JsonWebToken;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
+
+import org.keycloak.TokenVerifier;
+import org.keycloak.TokenVerifier.Predicate;
+import org.keycloak.representations.JsonWebToken;
 
 /**
  *

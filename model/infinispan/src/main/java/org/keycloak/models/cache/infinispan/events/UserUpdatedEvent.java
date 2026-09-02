@@ -20,11 +20,12 @@ package org.keycloak.models.cache.infinispan.events;
 import java.util.Objects;
 import java.util.Set;
 
+import org.keycloak.marshalling.Marshalling;
+import org.keycloak.models.cache.infinispan.UserCacheManager;
+
 import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.infinispan.protostream.annotations.ProtoTypeId;
-import org.keycloak.marshalling.Marshalling;
-import org.keycloak.models.cache.infinispan.UserCacheManager;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -41,7 +42,7 @@ public class UserUpdatedEvent extends InvalidationEvent implements UserCacheInva
 
     private UserUpdatedEvent(String id, String username, String email, String realmId) {
         super(id);
-        this.username = Objects.requireNonNull(username);
+        this.username = username;
         this.email = email;
         this.realmId = Objects.requireNonNull(realmId);
     }

@@ -16,9 +16,6 @@
  */
 package org.keycloak.userprofile.config;
 
-import static org.keycloak.common.util.ObjectUtil.isBlank;
-import static org.keycloak.userprofile.UserProfileUtil.isRootAttribute;
-
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -29,6 +26,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +49,9 @@ import org.keycloak.validate.ValidationResult;
 import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.Validators;
 
+import static org.keycloak.common.util.ObjectUtil.isBlank;
+import static org.keycloak.userprofile.UserProfileUtil.isRootAttribute;
+
 /**
  * Utility methods to work with User Profile Configurations
  *
@@ -63,6 +64,7 @@ public class UPConfigUtils {
     public static final String ROLE_USER = UserProfileConstants.ROLE_USER;
     public static final String ROLE_ADMIN = UserProfileConstants.ROLE_ADMIN;
 
+    private static final String ANNOTATION_SCIM_SCHEMA_ATTRIBUTE = "kc.scim.schema.attribute";
     private static final Set<String> PSEUDOROLES = new HashSet<>();
     public static final Pattern ATTRIBUTE_NAME_PATTERN = Pattern.compile("[a-zA-Z0-9\\._\\-]+");
 
@@ -137,9 +139,72 @@ public class UPConfigUtils {
             Set<String> attNamesCache = new HashSet<>();
             config.getAttributes().forEach((attribute) -> validateAttribute(session, attribute, groups, errors, attNamesCache));
             errors.addAll(validateRootAttributes(config));
+            errors.addAll(validateScimAttributeMappings(config));
         }
 
         return errors;
+    }
+
+    private static List<String> validateScimAttributeMappings(UPConfig config) {
+        Map<String, List<ScimSubAttributeMapping>> mappingsByParent = new HashMap<>();
+
+        for (UPAttribute attribute : config.getAttributes()) {
+            Map<String, Object> annotations = attribute.getAnnotations();
+
+            if (annotations == null) {
+                continue;
+            }
+
+            Object scimValue = annotations.get(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE);
+
+            if (!(scimValue instanceof String scimName) || !scimName.contains(":")) {
+                continue;
+            }
+
+            int lastColon = scimName.lastIndexOf(':');
+            String schema = scimName.substring(0, lastColon);
+            String simpleName = scimName.substring(lastColon + 1);
+            int dot = simpleName.indexOf('.');
+
+            if (dot == -1) {
+                continue;
+            }
+
+            String parentName = simpleName.substring(0, dot);
+            String subAttributeName = simpleName.substring(dot + 1);
+            String parentKey = schema + ":" + parentName;
+
+            mappingsByParent.computeIfAbsent(parentKey, k -> new ArrayList<>())
+                    .add(new ScimSubAttributeMapping(subAttributeName, attribute.isMultivalued()));
+        }
+
+        List<String> errors = new ArrayList<>();
+
+        for (Map.Entry<String, List<ScimSubAttributeMapping>> entry : mappingsByParent.entrySet()) {
+            List<ScimSubAttributeMapping> mappings = entry.getValue();
+            boolean hasMultivaluedValue = mappings.stream()
+                    .anyMatch(m -> "value".equals(m.subAttributeName) && m.multivalued);
+
+            if (!hasMultivaluedValue) {
+                continue;
+            }
+
+            List<String> siblings = mappings.stream()
+                    .filter(m -> !("value".equals(m.subAttributeName) && m.multivalued))
+                    .map(m -> m.subAttributeName)
+                    .toList();
+
+            if (!siblings.isEmpty()) {
+                errors.add("Incompatible SCIM extension mappings for complex attribute '"
+                        + entry.getKey() + "': multivalued '.value' cannot be combined with sibling sub-attributes "
+                        + siblings);
+            }
+        }
+
+        return errors;
+    }
+
+    private record ScimSubAttributeMapping(String subAttributeName, boolean multivalued) {
     }
 
     private static List<String> validateRootAttributes(UPConfig config) {
@@ -298,18 +363,18 @@ public class UPConfigUtils {
         if (isBlank(validator)) {
             errors.add("Validation without validator id is defined for attribute '" + attributeName + "'");
         } else {
-        	if(session!=null) {
-            	if(Validators.validator(session, validator) == null) {
-            		errors.add("Validator '" + validator + "' defined for attribute '" + attributeName + "' doesn't exist");
-            	} else {
-            		ValidationResult result = Validators.validateConfig(session, validator, ValidatorConfig.configFromMap(validatorConfig));
-            		if(!result.isValid()) {
-            			final StringBuilder sb = new StringBuilder();
-            			result.forEachError(err -> sb.append(err.toString()+", "));
-            			errors.add("Validator '" + validator + "' defined for attribute '" + attributeName + "' has incorrect configuration: " + sb.toString());
-            		}
-            	}
-        	}
+            if(session!=null) {
+                if(Validators.validator(session, validator) == null) {
+                    errors.add("Validator '" + validator + "' defined for attribute '" + attributeName + "' doesn't exist");
+                } else {
+                    ValidationResult result = Validators.validateConfig(session, validator, ValidatorConfig.configFromMap(validatorConfig));
+                    if(!result.isValid()) {
+                        final StringBuilder sb = new StringBuilder();
+                        result.forEachError(err -> sb.append(err.toString()+", "));
+                        errors.add("Validator '" + validator + "' defined for attribute '" + attributeName + "' has incorrect configuration: " + sb.toString());
+                    }
+                }
+            }
         }
     }
 
@@ -339,7 +404,7 @@ public class UPConfigUtils {
         try (InputStream is = new FileInputStream(configPath.toFile())) {
             return parseConfig(is);
         } catch (IOException ioe) {
-            throw new RuntimeException("Failed to reaad default user profile configuration: " + configPath, ioe);
+            throw new RuntimeException("Failed to read default user profile configuration: " + configPath, ioe);
         }
     }
 

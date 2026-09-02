@@ -24,4 +24,3 @@ import org.keycloak.provider.Provider;
 public interface RoleStorageProvider extends Provider, RoleLookupProvider {
 
 }
-

@@ -1,9 +1,5 @@
 package org.keycloak.encoding;
 
-import org.apache.commons.io.IOUtils;
-import org.jboss.logging.Logger;
-import org.keycloak.theme.ResourceLoader;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -11,6 +7,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.zip.GZIPOutputStream;
+
+import org.keycloak.theme.ResourceLoader;
+
+import org.apache.commons.io.IOUtils;
+import org.jboss.logging.Logger;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 

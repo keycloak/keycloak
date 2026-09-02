@@ -20,10 +20,7 @@ package org.keycloak.testsuite.broker;
 import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
+
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -33,6 +30,11 @@ import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.LDAPRule;
+
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 public final class KcOidcBrokerLdapTest extends AbstractInitializedBaseBrokerTest {
 
@@ -55,11 +57,12 @@ public final class KcOidcBrokerLdapTest extends AbstractInitializedBaseBrokerTes
     @Test
     public void testUpdateProfileOnFirstLogin() {
         updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         logInWithBroker(bc);
         updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "f", "l");
-        Assert.assertFalse(errorPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     private ComponentRepresentation getUserStorageConfiguration(String providerName, String providerId) {

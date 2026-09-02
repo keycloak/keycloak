@@ -19,6 +19,7 @@ package org.keycloak.connections.jpa.updater.liquibase;
 
 import java.util.HashSet;
 import java.util.Set;
+
 import liquibase.database.core.MariaDBDatabase;
 
 /**

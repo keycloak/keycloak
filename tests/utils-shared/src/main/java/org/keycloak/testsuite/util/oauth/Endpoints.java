@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.util.oauth;
 
 import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.device.DeviceGrantType;
@@ -75,6 +76,26 @@ public class Endpoints {
 
     public String getBackchannelAuthenticationCallback() {
         return asString(CibaGrantType.authenticationUrl(getBase()));
+    }
+
+    public String getOid4vcIssuerMetadata() {
+        return asString(getBase().path(RealmsResource.class).path("{realm}/.well-known/openid-credential-issuer"));
+    }
+
+    public String getOid4vcCredential() {
+        return asString(getBase().path(RealmsResource.class).path("{realm}/protocol/oid4vc/credential"));
+    }
+
+    public String getOid4vcNonce() {
+        return asString(getBase().path(RealmsResource.class).path("{realm}/protocol/oid4vc/nonce"));
+    }
+
+    public String getOid4vcCredentialOffer() {
+        return asString(getBase().path(RealmsResource.class).path("{realm}/protocol/oid4vc/credential-offer"));
+    }
+
+    public String getOid4vcCredentialOfferUri() {
+        return asString(getBase().path(RealmsResource.class).path("{realm}/protocol/oid4vc/create-credential-offer"));
     }
 
     UriBuilder getBase() {

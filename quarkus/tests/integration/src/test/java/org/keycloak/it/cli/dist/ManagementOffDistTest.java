@@ -16,18 +16,20 @@
  */
 package org.keycloak.it.cli.dist;
 
+import java.io.IOException;
+
+import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
+
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.Test;
-import org.keycloak.it.junit5.extension.CLIResult;
-import org.keycloak.it.junit5.extension.DistributionTest;
-
-import java.io.IOException;
 
 import static io.restassured.RestAssured.when;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@DistributionTest(keepAlive = true,
+@DistributionTest(stopServer = Mode.MANUAL,
         requestPort = 9000,
         containerExposedPorts = {9000, 8080})
 public class ManagementOffDistTest {
@@ -36,7 +38,7 @@ public class ManagementOffDistTest {
     @Launch({"start-dev"})
     public void notOccupied(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertNoMessage("Management interface listening on");
+        cliResult.assertNoStartupMessage("Management interface listening on");
 
         assertThrows(IOException.class, () -> when().get("/"), "Connection refused must be thrown");
         assertThrows(IOException.class, () -> when().get("/health"), "Connection refused must be thrown");

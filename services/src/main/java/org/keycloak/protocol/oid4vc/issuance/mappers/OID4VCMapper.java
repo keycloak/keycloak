@@ -17,26 +17,37 @@
 
 package org.keycloak.protocol.oid4vc.issuance.mappers;
 
-import org.apache.commons.collections4.ListUtils;
-import org.keycloak.Config;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.constants.Oid4VciConstants;
-import org.keycloak.protocol.ProtocolMapper;
-import org.keycloak.protocol.oid4vc.OID4VCEnvironmentProviderFactory;
-import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
-import org.keycloak.protocol.oid4vc.model.Format;
-import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
-import org.keycloak.provider.ProviderConfigProperty;
-
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+
+import org.keycloak.Config;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ProtocolMapperContainerModel;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.models.oid4vci.Oid4vcProtocolMapperModel;
+import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.ProtocolMapperConfigException;
+import org.keycloak.protocol.oid4vc.OID4VCEnvironmentProviderFactory;
+import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
+import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.utils.JsonUtils;
+
+import org.apache.commons.collections4.ListUtils;
+
+import static org.keycloak.OID4VCConstants.CREDENTIAL_SUBJECT;
+import static org.keycloak.VCFormat.MSO_MDOC;
+import static org.keycloak.VCFormat.SD_JWT_VC;
 
 /**
  * Base class for OID4VC Mappers, to provide common configuration and functionality for all of them
@@ -46,8 +57,43 @@ import java.util.stream.Stream;
 public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentProviderFactory {
 
     public static final String CLAIM_NAME = "claim.name";
+    public static final String MDOC_NAMESPACE = "mdoc.namespace";
     public static final String USER_ATTRIBUTE_KEY = "userAttribute";
     private static final List<ProviderConfigProperty> OID4VC_CONFIG_PROPERTIES = new ArrayList<>();
+    private static final List<ProviderConfigProperty> MDOC_CONFIG_PROPERTIES = new ArrayList<>();
+
+    static {
+        ProviderConfigProperty property;
+
+        // Add vc.mandatory property - indicates whether this claim is mandatory in the credential
+        property = new ProviderConfigProperty();
+        property.setName(Oid4vcProtocolMapperModel.MANDATORY);
+        property.setLabel("Mandatory Claim");
+        property.setHelpText("Indicates whether this claim must be present in the issued credential. " +
+                "This information is included in the credential metadata for wallet applications.");
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        property.setDefaultValue(false);
+        OID4VC_CONFIG_PROPERTIES.add(property);
+
+        // Add vc.display property - display information for wallet UIs
+        property = new ProviderConfigProperty();
+        property.setName(Oid4vcProtocolMapperModel.DISPLAY);
+        property.setLabel("Claim Display Information");
+        property.setHelpText("Display metadata for wallet applications to show user-friendly claim names. " +
+                "Provide display entries with name and locale for internationalization support.");
+        property.setType(ProviderConfigProperty.CLAIM_DISPLAY_TYPE);
+        property.setDefaultValue(null);
+        OID4VC_CONFIG_PROPERTIES.add(property);
+
+        property = new ProviderConfigProperty();
+        property.setName(MDOC_NAMESPACE);
+        property.setLabel("mDoc Namespace");
+        property.setHelpText("Namespace for mso_mdoc claims. Used only when issuing mso_mdoc credentials.");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setDefaultValue(null);
+        MDOC_CONFIG_PROPERTIES.add(property);
+    }
+
     protected ProtocolMapperModel mapperModel;
     protected String format;
 
@@ -55,7 +101,9 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return Stream.concat(OID4VC_CONFIG_PROPERTIES.stream(), getIndividualConfigProperties().stream()).toList();
+        Stream<ProviderConfigProperty> configProperties = OID4VC_CONFIG_PROPERTIES.stream();
+        configProperties = Stream.concat(configProperties, MDOC_CONFIG_PROPERTIES.stream());
+        return Stream.concat(configProperties, getIndividualConfigProperties().stream()).toList();
     }
 
     public OID4VCMapper setMapperModel(ProtocolMapperModel mapperModel, String format) {
@@ -64,35 +112,125 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
         return this;
     }
 
+    @Override
+    public void validateConfig(KeycloakSession session, RealmModel realm, ProtocolMapperContainerModel client,
+                              ProtocolMapperModel mapperModel) throws ProtocolMapperConfigException {
+        // OID4VC mappers are configured on the credential client scope, which carries the credential format.
+        if (client instanceof ClientScopeModel clientScope) {
+            validateMdocNamespace(new CredentialScopeModel(clientScope).getFormat(), mapperModel);
+        }
+    }
+
+    /**
+     * Revalidates this mapper's namespace against the given format. Switching a client scope to mso_mdoc through the
+     * format selector does not run {@link #validateConfig}, so issuance uses this to reject an already stored claim
+     * mapper that is missing a namespace before it produces broken claims.
+     */
+    public void validateMdocNamespace(String credentialFormat) throws ProtocolMapperConfigException {
+        validateMdocNamespace(credentialFormat, mapperModel);
+    }
+
+    /**
+     * mDoc claim paths are addressed by namespace, so a namespaced claim mapper without a configured namespace would
+     * produce a non-namespaced path that fails at signing time. Reject such configuration up front.
+     */
+    void validateMdocNamespace(String credentialFormat, ProtocolMapperModel mapperModel) throws ProtocolMapperConfigException {
+        if (!MSO_MDOC.equals(credentialFormat) || !supportsCredentialFormat(credentialFormat)) {
+            return;
+        }
+
+        Map<String, String> config = mapperModel.getConfig();
+        String namespace = config == null ? null : config.get(MDOC_NAMESPACE);
+        if (namespace == null || namespace.isBlank()) {
+            throw new ProtocolMapperConfigException(
+                    String.format("mso_mdoc credential mappers require a non-empty '%s' configuration.", MDOC_NAMESPACE));
+        }
+    }
+
     /**
      * some specific claims should not be added into the metadata. Examples are jti, sub, iss etc. Since we have the
      * possibility to add these credentials with specific claims we should also be able to exclude these specific
      * attributes from the metadata
      */
     public boolean includeInMetadata() {
-        return Optional.ofNullable(mapperModel.getConfig().get(CredentialScopeModel.INCLUDE_IN_METADATA))
+        return Optional.ofNullable(mapperModel.getConfig().get(CredentialScopeModel.VC_INCLUDE_IN_METADATA))
                        .map(Boolean::parseBoolean)
                        .orElse(true);
     }
 
     /**
-     * must return ordered list of attribute-names as they are added into the credential. This is required for the
-     * metadata endpoint to add the appropriate path-attributes into the claim's description.
-     *
-     * @return the attribute path that is being mapped into the credential
+     * Some mappers target format-specific container fields instead of subject/data-element claims. Callers use this
+     * hook for both metadata and issuance so unsupported mappers are not advertised or applied for a credential format.
+     */
+    public boolean supportsCredentialFormat(String credentialFormat) {
+        return true;
+    }
+
+    /**
+     * Returns the externally visible claim path used in credential metadata and authorization_details validation.
+     * JSON credentials use their normal credentialSubject/top-level paths; mDoc prepends the configured namespace
+     * because OID4VCI mDoc paths address namespace -> data element -> optional nested value.
      */
     public List<String> getMetadataAttributePath() {
-        final String claimName = mapperModel.getConfig().get(CLAIM_NAME);
-        final String userAttributeName = mapperModel.getConfig().get(USER_ATTRIBUTE_KEY);
-        return ListUtils.union(getAttributePrefix(),
-                               List.of(Optional.ofNullable(claimName).orElse(userAttributeName)));
+        final String attributeName = getClaimName();
+        return getMetadataAttributePath(attributeName);
+    }
+
+    protected List<String> getMetadataAttributePath(String attributeName) {
+        if (attributeName == null) {
+            return Collections.emptyList();
+        }
+
+        List<String> attributePath = MSO_MDOC.equals(format) ? JsonUtils.splitClaimPath(attributeName) : List.of(attributeName);
+        return prefixMetadataAttributePath(attributePath);
+    }
+
+    protected List<String> prefixMetadataAttributePath(List<String> attributePath) {
+        if (attributePath.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return ListUtils.union(getAttributePrefix(), attributePath);
+    }
+
+    /**
+     * Returns the raw claim lookup path in the intermediate map populated by {@link #setClaim(Map, UserSessionModel)}.
+     * This is intentionally separate from {@link #getMetadataAttributePath()}: mDoc metadata paths add a namespace
+     * that is not present in the raw mapper output, and simple mappers may write a dotted claim name as one literal key.
+     */
+    protected List<String> getClaimLookupPath() {
+        return getClaimLookupPath(getClaimName());
+    }
+
+    protected List<String> getClaimLookupPath(String claimName) {
+        if (claimName == null) {
+            return Collections.emptyList();
+        }
+        return List.of(claimName);
+    }
+
+    protected String getClaimName() {
+        return mapperModel.getConfig().get(CLAIM_NAME);
+    }
+
+    protected String getClaimName(String defaultClaimName) {
+        return Optional.ofNullable(getClaimName()).orElse(defaultClaimName);
     }
 
     protected List<String> getAttributePrefix() {
-        return switch (Optional.ofNullable(format).orElse("")) {
-            case Format.JWT_VC, Format.LDP_VC -> List.of(Oid4VciConstants.CREDENTIAL_SUBJECT);
-            default -> Collections.emptyList();
-        };
+        if (SD_JWT_VC.equals(format)) {
+            return Collections.emptyList();
+        } else if (MSO_MDOC.equals(format)) {
+            String namespace = mapperModel.getConfig().get(MDOC_NAMESPACE);
+            if (namespace == null || namespace.isBlank()) {
+                return Collections.emptyList();
+            }
+            // OID4VCI 1.0 Appendix C.2: mDoc claim paths start with namespace and data element identifier,
+            // followed by optional path components inside the selected data element value.
+            return List.of(namespace);
+        } else {
+            return List.of(CREDENTIAL_SUBJECT);
+        }
     }
 
     @Override
@@ -121,13 +259,81 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
     /**
      * Set the claims to credential, like f.e. the context
      */
-    public abstract void setClaimsForCredential(VerifiableCredential verifiableCredential,
-                                                UserSessionModel userSessionModel);
+    public abstract void setClaim(VerifiableCredential verifiableCredential,
+                                  UserSessionModel userSessionModel);
 
     /**
      * Set the claims to the credential subject.
      */
-    public abstract void setClaimsForSubject(Map<String, Object> claims,
-                                             UserSessionModel userSessionModel);
+    public abstract void setClaim(Map<String, Object> claims,
+                                  UserSessionModel userSessionModel);
+
+    /**
+     * Reads a mapper-produced claim from the intermediate, un-prefixed claim map.
+     *
+     * Some mappers write {@code address.street} as one literal key, while the user-attribute mapper writes it as
+     * {@code {"address": {"street": "Main Street"}}}. This method follows the mapper-specific raw lookup path and
+     * returns only the claim value; the caller then writes that value to the externally visible path, for example
+     * {@code ["credentialSubject", "address", "street"]} for JWT VC or {@code ["namespace", "address", "street"]}
+     * for mDoc.
+     */
+    private Object getNestedClaimValue(Map<String, Object> claims, List<String> claimPath) {
+        if (claimPath.isEmpty()) {
+            // No raw lookup path means the mapper produces no subject claim (e.g. type/context mappers), so there
+            // is no value to copy into the prefixed map. Returning the whole claims map here would be incorrect.
+            return null;
+        }
+
+        Object current = claims;
+        for (String pathElement : claimPath) {
+            if (!(current instanceof Map<?, ?> currentMap)) {
+                return null;
+            }
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> typedMap = (Map<String, Object>) currentMap;
+            current = typedMap.get(pathElement);
+            if (current == null) {
+                return null;
+            }
+        }
+
+        return current;
+    }
+
+    /**
+     * Copies the mapper claim value into {@code claimsWithPrefix} using the externally visible credential path. This
+     * is used for authorization_details validation and for mDoc issuance, where the credential subject is
+     * namespace-shaped even though individual mappers write un-namespaced raw claims.
+     *
+     * @param claimsOrig Map with the original claims, which were returned by {@link #setClaim(Map, UserSessionModel)} . This method usually just reads from this map
+     * @param claimsWithPrefix Map with the claims including path prefix. This method might write to this map
+     */
+    public void setClaimWithMetadataPrefix(Map<String, Object> claimsOrig, Map<String, Object> claimsWithPrefix) {
+        List<String> attributePath = getMetadataAttributePath();
+        if (attributePath.isEmpty()) {
+            return;
+        }
+
+        Object claimValue = getNestedClaimValue(claimsOrig, getClaimLookupPath());
+        if (claimValue != null) {
+            Map<String, Object> current = claimsWithPrefix;
+
+            for (int i = 0; i < attributePath.size(); i++) {
+                String currentSnippetName = attributePath.get(i);
+                if (i < attributePath.size() - 1) {
+                    Map<String, Object> obj = (Map<String, Object>) current.get(currentSnippetName);
+                    if (obj == null) {
+                        obj = new HashMap<>();
+                        current.put(currentSnippetName, obj);
+                    }
+                    current = obj;
+                } else {
+                    // Last element
+                    current.put(currentSnippetName, claimValue);
+                }
+            }
+        }
+    }
 
 }

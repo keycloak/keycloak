@@ -1,17 +1,19 @@
 package org.keycloak.tests.admin.realm;
 
-import org.junit.jupiter.api.Test;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -29,6 +31,7 @@ public class RealmRolesSearchTest extends AbstractRealmRolesTest {
     }
 
     @Test
+    @DatabaseTest
     public void testSearchForRoles() {
 
         for(int i = 0; i<15; i++) {
@@ -59,6 +62,7 @@ public class RealmRolesSearchTest extends AbstractRealmRolesTest {
     }
 
     @Test
+    @DatabaseTest
     public void testPaginationRoles() {
 
         for(int i = 0; i<15; i++) {

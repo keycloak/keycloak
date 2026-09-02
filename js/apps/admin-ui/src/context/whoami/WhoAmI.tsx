@@ -7,8 +7,9 @@ import {
   useRequiredContext,
 } from "@keycloak/keycloak-ui-shared";
 import { PropsWithChildren, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
-import { DEFAULT_LOCALE, i18n } from "../../i18n/i18n";
+import { DEFAULT_LOCALE } from "../../i18n/constants";
 import { useRealm } from "../realm-context/RealmContext";
 
 // can be replaced with https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Locale/getTextInfo
@@ -40,6 +41,7 @@ export const WhoAmIContext = createNamedContext<WhoAmIProps | undefined>(
 export const useWhoAmI = () => useRequiredContext(WhoAmIContext);
 
 export const WhoAmIContextProvider = ({ children }: PropsWithChildren) => {
+  const { i18n } = useTranslation();
   const { adminClient } = useAdminClient();
   const { environment } = useEnvironment();
 

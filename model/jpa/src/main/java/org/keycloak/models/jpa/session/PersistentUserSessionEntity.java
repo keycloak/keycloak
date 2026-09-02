@@ -17,9 +17,8 @@
 
 package org.keycloak.models.jpa.session;
 
-import jakarta.persistence.Version;
-import org.hibernate.annotations.DynamicUpdate;
-import org.keycloak.storage.jpa.KeyUtils;
+import java.io.Serializable;
+import java.util.Objects;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -27,8 +26,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import java.io.Serializable;
+import jakarta.persistence.Version;
+
+import org.keycloak.connections.jpa.AsynchronousCommitAllowed;
+import org.keycloak.storage.jpa.KeyUtils;
+
+import org.hibernate.annotations.DynamicUpdate;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -37,13 +42,19 @@ import java.io.Serializable;
         @NamedQuery(name="deleteUserSessionsByRealm", query="delete from PersistentUserSessionEntity sess where sess.realmId = :realmId"),
         @NamedQuery(name="deleteUserSessionsByRealmSessionType", query="delete from PersistentUserSessionEntity sess where sess.realmId = :realmId and sess.offline = :offline"),
         @NamedQuery(name="deleteUserSessionsByUser", query="delete from PersistentUserSessionEntity sess where sess.userId = :userId"),
+        // The query "deleteExpiredUserSessions" is deprecated (since 26.5) and may be removed in the future.
         @NamedQuery(name="deleteExpiredUserSessions", query="delete from PersistentUserSessionEntity sess where sess.realmId = :realmId AND sess.offline = :offline AND sess.lastSessionRefresh < :lastSessionRefresh"),
-        @NamedQuery(name="updateUserSessionLastSessionRefresh", query="update PersistentUserSessionEntity sess set lastSessionRefresh = :lastSessionRefresh where sess.realmId = :realmId" +
-                " AND sess.offline = :offline AND sess.userSessionId IN (:userSessionIds)"),
+        @NamedQuery(name="deleteUserSessions", query="delete from PersistentUserSessionEntity sess where sess.offline = :offline AND sess.userSessionId IN (:userSessionIds)"),
+        // The query "findExpiredUserSessions" is deprecated (since 26.5) and may be removed in the future.
+        @NamedQuery(name="findExpiredUserSessions", query="select sess.userSessionId, sess.userId from PersistentUserSessionEntity sess where sess.realmId = :realmId AND sess.offline = :offline AND sess.lastSessionRefresh < :lastSessionRefresh"),
+        @NamedQuery(name="updateUserSessionLastSessionRefresh", query="update PersistentUserSessionEntity sess set lastSessionRefresh = :lastSessionRefresh," +
+                " lastSessionRefreshCoarse = FLOOR((:lastSessionRefresh - MOD(sess.createdOn, :granularity)) / :granularity) * :granularity + MOD(sess.createdOn, :granularity)" +
+                " where sess.realmId = :realmId AND sess.offline = :offline AND sess.userSessionId IN (:userSessionIds)"),
         @NamedQuery(name="findUserSessionsCount", query="select count(sess) from PersistentUserSessionEntity sess where sess.offline = :offline"),
         @NamedQuery(name="findUserSessionsOrderedById", query="select sess from PersistentUserSessionEntity sess, RealmEntity realm where realm.id = sess.realmId AND sess.offline = :offline" +
                 " AND sess.userSessionId > :lastSessionId" +
                 " order by sess.userSessionId"),
+        // The query "findUserSession" is deprecated (since 26.7) and may be removed in the future.
         @NamedQuery(name="findUserSession", query="select sess from PersistentUserSessionEntity sess where sess.offline = :offline" +
                 " AND sess.userSessionId = :userSessionId AND sess.realmId = :realmId AND sess.lastSessionRefresh >= :lastSessionRefresh"),
         @NamedQuery(name="findUserSessionsByUserId", query="select sess from PersistentUserSessionEntity sess where sess.offline = :offline" +
@@ -56,17 +67,79 @@ import java.io.Serializable;
         @NamedQuery(name="findUserSessionsByExternalClientId", query="SELECT sess FROM PersistentUserSessionEntity sess INNER JOIN PersistentClientSessionEntity clientSess " +
                 " ON sess.userSessionId = clientSess.userSessionId AND clientSess.clientStorageProvider = :clientStorageProvider AND sess.offline = clientSess.offline AND clientSess.externalClientId = :externalClientId WHERE sess.offline = :offline " +
                 " AND sess.realmId = :realmId AND sess.lastSessionRefresh >= :lastSessionRefresh ORDER BY sess.userSessionId"),
-        @NamedQuery(name="findClientSessionsClientIds", query="SELECT clientSess.clientId, clientSess.externalClientId, clientSess.clientStorageProvider, count(clientSess)" +
-                " FROM PersistentClientSessionEntity clientSess INNER JOIN PersistentUserSessionEntity sess ON clientSess.userSessionId = sess.userSessionId AND sess.offline = clientSess.offline" +
-                " WHERE sess.offline = :offline AND sess.realmId = :realmId AND sess.lastSessionRefresh >= :lastSessionRefresh" +
-                " GROUP BY clientSess.clientId, clientSess.externalClientId, clientSess.clientStorageProvider")
-
+        @NamedQuery(name = "findUserSessionAndDataWithNullRememberMeLastRefresh",
+                query = "SELECT sess.userSessionId, sess.userId, sess.data" +
+                        " FROM PersistentUserSessionEntity sess" +
+                        " WHERE sess.realmId = :realmId AND sess.offline = '0' AND sess.rememberMe IS NULL AND sess.lastSessionRefresh < :lastSessionRefresh"),
+        @NamedQuery(name = "findUserSessionAndDataWithNullRememberMeCreatedOn",
+                query = "SELECT sess.userSessionId, sess.userId, sess.data" +
+                        " FROM PersistentUserSessionEntity sess" +
+                        " WHERE sess.realmId = :realmId AND sess.offline = '0' AND sess.rememberMe IS NULL AND sess.createdOn < :createdOn"),
+        @NamedQuery(name = "updateUserSessionRememberMeColumn",
+                query = "UPDATE PersistentUserSessionEntity sess" +
+                        " SET sess.rememberMe = :rememberMe" +
+                        " WHERE sess.userSessionId IN (:userSessionIds)"),
+        @NamedQuery(name = "findExpiredOfflineUserSessionsLastRefresh",
+                query = "SELECT sess.userSessionId, sess.userId, sess.lastSessionRefresh" +
+                        " FROM PersistentUserSessionEntity sess" +
+                        " WHERE sess.realmId = :realmId AND sess.offline = '1' AND sess.sessionBucket = :sessionBucket AND sess.lastSessionRefreshCoarse < :lastSessionRefreshCoarse"),
+        @NamedQuery(name = "findExpiredOfflineUserSessionsCreatedOn",
+                query = "SELECT sess.userSessionId, sess.userId" +
+                        " FROM PersistentUserSessionEntity sess" +
+                        " WHERE sess.realmId = :realmId AND sess.offline = '1' AND sess.sessionBucket = :sessionBucket AND sess.createdOn < :createdOn"),
+        @NamedQuery(name = "setLastSessionRefreshCoarseToExact",
+                query = "UPDATE PersistentUserSessionEntity sess" +
+                        " SET sess.lastSessionRefreshCoarse = sess.lastSessionRefresh" +
+                        " WHERE sess.offline = :offline AND sess.userSessionId IN (:userSessionIds)"),
+        @NamedQuery(name = "findExpiredRegularUserSessionsLastRefresh",
+                query = "SELECT sess.userSessionId, sess.userId, sess.lastSessionRefresh" +
+                        " FROM PersistentUserSessionEntity sess" +
+                        " WHERE sess.realmId = :realmId AND sess.offline = '0' AND sess.rememberMe = :rememberMe AND sess.sessionBucket = :sessionBucket AND sess.lastSessionRefreshCoarse < :lastSessionRefreshCoarse"),
+        @NamedQuery(name = "findExpiredRegularUserSessionsCreatedOn",
+                query = "SELECT sess.userSessionId, sess.userId" +
+                        " FROM PersistentUserSessionEntity sess" +
+                        " WHERE sess.realmId = :realmId AND sess.offline = '0' AND sess.rememberMe = :rememberMe AND sess.sessionBucket = :sessionBucket AND sess.createdOn < :createdOn"),
+        @NamedQuery(name = "findInvalidRegularUserSessions",
+                query = "SELECT sess.userSessionId, sess.userId" +
+                        " FROM PersistentUserSessionEntity sess" +
+                        " WHERE sess.realmId = :realmId AND sess.offline = '0' AND sess.rememberMe = true"),
+        @NamedQuery(name = "findUserSessionsByRealmAndTypeReadOnly",
+                query = "SELECT new org.keycloak.models.jpa.session.ImmutablePersistentUserSessionEntity(sess.userSessionId, sess.realmId, sess.userId, sess.createdOn, sess.lastSessionRefresh, sess.brokerSessionId, sess.offline, sess.data, sess.rememberMe)" +
+                        " FROM PersistentUserSessionEntity sess" +
+                        " WHERE sess.realmId = :realmId AND sess.offline = :offline AND sess.lastSessionRefresh >= :lastSessionRefresh" +
+                        " ORDER BY sess.userSessionId"),
+        @NamedQuery(name = "findUserSessionsByClientIdReadOnly",
+                query = "SELECT new org.keycloak.models.jpa.session.ImmutablePersistentUserSessionEntity(sess.userSessionId, sess.realmId, sess.userId, sess.createdOn, sess.lastSessionRefresh, sess.brokerSessionId, sess.offline, sess.data, sess.rememberMe)" +
+                        " FROM PersistentUserSessionEntity sess INNER JOIN PersistentClientSessionEntity clientSess " +
+                        " ON sess.userSessionId = clientSess.userSessionId AND sess.offline = clientSess.offline AND clientSess.clientId = :clientId WHERE sess.offline = :offline " +
+                        " AND sess.realmId = :realmId AND sess.lastSessionRefresh >= :lastSessionRefresh ORDER BY sess.userSessionId"),
+        @NamedQuery(name = "findUserSessionsByExternalClientIdReadOnly",
+                query = "SELECT new org.keycloak.models.jpa.session.ImmutablePersistentUserSessionEntity(sess.userSessionId, sess.realmId, sess.userId, sess.createdOn, sess.lastSessionRefresh, sess.brokerSessionId, sess.offline, sess.data, sess.rememberMe)" +
+                        " FROM PersistentUserSessionEntity sess INNER JOIN PersistentClientSessionEntity clientSess " +
+                        " ON sess.userSessionId = clientSess.userSessionId AND clientSess.clientStorageProvider = :clientStorageProvider AND sess.offline = clientSess.offline AND clientSess.externalClientId = :externalClientId WHERE sess.offline = :offline " +
+                        " AND sess.realmId = :realmId AND sess.lastSessionRefresh >= :lastSessionRefresh ORDER BY sess.userSessionId"),
+        @NamedQuery(name="findUserAndClientSessionsByUserId", query="SELECT sess.userSessionId, cs.clientId, cs.clientStorageProvider, cs.externalClientId FROM PersistentUserSessionEntity sess" +
+                " LEFT JOIN PersistentClientSessionEntity cs ON cs.userSessionId = sess.userSessionId AND cs.offline = sess.offline" +
+                " WHERE sess.offline = :offline AND sess.realmId = :realmId AND sess.userId = :userId"),
 })
 @Table(name="OFFLINE_USER_SESSION")
 @Entity
 @DynamicUpdate
 @IdClass(PersistentUserSessionEntity.Key.class)
-public class PersistentUserSessionEntity {
+public class PersistentUserSessionEntity implements AsynchronousCommitAllowed {
+
+    // Session bucket spreads expiration index inserts across multiple leaf pages instead of one,
+    // avoiding page-level latch contention (PAGELATCH_EX on MSSQL, buffer busy waits on Oracle)
+    // that occurs because the expiration indexes' leading columns (REALM_ID, OFFLINE_FLAG, REMEMBER_ME)
+    // are typically single-valued, funneling all inserts into the same B-tree leaf page.
+    static final int SESSION_BUCKET_COUNT = 64;
+
+    @Override
+    public boolean isAsyncCommitAllowed(EntityOperationType operationType) {
+        // If a session is removed via a user logout,
+        // this needs to be durable to prevent a security relevant timing attack
+        return operationType != EntityOperationType.DELETE;
+    }
 
     @Id
     @Column(name="USER_SESSION_ID", length = 36)
@@ -75,7 +148,7 @@ public class PersistentUserSessionEntity {
     @Column(name = "REALM_ID", length = 36)
     protected String realmId;
 
-    @Column(name="USER_ID", length = 255)
+    @Column(name="USER_ID")
     protected String userId;
 
     @Column(name = "CREATED_ON")
@@ -97,6 +170,22 @@ public class PersistentUserSessionEntity {
 
     @Column(name="DATA")
     protected String data;
+
+    @Column(name="REMEMBER_ME")
+    protected Boolean rememberMe;
+
+    @Column(name="SESSION_BUCKET")
+    protected Integer sessionBucket;
+
+    @Column(name="LAST_SESSION_REFRESH_COARSE")
+    protected int lastSessionRefreshCoarse;
+
+    @PrePersist
+    void computeSessionBucket() {
+        if (sessionBucket == null && userSessionId != null) {
+            sessionBucket = Math.floorMod(userSessionId.hashCode(), SESSION_BUCKET_COUNT);
+        }
+    }
 
     public String getUserSessionId() {
         return userSessionId;
@@ -163,6 +252,34 @@ public class PersistentUserSessionEntity {
         this.data = data;
     }
 
+    public boolean isRememberMe() {
+        return rememberMe == Boolean.TRUE;
+    }
+
+    public void setRememberMe(boolean rememberMe) {
+        this.rememberMe = rememberMe;
+    }
+
+    public Integer getSessionBucket() {
+        return sessionBucket;
+    }
+
+    public void setSessionBucket(Integer sessionBucket) {
+        this.sessionBucket = sessionBucket;
+    }
+
+    public int getLastSessionRefreshCoarse() {
+        return lastSessionRefreshCoarse;
+    }
+
+    public void setLastSessionRefreshCoarse(int lastSessionRefreshCoarse) {
+        this.lastSessionRefreshCoarse = lastSessionRefreshCoarse;
+    }
+
+    public int getVersion() {
+        return version;
+    }
+
     public static class Key implements Serializable {
 
         protected String userSessionId;
@@ -192,10 +309,8 @@ public class PersistentUserSessionEntity {
 
             Key key = (Key) o;
 
-            if (this.userSessionId != null ? !this.userSessionId.equals(key.userSessionId) : key.userSessionId != null) return false;
-            if (this.offline != null ? !this.offline.equals(key.offline) : key.offline != null) return false;
-
-            return true;
+            return Objects.equals(this.userSessionId, key.userSessionId) &&
+                    Objects.equals(this.offline, key.offline);
         }
 
         @Override

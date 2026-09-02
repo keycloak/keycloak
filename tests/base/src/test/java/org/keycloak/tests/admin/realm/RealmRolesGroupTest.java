@@ -1,18 +1,21 @@
 package org.keycloak.tests.admin.realm;
 
-import org.junit.jupiter.api.Test;
-import org.keycloak.admin.client.resource.RoleResource;
-import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import org.keycloak.admin.client.resource.RoleResource;
+import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.suites.DatabaseTest;
+
+import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
+@DatabaseTest
 public class RealmRolesGroupTest extends AbstractRealmRolesTest {
 
     /**

@@ -17,24 +17,32 @@
 
 package org.keycloak.models.jpa;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.jpa.entities.RoleAttributeEntity;
-import org.keycloak.models.jpa.entities.RoleEntity;
-import org.keycloak.models.utils.KeycloakModelUtils;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.Query;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.jpa.entities.CompositeRoleEntity;
+import org.keycloak.models.jpa.entities.RoleAttributeEntity;
+import org.keycloak.models.jpa.entities.RoleEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.utils.StreamsUtil;
+
+import static java.util.Optional.ofNullable;
+
+import static org.keycloak.common.util.CollectionUtil.collectionEquals;
+import static org.keycloak.utils.StringUtil.isBlank;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -84,39 +92,53 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public void setName(String name) {
+        if (isBlank(name)) {
+            throw new ModelException("Role name cannot be null or empty");
+        }
         role.setName(name);
     }
 
     @Override
     public boolean isComposite() {
-        return getCompositesStream().count() > 0;
+        return StreamsUtil.closing(em.createNamedQuery("getChildRoles", RoleEntity.class)
+                .setMaxResults(1)
+                .setParameter("parentRoleId", getId()).getResultStream()).findAny().isPresent();
     }
 
     @Override
     public void addCompositeRole(RoleModel role) {
-        RoleEntity entity = toRoleEntity(role);
-        for (RoleEntity composite : getEntity().getCompositeRoles()) {
-            if (composite.equals(entity)) return;
+        if (em.find(CompositeRoleEntity.class, new CompositeRoleEntity.Key(getEntity(), toRoleEntity(role))) == null) {
+            CompositeRoleEntity compositeRoleEntity = new CompositeRoleEntity(getEntity(), toRoleEntity(role));
+            em.persist(compositeRoleEntity);
         }
-        getEntity().getCompositeRoles().add(entity);
     }
 
     @Override
     public void removeCompositeRole(RoleModel role) {
-        RoleEntity entity = toRoleEntity(role);
-        getEntity().getCompositeRoles().remove(entity);
+        RoleEntity child = toRoleEntity(role);
+        em.createNamedQuery("deleteSingleCompositeFromRole")
+                .setParameter("parentRole", getEntity())
+                .setParameter("childRole", child)
+                .executeUpdate();
     }
 
     @Override
     public Stream<RoleModel> getCompositesStream() {
-        Stream<RoleModel> composites = getEntity().getCompositeRoles().stream().map(c -> new RoleAdapter(session, realm, em, c));
+        // look up the roles via the session to allow returning cached entries
+        Stream<RoleModel> composites = getChildRoles().map(c -> session.roles().getRoleById(realm, c.getId()));
         return composites.filter(Objects::nonNull);
+    }
+
+
+    private Stream<RoleEntity> getChildRoles() {
+        return StreamsUtil.closing(em.createNamedQuery("getChildRoles", RoleEntity.class)
+                .setParameter("parentRoleId", getId()).getResultStream());
     }
 
     @Override
     public Stream<RoleModel> getCompositesStream(String search, Integer first, Integer max) {
         return session.roles().getRolesStream(realm,
-                getEntity().getCompositeRoles().stream().map(RoleEntity::getId),
+                getChildRoles().map(RoleEntity::getId),
                 search, first, max);
     }
 
@@ -137,11 +159,36 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public void setSingleAttribute(String name, String value) {
-        setAttribute(name, Collections.singletonList(value));
+        boolean found = false;
+        List<RoleAttributeEntity> toRemove = new ArrayList<>();
+        for (RoleAttributeEntity attr : role.getAttributes()) {
+            if (attr.getName().equals(name)) {
+                if (!found) {
+                    attr.setValue(value);
+                    found = true;
+                } else {
+                    toRemove.add(attr);
+                }
+            }
+        }
+
+        for (RoleAttributeEntity attr : toRemove) {
+            em.remove(attr);
+            role.getAttributes().remove(attr);
+        }
+
+        if (!found) {
+            persistAttributeValue(name, value);
+        }
     }
 
     @Override
     public void setAttribute(String name, List<String> values) {
+        List<String> current = getAttributes().getOrDefault(name, List.of());
+
+        if (collectionEquals(current, ofNullable(values).orElse(List.of()))) {
+            return;
+        }
         removeAttribute(name);
 
         for (String value : values) {

@@ -17,10 +17,9 @@
 
 package org.keycloak.connections.jpa.updater.liquibase.lock;
 
-import liquibase.Liquibase;
-import liquibase.exception.DatabaseException;
-import liquibase.exception.LiquibaseException;
-import org.jboss.logging.Logger;
+import java.sql.Connection;
+import java.sql.SQLException;
+
 import org.keycloak.common.util.Retry;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
@@ -29,8 +28,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import java.sql.Connection;
-import java.sql.SQLException;
+import liquibase.Liquibase;
+import liquibase.exception.DatabaseException;
+import liquibase.exception.LiquibaseException;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -97,7 +98,7 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
                     logger.warnf("Locking namespace %s which was already locked in this provider", lock);
                     return;
                 } else {
-                    throw new RuntimeException(String.format("Trying to get a lock when one was already taken by the provider"));
+                    throw new RuntimeException("Trying to get a lock when one was already taken by the provider");
                 }
             }
 
@@ -164,9 +165,7 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
 
     @Override
     public void close() {
-        KeycloakModelUtils.suspendJtaTransaction(session.getKeycloakSessionFactory(), () -> {
-            safeCloseConnection();
-        });
+        KeycloakModelUtils.suspendJtaTransaction(session.getKeycloakSessionFactory(), this::safeCloseConnection);
     }
 
     private void safeRollbackConnection() {

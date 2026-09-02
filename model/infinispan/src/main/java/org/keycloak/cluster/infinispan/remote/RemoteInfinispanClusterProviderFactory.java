@@ -21,15 +21,12 @@ import java.lang.invoke.MethodHandles;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.client.hotrod.exceptions.HotRodClientException;
-import org.infinispan.commons.util.ByRef;
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ClusterProviderFactory;
 import org.keycloak.cluster.infinispan.InfinispanClusterProvider;
 import org.keycloak.cluster.infinispan.LockEntry;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -37,6 +34,11 @@ import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.client.hotrod.exceptions.HotRodClientException;
+import org.infinispan.commons.util.ByRef;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
 
@@ -68,6 +70,9 @@ public class RemoteInfinispanClusterProviderFactory implements ClusterProviderFa
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        if (Profile.isFeatureEnabled(Profile.Feature.CLUSTERLESS)) {
+            logger.warn("The experimental clusterless feature will be removed in a future release. Use the stateless feature instead.");
+        }
         try (var session = factory.create()) {
             lazyInit(session);
         }
@@ -102,7 +107,7 @@ public class RemoteInfinispanClusterProviderFactory implements ClusterProviderFa
         var provider = session.getProvider(InfinispanConnectionProvider.class);
         executor = provider.getExecutor("cluster-provider");
         clusterStartupTime = initClusterStartupTime(provider.getRemoteCache(WORK_CACHE_NAME), (int) (session.getKeycloakSessionFactory().getServerStartupTimestamp() / 1000));
-        notificationManager = new RemoteInfinispanNotificationManager(executor, provider.getRemoteCache(WORK_CACHE_NAME), provider.getTopologyInfo());
+        notificationManager = new RemoteInfinispanNotificationManager(executor, provider.getRemoteCache(WORK_CACHE_NAME), provider.getNodeInfo());
         notificationManager.addClientListener();
         workCache = provider.getRemoteCache(WORK_CACHE_NAME);
 

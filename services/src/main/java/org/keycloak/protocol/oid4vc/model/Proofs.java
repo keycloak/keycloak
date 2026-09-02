@@ -17,10 +17,12 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.List;
 
 /**
  * Proofs object for Credential Request in OID4VCI (Section 8.2).
@@ -39,15 +41,6 @@ public class Proofs {
 
     @JsonProperty("attestation")
     private List<String> attestation;
-
-    public Proofs() {
-    }
-
-    public Proofs(List<String> jwt, List<DiVpProof> diVp, List<String> attestation) {
-        this.jwt = jwt;
-        this.diVp = diVp;
-        this.attestation = attestation;
-    }
 
     public List<String> getJwt() {
         return jwt;
@@ -74,5 +67,87 @@ public class Proofs {
     public Proofs setAttestation(List<String> attestation) {
         this.attestation = attestation;
         return this;
+    }
+
+    /**
+     * Create proofs based on the proof type.
+     * Sets the appropriate field (JWT or Attestation) depending on the proof type.
+     *
+     * @param proofType   the proof type (ProofType.JWT or ProofType.ATTESTATION)
+     * @param proofValues the proof values to set
+     */
+    public static Proofs create(String proofType, String... proofValues) {
+        if (proofType == null) {
+            throw new IllegalArgumentException("proofType cannot be null");
+        }
+        if (proofValues == null || proofValues.length == 0) {
+            throw new IllegalArgumentException("proofValues cannot be null or empty");
+        }
+        for (String proof : proofValues) {
+            if (proof == null || proof.isBlank()) {
+                throw new IllegalArgumentException("Null or blank proof value");
+            }
+        }
+        Proofs proofs = new Proofs();
+        switch (proofType) {
+            case ProofType.JWT ->
+                    proofs.setJwt(List.of(proofValues));
+            case ProofType.ATTESTATION ->
+                    proofs.setAttestation(List.of(proofValues));
+            default -> throw new IllegalArgumentException("Unknown proof type: " + proofType);
+        }
+        return proofs;
+    }
+
+    /**
+     * Determines the proof type based on which field is populated.
+     * Checks JWT first, then Attestation.
+     *
+     * @return the proof type string (ProofType.JWT or ProofType.ATTESTATION), or null if no proof type is found
+     */
+    @JsonIgnore
+    public String getProofType() {
+        if (jwt != null && !jwt.isEmpty()) {
+            return ProofType.JWT;
+        } else if (attestation != null && !attestation.isEmpty()) {
+            return ProofType.ATTESTATION;
+        }
+        return null;
+    }
+
+    /**
+     * Returns all proof values as a list.
+     * Checks JWT proofs first, then Attestation proofs.
+     * Returns an empty list if no proofs are present.
+     *
+     * @return a list containing all proof values, or an empty list if no proofs are present
+     */
+    @JsonIgnore
+    public List<String> getAllProofs() {
+        List<String> allProofs = new ArrayList<>();
+        if (jwt != null && !jwt.isEmpty()) {
+            allProofs.addAll(jwt);
+        } else if (attestation != null && !attestation.isEmpty()) {
+            allProofs.addAll(attestation);
+        }
+        return allProofs;
+    }
+
+    /**
+     * Returns a list of proof types that are present (non-null and non-empty).
+     * This can be used to iterate over proof types that need validation.
+     *
+     * @return a list of proof type strings (ProofType.JWT, ProofType.ATTESTATION, etc.) that are present
+     */
+    @JsonIgnore
+    public List<String> getPresentProofTypes() {
+        List<String> presentTypes = new ArrayList<>();
+        if (jwt != null && !jwt.isEmpty()) {
+            presentTypes.add(ProofType.JWT);
+        }
+        if (attestation != null && !attestation.isEmpty()) {
+            presentTypes.add(ProofType.ATTESTATION);
+        }
+        return presentTypes;
     }
 } 

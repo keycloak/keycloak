@@ -16,9 +16,9 @@
  */
 package org.keycloak.protocol.oidc.rar.model;
 
-import org.keycloak.models.ClientScopeModel;
-
 import java.util.Objects;
+
+import org.keycloak.models.ClientScopeModel;
 
 /**
  * @author <a href="mailto:dgozalob@redhat.com">Daniel Gozalo</a>
@@ -27,18 +27,18 @@ public class IntermediaryScopeRepresentation {
     final private ClientScopeModel scope;
     final private String requestedScopeString;
     final private String parameter;
-    final private boolean isDynamic;
+    final private boolean isParameterized;
 
     public IntermediaryScopeRepresentation(ClientScopeModel scope, String parameter, String requestedScopeString) {
         this.scope = scope;
         this.parameter = parameter;
-        this.isDynamic = scope.isDynamicScope();
+        this.isParameterized = scope.isParameterizedScope();
         this.requestedScopeString = requestedScopeString;
     }
 
     public IntermediaryScopeRepresentation(ClientScopeModel scope) {
         this.scope = scope;
-        this.isDynamic = false;
+        this.isParameterized = false;
         this.parameter = null;
         this.requestedScopeString = scope.getName();
     }
@@ -51,8 +51,8 @@ public class IntermediaryScopeRepresentation {
         return parameter;
     }
 
-    public boolean isDynamic() {
-        return isDynamic;
+    public boolean isParameterized() {
+        return isParameterized;
     }
 
     public String getRequestedScopeString() {
@@ -64,11 +64,11 @@ public class IntermediaryScopeRepresentation {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         IntermediaryScopeRepresentation that = (IntermediaryScopeRepresentation) o;
-        return isDynamic == that.isDynamic && Objects.equals(scope.getName(), that.scope.getName()) && Objects.equals(parameter, that.parameter);
+        return isParameterized == that.isParameterized && Objects.equals(scope.getName(), that.scope.getName()) && Objects.equals(parameter, that.parameter);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(scope.getName(), parameter, isDynamic);
+        return Objects.hash(scope.getName(), parameter, isParameterized);
     }
 }

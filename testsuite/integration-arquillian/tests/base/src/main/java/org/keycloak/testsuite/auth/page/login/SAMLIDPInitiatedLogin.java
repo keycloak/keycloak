@@ -16,4 +16,3 @@ public class SAMLIDPInitiatedLogin extends SAMLRedirectLogin {
         return super.createUriBuilder().path("clients/{clientUrlName}");
     }
 }
-

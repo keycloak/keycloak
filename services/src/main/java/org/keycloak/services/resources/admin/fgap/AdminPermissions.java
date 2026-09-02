@@ -42,7 +42,7 @@ public class AdminPermissions {
     }
     public static AdminPermissionEvaluator evaluator(KeycloakSession session, RealmModel realm, RealmModel adminsRealm, UserModel admin) {
         if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ_V2)) {
-            return new MgmtPermissionsV2(session, adminsRealm, admin);
+            return new MgmtPermissionsV2(session, realm, adminsRealm, admin);
         }
         return new MgmtPermissions(session, realm, adminsRealm, admin);
     }

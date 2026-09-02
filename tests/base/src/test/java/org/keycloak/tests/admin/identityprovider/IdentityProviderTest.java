@@ -1,20 +1,25 @@
 package org.keycloak.tests.admin.identityprovider;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+
+import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.social.google.GoogleIdentityProvider;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.Assert;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -26,6 +31,7 @@ public class IdentityProviderTest extends AbstractIdentityProviderTest {
     ManagedRealm managedRealm;
 
     @Test
+    @DatabaseTest
     public void testFind() {
         create(createRep("twitter", "twitter idp","twitter", true, Collections.singletonMap("key1", "value1")));
         create(createRep("linkedin-openid-connect", "linkedin-openid-connect"));
@@ -59,6 +65,7 @@ public class IdentityProviderTest extends AbstractIdentityProviderTest {
     }
 
     @Test
+    @DatabaseTest
     public void testFindForLoginPreservesOrderByAlias() {
 
         create(createRep("twitter", "twitter"));
@@ -132,4 +139,15 @@ public class IdentityProviderTest extends AbstractIdentityProviderTest {
         response = managedRealm.admin().identityProviders().getIdentityProviders("nonexistent");
         Assertions.assertEquals(400, response.getStatus(), "Status");
     }
+
+    @Test
+    public void testGoogleIDPConfiguration() {
+        Response response = managedRealm.admin().identityProviders().create(createRep("google", "google", false, Map.of(OIDCIdentityProviderConfig.ISSUER, "bad-issuer")));
+        Assertions.assertEquals(400, response.getStatus(), "Status");
+
+        create(createRep("google", "google"));
+        IdentityProviderRepresentation googleIdentityProvider = managedRealm.admin().identityProviders().get("google").toRepresentation();
+        Assertions.assertEquals(GoogleIdentityProvider.ISSUER_URL, googleIdentityProvider.getConfig().get(OIDCIdentityProviderConfig.ISSUER));
+    }
+
 }

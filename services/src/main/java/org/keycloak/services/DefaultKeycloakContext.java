@@ -17,8 +17,17 @@
 
 package org.keycloak.services;
 
-import io.opentelemetry.api.trace.Span;
+import java.lang.reflect.Proxy;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+
+import jakarta.enterprise.context.ContextNotActiveException;
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.Token;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.http.HttpRequest;
@@ -31,27 +40,22 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.Permissions;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.theme.Theme;
 import org.keycloak.tracing.TracingAttributes;
 import org.keycloak.tracing.TracingProvider;
 import org.keycloak.urls.UrlType;
 
-import java.net.URI;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
+import io.opentelemetry.api.trace.Span;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public abstract class DefaultKeycloakContext implements KeycloakContext {
-
     private RealmModel realm;
 
     private ClientModel client;
@@ -68,9 +72,11 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     private HttpResponse response;
     private ClientConnection clientConnection;
     private Token bearerToken;
+    private final Permissions permissions;
 
     public DefaultKeycloakContext(KeycloakSession session) {
         this.session = session;
+        this.permissions = new DefaultPermissions(session, this);
     }
 
     @Override
@@ -89,8 +95,15 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
             if (uriInfo == null) {
                 uriInfo = new HashMap<>();
             }
-
-            uriInfo.put(type, new KeycloakUriInfo(session, type, getHttpRequest().getUri()));
+            UriInfo info = null;
+            try {
+                info = getHttpRequest().getUri();
+            } catch (ContextNotActiveException e) {
+                info = (UriInfo) Proxy.newProxyInstance(UriInfo.class.getClassLoader(), new Class[] { UriInfo.class }, (proxy, method, args) -> {
+                    throw new ContextNotActiveException(e); // see the javadoc on UriInfo / KeycloakUriInfo, but we are throwing ContextNotActiveException, rather than IllegalStateException.
+                });
+            }
+            uriInfo.put(type, new KeycloakUriInfo(session, type, info));
         }
         return uriInfo.get(type);
     }
@@ -100,12 +113,6 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
         return getUri(UrlType.FRONTEND);
     }
 
-    /**
-     * @deprecated
-     * Use {@link #getHttpRequest()} to obtain the request headers.
-     * @return
-     */
-    @Deprecated
     @Override
     public HttpHeaders getRequestHeaders() {
         return getHttpRequest().getHttpHeaders();
@@ -155,7 +162,7 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public ClientConnection getConnection() {
         if (clientConnection == null) {
-            clientConnection = createClientConnection();
+            clientConnection = createClientConnection().orElseGet(() -> new ClientConnection() {});
         }
 
         return clientConnection;
@@ -186,7 +193,7 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public HttpRequest getHttpRequest() {
         if (request == null) {
-            request = createHttpRequest();
+            request = createHttpRequest().orElseThrow(ContextNotActiveException::new);
         }
 
         return request;
@@ -195,19 +202,19 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public HttpResponse getHttpResponse() {
         if (response == null) {
-            response = createHttpResponse();
+            response = createHttpResponse().orElseThrow(ContextNotActiveException::new);
         }
 
         return response;
     }
 
-    protected ClientConnection createClientConnection() {
-        return null;
+    protected Optional<ClientConnection> createClientConnection() {
+        return Optional.empty();
     }
 
-    protected abstract HttpRequest createHttpRequest();
+    protected abstract Optional<HttpRequest> createHttpRequest();
 
-    protected abstract HttpResponse createHttpResponse();
+    protected abstract Optional<HttpResponse> createHttpResponse();
 
     protected KeycloakSession getSession() {
         return session;
@@ -320,5 +327,10 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
 
     private MappedDiagnosticContextProvider mdc() {
         return MappedDiagnosticContextUtil.getMappedDiagnosticContextProvider(session);
+    }
+
+    @Override
+    public Permissions getPermissions() {
+        return permissions;
     }
 }

@@ -17,15 +17,15 @@
 
 package org.keycloak.protocol.oid4vc.issuance.mappers;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Allows to add statically configured claims to the credential subject
@@ -61,15 +61,17 @@ public class OID4VCStaticClaimMapper extends OID4VCMapper {
         return CONFIG_PROPERTIES;
     }
 
-    public void setClaimsForCredential(VerifiableCredential verifiableCredential,
-                                       UserSessionModel userSessionModel) {
+    public void setClaim(VerifiableCredential verifiableCredential,
+                         UserSessionModel userSessionModel) {
         // nothing to do for the mapper.
     }
 
     @Override
-    public void setClaimsForSubject(Map<String, Object> claims, UserSessionModel userSessionModel) {
-        List<String> attributePath = getMetadataAttributePath();
-        String propertyName = attributePath.get(attributePath.size() - 1);
+    public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel) {
+        String propertyName = getClaimName();
+        if (propertyName == null) {
+            return;
+        }
         String staticValue = mapperModel.getConfig().get(STATIC_CLAIM_KEY);
         claims.put(propertyName, staticValue);
     }

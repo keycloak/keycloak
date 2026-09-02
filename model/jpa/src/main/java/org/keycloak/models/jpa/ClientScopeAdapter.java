@@ -17,6 +17,15 @@
 
 package org.keycloak.models.jpa;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Stream;
+
+import jakarta.persistence.EntityManager;
+
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -29,13 +38,6 @@ import org.keycloak.models.jpa.entities.ClientScopeEntity;
 import org.keycloak.models.jpa.entities.ProtocolMapperEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
-
-import jakarta.persistence.EntityManager;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -193,6 +195,14 @@ public class ClientScopeAdapter implements ClientScopeModel, JpaModel<ClientScop
     }
 
     @Override
+    public List<ProtocolMapperModel> getProtocolMapperByType(String type) {
+        return this.entity.getProtocolMappers().stream()
+                .filter((mapper) -> mapper.getProtocolMapper().equals(type))
+                .map(this::entityToModel)
+                .toList();
+    }
+
+    @Override
     public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
         ProtocolMapperEntity entity = getProtocolMapperEntityByName(protocol, name);
         if (entity == null) return null;
@@ -240,11 +250,24 @@ public class ClientScopeAdapter implements ClientScopeModel, JpaModel<ClientScop
 
     @Override
     public void setAttribute(String name, String value) {
+        boolean valueUndefined = value == null || "".equals(value.trim());
+
         for (ClientScopeAttributeEntity attr : entity.getAttributes()) {
             if (attr.getName().equals(name)) {
-                attr.setValue(value);
+                // clean up, so that attributes previously set with either a empty or null value are removed
+                // we should remove this in future versions so that new client scopes never store empty/null attributes
+                if (valueUndefined) {
+                    removeAttribute(name);
+                } else {
+                    attr.setValue(value);
+                }
                 return;
             }
+        }
+
+        // do not create attributes if empty or null
+        if (valueUndefined) {
+            return;
         }
 
         ClientScopeAttributeEntity attr = new ClientScopeAttributeEntity();

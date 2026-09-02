@@ -17,15 +17,15 @@
 
 package org.keycloak.connections.jpa.support;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import java.lang.reflect.Proxy;
 import java.util.HashSet;
 
+import jakarta.persistence.EntityManager;
+
 import org.junit.Test;
 
-import jakarta.persistence.EntityManager;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class EntityManagerProxyTest {
 

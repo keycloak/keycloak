@@ -17,12 +17,22 @@
 
 package org.keycloak.models.cache.infinispan;
 
-import static org.keycloak.models.utils.KeycloakModelUtils.runOnRealm;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -35,7 +45,9 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ParConfig;
@@ -45,23 +57,19 @@ import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.cache.CachedRealmModel;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.cache.infinispan.entities.CachedRealm;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.client.ClientStorageProvider;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
+import static org.keycloak.models.utils.KeycloakModelUtils.runOnRealm;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -179,7 +187,7 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public boolean isUserManagedAccessAllowed() {
-        if (isUpdated()) return updated.isEnabled();
+        if (isUpdated()) return updated.isUserManagedAccessAllowed();
         return cached.isAllowUserManagedAccess();
     }
 
@@ -258,7 +266,42 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public void setBruteForceProtected(boolean value) {
         getDelegateForUpdate();
+        if (updated.isBruteForceProtected() != value) {
+            updateBruteForceSettings();
+        }
         updated.setBruteForceProtected(value);
+    }
+
+    boolean updateBruteForceSettings = false;
+
+    private void updateBruteForceSettings() {
+        // TODO: This should really be an event where the recipient could figure out what has changed and can react accordingly
+        if (!updateBruteForceSettings) {
+            updateBruteForceSettings = true;
+            KeycloakSessionFactory sf = session.getKeycloakSessionFactory();
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    runUpdateOfLoginFailureProvider(sf, cached.getId());
+                    // Should not be necessary, as the cache entry of the realm will be discarded
+                    updateBruteForceSettings = false;
+                }
+
+                @Override
+                protected void rollbackImpl() {
+                    updateBruteForceSettings = false;
+                }
+            });
+        }
+    }
+
+    private static void runUpdateOfLoginFailureProvider(KeycloakSessionFactory keycloakSessionFactory, String realmId) {
+        KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory,
+                s -> {
+                    UserLoginFailureProvider provider = s.getProvider(UserLoginFailureProvider.class);
+                    RealmModel realm = s.realms().getRealm(realmId);
+                    provider.updateWithLatestRealmSettings(realm);
+                });
     }
 
     @Override
@@ -270,6 +313,9 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public void setPermanentLockout(final boolean val) {
         getDelegateForUpdate();
+        if (updated.isPermanentLockout() != val) {
+            updateBruteForceSettings();
+        }
         updated.setPermanentLockout(val);
     }
 
@@ -282,6 +328,9 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public void setMaxTemporaryLockouts(final int val) {
         getDelegateForUpdate();
+        if (updated.getMaxTemporaryLockouts() != val) {
+            updateBruteForceSettings();
+        }
         updated.setMaxTemporaryLockouts(val);
     }
 
@@ -354,6 +403,9 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public void setMaxDeltaTimeSeconds(int val) {
         getDelegateForUpdate();
+        if (updated.getMaxDeltaTimeSeconds() != val) {
+            updateBruteForceSettings();
+        }
         updated.setMaxDeltaTimeSeconds(val);
     }
 
@@ -367,6 +419,18 @@ public class RealmAdapter implements CachedRealmModel {
     public void setFailureFactor(int failureFactor) {
         getDelegateForUpdate();
         updated.setFailureFactor(failureFactor);
+    }
+
+    @Override
+    public int getMaxSecondaryAuthFailures() {
+        if (isUpdated()) return updated.getMaxSecondaryAuthFailures();
+        return cached.getMaxSecondaryAuthFailures();
+    }
+
+    @Override
+    public void setMaxSecondaryAuthFailures(int maxSecondaryAuthFailures) {
+        getDelegateForUpdate();
+        updated.setMaxSecondaryAuthFailures(maxSecondaryAuthFailures);
     }
 
     @Override
@@ -727,13 +791,13 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public CibaConfig getCibaPolicy() {
         if (isUpdated()) return updated.getCibaPolicy();
-        return cached.getCibaConfig(session, modelSupplier);
+        return cached.getCibaConfig(modelSupplier);
     }
 
     @Override
     public ParConfig getParPolicy() {
         if (isUpdated()) return updated.getParPolicy();
-        return cached.getParConfig(session, modelSupplier);
+        return cached.getParConfig(modelSupplier);
     }
 
     @Override
@@ -918,7 +982,7 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public Stream<IdentityProviderModel> getIdentityProvidersStream() {
-        return runOnRealm(session, this, (session) -> session.identityProviders().getAllStream());
+        return runOnRealm(session, this, (session) -> session.identityProviders().getAllStream(IdentityProviderQuery.userAuthentication()));
     }
 
     @Override
@@ -1661,9 +1725,72 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public void updateComponent(ComponentModel component) {
         getDelegateForUpdate();
-        executeEvictions(component);
+        if (!isLastSyncOnlyUpdate(component)) {
+            executeEvictions(component);
+        }
         updated.updateComponent(component);
 
+    }
+
+    /**
+     * A user-storage sync ends by persisting the {@code lastSync} timestamp on the provider's
+     * component (see {@code UserStorageSyncTask#updateLastSyncInterval}). That update reloads the
+     * provider from the store and changes nothing but the {@code lastSync_*} config entries, yet it
+     * routes through {@link #updateComponent(ComponentModel)} which unconditionally evicts the whole
+     * realm's user cache via {@link #executeEvictions(ComponentModel)}. The {@code lastSync}
+     * timestamp is runtime bookkeeping and has no bearing on the staleness of cached users, so that
+     * eviction makes a long cache policy (e.g. {@code EVICT_DAILY}) ineffective in any realm that
+     * runs federation syncs.
+     * <p>
+     * Detect the case where a user-storage provider update only touches the {@code lastSync_*} keys
+     * so the eviction can be skipped; any user-affecting config change still evicts as before.
+     */
+    private boolean isLastSyncOnlyUpdate(ComponentModel updatedComponent) {
+        if (!UserStorageProvider.class.getName().equals(updatedComponent.getProviderType())) {
+            return false;
+        }
+
+        ComponentModel existing = getComponent(updatedComponent.getId());
+        if (existing == null) {
+            return false;
+        }
+
+        return onlyLastSyncChanged(existing.getConfig(), updatedComponent.getConfig());
+    }
+
+    /**
+     * Returns {@code true} only when every non-{@code lastSync} config entry is unchanged between the
+     * two configs and at least one {@code lastSync_*} entry actually differs — i.e. the update changes
+     * nothing but the {@code lastSync} bookkeeping. Returns {@code false} for any other config change,
+     * including a genuine no-op where the {@code lastSync} entries are identical.
+     */
+    private static boolean onlyLastSyncChanged(MultivaluedHashMap<String, String> existingConfig,
+                                               MultivaluedHashMap<String, String> updatedConfig) {
+        Set<String> keys = new HashSet<>(existingConfig.keySet());
+        keys.addAll(updatedConfig.keySet());
+
+        for (String key : keys) {
+            if (isLastSyncKey(key)) {
+                continue;
+            }
+            if (!Objects.equals(existingConfig.get(key), updatedConfig.get(key))) {
+                return false;
+            }
+        }
+
+        // The lastSync entries must actually differ, otherwise this is a genuine no-op update and we
+        // gain nothing by treating it specially.
+        for (String key : keys) {
+            if (isLastSyncKey(key) && !Objects.equals(existingConfig.get(key), updatedConfig.get(key))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static boolean isLastSyncKey(String key) {
+        return key != null && key.startsWith(UserStorageProviderModel.LAST_SYNC + "_");
     }
 
     @Override
@@ -1800,28 +1927,32 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public ClientInitialAccessModel createClientInitialAccessModel(int expiration, int count) {
-        getDelegateForUpdate();
-        return updated.createClientInitialAccessModel(expiration, count);
+        // This does not call getDelegateForUpdate() this data is never cached, and calling it would invalidate all cached realm data
+        return modelSupplier.get().createClientInitialAccessModel(expiration, count);
     }
 
     @Override
     public ClientInitialAccessModel getClientInitialAccessModel(String id) {
-        return getDelegateForUpdate().getClientInitialAccessModel(id);
+        // This does not call getDelegateForUpdate() this data is never cached, and calling it would invalidate all cached realm data
+        return modelSupplier.get().getClientInitialAccessModel(id);
     }
 
     @Override
     public void removeClientInitialAccessModel(String id) {
-        getDelegateForUpdate().removeClientInitialAccessModel(id);
+        // This does not call getDelegateForUpdate() this data is never cached, and calling it would invalidate all cached realm data
+        modelSupplier.get().removeClientInitialAccessModel(id);
     }
 
     @Override
     public Stream<ClientInitialAccessModel> getClientInitialAccesses() {
-        return getDelegateForUpdate().getClientInitialAccesses();
+        // This does not call getDelegateForUpdate() this data is never cached, and calling it would invalidate all cached realm data
+        return modelSupplier.get().getClientInitialAccesses();
     }
 
     @Override
     public void decreaseRemainingCount(ClientInitialAccessModel clientInitialAccess) {
-        getDelegateForUpdate().decreaseRemainingCount(clientInitialAccess);
+        // This does not call getDelegateForUpdate() this data is never cached, and calling it would invalidate all cached realm data
+        modelSupplier.get().decreaseRemainingCount(clientInitialAccess);
     }
 
     @Override
@@ -1863,6 +1994,18 @@ public class RealmAdapter implements CachedRealmModel {
     public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
         getDelegateForUpdate();
         updated.setVerifiableCredentialsEnabled(verifiableCredentialsEnabled);
+    }
+
+    @Override
+    public boolean isScimApiEnabled() {
+        if (isUpdated()) return featureAwareIsEnabled(Feature.SCIM_API, updated.isScimApiEnabled());
+        return featureAwareIsEnabled(Feature.SCIM_API, cached.isScimApiEnabled());
+    }
+
+    @Override
+    public void setScimApiEnabled(boolean enabled) {
+        getDelegateForUpdate();
+        updated.setScimApiEnabled(enabled);
     }
 
     private boolean featureAwareIsEnabled(Profile.Feature feature, boolean isEnabled) {

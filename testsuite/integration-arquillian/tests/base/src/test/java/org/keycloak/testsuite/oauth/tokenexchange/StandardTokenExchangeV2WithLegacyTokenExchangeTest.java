@@ -20,13 +20,16 @@
 package org.keycloak.testsuite.oauth.tokenexchange;
 
 import jakarta.ws.rs.core.Response;
-import org.junit.Test;
+
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
@@ -49,9 +52,9 @@ public class StandardTokenExchangeV2WithLegacyTokenExchangeTest extends Standard
         String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret").getAccessToken();
         {
             AccessTokenResponse response = tokenExchange(accessToken, "disabled-requester-client", "secret", null, null);
-            org.junit.Assert.assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatusCode());
-            org.junit.Assert.assertEquals(OAuthErrorException.ACCESS_DENIED, response.getError());
-            org.junit.Assert.assertEquals("Client is not within the token audience", response.getErrorDescription());
+            Assertions.assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatusCode());
+            Assertions.assertEquals(OAuthErrorException.ACCESS_DENIED, response.getError());
+            Assertions.assertEquals("Client is not within the token audience", response.getErrorDescription());
         }
     }
 }

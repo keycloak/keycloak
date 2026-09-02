@@ -17,6 +17,7 @@
 package org.keycloak.jose.jwk;
 
 import java.math.BigInteger;
+
 import org.junit.Assert;
 import org.junit.Test;
 

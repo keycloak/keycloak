@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { login } from "../utils/login.ts";
@@ -11,7 +11,8 @@ import {
   assertSsoSessionMaxRememberMe,
   clickSaveSessionsButton,
   goToSessionsTab,
-  populateSessionsPage,
+  populateSessionsPageRememberMeDisabled,
+  populateSessionsPageRememberMeEnabled,
 } from "./sessions.ts";
 
 test.describe.serial("Sessions", () => {
@@ -24,15 +25,36 @@ test.describe.serial("Sessions", () => {
     await login(page);
     await goToRealm(page, realmName);
     await goToRealmSettings(page);
-    await goToSessionsTab(page);
   });
 
-  test("Add session data", async ({ page }) => {
-    await populateSessionsPage(page);
+  test("Add session data when Remember Me is disabled", async ({ page }) => {
+    //Disable Remember Me and save realm
+    await page.getByTestId("rs-login-tab").click();
+    await page.getByLabel("Remember Me").uncheck();
+    await goToSessionsTab(page);
+    // verify remember me fields are not visible
+    await expect(
+      page.getByTestId("sso-session-idle-remember-me-input"),
+    ).toHaveCount(0);
+    await expect(
+      page.getByTestId("sso-session-max-remember-me-input"),
+    ).toHaveCount(0);
+    await populateSessionsPageRememberMeDisabled(page);
     await clickSaveSessionsButton(page);
     await assertNotificationMessage(page, "Realm successfully updated");
-
-    await assertSsoSessionIdleInput(page, "1");
+    await assertSsoSessionIdleInput(page, "5");
+    await assertSsoSessionMaxInput(page, "2");
+  });
+  test("Add session data when Remember Me is enabled", async ({ page }) => {
+    //Enable Remember Me and save realm
+    await page.getByTestId("rs-login-tab").click();
+    const rememberMeSwitch = page.locator('[for="kc-remember-me-switch"]');
+    await rememberMeSwitch.click();
+    await goToSessionsTab(page);
+    await populateSessionsPageRememberMeEnabled(page);
+    await clickSaveSessionsButton(page);
+    await assertNotificationMessage(page, "Realm successfully updated");
+    await assertSsoSessionIdleInput(page, "5");
     await assertSsoSessionMaxInput(page, "2");
     await assertSsoSessionIdleRememberMe(page, "3");
     await assertSsoSessionMaxRememberMe(page, "4");

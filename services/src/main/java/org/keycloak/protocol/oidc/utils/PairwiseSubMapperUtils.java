@@ -1,10 +1,5 @@
 package org.keycloak.protocol.oidc.utils;
 
-import org.jboss.logging.Logger;
-import org.keycloak.protocol.oidc.mappers.AbstractPairwiseSubMapper;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
@@ -14,6 +9,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.keycloak.protocol.oidc.mappers.AbstractPairwiseSubMapper;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+
+import org.jboss.logging.Logger;
 
 public class PairwiseSubMapperUtils {
     private static final Logger logger = Logger.getLogger(PairwiseSubMapperUtils.class);

@@ -17,9 +17,13 @@
 
 package org.keycloak.testsuite.model.user;
 
-import org.hamcrest.Matchers;
-import org.junit.Test;
+import java.util.Collections;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
+import javax.naming.directory.BasicAttribute;
+
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -28,6 +32,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.CacheableStorageProviderModel;
 import org.keycloak.storage.UserStoragePrivateUtil;
@@ -41,17 +46,17 @@ import org.keycloak.storage.ldap.idm.store.ldap.LDAPOperationManager;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory;
-import org.keycloak.storage.managers.UserStorageSyncManager;
 import org.keycloak.storage.user.ImportSynchronization;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
-import javax.naming.directory.BasicAttribute;
-import java.util.Collections;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.IntStream;
+import org.hamcrest.Matchers;
+import org.junit.Test;
+
+import static org.keycloak.models.LDAPConstants.LDAP_ID;
+import static org.keycloak.storage.UserStorageProviderModel.REMOVE_INVALID_USERS_ENABLED;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -60,8 +65,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assume.assumeThat;
-import static org.keycloak.models.LDAPConstants.LDAP_ID;
-import static org.keycloak.storage.UserStorageProviderModel.REMOVE_INVALID_USERS_ENABLED;
 
 @RequireProvider(UserProvider.class)
 @RequireProvider(ClusterProvider.class)
@@ -137,7 +140,7 @@ public class UserSyncTest extends KeycloakModelTest {
         long start = System.currentTimeMillis();
         SynchronizationResult res = withRealm(realmId, (session, realm) -> {
             UserStorageProviderModel providerModel = new UserStorageProviderModel(realm.getComponent(userFederationId));
-            return UserStorageSyncManager.syncAllUsers(session.getKeycloakSessionFactory(), realm.getId(), providerModel);
+            return UserStoragePrivateUtil.runFullSync(session.getKeycloakSessionFactory(), providerModel);
         });
         long end = System.currentTimeMillis();
         long timeNeeded = end - start;
@@ -147,6 +150,73 @@ public class UserSyncTest extends KeycloakModelTest {
                 (float) (timeNeeded) / NUMBER_OF_USERS), timeNeeded, Matchers.lessThan((long) (18 * NUMBER_OF_USERS)));
         assertThat(res.getAdded(), is(NUMBER_OF_USERS));
         assertThat(withRealm(realmId, (session, realm) -> UserStoragePrivateUtil.userLocalStorage(session).getUsersCount(realm)), is(NUMBER_OF_USERS));
+    }
+
+    @Test
+    public void testUserCacheSurvivesLastSyncUpdate() {
+        // give the provider a caching policy so federated users are cached and the assertions below
+        // are meaningful regardless of the parameterized default (the assumeThat further down still
+        // covers configurations where the user cache is globally disabled)
+        withRealm(realmId, (session, realm) -> {
+            UserStorageProviderModel provider = new UserStorageProviderModel(realm.getComponent(userFederationId));
+            provider.setCachePolicy(CacheableStorageProviderModel.CachePolicy.EVICT_DAILY);
+            realm.updateComponent(provider);
+            return null;
+        });
+
+        // create a user in LDAP and read it so it gets cached
+        withRealm(realmId, (session, realm) -> {
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            LDAPTestUtils.addLDAPUser(ldapFedProvider, realm, "cacheuser", "CacheFN", "CacheLN", "cacheuser@email.org", "my-street 9", "1234");
+            return null;
+        });
+
+        Long firstCacheTimestamp = withRealm(realmId, (session, realm) -> {
+            UserModel user = session.users().getUserByUsername(realm, "cacheuser");
+            assertThat(user, is(notNullValue()));
+            return user instanceof CachedUserModel cached ? cached.getCacheTimestamp() : null;
+        });
+
+        // nothing to assert if this configuration does not cache federated users
+        assumeThat("Cannot run testUserCacheSurvivesLastSyncUpdate because federated users are not cached in this configuration",
+                firstCacheTimestamp, notNullValue());
+
+        // simulate the tail of a federation sync: persist only the lastSync timestamp on the provider
+        withRealm(realmId, (session, realm) -> {
+            UserStorageProviderModel provider = new UserStorageProviderModel(realm.getComponent(userFederationId));
+            provider.setLastSync(Time.currentTime(), UserStorageProviderModel.SyncMode.FULL);
+            realm.updateComponent(provider);
+            return null;
+        });
+
+        // the cached user must survive the lastSync bump (same cache timestamp => not evicted/reloaded)
+        withRealm(realmId, (session, realm) -> {
+            UserModel user = session.users().getUserByUsername(realm, "cacheuser");
+            assertThat(user, Matchers.instanceOf(CachedUserModel.class));
+            assertThat(((CachedUserModel) user).getCacheTimestamp(), is(firstCacheTimestamp));
+            return null;
+        });
+
+        // sanity check: a genuine (non-lastSync) config change still evicts the user cache
+        try {
+            Time.setOffset(10); // ensure a reload gets a strictly later cache timestamp
+            withRealm(realmId, (session, realm) -> {
+                UserStorageProviderModel provider = new UserStorageProviderModel(realm.getComponent(userFederationId));
+                provider.getConfig().putSingle("someUserAffectingSetting", "changed");
+                realm.updateComponent(provider);
+                return null;
+            });
+
+            withRealm(realmId, (session, realm) -> {
+                UserModel user = session.users().getUserByUsername(realm, "cacheuser");
+                assertThat(user, Matchers.instanceOf(CachedUserModel.class));
+                assertThat(((CachedUserModel) user).getCacheTimestamp(), is(not(firstCacheTimestamp)));
+                return null;
+            });
+        } finally {
+            Time.setOffset(0);
+        }
     }
 
     @Test
@@ -221,7 +291,7 @@ public class UserSyncTest extends KeycloakModelTest {
             LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, providerModel);
 
             LDAPObject user1LdapObject = ldapFedProvider.loadLDAPUserByUsername(realm, "user1");
-            LDAPOperationManager ldapOperationManager = new LDAPOperationManager(session, ldapFedProvider.getLdapIdentityStore().getConfig());
+            LDAPOperationManager ldapOperationManager = new LDAPOperationManager(session, ldapFedProvider.getLdapIdentityStore().getConfig(), null);
 
             ldapOperationManager.removeAttribute(user1LdapObject.getDn().getLdapName(), new BasicAttribute(LDAPConstants.STREET));
             return null;
@@ -249,6 +319,64 @@ public class UserSyncTest extends KeycloakModelTest {
             assertThat(user1.getAttributes().get(LDAPConstants.STREET), is(nullValue()));
             assertThat(user1.getFirstAttribute(LDAPConstants.STREET), is(nullValue()));
             assertThat(user1.getAttributeStream(LDAPConstants.STREET).findFirst().isPresent(), is(false));
+            return null;
+        });
+    }
+
+    @Test
+    public void testEmailLowercasedWithAlwaysReadValueFromLDAP() {
+        withRealm(realmId, (session, realm) -> {
+            UserStorageProviderModel providerModel = new UserStorageProviderModel(realm.getComponent(userFederationId));
+            providerModel.setCachePolicy(CacheableStorageProviderModel.CachePolicy.NO_CACHE);
+            realm.updateComponent(providerModel);
+
+            ComponentModel emailMapper = LDAPTestUtils.getSubcomponentByName(realm, providerModel, "email");
+            emailMapper.put(UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, true);
+            realm.updateComponent(emailMapper);
+
+            return null;
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            LDAPTestUtils.addLDAPUser(ldapFedProvider, realm, "mixedcaseuser", "Test", "User", "Mixed.Case@Email.ORG", null, "5678");
+            return null;
+        });
+
+        // Import enabled: email should be lowercased
+        withRealm(realmId, (session, realm) -> {
+            UserModel user = session.users().getUserByUsername(realm, "mixedcaseuser");
+            assertThat(user, is(notNullValue()));
+            assertThat(user.getEmail(), is(equalTo("mixed.case@email.org")));
+            return null;
+        });
+
+        // Toggle import to disabled
+        withRealm(realmId, (session, realm) -> {
+            UserStorageProviderModel providerModel = new UserStorageProviderModel(realm.getComponent(userFederationId));
+            providerModel.setImportEnabled(false);
+            realm.updateComponent(providerModel);
+            return null;
+        });
+
+        // Import disabled: original LDAP casing should be preserved
+        withRealm(realmId, (session, realm) -> {
+            UserModel user = session.users().getUserByUsername(realm, "mixedcaseuser");
+            assertThat(user, is(notNullValue()));
+            assertThat(user.getEmail(), is(equalTo("Mixed.Case@Email.ORG")));
+            return null;
+        });
+
+        // Cleanup: re-enable import and reset always-read-from-LDAP
+        withRealm(realmId, (session, realm) -> {
+            UserStorageProviderModel providerModel = new UserStorageProviderModel(realm.getComponent(userFederationId));
+            providerModel.setImportEnabled(true);
+            realm.updateComponent(providerModel);
+
+            ComponentModel emailMapper = LDAPTestUtils.getSubcomponentByName(realm, providerModel, "email");
+            emailMapper.put(UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, false);
+            realm.updateComponent(emailMapper);
             return null;
         });
     }
@@ -398,4 +526,3 @@ public class UserSyncTest extends KeycloakModelTest {
         });
     }
 }
-

@@ -16,19 +16,98 @@ concurrency:
 
 permissions:
   contents: read
-  
+
+env:
+  # Quarkus branch to build snapshots from. Update when quarkus-next should track a different release stream.
+  QUARKUS_BRANCH: 3.39
+
 jobs:
-  update-quarkus-next-branch:
-    name: Update quarkus-next branch
+  build-quarkus-snapshot:
+    name: Build Quarkus snapshot
     if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
     runs-on: ubuntu-latest
+    outputs:
+      quarkus-version: ${{ steps.quarkus-version.outputs.version }}
+      qosdk-version: ${{ steps.qosdk-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: quarkusio/quarkus
+          ref: ${{ env.QUARKUS_BRANCH }}
+          path: quarkus
+
+      - name: Extract Quarkus snapshot version
+        id: quarkus-version
+        run: |
+          version=$(grep -m1 '<version>' quarkus/pom.xml | sed 's/.*<version>\(.*\)<\/version>.*/\1/')
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: quarkiverse/quarkus-operator-sdk
+          ref: main
+          path: quarkus-operator-sdk
+
+      # JDK 17 to match how Quarkus and QOSDK build and publish their own snapshots
+      - name: Setup Java
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Key for daily rotation of cache
+        id: cache-key
+        run: echo "date=$(date -u +%Y-%m-%d)" >> $GITHUB_OUTPUT
+
+      - name: Quarkus snapshot cache
+        id: quarkus-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.m2/repository/io/quarkus
+            ~/.m2/repository/io/quarkiverse/operatorsdk
+          key: quarkus-snapshot-${{ env.QUARKUS_BRANCH }}-${{ steps.cache-key.outputs.date }}
+          enableCrossOsArchive: true
+
+      - name: Build Quarkus snapshot
+        if: steps.quarkus-cache.outputs.cache-hit != 'true'
+        run: |
+          cd quarkus
+          ./mvnw -B -e --no-transfer-progress \
+            -Dquickly -Dno-test-modules -Prelocations \
+            clean install
+
+      - name: Build Quarkus Operator SDK snapshot
+        if: steps.quarkus-cache.outputs.cache-hit != 'true'
+        run: |
+          cd quarkus-operator-sdk
+          ./mvnw -B -e --no-transfer-progress \
+            clean install -DskipTests -DskipITs -DskipDocs \
+            -Dquarkus.version=${{ steps.quarkus-version.outputs.version }}
+
+      - name: Extract QOSDK version
+        id: qosdk-version
+        run: |
+          version=$(ls ~/.m2/repository/io/quarkiverse/operatorsdk/quarkus-operator-sdk-bom/ | grep -E '.*-SNAPSHOT$' | head -1)
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+  update-quarkus-next-branch:
+    name: Update quarkus-next branch
+    runs-on: ubuntu-latest
+    needs: build-quarkus-snapshot
     permissions:
       contents: write # Required to push changes to the repository
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
           fetch-depth: 0
+
+      - name: Setup Java
+        uses: ./.github/actions/java-setup
+
+      - name: Restore Quarkus snapshot cache
+        uses: ./.github/actions/quarkus-snapshot-cache
 
       - name: Configure Git
         run: |
@@ -36,6 +115,9 @@ jobs:
           git config --global user.name "github-actions[bot]"
 
       - name: Cherry-pick additional commits in quarkus-next
+        env:
+          QUARKUS_VERSION: ${{ needs.build-quarkus-snapshot.outputs.quarkus-version }}
+          QOSDK_VERSION: ${{ needs.build-quarkus-snapshot.outputs.qosdk-version }}
         run: |
           ${GITHUB_WORKSPACE}/.github/scripts/prepare-quarkus-next.sh
 

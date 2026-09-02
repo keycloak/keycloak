@@ -20,7 +20,6 @@ package org.keycloak.storage.datastore;
 import java.util.Arrays;
 import java.util.List;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
 import org.keycloak.migration.MigrationModelManager;
@@ -34,16 +33,18 @@ import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.services.scheduled.ClearExpiredAdminEvents;
 import org.keycloak.services.scheduled.ClearExpiredClientInitialAccessTokens;
 import org.keycloak.services.scheduled.ClearExpiredEvents;
+import org.keycloak.services.scheduled.ClearExpiredIssuedVerifiableCredentials;
 import org.keycloak.services.scheduled.ClearExpiredRevokedTokens;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.DatastoreProviderFactory;
 import org.keycloak.storage.StoreMigrateRepresentationEvent;
-import org.keycloak.storage.StoreSyncEvent;
-import org.keycloak.storage.managers.UserStorageSyncManager;
+import org.keycloak.storage.UserStorageEventListener;
 import org.keycloak.timer.ScheduledTask;
 import org.keycloak.timer.TimerProvider;
+
+import org.jboss.logging.Logger;
 
 public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory, ProviderEventListener {
 
@@ -73,7 +74,12 @@ public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         factory.register(this);
-        onClose = () -> factory.unregister(this);
+        UserStorageEventListener userStorageEventListener = new UserStorageEventListener(factory);
+        factory.register(userStorageEventListener);
+        onClose = () -> {
+            factory.unregister(this);
+            factory.unregister(userStorageEventListener);
+        };
     }
 
     @Override
@@ -118,9 +124,6 @@ public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory
     public void onEvent(ProviderEvent event) {
         if (event instanceof PostMigrationEvent) {
             setupScheduledTasks(((PostMigrationEvent) event).getFactory());
-        } else if (event instanceof StoreSyncEvent) {
-            StoreSyncEvent ev = (StoreSyncEvent) event;
-            UserStorageSyncManager.notifyToRefreshPeriodicSyncAll(ev.getSession(), ev.getRealm(), ev.getRemoved());
         } else if (event instanceof StoreMigrateRepresentationEvent) {
             StoreMigrateRepresentationEvent ev = (StoreMigrateRepresentationEvent) event;
             MigrationModelManager.migrateImport(ev.getSession(), ev.getRealm(), ev.getRep(), ev.isSkipUserDependent());
@@ -140,12 +143,10 @@ public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory
         for (ScheduledTask task : getScheduledTasks()) {
             scheduleTask(timer, sessionFactory, task, interval);
         }
-
-        UserStorageSyncManager.bootstrapPeriodic(sessionFactory, timer);
     }
 
     protected static List<ScheduledTask> getScheduledTasks() {
-        return Arrays.asList(new ClearExpiredEvents(), new ClearExpiredAdminEvents(), new ClearExpiredClientInitialAccessTokens(), new ClearExpiredUserSessions());
+        return Arrays.asList(new ClearExpiredEvents(), new ClearExpiredAdminEvents(), new ClearExpiredClientInitialAccessTokens(), new ClearExpiredUserSessions(), new ClearExpiredIssuedVerifiableCredentials());
     }
 
     protected static void scheduleTask(TimerProvider timer, KeycloakSessionFactory sessionFactory, ScheduledTask task, long interval) {

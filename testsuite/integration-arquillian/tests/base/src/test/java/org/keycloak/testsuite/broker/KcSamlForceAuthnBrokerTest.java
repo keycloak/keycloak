@@ -18,6 +18,8 @@
  */
 package org.keycloak.testsuite.broker;
 
+import java.io.Closeable;
+
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
@@ -26,11 +28,11 @@ import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
-import java.io.Closeable;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.w3c.dom.Document;
+
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 /**
@@ -68,7 +70,7 @@ public final class KcSamlForceAuthnBrokerTest extends AbstractBrokerTest {
                     {
                         // Find the AuthnRequest ForceAuthN attribute
                         String attrValue = document.getDocumentElement().getAttributes().getNamedItem("ForceAuthn").getNodeValue();
-                        Assert.assertEquals("Unexpected ForceAuthn attribute value", "false", attrValue);
+                        Assertions.assertEquals("false", attrValue, "Unexpected ForceAuthn attribute value");
                     }
                     catch (Exception ex)
                     {
@@ -106,7 +108,7 @@ public final class KcSamlForceAuthnBrokerTest extends AbstractBrokerTest {
                     {
                         // Find the AuthnRequest ForceAuthN attribute
                         String attrValue = document.getDocumentElement().getAttributes().getNamedItem("ForceAuthn").getNodeValue();
-                        Assert.assertEquals("Unexpected ForceAuthn attribute value", "true", attrValue);
+                        Assertions.assertEquals("true", attrValue, "Unexpected ForceAuthn attribute value");
                     }
                     catch (Exception ex)
                     {

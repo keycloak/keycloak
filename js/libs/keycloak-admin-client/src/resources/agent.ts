@@ -1,4 +1,3 @@
-import urlJoin from "url-join";
 import { parseTemplate } from "url-template";
 import type { KeycloakAdminClient } from "../client.js";
 import {
@@ -6,12 +5,13 @@ import {
   NetworkError,
   parseResponse,
 } from "../utils/fetchWithError.js";
+import { joinPath } from "../utils/joinPath.js";
 import { stringifyQueryParams } from "../utils/stringifyQueryParams.js";
 
 // constants
 const SLASH = "/";
 
-type Method = "GET" | "POST" | "PUT" | "DELETE";
+type Method = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
 // interface
 export interface RequestArgs {
@@ -53,7 +53,7 @@ export class Agent {
   #client: KeycloakAdminClient;
   #basePath: string;
   #getBaseParams?: () => Record<string, any>;
-  #getBaseUrl?: () => string;
+  #getBaseUrl: () => string;
 
   constructor({
     client,
@@ -148,9 +148,10 @@ export class Agent {
       const baseParams = this.#getBaseParams?.() ?? {};
 
       // Filter query parameters by queryParamKeys
-      const queryParams = queryParamKeys
-        ? (pick(query, queryParamKeys) as any)
-        : undefined;
+      const queryParams =
+        queryParamKeys.length > 0
+          ? (pick(query, queryParamKeys) as any)
+          : undefined;
 
       // Add filtered query parameters to base parameters
       const allUrlParamKeys = [...Object.keys(baseParams), ...urlParamKeys];
@@ -199,12 +200,6 @@ export class Agent {
     returnResourceIdInLocationHeader?: { field: string };
     headers?: [string, string][] | Record<string, string> | Headers;
   }) {
-    const newPath = urlJoin(this.#basePath, path);
-
-    // Parse template and replace with values from urlParams
-    const pathTemplate = parseTemplate(newPath);
-    const parsedPath = pathTemplate.expand(urlParams);
-    const url = new URL(`${this.#getBaseUrl?.() ?? ""}${parsedPath}`);
     const requestOptions = { ...this.#client.getRequestOptions() };
     const requestHeaders = new Headers([
       ...new Headers(requestOptions.headers).entries(),
@@ -243,6 +238,10 @@ export class Agent {
       Object.assign(searchParams, queryParams);
     }
 
+    const url = new URL(this.#getBaseUrl());
+    const pathTemplate = parseTemplate(joinPath(this.#basePath, path));
+
+    url.pathname = joinPath(url.pathname, pathTemplate.expand(urlParams));
     url.search = stringifyQueryParams(searchParams);
 
     try {
@@ -250,6 +249,9 @@ export class Agent {
         ...requestOptions,
         headers: requestHeaders,
         method,
+        ...(this.#client.timeout
+          ? { signal: AbortSignal.timeout(this.#client.timeout) }
+          : {}),
       });
 
       // now we get the response of the http request
@@ -306,9 +308,9 @@ export class Agent {
       return;
     }
 
-    Object.keys(keyMapping).some((key) => {
+    Object.keys(keyMapping).forEach((key) => {
       if (typeof payload[key] === "undefined") {
-        return false;
+        return;
       }
       const newKey = keyMapping[key];
       payload[newKey] = payload[key];

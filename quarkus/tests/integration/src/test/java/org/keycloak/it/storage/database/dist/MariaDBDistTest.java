@@ -17,8 +17,6 @@
 
 package org.keycloak.it.storage.database.dist;
 
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.WithDatabase;
@@ -27,8 +25,10 @@ import org.keycloak.it.utils.RawDistRootPath;
 import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
 
 import io.quarkus.test.junit.main.Launch;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
-@DistributionTest(removeBuildOptionsAfterBuild = true)
+@DistributionTest
 @WithDatabase(alias = "mariadb")
 public class MariaDBDistTest extends MariaDBTest {
 

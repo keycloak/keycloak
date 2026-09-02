@@ -16,17 +16,40 @@
  */
 package org.keycloak.services.resources.admin;
 
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
-import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.reactive.NoCache;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.execactions.ExecuteActionsActionToken;
@@ -37,7 +60,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
-import org.keycloak.credential.CredentialProvider;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Details;
@@ -66,7 +88,9 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.models.utils.SystemClientUtil;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.policy.PasswordPolicyNotMetException;
+import org.keycloak.protocol.oid4vc.resources.admin.UserVerifiableCredentialResource;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.provider.ProviderFactory;
@@ -95,46 +119,23 @@ import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.utils.ProfileHelper;
-
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.ForbiddenException;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.utils.StringUtil;
 
-import java.net.URI;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.NoCache;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
+
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
@@ -195,6 +196,7 @@ public class UserResource {
         auth.users().requireManage(user);
         try {
 
+            boolean wasEnabled = user.isEnabled();
             boolean wasPermanentlyLockedOut = false;
             if (rep.isEnabled() != null && rep.isEnabled()) {
                 if (!user.isEnabled() || session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)) {
@@ -235,6 +237,14 @@ public class UserResource {
                 session.getProvider(BruteForceProtector.class).cleanUpPermanentLockout(session, realm, user);
             }
 
+            if (rep.isEnabled() != null && rep.isEnabled() != wasEnabled) {
+                // Capture the enabled-state transition as admin event details — the
+                // representation only ever carries the new state, so without this a
+                // listener can't tell "account disabled" apart from any other profile
+                // update (see SSF RiscAccountDisabled / RiscAccountEnabled).
+                adminEvent.detail(Details.PREVIOUS_ENABLED, String.valueOf(wasEnabled))
+                        .detail(Details.UPDATED_ENABLED, String.valueOf(rep.isEnabled()));
+            }
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
 
             if (session.getTransactionManager().isActive()) {
@@ -250,8 +260,7 @@ public class UserResource {
         } catch (PasswordPolicyNotMetException e) {
             logger.warn("Password policy not met for user " + e.getUsername(), e);
             session.getTransactionManager().setRollbackOnly();
-            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
-            throw new ErrorResponseException(e.getMessage(), MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
+            throw new ErrorResponseException(e.getMessage(), ErrorResponse.resolveMessage(session, auth.adminAuth().getToken().getLocale(), e.getMessage(), e.getParameters()),
                     Status.BAD_REQUEST);
         } catch (ModelIllegalStateException e) {
             logger.error(e.getMessage(), e);
@@ -527,6 +536,10 @@ public class UserResource {
             throw ErrorResponse.exists("User is already linked with provider");
         }
 
+        if (!Organizations.resolveHomeBroker(session, user).isEmpty()) {
+            throw ErrorResponse.error("Cannot add identity provider link to a managed organization member.", Status.BAD_REQUEST);
+        }
+
         FederatedIdentityModel socialLink = new FederatedIdentityModel(provider, rep.getUserId(), rep.getUserName());
         session.users().addFederatedIdentity(realm, user, socialLink);
         adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri()).representation(rep).success();
@@ -661,6 +674,11 @@ public class UserResource {
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
     }
 
+    @Path("vc")
+    public UserVerifiableCredentialResource verifiableCredentials() {
+        return new UserVerifiableCredentialResource(session, realm, user, auth, adminEvent);
+    }
+
     /**
      * Remove all user sessions associated with the user
      *
@@ -704,9 +722,13 @@ public class UserResource {
     public Response deleteUser() {
         auth.users().requireManage(user);
 
+        UserRepresentation userRepresentation = new UserRepresentation();
+        userRepresentation.setId(user.getId());
+        userRepresentation.setUsername(user.getUsername());
+
         boolean removed = new UserManager(session).removeUser(realm, user);
         if (removed) {
-            adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+            adminEvent.operation(OperationType.DELETE).representation(userRepresentation).resourcePath(session.getContext().getUri()).success();
             return Response.noContent().build();
         } else {
             throw ErrorResponse.error("User couldn't be deleted", Status.BAD_REQUEST);
@@ -776,16 +798,18 @@ public class UserResource {
             throw new BadRequestException("Can't reset password as account is read only");
         } catch (PasswordPolicyNotMetException e) {
             logger.warn("Password policy not met for user " + e.getUsername(), e);
-            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
-            throw new ErrorResponseException(e.getMessage(), MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
+            throw new ErrorResponseException(e.getMessage(), ErrorResponse.resolveMessage(session, auth.adminAuth().getToken().getLocale(), e.getMessage(), e.getParameters()),
                     Status.BAD_REQUEST);
         } catch (ModelIllegalStateException e) {
             logger.error(e.getMessage(), e);
             throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException e) {
-            logger.warn("Could not update user password.", e);
-            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
-            throw new ErrorResponseException(e.getMessage(), MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
+            String exceptionMessage = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
+            logger.warnf("Could not update password for user %s. Reason: %s", user.getUsername(), exceptionMessage);
+            if (logger.isTraceEnabled()) {
+                logger.trace("Could not update user password.", e);
+            }
+            throw new ErrorResponseException(e.getMessage(), ErrorResponse.resolveMessage(session, auth.adminAuth().getToken().getLocale(), e.getMessage(), e.getParameters()),
                     Status.BAD_REQUEST);
         }
         if (cred.isTemporary() != null && cred.isTemporary()) {
@@ -818,15 +842,11 @@ public class UserResource {
     }
 
     private CredentialModel decorateCredentialForPresentation(CredentialModel credential) {
-        CredentialProvider credentialProvider = AuthenticatorUtil.getCredentialProviders(session)
+        return AuthenticatorUtil.getCredentialProviders(session)
                 .filter(p -> p.supportsCredentialType(credential.getType()))
-                .findFirst().orElse(null);
-        if (credentialProvider == null) {
-            logger.warnf("Credential Provider not found for credential of type '%s'", credential.getType());
-            return credential;
-        }
-
-        return credentialProvider.getCredentialForPresentationFromModel(credential);
+                .findFirst()
+                .map(p -> p.getCredentialForPresentationFromModel(credential))
+                .orElse(credential);
     }
 
     /**
@@ -875,7 +895,11 @@ public class UserResource {
             else throw new ForbiddenException();
         }
         user.credentialManager().removeStoredCredentialById(credentialId);
-        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri())
+                .detail(Details.CREDENTIAL_ID, credentialId)
+                .detail(Details.CREDENTIAL_TYPE, credential.getType())
+                .detail(Details.CREDENTIAL_USER_LABEL, credential.getUserLabel())
+                .success();
     }
 
     /**
@@ -892,7 +916,7 @@ public class UserResource {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public void setCredentialUserLabel(final @PathParam("credentialId") String credentialId, String userLabel) {
-        auth.users().requireManage(user);
+        auth.users().requireResetPassword(user);
         CredentialModel credential = user.credentialManager().getStoredCredentialById(credentialId);
         if (credential == null) {
             // we do this to make sure somebody can't phish ids
@@ -1174,6 +1198,9 @@ public class UserResource {
         if (group == null) {
             throw new NotFoundException("Group not found");
         }
+        if (Organizations.isOrganizationGroup(group)) {
+            throw ErrorResponse.error("Cannot access organization related group via non Organization API.", Status.BAD_REQUEST);
+        }
         auth.groups().requireManageMembership(group);
 
         try {
@@ -1191,8 +1218,7 @@ public class UserResource {
             logger.error(e.getMessage(), e);
             throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException me) {
-            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
-            throw new ErrorResponseException(me.getMessage(), MessageFormat.format(messages.getProperty(me.getMessage(), me.getMessage()), me.getParameters()),
+            throw new ErrorResponseException(me.getMessage(), ErrorResponse.resolveMessage(session, auth.adminAuth().getToken().getLocale(), me.getMessage(), me.getParameters()),
                     Status.BAD_REQUEST);
         }
     }
@@ -1212,6 +1238,9 @@ public class UserResource {
         GroupModel group = session.groups().getGroupById(realm, groupId);
         if (group == null) {
             throw new NotFoundException("Group not found");
+        }
+        if (Organizations.isOrganizationGroup(group)) {
+            throw ErrorResponse.error("Cannot access organization related group via non Organization API.", Status.BAD_REQUEST);
         }
         auth.groups().requireManageMembership(group);
 
@@ -1240,18 +1269,9 @@ public class UserResource {
     public Map<String, List<String>> getUnmanagedAttributes() {
         auth.users().requireView(user);
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
-
         UserProfile profile = provider.create(USER_API, user);
-        Map<String, List<String>> managedAttributes = profile.getAttributes().getReadable();
-        Map<String, List<String>> unmanagedAttributes = profile.getAttributes().getUnmanagedAttributes();
-        managedAttributes.entrySet().removeAll(unmanagedAttributes.entrySet());
-        Map<String, List<String>> attributes = new HashMap<>(user.getAttributes());
-        attributes.entrySet().removeAll(managedAttributes.entrySet());
 
-        attributes.remove(UserModel.USERNAME);
-        attributes.remove(UserModel.EMAIL);
-
-        return attributes.entrySet().stream()
+        return profile.getAttributes().getUnmanagedAttributes().entrySet().stream()
                 .filter(entry -> ofNullable(entry.getValue()).orElse(emptyList()).stream().anyMatch(StringUtil::isNotBlank))
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
     }
@@ -1276,6 +1296,11 @@ public class UserResource {
     }
 
     private SendEmailParams verifySendEmailParams(String redirectUri, String clientId, Integer lifespan) {
+        return verifySendEmailParams(session, realm, user, redirectUri, clientId, lifespan);
+    }
+
+    public static SendEmailParams verifySendEmailParams(KeycloakSession session, RealmModel realm, UserModel user,
+                                                        String redirectUri, String clientId, Integer lifespan) {
         if (user.getEmail() == null) {
             throw ErrorResponse.error("User email missing", Status.BAD_REQUEST);
         }
@@ -1313,15 +1338,27 @@ public class UserResource {
         return new SendEmailParams(redirectUri, client.getClientId(), lifespan);
     }
 
-    private static class SendEmailParams {
-        final String redirectUri;
-        final String clientId;
-        final int lifespan;
+    public static class SendEmailParams {
+        private final String redirectUri;
+        private final String clientId;
+        private final int lifespan;
 
         public SendEmailParams(String redirectUri, String clientId, Integer lifespan) {
             this.redirectUri = redirectUri;
             this.clientId = clientId;
             this.lifespan = lifespan;
+        }
+
+        public String getRedirectUri() {
+            return redirectUri;
+        }
+
+        public String getClientId() {
+            return clientId;
+        }
+
+        public int getLifespan() {
+            return lifespan;
         }
     }
 }

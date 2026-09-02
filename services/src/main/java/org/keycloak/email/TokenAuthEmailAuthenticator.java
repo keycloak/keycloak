@@ -1,20 +1,22 @@
 package org.keycloak.email;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import jakarta.mail.AuthenticationFailedException;
-import jakarta.mail.MessagingException;
-import jakarta.mail.Transport;
-import org.jboss.logging.Logger;
-import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.utils.KeycloakSessionUtil;
-import org.keycloak.vault.VaultStringSecret;
-
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+
+import jakarta.mail.AuthenticationFailedException;
+import jakarta.mail.MessagingException;
+import jakarta.mail.Transport;
+
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.utils.KeycloakSessionUtil;
+import org.keycloak.vault.VaultStringSecret;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import org.jboss.logging.Logger;
 
 public class TokenAuthEmailAuthenticator implements EmailAuthenticator {
 
@@ -122,7 +124,7 @@ public class TokenAuthEmailAuthenticator implements EmailAuthenticator {
     }
 
     private JsonNode fetchTokenViaHTTP(KeycloakSession session, String authTokenUrl, String authTokenScope, String authTokenClientId, String authTokenClientSecret) throws IOException {
-        return SimpleHttp.doPost(authTokenUrl, session)
+        return SimpleHttp.create(session).doPost(authTokenUrl)
                 .param("client_id", authTokenClientId)
                 .param("client_secret", authTokenClientSecret)
                 .param("scope", authTokenScope)

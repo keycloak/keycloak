@@ -16,7 +16,11 @@
  */
 package org.keycloak.services.managers;
 
+import java.util.List;
+
 import jakarta.ws.rs.NotAuthorizedException;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
@@ -25,14 +29,12 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.UriInfo;
 import org.keycloak.services.util.DPoPUtil;
-import org.keycloak.util.TokenUtil;
 
-import java.util.List;
-import java.util.regex.Pattern;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.util.TokenUtil.TOKEN_TYPE_BEARER;
+import static org.keycloak.util.TokenUtil.TOKEN_TYPE_DPOP;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -40,17 +42,13 @@ import java.util.regex.Pattern;
  */
 public class AppAuthManager extends AuthenticationManager {
 
-    public static final String BEARER = "Bearer";
-
-    private static final Pattern WHITESPACES = Pattern.compile("\\s+");
-
     @Override
     public AuthResult authenticateIdentityCookie(KeycloakSession session, RealmModel realm) {
         AuthResult authResult = super.authenticateIdentityCookie(session, realm);
         if (authResult == null) return null;
         // refresh the cookies!
-        createLoginCookie(session, realm, authResult.getUser(), authResult.getSession(), session.getContext().getUri(), session.getContext().getConnection());
-        if (authResult.getSession().isRememberMe()) createRememberMeCookie(authResult.getUser().getUsername(), session.getContext().getUri(), session);
+        createLoginCookie(session, realm, authResult.user(), authResult.session(), session.getContext().getUri(), session.getContext().getConnection());
+        if (authResult.session().isRememberMe()) createRememberMeCookie(authResult.user().getUsername(), session.getContext().getUri(), session);
         return authResult;
     }
 
@@ -65,26 +63,29 @@ public class AppAuthManager extends AuthenticationManager {
             return null;
         }
 
-        String[] split = WHITESPACES.split(authHeader.trim());
-        if (split.length != 2){
+        int indexOfSpace = authHeader.indexOf(' ');
+
+        if (indexOfSpace <= 0) {
             return null;
         }
 
-        String typeString = split[0];
+        String typeString = authHeader.substring(0, indexOfSpace);
+        String tokenString = authHeader.substring(indexOfSpace + 1);
 
+        // Auth schemes are case insensitive per RFC9110-11.1
+        // Checked by fapi2-security-profile-final-access-token-type-header-case-sensitivity
+        boolean isBearerHeader = typeString.equalsIgnoreCase(TOKEN_TYPE_BEARER);
         if (!Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
-            if (!typeString.equalsIgnoreCase(BEARER)) {
+            if (!isBearerHeader) {
                 return null;
             }
         } else {
-            // "Bearer" is case-insensitive for historical reasons. "DPoP" is case-sensitive to follow the spec.
-            if (!typeString.equalsIgnoreCase(BEARER) && !typeString.equals(TokenUtil.TOKEN_TYPE_DPOP)){
+            if (!isBearerHeader && !typeString.equalsIgnoreCase(TOKEN_TYPE_DPOP)) {
                 return null;
             }
         }
 
-        String tokenString = split[1];
-        if (ObjectUtil.isBlank(tokenString)) {
+        if (ObjectUtil.isBlank(tokenString) || tokenString.contains(" ")) {
             return null;
         }
 
@@ -104,7 +105,7 @@ public class AppAuthManager extends AuthenticationManager {
             return null;
         }
         if (authHeaders.size() != 1) {
-            throw new NotAuthorizedException(BEARER);
+            throw new NotAuthorizedException(TOKEN_TYPE_BEARER);
         }
         String authHeader = headers.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         return extractTokenStringFromAuthHeader(authHeader);
@@ -124,12 +125,14 @@ public class AppAuthManager extends AuthenticationManager {
         }
         AuthHeader parsedHeader = extractTokenStringFromAuthHeader(authHeader);
         if (parsedHeader == null ){
-            throw new NotAuthorizedException(BEARER);
+            throw new NotAuthorizedException(TOKEN_TYPE_BEARER);
         }
         return parsedHeader.getToken();
     }
 
     public static class BearerTokenAuthenticator {
+        private static final Logger logger = Logger.getLogger(BearerTokenAuthenticator.class);
+        
         private KeycloakSession session;
         private RealmModel realm;
         private UriInfo uriInfo;
@@ -194,7 +197,10 @@ public class AppAuthManager extends AuthenticationManager {
             // audience can be null
 
             return verifyIdentityToken(session, realm, uriInfo, connection, true, true, audience, false, tokenString, headers,
-                    verifier -> DPoPUtil.withDPoPVerifier(verifier, realm, new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).accessToken(tokenString)));
+                    verifier -> {
+                        DPoPUtil.withDPoPVerifier(verifier, realm, new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).accessToken(tokenString));
+                        verifier.withChecks(GrantTypeEndpointRestrictionValidator.check(session));
+                    });
         }
     }
 

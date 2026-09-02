@@ -1,11 +1,14 @@
 package org.keycloak.crypto.fips;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyFactory;
 import java.security.KeyPairGenerator;
@@ -15,12 +18,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
 import java.security.SecureRandom;
-import java.security.spec.ECField;
-import java.security.spec.ECFieldF2m;
-import java.security.spec.ECFieldFp;
-import java.security.spec.ECParameterSpec;
-import java.security.spec.ECPoint;
-import java.security.spec.EllipticCurve;
 import java.security.Security;
 import java.security.Signature;
 import java.security.cert.CertPathBuilder;
@@ -28,12 +25,18 @@ import java.security.cert.CertStore;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CollectionCertStoreParameters;
+import java.security.spec.ECField;
+import java.security.spec.ECFieldF2m;
+import java.security.spec.ECFieldFp;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPoint;
+import java.security.spec.EllipticCurve;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
+import java.util.regex.Pattern;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactory;
@@ -44,8 +47,19 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 
+import org.keycloak.common.crypto.CertificateUtilsProvider;
+import org.keycloak.common.crypto.CryptoConstants;
+import org.keycloak.common.crypto.CryptoProvider;
+import org.keycloak.common.crypto.ECDSACryptoProvider;
+import org.keycloak.common.crypto.PemUtilsProvider;
+import org.keycloak.common.crypto.UserIdentityExtractorProvider;
+import org.keycloak.common.util.BouncyIntegration;
+import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
+import org.keycloak.crypto.JavaAlgorithm;
+
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.fips.FipsRSA;
 import org.bouncycastle.crypto.fips.FipsSHS;
 import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
@@ -54,15 +68,6 @@ import org.bouncycastle.jsse.util.CustomSSLSocketFactory;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.IPAddress;
 import org.jboss.logging.Logger;
-import org.keycloak.common.crypto.CryptoProvider;
-import org.keycloak.common.crypto.ECDSACryptoProvider;
-import org.keycloak.common.crypto.CryptoConstants;
-import org.keycloak.common.crypto.CertificateUtilsProvider;
-import org.keycloak.common.crypto.PemUtilsProvider;
-import org.keycloak.common.crypto.UserIdentityExtractorProvider;
-import org.keycloak.common.util.BouncyIntegration;
-import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
-import org.keycloak.crypto.JavaAlgorithm;
 
 
 /**
@@ -73,6 +78,9 @@ import org.keycloak.crypto.JavaAlgorithm;
 public class FIPS1402Provider implements CryptoProvider {
 
     private static final Logger log = Logger.getLogger(FIPS1402Provider.class);
+    private static final String FIPS_FILE = "/proc/sys/crypto/fips_enabled";
+    // The fips provider is different in 21 and 25
+    private static final String PKCS11_FIPS_NAME = "SunPKCS11(-NSS)?-FIPS";
 
     private final BouncyCastleFipsProvider bcFipsProvider;
     private final Map<String, Object> providers = new ConcurrentHashMap<>();
@@ -91,13 +99,16 @@ public class FIPS1402Provider implements CryptoProvider {
         providers.put(CryptoConstants.ECDH_ES_A192KW, new BCFIPSEcdhEsAlgorithmProvider());
         providers.put(CryptoConstants.ECDH_ES_A256KW, new BCFIPSEcdhEsAlgorithmProvider());
 
-        Security.insertProviderAt(new KeycloakFipsSecurityProvider(bcFipsProvider), 1);
         if (existingBcFipsProvider == null) {
-            checkSecureRandom(() -> Security.insertProviderAt(this.bcFipsProvider, 2));
+            final String isSystemFipsEnabled = isSystemFipsEnabled();
+            checkSecureRandom(() -> Security.insertProviderAt(this.bcFipsProvider, 1));
             Provider bcJsseProvider = new BouncyCastleJsseProvider("fips:BCFIPS");
-            Security.insertProviderAt(bcJsseProvider, 3);
+            Security.insertProviderAt(bcJsseProvider, 2);
             // force the key and trust manager factories if default values not present in BCJSSE
             modifyKeyTrustManagerSecurityProperties(bcJsseProvider);
+            log.infof("FIPS1402Provider created: KC(%s%s, FIPS-JVM: %s)", bcFipsProvider,
+                    CryptoServicesRegistrar.isInApprovedOnlyMode() ? " Approved Mode" : "",
+                    isSystemFipsEnabled);
             log.debugf("Inserted security providers: %s", Arrays.asList(this.bcFipsProvider.getName(),bcJsseProvider.getName()));
         } else {
             log.debugf("Security provider %s already loaded", existingBcFipsProvider.getName());
@@ -387,5 +398,17 @@ public class FIPS1402Provider implements CryptoProvider {
         }
         throw new IllegalStateException("Provider " + bcJsseProvider.getName()
                 + " does not provide KeyManagerFactory or TrustManagerFactory algorithms for TLS");
+    }
+
+    public static String isSystemFipsEnabled() {
+        // java 25 does not have any class and checks directly the file
+        // check kernel file is 1 and the first security provider is the FIPS one
+        try (InputStream is = Files.newInputStream(Paths.get(FIPS_FILE))) {
+            final String name =  Security.getProviders()[0].getName();
+            return is.read() == '1' && Pattern.matches(PKCS11_FIPS_NAME, name) ? "enabled" : "disabled";
+        } catch (Throwable ignore) {
+            log.debug("Could not detect if FIPS is enabled from the host", ignore);
+            return "unknown";
+        }
     }
 }

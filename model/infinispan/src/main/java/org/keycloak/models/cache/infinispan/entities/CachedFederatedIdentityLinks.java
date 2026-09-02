@@ -17,11 +17,11 @@
 
 package org.keycloak.models.cache.infinispan.entities;
 
-import org.keycloak.models.FederatedIdentityModel;
-import org.keycloak.models.RealmModel;
-
 import java.util.HashSet;
 import java.util.Set;
+
+import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.RealmModel;
 
 /**
  * The cache entry, which contains list of all identityProvider links for particular user. It needs to be updated every time when any
@@ -34,7 +34,7 @@ public class CachedFederatedIdentityLinks extends AbstractRevisioned implements 
     private final String realmId;
     private final Set<FederatedIdentityModel> federatedIdentities = new HashSet<>();
 
-    public CachedFederatedIdentityLinks(Long revision, String id, RealmModel realm, Set<FederatedIdentityModel> federatedIdentities) {
+    public CachedFederatedIdentityLinks(long revision, String id, RealmModel realm, Set<FederatedIdentityModel> federatedIdentities) {
         super(revision, id);
         this.realmId = realm.getId();
         this.federatedIdentities.addAll(federatedIdentities);

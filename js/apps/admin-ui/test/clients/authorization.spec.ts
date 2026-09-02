@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import adminClient from "../utils/AdminClient.ts";
 import { clickSaveButton } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
@@ -6,25 +6,34 @@ import {
   assertAxeViolations,
   assertNotificationMessage,
 } from "../utils/masthead.ts";
+import { confirmModal } from "../utils/modal.ts";
 import { goToClients, goToRealm } from "../utils/sidebar.ts";
 import {
   assertRowExists,
+  clickRowKebabItem,
   clickTableRowItem,
   searchItem,
 } from "../utils/table.ts";
 import {
   assertClipboardHasText,
-  assertDefaultResource,
   assertDownload,
+  assertEmptyStateNotVisible,
+  assertTableIsPopulated,
+  assertResource,
+  assertRowNotVisible,
   clickAuthenticationSaveButton,
   clickCopyButton,
+  clickNextPage,
   createAuthorizationScope,
   createPermission,
   createPolicy,
   createResource,
   deletePolicy,
   fillForm,
+  getEvaluateResourceKeyInput,
+  getEvaluateResourceKeyOptions,
   goToAuthorizationTab,
+  goToEvaluateSubTab,
   goToExportSubTab,
   goToPermissionsSubTab,
   goToPoliciesSubTab,
@@ -69,9 +78,8 @@ test.describe.serial("Client authentication subtab", () => {
 
   test("Should create a resource", async ({ page }) => {
     await goToResourcesSubTab(page);
-    await assertDefaultResource(page);
     await createResource(page, {
-      name: "Resource",
+      name: "Test Resource",
       displayName: "The display name",
       type: "type",
       uris: ["one", "two"],
@@ -83,12 +91,50 @@ test.describe.serial("Client authentication subtab", () => {
 
   test("Edit a resource", async ({ page }) => {
     await goToResourcesSubTab(page);
-    await clickTableRowItem(page, "Default Resource");
+    await clickTableRowItem(page, "Test Resource");
 
     await fillForm(page, { displayName: "updated" });
     await clickSaveButton(page);
 
     await assertNotificationMessage(page, "Resource successfully updated");
+  });
+
+  test("Should navigate to previous page when last resource on current page is deleted", async ({
+    page,
+  }) => {
+    for (let i = 0; i < 15; i++) {
+      const paddedIndex = i.toString().padStart(2, "0");
+      await adminClient.createResource(clientId, {
+        name: `Z Paginated Resource ${paddedIndex}`,
+      });
+    }
+
+    try {
+      await goToResourcesSubTab(page);
+      await assertTableIsPopulated(page);
+
+      await clickNextPage(page);
+      await assertResource(page, "Z Paginated Resource 10");
+
+      for (let i = 10; i < 15; i++) {
+        const paddedIndex = i.toString().padStart(2, "0");
+        const resourceName = `Z Paginated Resource ${paddedIndex}`;
+
+        await clickRowKebabItem(page, resourceName, "Delete");
+        await confirmModal(page);
+        await assertRowNotVisible(page, resourceName);
+      }
+
+      await assertEmptyStateNotVisible(page);
+      await assertTableIsPopulated(page);
+    } finally {
+      for (let i = 0; i < 15; i++) {
+        const paddedIndex = i.toString().padStart(2, "0");
+        await adminClient.deleteResource(clientId, {
+          name: `Z Paginated Resource ${paddedIndex}`,
+        });
+      }
+    }
   });
 
   test("Should create a scope", async ({ page }) => {
@@ -115,7 +161,7 @@ test.describe.serial("Client authentication subtab", () => {
       name: "Permission name",
       description: "Something describing this permission",
     });
-    await selectResource(page, "Default Resource");
+    await selectResource(page, "Test Resource");
 
     await clickSaveButton(page);
     await assertNotificationMessage(
@@ -139,7 +185,7 @@ test.describe.serial("Client authentication subtab", () => {
 
   test("Should delete a policy", async ({ page }) => {
     await goToPoliciesSubTab(page);
-    await deletePolicy(page, "Default Policy");
+    await deletePolicy(page, "Regex Policy");
 
     await assertNotificationMessage(page, "The Policy successfully deleted");
   });
@@ -175,6 +221,7 @@ test.describe.serial("Client authentication subtab", () => {
 test.describe
   .serial("Client authorization tab access for view-realm-authorization", () => {
   const clientId = `realm-view-authz-client-${crypto.randomUUID()}`;
+  const resourceName = `test-resource-${crypto.randomUUID()}`;
 
   test.beforeAll(async () => {
     await adminClient.createRealm("realm-view-authz");
@@ -196,6 +243,10 @@ test.describe
       authorizationServicesEnabled: true,
       serviceAccountsEnabled: true,
       standardFlowEnabled: true,
+    });
+    await adminClient.createResource(clientId, {
+      realm: "realm-view-authz",
+      name: resourceName,
     });
   });
 
@@ -219,7 +270,7 @@ test.describe
     await goToAuthorizationTab(page);
 
     await goToResourcesSubTab(page);
-    await clickTableRowItem(page, "Default Resource");
+    await clickTableRowItem(page, resourceName);
     await page.goBack();
 
     await goToScopesSubTab(page);
@@ -255,5 +306,171 @@ test.describe.serial("Accessibility tests for client authorization", () => {
     page,
   }) => {
     await assertAxeViolations(page);
+  });
+});
+
+test.describe.serial("Client authorization resources pagination", () => {
+  const clientId = `client-authz-pagination-${crypto.randomUUID()}`;
+
+  test.beforeAll(async () => {
+    await adminClient.createClient({
+      protocol: "openid-connect",
+      clientId,
+      publicClient: false,
+      authorizationServicesEnabled: true,
+      serviceAccountsEnabled: true,
+      standardFlowEnabled: true,
+    });
+
+    for (let i = 1; i <= 11; i++) {
+      await adminClient.createResource(clientId, {
+        name: `Resource-${i.toString().padStart(2, "0")}`,
+        displayName: `Display Resource ${i}`,
+        type: "urn:pagination:test",
+      });
+    }
+  });
+
+  test.afterAll(async () => {
+    await adminClient.deleteClient(clientId);
+  });
+
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+    await goToClients(page);
+    await searchItem(page, "Search for client", clientId);
+    await clickTableRowItem(page, clientId);
+    await goToAuthorizationTab(page);
+    await goToResourcesSubTab(page);
+  });
+
+  test("Should not duplicate the 10th item on the 2nd page", async ({
+    page,
+  }) => {
+    await page.waitForSelector("table");
+    await expect(page.getByText("Resource-10", { exact: true })).toBeVisible();
+    await expect(page.getByText("Resource-11", { exact: true })).toBeHidden();
+    await page.locator('[aria-label="Go to next page"]').first().click();
+    await expect(page.getByText("Resource-11", { exact: true })).toBeVisible();
+    await expect(page.getByText("Resource-10", { exact: true })).toBeHidden();
+  });
+});
+
+test.describe.serial("Client authorization evaluate resource key", () => {
+  const clientId = `client-authz-evaluate-${crypto.randomUUID()}`;
+  const resourceNames = [
+    "alpha-resource",
+    "bravo-resource",
+    "charlie-resource",
+  ];
+
+  test.beforeAll(async () => {
+    await adminClient.createClient({
+      protocol: "openid-connect",
+      clientId,
+      publicClient: false,
+      authorizationServicesEnabled: true,
+      serviceAccountsEnabled: true,
+      standardFlowEnabled: true,
+    });
+
+    for (const name of resourceNames) {
+      await adminClient.createResource(clientId, { name });
+    }
+  });
+
+  test.afterAll(async () => {
+    await adminClient.deleteClient(clientId);
+  });
+
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+    await goToClients(page);
+    await searchItem(page, "Search for client", clientId);
+    await clickTableRowItem(page, clientId);
+    await goToAuthorizationTab(page);
+    await goToEvaluateSubTab(page);
+  });
+
+  test("Should filter the resource key options while typing", async ({
+    page,
+  }) => {
+    const key = getEvaluateResourceKeyInput(page);
+    const options = getEvaluateResourceKeyOptions(page);
+
+    await key.click();
+    await key.pressSequentially("charlie");
+
+    await expect(key).toHaveValue("charlie");
+    await expect(options).toHaveText(["charlie-resource"]);
+
+    await key.press("Enter");
+    await expect(key).toHaveValue("charlie-resource");
+  });
+
+  test("Should replace an existing resource key selection by typing", async ({
+    page,
+  }) => {
+    const key = getEvaluateResourceKeyInput(page);
+    const options = getEvaluateResourceKeyOptions(page);
+
+    await key.click();
+    await options.filter({ hasText: "charlie-resource" }).click();
+    await expect(key).toHaveValue("charlie-resource");
+
+    // Typing over an existing selection must show what was typed, not the
+    // selection it replaces, and must narrow the menu down to it.
+    await key.click();
+    await key.press("ControlOrMeta+a");
+    await key.pressSequentially("alpha");
+
+    await expect(key).toHaveValue("alpha");
+    await expect(options).toHaveText(["alpha-resource"]);
+
+    await key.press("Enter");
+    await expect(key).toHaveValue("alpha-resource");
+  });
+
+  test("Should restore the selection when an edit is abandoned", async ({
+    page,
+  }) => {
+    const key = getEvaluateResourceKeyInput(page);
+    const options = getEvaluateResourceKeyOptions(page);
+
+    await key.click();
+    await options.filter({ hasText: "bravo-resource" }).click();
+    await expect(key).toHaveValue("bravo-resource");
+
+    await key.click();
+    await key.press("ControlOrMeta+a");
+    await key.pressSequentially("zzz");
+    await key.press("Escape");
+    await expect(key).toHaveValue("bravo-resource");
+
+    // Re-opening must offer the whole list again, not just the last filter.
+    await key.click();
+    await expect(options).toHaveText(resourceNames);
+  });
+
+  test("Should not satisfy a required select by clearing the input", async ({
+    page,
+  }) => {
+    await goToPermissionsSubTab(page);
+    await createPermission(page, "resource", {
+      name: "clear-input-permission",
+    });
+
+    // Clearing has to reset the consumer's value via onClear. Falling back to
+    // onSelect("") would store [""], which is non-empty and would let the
+    // required check pass with nothing actually selected.
+    const resources = page.locator("#resources").getByRole("combobox");
+    await resources.click();
+    await resources.pressSequentially("alpha");
+    await page.locator("#resources").getByLabel("Clear input value").click();
+
+    await clickSaveButton(page);
+    await expect(
+      page.getByText("Required field", { exact: true }),
+    ).toBeVisible();
   });
 });

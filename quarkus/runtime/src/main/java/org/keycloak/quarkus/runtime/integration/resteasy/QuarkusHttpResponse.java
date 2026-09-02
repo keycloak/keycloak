@@ -17,15 +17,18 @@
 
 package org.keycloak.quarkus.runtime.integration.resteasy;
 
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.ext.RuntimeDelegate;
-import org.jboss.resteasy.reactive.server.core.ResteasyReactiveRequestContext;
-import org.jboss.resteasy.reactive.server.vertx.VertxResteasyReactiveRequestContext;
+
 import org.keycloak.http.HttpResponse;
 
-import java.util.HashSet;
-import java.util.Set;
+import org.jboss.resteasy.reactive.server.core.ResteasyReactiveRequestContext;
+import org.jboss.resteasy.reactive.server.vertx.VertxResteasyReactiveRequestContext;
 
 public final class QuarkusHttpResponse implements HttpResponse {
 
@@ -36,7 +39,7 @@ public final class QuarkusHttpResponse implements HttpResponse {
     private Set<NewCookie> newCookies;
 
     public QuarkusHttpResponse(ResteasyReactiveRequestContext requestContext) {
-        this.requestContext = requestContext;
+        this.requestContext = Objects.requireNonNull(requestContext);
     }
 
     @Override

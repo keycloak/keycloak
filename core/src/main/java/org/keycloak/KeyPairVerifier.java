@@ -17,14 +17,14 @@
 
 package org.keycloak;
 
+import java.security.PrivateKey;
+import java.security.PublicKey;
+
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
-
-import java.security.PrivateKey;
-import java.security.PublicKey;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

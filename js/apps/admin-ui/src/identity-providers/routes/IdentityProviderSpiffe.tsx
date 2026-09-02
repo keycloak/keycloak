@@ -10,9 +10,9 @@ const AddSpiffeConnect = lazy(() => import("../add/AddSpiffeConnect"));
 export const IdentityProviderSpiffeRoute: AppRouteObject = {
   path: "/:realm/identity-providers/spiffe/add",
   element: <AddSpiffeConnect />,
-  breadcrumb: (t) => t("addSpiffeProvider"),
   handle: {
     access: "manage-identity-providers",
+    breadcrumb: (t) => t("addSpiffeProvider"),
   },
 };
 

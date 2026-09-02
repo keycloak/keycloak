@@ -1,10 +1,9 @@
 import { test } from "@playwright/test";
-import { v4 as uuid } from "uuid";
-import adminClient from "../utils/AdminClient.ts";
+import { toAuthentication } from "../../src/authentication/routes/Authentication.tsx";
+import { createTestBed } from "../support/testbed.ts";
 import { clickSaveButton } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
-import { goToAuthentication, goToRealm } from "../utils/sidebar.ts";
 import {
   assertSupportedApplications,
   fillSelects,
@@ -16,21 +15,14 @@ import {
   setWebAuthnPolicyCreateTimeout,
 } from "./policies.ts";
 
-test.describe.serial("OTP policies tab", () => {
-  const realmName = `policies-otp-${uuid()}`;
+test.describe("OTP policies tab", () => {
+  test("changes to hotp", async ({ page }) => {
+    await using testBed = await createTestBed();
 
-  test.beforeAll(() => adminClient.createRealm(realmName));
-
-  test.afterAll(() => adminClient.deleteRealm(realmName));
-
-  test.beforeEach(async ({ page }) => {
-    await login(page);
-    await goToRealm(page, realmName);
-    await goToAuthentication(page);
+    await login(page, {
+      to: toAuthentication({ realm: testBed.realm, tab: "policies" }),
+    });
     await goToOTPPolicyTab(page);
-  });
-
-  test("should change to hotp", async ({ page }) => {
     // Check initial supported applications
     await assertSupportedApplications(page, [
       "FreeOTP",
@@ -52,13 +44,13 @@ test.describe.serial("OTP policies tab", () => {
   });
 });
 
-test.describe.serial("Webauthn policies tabs", () => {
-  test.beforeEach(async ({ page }) => {
-    await login(page);
-    await goToAuthentication(page);
-  });
+test.describe("Webauthn policies tabs", () => {
+  test("fills webauthn settings", async ({ page }) => {
+    await using testBed = await createTestBed();
 
-  test("should fill webauthn settings", async ({ page }) => {
+    await login(page, {
+      to: toAuthentication({ realm: testBed.realm, tab: "policies" }),
+    });
     await goToWebauthnPage(page);
 
     await fillSelects(page, {
@@ -76,7 +68,12 @@ test.describe.serial("Webauthn policies tabs", () => {
     );
   });
 
-  test("should fill webauthn passwordless settings", async ({ page }) => {
+  test("fills webauthn passwordless settings", async ({ page }) => {
+    await using testBed = await createTestBed();
+
+    await login(page, {
+      to: toAuthentication({ realm: testBed.realm, tab: "policies" }),
+    });
     await goToWebauthnPasswordlessPage(page);
 
     await fillSelects(page, {

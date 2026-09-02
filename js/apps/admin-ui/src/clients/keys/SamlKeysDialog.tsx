@@ -32,6 +32,7 @@ import type { KeyTypes } from "./SamlKeys";
 type SamlKeysDialogProps = {
   id: string;
   attr: KeyTypes;
+  localeKey: string;
   onClose: () => void;
   onCancel: () => void;
 };
@@ -58,7 +59,7 @@ export const submitForm = async (
     );
     formData.append("file", file);
 
-    await adminClient.clients.uploadKey({ id, attr }, formData);
+    await adminClient.clients.uploadCertificate({ id, attr }, formData);
     callback();
   } catch (error) {
     callback(error);
@@ -68,6 +69,7 @@ export const submitForm = async (
 export const SamlKeysDialog = ({
   id,
   attr,
+  localeKey,
   onClose,
   onCancel,
 }: SamlKeysDialogProps) => {
@@ -96,17 +98,19 @@ export const SamlKeysDialog = ({
 
   const generate = async () => {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
       const key = await adminClient.clients.generateKey({
         id,
         attr,
       });
-      setKeys(key);
       saveAs(
         new Blob([key.privateKey!], {
           type: "application/octet-stream",
         }),
         "private.key",
       );
+      // Clear private key from display state — it is not stored on server
+      setKeys({ ...key, privateKey: undefined });
 
       addAlert(t("generateSuccess"), AlertVariant.success);
     } catch (error) {
@@ -120,8 +124,16 @@ export const SamlKeysDialog = ({
       aria-label={t("enableClientSignatureRequiredModal")}
       header={
         <TextContent>
-          <Title headingLevel="h1">{t("enableClientSignatureRequired")}</Title>
-          <Text>{t("enableClientSignatureRequiredExplain")}</Text>
+          <Title headingLevel="h1">
+            {t("enableClientSignatureRequired", {
+              key: t(localeKey),
+            })}
+          </Title>
+          <Text>
+            {t("enableClientSignatureRequiredExplain", {
+              key: t(localeKey),
+            })}
+          </Text>
         </TextContent>
       }
       isOpen={true}
@@ -187,7 +199,7 @@ export const SamlKeysDialog = ({
               fieldId="certificate"
               labelIcon={
                 <HelpItem
-                  helpText={t("certificateHelp")}
+                  helpText={t(`saml${localeKey}CertificateHelp`)}
                   fieldLabelId="certificate"
                 />
               }

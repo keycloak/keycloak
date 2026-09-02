@@ -10,6 +10,7 @@ import { libInjectCss } from "vite-plugin-lib-inject-css";
 export default defineConfig({
   build: {
     target: "esnext",
+    sourcemap: true,
     lib: {
       entry: path.resolve(__dirname, "src/main.ts"),
       formats: ["es"],

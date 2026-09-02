@@ -1,0 +1,65 @@
+[id="managing-workflows_{context}"]
+
+[[_managing_workflows_]]
+=  Managing workflows
+[role="_abstract"]
+
+Workflows can be managed through the Admin Console or the Admin REST API.
+
+Only realm administrators with the appropriate permissions can manage workflows as they are considered sensitive operations.
+For more details, see <<_understanding_different_types_realm_admins_,Understanding different types of Realm Admins>>.
+
+== Managing workflows through the Admin Console
+
+To manage workflows through the Admin Console, you can follow these steps:
+
+.Procedure
+
+. Click *Workflows* in the menu.
+
+.Empty workflows list
+image:images/workflows-empty-list.png[alt="Empty workflows list"]
+
+If your realm does not have any workflows defined yet, you will see an empty list. To create a new workflow, click *Create*.
+
+. Creating a new workflow
+image:images/workflows-create.png[alt="Creating a new workflow"]
+
+This will open the workflow creation screen where you can define the workflow using YAML format. To save the workflow, click *Save*.
+
+Once you have created one or more workflows, they will be listed in the workflows list.
+
+.List of workflows
+image:images/workflows-list.png[alt="List of workflows"]
+
+From the workflows list, you can perform the following actions:
+
+*   **Create**: Click *Create workflow* to create a new workflow.
+*   **Update**: Click on the name of an existing workflow to update it.
+*   **Enable/Disable**: Use the toggle button on the *Status* column to enable or disable a workflow.
+*   **Copy**: Click on the *Copy* button next to a workflow to create a copy of it. This is useful if you want to create a new workflow based on an existing one.
+*   **Delete**: Click on the *Delete* button next to a workflow to delete it.
+
+=== Updating a workflow
+
+To update a workflow, click on its name in the workflows list. This will open the workflow in edit mode, where you can modify its YAML definition.
+After making your changes, click *Save* to apply the updates.
+
+There are limitations when updating workflows if they have scheduled steps. In such cases, you are not able to change the step chain of a workflow
+if there are active instances of the workflow being updated. This limitation is in place to ensure the integrity of ongoing workflow instances
+where updates to the step chain could lead to an expensive operation of migrating existing instances to the new step chain,
+which could impact system performance as well as lead to inconsistencies and an unexpected behavior.
+
+In future releases, we plan to introduce a more flexible approach to updating workflows with scheduled steps, so that administrators
+are going to be allowed to migrate realm resources scheduled for a specific step to a different step in the updated workflow.
+
+For now, the only option is to either wait for all active instances to complete or to delete the workflow and create a new one.
+Note that deleting a workflow will also delete all its active instances, therefore, realm resources associated with those instances
+will not be processed further, and they would need to be re-associated with a new workflow instance if needed.
+
+
+
+
+
+
+

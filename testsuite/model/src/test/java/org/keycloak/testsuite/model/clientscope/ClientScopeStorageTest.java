@@ -16,10 +16,6 @@
  */
 package org.keycloak.testsuite.model.clientscope;
 
-import org.hamcrest.Matchers;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Test;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
@@ -32,6 +28,11 @@ import org.keycloak.storage.clientscope.ClientScopeStorageProviderModel;
 import org.keycloak.testsuite.federation.HardcodedClientScopeStorageProviderFactory;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
+
+import org.hamcrest.Matchers;
+import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Test;
 
 @RequireProvider(RealmProvider.class)
 @RequireProvider(ClientScopeStorageProvider.class)

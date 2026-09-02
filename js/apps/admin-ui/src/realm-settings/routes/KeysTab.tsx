@@ -15,9 +15,9 @@ const RealmSettingsSection = lazy(() => import("../RealmSettingsSection"));
 export const KeysRoute: AppRouteObject = {
   path: "/:realm/realm-settings/keys/:tab",
   element: <RealmSettingsSection />,
-  breadcrumb: (t) => t("keys"),
   handle: {
     access: "view-realm",
+    breadcrumb: (t) => t("keys"),
   },
 };
 

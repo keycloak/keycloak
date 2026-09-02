@@ -1,13 +1,17 @@
 package org.keycloak.testsuite.util.oauth;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
-
 import java.io.IOException;
 
-public class OpenIDProviderConfigurationRequest extends AbstractHttpGetRequest<OpenIDProviderConfigurationResponse> {
+import org.apache.http.client.methods.CloseableHttpResponse;
+
+public class OpenIDProviderConfigurationRequest extends AbstractHttpGetRequest<OpenIDProviderConfigurationRequest, OpenIDProviderConfigurationResponse> {
 
     public OpenIDProviderConfigurationRequest(AbstractOAuthClient<?> client) {
         super(client);
+    }
+
+    public OpenIDProviderConfigurationRequest url(String url) {
+        return endpoint(url + (url.endsWith("/") ? "" : "/") + ".well-known/openid-configuration");
     }
 
     @Override

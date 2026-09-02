@@ -16,10 +16,13 @@
  */
 package org.keycloak.testsuite.federation;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -30,16 +33,14 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Stream;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItems;
 
 /**
  * Test graceful degradation when user storage providers fail.
@@ -139,7 +140,7 @@ public class UserStorageGracefulDegradationTest extends AbstractTestRealmKeycloa
                   hasItems("local-user1", "local-user2", "local-admin"));
         
         // Should have at least our 3 local users
-        Assert.assertTrue("Should have at least 3 users, found: " + usernames.size(), usernames.size() >= 3);
+        Assertions.assertTrue(usernames.size() >= 3, "Should have at least 3 users, found: " + usernames.size());
     }
 
 
@@ -158,7 +159,7 @@ public class UserStorageGracefulDegradationTest extends AbstractTestRealmKeycloa
         List<String> usernames = users.map(UserModel::getUsername).toList();
         
         // Should find users from working providers that match the search
-        Assert.assertFalse("Should find some users matching 'user'", usernames.isEmpty());
+        Assertions.assertFalse(usernames.isEmpty(), "Should find some users matching 'user'");
         
         // Verify all returned users have "user" in their username
         for (String username : usernames) {
@@ -180,7 +181,7 @@ public class UserStorageGracefulDegradationTest extends AbstractTestRealmKeycloa
         
         // Should count users from local storage despite failing provider
         // At least 3 users: 3 local users
-        Assert.assertTrue("User count should be at least 3, but was: " + userCount, userCount >= 3);
+        Assertions.assertTrue(userCount >= 3, "User count should be at least 3, but was: " + userCount);
     }
 
 }

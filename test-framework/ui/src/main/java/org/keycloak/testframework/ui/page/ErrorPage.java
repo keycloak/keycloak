@@ -16,27 +16,44 @@
  */
 package org.keycloak.testframework.ui.page;
 
-import org.openqa.selenium.WebDriver;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ErrorPage extends AbstractPage {
+public class ErrorPage extends AbstractLoginPage {
 
     @FindBy(className = "instruction")
     private WebElement errorMessage;
 
+    @FindBy(id = "traceId")
+    private WebElement traceIdMessage;
+
     @FindBy(id = "backToApplication")
     private WebElement backToApplicationLink;
 
-    public ErrorPage(WebDriver driver) {
+    public ErrorPage(ManagedWebDriver driver) {
         super(driver);
     }
 
     public String getError() {
         return errorMessage.getText();
+    }
+
+    public String getTraceId() {
+        return traceIdMessage.getText();
+    }
+
+    public boolean isTraceIdPresent() {
+        try {
+            return traceIdMessage.isDisplayed();
+        } catch (NoSuchElementException e) {
+            return false;
+        }
     }
 
     public void clickBackToApplication() {

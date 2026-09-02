@@ -18,20 +18,21 @@
 
 package org.keycloak.authorization.common;
 
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.AccessToken;
-
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -59,7 +60,7 @@ public class DefaultEvaluationContext implements EvaluationContext {
     }
 
     protected Map<String, Collection<String>> getBaseAttributes() {
-        Map<String, Collection<String>> attributes = new HashMap<>();
+        Map<String, Collection<String>> attributes = new HashMap<>(Optional.ofNullable(claims).orElse(Map.of()));
 
         attributes.put("kc.time.date_time", Arrays.asList(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())));
         attributes.put("kc.client.network.ip_address", Arrays.asList(this.keycloakSession.getContext().getConnection().getRemoteAddr()));
@@ -71,19 +72,13 @@ public class DefaultEvaluationContext implements EvaluationContext {
             attributes.put("kc.client.user_agent", userAgents);
         }
 
-        attributes.put("kc.realm.name", Arrays.asList(this.keycloakSession.getContext().getRealm().getName()));
+        attributes.put(REALM_NAME_ATTRIBUTE, Arrays.asList(this.keycloakSession.getContext().getRealm().getName()));
 
-        if (claims != null) {
-            for (Entry<String, List<String>> entry : claims.entrySet()) {
-                attributes.put(entry.getKey(), entry.getValue());
-            }
-        }
-
-        if (KeycloakIdentity.class.isInstance(identity)) {
-            AccessToken accessToken = KeycloakIdentity.class.cast(this.identity).getAccessToken();
+        if (identity instanceof KeycloakIdentity) {
+            AccessToken accessToken = ((KeycloakIdentity) this.identity).getAccessToken();
 
             if (accessToken != null) {
-                attributes.put("kc.client.id", Arrays.asList(accessToken.getIssuedFor()));
+                attributes.put(CLIENT_ID_ATTRIBUTE, Collections.singletonList(accessToken.getIssuedFor()));
             }
         }
 

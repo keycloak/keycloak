@@ -16,6 +16,19 @@
  */
 package org.keycloak.saml.processing.core.util;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.List;
+import javax.xml.XMLConstants;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.Source;
+import javax.xml.transform.stax.StAXSource;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
+
 import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.GeneralConstants;
@@ -24,25 +37,14 @@ import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.SecurityActions;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.common.util.SystemPropertiesUtil;
+
 import org.w3c.dom.Node;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
-
-import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Validator;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.List;
-import javax.xml.XMLConstants;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.transform.stax.StAXSource;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
+import org.xml.sax.SAXParseException;
+
 import static org.keycloak.saml.common.util.DocumentUtil.feature_disallow_doctype_decl;
 import static org.keycloak.saml.common.util.DocumentUtil.feature_external_general_entities;
 import static org.keycloak.saml.common.util.DocumentUtil.feature_external_parameter_entities;

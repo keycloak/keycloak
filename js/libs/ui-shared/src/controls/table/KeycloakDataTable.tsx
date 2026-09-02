@@ -141,6 +141,7 @@ function DataTable<T>({
   useEffect(() => {
     if (canSelectAll) {
       const selectAllCheckbox = document.getElementsByName("check-all").item(0);
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- DOM query can return null at runtime
       if (selectAllCheckbox) {
         const checkbox = selectAllCheckbox as HTMLInputElement;
         checkbox.indeterminate =
@@ -318,11 +319,16 @@ export type LoaderFunction<T> = (
   search?: string,
 ) => Promise<T[]>;
 
+export type SignaledLoader<T> = {
+  readonly signal: any;
+  loader: LoaderFunction<T>;
+};
+
 export type DataListProps<T> = Omit<
   TableProps,
   "rows" | "cells" | "onSelect"
 > & {
-  loader: T[] | LoaderFunction<T>;
+  loader: T[] | LoaderFunction<T> | SignaledLoader<T>;
   onSelect?: (value: T[]) => void;
   canSelectAll?: boolean;
   detailColumns?: DetailField<T>[];
@@ -357,7 +363,7 @@ export type DataListProps<T> = Omit<
  * @param {DataListProps} props - The properties.
  * @param {string} props.ariaLabelKey - The aria label key i18n key to lookup the label
  * @param {string} props.searchPlaceholderKey - The i18n key to lookup the placeholder for the search box
- * @param {boolean} props.isPaginated - if true the the loader will be called with first, max and search and a pager will be added in the header
+ * @param {boolean} props.isPaginated - if true, the loader will be called with first, max and search and a pager will be added in the header
  * @param {(first?: number, max?: number, search?: string) => Promise<T[]>} props.loader - loader function that will fetch the data to display first, max and search are only applicable when isPaginated = true
  * @param {Field<T>} props.columns - definition of the columns
  * @param {Field<T>} props.detailColumns - definition of the columns expandable columns
@@ -403,12 +409,23 @@ export function KeycloakDataTable<T>({
   const [max, setMax] = useState(defaultPageSize);
   const [first, setFirst] = useState(0);
   const [search, setSearch] = useState<string>("");
-  const prevSearch = useRef<string>();
 
   const [key, setKey] = useState(0);
   const prevKey = useRef<number>();
   const refresh = () => setKey(key + 1);
   const id = useId();
+
+  // A different search term yields a different result set, so the current page
+  // offset no longer applies and has to be reset along with it. Without this the
+  // offset is carried over and applied to the new results, which makes the table
+  // come up empty even when there are matches on the first page.
+  const onSearchChange = (value: string) => {
+    if (value === search) {
+      return;
+    }
+    setFirst(0);
+    setSearch(value);
+  };
 
   const renderCell = (columns: (Field<T> | DetailField<T>)[], value: T) => {
     return columns.map((col) => {
@@ -436,6 +453,7 @@ export function KeycloakDataTable<T>({
             data: value,
             disableSelection: disabledRow,
             disableActions: disabledRow,
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- lodash get performs dynamic property access at runtime
             selected: !!selected.find((v) => get(v, "id") === get(value, "id")),
             isOpen: isDetailColumnsEnabled(value) ? false : undefined,
             cells: renderCell(columns, value),
@@ -492,17 +510,13 @@ export function KeycloakDataTable<T>({
   useFetch(
     async () => {
       setLoading(true);
-      const newSearch = prevSearch.current === "" && search !== "";
-
-      if (newSearch) {
-        setFirst(0);
-      }
-      prevSearch.current = search;
-      return typeof loader === "function"
-        ? key === prevKey.current && unPaginatedData
-          ? unPaginatedData
-          : await loader(newSearch ? 0 : first, max + 1, search)
-        : loader;
+      const loaderFn =
+        typeof loader === "function"
+          ? loader
+          : "loader" in loader
+            ? loader.loader
+            : async () => loader;
+      return await loaderFn(first, max + 1, search);
     },
     (data) => {
       prevKey.current = key;
@@ -524,7 +538,11 @@ export function KeycloakDataTable<T>({
       first,
       max,
       search,
-      typeof loader !== "function" ? loader : undefined,
+      typeof loader !== "function"
+        ? "signal" in loader
+          ? loader.signal
+          : loader
+        : undefined,
     ],
   );
 
@@ -538,7 +556,7 @@ export function KeycloakDataTable<T>({
         );
         if (result) {
           if (!isPaginated) {
-            setSearch("");
+            onSearchChange("");
           }
           refresh();
         }
@@ -576,7 +594,7 @@ export function KeycloakDataTable<T>({
           inputGroupName={
             searchPlaceholderKey ? `${ariaLabelKey}input` : undefined
           }
-          inputGroupOnEnter={setSearch}
+          inputGroupOnEnter={onSearchChange}
           inputGroupPlaceholder={t(searchPlaceholderKey || "")}
           searchTypeComponent={searchTypeComponent}
           toolbarItem={
@@ -623,7 +641,7 @@ export function KeycloakDataTable<T>({
                   ? [
                       {
                         text: t("clearAllFilters"),
-                        onClick: () => setSearch(""),
+                        onClick: () => onSearchChange(""),
                         type: ButtonVariant.link,
                       },
                     ]

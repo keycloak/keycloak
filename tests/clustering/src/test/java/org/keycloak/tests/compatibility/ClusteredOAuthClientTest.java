@@ -1,23 +1,27 @@
 package org.keycloak.tests.compatibility;
 
+import org.keycloak.testframework.annotations.InjectLoadBalancer;
+import org.keycloak.testframework.annotations.InjectTestDatabase;
+import org.keycloak.testframework.annotations.InjectUser;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.clustering.LoadBalancer;
+import org.keycloak.testframework.database.TestDatabase;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.realm.UserConfig;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+
 import org.htmlunit.WebClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.keycloak.testframework.annotations.InjectLoadBalancer;
-import org.keycloak.testframework.annotations.InjectUser;
-import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.clustering.LoadBalancer;
-import org.keycloak.testframework.oauth.OAuthClient;
-import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.ManagedUser;
-import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.testframework.realm.UserConfigBuilder;
-import org.keycloak.testframework.ui.annotations.InjectWebDriver;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 @KeycloakIntegrationTest
@@ -33,13 +37,17 @@ public class ClusteredOAuthClientTest {
     OAuthClient oauth;
 
     @InjectWebDriver
-    WebDriver driver;
+    ManagedWebDriver driver;
+
+    // we cannot reuse the database between tests with mix-cluster; Keycloak won't start.
+    @InjectTestDatabase(lifecycle = LifeCycle.CLASS)
+    TestDatabase database;
 
     @AfterEach
     public void cleanup() {
         loadBalancer.node(0);
-        driver.navigate().to("about:blank");
-        if (driver instanceof HtmlUnitDriver htmlUnitDriver) {
+        driver.open("about:blank");
+        if (driver.driver() instanceof HtmlUnitDriver htmlUnitDriver) {
             WebClient webClient = htmlUnitDriver.getWebClient();
             webClient.getCache().clear();
             webClient.getCookieManager().clearCookies();
@@ -83,7 +91,7 @@ public class ClusteredOAuthClientTest {
 
     public static class OAuthUserConfig implements UserConfig {
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder user) {
+        public UserBuilder configure(UserBuilder user) {
             return user.username("myuser").name("First", "Last")
                   .email("test@local")
                   .password("password");

@@ -1,10 +1,10 @@
 package org.keycloak.services.clientpolicy.executor;
 
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSecretConstants;
@@ -17,6 +17,9 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.ClientSecretRotationContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdatedContext;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutorFactory.DEFAULT_SECRET_EXPIRATION_PERIOD;
 import static org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutorFactory.DEFAULT_SECRET_REMAINING_ROTATION_PERIOD;
@@ -108,32 +111,31 @@ public class ClientSecretRotationExecutor implements
         } else {
 
             if (adminContext instanceof DynamicClientUpdatedContext) {
-                int startRemainingWindow = clientConfigWrapper.getClientSecretExpirationTime()
+                long startRemainingWindow = clientConfigWrapper.getClientSecretExpirationTime()
                         - configuration.remainExpirationPeriod;
 
                 debugDynamicInfo(clientConfigWrapper, startRemainingWindow);
 
-                if (Time.currentTime() >= startRemainingWindow) {
-                    logger.debugv("Executing rotation for the dynamic client {0} due to remaining expiration time that starts at {1}", adminContext.getTargetClient().getClientId(), Time.toDate(startRemainingWindow));
+                if (Time.currentTimeSeconds() >= startRemainingWindow) {
+                    logger.debugv("Executing rotation for the dynamic client {0} due to remaining expiration time that starts at {1}", adminContext.getTargetClient().getClientId(), new Date(TimeUnit.SECONDS.toMillis(startRemainingWindow)));
                     rotateSecret(adminContext, clientConfigWrapper);
                 }
             }
         }
     }
 
-    private void debugDynamicInfo(OIDCClientSecretConfigWrapper clientConfigWrapper, int startRemainingWindow) {
+    private void debugDynamicInfo(OIDCClientSecretConfigWrapper clientConfigWrapper, long startRemainingWindow) {
         if (logger.isDebugEnabled()) {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-            logger.debugv("client expiration time: {0}, remaining time: {1}, current time: {2}, Time offset: {3}", clientConfigWrapper.getClientSecretExpirationTime(), startRemainingWindow, Time.currentTime(), Time.getOffset());
-            logger.debugv("client expiration date: {0}, window remaining date: {1}, current date: {2}", sdf.format(Time.toDate(clientConfigWrapper.getClientSecretExpirationTime())), sdf.format(Time.toDate(startRemainingWindow)), sdf.format(Time.toDate(Time.currentTime())));
+            logger.debugv("client expiration time: {0}, remaining time: {1}, current time: {2}, Time offset: {3}", clientConfigWrapper.getClientSecretExpirationTime(), startRemainingWindow, Time.currentTimeSeconds(), Time.getOffset());
+            logger.debugv("client expiration date: {0}, window remaining date: {1}, current date: {2}", sdf.format(new Date(TimeUnit.SECONDS.toMillis(clientConfigWrapper.getClientSecretExpirationTime()))), sdf.format(new Date(TimeUnit.SECONDS.toMillis(startRemainingWindow))), sdf.format(new Date(Time.currentTimeMillis())));
         }
     }
 
     private void rotateSecret(ClientCRUDContext crudContext,
                               OIDCClientSecretConfigWrapper clientConfigWrapper) {
 
-        if (crudContext instanceof ClientSecretRotationContext) {
-            ClientSecretRotationContext secretRotationContext = ((ClientSecretRotationContext) crudContext);
+        if (crudContext instanceof ClientSecretRotationContext secretRotationContext) {
             if (secretRotationContext.isForceRotation()) {
                 logger.debugv("Force rotation for client {0}", clientConfigWrapper.getId());
                 updateRotateSecret(clientConfigWrapper, secretRotationContext.getCurrentSecret());
@@ -160,12 +162,12 @@ public class ClientSecretRotationExecutor implements
 
     private void updatedSecretExpiration(OIDCClientSecretConfigWrapper clientConfigWrapper) {
         clientConfigWrapper.setClientSecretExpirationTime(
-                Time.currentTime() + configuration.getExpirationPeriod());
-        logger.debugv("A new secret expiration is configured for client {0}. Expires at {1}", clientConfigWrapper.getId(), Time.toDate(clientConfigWrapper.getClientSecretExpirationTime()));
+                Time.currentTimeSeconds() + configuration.getExpirationPeriod());
+        logger.debugv("A new secret expiration is configured for client {0}. Expires at {1}", clientConfigWrapper.getId(), new Date(TimeUnit.SECONDS.toMillis(clientConfigWrapper.getClientSecretExpirationTime())));
     }
 
     private void updateClientConfigProperties(OIDCClientSecretConfigWrapper clientConfigWrapper) {
-        clientConfigWrapper.setClientSecretCreationTime(Time.currentTime());
+        clientConfigWrapper.setClientSecretCreationTime(Time.currentTimeSeconds());
         updatedSecretExpiration(clientConfigWrapper);
     }
 
@@ -175,8 +177,8 @@ public class ClientSecretRotationExecutor implements
             clientConfigWrapper.setClientRotatedSecret(secret);
             clientConfigWrapper.setClientRotatedSecretCreationTime();
             clientConfigWrapper.setClientRotatedSecretExpirationTime(
-                    Time.currentTime() + configuration.getRotatedExpirationPeriod());
-            logger.debugv("Rotating the secret for client {0}. Secret creation at {1}. Secret expiration at {2}", clientConfigWrapper.getId(), Time.toDate(clientConfigWrapper.getClientRotatedSecretCreationTime()), Time.toDate(clientConfigWrapper.getClientRotatedSecretExpirationTime()));
+                    Time.currentTimeSeconds() + configuration.getRotatedExpirationPeriod());
+            logger.debugv("Rotating the secret for client {0}. Secret creation at {1}. Secret expiration at {2}", clientConfigWrapper.getId(), new Date(TimeUnit.SECONDS.toMillis(clientConfigWrapper.getClientRotatedSecretCreationTime())), new Date(TimeUnit.SECONDS.toMillis(clientConfigWrapper.getClientRotatedSecretExpirationTime())));
         } else {
             logger.debugv("Removing rotation for client {0}", clientConfigWrapper.getId());
             clientConfigWrapper.setClientRotatedSecret(null);
@@ -188,15 +190,19 @@ public class ClientSecretRotationExecutor implements
     public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
 
         @JsonProperty(ClientSecretRotationExecutorFactory.SECRET_EXPIRATION_PERIOD)
-        protected Integer expirationPeriod;
+        protected Long expirationPeriod;
         @JsonProperty(ClientSecretRotationExecutorFactory.SECRET_REMAINING_ROTATION_PERIOD)
-        protected Integer remainExpirationPeriod;
+        protected Long remainExpirationPeriod;
         @JsonProperty(ClientSecretRotationExecutorFactory.SECRET_ROTATED_EXPIRATION_PERIOD)
-        private Integer rotatedExpirationPeriod;
+        private Long rotatedExpirationPeriod;
 
         @Override
         public boolean validateConfig() {
             logger.debugv("Validating configuration: [ expirationPeriod: {0}, rotatedExpirationPeriod: {1}, remainExpirationPeriod: {2} ]", expirationPeriod, rotatedExpirationPeriod, remainExpirationPeriod);
+            if (expirationPeriod == null || rotatedExpirationPeriod == null || remainExpirationPeriod == null) {
+                return false;
+            }
+
             // expiration must be a positive value greater than 0 (seconds)
             if (expirationPeriod <= 0) {
                 return false;
@@ -215,27 +221,27 @@ public class ClientSecretRotationExecutor implements
             return true;
         }
 
-        public Integer getExpirationPeriod() {
+        public Long getExpirationPeriod() {
             return expirationPeriod;
         }
 
-        public void setExpirationPeriod(Integer expirationPeriod) {
+        public void setExpirationPeriod(Long expirationPeriod) {
             this.expirationPeriod = expirationPeriod;
         }
 
-        public Integer getRemainExpirationPeriod() {
+        public Long getRemainExpirationPeriod() {
             return remainExpirationPeriod;
         }
 
-        public void setRemainExpirationPeriod(Integer remainExpirationPeriod) {
+        public void setRemainExpirationPeriod(Long remainExpirationPeriod) {
             this.remainExpirationPeriod = remainExpirationPeriod;
         }
 
-        public Integer getRotatedExpirationPeriod() {
+        public Long getRotatedExpirationPeriod() {
             return rotatedExpirationPeriod;
         }
 
-        public void setRotatedExpirationPeriod(Integer rotatedExpirationPeriod) {
+        public void setRotatedExpirationPeriod(Long rotatedExpirationPeriod) {
             this.rotatedExpirationPeriod = rotatedExpirationPeriod;
         }
 

@@ -17,19 +17,26 @@
 
 package org.keycloak.tests.admin;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import jakarta.ws.rs.BadRequestException;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientInitialAccessResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectAdminEvents;
+import org.keycloak.testframework.annotations.InjectHttpClient;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
@@ -39,14 +46,23 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
+import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
+import org.keycloak.util.JsonSerialization;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -71,6 +87,15 @@ public class InitialAccessTokenResourceTest {
     @InjectRunOnServer
     RunOnServerClient runOnServer;
 
+    @InjectAdminClient
+    Keycloak adminClient;
+
+    @InjectHttpClient
+    CloseableHttpClient httpClient;
+
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
+
     private ClientInitialAccessResource resource;
 
     @BeforeEach
@@ -79,6 +104,7 @@ public class InitialAccessTokenResourceTest {
     }
 
     @Test
+    @DatabaseTest
     public void testInitialAccessTokens() {
         ClientInitialAccessCreatePresentation rep = new ClientInitialAccessCreatePresentation();
         rep.setCount(2);
@@ -149,12 +175,47 @@ public class InitialAccessTokenResourceTest {
         }
     }
 
+    @Test
+    public void testCreateReturns201WithLocationHeader() throws IOException {
+        ClientInitialAccessCreatePresentation rep = new ClientInitialAccessCreatePresentation();
+        rep.setCount(1);
+        rep.setExpiration(100);
+
+        String url = keycloakUrls.getAdminBuilder()
+                .path("realms/{realm}/clients-initial-access")
+                .build(managedRealm.getName())
+                .toString();
+
+        HttpPost post = new HttpPost(url);
+        post.setHeader("Authorization", "Bearer " + adminClient.tokenManager().getAccessTokenString());
+        post.setHeader("Content-Type", "application/json");
+        post.setEntity(new StringEntity(JsonSerialization.writeValueAsString(rep)));
+
+        String id = null;
+        try (CloseableHttpResponse response = httpClient.execute(post)) {
+            assertEquals(201, response.getStatusLine().getStatusCode());
+
+            String location = response.getFirstHeader("Location").getValue();
+            assertNotNull(location, "Location header must be present on 201 Created");
+
+            ClientInitialAccessPresentation entity = JsonSerialization.readValue(
+                    response.getEntity().getContent(), ClientInitialAccessPresentation.class);
+            id = entity.getId();
+            assertNotNull(id);
+            assertNotNull(entity.getToken());
+            assertThat(location, endsWith("/clients-initial-access/" + id));
+        } finally {
+            if (id != null) {
+                resource.delete(id);
+            }
+        }
+    }
+
     private void removeExpired(String realmUuid) {
         runOnServer.run(session -> {
             RealmModel realm = session.realms().getRealm(realmUuid);
 
-            session.sessions().removeExpired(realm);
-            session.authenticationSessions().removeExpired(realm);
+            session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
             session.realms().removeExpiredClientInitialAccess();
         });
     }

@@ -3,7 +3,18 @@ package org.keycloak.testsuite.broker;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertTrue;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderSyncMode;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testsuite.updaters.Creator;
+
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
@@ -11,16 +22,7 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvid
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
-import org.junit.Test;
-import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.IdentityProviderSyncMode;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.updaters.Creator;
-import org.keycloak.testsuite.util.UserBuilder;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
 
@@ -44,8 +46,9 @@ public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
 
     @Override
     protected void loginUser() {
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         
         driver.navigate().to(driver.getCurrentUrl() + "&login_hint=" + USER_EMAIL);
 
@@ -54,11 +57,11 @@ public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
 
         waitForPage(driver, "sign in to", true);
 
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+                "Driver should be on the provider realm page right now");
 
-        Assert.assertTrue("User identifiant should be fullfilled",
-                loginPage.getUsername().equalsIgnoreCase(USER_EMAIL));
+        Assertions.assertTrue(loginPage.getUsername().equalsIgnoreCase(USER_EMAIL),
+                "User identifiant should be fullfilled");
         
         log.debug("Logging in");
         loginPage.login(bc.getUserPassword());
@@ -66,8 +69,8 @@ public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
         waitForPage(driver, "update account information", false);
 
         updateAccountInformationPage.assertCurrent();
-        Assert.assertTrue("We must be on correct realm right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+                "We must be on correct realm right now");
 
         log.debug("Updating info on updateAccount page");
         updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
@@ -75,7 +78,7 @@ public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
         UsersResource consumerUsers = adminClient.realm(bc.consumerRealmName()).users();
 
         int userCount = consumerUsers.count();
-        Assert.assertTrue("There must be at least one user", userCount > 0);
+        Assertions.assertTrue(userCount > 0, "There must be at least one user");
 
         List<UserRepresentation> users = consumerUsers.search("", 0, userCount);
 
@@ -87,8 +90,8 @@ public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
             }
         }
 
-        Assert.assertTrue("There must be user " + bc.getUserLogin() + " in realm " + bc.consumerRealmName(),
-                isUserFound);
+        Assertions.assertTrue(isUserFound,
+                "There must be user " + bc.getUserLogin() + " in realm " + bc.consumerRealmName());
     }
 
     @Test
@@ -101,8 +104,9 @@ public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
                         .enabled(true)
                         .build()
             )) {
-            oauth.clientId("broker-app");
-            loginPage.open(bc.consumerRealmName());
+            oauth.client("broker-app");
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
             waitForPageToLoad();
             driver.navigate().to(driver.getCurrentUrl() + "&login_hint=" + USER_EMAIL + "&kc_idp_hint=" + IDP_OIDC_ALIAS);
             waitForPageToLoad();
@@ -116,7 +120,7 @@ public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
             idpConfirmLinkPage.clickLinkAccount();
 
             loginPage.login(bc.getUserPassword());
-            assertTrue("Test user should be successfully logged in.", driver.getTitle().contains("AUTH_RESPONSE"));
+            assertTrue(driver.getTitle().contains("AUTH_RESPONSE"), "Test user should be successfully logged in.");
         }
     }
 }

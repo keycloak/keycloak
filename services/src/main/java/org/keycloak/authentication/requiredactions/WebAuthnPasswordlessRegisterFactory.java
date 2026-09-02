@@ -18,8 +18,9 @@
 
 package org.keycloak.authentication.requiredactions;
 
-import com.webauthn4j.verifier.attestation.trustworthiness.certpath.CertPathTrustworthinessVerifier;
 import org.keycloak.models.KeycloakSession;
+
+import com.webauthn4j.verifier.attestation.trustworthiness.certpath.CertPathTrustworthinessVerifier;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

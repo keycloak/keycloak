@@ -22,9 +22,6 @@ package org.keycloak.testsuite.broker;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.AuthenticationFlow;
@@ -42,8 +39,14 @@ import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.FlowUtil;
+
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+
 import static org.keycloak.models.utils.TimeBasedOTP.DEFAULT_INTERVAL_SECONDS;
-import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
+import static org.keycloak.testsuite.admin.AdminApiUtil.removeUserByUsername;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configurePostBrokerLoginWithOTP;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
@@ -81,8 +84,9 @@ public class KcOidcPostBrokerLoginTest extends AbstractInitializedBaseBrokerTest
             adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
             consumerRealm.identityProviders().create(samlBroker);
 
-            oauth.clientId("broker-app");
-            loginPage.open(bc.consumerRealmName());
+            oauth.client("broker-app");
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
 
             testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(samlBrokerConfig.getIDPAlias()));
             logInWithBroker(samlBrokerConfig);
@@ -96,8 +100,9 @@ public class KcOidcPostBrokerLoginTest extends AbstractInitializedBaseBrokerTest
 
             setOtpTimeOffset(DEFAULT_INTERVAL_SECONDS, totp);
 
-            oauth.clientId("broker-app");
-            loginPage.open(bc.consumerRealmName());
+            oauth.client("broker-app");
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
 
             logInWithBroker(bc);
 
@@ -130,8 +135,9 @@ public class KcOidcPostBrokerLoginTest extends AbstractInitializedBaseBrokerTest
             adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
             consumerRealm.identityProviders().create(samlBroker);
 
-            oauth.clientId("broker-app");
-            loginPage.open(bc.consumerRealmName());
+            oauth.client("broker-app");
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
 
             logInWithBroker(samlBrokerConfig);
             AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
@@ -139,8 +145,9 @@ public class KcOidcPostBrokerLoginTest extends AbstractInitializedBaseBrokerTest
 
             testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(bc.getIDPAlias()));
 
-            oauth.clientId("broker-app");
-            loginPage.open(bc.consumerRealmName());
+            oauth.client("broker-app");
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
 
             logInWithBroker(bc);
 
@@ -179,8 +186,9 @@ public class KcOidcPostBrokerLoginTest extends AbstractInitializedBaseBrokerTest
                 providerRealm.clients().create(samlClient);
                 consumerRealm.identityProviders().create(samlBroker);
 
-                oauth.clientId("broker-app");
-                loginPage.open(bc.consumerRealmName());
+                oauth.client("broker-app");
+                oauth.realm(bc.consumerRealmName());
+                oauth.openLoginForm();
 
                 testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(samlBrokerConfig.getIDPAlias()));
                 logInWithBroker(samlBrokerConfig);
@@ -191,8 +199,9 @@ public class KcOidcPostBrokerLoginTest extends AbstractInitializedBaseBrokerTest
                 AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
                 testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(bc.getIDPAlias()));
-                oauth.clientId("broker-app");
-                loginPage.open(bc.consumerRealmName());
+                oauth.client("broker-app");
+                oauth.realm(bc.consumerRealmName());
+                oauth.openLoginForm();
 
                 logInWithBroker(bc);
 
@@ -206,8 +215,9 @@ public class KcOidcPostBrokerLoginTest extends AbstractInitializedBaseBrokerTest
                 AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
                 AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-                oauth.clientId("broker-app");
-                loginPage.open(bc.consumerRealmName());
+                oauth.client("broker-app");
+                oauth.realm(bc.consumerRealmName());
+                oauth.openLoginForm();
 
                 logInWithBroker(bc);
 
@@ -230,8 +240,9 @@ public class KcOidcPostBrokerLoginTest extends AbstractInitializedBaseBrokerTest
         // Setup with default client scope - OTP required
         configurePostBrokerLoginWithClientScopeConditionAndOTP(testingClient, bc.consumerRealmName(), bc.getIDPAlias(), OAuth2Constants.SCOPE_PROFILE, false);
 
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         logInWithBroker(bc);
 
         totpPage.assertCurrent();
@@ -241,7 +252,7 @@ public class KcOidcPostBrokerLoginTest extends AbstractInitializedBaseBrokerTest
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
         assertNumFederatedIdentities(realm.users().search(bc.getUserLogin()).get(0).getId(), 1);
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
@@ -249,23 +260,25 @@ public class KcOidcPostBrokerLoginTest extends AbstractInitializedBaseBrokerTest
         configurePostBrokerLoginWithClientScopeConditionAndOTP(testingClient, bc.consumerRealmName(), bc.getIDPAlias(), OAuth2Constants.SCOPE_PHONE, false);
         setOtpTimeOffset(DEFAULT_INTERVAL_SECONDS, totp);
 
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         logInWithBroker(bc);
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
         // Setup with optional client scope - scope parameter present, OTP required
         oauth.scope("openid phone");
 
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         logInWithBroker(bc);
 
         loginTotpPage.assertCurrent();
         loginTotpPage.login(totp.generateTOTP(totpSecret));
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
@@ -274,10 +287,11 @@ public class KcOidcPostBrokerLoginTest extends AbstractInitializedBaseBrokerTest
 
         oauth.scope("openid phone");
 
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         logInWithBroker(bc);
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
     }

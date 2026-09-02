@@ -18,11 +18,10 @@
 package org.keycloak.services.clientregistration.policy.impl;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 
-import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -32,6 +31,8 @@ import org.keycloak.services.clientregistration.ClientRegistrationContext;
 import org.keycloak.services.clientregistration.ClientRegistrationProvider;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyException;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -120,18 +121,14 @@ public class ClientScopesClientRegistrationPolicy implements ClientRegistrationP
     }
 
     private List<String> getAllowedScopeNames(RealmModel realm, boolean defaultScopes) {
-        List<String> allAllowed = new LinkedList<>();
-
         // Add client scopes allowed by config
-        List<String> allowedScopesConfig = componentModel.getConfig().getList(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES);
-        if (allowedScopesConfig != null) {
-            allAllowed.addAll(allowedScopesConfig);
-        }
+        List<String> allowedScopesConfig = componentModel.getConfig().getOrDefault(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES, Collections.emptyList());
+        List<String> allAllowed = new LinkedList<>(allowedScopesConfig);
 
         // If allowDefaultScopes, then realm default scopes are allowed as default scopes (+ optional scopes are allowed as optional scopes)
         boolean allowDefaultScopes = componentModel.get(ClientScopesClientRegistrationPolicyFactory.ALLOW_DEFAULT_SCOPES, true);
         if (allowDefaultScopes) {
-            allAllowed.addAll(realm.getDefaultClientScopesStream(defaultScopes).map(ClientScopeModel::getName).collect(Collectors.toList()));
+            allAllowed.addAll(realm.getDefaultClientScopesStream(defaultScopes).map(ClientScopeModel::getName).toList());
         }
 
         return allAllowed;

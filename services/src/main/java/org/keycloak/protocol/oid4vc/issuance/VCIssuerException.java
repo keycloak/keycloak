@@ -28,14 +28,9 @@ public class VCIssuerException extends RuntimeException {
 
     private final ErrorType errorType;
 
-    public VCIssuerException(String message) {
+    public VCIssuerException(ErrorType errorType, String message) {
         super(message);
-        this.errorType = null;
-    }
-
-    public VCIssuerException(String message, Throwable cause) {
-        super(message, cause);
-        this.errorType = null;
+        this.errorType = errorType;
     }
 
     public VCIssuerException(ErrorType errorType, String message, Throwable cause) {

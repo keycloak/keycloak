@@ -17,16 +17,17 @@
  */
 package org.keycloak.authorization.protection.permission;
 
-import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.common.KeycloakIdentity;
-import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.representations.idm.authorization.PermissionRequest;
+import java.util.List;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Response;
-import java.util.List;
+
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.common.KeycloakIdentity;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.representations.idm.authorization.PermissionRequest;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

@@ -19,7 +19,27 @@ When you use a pair of matching certificate and private key files in PEM format,
 
 <@kc.start parameters="--https-certificate-file=/path/to/certfile.pem --https-certificate-key-file=/path/to/keyfile.pem"/>
 
-{project_name} creates a keystore out of these files in memory and uses this keystore afterwards.
+=== Using encrypted private keys
+If your PEM private key is encrypted (PKCS#8 encrypted format), provide the decryption password using the `https-certificate-key-file-password` option:
+
+<@kc.start parameters="--https-certificate-file=/path/to/certfile.pem --https-certificate-key-file=/path/to/encrypted-keyfile.pem --https-certificate-key-file-password=<password>"/>
+
+To create an encrypted private key with OpenSSL:
+
+----
+openssl genpkey -algorithm RSA -out keyfile.pem -aes-256-cbc
+----
+
+Or to convert an existing unencrypted key:
+
+----
+openssl pkcs8 -topk8 -in unencrypted.pem -out encrypted.pem -v2 aes-256-cbc
+----
+
+Avoid setting the password directly on the command line or adding it to the `conf/keycloak.conf` file.
+Instead use good practices such as using a vault / mounted secret, or the `KC_HTTPS_CERTIFICATE_KEY_FILE_PASSWORD` environment variable. For more detail, see <@links.server id="vault"/> and <@links.server id="configuration-production" />.
+
+The management interface also supports this via `https-management-certificate-key-file-password`.
 
 == Providing a Keystore
 When no keystore file is explicitly configured, but `http-enabled` is set to false, {project_name} looks for a `conf/server.keystore` file.
@@ -29,11 +49,10 @@ As an alternative, you can use an existing keystore by running the following com
 
 Recognized file extensions for a keystore:
 
-* `.p12`, `.pkcs12`, and `.pfx` for a pkcs12 file
-* `.jks`, and `.keystore` for a jks file
-* `.key`, `.crt`, and `.pem` for a pem file
+* `.p12`, `.pkcs12`, and `.pfx` for a PKCS12 file
+* `.jks` and `.keystore` for a JKS file
 
-If your keystore does not have an extension matching its file type, you will also need to set the `https-key-store-type` option.
+If your keystore does not have one of these extensions, you must set the `https-key-store-type` option. For BCFKS keystores (used in FIPS mode), the type is set automatically when `--fips-mode=strict` is enabled. Similarly, `.truststore` is recognized for JKS trust stores.
 
 === Setting the Keystore password
 You can set a secure password for your keystore using the `https-key-store-password` option:
@@ -42,7 +61,7 @@ You can set a secure password for your keystore using the `https-key-store-passw
 If no password is set, the default password `password` is used.
 
 ==== Securing credentials
-Avoid setting a password in plaintext by using the CLI or adding it to `conf/keycloak.conf` file.
+Avoid setting the password directly on the command line or adding it to the `conf/keycloak.conf` file.
 Instead use good practices such as using a vault / mounted secret. For more detail, see <@links.server id="vault"/> and <@links.server id="configuration-production" />.
 
 == Configuring TLS protocols
@@ -52,7 +71,7 @@ However, as a temporary work-around, you can enable deprecated protocols by runn
 
 <@kc.start parameters="--https-protocols=<protocol>[,<protocol>]"/>
 
-To also allow TLSv1.2, use a command such as the following: `kc.sh start --https-protocols=TLSv1.3,TLSv1.2`.
+For example to only enable TLSv1.3, use a command such as the following: `kc.sh start --https-protocols=TLSv1.3`.
 
 == Switching the HTTPS port
 {project_name} listens for HTTPS traffic on port `8443`. To change this port, use the following command:

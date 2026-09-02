@@ -14,9 +14,9 @@ const AttributesGroupDetails = lazy(
 export const NewAttributesGroupRoute: AppRouteObject = {
   path: "/:realm/realm-settings/user-profile/attributesGroup/new",
   element: <AttributesGroupDetails />,
-  breadcrumb: (t) => t("createGroupText"),
   handle: {
     access: "view-realm",
+    breadcrumb: (t) => t("createGroupText"),
   },
 };
 

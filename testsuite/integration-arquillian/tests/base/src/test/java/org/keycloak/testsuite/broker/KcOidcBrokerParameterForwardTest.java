@@ -1,13 +1,5 @@
 package org.keycloak.testsuite.broker;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
-import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -19,7 +11,17 @@ import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Assert;
+
+import org.junit.jupiter.api.Assertions;
+
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
+import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class KcOidcBrokerParameterForwardTest extends AbstractBrokerTest {
 
@@ -47,14 +49,15 @@ public class KcOidcBrokerParameterForwardTest extends AbstractBrokerTest {
 
     @Override
     protected void loginUser() {
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
-        String claimsValue = "{\"userinfo\":{\"http://itsme.services/v2/claim/BENationalNumber\":null}}";
+        String claimsValue = "{\"userinfo\":{\"http://itsme.services/v2/claim/BENationalNumber\":null,\"spaced_value\":\"with space\"}}";
         String urlEncodedClaims = URLEncoder.encode(claimsValue, StandardCharsets.UTF_8);
         String forwardedEncodedParam = "forwarded_encoded";
         String forwardedEncodedParamValue = "encoded value";
-        String forwardedEncodedParamvalueEncoded = URLEncoder.encode(forwardedEncodedParamValue, StandardCharsets.UTF_8);
+        String forwardedEncodedParamValueEncoded = URLEncoder.encode(forwardedEncodedParamValue, StandardCharsets.UTF_8);
         String queryString = "&" + FORWARDED_PARAMETER + "=" + FORWARDED_PARAMETER_VALUE + "&" + PARAMETER_NOT_FORWARDED + "=" + "value"
                 + "&" + OAuth2Constants.ACR_VALUES + "=" + "phr"
                 + "&" + OIDCLoginProtocol.CLAIMS_PARAM + "=" + urlEncodedClaims
@@ -76,7 +79,7 @@ public class KcOidcBrokerParameterForwardTest extends AbstractBrokerTest {
         assertThat(OIDCLoginProtocol.CLAIMS_PARAM + "=" + urlEncodedClaims + " should be part of the url",
                 driver.getCurrentUrl(), containsString(OIDCLoginProtocol.CLAIMS_PARAM + "=" + urlEncodedClaims));
         assertThat(forwardedEncodedParam + "=" + forwardedEncodedParamValue +  "should be part of the url",
-                driver.getCurrentUrl(), containsString(forwardedEncodedParam + "=" + URLEncoder.encode(forwardedEncodedParamvalueEncoded, StandardCharsets.UTF_8)));
+                driver.getCurrentUrl(), containsString(forwardedEncodedParam + "=" + forwardedEncodedParamValueEncoded));
         assertThat("\"" + PARAMETER_NOT_SET + "\"" + " should NOT be part of the url",
                 driver.getCurrentUrl(), not(containsString(PARAMETER_NOT_SET)));
 
@@ -97,7 +100,7 @@ public class KcOidcBrokerParameterForwardTest extends AbstractBrokerTest {
         UsersResource consumerUsers = adminClient.realm(bc.consumerRealmName()).users();
 
         int userCount = consumerUsers.count();
-        Assert.assertTrue("There must be at least one user", userCount > 0);
+        Assertions.assertTrue(userCount > 0, "There must be at least one user");
 
         List<UserRepresentation> users = consumerUsers.search("", 0, userCount);
 
@@ -109,8 +112,8 @@ public class KcOidcBrokerParameterForwardTest extends AbstractBrokerTest {
             }
         }
 
-        Assert.assertTrue("There must be user " + bc.getUserLogin() + " in realm " + bc.consumerRealmName(),
-                isUserFound);
+        Assertions.assertTrue(isUserFound,
+                "There must be user " + bc.getUserLogin() + " in realm " + bc.consumerRealmName());
     }
 
 }

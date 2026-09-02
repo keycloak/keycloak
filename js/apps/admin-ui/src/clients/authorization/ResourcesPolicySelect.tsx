@@ -176,7 +176,6 @@ export const ResourcesPolicySelect = ({
         (value || []).map(async (id) =>
           adminClient.clients.findOnePolicy({
             id: clientId,
-            type: "",
             policyId: id,
           }),
         ),
@@ -220,12 +219,12 @@ export const ResourcesPolicySelect = ({
   ) => {
     return (
       <ChipGroup>
-        {selected?.map((item) => (
+        {selected.map((item) => (
           <Chip
             key={item.id}
             onClick={() => {
               field.onChange(field.value?.filter((id) => id !== item.id) || []);
-              setSelected(selected?.filter((p) => p.id !== item.id) || []);
+              setSelected(selected.filter((p) => p.id !== item.id));
             }}
           >
             {!isAdminPermissionsClient ? (
@@ -234,7 +233,9 @@ export const ResourcesPolicySelect = ({
                 onClick={(event) => {
                   if (isDirty) {
                     event.preventDefault();
-                    setOnUnsavedChangesConfirm(() => () => navigate(to(item)));
+                    setOnUnsavedChangesConfirm(
+                      () => () => void navigate(to(item)),
+                    );
                     toggleUnsavedChangesDialog();
                   }
                 }}
@@ -257,7 +258,7 @@ export const ResourcesPolicySelect = ({
         <NewPolicyDialog
           policyProviders={policyProviders}
           onSelect={(p) => {
-            navigate(
+            void navigate(
               toCreatePolicy({ id: clientId, realm, policyType: p.type! }),
             );
           }}
@@ -285,7 +286,7 @@ export const ResourcesPolicySelect = ({
             selections={
               variant === SelectVariant.typeaheadMulti
                 ? field.value
-                : items.find((i) => i.id === field.value?.[0])?.name
+                : selected.find((i) => i.id === field.value?.[0])?.name
             }
             onSelect={(selectedValue) => {
               const option = selectedValue.toString();
@@ -298,6 +299,10 @@ export const ResourcesPolicySelect = ({
                 field.onChange(changedValue);
               } else {
                 field.onChange([option]);
+                const selectedItem = items.find((i) => i.id === option);
+                if (selectedItem) {
+                  setSelected([selectedItem]);
+                }
               }
 
               setSearch("");

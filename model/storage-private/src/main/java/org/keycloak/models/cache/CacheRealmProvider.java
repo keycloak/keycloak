@@ -21,6 +21,7 @@ import org.keycloak.models.ClientProvider;
 import org.keycloak.models.ClientScopeProvider;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.models.RealmProvider;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleProvider;
 
 /**
@@ -40,4 +41,7 @@ public interface CacheRealmProvider extends RealmProvider, ClientProvider, Clien
 
     void registerGroupInvalidation(String id);
     void registerInvalidation(String id);
+    default boolean refreshMasterAdminRole(RoleModel masterAdminRole, String clientId) {
+        return false;
+    }
 }

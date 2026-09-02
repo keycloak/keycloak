@@ -17,34 +17,35 @@
 
 package org.keycloak.operator.testsuite.integration;
 
+import java.util.Map;
+
+import org.keycloak.operator.Constants;
+import org.keycloak.operator.controllers.KeycloakController;
+import org.keycloak.operator.controllers.KeycloakIngressDependentResource;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.IngressSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.IngressSpecBuilder;
+import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
+import org.keycloak.operator.testsuite.utils.K8sUtils;
+
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder;
-import io.fabric8.kubernetes.api.model.networking.v1.ServiceBackendPortBuilder;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
-
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import org.keycloak.operator.Constants;
-import org.keycloak.operator.controllers.KeycloakController;
-import org.keycloak.operator.controllers.KeycloakIngressDependentResource;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpecBuilder;
-import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
-import org.keycloak.operator.testsuite.utils.K8sUtils;
-
-import java.util.Map;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
+
+import static org.keycloak.operator.testsuite.utils.K8sUtils.disableHttps;
+import static org.keycloak.operator.testsuite.utils.K8sUtils.enableHttp;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.keycloak.operator.testsuite.utils.K8sUtils.disableHttps;
-import static org.keycloak.operator.testsuite.utils.K8sUtils.enableHttp;
 
 @QuarkusTest
 public class KeycloakIngressTest extends BaseOperatorTest {
@@ -116,14 +117,17 @@ public class KeycloakIngressTest extends BaseOperatorTest {
         var hostnameSpecBuilder = new HostnameSpecBuilder()
                 .withStrict(false)
                 .withStrictBackchannel(false);
+        IngressSpec ingressSpec = new IngressSpec();
+        ingressSpec.setIngressEnabled(true);
+        kc.getSpec().setIngressSpec(ingressSpec);
         if (isOpenShift) {
-            kc.getSpec().setIngressSpec(new IngressSpecBuilder().withIngressClassName(KeycloakController.OPENSHIFT_DEFAULT).build());
+            ingressSpec.setIngressClassName(KeycloakController.OPENSHIFT_DEFAULT);
         }
         kc.getSpec().setHostnameSpec(hostnameSpecBuilder.build());
         String secret = kc.getSpec().getHttpSpec().getTlsSecret();
         kc.getSpec().getHttpSpec().setHttpEnabled(true);
         kc.getSpec().getHttpSpec().setTlsSecret(null);
-        kc.getSpec().setIngressSpec(new IngressSpecBuilder().withTlsSecret(secret).build());
+        ingressSpec.setTlsSecret(secret);
 
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
@@ -224,7 +228,6 @@ public class KeycloakIngressTest extends BaseOperatorTest {
         var labels = Map.of("address", "EvergreenTerrace742");
 		ingressSelector.accept(currentIngress -> {
 			currentIngress.getMetadata().setResourceVersion(null);
-			currentIngress.getSpec().getDefaultBackend().getService().setPort(new ServiceBackendPortBuilder().withNumber(6500).build());
 
 	        currentIngress.getMetadata().getAnnotations().clear();
 	        currentIngress.getMetadata().getLabels().putAll(labels);
@@ -239,7 +242,6 @@ public class KeycloakIngressTest extends BaseOperatorTest {
                     assertEquals("HTTPS", i.getMetadata().getAnnotations().get("nginx.ingress.kubernetes.io/backend-protocol"));
                     assertEquals("passthrough", i.getMetadata().getAnnotations().get("route.openshift.io/termination"));
                     assertEquals("true", i.getMetadata().getAnnotations().get("haproxy.router.openshift.io/disable_cookies"));
-                    assertEquals(Constants.KEYCLOAK_HTTPS_PORT_NAME, i.getSpec().getDefaultBackend().getService().getPort().getName());
                 });
 
         // Delete the ingress

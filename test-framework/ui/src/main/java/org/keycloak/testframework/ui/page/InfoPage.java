@@ -17,19 +17,23 @@
 
 package org.keycloak.testframework.ui.page;
 
-import org.openqa.selenium.WebDriver;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class InfoPage extends AbstractPage {
+public class InfoPage extends AbstractLoginPage {
 
     @FindBy(className = "instruction")
     private WebElement infoMessage;
 
-    public InfoPage(WebDriver driver) {
+    @FindBy(linkText = "« Back to Application")
+    private WebElement backToApplicationLink;
+
+    public InfoPage(ManagedWebDriver driver) {
         super(driver);
     }
 
@@ -40,5 +44,9 @@ public class InfoPage extends AbstractPage {
     @Override
     public String getExpectedPageId() {
         return "login-info";
+    }
+
+    public void clickBackToApplicationLink() {
+        backToApplicationLink.click();
     }
 }

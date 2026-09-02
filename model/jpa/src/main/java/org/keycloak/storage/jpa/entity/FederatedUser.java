@@ -16,8 +16,6 @@
  */
 package org.keycloak.storage.jpa.entity;
 
-import org.keycloak.storage.jpa.KeyUtils;
-
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
 import jakarta.persistence.Column;
@@ -26,6 +24,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
+
+import org.keycloak.storage.jpa.KeyUtils;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

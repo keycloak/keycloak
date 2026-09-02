@@ -17,6 +17,7 @@
 package org.keycloak.services.securityprofile;
 
 import java.util.List;
+
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.SecurityProfileConfiguration;

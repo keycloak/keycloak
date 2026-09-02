@@ -16,7 +16,11 @@
  */
 package org.keycloak.services.resources;
 
+import java.util.Objects;
+import java.util.function.Consumer;
+
 import jakarta.ws.rs.core.Response;
+
 import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.ExplainedVerificationException;
@@ -26,11 +30,10 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.models.SingleUseObjectKeyModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleUseObjectProvider;
+import org.keycloak.models.SingleUseObjectKeyModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -42,8 +45,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel.Action;
-import java.util.Objects;
-import java.util.function.Consumer;
+
 import org.jboss.logging.Logger;
 
 /**
@@ -133,7 +135,7 @@ public class LoginActionsServiceChecks {
         AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(session, realm, true);
 
         if (authResult != null) {
-            UserSessionModel userSession = authResult.getSession();
+            UserSessionModel userSession = authResult.session();
             if (!user.equals(userSession.getUser())) {
                 // do not allow authenticated users performing actions that are bound to other user and fire an event
                 // it might be an attempt to hijack a user account or perform actions on behalf of others
@@ -250,8 +252,6 @@ public class LoginActionsServiceChecks {
      *  </ul>
      *
      *  When the check passes, it also sets the authentication session in token context accordingly.
-     *
-     *  @param <T>
      */
     public static <T extends JsonWebToken> boolean doesAuthenticationSessionFromCookieMatchOneFromToken(
             ActionTokenContext<T> context, AuthenticationSessionModel authSessionFromCookie, String authSessionCompoundIdFromToken) throws VerificationException {
@@ -289,9 +289,7 @@ public class LoginActionsServiceChecks {
     }
 
     public static <T extends JsonWebToken & SingleUseObjectKeyModel> void checkTokenWasNotUsedYet(T token, ActionTokenContext<T> context) throws VerificationException {
-        SingleUseObjectProvider singleUseObjectProvider = context.getSession().singleUseObjects();
-
-        if (singleUseObjectProvider.get(token.serializeKey()) != null) {
+        if (context.getSession().revokedTokens().contains(token.serializeKey())) {
             throw new ExplainedTokenVerificationException(token, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
         }
     }

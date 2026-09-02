@@ -1,7 +1,7 @@
 package org.keycloak.authorization.store.syncronization;
 
-import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RoleContainerModel.RoleRemovedEvent;
 import org.keycloak.provider.ProviderFactory;

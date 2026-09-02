@@ -1,16 +1,17 @@
 package org.keycloak.testsuite.util.oauth;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
+import java.io.IOException;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.util.TokenUtil;
 
-import java.io.IOException;
+import org.apache.http.client.methods.CloseableHttpResponse;
 
 public class RefreshRequest extends AbstractHttpPostRequest<RefreshRequest, AccessTokenResponse> {
 
     private final String refreshToken;
 
-    RefreshRequest(String refreshToken, AbstractOAuthClient<?> client) {
+    public RefreshRequest(String refreshToken, AbstractOAuthClient<?> client) {
         super(client);
         this.refreshToken = refreshToken;
     }
@@ -22,6 +23,11 @@ public class RefreshRequest extends AbstractHttpPostRequest<RefreshRequest, Acce
 
     public RefreshRequest dpopProof(String dpopProof) {
         header(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
+        return this;
+    }
+
+    public RefreshRequest resource(String resource) {
+        parameter(OAuth2Constants.RESOURCE, resource);
         return this;
     }
 

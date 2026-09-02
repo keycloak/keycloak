@@ -1,6 +1,11 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import org.keycloak.common.Profile;
+import org.keycloak.events.EventType;
 
 import static org.keycloak.config.EventOptions.USER_EVENT_METRICS_ENABLED;
 import static org.keycloak.config.EventOptions.USER_EVENT_METRICS_EVENTS;
@@ -9,8 +14,6 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.MetricsPropertyMappers.METRICS_ENABLED_MSG;
 import static org.keycloak.quarkus.runtime.configuration.mappers.MetricsPropertyMappers.metricsEnabled;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
-
-import java.util.List;
 
 
 final class EventPropertyMappers implements PropertyMapperGrouping {
@@ -27,12 +30,29 @@ final class EventPropertyMappers implements PropertyMapperGrouping {
                         .paramLabel("tags")
                         .isEnabled(EventPropertyMappers::userEventsMetricsTags, "user event metrics are enabled")
                         .build(),
-                fromOption(USER_EVENT_METRICS_EVENTS)
+                fromOption(USER_EVENT_METRICS_EVENTS.toBuilder().expectedValues(expectedUserMetricEvents()).build())
                         .to("kc.spi-events-listener--micrometer-user-event-metrics--events")
                         .paramLabel("events")
                         .isEnabled(EventPropertyMappers::userEventsMetricsTags, "user event metrics are enabled")
                         .build()
         );
+    }
+
+    private static List<String> expectedUserMetricEvents() {
+        List<String> values = new ArrayList<>();
+        for (EventType event : EventType.values()) {
+            if (event.name().endsWith("_ERROR")) {
+                continue;
+            }
+            if (event == EventType.VALIDATE_ACCESS_TOKEN) {
+                // event is deprecated and no longer used in the code base
+                continue;
+            }
+            String value = event.name().toLowerCase();
+            values.add(value);
+        }
+        Collections.sort(values);
+        return values;
     }
 
     private static boolean userEventsMetricsEnabled() {

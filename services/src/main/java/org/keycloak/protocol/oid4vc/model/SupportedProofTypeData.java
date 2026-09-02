@@ -16,11 +16,11 @@
  */
 package org.keycloak.protocol.oid4vc.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonInclude;
-
 import java.util.List;
 import java.util.Objects;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Represents the supported proof type data for a given proof type in the OpenID for Verifiable Credential Issuance.
@@ -58,6 +58,15 @@ public class SupportedProofTypeData {
         return this;
     }
 
+    /**
+     * Returns the key attestations required.
+     * According to the spec:
+     * - If the Credential Issuer does not require a key attestation, this parameter MUST NOT be present (should be null).
+     * - If both key_storage and user_authentication parameters are absent, the key_attestations_required parameter
+     * may be empty (both fields null), indicating a key attestation is needed without additional constraints.
+     *
+     * @return KeyAttestationsRequired object, or null if attestation is not required
+     */
     public KeyAttestationsRequired getKeyAttestationsRequired() {
         return keyAttestationsRequired;
     }

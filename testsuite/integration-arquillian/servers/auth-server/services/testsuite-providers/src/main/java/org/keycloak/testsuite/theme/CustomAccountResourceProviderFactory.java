@@ -4,12 +4,14 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.jboss.resteasy.reactive.NoCache;
+
 import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.resource.AccountResourceProvider;
 import org.keycloak.services.resource.AccountResourceProviderFactory;
+
+import org.jboss.resteasy.reactive.NoCache;
 
 public class CustomAccountResourceProviderFactory implements AccountResourceProviderFactory, AccountResourceProvider {
   public static final String ID = "ext-custom-account-console";

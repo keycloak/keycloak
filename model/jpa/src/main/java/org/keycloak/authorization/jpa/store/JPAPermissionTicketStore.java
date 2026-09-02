@@ -26,6 +26,7 @@ import java.util.Objects;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.FlushModeType;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -41,8 +42,10 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import jakarta.persistence.LockModeType;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
@@ -82,9 +85,30 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
                                           ResourceServer resourceServer,
                                           Map<PermissionTicket.FilterOption, String> attributes) {
         List<Predicate> predicates = new ArrayList<>();
+        KeycloakSession session = provider.getKeycloakSession();
 
         if (resourceServer != null) {
             predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServer.getId()));
+
+            if (!Boolean.parseBoolean(attributes.get(PermissionTicket.FilterOption.IS_ADMIN))) {
+                ClientModel resourceServerClient = session.clients().getClientById(session.getContext().getRealm(), resourceServer.getClientId());
+                UserModel currentUser = session.getContext().getUser();
+
+                if (resourceServerClient.isServiceAccountsEnabled()) {
+                    UserModel serviceAccount = session.users().getServiceAccount(resourceServerClient);
+
+                    if (serviceAccount != null && serviceAccount.equals(currentUser)) {
+                        currentUser = null;
+                    }
+                }
+
+                if (currentUser != null) {
+                    predicates.add(builder.or(
+                            builder.equal(root.get("owner"), currentUser.getId()),
+                            builder.equal(root.get("requester"), currentUser.getId())
+                    ));
+                }
+            }
         }
 
         attributes.forEach((filterOption, value) -> {
@@ -120,6 +144,8 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
                     break;
                 case POLICY_IS_NOT_NULL:
                     predicates.add(builder.isNotNull(root.get("policy")));
+                    break;
+                case IS_ADMIN:
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported filter [" + filterOption + "]");
@@ -166,7 +192,10 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
         }
 
         PermissionTicketEntity entity = entityManager.find(PermissionTicketEntity.class, id);
-        if (entity == null) return null;
+
+        if (entity == null || (resourceServer != null && !resourceServer.getId().equals(entity.getResourceServer().getId()))) {
+            return null;
+        }
 
         return new PermissionTicketAdapter(entity, entityManager, provider.getStoreFactory());
     }

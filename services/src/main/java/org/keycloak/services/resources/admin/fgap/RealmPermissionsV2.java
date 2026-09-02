@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin.fgap;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.ClientModel;
 
@@ -27,8 +28,12 @@ class RealmPermissionsV2 extends RealmPermissions {
 
     @Override
     public boolean canManageAuthorizationDefault(ResourceServer resourceServer) {
-        if (resourceServer == null) {
-            return super.canManageAuthorizationDefault(resourceServer);
+        // if the ResourceServer belongs to the admin-permissions client, check manage-realm
+        if (resourceServer != null && AdminPermissionsSchema.SCHEMA.isAdminPermissionClient(root.realm, resourceServer.getId())) {
+            return super.canManageRealm();
+        }
+        if (super.canManageAuthorizationDefault(resourceServer)) {
+            return true;
         }
 
         return root.clients().canManage(getClient(resourceServer));
@@ -36,15 +41,19 @@ class RealmPermissionsV2 extends RealmPermissions {
 
     @Override
     public boolean canViewAuthorizationDefault(ResourceServer resourceServer) {
-        if (resourceServer == null) {
-            return super.canViewAuthorizationDefault(resourceServer);
+        // if the ResourceServer belongs to the admin-permissions client, check manage-realm or view-realm
+        if (resourceServer != null && AdminPermissionsSchema.SCHEMA.isAdminPermissionClient(root.realm, resourceServer.getId())) {
+            return super.canViewRealm();
+        }
+        if (super.canViewAuthorizationDefault(resourceServer)) {
+            return true;
         }
 
         return root.clients().canView(getClient(resourceServer));
     }
 
     private ClientModel getClient(ResourceServer resourceServer) {
-        ClientModel client = root.session.clients().getClientById(root.realm, resourceServer.getId());
-        return client;
+        if (resourceServer == null) return null;
+        return root.session.clients().getClientById(root.realm, resourceServer.getId());
     }
 }

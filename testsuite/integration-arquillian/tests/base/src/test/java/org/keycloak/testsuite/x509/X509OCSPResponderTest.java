@@ -18,36 +18,35 @@
 
 package org.keycloak.testsuite.x509;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
-import org.keycloak.testsuite.util.MutualTLSUtils;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
-import org.keycloak.testsuite.util.oauth.HttpClientManager;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 
 import jakarta.ws.rs.core.Response;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertEquals;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USERNAME_EMAIL;
-import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
+import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.testsuite.util.HtmlUnitBrowser;
+import org.keycloak.testsuite.util.MutualTLSUtils;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import io.undertow.Undertow;
 import io.undertow.server.handlers.BlockingHandler;
-
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.keycloak.testsuite.util.HtmlUnitBrowser;
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.WebDriver;
+
+import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USERNAME_EMAIL;
+import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Verifies Certificate revocation using OCSP responder.
@@ -84,7 +83,7 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
                         .setUserIdentityMapperType(USERNAME_EMAIL);
         AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config", config.getConfig());
         String cfgId = createConfig(directGrantExecution.getId(), cfg);
-        Assert.assertNotNull(cfgId);
+        Assertions.assertNotNull(cfgId);
 
         oauth.client("resource-owner", "secret");
         AccessTokenResponse response = oauth.doPasswordGrantRequest("", "");
@@ -105,7 +104,7 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
                         .setUserIdentityMapperType(USERNAME_EMAIL);
         AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config", config.getConfig());
         String cfgId = createConfig(directGrantExecution.getId(), cfg);
-        Assert.assertNotNull(cfgId);
+        Assertions.assertNotNull(cfgId);
 
         String keyStorePath = Paths.get(System.getProperty("client.certificate.keystore"))
                 .getParent().resolve("client-ca.jks").toString();
@@ -137,7 +136,7 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
                         .setUserIdentityMapperType(USERNAME_EMAIL);
         AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config", config.getConfig());
         String cfgId = createConfig(directGrantExecution.getId(), cfg);
-        Assert.assertNotNull(cfgId);
+        Assertions.assertNotNull(cfgId);
 
         String keyStorePath = Paths.get(System.getProperty("client.certificate.keystore"))
                 .getParent().resolve("test-user-cert-intermediary-ca.jks").toString();
@@ -170,7 +169,7 @@ public class X509OCSPResponderTest extends AbstractX509AuthenticationTest {
                         .setUserIdentityMapperType(USERNAME_EMAIL);
         AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config", config.getConfig());
         String cfgId = createConfig(directGrantExecution.getId(), cfg);
-        Assert.assertNotNull(cfgId);
+        Assertions.assertNotNull(cfgId);
 
         String keyStorePath = Paths.get(System.getProperty("client.certificate.keystore"))
                 .getParent().resolve("client-ca.jks").toString();

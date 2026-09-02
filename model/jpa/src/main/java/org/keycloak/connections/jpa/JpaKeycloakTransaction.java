@@ -17,11 +17,12 @@
 
 package org.keycloak.connections.jpa;
 
-import org.jboss.logging.Logger;
-import org.keycloak.models.KeycloakTransaction;
-
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceException;
+
+import org.keycloak.models.KeycloakTransaction;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -48,7 +49,7 @@ public class JpaKeycloakTransaction implements KeycloakTransaction {
             logger.trace("Committing transaction");
             em.getTransaction().commit();
         } catch (PersistenceException e) {
-            throw PersistenceExceptionConverter.convert(e.getCause() != null ? e.getCause() : e);
+            throw PersistenceExceptionConverter.convert(e);
         }
     }
 

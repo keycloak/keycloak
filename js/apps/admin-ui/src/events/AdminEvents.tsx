@@ -171,7 +171,7 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
   useFetch(
     () => adminClient.realms.getConfigEvents({ realm }),
     (events) => {
-      setAdminEventsEnabled(events?.adminEventsEnabled!);
+      setAdminEventsEnabled(events.adminEventsEnabled!);
     },
     [],
   );
@@ -336,7 +336,7 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
                               collapsedText: t("showRemaining"),
                             }}
                             variant={SelectVariant.typeaheadMulti}
-                            typeAheadAriaLabel="Select"
+                            typeAheadAriaLabel="select-resourceTypes"
                             onToggle={(isOpen) =>
                               setSelectResourceTypesOpen(isOpen)
                             }
@@ -403,7 +403,7 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
                               collapsedText: t("showRemaining"),
                             }}
                             variant={SelectVariant.typeaheadMulti}
-                            typeAheadAriaLabel="Select"
+                            typeAheadAriaLabel="select-operationTypes"
                             onToggle={(isOpen) =>
                               setSelectOperationTypesOpen(isOpen)
                             }

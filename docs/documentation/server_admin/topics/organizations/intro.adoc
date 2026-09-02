@@ -14,6 +14,7 @@ and controlled context, that context being the organization to which they belong
 some of the core capabilities needed to manage organizations such as:
 
 * Manage members
+* Organize members into groups with hierarchical structures
 * Onboard organization members using invitation links
 * Onboard organization members by federating their identities through identity brokering
 * Identity-first login and organization-specific steps when authenticating in the scope of an organization

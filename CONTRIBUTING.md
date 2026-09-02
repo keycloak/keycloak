@@ -18,8 +18,8 @@ Issues are important for administrative purposes such as generating a changelog 
 
 Here's a quick checklist for a good PR, more details below:
 
-1. A discussion around the change (https://github.com/keycloak/keycloak/discussions/categories/ideas)
-1. A GitHub Issue with a good description associated with the PR
+1. [A discussion around the change](https://github.com/keycloak/keycloak/discussions/categories/ideas)
+1. A GitHub issue with a good description associated with the PR
 1. One feature/change per PR
 1. One commit per PR
 1. PR rebased on main (`git rebase`, not `git pull`) 
@@ -32,13 +32,14 @@ Once you have submitted your PR please monitor it for comments/feedback. We rese
 you do not respond within 2 weeks (bear in mind you can always open a new PR if it is closed due to inactivity).
 
 Also, please remember that we do receive a fairly large amount of PRs and also have code to write ourselves, so we may
-not be able to respond to your PR immediately. The best place to ping us is on the thread you started on the dev mailing list.
+not be able to respond to your PR immediately. The best place to ping us is on the thread you started on the dev mailing
+list or on the GitHub discussion you started.
 
 ### Finding something to work on
 
 If you would like to contribute to Keycloak, but are not sure exactly what to work on, you can find a number of open
 issues that are awaiting contributions in  
-[issues](https://github.com/keycloak/keycloak/issues).
+[issues](https://github.com/keycloak/keycloak/issues). To keep things manageable for everyone, new contributors may have at most 2 open pull requests at a time. This ensures you can focus on addressing review feedback promptly and helps reviewers manage their workload.
 
 ### Open a discussion on a proposed change
 
@@ -110,6 +111,45 @@ git commit --signoff --message "This is the commit message"
 
 This option adds a `Signed-off-by` trailer at the end of the commit log message.
 
+### Use of Generative AI
+
+Generative AI tools may be used to assist in writing code, tests, or documentation, provided that you fully understand every change you submit. The goal is to keep Keycloak's code consistent and high-quality while respecting reviewers' limited time.
+
+If you use generative AI to assist with your contribution, all of the following are required:
+
+1. **You understand the change.** You must be able to explain what your code does and why. Submitting AI-generated code you do not understand is not acceptable.
+2. **You engage with review feedback.** You are expected to respond to questions and comments from reviewers. If you use AI to help draft responses, you must edit and proofread them to ensure they are accurate and address the reviewer's point.
+3. **You can revise the code yourself.** If a reviewer requests changes, you are responsible for addressing them, even if your AI tool is unable to produce a suitable fix.
+4. **You disclose AI agents usage.** Include a note in the PR description indicating the usage of AI agents for generating complete solutions from a prompt (i.e. you do not need to mention a simple AI autocomplete). This helps reviewers calibrate their review. 
+5. **You ensure licensing compliance.** All generated code must be released under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0), the same license as Keycloak. You are responsible for verifying that the tools you use do not introduce additional licensing restrictions.
+
+### Spotless
+
+Spotless is used to check and apply code formatting. To check your code locally before sending a PR run:
+
+```
+./mvnw spotless:check
+```
+
+You can either use your IDE to fix these issues; or Spotless can fix them for you by running:
+
+```
+./mvnw spotless:apply
+```
+
+A good practice is to create a commit with your changes prior to running `spotless:apply` then you can see and
+review what changes Spotless has applied, for example by using a diff tool. Finally, if you are happy with the changes
+Spotless has applied you can amend the changes to your commit by running:
+
+```
+git add -a
+git commit --amend
+```
+
+Note: If you get the error `Could not find goal 'verify' in plugin com.diffplug.spotless:spotless-maven-plugin` you are
+probably running `mvn spotless:check` instead of `./mvnw spotless:check`. This is most likely a bug in Maven or the 
+Spotless plugin.
+ 
 ### Commit messages and issue linking
 
 The format for a commit message should look like:

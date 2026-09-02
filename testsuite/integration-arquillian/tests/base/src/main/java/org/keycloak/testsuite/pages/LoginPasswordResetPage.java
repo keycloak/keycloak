@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.pages;
 
 import org.keycloak.testsuite.util.UIUtils;
+
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -61,8 +62,9 @@ public class LoginPasswordResetPage extends LanguageComboboxAwarePage {
         UIUtils.clickLink(submitButton);
     }
 
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).equals("Forgot Your Password?");
+    @Override
+    public String getExpectedPageId() {
+        return "login-login-reset-password";
     }
 
     public String getSuccessMessage() {

@@ -16,11 +16,6 @@
 
 package org.keycloak.authentication.requiredactions;
 
-import com.webauthn4j.anchor.KeyStoreTrustAnchorRepository;
-import com.webauthn4j.verifier.attestation.trustworthiness.certpath.CertPathTrustworthinessVerifier;
-import com.webauthn4j.verifier.attestation.trustworthiness.certpath.DefaultCertPathTrustworthinessVerifier;
-import com.webauthn4j.verifier.attestation.trustworthiness.certpath.NullCertPathTrustworthinessVerifier;
-
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
 import org.keycloak.authentication.RequiredActionFactory;
@@ -30,6 +25,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.truststore.TruststoreProvider;
+
+import com.webauthn4j.anchor.KeyStoreTrustAnchorRepository;
+import com.webauthn4j.verifier.attestation.trustworthiness.certpath.CertPathTrustworthinessVerifier;
+import com.webauthn4j.verifier.attestation.trustworthiness.certpath.DefaultCertPathTrustworthinessVerifier;
+import com.webauthn4j.verifier.attestation.trustworthiness.certpath.NullCertPathTrustworthinessVerifier;
 
 public class WebAuthnRegisterFactory implements RequiredActionFactory, EnvironmentDependentProviderFactory {
 

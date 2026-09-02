@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.webauthn.utils;
 
 import java.util.Arrays;
+
 import org.keycloak.models.Constants;
 
 public enum PropertyRequirement {

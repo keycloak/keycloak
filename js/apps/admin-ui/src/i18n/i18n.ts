@@ -5,13 +5,13 @@ import { initReactI18next } from "react-i18next";
 
 import { environment } from "../environment";
 import { joinPath } from "../utils/joinPath";
+import { DEFAULT_LOCALE } from "./constants";
 
 // @ts-ignore imported by rollup plugin
 import code from "message-bundle";
 
 type KeyValue = { key: string; value: string };
 
-export const DEFAULT_LOCALE = "en";
 export const KEY_SEPARATOR = ".";
 
 export const i18n: i18nType = createInstance({

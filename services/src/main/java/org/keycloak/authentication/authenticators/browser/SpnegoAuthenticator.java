@@ -17,8 +17,14 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
-import org.jboss.logging.Logger;
-import org.keycloak.http.HttpRequest;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
+
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -26,6 +32,7 @@ import org.keycloak.authentication.Authenticator;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -33,11 +40,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
 
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import java.net.URI;
-import java.util.Map;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -101,9 +104,14 @@ public class SpnegoAuthenticator extends AbstractUsernameFormAuthenticator imple
         if (output.getAuthStatus() == CredentialValidationOutput.Status.AUTHENTICATED) {
             context.setUser(output.getAuthenticatedUser());
             if (output.getState() != null && !output.getState().isEmpty()) {
-                for (Map.Entry<String, String> entry : output.getState().entrySet()) {
-                    context.getAuthenticationSession().setUserSessionNote(entry.getKey(), entry.getValue());
+                Map<String, String> state = new HashMap<>(output.getState());
+                String spnegoResponseToken = state.remove(KerberosConstants.RESPONSE_TOKEN);
+                if (spnegoResponseToken != null && !spnegoResponseToken.isEmpty()) {
+                    String negotiateHeader = KerberosConstants.NEGOTIATE + " " + spnegoResponseToken;
+                    // The authenticator does not own the final flow response, so attach the final GSS token before the flow continues.
+                    context.getSession().getContext().getHttpResponse().setHeader(HttpHeaders.WWW_AUTHENTICATE, negotiateHeader);
                 }
+                state.forEach(context.getAuthenticationSession()::setUserSessionNote);
             }
             context.success(UserCredentialModel.KERBEROS);
         } else if (output.getAuthStatus() == CredentialValidationOutput.Status.CONTINUE) {

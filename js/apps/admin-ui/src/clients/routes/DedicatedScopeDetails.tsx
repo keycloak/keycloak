@@ -16,9 +16,9 @@ const DedicatedScopes = lazy(() => import("../scopes/DedicatedScopes"));
 export const DedicatedScopeDetailsRoute: AppRouteObject = {
   path: "/:realm/clients/:clientId/clientScopes/dedicated",
   element: <DedicatedScopes />,
-  breadcrumb: (t) => t("dedicatedScopes"),
   handle: {
     access: "view-clients",
+    breadcrumb: (t) => t("dedicatedScopes"),
   },
 };
 

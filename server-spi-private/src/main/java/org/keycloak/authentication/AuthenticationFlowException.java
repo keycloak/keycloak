@@ -17,8 +17,9 @@
 
 package org.keycloak.authentication;
 
-import jakarta.ws.rs.core.Response;
 import java.util.List;
+
+import jakarta.ws.rs.core.Response;
 
 /**
  * Throw this exception from an Authenticator, FormAuthenticator, or FormAction if you want to completely abort the flow.

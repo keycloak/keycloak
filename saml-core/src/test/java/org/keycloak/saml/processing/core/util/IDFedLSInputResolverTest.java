@@ -16,13 +16,13 @@
  */
 package org.keycloak.saml.processing.core.util;
 
-import org.keycloak.saml.common.util.SecurityActions;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-
 import javax.xml.XMLConstants;
 import javax.xml.validation.SchemaFactory;
+
+import org.keycloak.saml.common.util.SecurityActions;
 
 import org.junit.Test;
 import org.w3c.dom.ls.LSInput;

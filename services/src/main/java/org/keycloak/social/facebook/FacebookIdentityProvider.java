@@ -17,25 +17,21 @@
 
 package org.keycloak.social.facebook;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import java.io.IOException;
 
 import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.Response;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.OAuthErrorException;
+
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.saml.common.util.StringUtil;
-import org.keycloak.services.ErrorResponseException;
 
-import java.io.IOException;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -62,7 +58,7 @@ public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider<Fac
 			final String url = StringUtil.isNotNull(fetchedFields)
 					? String.join(PROFILE_URL_FIELDS_SEPARATOR, PROFILE_URL, fetchedFields)
 					: PROFILE_URL;
-			JsonNode profile = SimpleHttp.doGet(url, session).header("Authorization", "Bearer " + accessToken).asJson();
+			JsonNode profile = SimpleHttp.create(session).doGet(url).header("Authorization", "Bearer " + accessToken).asJson();
 			return extractIdentityFromProfile(null, profile);
 		} catch (Exception e) {
 			throw new IdentityBrokerException("Could not obtain user profile from facebook.", e);
@@ -70,7 +66,7 @@ public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider<Fac
 	}
 
     private void verifyToken(String accessToken) throws IOException {
-        JsonNode response = SimpleHttp.doGet(DEBUG_TOKEN_URL, session)
+        JsonNode response = SimpleHttp.create(session).doGet(DEBUG_TOKEN_URL)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + getConfig().getClientId() + "|" + getConfig().getClientSecret())
                 .param("input_token", accessToken)
                 .asJson();
@@ -140,20 +136,6 @@ public class FacebookIdentityProvider extends AbstractOAuth2IdentityProvider<Fac
 		return user;
 	}
 
-    @Override
-    protected BrokeredIdentityContext exchangeExternalTokenV2Impl(TokenExchangeContext tokenExchangeContext) {
-        String subjectToken = tokenExchangeContext.getFormParams().getFirst(OAuth2Constants.SUBJECT_TOKEN);
-        if (subjectToken == null) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "token not set", Response.Status.BAD_REQUEST);
-        }
-        try {
-            verifyToken(subjectToken);
-            return doGetFederatedIdentity(subjectToken);
-        }
-        catch (Exception e) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, e.getMessage(), Response.Status.BAD_REQUEST);
-        }
-    }
 
     @Override
 	protected String getDefaultScopes() {

@@ -17,8 +17,10 @@
 
 package org.keycloak.models.sessions.infinispan.changes;
 
-import org.infinispan.Cache;
-import org.jboss.logging.Logger;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -30,11 +32,8 @@ import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessi
 import org.keycloak.models.sessions.infinispan.entities.EmbeddedClientSessionKey;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
-import java.util.Collection;
-import java.util.Objects;
-import java.util.UUID;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
+import org.infinispan.Cache;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 
@@ -42,14 +41,16 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
 
     private static final Logger LOG = Logger.getLogger(ClientSessionPersistentChangelogBasedTransaction.class);
     private final UserSessionPersistentChangelogBasedTransaction userSessionTx;
+    private final boolean pessimisticLockingAuthenticationSession;
 
     public ClientSessionPersistentChangelogBasedTransaction(KeycloakSession session,
-                                                            ArrayBlockingQueue<PersistentUpdate> batchingQueue,
                                                             CacheHolder<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> cacheHolder,
                                                             CacheHolder<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> offlineCacheHolder,
-                                                            UserSessionPersistentChangelogBasedTransaction userSessionTx) {
-        super(session, CLIENT_SESSION_CACHE_NAME, batchingQueue, cacheHolder, offlineCacheHolder);
+                                                            UserSessionPersistentChangelogBasedTransaction userSessionTx,
+                                                            boolean pessimisticLockingAuthenticationSession) {
+        super(session, CLIENT_SESSION_CACHE_NAME, cacheHolder, offlineCacheHolder);
         this.userSessionTx = userSessionTx;
+        this.pessimisticLockingAuthenticationSession = pessimisticLockingAuthenticationSession;
     }
 
     public void setUserSessionId(Collection<EmbeddedClientSessionKey> keys, String userSessionId, boolean offline) {
@@ -118,6 +119,18 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         }
     }
 
+    @Override
+    protected boolean lockDatabaseEntity(RealmModel realm, EmbeddedClientSessionKey clientSessionKey, boolean offline, SessionUpdateTask.CacheOperation operation) {
+        if (operation == SessionUpdateTask.CacheOperation.ADD_IF_ABSENT) {
+            // There might be concurrent inserts for the same key, which can lead to conflicts.
+            // If the authentication session was locked pessimistically, we can still perform the insert safely.
+            // See UserSessionConcurrencyTest#testConcurrentNotesChange for a test.
+            return pessimisticLockingAuthenticationSession;
+        } else {
+            return kcSession.getProvider(UserSessionPersisterProvider.class).lockClientSession(realm, clientSessionKey.userSessionId(), clientSessionKey.clientId(), offline, operation == SessionUpdateTask.CacheOperation.REMOVE);
+        }
+    }
+
     private SessionEntityWrapper<AuthenticatedClientSessionEntity> getSessionEntityFromPersister(RealmModel realm, ClientModel client, UserSessionModel userSession, EmbeddedClientSessionKey clientSessionId, boolean offline) {
         UserSessionPersisterProvider persister = kcSession.getProvider(UserSessionPersisterProvider.class);
         AuthenticatedClientSessionModel clientSession = persister.loadClientSession(realm, client, userSession, offline);
@@ -137,7 +150,7 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         return authenticatedClientSessionEntitySessionEntityWrapper;
     }
 
-    public static AuthenticatedClientSessionEntity createAuthenticatedClientSessionInstance(String userSessionId, AuthenticatedClientSessionModel clientSession,
+    public static AuthenticatedClientSessionEntity createAuthenticatedClientSessionInstance(String userSessionId, String userId, AuthenticatedClientSessionModel clientSession,
                                                                                       String realmId, String clientId, boolean offline) {
 
         AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity();
@@ -152,12 +165,13 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
         entity.setTimestamp(clientSession.getTimestamp());
         entity.setOffline(offline);
         entity.setUserSessionId(userSessionId);
+        entity.setUserId(userId);
 
         return entity;
     }
 
     private SessionEntityWrapper<AuthenticatedClientSessionEntity> importClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession, AuthenticatedClientSessionModel persistentClientSession, EmbeddedClientSessionKey clientSessionId) {
-        AuthenticatedClientSessionEntity entity = createAuthenticatedClientSessionInstance(userSession.getId(), persistentClientSession,
+        AuthenticatedClientSessionEntity entity = createAuthenticatedClientSessionInstance(userSession.getId(), userSession.getUser().getId(), persistentClientSession,
                 realm.getId(), client.getId(), userSession.isOffline());
         boolean offline = userSession.isOffline();
 

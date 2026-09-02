@@ -1,6 +1,8 @@
 package org.keycloak.tests.admin.partialimport;
 
-import org.junit.jupiter.api.Test;
+import java.util.Arrays;
+import java.util.Map;
+
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.partialimport.PartialImportResult;
 import org.keycloak.partialimport.PartialImportResults;
@@ -8,9 +10,9 @@ import org.keycloak.partialimport.ResourceType;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.suites.DatabaseTest;
 
-import java.util.Arrays;
-import java.util.Map;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -19,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class PartialImportProvidersTest extends AbstractPartialImportTest {
 
     @Test
+    @DatabaseTest
     public void testAddProviders() {
         setFail();
         addProviders();
@@ -36,6 +39,7 @@ public class PartialImportProvidersTest extends AbstractPartialImportTest {
     }
 
     @Test
+    @DatabaseTest
     public void testAddProviderMappers() {
         setFail();
         addProviderMappers();

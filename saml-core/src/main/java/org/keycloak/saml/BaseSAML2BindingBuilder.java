@@ -17,9 +17,21 @@
 
 package org.keycloak.saml;
 
-import org.apache.xml.security.encryption.XMLCipher;
-
-import org.jboss.logging.Logger;
+import java.io.IOException;
+import java.net.URI;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.cert.X509Certificate;
+import java.util.HashMap;
+import java.util.Map;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import javax.xml.crypto.dsig.CanonicalizationMethod;
+import javax.xml.namespace.QName;
 
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.saml.common.constants.GeneralConstants;
@@ -33,25 +45,11 @@ import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
 import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
 
+import org.apache.xml.security.encryption.XMLCipher;
+import org.jboss.logging.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import javax.xml.crypto.dsig.CanonicalizationMethod;
-import javax.xml.namespace.QName;
-import java.io.IOException;
-import java.net.URI;
-import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.Signature;
-import java.security.SignatureException;
-import java.security.cert.X509Certificate;
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.keycloak.common.util.HtmlUtils.escapeAttribute;
 import static org.keycloak.saml.common.util.StringUtil.isNotNull;

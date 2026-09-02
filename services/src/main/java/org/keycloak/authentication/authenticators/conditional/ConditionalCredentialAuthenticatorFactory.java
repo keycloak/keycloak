@@ -19,6 +19,7 @@ package org.keycloak.authentication.authenticators.conditional;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.credential.CredentialProvider;

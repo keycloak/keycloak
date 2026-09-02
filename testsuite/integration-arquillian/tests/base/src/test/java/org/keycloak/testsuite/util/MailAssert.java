@@ -17,32 +17,26 @@
 
 package org.keycloak.testsuite.util;
 
-import org.jboss.logging.Logger;
+import java.io.IOException;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMessage.RecipientType;
 import jakarta.mail.internet.MimeMultipart;
-import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import org.jboss.logging.Logger;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MailAssert {
 
     private static final Logger log = Logger.getLogger(MailAssert.class);
     
-    public static String assertEmailAndGetUrl(String from, String recipient, String content, Boolean sslEnabled) {
-
+    public static String assertEmailAndGetUrl(MimeMessage message, String from, String recipient, String content) {
         try {
-            MimeMessage message;
-            if (sslEnabled){
-                message= SslMailServer.getLastReceivedMessage();
-            } else {
-                message = MailServer.getLastReceivedMessage();
-            }            
-            assertNotNull("There is no received email.", message);
+            assertNotNull(message, "There is no received email.");
             assertEquals(recipient, message.getRecipients(RecipientType.TO)[0].toString());
             assertEquals(from, message.getFrom()[0].toString());
 
@@ -59,7 +53,7 @@ public class MailAssert {
             String errorMessage = "Email content should contains \"" + content
                     + "\", but it doesn't.\nEmail content:\n" + messageContent + "\n";
 
-            assertTrue(errorMessage, messageContent.contains(content));
+            assertTrue(messageContent.contains(content), errorMessage);
             for (String string : messageContent.split("\n")) {
                 if (string.startsWith("http")) {
                     // Ampersand escaped in the text version. Needs to be replaced to have correct URL
@@ -68,7 +62,7 @@ public class MailAssert {
                 }
             }
             return null;
-        } catch (IOException | MessagingException | InterruptedException ex) {
+        } catch (IOException | MessagingException ex) {
             throw new RuntimeException(ex);
         }
     }

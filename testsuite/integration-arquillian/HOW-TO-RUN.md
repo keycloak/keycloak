@@ -113,13 +113,13 @@ server nodes. Tests are usually using 2 cluster adapter nodes.
 
 ## Testsuite logging
 
-It is configured in `testsuite/integration-arquillian/tests/base/src/test/resources/log4j.properties` . You can see that logging of testsuite itself (category `org.keycloak.testsuite`) is debug by default.
+It is configured in `testsuite/integration-arquillian/tests/base/src/test/resources/logging.properties` . You can see that logging of testsuite itself (category `org.keycloak.testsuite`) is DEBUG by default.
 
-When you run tests with undertow (which is by default), there is logging for Keycloak server and adapter (category `org.keycloak` ) in `info` when you run tests from IDE, but `off` when
+When you run tests with undertow (which is by default), there is logging for Keycloak server and adapter (category `org.keycloak` ) in `INFO` when you run tests from IDE, but `OFF` when
 you run tests with maven. The reason is that, we don't want huge logs when running mvn build. However using system property `keycloak.logging.level` will override it. This can be used for both IDE or maven.
-So for example using `-Dkeycloak.logging.level=debug` will enable debug logging for keycloak server and adapter.
+So for example using `-Dkeycloak.logging.level=DEBUG` will enable debug logging for keycloak server and adapter.
 
-For more fine-tuning of individual categories, you can look at log4j.properties file and temporarily enable/disable them here.
+For more fine-tuning of individual categories, you can look at logging.properties file and temporarily enable/disable them here.
 
 ### Wildfly server logging
 
@@ -165,7 +165,7 @@ The `MigrationTest` test will:
 - Perform a couple of tests to verify data after the update are correct.
 - Stop MariaDB docker container. In case of a test failure, the MariaDB container is not stopped, so you can manually inspect the database.
 
-The first version of Keycloak on Quarkus is version `17.0.0`, but the initial versions have a complete different set of boot options that make co-existance impossible.
+The first version of Keycloak on Quarkus is version `17.0.0`, but the initial versions have a complete different set of boot options that make co-existence impossible.
 Therefore the first version that can be tested is `19.0.3`.
 You can execute those tests as follows:
 ```
@@ -661,26 +661,4 @@ For running testsuite with server using BCFIPS approved mode, those additional p
 The log should contain `KeycloakFipsSecurityProvider` mentioning "Approved mode". Something like:
 ```
 KC(BCFIPS version 1.000203 Approved Mode, FIPS-JVM: enabled) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider,
-```
-
-## Aurora DB Tests
-To run the Aurora DB tests on a local machine, do the following:
-
-1. Provision an Aurora DB:
-```bash
-AURORA_CLUSTER="example-cluster"
-AURORA_REGION=eu-west-1
-AURORA_PASSWORD=TODO
-source ./.github/scripts/aws/rds/aurora_create.sh
-```
-
-2. Execute the store integration tests:
-```bash
-TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
-mvn test -Pauth-server-quarkus -Pdb-aurora-postgres -Dtest=$TESTS  -Dauth.server.db.host=$AURORA_ENDPOINT -Dkeycloak.connectionsJpa.password=$AURORA_PASSWORD -pl testsuite/integration-arquillian/tests/base
-```
-
-3. Teardown Aurora DB instance:
-```bash
-./.github/scripts/aws/rds/aurora_delete.sh
 ```

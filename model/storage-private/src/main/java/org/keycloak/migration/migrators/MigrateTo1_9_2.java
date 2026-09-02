@@ -17,14 +17,14 @@
 
 package org.keycloak.migration.migrators;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 public class MigrateTo1_9_2 implements Migration {
 

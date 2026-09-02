@@ -1,20 +1,21 @@
 package org.keycloak.encoding;
 
-import org.apache.commons.io.FileUtils;
-import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.common.Version;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.platform.Platform;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.provider.ProviderConfigurationBuilder;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.keycloak.Config;
+import org.keycloak.common.Version;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.services.resources.KeycloakApplication;
+
+import org.apache.commons.io.FileUtils;
+import org.jboss.logging.Logger;
 
 public class GzipResourceEncodingProviderFactory implements ResourceEncodingProviderFactory {
 
@@ -66,7 +67,7 @@ public class GzipResourceEncodingProviderFactory implements ResourceEncodingProv
             return cacheDir;
         }
 
-        File cacheRoot = new File(Platform.getPlatform().getTmpDirectory(), "kc-gzip-cache");
+        File cacheRoot = new File(KeycloakApplication.getTmpDirectory(), "kc-gzip-cache");
         File cacheDir = new File(cacheRoot, Version.RESOURCES_VERSION);
 
         if (cacheRoot.isDirectory()) {
@@ -81,8 +82,9 @@ public class GzipResourceEncodingProviderFactory implements ResourceEncodingProv
             }
         }
 
-        if (!cacheDir.isDirectory() && !cacheDir.mkdirs()) {
-            logger.warn("Failed to create gzip cache directory");
+        cacheDir.mkdirs();
+        if (!cacheDir.isDirectory()) {
+            logger.warn("Failed to create gzip cache directory " + cacheDir.getAbsolutePath());
             return null;
         }
 

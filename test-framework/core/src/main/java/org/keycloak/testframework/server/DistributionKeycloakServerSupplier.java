@@ -7,12 +7,18 @@ public class DistributionKeycloakServerSupplier extends AbstractKeycloakServerSu
 
     private static final Logger LOGGER = Logger.getLogger(DistributionKeycloakServerSupplier.class);
 
+    @ConfigProperty(name = "start.timeout", defaultValue = "120")
+    long startTimeout;
+
     @ConfigProperty(name = "debug", defaultValue = "false")
     boolean debug = false;
 
+    @ConfigProperty(name = "reuse", defaultValue = "false")
+    boolean reuse;
+
     @Override
     public KeycloakServer getServer() {
-        return new DistributionKeycloakServer(debug);
+        return new DistributionKeycloakServer(debug, reuse, startTimeout);
     }
 
     @Override

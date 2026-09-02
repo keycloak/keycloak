@@ -1,5 +1,8 @@
 package org.keycloak.quarkus.runtime.themes;
 
+import java.io.File;
+import java.util.Optional;
+
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -7,9 +10,6 @@ import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.theme.FolderThemeProvider;
 import org.keycloak.theme.ThemeProvider;
 import org.keycloak.theme.ThemeProviderFactory;
-
-import java.io.File;
-import java.util.Objects;
 
 public class QuarkusFolderThemeProviderFactory implements ThemeProviderFactory {
 
@@ -53,14 +53,7 @@ public class QuarkusFolderThemeProviderFactory implements ThemeProviderFactory {
      * @throws RuntimeException when filesystem path is not accessible
      */
     private File getThemeRootDirWithFallback(String rootDirFromConfig) {
-        File themeRootDir;
-
-        themeRootDir = new File(Objects.requireNonNullElseGet(rootDirFromConfig, Environment::getDefaultThemeRootDir));
-
-        if (!themeRootDir.exists()) {
-            return null;
-        }
-
-        return themeRootDir;
+        return Optional.ofNullable(rootDirFromConfig).or(Environment::getDefaultThemeRootDir).map(File::new)
+                .filter(File::exists).orElse(null);
     }
 }

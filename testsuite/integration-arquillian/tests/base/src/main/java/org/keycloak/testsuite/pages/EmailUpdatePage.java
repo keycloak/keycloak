@@ -16,12 +16,12 @@
  */
 package org.keycloak.testsuite.pages;
 
-import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
-import static org.keycloak.testsuite.util.UIUtils.isElementVisible;
-
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
+import static org.keycloak.testsuite.util.UIUtils.isElementVisible;
 
 public class EmailUpdatePage extends AbstractPage {
 
@@ -49,8 +49,8 @@ public class EmailUpdatePage extends AbstractPage {
 	}
 
 	@Override
-	public boolean isCurrent() {
-		return PageUtils.getPageTitle(driver).equals("Update email");
+	public String getExpectedPageId() {
+		return "login-update-email";
 	}
 
 	public String getEmailError() {

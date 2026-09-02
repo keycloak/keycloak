@@ -16,12 +16,9 @@
  */
 package org.keycloak.protocol.oid4vc.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
+import java.util.List;
+import java.util.Optional;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.oid4vci.Oid4vcProtocolMapperModel;
 import org.keycloak.protocol.ProtocolMapper;
@@ -29,8 +26,12 @@ import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
-import java.util.List;
-import java.util.Optional;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 /**
  * Holding metadata on a claim of verifiable credential.
@@ -72,13 +73,22 @@ public class Claim {
             OID4VCMapper mapper = (OID4VCMapper) protocolMapperImpl;
             mapper.setMapperModel(protocolMapper, credentialFormat);
 
+            if (!mapper.supportsCredentialFormat(credentialFormat)) {
+                return Optional.empty();
+            }
+
             if (!mapper.includeInMetadata()) {
                 return Optional.empty();
             }
 
-            claim.setName(String.join(".", mapper.getMetadataAttributePath()));
+            List<String> attributePath = mapper.getMetadataAttributePath();
+            if (attributePath == null || attributePath.isEmpty()) {
+                return Optional.empty();
+            }
 
-            claim.setPath(mapper.getMetadataAttributePath());
+            claim.setName(String.join(".", attributePath));
+
+            claim.setPath(attributePath);
             claim.setMandatory(protocolMapper.isMandatory());
 
             String displayString = protocolMapper.getDisplay();

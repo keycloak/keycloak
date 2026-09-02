@@ -17,14 +17,13 @@
 
 package org.keycloak.services.resources.admin;
 
+import jakarta.ws.rs.POST;
+
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.CachePublicKeyProvider;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
-
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.core.Context;
 
 public class ClearKeysCacheResource {
 

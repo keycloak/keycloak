@@ -1,10 +1,11 @@
 package org.keycloak.testsuite.util.oauth;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
+import java.io.IOException;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.util.TokenUtil;
 
-import java.io.IOException;
+import org.apache.http.client.methods.CloseableHttpResponse;
 
 public class ClientCredentialsGrantRequest extends AbstractHttpPostRequest<ClientCredentialsGrantRequest, AccessTokenResponse> {
 
@@ -14,6 +15,11 @@ public class ClientCredentialsGrantRequest extends AbstractHttpPostRequest<Clien
 
     public ClientCredentialsGrantRequest dpopProof(String dpopProof) {
         header(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
+        return this;
+    }
+
+    public ClientCredentialsGrantRequest resource(String resource) {
+        parameter(OAuth2Constants.RESOURCE, resource);
         return this;
     }
 

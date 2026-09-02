@@ -17,8 +17,8 @@
 
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import io.smallrye.config.ConfigSourceInterceptorContext;
-import io.smallrye.config.ConfigValue;
+import java.util.List;
+
 import org.keycloak.config.ExportOptions;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionBuilder;
@@ -29,12 +29,13 @@ import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.command.Export;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
+import io.smallrye.config.ConfigSourceInterceptorContext;
+import io.smallrye.config.ConfigValue;
+
 import static org.keycloak.exportimport.ExportImportConfig.PROVIDER;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isBlank;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
-
-import java.util.List;
 
 public final class ExportPropertyMappers implements PropertyMapperGrouping {
     private static final String EXPORTER_PROPERTY = "kc.spi-export--exporter";
@@ -52,10 +53,12 @@ public final class ExportPropertyMappers implements PropertyMapperGrouping {
                 fromOption(ExportOptions.FILE)
                         .to("kc.spi-export--single-file--file")
                         .paramLabel("file")
+                        .isEnabled(c -> c instanceof Export)
                         .build(),
                 fromOption(ExportOptions.DIR)
                         .to("kc.spi-export--dir--dir")
                         .paramLabel("dir")
+                        .isEnabled(c -> c instanceof Export)
                         .build(),
                 fromOption(ExportOptions.REALM)
                         .to("kc.spi-export--single-file--realm-name")
@@ -93,6 +96,10 @@ public final class ExportPropertyMappers implements PropertyMapperGrouping {
     @Override
     public void validateConfig(Picocli picocli) {
         if (picocli.getParsedCommand().orElse(null) instanceof Export && getOptionalValue(EXPORTER_PROPERTY).isEmpty() && System.getProperty(PROVIDER) == null) {
+            if (!isBlank(ExportOptions.FILE) && !isBlank(ExportOptions.DIR)) {
+                throw new PropertyException("Only one of the --dir or --file options can be specified.");
+            }
+
             throw new PropertyException("Must specify either --dir or --file options.");
         }
     }
@@ -101,7 +108,7 @@ public final class ExportPropertyMappers implements PropertyMapperGrouping {
             .category(OptionCategory.EXPORT)
             .description("Placeholder for determining export mode")
             .buildTime(false)
-            .hidden()
+            .synthetic()
             .build();
 
     private static boolean isSingleFileProvider() {
@@ -109,7 +116,7 @@ public final class ExportPropertyMappers implements PropertyMapperGrouping {
     }
 
     private static boolean isDirProvider() {
-        return isProvider(DIR);
+        return !isSingleFileProvider();
     }
 
     private static boolean isProvider(String provider) {

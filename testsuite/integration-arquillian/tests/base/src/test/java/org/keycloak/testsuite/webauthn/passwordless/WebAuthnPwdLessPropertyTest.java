@@ -17,10 +17,11 @@
 
 package org.keycloak.testsuite.webauthn.passwordless;
 
-import org.junit.Ignore;
-import org.junit.Test;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.webauthn.WebAuthnPropertyTest;
+
+import org.junit.Ignore;
+import org.junit.Test;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
 /**

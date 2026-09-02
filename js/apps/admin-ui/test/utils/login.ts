@@ -32,16 +32,27 @@ export async function login(
     ...options,
   };
 
-  const url = new URL(generatePath(ROOT_PATH, { realm }), SERVER_URL);
+  await navigateTo(page, to, realm);
+  await page.getByLabel("Username").fill(username);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Sign In" }).click();
+}
+
+export async function navigateTo(
+  page: Page,
+  to: Partial<Path>,
+  rootRealm = DEFAULT_REALM,
+): Promise<void> {
+  const url = new URL(
+    generatePath(ROOT_PATH, { realm: rootRealm }),
+    SERVER_URL,
+  );
 
   if (to.pathname) {
     url.hash = to.pathname;
   }
 
   await page.goto(url.toString());
-  await page.getByLabel("Username").fill(username);
-  await page.getByLabel("Password", { exact: true }).fill(password);
-  await page.getByRole("button", { name: "Sign In" }).click();
 }
 
 export async function logout(page: Page, username = ADMIN_USER): Promise<void> {

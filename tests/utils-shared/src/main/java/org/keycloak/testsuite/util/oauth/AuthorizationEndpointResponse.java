@@ -1,14 +1,15 @@
 package org.keycloak.testsuite.util.oauth;
 
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
-import org.keycloak.protocol.oidc.utils.OIDCResponseType;
-import org.openqa.selenium.WebDriver;
-
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
+import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.openqa.selenium.WebDriver;
 
 public class AuthorizationEndpointResponse {
 
@@ -45,6 +46,14 @@ public class AuthorizationEndpointResponse {
         } catch (IllegalArgumentException e) {
             return false;
         }
+    }
+
+    public boolean isSuccess() {
+        return isRedirected() && getCode() != null;
+    }
+
+    public boolean isError() {
+        return isRedirected() && getError() != null;
     }
 
     public boolean isRedirected() {

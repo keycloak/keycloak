@@ -17,16 +17,18 @@
 
 package org.keycloak.url;
 
+import java.net.URI;
+import java.util.Optional;
+
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
-import org.jboss.logging.Logger;
+
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.urls.HostnameProvider;
 import org.keycloak.urls.UrlType;
 
-import java.net.URI;
-import java.util.Optional;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.common.util.UriUtils.checkUrl;
 import static org.keycloak.urls.UrlType.FRONTEND;
@@ -53,7 +55,8 @@ public class HostnameV2Provider implements HostnameProvider {
         this.backchannelDynamic = backchannelDynamic;
     }
 
-    private URI getUri(UriInfo originalUriInfo, UrlType type) {
+    @Override
+    public URI getBaseUri(UriInfo originalUriInfo, UrlType type) {
         UriBuilder builder;
 
         switch (type) {
@@ -67,7 +70,7 @@ public class HostnameV2Provider implements HostnameProvider {
                 builder.host("localhost");
                 break;
             case BACKEND:
-                builder = backchannelDynamic ? originalUriInfo.getBaseUriBuilder() : getFrontUriBuilder(originalUriInfo);
+                builder = backchannelDynamic && !isFrontendRequest(originalUriInfo) ? originalUriInfo.getBaseUriBuilder() : getFrontUriBuilder(originalUriInfo);
                 break;
             case FRONTEND:
                 builder = getFrontUriBuilder(originalUriInfo);
@@ -76,13 +79,29 @@ public class HostnameV2Provider implements HostnameProvider {
                 throw new IllegalArgumentException("Unknown URL type");
         }
 
+        URI uri = builder.build();
         // sanitize ports
-        URI uriPeak = builder.build();
-        if ((uriPeak.getScheme().equals("http") && uriPeak.getPort() == 80) || (uriPeak.getScheme().equals("https") && uriPeak.getPort() == 443)) {
-            builder.port(-1);
+        int normalizedPort = normalizedPort(uri);
+        if (normalizedPort != uri.getPort()) {
+            builder.port(normalizedPort);
+            uri = builder.build();
         }
 
-        return builder.build();
+        return uri;
+    }
+
+    private int normalizedPort(URI uri) {
+        if ((uri.getScheme().equals("http") && uri.getPort() == 80) || (uri.getScheme().equals("https") && uri.getPort() == 443)) {
+            return -1;
+        }
+        return uri.getPort();
+    }
+
+    private boolean isFrontendRequest(UriInfo originalUriInfo) {
+        URI frontend = getFrontUriBuilder(originalUriInfo).build();
+        return frontend.getScheme().equals(originalUriInfo.getBaseUri().getScheme()) &&
+                frontend.getHost().equals(originalUriInfo.getBaseUri().getHost()) &&
+                frontend.getPort() == normalizedPort(originalUriInfo.getBaseUri());
     }
 
     private UriBuilder getFrontUriBuilder(UriInfo originalUriInfo) {
@@ -131,7 +150,7 @@ public class HostnameV2Provider implements HostnameProvider {
 
     @Override
     public String getScheme(UriInfo originalUriInfo, UrlType type) {
-        return getUri(originalUriInfo, type).getScheme();
+        return getBaseUri(originalUriInfo, type).getScheme();
     }
 
     @Override
@@ -141,7 +160,7 @@ public class HostnameV2Provider implements HostnameProvider {
 
     @Override
     public String getHostname(UriInfo originalUriInfo, UrlType type) {
-        return getUri(originalUriInfo, type).getHost();
+        return getBaseUri(originalUriInfo, type).getHost();
     }
 
     @Override
@@ -151,7 +170,7 @@ public class HostnameV2Provider implements HostnameProvider {
 
     @Override
     public int getPort(UriInfo originalUriInfo, UrlType type) {
-        return getUri(originalUriInfo, type).getPort();
+        return getBaseUri(originalUriInfo, type).getPort();
     }
 
     @Override
@@ -161,11 +180,12 @@ public class HostnameV2Provider implements HostnameProvider {
 
     @Override
     public String getContextPath(UriInfo originalUriInfo, UrlType type) {
-        return getUri(originalUriInfo, type).getPath();
+        return getBaseUri(originalUriInfo, type).getPath();
     }
 
     @Override
     public String getContextPath(UriInfo originalUriInfo) {
         return getContextPath(originalUriInfo, defaultUrlType);
     }
+
 }

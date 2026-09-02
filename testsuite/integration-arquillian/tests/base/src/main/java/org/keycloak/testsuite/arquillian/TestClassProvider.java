@@ -1,5 +1,7 @@
 package org.keycloak.testsuite.arquillian;
 
+import java.net.URL;
+
 import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.UndertowMessages;
@@ -9,15 +11,15 @@ import io.undertow.server.handlers.resource.ResourceManager;
 import io.undertow.server.handlers.resource.URLResource;
 import org.jboss.logging.Logger;
 
-import java.net.URL;
-
 public class TestClassProvider {
 
     private static final Logger LOGGER = Logger.getLogger(TestClassProvider.class);
 
     public static final String[] PERMITTED_PACKAGES = new String[] {
             "/org/keycloak/testsuite",
+            "/org/keycloak/testframework",
             "/org/junit",
+            "/org/opentest4j",
             "/org/hamcrest",
             "/org/keycloak/admin/client",
             "/org/jboss/resteasy/client",
@@ -28,7 +30,9 @@ public class TestClassProvider {
             "/com/webauthn4j",
             "/com/fasterxml/jackson/dataformat/cbor",
             "/org/slf4j",
-            "/org/apache"
+            "/org/apache",
+            "/org/keycloak/util/ldap",
+            "/kerberos"
     };
 
     private Undertow server;

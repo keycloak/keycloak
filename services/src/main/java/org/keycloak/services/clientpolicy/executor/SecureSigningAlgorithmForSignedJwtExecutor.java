@@ -19,19 +19,21 @@ package org.keycloak.services.clientpolicy.executor;
 
 import java.util.Optional;
 
-import org.jboss.logging.Logger;
-import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.authentication.ClientAuthenticator;
+import org.keycloak.authentication.ClientAuthenticatorFactory;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jboss.logging.Logger;
 
 public class SecureSigningAlgorithmForSignedJwtExecutor implements ClientPolicyExecutorProvider<SecureSigningAlgorithmForSignedJwtExecutor.Configuration> {
 
@@ -81,24 +83,46 @@ public class SecureSigningAlgorithmForSignedJwtExecutor implements ClientPolicyE
             case TOKEN_REVOKE:
             case TOKEN_INTROSPECT:
             case LOGOUT_REQUEST:
-                boolean isRequireClientAssertion = Optional.ofNullable(configuration.isRequireClientAssertion()).orElse(Boolean.FALSE).booleanValue();
-                HttpRequest req = session.getContext().getHttpRequest();
-                String clientAssertion = req.getDecodedFormParameters().getFirst(OAuth2Constants.CLIENT_ASSERTION);
-                if (!isRequireClientAssertion && ObjectUtil.isBlank(clientAssertion)) {
-                    break;
-                }
-
-                JWSInput jws = null;
-                try {
-                    jws = new JWSInput(clientAssertion);
-                } catch (JWSInputException e) {
-                    throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed input format.");
-                }
-                verifySecureSigningAlgorithm(jws.getHeader().getAlgorithm().name());
+                validateSigningAlgorithm();
                 break;
             default:
                 return;
         }
+    }
+
+    private void validateSigningAlgorithm() throws ClientPolicyException {
+        boolean isRequireClientAssertion = Optional.ofNullable(configuration.isRequireClientAssertion()).orElse(Boolean.FALSE).booleanValue();
+        ClientModel client = session.getContext().getClient();
+
+        if (client == null) {
+            return;
+        }
+
+        // check on the authenticator that actually succeeded, not on the presence of the client_assertion parameter.
+        if (client.isPublicClient() || !supportsClientAssertion(client.getClientAuthenticatorType())) {
+            if (isRequireClientAssertion) {
+                throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "client assertion is required.");
+            }
+            return;
+        }
+
+        // Signed-JWT auth already succeeded because of the authenticator, so the assertion is present and its signature verified, only checks the alg
+        HttpRequest req = session.getContext().getHttpRequest();
+        String clientAssertion = req.getDecodedFormParameters().getFirst(OAuth2Constants.CLIENT_ASSERTION);
+
+        JWSInput jws;
+        try {
+            jws = new JWSInput(clientAssertion);
+        } catch (JWSInputException e) {
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed input format.");
+        }
+        verifySecureSigningAlgorithm(jws.getHeader().getAlgorithm().name());
+    }
+
+    private boolean supportsClientAssertion(String clientAuthenticatorType) {
+        ClientAuthenticatorFactory factory = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(ClientAuthenticator.class, clientAuthenticatorType);
+        return factory != null && factory.supportsClientAssertion();
     }
 
     private void verifySecureSigningAlgorithm(String signatureAlgorithm) throws ClientPolicyException {

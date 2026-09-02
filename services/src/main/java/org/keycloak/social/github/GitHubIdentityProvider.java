@@ -17,27 +17,26 @@
 
 package org.keycloak.social.github;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import jakarta.ws.rs.core.Response;
-
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.keycloak.OAuth2Constants;
-import org.keycloak.OAuthErrorException;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpRequest;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oidc.TokenExchangeContext;
-import org.keycloak.services.ErrorResponseException;
 import org.keycloak.util.BasicAuthHelper;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -135,8 +134,8 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 	}
 
     @Override
-    public SimpleHttp authenticateTokenRequest(SimpleHttp tokenRequest) {
-        SimpleHttp simpleHttp = super.authenticateTokenRequest(tokenRequest);
+    public SimpleHttpRequest authenticateTokenRequest(SimpleHttpRequest tokenRequest) {
+        SimpleHttpRequest simpleHttp = super.authenticateTokenRequest(tokenRequest);
         if (githubJsonFormat) {
             simpleHttp.acceptJson();
         }
@@ -160,7 +159,7 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 
 	@Override
 	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
-		try (SimpleHttp.Response response = SimpleHttp.doGet(profileUrl, session)
+		try (SimpleHttpResponse response = SimpleHttp.create(session).doGet(profileUrl)
                         .header("Authorization", "Bearer " + accessToken)
                         .header("Accept", "application/json")
                         .asResponse()) {
@@ -184,7 +183,7 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 	}
 
 	private String searchEmail(String accessToken) {
-		try (SimpleHttp.Response response = SimpleHttp.doGet(emailUrl, session)
+		try (SimpleHttpResponse response = SimpleHttp.create(session).doGet(emailUrl)
                         .header("Authorization", "Bearer " + accessToken)
                         .header("Accept", "application/json")
                         .asResponse()) {
@@ -215,7 +214,7 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 
     private void verifyToken(String accessToken) throws IOException {
         String tokenUrl = DEFAULT_APPLICATIONS_URL + "/" + getConfig().getClientId() + "/token";
-        SimpleHttp.Response response = SimpleHttp.doPost(tokenUrl, session)
+        SimpleHttpResponse response = SimpleHttp.create(session).doPost(tokenUrl)
                 .header("Authorization",  BasicAuthHelper.createHeader(getConfig().getClientId(), getConfig().getClientSecret()))
                 .json(Map.of("access_token", accessToken)).asResponse();
 
@@ -236,20 +235,6 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
         }
     }
 
-    @Override
-    protected BrokeredIdentityContext exchangeExternalTokenV2Impl(TokenExchangeContext tokenExchangeContext) {
-        String subjectToken = tokenExchangeContext.getFormParams().getFirst(OAuth2Constants.SUBJECT_TOKEN);
-        if (subjectToken == null) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "token not set", Response.Status.BAD_REQUEST);
-        }
-        try {
-            verifyToken(subjectToken);
-            return doGetFederatedIdentity(subjectToken);
-        }
-        catch (Exception e) {
-            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, e.getMessage(), Response.Status.BAD_REQUEST);
-        }
-    }
 
     @Override
 	protected String getDefaultScopes() {

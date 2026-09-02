@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.pages;
 
 import org.keycloak.testsuite.util.UIUtils;
+
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -36,8 +37,8 @@ public class IdpConfirmLinkPage extends LanguageComboboxAwarePage {
     private WebElement message;
 
     @Override
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).equals("Account already exists");
+    public String getExpectedPageId() {
+        return "login-login-idp-link-confirm";
     }
 
     public String getMessage() {

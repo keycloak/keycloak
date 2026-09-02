@@ -18,6 +18,9 @@
 package org.keycloak.storage.ldap.mappers.membership;
 
 
+import java.util.List;
+import java.util.Set;
+
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -29,10 +32,6 @@ import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.utils.StreamsUtil;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Strategy for how to retrieve LDAP roles of user
@@ -147,6 +146,15 @@ public interface UserRolesRetrieveStrategy {
         @Override
         protected Condition getMembershipCondition(String membershipAttr, String userMembership) {
             return new LDAPQueryConditionsBuilder().equal(membershipAttr + LDAPConstants.LDAP_MATCHING_RULE_IN_CHAIN, userMembership);
+        }
+
+        @Override
+        public List<UserModel> getLDAPRoleMembers(RealmModel realm, CommonLDAPGroupMapper roleOrGroupMapper, LDAPObject ldapRoleOrGroup, int firstResult, int maxResults) {
+            String memberOfLdapAttrName = roleOrGroupMapper.getConfig().getMemberOfLdapAttribute();
+            String roleOrGroupDn = ldapRoleOrGroup.getDn().toString();
+            return StreamsUtil.paginatedStream(
+                    roleOrGroupMapper.getLdapProvider().searchForUserByUserAttributeStream(realm, memberOfLdapAttrName + LDAPConstants.LDAP_MATCHING_RULE_IN_CHAIN, roleOrGroupDn), firstResult, maxResults)
+                    .toList();
         }
 
     };

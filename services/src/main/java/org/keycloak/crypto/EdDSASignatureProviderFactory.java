@@ -16,6 +16,8 @@
  */
 package org.keycloak.crypto;
 
+import java.util.Set;
+
 import org.keycloak.models.KeycloakSession;
 
 /**
@@ -33,6 +35,11 @@ public class EdDSASignatureProviderFactory implements SignatureProviderFactory {
     @Override
     public SignatureProvider create(KeycloakSession session) {
         return new EdDSASignatureProvider(session);
+    }
+
+    @Override
+    public Set<String> getJwkPrivateKeyClaims() {
+        return OKP_PRIVATE_JWK_CLAIMS;
     }
 
 }

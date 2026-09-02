@@ -20,13 +20,13 @@ package org.keycloak.adapters.saml;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
-import org.jboss.logging.Logger;
 import org.keycloak.adapters.saml.config.parsers.ResourceLoader;
+
+import org.jboss.logging.Logger;
 
 /**
  * A {@link RoleMappingsProvider} implementation that uses a {@code properties} file to determine the mappings that should be applied

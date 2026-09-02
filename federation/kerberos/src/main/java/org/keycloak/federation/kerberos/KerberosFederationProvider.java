@@ -17,9 +17,14 @@
 
 package org.keycloak.federation.kerberos;
 
-import org.jboss.logging.Logger;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+import javax.security.auth.login.LoginException;
+
 import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.CredentialInput;
@@ -35,8 +40,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserManager;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.storage.ReadOnlyException;
@@ -52,13 +57,7 @@ import org.keycloak.userprofile.UserProfileDecorator;
 import org.keycloak.userprofile.UserProfileMetadata;
 import org.keycloak.userprofile.UserProfileUtil;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
-
-import javax.security.auth.login.LoginException;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -216,6 +215,11 @@ public class KerberosFederationProvider implements UserStorageProvider,
 
                     return CredentialValidationOutput.fallback();
                 } else {
+                    String responseToken = spnegoAuthenticator.getResponseToken();
+                    if (responseToken != null) {
+                        state.put(KerberosConstants.RESPONSE_TOKEN, responseToken);
+                    }
+
                     String delegationCredential = spnegoAuthenticator.getSerializedDelegationCredential();
                     if (delegationCredential != null) {
                         state.put(KerberosConstants.GSS_DELEGATION_CREDENTIAL, delegationCredential);

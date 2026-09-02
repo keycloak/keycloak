@@ -19,10 +19,10 @@ package org.keycloak.testsuite.pages;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.junit.Assert;
 import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.util.UIUtils;
-import org.keycloak.testsuite.util.WaitUtils;
+
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
@@ -78,22 +78,18 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
         }
     }
 
-    public boolean isCurrent() {
-        try {
-            driver.findElement(By.id("otp"));
-            return true;
-        } catch (Throwable t) {
-            return false;
-        }
+    @Override
+    public String getExpectedPageId() {
+        return "login-login-otp";
     }
 
     // If false, we don't expect that credentials combobox is available. If true, we expect that it is available on the page
     public void assertOtpCredentialSelectorAvailability(boolean expectedAvailability) {
         try {
             driver.findElement(By.className("pf-v5-c-tile"));
-            Assert.assertTrue(expectedAvailability);
+            Assertions.assertTrue(expectedAvailability);
         } catch (NoSuchElementException nse) {
-            Assert.assertFalse(expectedAvailability);
+            Assertions.assertFalse(expectedAvailability);
         }
     }
 

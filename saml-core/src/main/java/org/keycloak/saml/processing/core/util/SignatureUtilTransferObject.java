@@ -16,11 +16,11 @@
  */
 package org.keycloak.saml.processing.core.util;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 
 /**
  * A Transfer Object used by {@link XMLSignatureUtil}

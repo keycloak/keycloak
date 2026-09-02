@@ -1,10 +1,10 @@
 package org.keycloak.admin.ui.rest.model;
 
-import org.keycloak.admin.ui.rest.model.ClientIdSessionType.SessionType;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+
+import org.keycloak.admin.ui.rest.model.ClientIdSessionType.SessionType;
 
 public class SessionRepresentation {
     private String id;
@@ -106,4 +106,3 @@ public class SessionRepresentation {
         return Objects.hash(id, type);
     }
 }
-

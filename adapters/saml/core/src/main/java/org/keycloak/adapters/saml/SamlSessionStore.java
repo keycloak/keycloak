@@ -17,9 +17,9 @@
 
 package org.keycloak.adapters.saml;
 
-import org.keycloak.adapters.spi.AdapterSessionStore;
-
 import java.util.List;
+
+import org.keycloak.adapters.spi.AdapterSessionStore;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

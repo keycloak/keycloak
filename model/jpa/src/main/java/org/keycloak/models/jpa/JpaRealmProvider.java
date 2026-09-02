@@ -17,21 +17,6 @@
 
 package org.keycloak.models.jpa;
 
-import static org.keycloak.common.util.StackUtil.getShortStackTrace;
-import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
-import static org.keycloak.utils.StreamsUtil.closing;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.LockModeType;
-import jakarta.persistence.TypedQuery;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaDelete;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.MapJoin;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -44,11 +29,23 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.hibernate.Session;
-import org.jboss.logging.Logger;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaDelete;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.MapJoin;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
+
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.migration.MigrationModel;
@@ -80,11 +77,19 @@ import org.keycloak.models.jpa.entities.ClientScopeClientMappingEntity;
 import org.keycloak.models.jpa.entities.ClientScopeEntity;
 import org.keycloak.models.jpa.entities.GroupAttributeEntity;
 import org.keycloak.models.jpa.entities.GroupEntity;
+import org.keycloak.models.jpa.entities.GroupRoleMappingEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
 import org.keycloak.models.jpa.entities.RealmLocalizationTextsEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+
+import org.hibernate.Session;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
+import static org.keycloak.utils.StreamsUtil.closing;
 
 
 /**
@@ -92,17 +97,27 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
  * @version $Revision: 1 $
  */
 public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientScopeProvider, GroupProvider, RoleProvider, DeploymentStateProvider {
+
+    public static final int JPA_IN_PARAMETERS_LIMIT_THRESHOLD = 1000;
+
     protected static final Logger logger = Logger.getLogger(JpaRealmProvider.class);
+
     private final KeycloakSession session;
     protected EntityManager em;
+    protected int jpaInParametersLimitThreshold;
     private Set<String> clientSearchableAttributes;
     private Set<String> groupSearchableAttributes;
 
     public JpaRealmProvider(KeycloakSession session, EntityManager em, Set<String> clientSearchableAttributes, Set<String> groupSearchableAttributes) {
+        this(session, em, clientSearchableAttributes, groupSearchableAttributes, JPA_IN_PARAMETERS_LIMIT_THRESHOLD);
+    }
+
+    public JpaRealmProvider(KeycloakSession session, EntityManager em, Set<String> clientSearchableAttributes, Set<String> groupSearchableAttributes, int jpaInParametersLimitThreshold) {
         this.session = session;
         this.em = em;
         this.clientSearchableAttributes = clientSearchableAttributes;
         this.groupSearchableAttributes = groupSearchableAttributes;
+        this.jpaInParametersLimitThreshold = jpaInParametersLimitThreshold;
     }
 
     @Override
@@ -203,11 +218,13 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         session.clientScopes().removeClientScopes(adapter);
         session.roles().removeRoles(adapter);
 
+        // Remove groups before organizations to avoid FK constraint violations
+        session.groups().preRemove(adapter);
+
         em.createNamedQuery("deleteOrganizationDomainsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("deleteOrganizationsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
-        session.groups().preRemove(adapter);
 
         session.identityProviders().removeAll();
         session.identityProviders().removeAllMappers();
@@ -453,17 +470,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             throw new ModelException("Role not found or trying to remove role from incorrect realm");
         }
 
-        // Can't use a native query to delete the composite roles mappings because it causes TransientObjectException.
-        // At the same time, can't use the persist cascade type on the compositeRoles field because in that case
-        // we could not still use a native query as a different problem would arise - it may happen that a parent role that
-        // has this role as a composite is present in the persistence context. In that case it, the role would be re-created
-        // again after deletion through persist cascade type.
-        // So in any case, native query is not an option. This is not optimal as it executes additional queries but
-        // the alternative of clearing the persistence context is not either as we don't know if something currently present
-        // in the context is not needed later.
-
-        roleEntity.getCompositeRoles().forEach(childRole -> childRole.getParentRoles().remove(roleEntity));
-        roleEntity.getParentRoles().forEach(parentRole -> parentRole.getCompositeRoles().remove(roleEntity));
+        em.createNamedQuery("deleteRoleFromComposites").setParameter("role", roleEntity)
+                .executeUpdate();
 
         em.createNamedQuery("deleteClientScopeRoleMappingByRole").setParameter("role", roleEntity).executeUpdate();
 
@@ -508,6 +516,34 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         if (!realm.getId().equals(entity.getRealmId())) return null;
         RoleAdapter adapter = new RoleAdapter(session, realm, em, entity);
         return adapter;
+    }
+
+    @Override
+    public Stream<RoleModel> getCompositeRolesStream(RealmModel realm, Set<String> parentRoleIds) {
+        if (parentRoleIds == null || parentRoleIds.isEmpty()) {
+            return Stream.empty();
+        }
+        // getChildRolesFromParentIds fetches the child roles of many parents at once, so a
+        // composite-role tree expands with a bounded number of queries per breadth-first level
+        // instead of one per role. The query hydrates the child RoleEntity rows, so the getRoleById
+        // calls below are served from the persistence context without extra round-trips.
+        //
+        // Databases cap the number of bind parameters per statement (e.g. MSSQL: 2100), so the
+        // frontier is split into chunks of at most jpaInParametersLimitThreshold parent ids and
+        // one query is issued per chunk (i.e. a single query for frontiers within the threshold).
+        // The query is "select distinct", but a child shared by parents in different chunks would
+        // be returned once per chunk, hence the distinct() on the child ids.
+        List<List<String>> roleIdChunks = CollectionUtil.partition(parentRoleIds, jpaInParametersLimitThreshold);
+        return roleIdChunks.stream()
+                .flatMap(parentRoleIdsChunk -> {
+                    return closing(em.createNamedQuery("getChildRolesFromParentIds", RoleEntity.class)
+                            .setParameter("parentRoleIds", parentRoleIdsChunk)
+                            .getResultStream());
+                })
+                .map(RoleEntity::getId)
+                .distinct()
+                .map(roleId -> session.roles().getRoleById(realm, roleId))
+                .filter(Objects::nonNull);
     }
 
     @Override
@@ -739,14 +775,30 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public Stream<GroupModel> getGroupsByRoleStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
-        TypedQuery<GroupEntity> query = em.createNamedQuery("groupsInRole", GroupEntity.class);
-        query.setParameter("roleId", role.getId());
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<String> queryBuilder = builder.createQuery(String.class);
+        Root<GroupEntity> root = queryBuilder.from(GroupEntity.class);
 
-        Stream<GroupEntity> results = paginateQuery(query, firstResult, maxResults).getResultStream();
+        queryBuilder.select(root.get("id"));
 
-        return closing(results
-                .map(g -> (GroupModel) new GroupAdapter(session, realm, em, g))
-                .sorted(GroupModel.COMPARE_BY_NAME));
+        Subquery<String> roleMappingSubquery = queryBuilder.subquery(String.class);
+        Root<GroupRoleMappingEntity> roleMappingRoot = roleMappingSubquery.from(GroupRoleMappingEntity.class);
+        roleMappingSubquery.select(roleMappingRoot.get("group").get("id"));
+        roleMappingSubquery.where(builder.equal(roleMappingRoot.get("roleId"), role.getId()));
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        predicates.add(root.get("id").in(roleMappingSubquery));
+        predicates.add(builder.equal(root.get("realm"), realm.getId()));
+        predicates.add(builder.equal(root.get("type"), Type.REALM.intValue()));
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, realm, builder, queryBuilder, root));
+
+        queryBuilder.where(predicates.toArray(new Predicate[0]));
+        queryBuilder.orderBy(builder.asc(root.get("name")));
+
+        return closing(paginateQuery(em.createQuery(queryBuilder), firstResult, maxResults).getResultStream()
+                .map(g -> session.groups().getGroupById(realm, g))
+                .filter(Objects::nonNull));
     }
 
     @Override
@@ -778,7 +830,6 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             .map(realm::getGroupById)
             // In concurrent tests, the group might be deleted in another thread, therefore, skip those null values.
             .filter(Objects::nonNull)
-            .sorted(GroupModel.COMPARE_BY_NAME)
         );
     }
 
@@ -838,6 +889,9 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         groupEntity.setRealm(realm.getId());
         groupEntity.setParentId(toParent == null? GroupEntity.TOP_PARENT_ID : toParent.getId());
         groupEntity.setType(type == null ? Type.REALM.intValue() : type.intValue());
+        long now = Time.currentTimeMillis();
+        groupEntity.setCreatedTimestamp(now);
+        groupEntity.setLastModifiedTimestamp(now);
         em.persist(groupEntity);
         em.flush();
 
@@ -905,7 +959,17 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
         resource = toClientModel(realm, entity);
 
-        session.getKeycloakSessionFactory().publish((ClientModel.ClientCreationEvent) () -> resource);
+        session.getKeycloakSessionFactory().publish(new ClientModel.ClientCreationEvent() {
+            @Override
+            public ClientModel getCreatedClient() {
+                return resource;
+            }
+
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        });
         return resource;
     }
 
@@ -1001,9 +1065,14 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public Stream<ClientModel> searchClientsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
-        Map<String, String> filteredAttributes = clientSearchableAttributes == null ? attributes :
-                attributes.entrySet().stream().filter(m -> clientSearchableAttributes.contains(m.getKey()))
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<String, String> filteredAttributes = attributes;
+        if (clientSearchableAttributes != null) {
+            Set<String> notAllowed = attributes.keySet().stream().filter(attr -> !clientSearchableAttributes.contains(attr)).collect(Collectors.toSet());
+            if (!notAllowed.isEmpty()) {
+                throw new ModelException("Attributes [" + String.join(", ", notAllowed) + "] not allowed for search");
+            }
+            filteredAttributes = attributes.entrySet().stream().filter(e -> clientSearchableAttributes.contains(e.getKey())).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        }
 
         CriteriaBuilder builder = em.getCriteriaBuilder();
         CriteriaQuery<String> queryBuilder = builder.createQuery(String.class);
@@ -1131,7 +1200,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             }
         });
 
-        int countRemoved = em.createNamedQuery("deleteClientScopeClientMappingByClient")
+        em.createNamedQuery("deleteClientScopeClientMappingByClient")
                 .setParameter("clientId", clientEntity.getId())
                 .executeUpdate();
         em.remove(clientEntity);  // i have no idea why, but this needs to come before deleteScopeMapping
@@ -1243,6 +1312,21 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
                     .map(entity -> new ClientScopeAdapter(realm, em, session, entity));
     }
 
+    @Override
+    public Stream<ClientScopeModel> getClientScopesByProtocolForUpdate(RealmModel realm, String protocol) {
+        RealmEntity realmEntity = em.find(RealmEntity.class, realm.getId(), LockModeType.PESSIMISTIC_WRITE);
+        if (realmEntity == null) {
+            return Stream.empty();
+        }
+
+        TypedQuery<ClientScopeEntity> query = em.createNamedQuery("getClientScopesByProtocol", ClientScopeEntity.class)
+                .setParameter("realm", realm.getId())
+                .setParameter("protocol", protocol)
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE);
+        return query.getResultStream()
+                .map(entity -> new ClientScopeAdapter(realm, em, session, entity));
+    }
+
     /**
      * This method filters clientScopes by specific attributes. To do this, it will generate the sql-statement
      * dynamically based on the given search-parameters.<br />
@@ -1315,24 +1399,27 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         Map<String, ClientScopeModel> existingClientScopes = getClientScopes(realm, client, true);
         existingClientScopes.putAll(getClientScopes(realm, client, false));
 
-        clientScopes.stream()
-            .filter(clientScope -> !existingClientScopes.containsKey(clientScope.getName()))
-            .filter(clientScope -> {
-                if (clientScope.getProtocol() == null) {
-                    // set default protocol if not set. Otherwise, we will get a NullPointer
-                    clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-                }
-                return acceptedClientProtocols.contains(clientScope.getProtocol());
-            })
-            .forEach(clientScope -> {
-                ClientScopeClientMappingEntity entity = new ClientScopeClientMappingEntity();
-                entity.setClientScopeId(clientScope.getId());
-                entity.setClientId(client.getId());
-                entity.setDefaultScope(defaultScope);
-                em.persist(entity);
-                em.flush();
-                em.detach(entity);
-            });
+        Set<ClientScopeClientMappingEntity> clientScopeEntities = clientScopes.stream()
+                .filter(clientScope -> !existingClientScopes.containsKey(clientScope.getName()))
+                .filter(clientScope -> {
+                    if (clientScope.getProtocol() == null) {
+                        // set default protocol if not set. Otherwise, we will get a NullPointer
+                        clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+                    }
+                    return acceptedClientProtocols.contains(clientScope.getProtocol());
+                })
+                .map(clientScope -> {
+                    ClientScopeClientMappingEntity entity = new ClientScopeClientMappingEntity();
+                    entity.setClientScopeId(clientScope.getId());
+                    entity.setClientId(client.getId());
+                    entity.setDefaultScope(defaultScope);
+                    em.persist(entity);
+                    return entity;
+                }).collect(Collectors.toSet());
+        if (!clientScopeEntities.isEmpty()) {
+            em.flush();
+            clientScopeEntities.forEach(entity -> em.detach(entity));
+        }
     }
 
     @Override
@@ -1386,7 +1473,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         if (Boolean.TRUE.equals(exact)) {
             predicates.add(builder.equal(root.get("name"), search));
         } else {
-            predicates.add(builder.like(builder.lower(root.get("name")), builder.lower(builder.literal("%" + search + "%"))));
+            String escapedSearch = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_").replace("*", "%");
+            predicates.add(builder.like(builder.lower(root.get("name")), builder.lower(builder.literal("%" + escapedSearch + "%")), '\\'));
         }
 
         predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, realm, builder, queryBuilder, root));
@@ -1397,7 +1485,6 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         return closing(paginateQuery(em.createQuery(queryBuilder), first, max).getResultStream()
                 .map(id -> session.groups().getGroupById(realm, id))
                 .filter(Objects::nonNull)
-                .sorted(GroupModel.COMPARE_BY_NAME)
                 .distinct());
     }
 

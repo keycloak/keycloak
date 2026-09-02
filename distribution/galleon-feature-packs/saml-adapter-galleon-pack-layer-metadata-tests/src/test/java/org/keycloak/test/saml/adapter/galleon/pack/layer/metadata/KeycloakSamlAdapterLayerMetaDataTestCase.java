@@ -1,5 +1,16 @@
 package org.keycloak.test.saml.adapter.galleon.pack.layer.metadata;
 
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Collections;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.Asset;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
@@ -13,17 +24,6 @@ import org.wildfly.glow.GlowMessageWriter;
 import org.wildfly.glow.GlowSession;
 import org.wildfly.glow.ScanResults;
 import org.wildfly.glow.maven.MavenResolver;
-
-import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Collections;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class KeycloakSamlAdapterLayerMetaDataTestCase {
 

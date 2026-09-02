@@ -17,13 +17,14 @@
 
 package org.keycloak.testsuite.arquillian.provider;
 
+import java.lang.annotation.Annotation;
+
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
-
-import java.lang.annotation.Annotation;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

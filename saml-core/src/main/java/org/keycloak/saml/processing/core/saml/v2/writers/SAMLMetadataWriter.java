@@ -16,6 +16,11 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.writers;
 
+import java.net.URI;
+import java.util.List;
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamWriter;
+
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.metadata.AdditionalMetadataLocationType;
 import org.keycloak.dom.saml.v2.metadata.AffiliationDescriptorType;
@@ -45,12 +50,8 @@ import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.StaxUtil;
-import org.w3c.dom.Element;
 
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLStreamWriter;
-import java.net.URI;
-import java.util.List;
+import org.w3c.dom.Element;
 
 /**
  * Write the SAML metadata elements
@@ -69,7 +70,6 @@ public class SAMLMetadataWriter extends BaseWriter {
     public void writeEntitiesDescriptor(EntitiesDescriptorType entities) throws ProcessingException {
         StaxUtil.writeStartElement(writer, METADATA_PREFIX, JBossSAMLConstants.ENTITIES_DESCRIPTOR.get(), JBossSAMLURIConstants.METADATA_NSURI.get());
 
-        StaxUtil.writeDefaultNameSpace(writer, JBossSAMLURIConstants.METADATA_NSURI.get());
         StaxUtil.writeNameSpace(writer, "md", JBossSAMLURIConstants.METADATA_NSURI.get());
         StaxUtil.writeNameSpace(writer, "saml", JBossSAMLURIConstants.ASSERTION_NSURI.get());
         StaxUtil.writeNameSpace(writer, "ds", JBossSAMLURIConstants.XMLDSIG_NSURI.get());
@@ -111,7 +111,6 @@ public class SAMLMetadataWriter extends BaseWriter {
 
     public void writeEntityDescriptor(EntityDescriptorType entityDescriptor) throws ProcessingException {
         StaxUtil.writeStartElement(writer, METADATA_PREFIX, JBossSAMLConstants.ENTITY_DESCRIPTOR.get(), JBossSAMLURIConstants.METADATA_NSURI.get());
-        StaxUtil.writeDefaultNameSpace(writer, JBossSAMLURIConstants.METADATA_NSURI.get());
         StaxUtil.writeNameSpace(writer, "md", JBossSAMLURIConstants.METADATA_NSURI.get());
         StaxUtil.writeNameSpace(writer, "saml", JBossSAMLURIConstants.ASSERTION_NSURI.get());
         StaxUtil.writeNameSpace(writer, "ds", JBossSAMLURIConstants.XMLDSIG_NSURI.get());

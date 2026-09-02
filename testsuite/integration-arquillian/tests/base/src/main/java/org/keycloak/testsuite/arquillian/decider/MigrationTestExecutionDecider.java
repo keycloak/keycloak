@@ -16,12 +16,13 @@
  */
 package org.keycloak.testsuite.arquillian.decider;
 
+import java.lang.reflect.Method;
+
+import org.keycloak.testsuite.arquillian.migration.Migration;
+
 import org.jboss.arquillian.test.spi.execution.ExecutionDecision;
 import org.jboss.arquillian.test.spi.execution.TestExecutionDecider;
-
-import java.lang.reflect.Method;
 import org.jboss.logging.Logger;
-import org.keycloak.testsuite.arquillian.migration.Migration;
 
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>

@@ -24,9 +24,9 @@ import java.util.Optional;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
@@ -38,6 +38,7 @@ import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -119,7 +120,7 @@ public class IntentClientBindCheckExecutor implements ClientPolicyExecutorProvid
         IntentBindCheckRequest request = new IntentBindCheckRequest();
         request.setClientId(clientId);
         request.setIntentId(intentId);
-        SimpleHttp simpleHttp = SimpleHttp.doPost(configuration.getIntentClientBindCheckEndpoint(), session)
+        SimpleHttpRequest simpleHttp = SimpleHttp.create(session).doPost(configuration.getIntentClientBindCheckEndpoint())
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
                 .json(request);
         IntentBindCheckResponse response = null;

@@ -16,15 +16,11 @@
  */
 package org.keycloak.testsuite.authz.admin;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
 import java.util.Collections;
 
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
-import org.junit.Test;
 import org.keycloak.admin.client.resource.AggregatePoliciesResource;
 import org.keycloak.admin.client.resource.AggregatePolicyResource;
 import org.keycloak.admin.client.resource.AuthorizationResource;
@@ -37,8 +33,13 @@ import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
+
+import org.junit.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -48,7 +49,7 @@ public class AggregatePolicyManagementTest extends AbstractPolicyManagementTest 
     @Override
     protected RealmBuilder createTestRealm() {
         return super.createTestRealm()
-                .user(UserBuilder.create().username("AggregatePolicyManagementTestUser"));
+                .users(UserBuilder.create().username("AggregatePolicyManagementTestUser"));
     }
 
     @Test

@@ -17,12 +17,8 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+import java.util.List;
+
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -32,11 +28,16 @@ import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
-import java.util.List;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LDAPExternalChangesTest extends AbstractLDAPTest {
@@ -79,7 +80,7 @@ public class LDAPExternalChangesTest extends AbstractLDAPTest {
         String originalEmail = "john@email.org";
 
         // import user from the ldap johnkeycloak and cache it reading it by id
-        List<UserRepresentation> users = testRealm().users().search("johnkeycloak", true);
+        List<UserRepresentation> users = managedRealm.admin().users().search("johnkeycloak", true);
         assertEquals(1, users.size());
         UserRepresentation user = users.get(0);
         String userId = user.getId();
@@ -98,7 +99,7 @@ public class LDAPExternalChangesTest extends AbstractLDAPTest {
         tokenResponse = oauth.doPasswordGrantRequest(originalEmail, "Password1");
         assertTrue(tokenResponse.isSuccess());
 
-        setTimeOffset(610);
+        timeOffSet.set(610);
 
         tokenResponse = oauth.doPasswordGrantRequest(originalEmail, "Password1");
         assertFalse(tokenResponse.isSuccess());
@@ -106,9 +107,9 @@ public class LDAPExternalChangesTest extends AbstractLDAPTest {
         tokenResponse = oauth.doPasswordGrantRequest(updatedEmail, "Password1");
         assertTrue(tokenResponse.isSuccess());
 
-        users = testRealm().users().search(originalEmail, true);
+        users = managedRealm.admin().users().search(originalEmail, true);
         assertTrue(users.isEmpty());
-        users = testRealm().users().search("johnkeycloak", true);
+        users = managedRealm.admin().users().search("johnkeycloak", true);
         assertEquals(1, users.size());
         user = users.get(0);
         assertEquals(userId, user.getId());
@@ -129,7 +130,7 @@ public class LDAPExternalChangesTest extends AbstractLDAPTest {
             realm.getClientByClientId("test-app").setDirectAccessGrantsEnabled(true);
         });
         // import user from the ldap johnkeycloak and cache it reading it by id
-        List<UserRepresentation> users = testRealm().users().search(originalUsername, true);
+        List<UserRepresentation> users = managedRealm.admin().users().search(originalUsername, true);
         assertEquals(1, users.size());
         UserRepresentation user = users.get(0);
         String userId = user.getId();
@@ -148,7 +149,7 @@ public class LDAPExternalChangesTest extends AbstractLDAPTest {
         tokenResponse = oauth.doPasswordGrantRequest(originalUsername, "Password1");
         assertTrue(tokenResponse.isSuccess());
 
-        setTimeOffset(610);
+        timeOffSet.set(610);
 
         tokenResponse = oauth.doPasswordGrantRequest(originalUsername, "Password1");
         assertFalse(tokenResponse.isSuccess());
@@ -156,9 +157,9 @@ public class LDAPExternalChangesTest extends AbstractLDAPTest {
         tokenResponse = oauth.doPasswordGrantRequest(updatedUsername, "Password1");
         assertTrue(tokenResponse.isSuccess());
 
-        users = testRealm().users().search(originalUsername, true);
+        users = managedRealm.admin().users().search(originalUsername, true);
         assertTrue(users.isEmpty());
-        users = testRealm().users().search(updatedUsername, true);
+        users = managedRealm.admin().users().search(updatedUsername, true);
         user = users.get(0);
         assertEquals(userId, user.getId());
         assertEquals(user.getUsername(), updatedUsername);

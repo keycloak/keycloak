@@ -19,9 +19,8 @@
 
 package org.keycloak.userprofile;
 
-import static java.util.Optional.ofNullable;
-
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,6 +28,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.keycloak.validate.ValidationError;
+
+import static java.util.Optional.ofNullable;
 
 /**
  * <p>This interface wraps the attributes associated with a user profile. Different operations are provided to access and
@@ -189,4 +190,30 @@ public interface Attributes {
 
         return metadata.getAnnotations();
     }
+
+    /**
+     * Returns the default attributes and their values.
+     *
+     * @return the default attributes and their values
+     */
+    default Map<String, List<String>> getDefaultAttributes() {
+        Map<String, List<String>> readable = getReadable();
+        HashMap<String, List<String>> attributes = new HashMap<>(readable);
+
+        for (String name : readable.keySet()) {
+            if (!isDefaultAttribute(name)) {
+                attributes.remove(name);
+            }
+        }
+
+        return attributes;
+    }
+
+    /**
+     * Returns whether the attribute with the given {@code name} is a default attribute.
+     *
+     * @param name the attribute name
+     * @return {@code true} if the attribute is a default attribute. Otherwise, {@code false}.
+     */
+    boolean isDefaultAttribute(String name);
 }

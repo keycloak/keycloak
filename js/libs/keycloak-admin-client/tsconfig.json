@@ -1,12 +1,14 @@
 {
   "extends": "../../tsconfig.json",
   "include": ["src"],
+  "exclude": ["src/generated/doc-examples"],
   "compilerOptions": {
     "lib": ["ESNext"],
     "module": "Node16",
     "moduleResolution": "Node16",
     "outDir": "lib",
     "noEmit": false,
-    "declaration": true
+    "declaration": true,
+    "sourceMap": true
   }
 }

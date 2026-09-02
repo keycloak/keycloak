@@ -1,8 +1,8 @@
 package org.keycloak.testframework.server;
 
-import org.keycloak.testframework.injection.InstanceContext;
-
 import java.lang.annotation.Annotation;
+
+import org.keycloak.testframework.injection.InstanceContext;
 
 public interface KeycloakServerConfigInterceptor<T, S extends Annotation> {
 

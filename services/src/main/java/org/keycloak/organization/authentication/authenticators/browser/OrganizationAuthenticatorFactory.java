@@ -17,8 +17,6 @@
 
 package org.keycloak.organization.authentication.authenticators.browser;
 
-import static org.keycloak.provider.ProviderConfigProperty.BOOLEAN_TYPE;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -33,6 +31,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
+
+import static org.keycloak.provider.ProviderConfigProperty.BOOLEAN_TYPE;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

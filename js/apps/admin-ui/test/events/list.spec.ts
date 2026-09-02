@@ -1,4 +1,4 @@
-import { type Page, test } from "@playwright/test";
+import { type Page, expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { login, logout } from "../utils/login.ts";
@@ -16,6 +16,7 @@ import {
   clickSearchPanel,
   enableSaveEvents,
   fillSearchPanel,
+  fillAdminEventsSearchPanel,
   goToAdminEventsTab,
   goToEventsConfig,
 } from "./list.ts";
@@ -112,6 +113,24 @@ test.describe.serial("Events tests", () => {
       );
     });
 
+    test("Filters the type select options while typing", async ({ page }) => {
+      await goToAdminEventsTab(page);
+      await clickSearchPanel(page);
+
+      const resourceTypeSelect = page.getByLabel("select-resourceTypes");
+      await resourceTypeSelect.click();
+      const optionCount = await page.getByRole("option").count();
+
+      await resourceTypeSelect.pressSequentially("user");
+
+      await expect(
+        page.getByRole("option", { name: "USER", exact: true }),
+      ).toBeVisible();
+      await expect
+        .poll(() => page.getByRole("option").count())
+        .toBeLessThan(optionCount);
+    });
+
     test("Check accessibility on user events tab", async ({ page }) => {
       await assertAxeViolations(page);
     });
@@ -119,6 +138,32 @@ test.describe.serial("Events tests", () => {
     test("Check accessibility on admin events tab", async ({ page }) => {
       await goToAdminEventsTab(page);
       await assertAxeViolations(page);
+    });
+
+    test("creating user", async ({ page }) => {
+      const userToCreate = {
+        username: `my-user`,
+        enabled: true,
+        credentials: [{ value: "events-test" }],
+        realm: realmName,
+        email: "some-other@email.com",
+        firstName: "My",
+        lastName: "User",
+      };
+
+      await adminClient.createUser(userToCreate);
+
+      await goToAdminEventsTab(page);
+
+      await clickSearchPanel(page);
+      await assertSearchButtonDisabled(page);
+      await fillAdminEventsSearchPanel(page, {
+        resourceType: "USER",
+      });
+      await clickSearchButton(page);
+
+      await assertRowExists(page, "users/");
+      await assertRowExists(page, "users//", false); // Assert no trailing slash
     });
   });
 });

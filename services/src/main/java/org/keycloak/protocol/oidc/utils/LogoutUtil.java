@@ -21,11 +21,12 @@ package org.keycloak.protocol.oidc.utils;
 import java.net.URI;
 
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
 
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.SystemClientUtil;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -39,14 +40,20 @@ public class LogoutUtil {
 
     public static Response sendResponseAfterLogoutFinished(KeycloakSession session, AuthenticationSessionModel logoutSession) {
         String redirectUri = logoutSession.getAuthNote(OIDCLoginProtocol.LOGOUT_REDIRECT_URI);
-        if (redirectUri != null) {
-            URI finalRedirectUri = getRedirectUriWithAttachedState(redirectUri, logoutSession);
-            return Response.status(302).location(finalRedirectUri).build();
+        URI finalRedirectUri = getRedirectUriWithAttachedState(redirectUri, logoutSession);
+        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientModel(logoutSession.getClient());
+        LoginFormsProvider loginFormsProvider = session.getProvider(LoginFormsProvider.class);
+
+        if (finalRedirectUri != null) {
+            if (!config.isLogoutConfirmationEnabled()) {
+                return Response.status(302).location(finalRedirectUri).build();
+            }
+            loginFormsProvider.setAttribute("pageRedirectUri", finalRedirectUri.toString());
         }
 
         SystemClientUtil.checkSkipLink(session, logoutSession);
 
-        return session.getProvider(LoginFormsProvider.class)
+        return loginFormsProvider
                 .setSuccess(Messages.SUCCESS_LOGOUT)
                 .setDetachedAuthSession()
                 .createInfoPage();
@@ -57,8 +64,9 @@ public class LogoutUtil {
         if (redirectUri == null) return null;
         String state = logoutSession.getAuthNote(OIDCLoginProtocol.LOGOUT_STATE_PARAM);
 
-        UriBuilder uriBuilder = UriBuilder.fromUri(redirectUri);
+        KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(redirectUri, false);
         if (state != null) {
+            uriBuilder.removeQueryParamByDecodedName(OIDCLoginProtocol.STATE_PARAM);
             uriBuilder.queryParam(OIDCLoginProtocol.STATE_PARAM, state);
         }
         return uriBuilder.build();

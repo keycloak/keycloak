@@ -17,10 +17,17 @@
 
 package org.keycloak.services.resteasy;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import org.keycloak.Config;
 import org.keycloak.common.Profile;
+import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.common.util.MultiSiteUtils;
+import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.error.KcUnrecognizedPropertyExceptionHandler;
 import org.keycloak.services.error.KeycloakErrorHandler;
 import org.keycloak.services.error.KeycloakMismatchedInputExceptionHandler;
@@ -35,15 +42,18 @@ import org.keycloak.services.resources.WelcomeResource;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.services.util.ObjectMapperResolver;
 
-import java.util.HashSet;
-import java.util.Set;
-
 public class ResteasyKeycloakApplication extends KeycloakApplication {
 
     protected Set<Object> singletons = new HashSet<>();
     protected Set<Class<?>> classes = new HashSet<>();
 
     public ResteasyKeycloakApplication() {
+        Config.init(new JsonConfigProviderFactory().create()
+                .orElseThrow(() -> new RuntimeException("Failed to load Keycloak configuration")));
+        Profile.configure(
+                new PropertiesProfileConfigResolver(System.getProperties()),
+                new PropertiesFileProfileConfigResolver()
+        );
         classes.add(RealmsResource.class);
         if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_API)) {
             classes.add(AdminRoot.class);
@@ -64,6 +74,12 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
             // an endpoint for the load balancer to gather information whether this site should receive requests or not.
             classes.add(LoadBalancerResource.class);
         }
+        startup();
+    }
+
+    @Override
+    protected String getDataDir() {
+        return System.getProperty("jboss.server.data.dir");
     }
 
     @Override
@@ -77,15 +93,19 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
     }
 
     @Override
-    protected KeycloakSessionFactory createSessionFactory() {
-        ResteasyKeycloakSessionFactory factory = new ResteasyKeycloakSessionFactory();
-        factory.init();
-        return factory;
+    protected DefaultKeycloakSessionFactory createSessionFactory() {
+        return new ResteasyKeycloakSessionFactory();
     }
 
     @Override
     protected void createTemporaryAdmin(KeycloakSession session) {
         // do nothing
+    }
+
+    @Override
+    protected ExportImportManager bootstrap(KeycloakSession session) {
+        // created a nested transaction as this triggers DefaultJpaConnectionProviderFactory.lazyInit
+        return KeycloakModelUtils.runJobInTransactionWithResult(getSessionFactory(), super::bootstrap);
     }
 
 }

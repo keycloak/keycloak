@@ -1,10 +1,10 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import java.util.List;
+
 import org.keycloak.config.TruststoreOptions;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
-
-import java.util.List;
 
 public class TruststorePropertyMappers implements PropertyMapperGrouping {
 
@@ -13,6 +13,9 @@ public class TruststorePropertyMappers implements PropertyMapperGrouping {
         return List.of(
                 fromOption(TruststoreOptions.TRUSTSTORE_PATHS)
                         .paramLabel(TruststoreOptions.TRUSTSTORE_PATHS.getKey())
+                        .build(),
+                fromOption(TruststoreOptions.TRUSTSTORE_KUBERNETES_CA_ENABLED)
+                        .paramLabel(TruststoreOptions.TRUSTSTORE_KUBERNETES_CA_ENABLED.getKey())
                         .build(),
                 fromOption(TruststoreOptions.HOSTNAME_VERIFICATION_POLICY)
                         .paramLabel(TruststoreOptions.HOSTNAME_VERIFICATION_POLICY.getKey())

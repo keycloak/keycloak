@@ -1,8 +1,5 @@
 package org.keycloak.vault;
 
-import org.jboss.logging.Logger;
-
-import jakarta.annotation.Nonnull;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.nio.ByteBuffer;
@@ -10,6 +7,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+
+import jakarta.annotation.Nonnull;
+
+import org.jboss.logging.Logger;
 
 /**
  * A text-based vault provider, which stores each secret in a separate file. The file name needs to match a vault secret id (or
@@ -49,7 +50,7 @@ public class FilesPlainTextVaultProvider extends AbstractVaultProvider {
 
     @Override
     protected VaultRawSecret obtainSecretInternal(String vaultSecretId) {
-        Path secretPath = vaultPath.resolve(vaultSecretId);
+        Path secretPath = vaultPath.resolve(vaultSecretId).normalize();
         if (!Files.exists(secretPath)) {
             logger.warnf("Cannot find secret %s in %s", vaultSecretId, secretPath);
             return DefaultVaultRawSecret.forBuffer(Optional.empty());
@@ -68,13 +69,16 @@ public class FilesPlainTextVaultProvider extends AbstractVaultProvider {
         if (!super.validate(resolver, key, resolvedKey)) {
             return false;
         }
-        Path secretPath = vaultPath.resolve(resolvedKey);
+        Path secretPath = vaultPath.resolve(resolvedKey).normalize();
 
         Path expectedPath = vaultPath;
         if (resolver == AbstractVaultProviderFactory.AvailableResolvers.REALM_FILESEPARATOR_KEY.getVaultKeyResolver()) {
             expectedPath = expectedPath.resolve(realm);
         }
-        if (!secretPath.getParent().equals(expectedPath)) {
+        expectedPath = expectedPath.normalize();
+
+        Path parent = secretPath.getParent();
+        if (parent == null || !parent.equals(expectedPath)) {
             logger.warnf("Path traversal attempt detected in secret %s.", key);
             return false;
         }

@@ -18,6 +18,7 @@
 package org.keycloak.connections.jpa.updater.liquibase.lock;
 
 import java.util.Set;
+
 import liquibase.statement.core.InitializeDatabaseChangeLogLockTableStatement;
 
 /**

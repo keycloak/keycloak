@@ -17,7 +17,8 @@
 
 package org.keycloak.services.clientpolicy.condition;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
+
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.utils.AcrUtils;
@@ -28,7 +29,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 /**

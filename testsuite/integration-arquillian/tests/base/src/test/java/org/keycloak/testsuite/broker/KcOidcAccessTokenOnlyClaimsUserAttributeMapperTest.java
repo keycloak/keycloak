@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.broker;
 
 import java.util.List;
+
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;

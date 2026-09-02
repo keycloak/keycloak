@@ -17,15 +17,16 @@
 
 package org.keycloak.models;
 
-import org.jboss.logging.Logger;
-import org.keycloak.policy.PasswordPolicyConfigException;
-import org.keycloak.policy.PasswordPolicyProvider;
-
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+
+import org.keycloak.policy.PasswordPolicyConfigException;
+import org.keycloak.policy.PasswordPolicyProvider;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -213,7 +214,7 @@ public class PasswordPolicy implements Serializable {
         }
 
         public PasswordPolicy build(KeycloakSession session) {
-            Map<String, Object> config = new HashMap<>();
+            Map<String, Object> config = new LinkedHashMap<>();
             for (Map.Entry<String, String> e : map.entrySet()) {
 
                 PasswordPolicyProvider provider = session.getProvider(PasswordPolicyProvider.class, e.getKey());

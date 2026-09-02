@@ -1,6 +1,5 @@
 package org.keycloak.it.cli;
 
-import org.keycloak.it.junit5.extension.CLITestExtension;
 
 /**
  * Used to specify the output directory for the received / to-be-approved outputs of this packages tests.

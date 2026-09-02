@@ -24,9 +24,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.infinispan.client.hotrod.RemoteCache;
 import org.keycloak.models.sessions.infinispan.changes.remote.remover.ConditionalRemover;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+
+import org.infinispan.client.hotrod.RemoteCache;
 
 /**
  * A {@link ConditionalRemover} implementation to delete {@link SessionEntity} based on the {@code realmId} value.

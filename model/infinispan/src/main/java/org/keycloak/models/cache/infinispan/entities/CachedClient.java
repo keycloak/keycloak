@@ -25,7 +25,6 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 
@@ -33,7 +32,7 @@ import org.keycloak.models.RoleModel;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class CachedClient extends AbstractRevisioned implements InRealm {
+public class CachedClient extends AbstractCachedClientScope<ClientModel> {
     protected String clientId;
     protected String name;
     protected String description;
@@ -53,7 +52,6 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
     protected int notBefore;
     protected Set<String> scope = new HashSet<>();
     protected Set<String> webOrigins = new HashSet<>();
-    protected Set<ProtocolMapperModel> protocolMappers = new HashSet<>();
     protected boolean surrogateAuthRequired;
     protected String managementUrl;
     protected String rootUrl;
@@ -66,9 +64,11 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
     protected boolean serviceAccountsEnabled;
     protected int nodeReRegistrationTimeout;
     protected Map<String, Integer> registeredNodes;
+    protected Long createdTimestamp;
+    protected Long lastModifiedTimestamp;
 
-    public CachedClient(Long revision, RealmModel realm, ClientModel model) {
-        super(revision, model.getId());
+    public CachedClient(long revision, RealmModel realm, ClientModel model) {
+        super(revision, model);
         clientAuthenticatorType = model.getClientAuthenticatorType();
         secret = model.getSecret();
         registrationToken = model.getRegistrationToken();
@@ -88,7 +88,6 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         redirectUris.addAll(model.getRedirectUris());
         webOrigins.addAll(model.getWebOrigins());
         scope.addAll(model.getScopeMappingsStream().map(RoleModel::getId).collect(Collectors.toSet()));
-        protocolMappers.addAll(model.getProtocolMappersStream().collect(Collectors.toSet()));
         surrogateAuthRequired = model.isSurrogateAuthRequired();
         managementUrl = model.getManagementUrl();
         rootUrl = model.getRootUrl();
@@ -102,6 +101,8 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
 
         nodeReRegistrationTimeout = model.getNodeReRegistrationTimeout();
         registeredNodes = new TreeMap<>(model.getRegisteredNodes());
+        createdTimestamp = model.getCreatedTimestamp();
+        lastModifiedTimestamp = model.getLastModifiedTimestamp();
     }
 
     public String getClientId() {
@@ -176,10 +177,6 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         return frontchannelLogout;
     }
 
-    public Set<ProtocolMapperModel> getProtocolMappers() {
-        return protocolMappers;
-    }
-
     public boolean isSurrogateAuthRequired() {
         return surrogateAuthRequired;
     }
@@ -230,5 +227,13 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
 
     public Map<String, String> getAuthFlowBindings() {
         return authFlowBindings;
+    }
+
+    public Long getCreatedTimestamp() {
+        return createdTimestamp;
+    }
+
+    public Long getLastModifiedTimestamp() {
+        return lastModifiedTimestamp;
     }
 }

@@ -17,12 +17,12 @@
 
 package org.keycloak.testsuite.pages;
 
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.junit.Assert;
 import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+
+import org.jboss.arquillian.test.api.ArquillianResource;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
@@ -154,6 +154,10 @@ public class LoginPage extends LanguageComboboxAwarePage {
         return !driver.findElements(By.id("username")).isEmpty();
     }
 
+    public boolean isEmailInputPresent() {
+        return !driver.findElements(By.id("email")).isEmpty();
+    }
+
     public boolean isRegisterLinkPresent() {
         return !driver.findElements(By.linkText("Register")).isEmpty();
     }
@@ -231,20 +235,8 @@ public class LoginPage extends LanguageComboboxAwarePage {
     }
 
     @Override
-    public boolean isCurrent() {
-        String realm = "test";
-        return isCurrent(realm);
-    }
-
-    @Override
-    public boolean isCurrent(String realm) {
-        return DroneUtils.getCurrentDriver().getTitle().equals("Sign in to " + realm) || DroneUtils.getCurrentDriver().getTitle().equals("Anmeldung bei " + realm);
-    }
-
-    public void assertCurrent(String realm) {
-        String name = getClass().getSimpleName();
-        Assert.assertTrue("Expected " + name + " but was " + DroneUtils.getCurrentDriver().getTitle() + " (" + DroneUtils.getCurrentDriver().getCurrentUrl() + ")",
-                isCurrent(realm));
+    public String getExpectedPageId() {
+        return "login-login";
     }
 
     public void clickRegister() {
@@ -278,22 +270,4 @@ public class LoginPage extends LanguageComboboxAwarePage {
         return rememberMe.isSelected();
     }
 
-    /**
-     * @deprecated Use {@link OAuthClient#openLoginForm()}
-     */
-    @Deprecated
-    public void open() {
-        oauth.openLoginForm();
-        assertCurrent();
-    }
-
-    /**
-     * @deprecated Use {@link OAuthClient#openLoginForm()}
-     */
-    @Deprecated
-    public void open(String realm) {
-        oauth.realm(realm);
-        oauth.openLoginForm();
-        assertCurrent(realm);
-    }
 }

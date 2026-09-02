@@ -16,6 +16,9 @@
  */
 package org.keycloak.broker.oauth;
 
+import java.io.IOException;
+import java.util.Map;
+
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
@@ -25,9 +28,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
-
-import java.io.IOException;
-import java.util.Map;
 
 public class OAuth2IdentityProviderFactory extends AbstractIdentityProviderFactory<OAuth2IdentityProvider> {
 

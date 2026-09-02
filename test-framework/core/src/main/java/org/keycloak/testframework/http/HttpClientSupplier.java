@@ -1,21 +1,45 @@
 package org.keycloak.testframework.http;
 
-import org.apache.http.client.HttpClient;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
+import java.io.IOException;
+import java.util.List;
+import javax.net.ssl.SSLContext;
+
 import org.keycloak.testframework.annotations.InjectHttpClient;
+import org.keycloak.testframework.https.ManagedCertificates;
+import org.keycloak.testframework.injection.DependenciesBuilder;
+import org.keycloak.testframework.injection.Dependency;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
 
-import java.io.IOException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 
 public class HttpClientSupplier implements Supplier<HttpClient, InjectHttpClient> {
 
     @Override
+    public List<Dependency> getDependencies(RequestedInstance<HttpClient, InjectHttpClient> instanceContext) {
+        return DependenciesBuilder.create(ManagedCertificates.class).build();
+    }
+
+    @Override
     public HttpClient getValue(InstanceContext<HttpClient, InjectHttpClient> instanceContext) {
         HttpClientBuilder builder = HttpClientBuilder.create();
+
+        ManagedCertificates managedCerts = instanceContext.getDependency(ManagedCertificates.class);
+
+        if (managedCerts.isTlsEnabled()) {
+            SSLContext sslContext = managedCerts.getClientSSLContext();
+            SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(
+                    sslContext,
+                    SSLConnectionSocketFactory.getDefaultHostnameVerifier()
+            );
+
+            builder.setSSLSocketFactory(sslSocketFactory);
+        }
 
         if (!instanceContext.getAnnotation().followRedirects()) {
             builder.disableRedirectHandling();

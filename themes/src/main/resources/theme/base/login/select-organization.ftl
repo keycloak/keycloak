@@ -8,15 +8,14 @@
                 <ul class="${properties.kcFormSocialAccountListClass!} <#if user.organizations?size gt 3>${properties.kcFormSocialAccountListGridClass!}</#if>">
                     <#list user.organizations as organization>
                         <li>
-                            <a id="organization-${organization.alias}" class="${properties.kcFormSocialAccountListButtonClass!} <#if user.organizations?size gt 3>${properties.kcFormSocialAccountGridItem!}</#if>"
-                               type="button" onclick="document.forms[0]['kc.org'].value = '${organization.alias}'; document.forms[0].requestSubmit()">
+                            <button type="submit" id="organization-${organization.alias}" class="${properties.kcFormSocialAccountListButtonClass!} <#if user.organizations?size gt 3>${properties.kcFormSocialAccountGridItem!}</#if>"
+                               name="kc.org" value="${organization.alias!}">
                                 <span class="${properties.kcFormSocialAccountNameClass!}">${organization.name!}</span>
-                            </a>
+                            </button>
                         </li>
                     </#list>
                 </ul>
             </div>
-            <input type="hidden" name="kc.org"/>
         </form>
     </#if>
 

@@ -16,19 +16,16 @@
  */
 package org.keycloak.testsuite.broker;
 
-import jakarta.ws.rs.core.Response;
 import java.util.List;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.Assert;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.keys.Attributes;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.KeysMetadataRepresentation;
-import org.keycloak.representations.idm.KeysMetadataRepresentation.KeyMetadataRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
@@ -39,6 +36,10 @@ import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.util.saml.SamlDocumentStepBuilder;
+
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Assertions;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -93,7 +94,7 @@ public abstract class AbstractKcSamlMetadataBrokerTest extends AbstractBrokerTes
                 .build()
                 // first-broker flow: if valid request, it displays an update profile page on consumer realm
                 .execute(currentResponse -> {
-                    Assert.assertEquals(statusCode, currentResponse.getStatusLine().getStatusCode());
+                    Assertions.assertEquals(statusCode, currentResponse.getStatusLine().getStatusCode());
                     if (expectedString != null) {
                         MatcherAssert.assertThat(currentResponse, bodyHC(Matchers.containsString(expectedString)));
                     }
@@ -118,7 +119,7 @@ public abstract class AbstractKcSamlMetadataBrokerTest extends AbstractBrokerTes
                 .build()
                 // first-broker flow: if valid request, it displays an update profile page on consumer realm
                 .execute(currentResponse -> {
-                    Assert.assertEquals(statusCode, currentResponse.getStatusLine().getStatusCode());
+                    Assertions.assertEquals(statusCode, currentResponse.getStatusLine().getStatusCode());
                     MatcherAssert.assertThat(currentResponse, bodyHC(Matchers.containsString(expectedString)));
                 });
     }
@@ -143,17 +144,17 @@ public abstract class AbstractKcSamlMetadataBrokerTest extends AbstractBrokerTes
         String realmId = realm.toRepresentation().getId();
         ComponentRepresentation keys = createComponentRep(algorithm, providerId, realmId);
         try (Response response = realm.components().add(keys)) {
-            Assert.assertEquals(201, response.getStatus());
+            Assertions.assertEquals(201, response.getStatus());
         }
 
         String updatedActiveKid = realm.keys().getKeyMetadata().getActive().get(algorithm);
-        Assert.assertNotEquals(activeKid, updatedActiveKid);
+        Assertions.assertNotEquals(activeKid, updatedActiveKid);
     }
 
     protected void updateKeyProvider(String realmName, String providerId, boolean active, boolean enabled) {
         RealmResource realm = adminClient.realm(realmName);
         List<ComponentRepresentation> components = realm.components().query(null, KeyProvider.class.getName(), providerId);
-        Assert.assertEquals("Key provider " + providerId + " not found.", 1, components.size());
+        Assertions.assertEquals(1, components.size(), "Key provider " + providerId + " not found.");
         ComponentRepresentation key = components.iterator().next();
         MultivaluedHashMap<String, String> config = key.getConfig();
         if (config == null) {

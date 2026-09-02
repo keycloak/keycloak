@@ -23,7 +23,7 @@ import java.util.Objects;
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
- * 
+ *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
 public class VisibleSdJwtClaim extends AbstractSdJwtClaim {
@@ -37,6 +37,26 @@ public class VisibleSdJwtClaim extends AbstractSdJwtClaim {
     @Override
     public JsonNode getVisibleClaimValue(String hashAlgo) {
         return claimValue;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof VisibleSdJwtClaim)) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        VisibleSdJwtClaim that = (VisibleSdJwtClaim) o;
+        return Objects.equals(claimValue, that.claimValue);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + Objects.hashCode(claimValue);
+        return result;
     }
 
     // Static method to create a builder instance

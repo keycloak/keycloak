@@ -4,6 +4,7 @@ import {
   NavExpandable,
   NavItem,
   NavList,
+  PageContext,
   PageSidebar,
   PageSidebarBody,
   Spinner,
@@ -12,6 +13,7 @@ import {
   PropsWithChildren,
   MouseEvent as ReactMouseEvent,
   Suspense,
+  useContext,
   useMemo,
   useState,
 } from "react";
@@ -24,8 +26,8 @@ import {
 } from "react-router-dom";
 
 import fetchContentJson from "../content/fetchContent";
-import { environment, type Environment, type Feature } from "../environment";
-import { TFuncKey } from "../i18n";
+import type { TFuncKey } from "../i18n-type";
+import type { AccountEnvironment, Feature } from "..";
 import { usePromise } from "../utils/usePromise";
 
 type RootMenuItem = {
@@ -46,7 +48,7 @@ export type MenuItem = RootMenuItem | MenuItemWithChildren;
 
 export const PageNav = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>();
-  const context = useEnvironment<Environment>();
+  const context = useEnvironment<AccountEnvironment>();
 
   usePromise((signal) => fetchContentJson({ signal, context }), setMenuItems);
   return (
@@ -81,13 +83,11 @@ type NavMenuItemProps = {
 
 function NavMenuItem({ menuItem }: NavMenuItemProps) {
   const { t } = useTranslation();
-  const {
-    environment: { features },
-  } = useEnvironment<Environment>();
+  const { environment } = useEnvironment<AccountEnvironment>();
   const { pathname } = useLocation();
   const isActive = useMemo(
-    () => matchMenuItem(pathname, menuItem),
-    [pathname, menuItem],
+    () => matchMenuItem(pathname, menuItem, environment.baseUrl),
+    [pathname, menuItem, environment.baseUrl],
   );
 
   if ("path" in menuItem) {
@@ -107,7 +107,7 @@ function NavMenuItem({ menuItem }: NavMenuItemProps) {
     >
       {menuItem.children
         .filter((menuItem) =>
-          menuItem.isVisible ? features[menuItem.isVisible] : true,
+          menuItem.isVisible ? environment.features[menuItem.isVisible] : true,
         )
         .map((child) => (
           <NavMenuItem key={child.label as string} menuItem={child} />
@@ -116,16 +116,22 @@ function NavMenuItem({ menuItem }: NavMenuItemProps) {
   );
 }
 
-function getFullUrl(path: string) {
-  return `${new URL(environment.baseUrl).pathname}${path}`;
+function getFullUrl(path: string, baseUrl: string) {
+  return `${new URL(baseUrl).pathname}${path}`;
 }
 
-function matchMenuItem(currentPath: string, menuItem: MenuItem): boolean {
+function matchMenuItem(
+  currentPath: string,
+  menuItem: MenuItem,
+  baseUrl: string,
+): boolean {
   if ("path" in menuItem) {
-    return !!matchPath(getFullUrl(menuItem.path), currentPath);
+    return !!matchPath(getFullUrl(menuItem.path, baseUrl), currentPath);
   }
 
-  return menuItem.children.some((child) => matchMenuItem(currentPath, child));
+  return menuItem.children.some((child) =>
+    matchMenuItem(currentPath, child, baseUrl),
+  );
 }
 
 type NavLinkProps = {
@@ -133,24 +139,35 @@ type NavLinkProps = {
   isActive: boolean;
 };
 
+// Matches PatternFly's own "--pf-v5-global--breakpoint--xl" token, which is
+// the width below which its Page component switches the sidebar from a
+// persistent panel to a slide-over that must be closed after navigating.
+const PAGE_SIDEBAR_OVERLAY_BREAKPOINT_PX = 1200;
+
 export const NavLink = ({
   path,
   isActive,
   children,
 }: PropsWithChildren<NavLinkProps>) => {
-  const menuItemPath = getFullUrl(path) + location.search;
+  const { environment } = useEnvironment<AccountEnvironment>();
+  const menuItemPath = getFullUrl(path, environment.baseUrl) + location.search;
   const href = useHref(menuItemPath);
   const handleClick = useLinkClickHandler(menuItemPath);
+  const { isSidebarOpen, onSidebarToggle, width } = useContext(PageContext);
+  const isOverlayView = width < PAGE_SIDEBAR_OVERLAY_BREAKPOINT_PX;
 
   return (
     <NavItem
       data-testid={path}
       to={href}
       isActive={isActive}
-      onClick={(event) =>
+      onClick={(event) => {
         // PatternFly does not have the correct type for this event, so we need to cast it.
-        handleClick(event as unknown as ReactMouseEvent<HTMLAnchorElement>)
-      }
+        handleClick(event as unknown as ReactMouseEvent<HTMLAnchorElement>);
+        if (isOverlayView && isSidebarOpen) {
+          onSidebarToggle();
+        }
+      }}
     >
       {children}
     </NavItem>

@@ -17,7 +17,17 @@
 
 package org.keycloak.storage.ldap.mappers;
 
-import org.jboss.logging.Logger;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
@@ -32,23 +42,17 @@ import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
+import org.keycloak.storage.ldap.idm.store.ldap.LDAPUtil;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import org.jboss.logging.Logger;
+
+import static java.util.Optional.ofNullable;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -65,6 +69,10 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
     public static final String ALWAYS_READ_VALUE_FROM_LDAP = "always.read.value.from.ldap";
     public static final String IS_MANDATORY_IN_LDAP = "is.mandatory.in.ldap";
     public static final String IS_BINARY_ATTRIBUTE = "is.binary.attribute";
+    public static final String BINARY_ATTRIBUTE_DECODER = "binary.attribute.decoder";
+    public static final String BINARY_DECODER_AUTO = "auto";
+    public static final String BINARY_DECODER_BASE64 = "base64";
+    public static final String BINARY_DECODER_UUID = "uuid";
     public static final String ATTRIBUTE_DEFAULT_VALUE = "attribute.default.value";
     public static final String FORCE_DEFAULT_VALUE = "attribute.force.default";
 
@@ -209,6 +217,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         final String ldapAttrName = getLdapAttributeName();
         boolean isAlwaysReadValueFromLDAP = parseBooleanParameter(mapperModel, ALWAYS_READ_VALUE_FROM_LDAP);
         final boolean isMandatoryInLdap = parseBooleanParameter(mapperModel, IS_MANDATORY_IN_LDAP);
+        final boolean decodeAsUuid = shouldDecodeAsUuid();
         final boolean isBinaryAttribute = parseBooleanParameter(mapperModel, IS_BINARY_ATTRIBUTE);
         final String attributeDefaultValue = getAttributeDefaultValue();
 
@@ -293,7 +302,9 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                 @Override
                 public String getUsername() {
                     if (UserModel.USERNAME.equals(userModelAttrName)) {
-                        return ldapUser.getAttributeAsString(ldapAttrName);
+                        return ofNullable(ldapUser.getAttributeAsString(ldapAttrName))
+                                .map(this::toLowerCaseIfImportEnabled)
+                                .orElse(null);
                     }
                     return super.getUsername();
                 }
@@ -301,7 +312,9 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                 @Override
                 public String getEmail() {
                     if (UserModel.EMAIL.equals(userModelAttrName)) {
-                        return ldapUser.getAttributeAsString(ldapAttrName);
+                        return ofNullable(ldapUser.getAttributeAsString(ldapAttrName))
+                                .map(this::toLowerCaseIfImportEnabled)
+                                .orElse(null);
                     }
                     return super.getEmail();
                 }
@@ -342,6 +355,12 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                     return true;
                 }
 
+                private String toLowerCaseIfImportEnabled(String value) {
+                    if (getLdapProvider().getModel().isImportEnabled()) {
+                        return value.toLowerCase();
+                    }
+                    return value;
+                }
             };
 
         } else if (isBinaryAttribute) {
@@ -388,10 +407,18 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
             delegate = new UserModelDelegate(delegate) {
 
+                private String decodeValue(String value) {
+                    if (decodeAsUuid) {
+                        LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
+                        return LDAPUtil.decodeBase64ToUuid(value, ldapConfig);
+                    }
+                    return value;
+                }
+
                 @Override
                 public String getFirstAttribute(String name) {
                     if (name.equalsIgnoreCase(userModelAttrName)) {
-                        return ldapUser.getAttributeAsString(ldapAttrName);
+                        return decodeValue(ldapUser.getAttributeAsString(ldapAttrName));
                     } else {
                         return super.getFirstAttribute(name);
                     }
@@ -404,7 +431,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                         if (ldapAttrValue == null) {
                             return Stream.empty();
                         } else {
-                            return ldapAttrValue.stream();
+                            return ldapAttrValue.stream().map(this::decodeValue);
                         }
                     } else {
                         return super.getAttributeStream(name);
@@ -417,20 +444,12 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
                     Set<String> allLdapAttrValues = ldapUser.getAttributeAsSet(ldapAttrName);
                     if (allLdapAttrValues != null) {
-                        attrs.put(userModelAttrName, new ArrayList<>(allLdapAttrValues));
+                        attrs.put(userModelAttrName, allLdapAttrValues.stream()
+                                .map(this::decodeValue).collect(Collectors.toList()));
                     } else {
                         attrs.remove(userModelAttrName);
                     }
                     return attrs;
-                }
-
-                @Override
-                public String getEmail() {
-                    if (UserModel.EMAIL.equalsIgnoreCase(userModelAttrName)) {
-                        return ldapUser.getAttributeAsString(ldapAttrName);
-                    } else {
-                        return super.getEmail();
-                    }
                 }
 
                 @Override
@@ -513,6 +532,16 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
     private boolean isBinaryAttribute() {
         return mapperModel.get(IS_BINARY_ATTRIBUTE, false);
+    }
+
+    private boolean shouldDecodeAsUuid() {
+        if (!isBinaryAttribute()) return false;
+        String decoder = mapperModel.getConfig().getFirst(BINARY_ATTRIBUTE_DECODER);
+        if (BINARY_DECODER_BASE64.equals(decoder)) return false;
+        if (BINARY_DECODER_UUID.equals(decoder)) return true;
+        // "auto" or not set: uuid when LDAP attribute matches the configured UUID LDAP attribute
+        LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
+        return getLdapAttributeName().equalsIgnoreCase(ldapConfig.getUuidLDAPAttributeName());
     }
 
     private boolean isReadOnly() {

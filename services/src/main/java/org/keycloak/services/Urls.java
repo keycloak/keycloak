@@ -16,9 +16,13 @@
  */
 package org.keycloak.services;
 
+import java.net.URI;
+
+import jakarta.ws.rs.core.UriBuilder;
+
+import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.common.Version;
 import org.keycloak.models.Constants;
-import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.endpoints.LogoutEndpoint;
@@ -30,10 +34,7 @@ import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.resources.ThemeResource;
 import org.keycloak.services.resources.admin.AdminRoot;
-
 import org.keycloak.utils.StringUtil;
-import jakarta.ws.rs.core.UriBuilder;
-import java.net.URI;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -180,8 +181,21 @@ public class Urls {
                 .build(realmId);
     }
 
+    public static URI realmLoginRestartPage(URI baseUri, String realmName, String clientId, String tabId, String clientData, boolean skipLogout) {
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "restartSession")
+                .replaceQueryParam(Constants.CLIENT_ID, clientId)
+                .replaceQueryParam(Constants.CLIENT_DATA, clientData)
+                .replaceQueryParam(Constants.TAB_ID, tabId)
+                .queryParam(Constants.SKIP_LOGOUT, String.valueOf(skipLogout))
+                .build(realmName);
+    }
+
     private static UriBuilder realmLogout(URI baseUri) {
         return tokenBase(baseUri).path(OIDCLoginProtocolService.class, "logout");
+    }
+
+    public static URI tokenEndpoint(URI baseUri, String realmName) {
+        return tokenBase(baseUri).path(OIDCLoginProtocolService.class, "token").build(realmName);
     }
 
     public static URI realmRegisterAction(URI baseUri, String realmName) {

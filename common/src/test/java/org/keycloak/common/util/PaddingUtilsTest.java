@@ -19,8 +19,8 @@
 
 package org.keycloak.common.util;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -29,11 +29,11 @@ public class PaddingUtilsTest {
 
     @Test
     public void testPadding() {
-        Assert.assertEquals("foo123", PaddingUtils.padding("foo123", 5));
-        Assert.assertEquals("foo123", PaddingUtils.padding("foo123", 6));
-        Assert.assertEquals("foo123\0", PaddingUtils.padding("foo123", 7));
+        Assertions.assertEquals("foo123", PaddingUtils.padding("foo123", 5));
+        Assertions.assertEquals("foo123", PaddingUtils.padding("foo123", 6));
+        Assertions.assertEquals("foo123\0", PaddingUtils.padding("foo123", 7));
 
-        Assert.assertEquals("someLongPassword", PaddingUtils.padding("someLongPassword", 14));
-        Assert.assertEquals("short\0\0\0\0\0\0\0\0\0", PaddingUtils.padding("short", 14));
+        Assertions.assertEquals("someLongPassword", PaddingUtils.padding("someLongPassword", 14));
+        Assertions.assertEquals("short\0\0\0\0\0\0\0\0\0", PaddingUtils.padding("short", 14));
     }
 }

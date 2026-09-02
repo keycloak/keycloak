@@ -83,4 +83,18 @@
         </modifySql>
     </changeSet>
 
+    <changeSet author="keycloak" id="24.0.0-26618-edb-migration">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <dbms type="postgresql"/>
+            <indexExists tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE" />
+            <changeSetExecuted id="24.0.0-26618-drop-index-if-present" author="keycloak" changeLogFile="META-INF/jpa-changelog-24.0.0.xml" />
+            <changeSetExecuted id="24.0.0-26618-reindex" author="keycloak" changeLogFile="META-INF/jpa-changelog-24.0.0.xml" />
+        </preConditions>
+        <dropIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE"/>
+        <createIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE">
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="substr(VALUE,1,255)" valueComputed="substr(VALUE,1,255)" />
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>

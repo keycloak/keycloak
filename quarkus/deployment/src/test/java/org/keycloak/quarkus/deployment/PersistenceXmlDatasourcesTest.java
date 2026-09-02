@@ -1,5 +1,17 @@
 package org.keycloak.quarkus.deployment;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.function.Consumer;
+
+import org.keycloak.Config;
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
+
 import io.smallrye.config.SmallRyeConfig;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.cfg.JdbcSettings;
@@ -7,26 +19,15 @@ import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
 import org.hibernate.jpa.boot.spi.PersistenceXmlParser;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.keycloak.Config;
-import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
-import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.function.Consumer;
+import static org.keycloak.quarkus.deployment.KeycloakProcessor.configurePersistenceUnitProperties;
+import static org.keycloak.quarkus.deployment.KeycloakProcessor.getDatasourceNameFromPersistenceXml;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.keycloak.quarkus.deployment.KeycloakProcessor.configurePersistenceUnitProperties;
-import static org.keycloak.quarkus.deployment.KeycloakProcessor.getDatasourceNameFromPersistenceXml;
 import static org.wildfly.common.Assert.assertNotNull;
 
 public class PersistenceXmlDatasourcesTest {
@@ -35,9 +36,9 @@ public class PersistenceXmlDatasourcesTest {
                          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                          xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
                          version="3.0">
-                         
+
                          %s
-                         
+
             </persistence>
             """;
 
@@ -228,7 +229,6 @@ public class PersistenceXmlDatasourcesTest {
     // inspired in AbstractConfigurationTest in quarkus/runtime
     private static SmallRyeConfig createConfig() {
         Configuration.resetConfig();
-        KeycloakConfigSourceProvider.reload();
         Environment.getCurrentOrCreateFeatureProfile();
         return Configuration.getConfig();
     }

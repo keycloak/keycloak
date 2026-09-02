@@ -131,6 +131,7 @@ public final class StringPropertyReplacer
         return new InputStream() {
             private ByteArrayInputStream buffer;
             private boolean closed;
+            private int curlyBraceDepth;
 
             @Override
             public int read() throws IOException {
@@ -147,8 +148,14 @@ public final class StringPropertyReplacer
                 }
                 // if no buffer, scan for } or ${
                 int c = source.read();
-                if (c == '}' && readUntilCurlyBrace) {
-                    return -2;
+                if (readUntilCurlyBrace) {
+                    if (c == '}') {
+                        if (curlyBraceDepth-- == 0) {
+                            return -2;
+                        }
+                    } else if (c == '{') {
+                        curlyBraceDepth++;
+                    }
                 }
                 if (c != '$') {
                     return c;

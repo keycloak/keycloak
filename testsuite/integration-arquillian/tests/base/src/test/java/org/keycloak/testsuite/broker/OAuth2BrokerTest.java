@@ -1,8 +1,10 @@
 package org.keycloak.testsuite.broker;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import jakarta.ws.rs.BadRequestException;
-import org.junit.Ignore;
-import org.junit.Test;
+
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.broker.oauth.OAuth2IdentityProviderFactory;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
@@ -15,10 +17,10 @@ import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Assert;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Final class as it's not intended to be overriden. Feel free to remove "final" if you really know what you are doing.
@@ -63,23 +65,24 @@ public final class OAuth2BrokerTest extends AbstractAdvancedBrokerTest {
 
     @Test
     public void testLoginDefaultConfiguration() {
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         logInWithBroker(bc);
 
         updateAccountInformationPage.assertCurrent();
-        Assert.assertTrue("We must be on correct realm right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+                "We must be on correct realm right now");
         log.debug("Updating info on updateAccount page");
         updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
 
         List<UserRepresentation> users = adminClient.realm(bc.consumerRealmName()).users().search(bc.getUserLogin());
-        Assert.assertEquals(1, users.size());
+        Assertions.assertEquals(1, users.size());
         UserRepresentation user = users.get(0);
-        Assert.assertEquals(bc.getUserLogin(), user.getUsername());
-        Assert.assertEquals(bc.getUserEmail(), user.getEmail());
-        Assert.assertEquals("Firstname", user.getFirstName());
-        Assert.assertEquals("Lastname", user.getLastName());
+        Assertions.assertEquals(bc.getUserLogin(), user.getUsername());
+        Assertions.assertEquals(bc.getUserEmail(), user.getEmail());
+        Assertions.assertEquals("Firstname", user.getFirstName());
+        Assertions.assertEquals("Lastname", user.getLastName());
     }
 
     @Test
@@ -91,17 +94,18 @@ public final class OAuth2BrokerTest extends AbstractAdvancedBrokerTest {
         broker.getConfig().put("fullNameClaim", "name-claim");
         brokerResource.update(broker);
 
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         logInWithBroker(bc);
 
         List<UserRepresentation> users = adminClient.realm(bc.consumerRealmName()).users().search("username-claim");
-        Assert.assertEquals(1, users.size());
+        Assertions.assertEquals(1, users.size());
         UserRepresentation user = users.get(0);
-        Assert.assertEquals("username-claim", user.getUsername());
-        Assert.assertEquals("email-claim@keycloak.org", user.getEmail());
-        Assert.assertEquals("my", user.getFirstName());
-        Assert.assertEquals("user", user.getLastName());
+        Assertions.assertEquals("username-claim", user.getUsername());
+        Assertions.assertEquals("email-claim@keycloak.org", user.getEmail());
+        Assertions.assertEquals("my", user.getFirstName());
+        Assertions.assertEquals("user", user.getLastName());
     }
 
     @Test
@@ -116,9 +120,9 @@ public final class OAuth2BrokerTest extends AbstractAdvancedBrokerTest {
         try {
             broker.getConfig().remove(key);
             brokerResource.update(broker);
-            Assert.fail(key + " must be mandatory");
+            Assertions.fail(key + " must be mandatory");
         } catch (BadRequestException bre) {
-            Assert.assertTrue(bre.getResponse().readEntity(String.class).contains(errorMessage));
+            Assertions.assertTrue(bre.getResponse().readEntity(String.class).contains(errorMessage));
         }
     }
 

@@ -1,13 +1,14 @@
 package org.keycloak.tests.admin.finegrainedadminv1;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.Profile;
 import org.keycloak.models.Constants;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 @KeycloakIntegrationTest(config = FineGrainedAdminWithTokenExchangeTest.FineGrainedWithTokenExchangeServerConf.class)
 public class FineGrainedAdminWithTokenExchangeTest extends AbstractFineGrainedAdminTest {

@@ -17,9 +17,9 @@
 
 package org.keycloak.testsuite.webauthn.updaters;
 
-import org.keycloak.admin.client.resource.RealmResource;
-
 import java.util.List;
+
+import org.keycloak.admin.client.resource.RealmResource;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
@@ -65,9 +65,19 @@ public class PasswordLessRealmAttributeUpdater extends AbstractWebAuthnRealmUpda
         return this;
     }
 
+    /**
+     * @deprecated Use {@link #setWebAuthnPolicyResidentKey(String)} instead.
+     */
+    @Deprecated
     @Override
     public PasswordLessRealmAttributeUpdater setWebAuthnPolicyRequireResidentKey(String webAuthnPolicyRequireResidentKey) {
         rep.setWebAuthnPolicyPasswordlessRequireResidentKey(webAuthnPolicyRequireResidentKey);
+        return this;
+    }
+
+    @Override
+    public PasswordLessRealmAttributeUpdater setWebAuthnPolicyResidentKey(String webAuthnPolicyResidentKey) {
+        rep.setWebAuthnPolicyPasswordlessResidentKey(webAuthnPolicyResidentKey);
         return this;
     }
 

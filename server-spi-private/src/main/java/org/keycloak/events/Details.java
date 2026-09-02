@@ -39,27 +39,39 @@ public interface Details {
     String AUTH_TYPE = "auth_type";
     String AUTH_METHOD = "auth_method";
     String IDENTITY_PROVIDER = "identity_provider";
+    String IDENTITY_PROVIDER_ISSUER = "identity_provider_issuer";
     String IDENTITY_PROVIDER_USERNAME = "identity_provider_identity";
+    String IDENTITY_PROVIDER_USER_ID = "identity_provider_user_id";
     String IDENTITY_PROVIDER_BROKER_SESSION_ID = "identity_provider_broker_session_id";
     String REGISTER_METHOD = "register_method";
     String USERNAME = "username";
+    String ACTOR = "actor";
+    String ACTOR_ID = "actor_id";
+    String ACTOR_TYPE = "actor_type";
+    String ACTOR_TYPE_USER = "user";
+    String ACTOR_TYPE_CLIENT = "client";
+    String ACTOR_SESSION_ID = "actor_session_id";
     String FIRST_NAME = "first_name";
     String LAST_NAME = "last_name";
     String PREVIOUS_FIRST_NAME = PREF_PREVIOUS + "first_name";
     String UPDATED_FIRST_NAME = PREF_UPDATED + "first_name";
     String PREVIOUS_LAST_NAME = PREF_PREVIOUS + "last_name";
     String UPDATED_LAST_NAME = PREF_UPDATED + "last_name";
+    String PREVIOUS_ENABLED = PREF_PREVIOUS + "enabled";
+    String UPDATED_ENABLED = PREF_UPDATED + "enabled";
     String REMEMBER_ME = "remember_me";
     String TOKEN_ID = "token_id";
     String TOKEN_TYPE = "token_type";
     String TOKEN_ISSUED_FOR = "token_issued_for";
     String ORG_ID = "org_id";
     String REFRESH_TOKEN_ID = "refresh_token_id";
+    String REFRESH_TOKEN_PROVIDER_ID = "refresh_token_provider_id";
     String REFRESH_TOKEN_TYPE = "refresh_token_type";
     String REFRESH_TOKEN_SUB = "refresh_token_sub";
     String CLIENT_ASSERTION_ID = "client_assertion_id";
     String CLIENT_ASSERTION_SUB = "client_assertion_sub";
     String CLIENT_ASSERTION_ISSUER = "client_assertion_issuer";
+    String CLIENT_JWT_KID = "client_jwt_kid";
     String VALIDATE_ACCESS_TOKEN = "validate_access_token";
     String UPDATED_REFRESH_TOKEN_ID = "updated_refresh_token_id";
     String NODE_HOST = "node_host";
@@ -84,8 +96,10 @@ public interface Details {
     String CONSENT_VALUE_PERSISTED_CONSENT = "persistent_consent";    // Persistent consent used (was already granted by user before)
     String IMPERSONATOR_REALM = "impersonator_realm";
     String IMPERSONATOR = "impersonator";
+    String IMPERSONATOR_ID = "impersonator_id";
 
     String CLIENT_AUTH_METHOD = "client_auth_method";
+    String CLIENT_AUTH_DETAIL = "client_auth_detail";
 
     String SIGNATURE_REQUIRED = "signature_required";
     String SIGNATURE_ALGORITHM = "signature_algorithm";
@@ -114,4 +128,14 @@ public interface Details {
 
     String CLIENT_POLICY_ERROR = "client_policy_error";
     String CLIENT_POLICY_ERROR_DETAIL = "client_policy_error_detail";
+
+    String USER_SESSION_EXPIRED_REASON = "user_session_expired";
+    String INVALID_USER_SESSION_REMEMBER_ME_REASON = "invalid_user_session_remember_me";
+
+    // OID4VCI (OpenID for Verifiable Credential Issuance) related details
+    String VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED = "verifiable_credential_pre_authorized";
+    String VERIFIABLE_CREDENTIAL_TARGET_CLIENT_ID = "verifiable_credential_target_client_id";
+    String VERIFIABLE_CREDENTIAL_TARGET_USER_ID = "verifiable_credential_target_user_id";
+    String VERIFIABLE_CREDENTIAL_FORMAT = "verifiable_credential_format";
+    String VERIFIABLE_CREDENTIALS_ISSUED = "verifiable_credentials_issued";
 }

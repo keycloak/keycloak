@@ -28,8 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.security.auth.x500.X500Principal;
 import javax.xml.crypto.dsig.keyinfo.KeyInfo;
 import javax.xml.crypto.dsig.keyinfo.KeyName;
-import org.apache.http.client.HttpClient;
-import org.jboss.logging.Logger;
+
 import org.keycloak.adapters.cloned.HttpAdapterUtils;
 import org.keycloak.adapters.cloned.HttpClientAdapterException;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -38,6 +37,9 @@ import org.keycloak.common.util.Time;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.processing.api.util.KeyInfoTools;
+
+import org.apache.http.client.HttpClient;
+import org.jboss.logging.Logger;
 
 /**
  * This class defines a {@link KeyLocator} that looks up public keys and certificates in IdP's

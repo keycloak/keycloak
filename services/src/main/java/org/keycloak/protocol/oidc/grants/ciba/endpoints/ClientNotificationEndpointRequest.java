@@ -18,8 +18,9 @@
 
 package org.keycloak.protocol.oidc.grants.ciba.endpoints;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

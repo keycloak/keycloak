@@ -22,12 +22,11 @@ import java.security.cert.X509Certificate;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import jakarta.ws.rs.core.MultivaluedHashMap;
 
+import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.events.Details;
@@ -38,6 +37,8 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.ServicesLogger;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
 
@@ -84,17 +85,22 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
                 context.attempted();
                 return;
             }
+            if (config.getCASubjectDN().isEmpty()) {
+                logger.warnf("[authenticate] Option '%s' is empty, this configuration is deprecated, please configure it for the authenticator in realm '%s'",
+                        CERTIFICATE_CA_SUBJECT_DN, context.getRealm().getName());
+            }
 
             // Validate X509 client certificate
             try {
                 CertificateValidator.CertificateValidatorBuilder builder = certificateValidationParameters(context.getSession(), config);
                 CertificateValidator validator = builder.build(certs);
-                validator.checkRevocationStatus()
-                         .validateTrust()
+                validator.validateTrust()
+                         .validateCASubjectDN()
+                         .validateTimestamps()
                          .validateKeyUsage()
                          .validateExtendedKeyUsage()
                          .validatePolicy()
-                         .validateTimestamps();
+                         .checkRevocationStatus();
             } catch(Exception e) {
                 logger.error(e.getMessage(), e);
                 // TODO use specific locale to load error messages

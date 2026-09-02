@@ -16,9 +16,10 @@
  */
 package org.keycloak.testsuite.arquillian;
 
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 
 /**
  *

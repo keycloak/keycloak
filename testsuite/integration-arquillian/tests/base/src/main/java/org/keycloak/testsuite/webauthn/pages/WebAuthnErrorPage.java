@@ -1,18 +1,14 @@
 package org.keycloak.testsuite.webauthn.pages;
 
-import org.junit.Assert;
 import org.keycloak.testsuite.pages.LanguageComboboxAwarePage;
 import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.WaitUtils;
-import org.openqa.selenium.By;
+
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
@@ -39,7 +35,7 @@ public class WebAuthnErrorPage extends LanguageComboboxAwarePage {
             WaitUtils.waitUntilElement(cancelRegistrationAIA).is().clickable();
             cancelRegistrationAIA.click();
         } catch (NoSuchElementException e) {
-            Assert.fail("It only works with AIA");
+            Assertions.fail("It only works with AIA");
         }
     }
 
@@ -52,14 +48,8 @@ public class WebAuthnErrorPage extends LanguageComboboxAwarePage {
     }
 
     @Override
-    public boolean isCurrent() {
-        try {
-            driver.findElement(By.id("kc-try-again"));
-            driver.findElement(By.id("kc-error-credential-form"));
-            return true;
-        } catch (NoSuchElementException e) {
-            return false;
-        }
+    public String getExpectedPageId() {
+        return "login-webauthn-error";
     }
 
 }

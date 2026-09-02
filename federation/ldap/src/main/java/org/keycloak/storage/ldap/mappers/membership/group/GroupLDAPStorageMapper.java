@@ -17,7 +17,20 @@
 
 package org.keycloak.storage.ldap.mappers.membership.group;
 
-import org.jboss.logging.Logger;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.ModelException;
@@ -35,6 +48,7 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
+import org.keycloak.storage.ldap.idm.store.ldap.LDAPUtil;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.membership.CommonLDAPGroupMapper;
 import org.keycloak.storage.ldap.mappers.membership.CommonLDAPGroupMapperConfig;
@@ -43,19 +57,7 @@ import org.keycloak.storage.ldap.mappers.membership.MembershipType;
 import org.keycloak.storage.ldap.mappers.membership.UserRolesRetrieveStrategy;
 import org.keycloak.storage.user.SynchronizationResult;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -352,12 +354,19 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
     private void updateAttributesOfKCGroup(GroupModel kcGroup, LDAPObject ldapGroup) {
         Collection<String> groupAttributes = config.getGroupAttributes();
+        LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
 
         for (String attrName : groupAttributes) {
             Set<String> attrValues = ldapGroup.getAttributeAsSet(attrName);
-            if (attrValues==null) {
+            if (attrValues == null) {
                 kcGroup.removeAttribute(attrName);
             } else {
+                if (config.isDecodeGroupUuidAttribute()
+                        && attrName.equalsIgnoreCase(ldapConfig.getUuidLDAPAttributeName())) {
+                    attrValues = attrValues.stream()
+                            .map(v -> LDAPUtil.decodeBase64ToUuid(v, ldapConfig))
+                            .collect(Collectors.toCollection(java.util.LinkedHashSet::new));
+                }
                 kcGroup.setAttribute(attrName, new LinkedList<>(attrValues));
             }
         }
@@ -778,6 +787,8 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             if (cachedLDAPGroupMappings != null) {
                 return cachedLDAPGroupMappings.stream();
             }
+
+            cachedLDAPGroupMappings = Set.of();
 
             List<LDAPObject> ldapGroups = getLDAPGroupMappings(ldapUser);
             if (!ldapGroups.isEmpty()) {

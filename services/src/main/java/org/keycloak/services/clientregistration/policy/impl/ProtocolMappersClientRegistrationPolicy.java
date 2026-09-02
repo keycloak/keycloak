@@ -17,12 +17,12 @@
 
 package org.keycloak.services.clientregistration.policy.impl;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -33,6 +33,8 @@ import org.keycloak.services.clientregistration.ClientRegistrationContext;
 import org.keycloak.services.clientregistration.ClientRegistrationProvider;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyException;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -84,6 +86,11 @@ public class ProtocolMappersClientRegistrationPolicy implements ClientRegistrati
 				ServicesLogger.LOGGER.warn(message);
 				throw new ClientRegistrationPolicyException(message);
 			}
+			String storedMapperType = mapperModel.getProtocolMapper();
+			if (!Objects.equals(mapperType, storedMapperType)) {
+				failWithProtocolMapperTypeNotAllowedError(mapperRepresentation);
+				return;
+			}
 			Map<String, String> modelConfig = mapperModel.getConfig();
 			Map<String, String> representationConfig = mapperRepresentation.getConfig();
 			if (!Objects.equals(representationConfig, modelConfig)) {
@@ -131,7 +138,7 @@ public class ProtocolMappersClientRegistrationPolicy implements ClientRegistrati
     }
 
     private List<String> getAllowedMapperProviders() {
-        return componentModel.getConfig().getList(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES);
+        return componentModel.getConfig().getOrDefault(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES, Collections.emptyList());
     }
 
 }

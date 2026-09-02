@@ -17,13 +17,14 @@
 
 package org.keycloak.testsuite.util.cli;
 
-import org.jboss.logging.Logger;
+import java.util.List;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import java.util.List;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -53,7 +54,7 @@ public abstract class AbstractCommand {
         } catch (HandledException handled) {
             // Fine to ignore. Was handled already
         } catch (RuntimeException e) {
-            log.error("Error occured during command. ", e);
+            log.error("Error occurred during command. ", e);
         }
     }
 

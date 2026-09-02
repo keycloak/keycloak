@@ -17,9 +17,9 @@
 
 package org.keycloak.models.session;
 
-import org.keycloak.provider.Provider;
-
 import java.util.stream.Stream;
+
+import org.keycloak.provider.Provider;
 
 /**
  * Use this to revoke a token, so they will be available even after the restart of Keycloak.

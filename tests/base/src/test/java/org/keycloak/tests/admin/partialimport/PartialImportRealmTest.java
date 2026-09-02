@@ -1,8 +1,10 @@
 package org.keycloak.tests.admin.partialimport;
 
-import org.junit.jupiter.api.Test;
 import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.suites.DatabaseTest;
+
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -38,6 +40,7 @@ public class PartialImportRealmTest extends AbstractPartialImportTest {
     }
 
     @Test
+    @DatabaseTest
     public void testEverythingOverwrite() {
         setOverwrite();
         importEverything(false);

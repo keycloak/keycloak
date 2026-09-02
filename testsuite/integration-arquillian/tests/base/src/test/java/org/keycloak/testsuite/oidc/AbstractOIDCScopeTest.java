@@ -20,21 +20,23 @@ package org.keycloak.testsuite.oidc;
 import java.util.Arrays;
 import java.util.Collection;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Rule;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.util.TokenUtil;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Rule;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -43,9 +45,6 @@ public abstract class AbstractOIDCScopeTest extends AbstractTestRealmKeycloakTes
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
-
-    @Page
-    protected AppPage appPage;
 
     @Page
     protected LoginPage loginPage;
@@ -63,7 +62,7 @@ public abstract class AbstractOIDCScopeTest extends AbstractTestRealmKeycloakTes
 
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.client(clientId, "password").doAccessTokenRequest(code);
-        Assert.assertEquals(200, response.getStatusCode());
+        Assertions.assertEquals(200, response.getStatusCode());
 
         // Test scopes
         log.info("expectedScopes = " + expectedScope);
@@ -76,10 +75,13 @@ public abstract class AbstractOIDCScopeTest extends AbstractTestRealmKeycloakTes
         // Test scope in the access token
         assertScopes(expectedScope, accessToken.getScope());
 
-        EventRepresentation codeToTokenEvent = events.expectCodeToToken(codeId, sessionId)
-                .user(userId)
-                .client(clientId)
-                .assertEvent();
+        EventRepresentation codeToTokenEvent = EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .userId(userId)
+                .clientId(clientId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID).getEvent();
 
         // Test scope in the event
         assertScopes(expectedScope, codeToTokenEvent.getDetails().get(Details.SCOPE));
@@ -90,8 +92,8 @@ public abstract class AbstractOIDCScopeTest extends AbstractTestRealmKeycloakTes
     public static void assertScopes(String expectedScope, String receivedScope) {
         Collection<String> expectedScopes = Arrays.asList(expectedScope.split(" "));
         Collection<String> receivedScopes = Arrays.asList(receivedScope.split(" "));
-        Assert.assertTrue("Not matched. expectedScope: " + expectedScope + ", receivedScope: " + receivedScope,
-                expectedScopes.containsAll(receivedScopes) && receivedScopes.containsAll(expectedScopes));
+        Assertions.assertTrue(expectedScopes.containsAll(receivedScopes) && receivedScopes.containsAll(expectedScopes),
+                "Not matched. expectedScope: " + expectedScope + ", receivedScope: " + receivedScope);
     }
 
     static class Tokens {

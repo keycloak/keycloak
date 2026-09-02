@@ -17,18 +17,18 @@
 
 package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
+import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
 import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
-
-
-import java.util.List;
-import java.util.Optional;
 
 /**
  * Validates attestation proofs as per OID4VCI specification.
@@ -57,17 +57,22 @@ public class AttestationProofValidator extends AbstractProofValidator {
             String jwt = extractAttestationProof(vcIssuanceContext);
 
             KeyAttestationJwtBody attestationBody = AttestationValidatorUtil.validateAttestationJwt(
-                    jwt, keycloakSession, vcIssuanceContext, keyResolver);
+                    jwt,
+                    keycloakSession,
+                    vcIssuanceContext,
+                    keyResolver,
+                    false,
+                    ProofType.ATTESTATION);
 
             if (attestationBody.getAttestedKeys() == null || attestationBody.getAttestedKeys().isEmpty()) {
-                throw new VCIssuerException("No valid attested keys found in attestation proof");
+                throw new VCIssuerException(ErrorType.INVALID_PROOF, "No valid attested keys found in attestation proof");
             }
 
             return attestationBody.getAttestedKeys();
         } catch (VCIssuerException e) {
             throw e; // Re-throw specific exceptions
         } catch (Exception e) {
-            throw new VCIssuerException("Failed to validate attestation proof: " + e.getMessage(), e);
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Failed to validate attestation proof: " + e.getMessage(), e);
         }
     }
 
@@ -75,19 +80,20 @@ public class AttestationProofValidator extends AbstractProofValidator {
             throws VCIssuerException {
 
         SupportedCredentialConfiguration config = Optional.ofNullable(vcIssuanceContext.getCredentialConfig())
-                .orElseThrow(() -> new VCIssuerException("Credential configuration is missing"));
+                .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF, "Credential configuration is missing"));
 
         if (config.getProofTypesSupported() == null || config.getProofTypesSupported().getSupportedProofTypes().get("attestation") == null) {
-            throw new VCIssuerException("Attestation proof type not supported");
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Attestation proof type not supported");
         }
 
         Proofs proofs = vcIssuanceContext.getCredentialRequest().getProofs();
         if (proofs == null || proofs.getAttestation() == null || proofs.getAttestation().isEmpty()) {
-            throw new VCIssuerException("Expected a proof of type attestation: " + ProofType.JWT);
+            throw new VCIssuerException(ErrorType.INVALID_PROOF,
+                    "Expected a proof of type attestation: " + ProofType.ATTESTATION);
         }
 
         if (proofs.getAttestation().size() > 1) {
-            throw new VCIssuerException("Multiple attestation proofs found; only one is allowed");
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Multiple attestation proofs found; only one is allowed");
         }
 
         return proofs.getAttestation().get(0);

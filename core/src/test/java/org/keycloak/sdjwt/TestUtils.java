@@ -20,17 +20,20 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Objects;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import org.keycloak.common.util.Base64Url;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
 public class TestUtils {
-    public static JsonNode readClaimSet(Class<?> klass, String path) {
+    public static ObjectNode readClaimSet(Class<?> klass, String path) {
         // try-with-resources closes inputstream!
         try (InputStream is = klass.getClassLoader().getResourceAsStream(path)) {
-            return SdJwtUtils.mapper.readTree(is);
+            return SdJwtUtils.mapper.readValue(is, ObjectNode.class);
         } catch (IOException e) {
             throw new RuntimeException("Error reading file at path: " + path, e);
         }
@@ -38,8 +41,9 @@ public class TestUtils {
 
     public static String readFileAsString(Class<?> klass, String filePath) {
         StringBuilder stringBuilder = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(
-                (new InputStreamReader(klass.getClassLoader().getResourceAsStream(filePath))))) {
+        try (InputStream inputStream = Objects.requireNonNull(klass.getClassLoader().getResourceAsStream(filePath));
+             InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+             BufferedReader reader = new BufferedReader(inputStreamReader)) {
             String line;
             while ((line = reader.readLine()) != null) {
                 stringBuilder.append(line); // Appends line without a newline character
@@ -57,6 +61,22 @@ public class TestUtils {
             result.append(input, i, end).append("\n");
         }
         return result.toString();
+    }
+
+    public static String removeAlgorithmFromJwsHeader(String jws) {
+        String[] parts = jws.split("\\.", -1);
+        if (parts.length != 3) {
+            throw new IllegalArgumentException("Expected a compact JWS with three parts");
+        }
+
+        try {
+            ObjectNode header = (ObjectNode) SdJwtUtils.mapper.readTree(Base64Url.decode(parts[0]));
+            header.remove("alg");
+            parts[0] = Base64Url.encode(SdJwtUtils.mapper.writeValueAsBytes(header));
+            return String.join(".", parts);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Could not rewrite JWS header", e);
+        }
     }
 
 }

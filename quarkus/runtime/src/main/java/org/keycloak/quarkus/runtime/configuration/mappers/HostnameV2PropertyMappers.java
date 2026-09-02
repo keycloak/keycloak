@@ -1,7 +1,5 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
-
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
@@ -11,12 +9,15 @@ import java.util.stream.Stream;
 
 import org.keycloak.common.Profile;
 import org.keycloak.config.HostnameV2Options;
+import org.keycloak.config.HttpOptions;
+import org.keycloak.config.ProxyOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
-import org.keycloak.config.ProxyOptions;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.utils.SecureContextResolver;
+
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 public final class HostnameV2PropertyMappers implements PropertyMapperGrouping {
 
@@ -103,10 +104,28 @@ public final class HostnameV2PropertyMappers implements PropertyMapperGrouping {
                 // else might be allowable if HOST is overwritten
             }
 
+            if (proxyHeaders == null && !url.getPath().isEmpty() && !normalizePath(url.getPath()).equals(
+                            normalizePath(Configuration.getConfigValue(HttpOptions.HTTP_RELATIVE_PATH).getValue()))) {
+                warn.accept("Likely misconfiguration detected. When using a `hostname` that includes a path that does not match the `http-relative-path` you must use `proxy-headers`");
+            }
+
             return true;
         } catch (MalformedURLException e) {
             return false;
         }
+    }
+
+    private static String normalizePath(String path) {
+        if (path == null) {
+            return path;
+        }
+        if (!path.startsWith("/")) {
+            path = "/" + path;
+        }
+        if (path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1);
+        }
+        return path;
     }
 
 }

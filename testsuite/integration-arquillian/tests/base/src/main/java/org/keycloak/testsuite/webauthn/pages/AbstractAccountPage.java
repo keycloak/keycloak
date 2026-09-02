@@ -17,10 +17,11 @@
 
 package org.keycloak.testsuite.webauthn.pages;
 
-import org.keycloak.testsuite.auth.page.AuthRealm;
+import java.util.List;
 
 import jakarta.ws.rs.core.UriBuilder;
-import java.util.List;
+
+import org.keycloak.testsuite.auth.page.AuthRealm;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>

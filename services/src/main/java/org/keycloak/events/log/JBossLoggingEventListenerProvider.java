@@ -17,7 +17,13 @@
 
 package org.keycloak.events.log;
 
-import org.jboss.logging.Logger;
+import java.util.Map;
+
+import jakarta.enterprise.context.ContextNotActiveException;
+import jakarta.ws.rs.core.Cookie;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.common.util.StackUtil;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
@@ -28,10 +34,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.StringUtil;
 
-import jakarta.ws.rs.core.Cookie;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.UriInfo;
-import java.util.Map;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -196,27 +199,30 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
 
     private void setKeycloakContext(StringBuilder sb) {
         KeycloakContext context = session.getContext();
-        UriInfo uriInfo = context.getUri();
-        HttpHeaders headers = context.getRequestHeaders();
-        if (uriInfo != null) {
-            sb.append(", requestUri=");
-            sanitize(sb, uriInfo.getRequestUri().toString());
-        }
-
-        if (headers != null) {
-            sb.append(", cookies=[");
-            boolean f = true;
-            for (Map.Entry<String, Cookie> e : headers.getCookies().entrySet()) {
-                if (f) {
-                    f = false;
-                } else {
-                    sb.append(", ");
-                }
-                sb.append(StringUtil.sanitizeSpacesAndQuotes(e.getValue().toString(), null));
+        try {
+            UriInfo uriInfo = context.getUri();
+            HttpHeaders headers = context.getRequestHeaders();
+            if (uriInfo != null) {
+                sb.append(", requestUri=");
+                sanitize(sb, uriInfo.getRequestUri().toString());
             }
-            sb.append("]");
-        }
 
+            if (headers != null) {
+                sb.append(", cookies=[");
+                boolean f = true;
+                for (Map.Entry<String, Cookie> e : headers.getCookies().entrySet()) {
+                    if (f) {
+                        f = false;
+                    } else {
+                        sb.append(", ");
+                    }
+                    sb.append(StringUtil.sanitizeSpacesAndQuotes(e.getValue().toString(), null));
+                }
+                sb.append("]");
+            }
+        } catch (ContextNotActiveException e) {
+            // no context information to add
+        }
     }
 
 }

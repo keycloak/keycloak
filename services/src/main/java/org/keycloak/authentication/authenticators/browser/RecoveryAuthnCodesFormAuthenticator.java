@@ -1,5 +1,10 @@
 package org.keycloak.authentication.authenticators.browser;
 
+import java.util.Optional;
+
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
@@ -18,15 +23,11 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
-import org.keycloak.models.utils.RecoveryAuthnCodesUtils;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.RecoveryAuthnCodesUtils;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.ReadOnlyException;
-
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
-import java.util.Optional;
 
 import static org.keycloak.services.validation.Validation.FIELD_USERNAME;
 

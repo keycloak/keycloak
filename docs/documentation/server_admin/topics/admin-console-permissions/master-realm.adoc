@@ -1,5 +1,5 @@
-[[_master_realm_access_control]]
 
+[[_master_realm_access_control]]
 === Master realm access control
 
 The `master` realm in {project_name} is a special realm and treated differently than other realms.
@@ -11,13 +11,15 @@ It's possible to create multiple superusers,  as well as users that can only man
 ==== Global roles
 
 There are two realm-level roles in the `master` realm.
-These are: 
+These are:
 
 * admin
-* create-realm        
+* create-realm
 
 Users with the `admin` role are superusers and have full access to manage any realm on the server.  Users with the `create-realm` role
 are allowed to create new realms.  They will be granted full access to any new realm they create.
+
+IMPORTANT: Admins with the `create-realm` role who do not have the `admin` role will also need the realm-specific `query-realms` role to be able to create and list realms in the Admin Console.
 
 ==== Realm specific roles
 
@@ -26,7 +28,7 @@ Each realm in {project_name} is represented by a client in the `master` realm.
 The name of the client is `<realm name>-realm`.  These clients each have client-level roles defined which define varying
 level of access to manage an individual realm.
 
-The roles available are: 
+The roles available are:
 
 * create-client
 * impersonation
@@ -34,16 +36,19 @@ The roles available are:
 * manage-clients
 * manage-events
 * manage-identity-providers
+* manage-organizations
 * manage-realm
 * manage-users
 * query-clients
 * query-groups
+* query-organizations
 * query-realms
 * query-users
 * view-authorization
 * view-clients
 * view-events
 * view-identity-providers
+* view-organizations
 * view-realm
 * view-users
 
@@ -51,5 +56,58 @@ Assign the roles you want to your users and they will only be able to use that s
 
 IMPORTANT: Admins with the `manage-users` role will only be able to assign admin roles to users that they themselves have.  So, if an admin has the `manage-users` role but doesn't have the `manage-realm` role, they will not be able to assign this role.
 
+==== Granting admin roles to users
 
+When granting admin roles to users in a realm, you must explicitly assign these roles to the user, either by a direct
+role mapping (including roles granted via identity provider mappers) or by assigning the user to a group that has the appropriate role mappings.
+This is true even for users in the `master` realm.
+
+Even though you are able to create client protocol mappers for a client to map admin roles to tokens, the admin roles
+will be ignored when the user authenticates and will not be included in the token.  This is because admin roles are only
+used for authorization to access the Admin Console and Admin REST endpoints, and are not intended to be used for
+application access control.
+
+Effectively, access to the Admin API is only granted to users with admin roles explicitly assigned through direct role
+mappings or group memberships, and not to users with admin roles mapped only through client protocol mappers.
+
+==== Multi-realm administration considerations
+
+The `admin` role in the `master` realm is a composite role. For every realm in the deployment, it includes
+the full set of admin roles from that realm's `<realm name>-realm` client. For example, with 100 realms,
+the `admin` composite contains over 2,000 role mappings (approximately 21 roles per realm). This has
+implications for token size and performance.
+
+===== Token size
+
+When using full (non-lightweight) access tokens, all admin roles from the `admin` composite are included
+in the token. With hundreds of realms, the token can exceed HTTP header size limits enforced by load
+balancers or reverse proxies.
+
+To mitigate this, use lightweight access tokens. The `security-admin-console` and `admin-cli` clients use
+lightweight access tokens by default since {project_name} 26. Lightweight tokens do not carry roles over
+the wire — the server resolves them from the user session when needed.
+
+===== Cache sizing
+
+Deployments with many realms should ensure that the `realms`, `users`, and `authorization` local caches are
+properly sized. Undersized caches lead to frequent evictions and cache misses, resulting in additional
+database round-trips that degrade performance. See the link:{server_guide_base_link}/caching[server caching guide]
+for guidance on tuning cache sizes.
+
+===== Role policies and fine-grained admin permissions
+
+When using link:{adminguide_finegrained_link}[fine-grained admin permissions], the effective admin roles considered
+by role policies are the intersection of the roles present in the token and the roles the user actually has. Because
+the token reflects the authenticating client's scope and protocol mapper configuration, the same user can have
+different effective roles depending on which client they authenticate with.
+
+The *Fetch Roles* setting on role policies controls whether this intersection is applied. When *Fetch Roles* is
+disabled (the default), only roles that are both assigned to the user and present in the token are considered.
+When *Fetch Roles* is enabled, roles are resolved directly from the user's role assignments, bypassing the token
+and any client scope filtering.
+
+For deployments where multiple clients authenticate administrators with different levels of access, keep
+*Fetch Roles* disabled on role policies so that client scope constrains which admin roles are considered
+for authorization decisions. This ensures that a client with a restricted scope cannot be used to exercise
+permissions beyond what its scope allows, even if the authenticating user holds broader role assignments.
 

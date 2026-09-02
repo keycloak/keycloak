@@ -2,16 +2,18 @@ package org.keycloak.testsuite.broker;
 
 import java.io.Closeable;
 import java.io.IOException;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.Test;
+
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import org.keycloak.testsuite.util.KeyUtils;
+
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 public final class KcSamlBrokerArtifactBindingTest extends AbstractInitializedBaseBrokerTest {
 
@@ -154,17 +156,18 @@ public final class KcSamlBrokerArtifactBindingTest extends AbstractInitializedBa
 
     private void login(boolean success) {
         // login using artifact binding
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         logInWithBroker(bc);
 
         if (success) {
             updateAccountInformationPage.assertCurrent();
             updateAccountInformationPage.updateAccountInformation("f", "l");
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         } else {
             errorPage.assertCurrent();
-            Assert.assertEquals("Invalid signature in response from identity provider.", errorPage.getError());
+            Assertions.assertEquals("Invalid signature in response from identity provider.", errorPage.getError());
         }
     }
 }

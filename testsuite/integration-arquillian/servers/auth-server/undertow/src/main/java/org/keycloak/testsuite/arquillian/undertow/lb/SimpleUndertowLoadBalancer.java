@@ -21,10 +21,17 @@ import java.lang.reflect.Field;
 import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
+
+import org.keycloak.common.util.reflections.Reflections;
+import org.keycloak.cookie.CookieType;
+import org.keycloak.testsuite.utils.tls.TLSUtils;
 
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
@@ -36,21 +43,13 @@ import io.undertow.server.handlers.proxy.ProxyCallback;
 import io.undertow.server.handlers.proxy.ProxyClient;
 import io.undertow.server.handlers.proxy.ProxyConnection;
 import io.undertow.server.handlers.proxy.ProxyHandler;
-import io.undertow.util.AttachmentKey;
-import io.undertow.util.Headers;
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.reflections.Reflections;
-import org.keycloak.cookie.CookieType;
-import org.keycloak.testsuite.utils.tls.TLSUtils;
-
 import io.undertow.server.handlers.proxy.RouteIteratorFactory;
 import io.undertow.server.handlers.proxy.RouteIteratorFactory.ParsingCompatibility;
 import io.undertow.server.handlers.proxy.RouteParsingStrategy;
+import io.undertow.util.AttachmentKey;
+import io.undertow.util.Headers;
+import org.jboss.logging.Logger;
 import org.xnio.OptionMap;
-
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.StringTokenizer;
 
 /**
  * Loadbalancer on embedded undertow. Supports sticky session over "AUTH_SESSION_ID" cookie and failover to different node when sticky node not available.

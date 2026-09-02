@@ -19,7 +19,6 @@
 
 package org.keycloak.migration.migrators;
 
-import org.jboss.logging.Logger;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.KeycloakSession;
@@ -31,6 +30,8 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.userprofile.UserProfileProvider;
+
+import org.jboss.logging.Logger;
 
 public class MigrateTo24_0_0 extends RealmMigration {
 

@@ -17,24 +17,20 @@
 
 package org.keycloak.protocol.saml.profile.util;
 
-import org.apache.http.Header;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.entity.ContentType;
-import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.saml.processing.core.saml.v2.util.DocumentUtil;
-import org.keycloak.saml.processing.web.util.PostBindingUtil;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.util.Iterator;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.xml.soap.MessageFactory;
+import jakarta.xml.soap.MimeHeader;
+import jakarta.xml.soap.MimeHeaders;
 import jakarta.xml.soap.Name;
 import jakarta.xml.soap.SOAPBody;
 import jakarta.xml.soap.SOAPConnection;
@@ -42,16 +38,24 @@ import jakarta.xml.soap.SOAPConnectionFactory;
 import jakarta.xml.soap.SOAPEnvelope;
 import jakarta.xml.soap.SOAPException;
 import jakarta.xml.soap.SOAPFault;
-import jakarta.xml.soap.MimeHeader;
-import jakarta.xml.soap.MimeHeaders;
 import jakarta.xml.soap.SOAPHeaderElement;
 import jakarta.xml.soap.SOAPMessage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.util.Iterator;
+
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpRequest;
+import org.keycloak.http.simple.SimpleHttpResponse;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.saml.processing.core.saml.v2.util.DocumentUtil;
+import org.keycloak.saml.processing.web.util.PostBindingUtil;
+
+import org.apache.http.Header;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.ContentType;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -262,7 +266,7 @@ public final class Soap {
                 message.saveChanges();
             }
             // use SimpleHttp from the session
-            SimpleHttp simpleHttp = SimpleHttp.doPost(url, session);
+            SimpleHttpRequest simpleHttp = SimpleHttp.create(session).doPost(url);
             // add all the headers as HTTP headers except the ones needed for the HttpEntity
             Iterator<MimeHeader> reqHeaders = message.getMimeHeaders().getAllHeaders();
             ContentType contentType = null;
@@ -291,7 +295,7 @@ public final class Soap {
             try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
                 message.writeTo(out);
                 simpleHttp.entity(new ByteArrayEntity(out.toByteArray(), 0, length, contentType));
-                try (SimpleHttp.Response res = simpleHttp.asResponse()) {
+                try (SimpleHttpResponse res = simpleHttp.asResponse()) {
                     // HTTP_INTERNAL_ERROR (500) and HTTP_BAD_REQUEST (400) should be processed as SOAP faults
                     if (res.getStatus() == HttpStatus.SC_INTERNAL_SERVER_ERROR
                             || res.getStatus() == HttpStatus.SC_BAD_REQUEST

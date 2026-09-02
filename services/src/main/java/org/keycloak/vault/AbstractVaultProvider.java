@@ -17,12 +17,12 @@
 
 package org.keycloak.vault;
 
-import org.jboss.logging.Logger;
-
 import java.io.File;
 import java.lang.invoke.MethodHandles;
 import java.util.List;
 import java.util.Optional;
+
+import org.jboss.logging.Logger;
 
 /**
  * Abstract class that is meant to be extended by implementations of {@link VaultProvider} that want to have support for

@@ -1,11 +1,11 @@
 package org.keycloak.testsuite.broker;
 
+import java.util.List;
+
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-
-import java.util.List;
 
 /**
  *

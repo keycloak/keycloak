@@ -16,15 +16,18 @@
  */
 package org.keycloak.social.linkedin;
 
+import java.io.IOException;
+import java.util.List;
+
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.io.IOException;
-import java.util.List;
+
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
@@ -93,7 +96,7 @@ public class LinkedInOIDCIdentityProviderFactory extends AbstractIdentityProvide
     }
 
     private static OIDCConfigurationRepresentation getWellKnownMetadata(KeycloakSession session) {
-        try (SimpleHttp.Response response = SimpleHttp.doGet(WELL_KNOWN_URL, session)
+        try (SimpleHttpResponse response = SimpleHttp.create(session).doGet(WELL_KNOWN_URL)
                 .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
                 .asResponse()) {
             if (Response.Status.fromStatusCode(response.getStatus()).getFamily() != Response.Status.Family.SUCCESSFUL) {

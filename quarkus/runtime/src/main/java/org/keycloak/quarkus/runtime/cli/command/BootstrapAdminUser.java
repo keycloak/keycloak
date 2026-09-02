@@ -17,16 +17,13 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import java.util.EnumSet;
-
 import org.keycloak.common.util.IoUtils;
 import org.keycloak.config.BootstrapAdminOptions;
 import org.keycloak.config.OptionCategory;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.integration.jaxrs.QuarkusKeycloakApplication;
-import org.keycloak.services.resources.KeycloakApplication;
 
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
@@ -101,16 +98,15 @@ public class BootstrapAdminUser extends AbstractNonServerCommand {
     }
 
     @Override
-    public void onStart(QuarkusKeycloakApplication application) {
+    public void onStart(QuarkusKeycloakApplication application, QuarkusKeycloakSessionFactory sessionFactory) {
         //BootstrapAdmin bootstrap = spec.commandLine().getParent().getCommand();
-        KeycloakSessionFactory sessionFactory = KeycloakApplication.getSessionFactory();
         KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> application
                 .createTemporaryMasterRealmAdminUser(username, password, /* bootstrap.expiration, */ session));
     }
 
     @Override
-    protected EnumSet<OptionCategory> excludedCategories() {
-        return EnumSet.of(OptionCategory.IMPORT, OptionCategory.EXPORT, OptionCategory.BOOTSTRAP_ADMIN);
+    public boolean isHiddenCategory(OptionCategory category) {
+        return category == OptionCategory.BOOTSTRAP_ADMIN || super.isHiddenCategory(category);
     }
 
 }

@@ -1,0 +1,13 @@
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: KeycloakOIDCClient
+metadata:
+  name: test-serialization-oidc-client
+spec:
+  keycloakCRName: kc
+  realm: my-realm
+  client:
+    description: 'a client'
+    auth:
+      secretRef:
+        name: my-secret
+        key: secret-key

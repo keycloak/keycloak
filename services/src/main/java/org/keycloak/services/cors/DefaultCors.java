@@ -20,19 +20,22 @@ package org.keycloak.services.cors;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
 
-import org.jboss.logging.Logger;
-import org.keycloak.http.HttpRequest;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.UriUtils;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
 import org.keycloak.representations.AccessToken;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -45,6 +48,7 @@ public class DefaultCors implements Cors {
     private final HttpResponse response;
     private final KeycloakSession session;
     private ResponseBuilder builder;
+    private final String allowedHeaders;
     private Set<String> allowedOrigins;
     private Set<String> allowedMethods;
     private Set<String> exposedHeaders;
@@ -52,10 +56,11 @@ public class DefaultCors implements Cors {
     private boolean preflight;
     private boolean auth;
 
-    DefaultCors(KeycloakSession session) {
+    DefaultCors(KeycloakSession session, String allowedHeaders) {
         this.session = session;
         this.request = session.getContext().getHttpRequest();
         this.response = session.getContext().getHttpResponse();
+        this.allowedHeaders = allowedHeaders;
     }
 
     @Override
@@ -83,26 +88,44 @@ public class DefaultCors implements Cors {
     }
 
     @Override
-    public Cors allowedOrigins(KeycloakSession session, ClientModel client) {
+    public Cors checkAllowedOrigins(KeycloakSession session, ClientModel client) {
         if (client != null) {
             allowedOrigins = WebOriginsUtils.resolveValidWebOrigins(session, client);
         }
+        checkOrigin();
         return this;
     }
 
     @Override
-    public Cors allowedOrigins(AccessToken token) {
+    public Cors checkAllowedOrigins(AccessToken token) {
         if (token != null) {
             allowedOrigins = token.getAllowedOrigins();
+            if (allowedOrigins == null || allowedOrigins.isEmpty()) {
+                ClientModel client = resolveClient(token);
+                if (client != null) {
+                    return checkAllowedOrigins(session, client);
+                }
+            }
         }
+        checkOrigin();
         return this;
     }
 
-    @Override
-    public Cors allowedOrigins(String... allowedOrigins) {
-        if (allowedOrigins != null && allowedOrigins.length > 0) {
-            this.allowedOrigins = new HashSet<>(Arrays.asList(allowedOrigins));
+    private ClientModel resolveClient(AccessToken token) {
+        String clientId = token.getIssuedFor();
+        if (clientId == null) {
+            return null;
         }
+        var realm = session.getContext().getRealm();
+        return realm == null ? null : realm.getClientByClientId(clientId);
+    }
+
+    @Override
+    public Cors checkAllowedOrigins(List<String> allowedOrigins) {
+        if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
+            this.allowedOrigins = new HashSet<>(allowedOrigins);
+        }
+        checkOrigin();
         return this;
     }
 
@@ -139,11 +162,8 @@ public class DefaultCors implements Cors {
             return;
         }
 
-        if (!preflight && (allowedOrigins == null || (!allowedOrigins.contains(origin) && !allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD)))) {
-            String requestOrigin = UriUtils.getOrigin(session.getContext().getUri().getRequestUri());
-            if (!origin.equals(requestOrigin) && logger.isDebugEnabled()) {
-                logger.debugv("Invalid CORS request: origin {0} not in allowed origins {1}", origin, allowedOrigins);
-            }
+        if (!preflight && !isOriginAllowed(origin)) {
+            logInvalidOrigin(origin);
             return;
         }
 
@@ -165,14 +185,51 @@ public class DefaultCors implements Cors {
 
         if (preflight) {
             if (auth) {
-                response.setHeader(ACCESS_CONTROL_ALLOW_HEADERS, String.format("%s, %s", DEFAULT_ALLOW_HEADERS, AUTHORIZATION_HEADER));
+                response.setHeader(ACCESS_CONTROL_ALLOW_HEADERS, String.format("%s, %s", allowedHeaders, AUTHORIZATION_HEADER));
             } else {
-                response.setHeader(ACCESS_CONTROL_ALLOW_HEADERS, DEFAULT_ALLOW_HEADERS);
+                response.setHeader(ACCESS_CONTROL_ALLOW_HEADERS, allowedHeaders);
             }
         }
 
         if (preflight) {
             response.setHeader(ACCESS_CONTROL_MAX_AGE, String.valueOf(DEFAULT_MAX_AGE));
+        }
+    }
+
+    private void checkOrigin() {
+        if (preflight) {
+            return;
+        }
+
+        String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
+        if (origin == null || isOriginAllowed(origin)) {
+            return;
+        }
+
+        String requestOrigin = UriUtils.getOrigin(session.getContext().getUri().getRequestUri());
+        if (origin.equals(requestOrigin)) {
+            return;
+        }
+
+        logInvalidOrigin(origin, requestOrigin);
+        throw new ForbiddenException("Invalid origin");
+    }
+
+    private boolean isOriginAllowed(String origin) {
+        return allowedOrigins != null
+                && (allowedOrigins.contains(origin) || allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD));
+    }
+
+    private void logInvalidOrigin(String origin) {
+        if (logger.isDebugEnabled()) {
+            String requestOrigin = UriUtils.getOrigin(session.getContext().getUri().getRequestUri());
+            logInvalidOrigin(origin, requestOrigin);
+        }
+    }
+
+    private void logInvalidOrigin(String origin, String requestOrigin) {
+        if (logger.isDebugEnabled() && !origin.equals(requestOrigin)) {
+            logger.debugv("Invalid CORS request: origin {0} not in allowed origins {1}", origin, allowedOrigins);
         }
     }
 

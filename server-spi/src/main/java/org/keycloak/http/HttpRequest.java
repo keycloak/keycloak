@@ -18,9 +18,11 @@
 package org.keycloak.http;
 
 import java.security.cert.X509Certificate;
+
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.UriInfo;
+
 import org.keycloak.models.KeycloakContext;
 
 /**

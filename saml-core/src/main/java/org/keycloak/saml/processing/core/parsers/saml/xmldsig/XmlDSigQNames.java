@@ -16,8 +16,9 @@
  */
 package org.keycloak.saml.processing.core.parsers.saml.xmldsig;
 
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import javax.xml.namespace.QName;
+
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.parsers.util.HasQName;
 
 /**

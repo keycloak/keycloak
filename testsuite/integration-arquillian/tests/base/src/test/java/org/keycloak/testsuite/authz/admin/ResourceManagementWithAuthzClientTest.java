@@ -17,10 +17,6 @@
 
 package org.keycloak.testsuite.authz.admin;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.hamcrest.MatcherAssert.assertThat;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,11 +25,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.hamcrest.Matchers;
-import org.junit.Test;
 import org.keycloak.authorization.client.AuthzClient;
+import org.keycloak.authorization.client.resource.ProtectionResource;
+import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+
+import org.hamcrest.Matchers;
+import org.junit.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  *
@@ -236,7 +239,16 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
         ResourceRepresentation resource = toResourceRepresentation(newResource);
 
         AuthzClient authzClient = getAuthzClient();
-        ResourceRepresentation response = authzClient.protection().resource().create(resource);
+        ResourceOwnerRepresentation owner = newResource.getOwner();
+        ProtectionResource protection;
+
+        if  (owner == null) {
+            protection = authzClient.protection();
+        } else {
+            protection = authzClient.protection(owner.getId(), "password");
+        }
+
+        ResourceRepresentation response = protection.resource().create(resource);
 
         return toResourceRepresentation(authzClient, response.getId());
     }

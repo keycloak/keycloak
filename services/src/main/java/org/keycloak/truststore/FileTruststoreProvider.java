@@ -17,14 +17,14 @@
 
 package org.keycloak.truststore;
 
-import org.keycloak.common.enums.HostnameVerificationPolicy;
-
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 import javax.net.ssl.SSLSocketFactory;
 import javax.security.auth.x500.X500Principal;
+
+import org.keycloak.common.enums.HostnameVerificationPolicy;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -36,12 +36,20 @@ public class FileTruststoreProvider implements TruststoreProvider {
     private final KeyStore truststore;
     private final Map<X500Principal, List<X509Certificate>> rootCertificates;
     private final Map<X500Principal, List<X509Certificate>> intermediateCertificates;
+    private final KeyStore httpsTruststore;
+    private final Map<X500Principal, List<X509Certificate>> httpsRootCertificates;
+    private final Map<X500Principal, List<X509Certificate>> httpsIntermediateCertificates;
 
-    public FileTruststoreProvider(KeyStore truststore, HostnameVerificationPolicy policy, Map<X500Principal, List<X509Certificate>> rootCertificates,Map<X500Principal, List<X509Certificate>> intermediateCertificates) {
+    public FileTruststoreProvider(KeyStore truststore, HostnameVerificationPolicy policy,
+            Map<X500Principal, List<X509Certificate>> rootCertificates, Map<X500Principal, List<X509Certificate>> intermediateCertificates,
+            KeyStore httpsTruststore, Map<X500Principal, List<X509Certificate>> httpsRootCertificates, Map<X500Principal, List<X509Certificate>> httpsIntermediateCertificates) {
         this.policy = policy;
         this.truststore = truststore;
         this.rootCertificates = rootCertificates;
         this.intermediateCertificates = intermediateCertificates;
+        this.httpsTruststore = httpsTruststore;
+        this.httpsRootCertificates = httpsRootCertificates;
+        this.httpsIntermediateCertificates = httpsIntermediateCertificates;
 
         SSLSocketFactory jsseSSLSocketFactory = new JSSETruststoreConfigurator(this).getSSLSocketFactory();
         this.sslSocketFactory = (jsseSSLSocketFactory != null) ? jsseSSLSocketFactory : (SSLSocketFactory) javax.net.ssl.SSLSocketFactory.getDefault();
@@ -60,6 +68,21 @@ public class FileTruststoreProvider implements TruststoreProvider {
     @Override
     public KeyStore getTruststore() {
         return truststore;
+    }
+
+    @Override
+    public KeyStore getHttpsTruststore() {
+        return httpsTruststore != null ? httpsTruststore : truststore;
+    }
+
+    @Override
+    public Map<X500Principal, List<X509Certificate>> getHttpsRootCertificates() {
+        return httpsRootCertificates != null ? httpsRootCertificates : rootCertificates;
+    }
+
+    @Override
+    public Map<X500Principal, List<X509Certificate>> getHttpsIntermediateCertificates() {
+        return httpsIntermediateCertificates != null ? httpsIntermediateCertificates : intermediateCertificates;
     }
 
     @Override

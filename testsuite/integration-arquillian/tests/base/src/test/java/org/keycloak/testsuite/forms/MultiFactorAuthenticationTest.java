@@ -20,12 +20,6 @@ package org.keycloak.testsuite.forms;
 
 import java.util.Arrays;
 
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
 import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
@@ -37,6 +31,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
@@ -48,6 +43,13 @@ import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.pages.SelectAuthenticatorPage;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+
+import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.jboss.arquillian.graphene.page.Page;
+import org.jboss.arquillian.test.api.ArquillianResource;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -93,25 +95,25 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
             configureBrowserFlowWithAlternativeCredentials();
 
             // test-user has not other credential than his password. No try-another-way link is displayed
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.login("test-user@localhost");
             passwordPage.assertCurrent();
             loginTotpPage.assertTryAnotherWayLinkAvailability(false);
 
             // A user with only one other credential than his password: the try-another-way link should be accessible
             // and he should be able to choose between his password and his OTP credentials
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.login("user-with-one-configured-otp");
             passwordPage.assertCurrent();
             passwordPage.assertTryAnotherWayLinkAvailability(true);
             passwordPage.clickTryAnotherWayLink();
 
             selectAuthenticatorPage.assertCurrent();
-            Assert.assertEquals(Arrays.asList(SelectAuthenticatorPage.PASSWORD, SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION), selectAuthenticatorPage.getAvailableLoginMethods());
+            Assertions.assertEquals(Arrays.asList(SelectAuthenticatorPage.PASSWORD, SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION), selectAuthenticatorPage.getAvailableLoginMethods());
 
             // Assert help texts
-            Assert.assertEquals("Sign in by entering your password.", selectAuthenticatorPage.getLoginMethodHelpText(SelectAuthenticatorPage.PASSWORD));
-            Assert.assertEquals("Enter a verification code from authenticator application.", selectAuthenticatorPage.getLoginMethodHelpText(SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION));
+            Assertions.assertEquals("Sign in by entering your password.", selectAuthenticatorPage.getLoginMethodHelpText(SelectAuthenticatorPage.PASSWORD));
+            Assertions.assertEquals("Enter a verification code from authenticator application.", selectAuthenticatorPage.getLoginMethodHelpText(SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION));
 
             // Select OTP and see that just single OTP is available for this user
             selectAuthenticatorPage.selectLoginMethod(SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION);
@@ -121,7 +123,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
 
             // A user with two OTP credentials and password credential: He should be able to choose just between the password and OTP similarly
             // like user with user-with-one-configured-otp. However OTP is preferred credential for him, so OTP mechanism will take preference
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.login("user-with-two-configured-otp");
             loginTotpPage.assertCurrent();
             loginTotpPage.assertTryAnotherWayLinkAvailability(true);
@@ -132,9 +134,9 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
             loginTotpPage.clickTryAnotherWayLink();
 
             selectAuthenticatorPage.assertCurrent();
-            Assert.assertEquals(Arrays.asList(SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION, SelectAuthenticatorPage.PASSWORD), selectAuthenticatorPage.getAvailableLoginMethods());
+            Assertions.assertEquals(Arrays.asList(SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION, SelectAuthenticatorPage.PASSWORD), selectAuthenticatorPage.getAvailableLoginMethods());
         } finally {
-            BrowserFlowTest.revertFlows(testRealm(), "browser - alternative");
+            BrowserFlowTest.revertFlows(managedRealm.admin(), "browser - alternative");
         }
     }
 
@@ -144,26 +146,26 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
         try {
             configureBrowserFlowWithAlternativeCredentials();
 
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.login("user-with-one-configured-otp");
             passwordPage.assertCurrent();
             passwordPage.assertTryAnotherWayLinkAvailability(true);
             passwordPage.clickTryAnotherWayLink();
 
             selectAuthenticatorPage.assertCurrent();
-            Assert.assertEquals(Arrays.asList(SelectAuthenticatorPage.PASSWORD, SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION), selectAuthenticatorPage.getAvailableLoginMethods());
+            Assertions.assertEquals(Arrays.asList(SelectAuthenticatorPage.PASSWORD, SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION), selectAuthenticatorPage.getAvailableLoginMethods());
 
             // Switch locale. Should be still on "selectAuthenticatorPage"
             selectAuthenticatorPage.openLanguage("Deutsch");
             selectAuthenticatorPage.assertCurrent();
-            Assert.assertEquals(Arrays.asList("Passwort", "Authenticator-Anwendung"), selectAuthenticatorPage.getAvailableLoginMethods());
+            Assertions.assertEquals(Arrays.asList("Passwort", "Authenticator-Anwendung"), selectAuthenticatorPage.getAvailableLoginMethods());
 
             // Change language back
             selectAuthenticatorPage.openLanguage("English");
             selectAuthenticatorPage.assertCurrent();
-            Assert.assertEquals(Arrays.asList(SelectAuthenticatorPage.PASSWORD, SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION), selectAuthenticatorPage.getAvailableLoginMethods());
+            Assertions.assertEquals(Arrays.asList(SelectAuthenticatorPage.PASSWORD, SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION), selectAuthenticatorPage.getAvailableLoginMethods());
         } finally {
-            BrowserFlowTest.revertFlows(testRealm(), "browser - alternative");
+            BrowserFlowTest.revertFlows(managedRealm.admin(), "browser - alternative");
         }
     }
 
@@ -212,7 +214,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
 
         try {
             // Provide username, should be on password page with the link "Try another way" available
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.login("user-with-one-configured-otp");
             passwordPage.assertCurrent();
             passwordPage.assertTryAnotherWayLinkAvailability(true);
@@ -220,7 +222,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
             // Click "Try another way" . Ability to have both password and OTP should be possible even if OTP is in different subflow
             passwordPage.clickTryAnotherWayLink();
             selectAuthenticatorPage.assertCurrent();
-            Assert.assertEquals(Arrays.asList(SelectAuthenticatorPage.PASSWORD, SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION), selectAuthenticatorPage.getAvailableLoginMethods());
+            Assertions.assertEquals(Arrays.asList(SelectAuthenticatorPage.PASSWORD, SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION), selectAuthenticatorPage.getAvailableLoginMethods());
             selectAuthenticatorPage.selectLoginMethod(SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION);
 
             // Should be on the OTP now. Click "Try another way" again. Should see again both Password and OTP
@@ -229,18 +231,17 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
 
             loginTotpPage.clickTryAnotherWayLink();
             selectAuthenticatorPage.assertCurrent();
-            Assert.assertEquals(Arrays.asList(SelectAuthenticatorPage.PASSWORD, SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION), selectAuthenticatorPage.getAvailableLoginMethods());
+            Assertions.assertEquals(Arrays.asList(SelectAuthenticatorPage.PASSWORD, SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION), selectAuthenticatorPage.getAvailableLoginMethods());
 
             selectAuthenticatorPage.selectLoginMethod(SelectAuthenticatorPage.PASSWORD);
             passwordPage.assertCurrent();
             passwordPage.login(getPassword("user-with-one-configured-otp"));
 
-            Assert.assertFalse(passwordPage.isCurrent());
-            Assert.assertFalse(loginPage.isCurrent());
-            events.expectLogin().user(testRealm().users().search("user-with-one-configured-otp").get(0).getId())
-                    .detail(Details.USERNAME, "user-with-one-configured-otp").assertEvent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+            EventAssertion.expectLoginSuccess(events.poll()).userId(managedRealm.admin().users().search("user-with-one-configured-otp").get(0).getId())
+                    .details(Details.USERNAME, "user-with-one-configured-otp");
         } finally {
-            BrowserFlowTest.revertFlows(testRealm(),"browser - alternative mechanisms");
+            BrowserFlowTest.revertFlows(managedRealm.admin(),"browser - alternative mechanisms");
         }
     }
 
@@ -270,7 +271,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
 
         try {
             // Provide username, should be on password page without the link "Try another way" available
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.login("user-with-one-configured-otp");
             passwordPage.assertCurrent();
             passwordPage.assertTryAnotherWayLinkAvailability(false);
@@ -282,11 +283,11 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
 
             // Successfully login with OTP
             loginTotpPage.login(new TimeBasedOTP().generateTOTP("DJmQfC73VGFhw7D4QJ8A"));
-            Assert.assertFalse(loginTotpPage.isCurrent());
-            events.expectLogin().user(testRealm().users().search("user-with-one-configured-otp").get(0).getId())
-                    .detail(Details.USERNAME, "user-with-one-configured-otp").assertEvent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+            EventAssertion.expectLoginSuccess(events.poll()).userId(managedRealm.admin().users().search("user-with-one-configured-otp").get(0).getId())
+                    .details(Details.USERNAME, "user-with-one-configured-otp");
         } finally {
-            BrowserFlowTest.revertFlows(testRealm(),"browser - alternative mechanisms");
+            BrowserFlowTest.revertFlows(managedRealm.admin(),"browser - alternative mechanisms");
         }
     }
 
@@ -296,11 +297,11 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
     @Test
     public void testUsernameLabelAndResetLogin() {
         try {
-            UserRepresentation user = testRealm().users().search("user-with-one-configured-otp").get(0);
+            UserRepresentation user = managedRealm.admin().users().search("user-with-one-configured-otp").get(0);
             configureBrowserFlowWithAlternativeCredentials();
 
             // The "attempted username" with username not yet available on the login screen
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.assertAttemptedUsernameAvailability(false);
 
             loginUsernameOnlyPage.login("user-with-one-configured-otp");
@@ -308,22 +309,21 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
             // On the password page, username should be shown as we know the user
             passwordPage.assertCurrent();
             passwordPage.assertAttemptedUsernameAvailability(true);
-            Assert.assertEquals("user-with-one-configured-otp", passwordPage.getAttemptedUsername());
+            Assertions.assertEquals("user-with-one-configured-otp", passwordPage.getAttemptedUsername());
             passwordPage.clickTryAnotherWayLink();
 
             // On the select-authenticator page, username should be shown as we know the user
             selectAuthenticatorPage.assertCurrent();
             selectAuthenticatorPage.assertAttemptedUsernameAvailability(true);
-            Assert.assertEquals("user-with-one-configured-otp", passwordPage.getAttemptedUsername());
+            Assertions.assertEquals("user-with-one-configured-otp", passwordPage.getAttemptedUsername());
 
             // Reset login
             selectAuthenticatorPage.clickResetLogin();
-            events.expect(EventType.RESTART_AUTHENTICATION)
-                    .client(oauth.getClientId())
-                    .user(user.getId())
-                    .detail(Details.USERNAME, "user-with-one-configured-otp")
-                    .detail(Details.AUTH_METHOD, OIDCLoginProtocol.LOGIN_PROTOCOL)
-                    .assertEvent();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.RESTART_AUTHENTICATION)
+                    .clientId(oauth.getClientId())
+                    .userId(user.getId())
+                    .details(Details.USERNAME, "user-with-one-configured-otp")
+                    .details(Details.AUTH_METHOD, OIDCLoginProtocol.LOGIN_PROTOCOL);
 
             // Should be back on the login page
             loginUsernameOnlyPage.assertCurrent();
@@ -335,14 +335,14 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
             // On the password page, the email of user should be shown
             passwordPage.assertCurrent();
             passwordPage.assertAttemptedUsernameAvailability(true);
-            Assert.assertEquals("otp1@redhat.com", passwordPage.getAttemptedUsername());
+            Assertions.assertEquals("otp1@redhat.com", passwordPage.getAttemptedUsername());
 
             // Login
             passwordPage.login(getPassword("user-with-one-configured-otp"));
-            events.expectLogin().user(user.getId())
-                    .detail(Details.USERNAME, "otp1@redhat.com").assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll()).userId(user.getId())
+                    .details(Details.USERNAME, "otp1@redhat.com");
         } finally {
-            BrowserFlowTest.revertFlows(testRealm(), "browser - alternative");
+            BrowserFlowTest.revertFlows(managedRealm.admin(), "browser - alternative");
         }
     }
 

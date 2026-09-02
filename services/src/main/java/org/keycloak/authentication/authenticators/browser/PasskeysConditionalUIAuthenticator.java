@@ -21,10 +21,10 @@
  */
 package org.keycloak.authentication.authenticators.browser;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.models.KeycloakSession;
-
-import jakarta.ws.rs.core.Response;
 
 @Deprecated(since = "26.3", forRemoval = true)
 public class PasskeysConditionalUIAuthenticator extends WebAuthnPasswordlessAuthenticator {

@@ -16,19 +16,19 @@
  */
 package org.keycloak.broker.provider;
 
-import static java.util.Optional.ofNullable;
-
-import org.keycloak.models.Constants;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.sessions.AuthenticationSessionModel;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+
+import org.keycloak.models.Constants;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
  * <p>Represents all identity information obtained from an {@link org.keycloak.broker.provider.IdentityProvider} after a
@@ -49,13 +49,16 @@ public class BrokeredIdentityContext {
     private String brokerUserId;
     private String token;
     private IdentityProviderModel idpConfig;
-    private IdentityProvider idp;
+    private UserAuthenticationIdentityProvider<?> idp;
     private Map<String, Object> contextData = new HashMap<>();
     private AuthenticationSessionModel authenticationSession;
 
     public BrokeredIdentityContext(String id, IdentityProviderModel idpConfig) {
-        if (id == null) {
-            throw new RuntimeException("No identifier provider for identity.");
+        Objects.requireNonNull(id, "id must not be null");
+        Objects.requireNonNull(idpConfig, "Identity provider config must not be null");
+
+        if (!idpConfig.isEnabled()) {
+            throw new IdentityBrokerException("Identity provider is disabled");
         }
 
         this.id = id;
@@ -63,6 +66,12 @@ public class BrokeredIdentityContext {
     }
 
     public BrokeredIdentityContext(IdentityProviderModel idpConfig) {
+        Objects.requireNonNull(idpConfig, "Identity provider config must not be null");
+
+        if (!idpConfig.isEnabled()) {
+            throw new IdentityBrokerException("Identity provider is disabled");
+        }
+
         this.idpConfig = idpConfig;
     }
 
@@ -153,11 +162,11 @@ public class BrokeredIdentityContext {
         return idpConfig;
     }
 
-    public IdentityProvider getIdp() {
+    public UserAuthenticationIdentityProvider<?> getIdp() {
         return idp;
     }
 
-    public void setIdp(IdentityProvider idp) {
+    public void setIdp(UserAuthenticationIdentityProvider<?> idp) {
         this.idp = idp;
     }
 

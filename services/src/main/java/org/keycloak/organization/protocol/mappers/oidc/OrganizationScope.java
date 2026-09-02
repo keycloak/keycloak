@@ -17,10 +17,6 @@
 
 package org.keycloak.organization.protocol.mappers.oidc;
 
-import static org.keycloak.models.ClientScopeModel.VALUE_SEPARATOR;
-import static org.keycloak.organization.utils.Organizations.getProvider;
-import static org.keycloak.utils.StringUtil.isBlank;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -30,6 +26,8 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+
+import jakarta.ws.rs.BadRequestException;
 
 import org.keycloak.common.util.TriFunction;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -41,16 +39,21 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.StringUtil;
 
+import static org.keycloak.models.ClientScopeModel.VALUE_SEPARATOR;
+import static org.keycloak.organization.utils.Organizations.getProvider;
+import static org.keycloak.utils.StringUtil.isBlank;
+
 /**
  * <p>An enum with utility methods to process the {@link OIDCLoginProtocolFactory#ORGANIZATION} scope.
  *
- * <p>The {@link OrganizationScope} behaves like a dynamic scopes so that access to organizations is granted depending
+ * <p>The {@link OrganizationScope} behaves like a parameterized scope so that access to organizations is granted depending
  * on how the client requests the {@link OIDCLoginProtocolFactory#ORGANIZATION} scope.
  */
 public enum OrganizationScope {
@@ -67,30 +70,39 @@ public enum OrganizationScope {
                 return getProvider(session).getByMember(user);
             },
             (organizations) -> true,
-            (session, current, previous) -> valueOfScope(session, current) == null ? previous : current),
+            (session, current, previous) -> {
+                OrganizationScope currentScope = valueOfScope(session, current);
+                
+                // Only handle organization scopes, ignore non-organization scopes
+                if (currentScope == null) {
+                    return null;
+                }
+                
+                // Reject ANY scope requests - they require user selection which isn't available during refresh
+                if (isAnyScope(currentScope)) {
+                    throw new BadRequestException("ANY organization scope is not allowed in this context");
+                }
+                
+                // Allow SINGLE (narrowing) or ALL (maintaining) scopes
+                return current;
+            }),
 
     /**
-     * Maps to a specific organization the user is a member. When this scope is requested by clients, only the
-     * organization specified in the scope is granted.
+     * Maps to one or more specific organizations the user is a member of. When this scope is requested by clients,
+     * only the organizations whose aliases are specified in the scope are granted. Multiple organizations can be
+     * requested using separate scopes, for example {@code organization:org-a organization:org-b}.
+     * If any of the aliases does not match an existing organization or the user is not a member, the request will be rejected.
      */
-    SINGLE(StringUtil::isNotBlank,
+    SPECIFIC(StringUtil::isNotBlank,
             (user, scopes, session) -> {
-                OrganizationModel organization = parseScopeParameter(session, scopes)
+                List<OrganizationModel> organizations = parseScopeParameter(session, scopes)
                         .map((String scope) -> parseScopeValue(session, scope))
                         .map(alias -> getProvider(session).getByAlias(alias))
                         .filter(Objects::nonNull)
-                        .findAny()
-                        .orElse(null);
+                        .filter(org -> user == null || org.isMember(user))
+                        .toList();
 
-                if (organization == null) {
-                    return Stream.empty();
-                }
-
-                if (user == null || organization.isMember(user)) {
-                    return Stream.of(organization);
-                }
-
-                return Stream.empty();
+                return organizations.stream();
             },
             (organizations) -> organizations.findAny().isPresent(),
             (session, current, previous) -> {
@@ -98,7 +110,16 @@ public enum OrganizationScope {
                     return current;
                 }
 
-                if (OrganizationScope.ALL.equals(valueOfScope(session, current))) {
+                OrganizationScope currentScope = valueOfScope(session, current);
+                
+                if (OrganizationScope.ALL.equals(currentScope)) {
+                    return previous;
+                }
+
+                // Handle the case where current is ANY scope ("organization") and previous is a SINGLE scope ("organization:foo")
+                // When the current scope is just "organization" and the previous scope has a specific org like "organization:foo",
+                // we should preserve the specific organization from the previous scope
+                if (isAnyScope(currentScope)) {
                     return previous;
                 }
 
@@ -116,7 +137,7 @@ public enum OrganizationScope {
                     return Stream.empty();
                 }
 
-                List<OrganizationModel> organizations = getProvider(session).getByMember(user).toList();
+                List<OrganizationModel> organizations = getProvider(session).getByMember(user).filter(OrganizationModel::isEnabled).toList();
 
                 if (organizations.size() == 1) {
                     return organizations.stream();
@@ -143,7 +164,9 @@ public enum OrganizationScope {
                     return current;
                 }
 
-                if (OrganizationScope.ALL.equals(valueOfScope(session, current))) {
+                OrganizationScope currentScope = valueOfScope(session, current);
+                
+                if (OrganizationScope.ALL.equals(currentScope)) {
                     return previous;
                 }
 
@@ -154,6 +177,19 @@ public enum OrganizationScope {
     private static final String UNSUPPORTED_ORGANIZATION_SCOPES_ATTRIBUTE = "kc.org.client.scope.unsupported";
     private static final Pattern SCOPE_PATTERN = Pattern.compile("(.*)" + VALUE_SEPARATOR + "(.*)");
     private static final String EMPTY_SCOPE = "";
+
+    /**
+     * Checks if the given scope is {@link OrganizationScope#ANY}.
+     *
+     * <p>This method exists because {@code ALL} and {@code SINGLE} are declared before {@code ANY} in this enum.
+     * Referencing {@code OrganizationScope.ANY} directly inside their initializer lambdas causes a
+     * "Cannot refer to enum constant before its definition" compile error. Routing through this static method
+     * (defined after all constants) avoids the forward-reference restriction.
+     */
+    private static boolean isAnyScope(OrganizationScope scope) {
+        return OrganizationScope.ANY.equals(scope);
+    }
+
 
     /**
      * <p>Resolves the value of the scope from its raw format. For instance, {@code organization:<value>} will resolve to {@code <value>}.
@@ -193,6 +229,9 @@ public enum OrganizationScope {
      * @return the organizations mapped from the {@code scope} parameter. Or an empty stream if no organizations were mapped from the parameter.
      */
     public Stream<OrganizationModel> resolveOrganizations(UserModel user, String scope, KeycloakSession session) {
+        if (!Organizations.isEnabled(session)) {
+            return Stream.empty();
+        }
         return valueResolver.apply(user, Optional.ofNullable(scope).orElse(EMPTY_SCOPE), session).filter(OrganizationModel::isEnabled);
     }
 

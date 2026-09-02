@@ -17,13 +17,13 @@
 
 package org.keycloak.services.validation;
 
-import org.keycloak.models.utils.FormMessage;
-import org.keycloak.userprofile.ValidationException;
-import org.keycloak.utils.EmailValidationUtil;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import org.keycloak.models.utils.FormMessage;
+import org.keycloak.userprofile.ValidationException;
+import org.keycloak.utils.EmailValidationUtil;
 
 public class Validation {
 
@@ -33,6 +33,7 @@ public class Validation {
     public static final String FIELD_USERNAME = "username";
     public static final String FIELD_OTP_CODE = "totp";
     public static final String FIELD_OTP_LABEL = "userLabel";
+    public static final int MAX_USERNAME_LENGTH = 255; // USER_ENTITY table
 
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^[\\p{IsLatin}|\\p{IsCommon}]+$");
 

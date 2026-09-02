@@ -16,13 +16,13 @@
  */
 package org.keycloak.dom.saml.v1.protocol;
 
-import org.keycloak.dom.saml.v1.assertion.SAML11ActionType;
-import org.keycloak.dom.saml.v1.assertion.SAML11EvidenceType;
-
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import org.keycloak.dom.saml.v1.assertion.SAML11ActionType;
+import org.keycloak.dom.saml.v1.assertion.SAML11EvidenceType;
 
 /**
  * <complexType name="AuthorizationDecisionQueryType"> <complexContent> <extension

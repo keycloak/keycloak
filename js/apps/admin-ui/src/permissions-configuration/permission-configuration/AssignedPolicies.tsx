@@ -68,7 +68,7 @@ export const AssignedPolicies = ({
       if (values && values.length > 0)
         return Promise.all(
           values.map((p) =>
-            adminClient.clients.findOnePolicy({
+            adminClient.clients.findOnePolicyWithType({
               id: permissionClientId,
               type: p.type!,
               policyId: p.id,
@@ -78,18 +78,19 @@ export const AssignedPolicies = ({
       return Promise.resolve([]);
     },
     (policies) => {
-      const filteredPolicy = policies.filter((p) => p) as [];
-      setSelectedPolicies(filteredPolicy);
+      setSelectedPolicies(
+        (policies as (PolicyRepresentation | undefined)[]).filter(
+          (p): p is PolicyRepresentation => p !== undefined,
+        ),
+      );
     },
     [policies],
   );
 
   const sortedProviders = sortBy(
     providers
-      ? providers
-          .filter((p) => p.type !== "resource" && p.type !== "scope")
-          .map((provider) => provider.name)
-      : [],
+      .filter((p) => p.type !== "resource" && p.type !== "scope")
+      .map((provider) => provider.name),
   );
 
   const assign = async (policies: { policy: PolicyRepresentation }[]) => {

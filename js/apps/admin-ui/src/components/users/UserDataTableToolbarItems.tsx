@@ -137,6 +137,7 @@ export function UserDataTableToolbarItems({
             setActiveFilters={setActiveFilters}
             profile={profile}
             createAttributeSearchChips={createAttributeSearchChips}
+            clearAllFilters={clearAllFilters}
             searchUserWithAttributes={() => {
               searchUserWithAttributes();
               setSearchDropdownOpen(false);

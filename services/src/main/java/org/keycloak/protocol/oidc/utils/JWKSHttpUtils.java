@@ -17,12 +17,12 @@
 
 package org.keycloak.protocol.oidc.utils;
 
+import java.io.IOException;
+
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.util.JsonSerialization;
-
-import java.io.IOException;
 
 /**
  *

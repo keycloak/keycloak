@@ -17,20 +17,30 @@
 
 package org.keycloak.authentication.authenticators.util;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.jboss.logging.Logger;
+import java.io.IOException;
+import java.util.Map;
+
+import jakarta.ws.rs.core.MultivaluedMap;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.hash.PasswordHashProvider;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.models.*;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
-import java.util.Map;
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator.USER_SET_BEFORE_USERNAME_PASSWORD_AUTH;
 
@@ -73,6 +83,18 @@ public final class AuthenticatorUtils {
         }
         int iterations = passwordPolicy != null ? passwordPolicy.getHashIterations() : -1;
         provider.encodedCredential("SlightlyLongerDummyPassword", iterations);
+    }
+
+    /**
+     * Returns {@code true} if {@code username} exceeds the maximum length allowed by the
+     * USER_ENTITY table column (VARCHAR(255)). Callers should invoke {@link #dummyHash(AuthenticationFlowContext)}
+     * and return their appropriate failure response when this returns {@code true}.
+     *
+     * @param username the trimmed username string to test; may be {@code null}
+     * @return true if the username is too long to be stored
+     */
+    public static boolean isUsernameTooLong(String username) {
+        return username != null && username.length() > Validation.MAX_USERNAME_LENGTH;
     }
 
     /**
@@ -132,4 +154,22 @@ public final class AuthenticatorUtils {
         }
     }
 
+    /**
+     * Process the <em>rememberMe</em> input for authentication. If the inputData contains
+     * the <em>rememberMe</em> attribute set to <em>on</em> and the realm is
+     * configured with the rememberMe option, the auth note is added to the
+     * authentication session; otherwise, the note is removed from the auth session.
+     * @param context The flow context
+     * @param inputData The form data
+     */
+    public static void processRememberMe(AuthenticationFlowContext context, MultivaluedMap<String, String> inputData) {
+        String rememberMe = inputData.getFirst("rememberMe");
+        boolean remember = context.getRealm().isRememberMe() && rememberMe != null && rememberMe.equalsIgnoreCase("on");
+        if (remember) {
+            context.getAuthenticationSession().setAuthNote(Details.REMEMBER_ME, "true");
+            context.getEvent().detail(Details.REMEMBER_ME, "true");
+        } else {
+            context.getAuthenticationSession().removeAuthNote(Details.REMEMBER_ME);
+        }
+    }
 }

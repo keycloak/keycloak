@@ -27,14 +27,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
+import javax.net.ssl.SSLContext;
 
-import org.infinispan.client.hotrod.configuration.AuthenticationConfigurationBuilder;
-import org.infinispan.client.hotrod.configuration.ClientIntelligence;
-import org.infinispan.client.hotrod.configuration.Configuration;
-import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
-import org.infinispan.client.hotrod.configuration.ExhaustedAction;
-import org.infinispan.client.hotrod.impl.ConfigurationProperties;
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -49,11 +43,17 @@ import org.keycloak.spi.infinispan.CacheRemoteConfigProvider;
 import org.keycloak.spi.infinispan.CacheRemoteConfigProviderFactory;
 import org.keycloak.spi.infinispan.impl.embedded.CacheConfigurator;
 
-import javax.net.ssl.SSLContext;
+import org.infinispan.client.hotrod.configuration.AuthenticationConfigurationBuilder;
+import org.infinispan.client.hotrod.configuration.ClientIntelligence;
+import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
+import org.infinispan.client.hotrod.configuration.ExhaustedAction;
+import org.infinispan.client.hotrod.impl.ConfigurationProperties;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLUSTERED_CACHE_NAMES;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.skipSessionsCacheIfRequired;
 import static org.keycloak.spi.infinispan.impl.Util.copyFromOption;
+
 import static org.wildfly.security.sasl.util.SaslMechanismInformation.Names.SCRAM_SHA_512;
 
 /**
@@ -61,7 +61,7 @@ import static org.wildfly.security.sasl.util.SaslMechanismInformation.Names.SCRA
  * <p>
  * It is used when an external Infinispan cluster is enabled.
  */
-public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfigProviderFactory, CacheRemoteConfigProvider, EnvironmentDependentProviderFactory {
+public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfigProviderFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "default";
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
@@ -87,7 +87,6 @@ public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfi
     private static final String CONNECTION_POOL_EXHAUSTED_ACTION_DEFAULT = ExhaustedAction.CREATE_NEW.name();
     private static final String SASL_MECHANISM_DEFAULT = SCRAM_SHA_512;
 
-    private volatile Configuration remoteConfiguration;
     private volatile Config.Scope keycloakConfiguration;
 
     @Override
@@ -97,8 +96,13 @@ public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfi
 
     @Override
     public CacheRemoteConfigProvider create(KeycloakSession session) {
-        lazyInit();
-        return this;
+        return () -> {
+            try {
+                return Optional.of(createConfigurationBuilder().build());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
 
     @Override
@@ -108,13 +112,6 @@ public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfi
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        lazyInit();
-    }
-
-    @Override
-    public Optional<Configuration> configuration() {
-        assert remoteConfiguration != null;
-        return Optional.of(remoteConfiguration);
     }
 
     @Override
@@ -165,22 +162,6 @@ public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfi
         configureRemoteCaches(builder);
 
         return builder;
-    }
-
-    private void lazyInit() {
-        if (remoteConfiguration != null) {
-            return;
-        }
-        synchronized (this) {
-            if (remoteConfiguration != null) {
-                return;
-            }
-            try {
-                remoteConfiguration = createConfigurationBuilder().build();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 
     private void loadProperties(ConfigurationBuilder builder) throws IOException {

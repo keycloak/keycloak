@@ -19,9 +19,10 @@ package org.keycloak.authorization.client.representation;
 
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.authorization.Permission;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

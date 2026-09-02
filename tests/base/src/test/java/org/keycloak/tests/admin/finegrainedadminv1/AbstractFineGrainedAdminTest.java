@@ -1,7 +1,5 @@
 package org.keycloak.tests.admin.finegrainedadminv1;
 
-import org.jboss.logging.Logger;
-import org.junit.jupiter.api.Assertions;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
@@ -34,6 +32,9 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+
+import org.jboss.logging.Logger;
+import org.junit.jupiter.api.Assertions;
 
 public class AbstractFineGrainedAdminTest {
 
@@ -142,6 +143,7 @@ public class AbstractFineGrainedAdminTest {
         RoleModel queryGroupsRole = realmManagementClient.getRole(AdminRoles.QUERY_GROUPS);
         RoleModel queryUsersRole = realmManagementClient.getRole(AdminRoles.QUERY_USERS);
         RoleModel queryClientsRole = realmManagementClient.getRole(AdminRoles.QUERY_CLIENTS);
+        RoleModel viewClientsRole = realmManagementClient.getRole(AdminRoles.VIEW_CLIENTS);
 
         UserModel nomapAdmin = session.users().addUser(realm, "nomap-admin");
         nomapAdmin.setFirstName("No Map");
@@ -213,6 +215,7 @@ public class AbstractFineGrainedAdminTest {
         groupManager.setEmail("group@manager");
         groupManager.grantRole(queryGroupsRole);
         groupManager.grantRole(queryUsersRole);
+        groupManager.grantRole(viewClientsRole);
         groupManager.setEnabled(true);
         groupManager.grantRole(mapperRole);
         groupManager.credentialManager().updateCredential(UserCredentialModel.password("password"));
@@ -243,6 +246,7 @@ public class AbstractFineGrainedAdminTest {
         clientMapper.setEnabled(true);
         clientMapper.grantRole(managerRole);
         clientMapper.grantRole(queryUsersRole);
+        clientMapper.grantRole(viewClientsRole);
         clientMapper.credentialManager().updateCredential(UserCredentialModel.password("password"));
         Policy clientMapperPolicy = permissions.clients().mapRolesPermission(client);
         UserPolicyRepresentation userRep = new UserPolicyRepresentation();

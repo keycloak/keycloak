@@ -16,11 +16,6 @@
  */
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import static java.util.Optional.ofNullable;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.toCliFormat;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.toEnvVarFormat;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
-
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -30,14 +25,23 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import org.keycloak.common.Profile;
 import org.keycloak.config.DeprecatedMetadata;
 import org.keycloak.config.Option;
+import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.OptionCategory;
+import org.keycloak.config.WildcardOptionsUtil;
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.ShortErrorMessageHandler;
+import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KcEnvConfigSource;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.NestedPropertyMappingInterceptor;
@@ -49,11 +53,18 @@ import io.smallrye.config.ConfigValue.ConfigValueBuilder;
 import io.smallrye.config.ExpressionConfigSourceInterceptor;
 import io.smallrye.config.Expressions;
 
+import static java.util.Optional.ofNullable;
+
+import static org.keycloak.quarkus.runtime.configuration.Configuration.toCliFormat;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.toEnvVarFormat;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+
 public class PropertyMapper<T> {
 
+    public static final int DEFAULT_VALUE_ORDINAL = 251; // keycloak defaults are logically higher than classpath entries
     protected final Option<T> option;
     private final String to;
-    private BooleanSupplier enabled;
+    private Function<AbstractCommand, Boolean> enabled;
     private String enabledWhen;
     private final ValueMapper mapper;
     private final String mapFrom;
@@ -76,7 +87,7 @@ public class PropertyMapper<T> {
                 mapper.requiredWhen, from, namedProperty);
     }
 
-    PropertyMapper(Option<T> option, String to, BooleanSupplier enabled, String enabledWhen,
+    PropertyMapper(Option<T> option, String to, Function<AbstractCommand, Boolean> enabled, String enabledWhen,
                    ValueMapper mapper, String mapFrom, ValueMapper parentMapper,
                    String paramLabel, boolean mask, BiConsumer<PropertyMapper<T>, ConfigValue> validator,
                    String description, BooleanSupplier required, String requiredWhen, String from, String namedProperty) {
@@ -107,12 +118,18 @@ public class PropertyMapper<T> {
      * <p>
      * In preference order we are looking for:
      * <pre>
-     *  [ {@link #from} ] ---> [ {@link #mapFrom} ] ---> [ {@link #getDefaultValue()} ] ---> [ {@link #to} ]
-     * (explicit)     (derived)           (fallback)         (fallback)
+     *  [ {@link #from} ] ---> [ {@link #mapFrom} ] ---> [ {@link #getDefaultValue()} ]
+     * (explicit)      (derived)           (fallback)
      * </pre>
      * <p>
      *
-     * <b>2. Transform found value</b>
+     * <b>2. Use to</b>
+     * <p>
+     * If we are looking for the `to` value, and no value was found from step 1 or it is effectively a default value,
+     * then use the `to` value if it was set by the user.
+     * <p>
+     *
+     * <b>3. Transform found value</b>
      * <p>
      * If we found a value for the attribute name, it needs to be transformed via {@link #transformValue} method. How to transform it?
      * <ul>
@@ -120,6 +137,10 @@ public class PropertyMapper<T> {
      *   <li>If the value contains an expression, expand it using SmallRye logic
      *   <li>Finally the returned {@link ConfigValue} is made to match what was requested - with the name, value, rawValue, and ordinal set appropriately.
      * </ul>
+     *
+     * <b>4. Use to</b>
+     * <p>
+     * If no value is found or mapped, return the `to` value.
      */
     ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
         String from = getFrom();
@@ -127,7 +148,11 @@ public class PropertyMapper<T> {
         // try to obtain the value for the property we want to map first
         // we don't want the NestedPropertyMappingInterceptor to restart the chain here, so we force a proceed
         // this ensures that mapFrom transformers, and regular transformers are applied exclusively - not chained
-        ConfigValue config = convertValue(NestedPropertyMappingInterceptor.proceed(context, from));
+        ConfigValue config = null;
+        if (!option.isSynthetic()) {
+            config = convertValue(NestedPropertyMappingInterceptor.proceed(context, from));
+        }
+        Optional<ConfigValue> directValue = null;
 
         boolean parentValue = false;
         if (mapFrom != null && (config == null || config.getValue() == null)) {
@@ -138,12 +163,21 @@ public class PropertyMapper<T> {
             parentValue = true;
         }
 
+        // instead of using a default or mapping from a default, check if the value is already set and use that instead
+        // a warning should be emitted about this in picocli
+        if (!name.equals(from) && (config == null || config.getValue() == null || (parentValue && Configuration.isDefault(config)))) {
+            directValue = Optional.ofNullable(context.proceed(name));
+            if (directValue.filter(c -> c.getValue() != null && Configuration.isUserModifiable(c)).isPresent()) {
+                return directValue.get();
+            }
+        }
+
         if (config != null && config.getValue() != null) {
             config = transformValue(name, config, context, parentValue);
         } else {
             String defaultValue = this.option.getDefaultValue().map(Option::getDefaultValueString).orElse(null);
             config = transformValue(name, new ConfigValueBuilder().withName(name)
-                    .withValue(defaultValue).withRawValue(defaultValue).build(),
+                    .withValue(defaultValue).withRawValue(defaultValue).withConfigSourceOrdinal(DEFAULT_VALUE_ORDINAL).build(),
                     context, false);
         }
 
@@ -152,6 +186,9 @@ public class PropertyMapper<T> {
         }
 
         // now try any defaults from quarkus
+        if (directValue != null) {
+            return directValue.orElse(null);
+        }
         return context.proceed(name);
     }
 
@@ -159,12 +196,12 @@ public class PropertyMapper<T> {
         return this.option;
     }
 
-    public void setEnabled(BooleanSupplier enabled) {
+    public void setEnabled(Function<AbstractCommand, Boolean> enabled) {
         this.enabled = enabled;
     }
 
-    public boolean isEnabled() {
-        return enabled.getAsBoolean();
+    public boolean isEnabled(AbstractCommand command) {
+        return enabled.apply(command);
     }
 
     public Optional<String> getEnabledWhen() {
@@ -220,7 +257,7 @@ public class PropertyMapper<T> {
     }
 
     public boolean isHidden() {
-        return this.option.isHidden() || this.getDescription() == null;
+        return this.option.isHidden();
     }
 
     public boolean isBuildTime() {
@@ -255,7 +292,7 @@ public class PropertyMapper<T> {
         return parentMapper;
     }
 
-    ValueMapper getMapper() {
+    public ValueMapper getMapper() {
         return mapper;
     }
 
@@ -283,7 +320,7 @@ public class PropertyMapper<T> {
         // fall back to the transformer when no mapper is explicitly specified in .mapFrom()
         var theMapper = parentValue && parentMapper != null ? this.parentMapper : this.mapper;
         // since our mapping logic assumes fully resolved values, we cannot reliably map if Expressions are disabled
-        if (Expressions.isEnabled() && theMapper != null && (!name.equals(getFrom()) || parentValue)) {
+        if (Expressions.isEnabled() && theMapper != null && (name.equals(getTo()) || parentValue)) {
             mappedValue = theMapper.map(getNamedProperty().orElse(null), value, context);
             mapped = true;
         }
@@ -303,8 +340,8 @@ public class PropertyMapper<T> {
             return configValue;
         }
 
-        // by unsetting the ordinal this will not be seen as directly modified by the user
-        return configValue.from().withName(name).withValue(mappedValue).withRawValue(value).withConfigSourceOrdinal(0).build();
+        // by unsetting the configsource name this will not be seen as directly modified by the user
+        return configValue.from().withName(name).withValue(mappedValue).withRawValue(value).withConfigSourceName(null).build();
     }
 
     private ConfigValue convertValue(ConfigValue configValue) {
@@ -356,7 +393,7 @@ public class PropertyMapper<T> {
         private String mapFrom = null;
         private ValueMapper parentMapper;
         private boolean isMasked = false;
-        private BooleanSupplier isEnabled = () -> true;
+        private Function<AbstractCommand, Boolean> enabled = ignored -> true;
         private String enabledWhen = "";
         private String paramLabel;
         private BiConsumer<PropertyMapper<T>, ConfigValue> validator = (mapper, value) -> mapper.validateValues(value, mapper::validateExpectedValues);
@@ -428,13 +465,17 @@ public class PropertyMapper<T> {
         }
 
         public Builder<T> isEnabled(BooleanSupplier isEnabled, String enabledWhen) {
-            this.isEnabled = isEnabled;
+            this.enabled = ignored -> isEnabled.getAsBoolean();
             this.enabledWhen=enabledWhen;
             return this;
         }
 
         public Builder<T> isEnabled(BooleanSupplier isEnabled) {
-            this.isEnabled = isEnabled;
+            return isEnabled(isEnabled, "");
+        }
+
+        public Builder<T> isEnabled(Function<AbstractCommand, Boolean> enabled) {
+            this.enabled = enabled;
             return this;
         }
 
@@ -523,22 +564,70 @@ public class PropertyMapper<T> {
             return this;
         }
 
+        /**
+         * Validates wildcard keys.
+         * You can validate whether an allowed key is provided as the wildcard key.
+         * <p>
+         * f.e. check whether existing feature is referenced
+         * <pre>
+         * kc.feature-<feature>:v1
+         * → (key, value) -> is key a feature? if not, fail
+         *
+         * @param validator validator with parameters (wildcardKey, value)
+         */
+        public Builder<T> wildcardKeysValidator(BiConsumer<String, String> validator) {
+            addValidator((mapper, configValue) -> {
+                var key = mapper.getNamedProperty().orElseThrow(() -> new PropertyException("Cannot determine wildcard key."));
+                validator.accept(key, configValue.getValue());
+            });
+            return this;
+        }
+
         public PropertyMapper<T> build() {
             if (paramLabel == null && Boolean.class.equals(option.getType())) {
                 paramLabel = Boolean.TRUE + "|" + Boolean.FALSE;
             }
-            if (option.getKey().contains(WildcardPropertyMapper.WILDCARD_FROM_START)) {
-                return new WildcardPropertyMapper<>(option, to, isEnabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, wildcardKeysTransformer, wildcardMapFrom);
+            Option<T> opt = option;
+            if (Objects.equals(option.getKey(), mapFrom)) {
+                opt = option.toBuilder().synthetic().build();
+            }
+            if (this.description == null && !opt.isHidden()) {
+                throw new AssertionError("Non-hidden options require a description");
+            }
+            if (option.getKey().contains(WildcardOptionsUtil.WILDCARD_START)) {
+                return new WildcardPropertyMapper<>(opt, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, wildcardKeysTransformer, wildcardMapFrom);
             }
             if (wildcardKeysTransformer != null || wildcardMapFrom != null) {
                 throw new AssertionError("Wildcard operations not expected with non-wildcard mapper");
             }
-            return new PropertyMapper<>(option, to, isEnabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, null, null);
+            if (!option.isBuildTime() && to != null && PropertyMappers.isSpiBuildTimeProperty(to, true)) {
+                throw new AssertionError("A runtime option should not map to a build time spi option");
+            }
+            return new PropertyMapper<>(opt, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, null, null);
         }
     }
 
     public static <T> PropertyMapper.Builder<T> fromOption(Option<T> opt) {
         return new PropertyMapper.Builder<>(opt);
+    }
+
+    /**
+     * Create a property mapper from a feature.
+     * The mapper maps to external properties the state of the feature.
+     */
+    public static PropertyMapper.Builder<Boolean> fromFeature(Profile.Feature feature) {
+        final var option = new OptionBuilder<>(feature.getKey() + "-hidden-mapper", Boolean.class)
+                .buildTime(true)
+                .synthetic()
+                .build();
+        return new Builder<>(option)
+                .transformer((value, context) -> {
+                    if (Profile.getInstance() == null) {
+                        // can be null when running during augmentation
+                        Environment.getCurrentOrCreateFeatureProfile();
+                    }
+                    return Profile.isFeatureEnabled(feature) ? "true" : "false";
+                });
     }
 
     public void validate(ConfigValue value) {
@@ -571,6 +660,24 @@ public class PropertyMapper<T> {
                 continue;
             }
             try {
+                if (option.getComponentType() != String.class && option.getExpectedValues().isEmpty()) {
+                    if (v.isEmpty()) {
+                        throw new PropertyException("Invalid empty value for option %s".formatted(getOptionAndSourceMessage(configValue)));
+                    }
+                    try {
+                        Configuration.getConfig().convert(v, option.getComponentType());
+                    } catch (Exception e) {
+                        // strip the smallrye code if possible
+                        String message = e.getMessage();
+                        Pattern p = Pattern.compile("SRCFG\\d+: (.*)$");
+                        Matcher m = p.matcher(message);
+                        if (m.find()) {
+                            message = m.group(1);
+                        }
+                        throw new PropertyException("Invalid value for option %s: %s".formatted(getOptionAndSourceMessage(configValue), message));
+                    }
+                }
+
                 singleValidator.accept(configValue, v);
             } catch (PropertyException e) {
                 if (!result.isEmpty()) {
@@ -628,7 +735,7 @@ public class PropertyMapper<T> {
         return !option.getConnectedOptions().isEmpty();
     }
 
-    String getMapFrom() {
+    public String getMapFrom() {
         return mapFrom;
     }
 

@@ -1,7 +1,5 @@
 package org.keycloak.testsuite.broker;
 
-import org.junit.Before;
-import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -14,12 +12,15 @@ import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.AuthenticationExecutionBuilder;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.ExecutionBuilder;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertEquals;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitializedBaseBrokerTest {
 
@@ -43,7 +44,7 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
         authMgmtResource.createFlow(authenticationFlowRepresentation);
 
         AuthenticationFlowRepresentation authenticationFlowRepresentation1 = getFlow(authMgmtResource, detectExistingFlowAlias);
-        assertNotNull("The authentication flow must exist", authenticationFlowRepresentation1);
+        assertNotNull(authenticationFlowRepresentation1, "The authentication flow must exist");
 
         String flowId = authenticationFlowRepresentation1.getId(); // retrieves the id of the newly created flow
 
@@ -58,11 +59,11 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
         identityProviderRepresentation.getConfig().put(IdentityProviderModel.SYNC_MODE, IdentityProviderSyncMode.FORCE.toString());
         identityConsumerResource.update(identityProviderRepresentation);
 
-        assertEquals("Two executions must have been created", 2, getFlow(authMgmtResource, detectExistingFlowAlias).getAuthenticationExecutions().size());
+        assertEquals(2, getFlow(authMgmtResource, detectExistingFlowAlias).getAuthenticationExecutions().size(), "Two executions must have been created");
     }
 
     private void addExecution(AuthenticationManagementResource authMgmtResource, String flowId, String providerId, int priority) {
-        AuthenticationExecutionRepresentation exec = ExecutionBuilder.create()
+        AuthenticationExecutionRepresentation exec = AuthenticationExecutionBuilder.create()
                 .parentFlow(flowId)
                 .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.toString())
                 .authenticator(providerId)
@@ -100,12 +101,13 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
         String username = "firstandlastname";
         createUser(bc.providerRealmName(), username, BrokerTestConstants.USER_PASSWORD, firstname, lastname, "firstnamelastname@example.org");
 
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithIdp(bc.getIDPAlias(), username, BrokerTestConstants.USER_PASSWORD);
 
-        loginPage.assertCurrent(bc.consumerRealmName());
+        errorPage.assertCurrent();
 
         assertEquals("User " +  username + " authenticated with identity provider " + bc.getIDPAlias() + " does not exist. Please contact your administrator.", loginPage.getInstruction());
     }
@@ -121,8 +123,9 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
         createUser(bc.providerRealmName(), username, BrokerTestConstants.USER_PASSWORD, firstname, lastname, email);
         createUser(bc.consumerRealmName(), username, "THIS PASSWORD IS USELESS", null, null, email);
 
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         logInWithIdp(bc.getIDPAlias(), username, BrokerTestConstants.USER_PASSWORD);
 
@@ -130,8 +133,8 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
         UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(
                 adminClient.realm(bc.consumerRealmName()), username);
 
-        assertEquals("Email is not correct", userRepresentation.getEmail(), email);
-        assertEquals("Firstname is not correct", userRepresentation.getFirstName(), firstname);
-        assertEquals("Lastname is not correct", userRepresentation.getLastName(), lastname);
+        assertEquals(userRepresentation.getEmail(), email, "Email is not correct");
+        assertEquals(userRepresentation.getFirstName(), firstname, "Firstname is not correct");
+        assertEquals(userRepresentation.getLastName(), lastname, "Lastname is not correct");
     }
 }

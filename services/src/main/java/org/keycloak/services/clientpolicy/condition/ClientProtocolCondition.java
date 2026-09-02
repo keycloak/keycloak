@@ -24,6 +24,10 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
+import org.keycloak.services.clientpolicy.context.ClientModelContext;
+
+import static org.keycloak.models.Constants.DEFAULT_PROTOCOL;
+import static org.keycloak.services.clientpolicy.ClientPolicyEvent.REGISTER;
 
 /**
  *
@@ -68,44 +72,32 @@ public class ClientProtocolCondition extends AbstractClientPolicyConditionProvid
 
     @Override
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
-        switch (context.getEvent()) {
-            case AUTHORIZATION_REQUEST:
-            case TOKEN_REQUEST:
-            case TOKEN_RESPONSE:
-            case SERVICE_ACCOUNT_TOKEN_REQUEST:
-            case SERVICE_ACCOUNT_TOKEN_RESPONSE:
-            case TOKEN_REFRESH:
-            case TOKEN_REFRESH_RESPONSE:
-            case TOKEN_REVOKE:
-            case TOKEN_INTROSPECT:
-            case USERINFO_REQUEST:
-            case LOGOUT_REQUEST:
-            case UPDATE:
-            case UPDATED:
-            case REGISTERED:
-            case SAML_AUTHN_REQUEST:
-            case SAML_LOGOUT_REQUEST:
-                if (isCorrectProtocolFromContext()) {
+        if (context.getEvent() == REGISTER) {
+            if (isCorrectProtocolFromRepresentation((ClientCRUDContext)context)) {
+                return ClientPolicyVote.YES;
+            }
+            return ClientPolicyVote.NO;
+        } else if (context instanceof ClientModelContext) {
+            ClientModel client = ((ClientModelContext) context).getClient();
+            if (isCorrectClientProtocol(client)) {
+                return ClientPolicyVote.YES;
+            } else {
+                // In case that there is an attempt to update protocol to the target protocol, condition should be also evaluated to success
+                if (context instanceof ClientCRUDContext && isCorrectProtocolFromRepresentation((ClientCRUDContext)context)) {
                     return ClientPolicyVote.YES;
+                } else {
+                    return ClientPolicyVote.NO;
                 }
-                return ClientPolicyVote.NO;
-            case REGISTER:
-                if (isCorrectProtocolFromRepresentation((ClientCRUDContext)context)) {
-                    return ClientPolicyVote.YES;
-                }
-                return ClientPolicyVote.NO;
-            default:
-                return ClientPolicyVote.ABSTAIN;
+            }
+        } else {
+            return ClientPolicyVote.ABSTAIN;
         }
     }
 
-    public boolean isCorrectProtocolFromContext() {
-        ClientModel client = session.getContext().getClient();
+    private boolean isCorrectClientProtocol(ClientModel client) {
         if (client != null) {
-            String protocol = client.getProtocol();
-            if (protocol != null) {
-                return protocol.equals(configuration.getProtocol());
-            }
+            String protocol = client.getProtocol() == null ? DEFAULT_PROTOCOL : client.getProtocol();
+            return protocol.equals(configuration.getProtocol());
         }
         return false;
     }
@@ -114,9 +106,10 @@ public class ClientProtocolCondition extends AbstractClientPolicyConditionProvid
         ClientRepresentation clientRep = context.getProposedClientRepresentation();
         if (clientRep != null) {
             String protocol = clientRep.getProtocol();
-            if (protocol != null) {
-                return protocol.equals(configuration.getProtocol());
+            if (protocol == null && context.getEvent() == REGISTER) {
+                protocol = DEFAULT_PROTOCOL;
             }
+            return protocol != null && protocol.equals(configuration.getProtocol());
         }
         return false;
     }

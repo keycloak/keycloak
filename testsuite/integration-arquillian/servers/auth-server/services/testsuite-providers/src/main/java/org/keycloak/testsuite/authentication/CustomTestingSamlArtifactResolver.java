@@ -1,10 +1,5 @@
 package org.keycloak.testsuite.authentication;
 
-import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.saml.ArtifactResolver;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -12,7 +7,12 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
-import static org.keycloak.testsuite.authentication.CustomTestingSamlArtifactResolverFactory.TYPE_CODE;
+import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.saml.ArtifactResolver;
+
+import static org.keycloak.testsuite.authentication.CustomTestingSamlArtifactResolverFactory.TYPE_CODE_AND_INDEX;
 
 
 /**
@@ -34,7 +34,7 @@ public class CustomTestingSamlArtifactResolver implements ArtifactResolver {
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try {
-            bos.write(TYPE_CODE);
+            bos.write(TYPE_CODE_AND_INDEX);
             bos.write(artifactIndex);
         } catch (IOException e) {
             e.printStackTrace();
@@ -48,7 +48,7 @@ public class CustomTestingSamlArtifactResolver implements ArtifactResolver {
     public String resolveArtifact(AuthenticatedClientSessionModel clientSessionModel, String artifact) {
         byte[] byteArray = Base64.getDecoder().decode(artifact);
         ByteArrayInputStream bis = new ByteArrayInputStream(byteArray);
-        bis.skip(2);
+        bis.skip(TYPE_CODE_AND_INDEX.length);
         int index = bis.read();
 
         return list.get(index);

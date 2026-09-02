@@ -1,9 +1,11 @@
 package org.keycloak.tests.admin;
 
+import java.util.List;
+import java.util.UUID;
+
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
@@ -16,13 +18,12 @@ import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.GroupConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
-import org.keycloak.tests.utils.admin.ApiUtil;
+import org.keycloak.testframework.realm.GroupBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.util.ApiUtil;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -47,7 +48,7 @@ public class AdminEndpointAccessibilityTest {
     @Test
     public void noAdminEndpointAccessWhenNoRoleAssigned() {
         String userName = "user-" + UUID.randomUUID();
-        UserRepresentation user = UserConfigBuilder.create()
+        UserRepresentation user = UserBuilder.create()
                 .username(userName)
                 .password("pwd")
                 .build();
@@ -73,7 +74,7 @@ public class AdminEndpointAccessibilityTest {
     @Test
     public void adminEndpointAccessibleWhenAdminRoleAssignedToUser() {
         String userName = "user-" + UUID.randomUUID();
-        UserRepresentation user = UserConfigBuilder.create()
+        UserRepresentation user = UserBuilder.create()
                 .username(userName)
                 .password("pwd")
                 .build();
@@ -115,14 +116,14 @@ public class AdminEndpointAccessibilityTest {
         assertThat(adminRole, notNullValue());
         assertThat(adminRole.getId(), notNullValue());
 
-        UserRepresentation user = UserConfigBuilder.create()
+        UserRepresentation user = UserBuilder.create()
                 .username(userName)
                 .password("pwd")
                 .build();
         final String userUuid = ApiUtil.getCreatedId(adminClient.realm(realmName).users().create(user));
         assertThat(userUuid, notNullValue());
 
-        GroupRepresentation group = GroupConfigBuilder.create().name(groupName).build();
+        GroupRepresentation group = GroupBuilder.create().name(groupName).build();
         Response response = realm.groups().add(group);
         String groupId = ApiUtil.getCreatedId(response);
 
@@ -157,14 +158,14 @@ public class AdminEndpointAccessibilityTest {
         assertThat(adminRole, notNullValue());
         assertThat(adminRole.getId(), notNullValue());
 
-        UserRepresentation user = UserConfigBuilder.create()
+        UserRepresentation user = UserBuilder.create()
                 .username(userName)
                 .password("pwd")
                 .build();
         final String userUuid = ApiUtil.getCreatedId(adminClient.realm(realmName).users().create(user));
         assertThat(userUuid, notNullValue());
 
-        GroupRepresentation group = GroupConfigBuilder.create().name(groupName).build();
+        GroupRepresentation group = GroupBuilder.create().name(groupName).build();
         Response response = realm.groups().add(group);
         String groupId = ApiUtil.getCreatedId(response);
 

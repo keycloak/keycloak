@@ -23,7 +23,7 @@ import java.util.Objects;
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
- * 
+ *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
 public class UndisclosedClaim extends Disclosable implements SdJwtClaim {
@@ -57,6 +57,28 @@ public class UndisclosedClaim extends Disclosable implements SdJwtClaim {
     @Override
     public JsonNode getVisibleClaimValue(String hashAlgo) {
         throw new UnsupportedOperationException("Unimplemented method 'getVisibleClaimValue'");
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof UndisclosedClaim)) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        UndisclosedClaim that = (UndisclosedClaim) o;
+        return Objects.equals(claimName, that.claimName) &&//
+            Objects.equals(claimValue, that.claimValue);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + Objects.hashCode(claimName);
+        result = 31 * result + Objects.hashCode(claimValue);
+        return result;
     }
 
     public static class Builder {

@@ -41,7 +41,7 @@
 
 			<#nested "beforeField" attribute>
 
-			<@field.group name=attribute.name label=advancedMsg(attribute.displayName!'') error=kcSanitize(messagesPerField.get('${attribute.name}'))?no_esc required=attribute.required>
+			<@field.group name=attribute.name label=advancedMsg(attribute.displayName!'') error=messagesPerField.get('${attribute.name}') required=attribute.required>
 				<div class="${properties.kcInputWrapperClass!}">
 					<#if attribute.annotations.inputHelperTextBefore??>
 						<div class="${properties.kcInputHelperTextBeforeClass!}" id="form-help-text-before-${attribute.name}" aria-live="polite">${kcSanitize(advancedMsg(attribute.annotations.inputHelperTextBefore))?no_esc}</div>

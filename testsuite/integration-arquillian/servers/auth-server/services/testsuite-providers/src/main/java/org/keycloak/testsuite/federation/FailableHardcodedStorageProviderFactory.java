@@ -16,6 +16,10 @@
  */
 package org.keycloak.testsuite.federation;
 
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -25,10 +29,6 @@ import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.user.ImportSynchronization;
 import org.keycloak.storage.user.SynchronizationResult;
 
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -36,10 +36,11 @@ import java.util.List;
 public class FailableHardcodedStorageProviderFactory implements UserStorageProviderFactory<FailableHardcodedStorageProvider>, ImportSynchronization {
 
     public static final String PROVIDER_ID = "failable-hardcoded-storage";
+    private boolean failOnValidation;
 
     @Override
     public FailableHardcodedStorageProvider create(KeycloakSession session, ComponentModel model) {
-        return new FailableHardcodedStorageProvider(model, session);
+        return new FailableHardcodedStorageProvider(model, session, isFailOnValidation());
     }
 
     @Override
@@ -67,5 +68,13 @@ public class FailableHardcodedStorageProviderFactory implements UserStorageProvi
     public SynchronizationResult syncSince(Date lastSync, KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model) {
         if (FailableHardcodedStorageProvider.isInFailMode(model)) FailableHardcodedStorageProvider.throwFailure();
         return SynchronizationResult.empty();
+    }
+
+    public void setFailOnValidation(boolean enabled) {
+        this.failOnValidation = enabled;
+    }
+
+    public boolean isFailOnValidation() {
+        return failOnValidation;
     }
 }

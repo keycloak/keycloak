@@ -16,10 +16,11 @@
  */
 package org.keycloak.connections.jpa.updater.liquibase.custom;
 
+import org.keycloak.models.UserModel;
+
 import liquibase.exception.CustomChangeException;
 import liquibase.statement.core.UpdateStatement;
 import liquibase.structure.core.Table;
-import org.keycloak.models.UserModel;
 
 public class JpaUpdate21_0_2_TermsAndConditionsRequiredAction extends CustomKeycloakTask {
 

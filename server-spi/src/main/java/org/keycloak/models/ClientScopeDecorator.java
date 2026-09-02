@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -131,18 +132,36 @@ public class ClientScopeDecorator implements ClientScopeModel {
     }
 
     @Override
-    public boolean isDynamicScope() {
-        return delegate.isDynamicScope();
+    public boolean isParameterizedScope() {
+        return delegate.isParameterizedScope();
     }
 
+    @Override
+    public void setIsParameterizedScope(boolean isParameterizedScope) {
+        delegate.setIsParameterizedScope(isParameterizedScope);
+    }
+
+    @Override
+    public String getParameterizedScopeRegexp() {
+        return delegate.getParameterizedScopeRegexp();
+    }
+
+    @Deprecated
+    @Override
+    public boolean isDynamicScope() {
+        return isParameterizedScope();
+    }
+
+    @Deprecated
     @Override
     public void setIsDynamicScope(boolean isDynamicScope) {
-        delegate.setIsDynamicScope(isDynamicScope);
+        setIsParameterizedScope(isDynamicScope);
     }
 
+    @Deprecated
     @Override
     public String getDynamicScopeRegexp() {
-        return delegate.getDynamicScopeRegexp();
+        return getParameterizedScopeRegexp();
     }
 
     @Override
@@ -168,6 +187,11 @@ public class ClientScopeDecorator implements ClientScopeModel {
     @Override
     public ProtocolMapperModel getProtocolMapperById(String id) {
         return delegate.getProtocolMapperById(id);
+    }
+
+    @Override
+    public List<ProtocolMapperModel> getProtocolMapperByType(String type) {
+        return delegate.getProtocolMapperByType(type);
     }
 
     @Override

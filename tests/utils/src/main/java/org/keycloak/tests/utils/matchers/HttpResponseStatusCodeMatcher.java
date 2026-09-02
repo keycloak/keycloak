@@ -16,14 +16,15 @@
  */
 package org.keycloak.tests.utils.matchers;
 
+import java.io.IOException;
+
 import jakarta.ws.rs.core.Response;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.util.EntityUtils;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
-
-import java.io.IOException;
 
 /**
  * Matcher for matching status code of {@link Response} instance.

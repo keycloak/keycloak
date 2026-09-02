@@ -16,6 +16,10 @@
  */
 package org.keycloak.testsuite.arquillian.containers;
 
+import java.io.IOException;
+
+import org.keycloak.testsuite.arquillian.ContainerInfo;
+
 import org.jboss.arquillian.container.spi.ContainerRegistry;
 import org.jboss.arquillian.container.spi.event.ContainerMultiControlEvent;
 import org.jboss.arquillian.container.spi.event.StopClassContainers;
@@ -30,17 +34,13 @@ import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.event.suite.AfterClass;
 import org.jboss.arquillian.test.spi.event.suite.AfterSuite;
 import org.jboss.logging.Logger;
+import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
-import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.wildfly.extras.creaper.commands.deployments.Deploy;
 import org.wildfly.extras.creaper.commands.deployments.Undeploy;
 import org.wildfly.extras.creaper.core.CommandFailedException;
 import org.wildfly.extras.creaper.core.ManagementClient;
 import org.wildfly.extras.creaper.core.online.OnlineOptions;
-
-import java.io.IOException;
-
-import org.jboss.shrinkwrap.api.Archive;
 
 /**
  * Changes behaviour of original ContainerEventController to stop manual containers 

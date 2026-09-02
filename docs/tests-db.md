@@ -70,8 +70,66 @@ Stop TiDB:
 
     docker rm -f tidb
 
-Using built-in profiles to run database tests using docker containers
+
+Enabling SSL
+============
+
+Generate certificate
 -------
+
+To enable TLS connection, a private key and certificate to be provided to the database.
+Let's create a directory named `certs` to store the files we need.
+
+```bash
+mkdir certs ; cd certs
+```
+
+```bash
+openssl req -x509 -newkey rsa:4096 -keyout database-key.pem -out database-cert.pem -sha256 -days 3650 -nodes -subj "/CN=localhost
+```
+
+Private key permissions
+-------
+
+The primary key must belong to the user running in the container and only that user should be able to access.
+PostgreSQL, MariaDB, and MySQL both use user with id 999 (at the time of writing).
+
+```bash
+chmod 0600 database-key.pem
+chown 999:999 database-key.pem
+```
+
+Starting the database container
+-------
+
+Mount the `certs` directory in the container and configure the database as shown below.
+The file `database-cert.pem` can be added to Keycloak truststore to perform the hostname verification.
+By default, the JDBC drivers do not perform the hostname verification.
+
+**PostgreSQL**
+
+```bash
+docker run -d --name postgres --network host --volume '${PWD}:/mnt/certs:ro' -e POSTGRES_USER=keycloak -e POSTGRES_PASSWORD=keycloak -e POSTGRES_DB=keycloak postgres:17 postgres -c ssl=on -c ssl_cert_file=/mnt/certs/database-cert.pem -c ssl_key_file=/mnt/certs/database-key.pem
+```
+
+**MariaDB**
+
+```bash
+docker run -d --name maridb --network host --volume '${PWD}:/mnt/certs:ro' -e MARIADB_ROOT_PASSWORD=keycloak -e MARIADB_USER=keycloak -e MARIADB_PASSWORD=keycloak -e MARIADB_DATABASE=keycloak mariadb:11 --ssl-cert=/mnt/certs/database-cert.pem --ssl-key=/mnt/certs/database-key.pem --require-secure-transport
+```
+
+The option `--require-secure-transport` ensures only TLS connections are accepted by the server.
+
+**MySQL**
+
+```bash
+docker run -d --name mysql --network host --volume '${PWD}:/mnt/certs:ro' -e MYSQL_ROOT_PASSWORD=keycloak -e MYSQL_USER=keycloak -e MYSQL_PASSWORD=keycloak -e MYSQL_DATABASE=keycloak mysql:9 --ssl-cert=/mnt/certs/database-cert.pem --ssl-key=/mnt/certs/database-key.pem --require-secure-transport
+```
+
+The option `--require-secure-transport` ensures only TLS connections are accepted by the server.
+
+Using built-in profiles to run database tests using docker containers
+============
 
 The project provides specific profiles to run database tests using containers. Below is a just a sample of implemented profiles. In order to get a full list, please invoke (`mvn help:all-profiles -pl testsuite/integration-arquillian | grep -- db-`):
 

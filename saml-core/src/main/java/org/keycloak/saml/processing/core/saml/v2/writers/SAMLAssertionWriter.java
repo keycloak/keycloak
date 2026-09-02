@@ -16,6 +16,13 @@
  */
 package org.keycloak.saml.processing.core.saml.v2.writers;
 
+import java.net.URI;
+import java.util.List;
+import java.util.Set;
+import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamWriter;
+
 import org.keycloak.dom.saml.v2.assertion.AdviceType;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
@@ -39,13 +46,6 @@ import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.StaxUtil;
 import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLAssertionQNames;
-
-import javax.xml.datatype.XMLGregorianCalendar;
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLStreamWriter;
-import java.net.URI;
-import java.util.List;
-import java.util.Set;
 
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
 
@@ -71,7 +71,6 @@ public class SAMLAssertionWriter extends BaseWriter {
     public void write(AssertionType assertion) throws ProcessingException {
         StaxUtil.writeStartElement(writer, ASSERTION_PREFIX, JBossSAMLConstants.ASSERTION.get(), ASSERTION_NSURI.get());
         StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, ASSERTION_NSURI.get());
-        StaxUtil.writeDefaultNameSpace(writer, ASSERTION_NSURI.get());
 
         // Attributes
         StaxUtil.writeAttribute(writer, JBossSAMLConstants.ID.get(), assertion.getID());
@@ -194,7 +193,6 @@ public class SAMLAssertionWriter extends BaseWriter {
         StaxUtil.writeStartElement(writer, ASSERTION_PREFIX, JBossSAMLConstants.AUTHN_STATEMENT.get(), ASSERTION_NSURI.get());
         if (includeNamespace) {
             StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, ASSERTION_NSURI.get());
-            StaxUtil.writeDefaultNameSpace(writer, ASSERTION_NSURI.get());
         }
 
         XMLGregorianCalendar authnInstant = authnStatement.getAuthnInstant();

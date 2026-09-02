@@ -1,10 +1,11 @@
 package org.keycloak.testframework.injection.mocks;
 
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
+
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 public class MockParentSupplier implements Supplier<MockParentValue, MockParentAnnotation> {
 
@@ -24,7 +25,8 @@ public class MockParentSupplier implements Supplier<MockParentValue, MockParentA
 
     @Override
     public MockParentValue getValue(InstanceContext<MockParentValue, MockParentAnnotation> instanceContext) {
-        return new MockParentValue(configString, configBoolean);
+        String stringOption = instanceContext.getAnnotation().stringOption();
+        return new MockParentValue(stringOption.isEmpty() ? configString : stringOption, configBoolean);
     }
 
     @Override

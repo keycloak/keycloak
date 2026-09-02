@@ -16,16 +16,6 @@
  */
 package org.keycloak.protocol.oid4vc.issuance.mappers;
 
-import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.ProtocolMapper;
-import org.keycloak.protocol.oid4vc.model.CredentialSubject;
-import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -33,6 +23,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+
+import org.keycloak.common.util.Time;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.oid4vc.issuance.TimeClaimNormalizer;
+import org.keycloak.protocol.oid4vc.model.CredentialSubject;
+import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.provider.ProviderConfigProperty;
+
+import org.jboss.logging.Logger;
+
+import static org.keycloak.VCFormat.MSO_MDOC;
 
 /**
  * Map issuance date to the credential, under the default claim name "iat"
@@ -59,7 +63,7 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
     public static final String VALUE_SOURCE = "valueSource";
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
-    private static final Logger log = LoggerFactory.getLogger(OID4VCIssuedAtTimeClaimMapper.class);
+    private static final Logger log = Logger.getLogger(OID4VCIssuedAtTimeClaimMapper.class);
 
     static {
         ProviderConfigProperty subjectPropertyNameConfig = new ProviderConfigProperty();
@@ -73,9 +77,9 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
         ProviderConfigProperty truncateToTimeUnit = new ProviderConfigProperty();
         truncateToTimeUnit.setName(TRUNCATE_TO_TIME_UNIT_KEY);
         truncateToTimeUnit.setLabel("Truncate To Time Unit");
-        truncateToTimeUnit.setHelpText("Truncate time to the first second of the MINUTES, HOURS, HALF_DAYS, DAYS, WEEKS, MONTHS or YEARS. Such as to prevent correlation of credentials based on this time value.");
+        truncateToTimeUnit.setHelpText("Truncate time to the start of the selected unit. Supported: SECONDS, MINUTES, HOURS, HALF_DAYS, DAYS, WEEKS, MONTHS, YEARS. Such as to prevent correlation of credentials based on this time value.");
         truncateToTimeUnit.setType(ProviderConfigProperty.LIST_TYPE);
-        truncateToTimeUnit.setOptions(List.of("MINUTES", "HOURS", "HALF_DAYS", "DAYS", "WEEKS", "MONTHS", "YEARS"));
+        truncateToTimeUnit.setOptions(List.of("SECONDS", "MINUTES", "HOURS", "HALF_DAYS", "DAYS", "WEEKS", "MONTHS", "YEARS"));
         CONFIG_PROPERTIES.add(truncateToTimeUnit);
 
         ProviderConfigProperty valueSource = new ProviderConfigProperty();
@@ -98,18 +102,23 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
      */
     @Override
     public boolean includeInMetadata() {
-        return Optional.ofNullable(mapperModel.getConfig().get(CredentialScopeModel.INCLUDE_IN_METADATA))
+        return Optional.ofNullable(mapperModel.getConfig().get(CredentialScopeModel.VC_INCLUDE_IN_METADATA))
                        .map(Boolean::parseBoolean)
                        .orElse(false);
     }
 
-    public void setClaimsForCredential(VerifiableCredential verifiableCredential,
-                                       UserSessionModel userSessionModel) {
+    @Override
+    public boolean supportsCredentialFormat(String credentialFormat) {
+        // mDoc carries issuance timing in the MSO validityInfo instead of a VC-level iat claim.
+        return !MSO_MDOC.equals(credentialFormat);
+    }
+
+    public void setClaim(VerifiableCredential verifiableCredential,
+                         UserSessionModel userSessionModel) {
         // Set the value
-        List<String> attributePath = getMetadataAttributePath();
-        String propertyName = attributePath.get(attributePath.size() - 1);
+        String propertyName = getClaimName("iat");
         if (propertyName == null) {
-            log.error("Invalid configuration: missing config-property '{}' for mapper '{}' of type '{}'. Mapper is ignored.",
+            log.errorf("Invalid configuration: missing config-property '%s' for mapper '%s' of type '%s'. Mapper is ignored.",
                       CLAIM_NAME,
                       mapperModel.getName(),
                       MAPPER_ID);
@@ -119,24 +128,27 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
         Instant iat = Optional.ofNullable(mapperModel.getConfig())
                 .flatMap(config -> Optional.ofNullable(config.get(VALUE_SOURCE)))
                 .filter(valueSource -> Objects.equals(valueSource, "COMPUTE"))
-                .map(valueSource -> Instant.now())
+                .map(valueSource -> Instant.ofEpochSecond(Time.currentTime()))
                 .orElseGet(() -> Optional.ofNullable(verifiableCredential.getIssuanceDate())
-                        .orElse(Instant.now()));
+                        .orElse(Instant.ofEpochSecond(Time.currentTime())));
+
+        Instant normalizedIat = new TimeClaimNormalizer(userSessionModel.getRealm())
+                .normalize(iat);
 
         // truncate is possible. Return iat if not.
         Instant iatTrunc = Optional.ofNullable(mapperModel.getConfig())
-                .flatMap(config -> Optional.ofNullable(config.get(TRUNCATE_TO_TIME_UNIT_KEY)))
-                .filter(String::isEmpty)
+                .map(config -> config.get(TRUNCATE_TO_TIME_UNIT_KEY))
+                .filter(val -> !val.isEmpty())
                 .map(ChronoUnit::valueOf)
-                .map(iat::truncatedTo)
-                .orElse(iat);
+                .map(normalizedIat::truncatedTo)
+                .orElse(normalizedIat);
 
         CredentialSubject credentialSubject = verifiableCredential.getCredentialSubject();
         credentialSubject.setClaims(propertyName, iatTrunc.getEpochSecond());
     }
 
     @Override
-    public void setClaimsForSubject(Map<String, Object> claims, UserSessionModel userSessionModel) {
+    public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel) {
         // NoOp
     }
 

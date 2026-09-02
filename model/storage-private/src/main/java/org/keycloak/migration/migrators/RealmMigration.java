@@ -19,16 +19,17 @@
 
 package org.keycloak.migration.migrators;
 
-import org.jboss.logging.Logger;
 import org.keycloak.connections.jpa.support.EntityManagers;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 
+import org.jboss.logging.Logger;
+
 public abstract class RealmMigration implements Migration {
 
-    private static final Logger LOG = Logger.getLogger(RealmMigration.class);
+    protected static final Logger LOG = Logger.getLogger(RealmMigration.class);
 
     @Override
     public void migrate(KeycloakSession session) {

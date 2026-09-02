@@ -16,6 +16,7 @@
  */
 package org.keycloak.common.util;
 
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -27,6 +28,10 @@ public abstract class PathMatcher<P> {
     private static final char WILDCARD = '*';
 
     public P matches(final String targetUri) {
+        final String normalizedUri = normalizeUri(targetUri);
+        if (normalizedUri == null) {
+            return null;
+        }
         int patternCount = 0;
         int bracketsPatternCount = 0;
         P matchingPath = null;
@@ -36,26 +41,26 @@ public abstract class PathMatcher<P> {
         for (P entry : getPaths()) {
             String expectedUri = getPath(entry);
 
-            if (expectedUri == null) {
+            if (expectedUri == null || expectedUri.isEmpty()) {
                 continue;
             }
 
             String matchingUri = null;
 
-            if (exactMatch(expectedUri, targetUri)) {
+            if (exactMatch(expectedUri, normalizedUri)) {
                 matchingUri = expectedUri;
             }
 
             if (isTemplate(expectedUri)) {
-                String templateUri = buildUriFromTemplate(expectedUri, targetUri, false);
+                String templateUri = buildUriFromTemplate(expectedUri, normalizedUri, false);
 
                 if (templateUri != null) {
                     int length = expectedUri.split("\\/").length;
                     int bracketsLength = expectedUri.split("\\{").length;
 
-                    if (exactMatch(templateUri, targetUri) && (patternCount == 0 || length > patternCount || bracketsLength < bracketsPatternCount)) {
+                    if (exactMatch(templateUri, normalizedUri) && (patternCount == 0 || length > patternCount || bracketsLength < bracketsPatternCount)) {
                         matchingUri = templateUri;
-                        P resolved = resolvePathConfig(entry, targetUri);
+                        P resolved = resolvePathConfig(entry, normalizedUri);
 
                         if (resolved != null) {
                             entry = resolved;
@@ -87,7 +92,7 @@ public abstract class PathMatcher<P> {
                     pathString = "/";
                 }
 
-                if (matchingUri.equals(targetUri) || pathString.equals(targetUri)) {
+                if (matchingUri.equals(normalizedUri) || pathString.equals(normalizedUri)) {
                     if (patternCount == 0) {
                         return entry;
                     } else {
@@ -111,7 +116,7 @@ public abstract class PathMatcher<P> {
                     if (suffixIndex != -1) {
                         String protectedSuffix = expectedUri.substring(suffixIndex + 1);
 
-                        if (targetUri.endsWith(protectedSuffix)) {
+                        if (normalizedUri.endsWith(protectedSuffix)) {
                             matchingAnySuffixPath = entry;
                         }
                     }
@@ -216,10 +221,19 @@ public abstract class PathMatcher<P> {
                         }
 
                         if (c == '{') {
-                            uri.replace(uri.indexOf("{", lastPattern), uri.indexOf("}", lastPattern) + 1, value.toString());
+                            int openBraceIndex = uri.indexOf("{", lastPattern);
+                            int closingBraceIndex = uri.indexOf("}", lastPattern);
+                            if (openBraceIndex == -1 || closingBraceIndex == -1 || closingBraceIndex < openBraceIndex) {
+                                return null;
+                            }
+                            String paramName = uri.substring(openBraceIndex + 1, closingBraceIndex);
+                            if (paramName.indexOf('/') != -1) {
+                                return null;
+                            }
+                            uri.replace(openBraceIndex, closingBraceIndex + 1, value.toString());
                         }
 
-                        if (value.charAt(value.length() - 1) == '}') {
+                        if (value.length() > 0 && value.charAt(value.length() - 1) == '}') {
                             lastPattern = uri.indexOf(value.toString()) + value.length();
                         }
 
@@ -258,8 +272,112 @@ public abstract class PathMatcher<P> {
         return uri.indexOf("{") != -1;
     }
 
+    /**
+     * Validates that the given URI is a well-formed path template.
+     *
+     * @return an error message if the URI is invalid, or {@code null} if it is valid
+     */
+    public static String validateTemplate(String uri) {
+        boolean inBrace = false;
+        boolean empty = true;
+
+        for (int i = 0; i < uri.length(); i++) {
+            char c = uri.charAt(i);
+
+            if (c == '{') {
+                if (inBrace) {
+                    return "nested '{'";
+                }
+                inBrace = true;
+                empty = true;
+            } else if (c == '}') {
+                if (!inBrace || empty) {
+                    return "unexpected '}' or empty parameter name";
+                }
+                inBrace = false;
+            } else if (inBrace) {
+                if (c == '/') {
+                    return "parameter name contains '/'";
+                }
+                empty = false;
+            }
+        }
+
+        if (inBrace) {
+            return "missing closing '}'";
+        }
+
+        int asteriskIndex = uri.indexOf('*');
+        if (asteriskIndex != -1) {
+            boolean validTrailing = uri.endsWith("/*") && asteriskIndex == uri.length() - 1;
+            boolean validSuffix = asteriskIndex > 0 && uri.charAt(asteriskIndex - 1) == '/'
+                    && asteriskIndex + 2 < uri.length() && uri.charAt(asteriskIndex + 1) == '.'
+                    && uri.indexOf('*', asteriskIndex + 1) == -1
+                    && uri.indexOf('/', asteriskIndex + 1) == -1;
+            if (!validTrailing && !validSuffix) {
+                return "wildcard '*' is only supported as trailing '/*' or as a suffix pattern '/*.ext'";
+            }
+        }
+
+        return null;
+    }
+
     protected P resolvePathConfig(P entry, String path) {
         return entry;
     }
-}
 
+    protected String normalizeUri(String uri) {
+        if (uri == null) {
+            return null;
+        }
+
+        // strip matrix params — prevents bypass via /api/admin;x=1 which Servlet/JAX-RS silently ignores when routing
+        StringBuilder sb = new StringBuilder(uri.length());
+        boolean inMatrix = false;
+        for (int i = 0; i < uri.length(); i++) {
+            char c = uri.charAt(i);
+            if (c == ';') {
+                inMatrix = true;
+            } else if (c == '/') {
+                inMatrix = false;
+                sb.append(c);
+            } else if (!inMatrix) {
+                sb.append(c);
+            }
+        }
+        String result = sb.toString();
+
+        // collapse double slashes before URI parsing — //foo is interpreted as a URI authority, not a path
+        while (result.contains("//")) {
+            result = result.replace("//", "/");
+        }
+
+        // resolve dot segments and decode percent-encoding — prevents bypass via /api/foo/../admin, /api/./admin,
+        // or /api/%61dmin. On the server side the decoding is a no-op (servlet container already decodes form/query
+        // parameters), but on the policy enforcer side getRequestURI() preserves percent-encoding so this is needed.
+        // Full decoding is safe because resource paths are always configured as plain decoded strings.
+        try {
+            // percent-encode curly braces before URI parsing — Keycloak uses {param} in path templates
+            // and new URI() rejects them as invalid characters
+            result = result.replace("{", "%7B").replace("}", "%7D");
+            result = new URI(result).normalize().getPath();
+            if (result == null) {
+                return null;
+            }
+        } catch (Exception e) {
+            return null;
+        }
+
+        // collapse double slashes again — decoding %2F introduces new slashes (e.g. /api/%2Fadmin → /api//admin)
+        while (result.contains("//")) {
+            result = result.replace("//", "/");
+        }
+
+        // strip trailing slash — prevents bypass via /api/admin/ which routes to /api/admin on the server
+        if (result.length() > 1 && result.endsWith("/")) {
+            result = result.substring(0, result.length() - 1);
+        }
+
+        return result;
+    }
+}

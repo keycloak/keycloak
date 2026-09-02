@@ -25,6 +25,20 @@ This will build a container image from `Dockerfile`, using `docker` by default. 
 - Set the `DOCKER_HOST` environment variable to point at this user socket. For example: `DOCKER_HOST=unix:///run/user/1000/podman/podman.sock`.
 - You may also have to set `QUARKUS_DOCKER_EXECUTABLE_NAME=podman`
 
+## Helm chart
+
+A Helm chart is generated alongside the regular build, under `operator/target/helm/kubernetes/keycloak-operator/`. The chart is produced by the `quarkus-helm` + `quarkus-operator-sdk-helm` extensions from the same source manifests as the `kubectl` install path — it is not a hand-written copy.
+
+To regenerate locally (from the repo root):
+
+```bash
+./mvnw -Poperator -Pcluster-wide -pl :keycloak-operator -am package -DskipTests
+```
+
+Then `helm install` / `helm template` against `operator/target/helm/kubernetes/keycloak-operator/`. See the [Operator Installation guide](../docs/guides/operator/installation.adoc) for end-user instructions.
+
+Helm chart configuration lives in `operator/src/main/resources/application.properties` under the `quarkus.helm.*` keys. CRDs are post-processed by `operator/scripts/post-process-helm-chart.sh` (wrapping them in a `{{ if .Values.crds.enabled }}` guard) — the rest is purely declarative.
+
 ## Configuration
 
 The Keycloak image can be configured, when starting the operator, using the Java property:
@@ -48,7 +62,7 @@ Vanilla minikube does not support Network Policies, and Cilium implements the CN
 Another CNI implementation may work too.
 
 ```bash
-minikube start --addons ingress --cni cilium
+minikube start --addons ingress --cni cilium --cpus=max
 ```
 
 Enable the Minikube Docker daemon:
@@ -67,13 +81,7 @@ Install the CRD definition and the operator in the cluster in the `keycloak` nam
 
 ```bash
 kubectl create namespace keycloak
-kubectl apply -k target
-```
-
-to install in the `default` namespace:
-
-```bash
-kubectl apply -k overlays/default-namespace
+kubectl apply -k target/kubernetes
 ```
 
 Remove the created resources with:
@@ -113,7 +121,7 @@ minikube addons enable ingress
 To avoid skipping tests that are depending on custom Keycloak images, you need to build those first:
 
 ```bash
-./build-testing-docker-images.sh [SOURCE KEYCLOAK IMAGE TAG] [SOURCE KEYCLOAK IMAGE]
+./scripts/build-testing-docker-images.sh [SOURCE KEYCLOAK IMAGE TAG] [SOURCE KEYCLOAK IMAGE]
 ```
 
 And run the tests passing an extra Java property:

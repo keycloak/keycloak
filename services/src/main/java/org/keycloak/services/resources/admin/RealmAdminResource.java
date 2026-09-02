@@ -16,7 +16,17 @@
  */
 package org.keycloak.services.resources.admin;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import java.io.InputStream;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -35,17 +45,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.StreamingOutput;
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
-import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.reactive.NoCache;
+
 import org.keycloak.Config;
 import org.keycloak.KeyPairVerifier;
 import org.keycloak.authentication.CredentialRegistrator;
@@ -86,7 +86,6 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.organization.admin.resource.OrganizationsResource;
 import org.keycloak.partialimport.PartialImportResult;
 import org.keycloak.partialimport.PartialImportResults;
-import org.keycloak.workflow.admin.resource.WorkflowsResource;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -114,17 +113,20 @@ import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.SMTPUtil;
+import org.keycloak.workflow.admin.resource.WorkflowsResource;
 
-import java.io.InputStream;
-import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.NoCache;
 
 import static org.keycloak.util.JsonSerialization.readValue;
 
@@ -290,6 +292,15 @@ public class RealmAdminResource {
         if (clientScope == null) {
             throw new NotFoundException("Client scope not found");
         }
+
+        // Parameterized scopes currently require the caller to explicitly provide the scope parameter (e.g. "scope_name:value"),
+        // so they cannot be included automatically as default scopes. This restriction may be lifted in the future.
+        if (defaultScope && clientScope.isParameterizedScope()) {
+            throw ErrorResponse.error("Can't assign a Parameterized Scope as a Default Scope", Status.BAD_REQUEST);
+        }
+
+        ClientResource.validateClientScopeAssignment(session, clientScope, defaultScope, realm, true);
+        
         realm.addDefaultClientScope(clientScope, defaultScope);
 
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.CLIENT_SCOPE).resourcePath(session.getContext().getUri()).success();
@@ -417,7 +428,13 @@ public class RealmAdminResource {
     })
     public RealmRepresentation getRealm() {
         if (auth.realm().canViewRealm()) {
-            return ModelToRepresentation.toRepresentation(session, realm, false);
+            RealmRepresentation rep = ModelToRepresentation.toRepresentation(session, realm, false);
+            List<String> filteredDefaultGroups = realm.getDefaultGroupsStream()
+                    .filter(auth.groups()::canView)
+                    .map(ModelToRepresentation::buildGroupPath)
+                    .toList();
+            rep.setDefaultGroups(filteredDefaultGroups.isEmpty() ? null : filteredDefaultGroups);
+            return rep;
         } else {
             auth.realm().requireViewRealmNameList();
 
@@ -428,6 +445,7 @@ public class RealmAdminResource {
             rep.setDisplayNameHtml(realm.getDisplayNameHtml());
             rep.setSupportedLocales(realm.getSupportedLocalesStream().collect(Collectors.toSet()));
             rep.setBruteForceProtected(realm.isBruteForceProtected());
+            rep.setOrganizationsEnabled(realm.isOrganizationsEnabled());
 
             if (auth.users().canView()) {
                 rep.setRegistrationEmailAsUsername(realm.isRegistrationEmailAsUsername());
@@ -639,7 +657,7 @@ public class RealmAdminResource {
 
     @Path("workflows")
     public WorkflowsResource workflows() {
-        return new WorkflowsResource(session);
+        return new WorkflowsResource(session, auth, adminEvent);
     }
 
     @Path("{extension}")
@@ -896,7 +914,7 @@ public class RealmAdminResource {
                                                  @Parameter(description = "To (inclusive) date (yyyy-MM-dd) or time in Epoch timestamp millis (number of milliseconds since January 1, 1970, 00:00:00 GMT)") @QueryParam("dateTo") String dateTo,
                                                  @Parameter(description = "IP Address") @QueryParam("ipAddress") String ipAddress,
                                                  @Parameter(description = "Paging offset") @QueryParam("first") Integer firstResult,
-                                                 @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults,
+                                                 @Parameter(description = "Maximum results size") @QueryParam("max") @DefaultValue(Constants.DEFAULT_MAX_RESULTS_STR) Integer maxResults,
                                                  @Parameter(description = "The direction to sort events by (asc or desc)") @QueryParam("direction") String direction) {
         auth.realm().requireViewEvents();
 
@@ -1182,7 +1200,15 @@ public class RealmAdminResource {
                 && realm.getSmtpConfig().getOrDefault("authType", EmailAuthenticator.AuthenticatorType.BASIC.name()).equalsIgnoreCase(type.name())
                 && Objects.equals(Optional.ofNullable(settings.get("host")).orElse(""), realm.getSmtpConfig().getOrDefault("host", ""))
                 && Objects.equals(Optional.ofNullable(settings.get("port")).orElse("25"), realm.getSmtpConfig().getOrDefault("port", "25"))
-                && Objects.equals(Optional.ofNullable(settings.get("user")).orElse(""), realm.getSmtpConfig().getOrDefault("user", ""));
+                && Objects.equals(Optional.ofNullable(settings.get("user")).orElse(""), realm.getSmtpConfig().getOrDefault("user", ""))
+                && Objects.equals(Optional.ofNullable(settings.get("ssl")).orElse("false"), realm.getSmtpConfig().getOrDefault("ssl", "false"))
+                && Objects.equals(Optional.ofNullable(settings.get("starttls")).orElse("false"), realm.getSmtpConfig().getOrDefault("starttls", "false"))
+                && Objects.equals(Optional.ofNullable(settings.get("from")).orElse(""), realm.getSmtpConfig().getOrDefault("from", ""))
+                && Objects.equals(Optional.ofNullable(settings.get("replyTo")).orElse(""), realm.getSmtpConfig().getOrDefault("replyTo", ""))
+                && Objects.equals(Optional.ofNullable(settings.get("envelopeFrom")).orElse(""), realm.getSmtpConfig().getOrDefault("envelopeFrom", ""))
+                && Objects.equals(Optional.ofNullable(settings.get("authTokenUrl")).orElse(""), realm.getSmtpConfig().getOrDefault("authTokenUrl", ""))
+                && Objects.equals(Optional.ofNullable(settings.get("authTokenClientId")).orElse(""), realm.getSmtpConfig().getOrDefault("authTokenClientId", ""))
+                && Objects.equals(Optional.ofNullable(settings.get("authTokenScope")).orElse(""), realm.getSmtpConfig().getOrDefault("authTokenScope", ""));
     }
 
     @Path("identity-provider")
@@ -1208,7 +1234,9 @@ public class RealmAdminResource {
     public Stream<GroupRepresentation> getDefaultGroups() {
         auth.realm().requireViewRealm();
 
-        return realm.getDefaultGroupsStream().map(ModelToRepresentation::groupToBriefRepresentation);
+        return realm.getDefaultGroupsStream()
+                .filter(auth.groups()::canView)
+                .map(ModelToRepresentation::groupToBriefRepresentation);
     }
 
     @PUT

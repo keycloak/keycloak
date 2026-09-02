@@ -2,7 +2,7 @@ import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { DEFAULT_REALM } from "../utils/constants.ts";
-import { assertRequiredFieldError, switchOff } from "../utils/form.ts";
+import { assertRequiredFieldError, clickSwitch } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import {
   assertNotificationMessage,
@@ -36,11 +36,14 @@ test.describe.serial("Realm tests", () => {
   });
 
   test.afterAll(async () => {
-    await Promise.all(
-      [testRealmName, newRealmName, editedRealmName, specialCharsName].map(
-        (realm) => adminClient.deleteRealm(realm),
-      ),
-    );
+    for (const realm of [
+      testRealmName,
+      newRealmName,
+      editedRealmName,
+      specialCharsName,
+    ]) {
+      await adminClient.deleteRealm(realm);
+    }
   });
 
   test("should fail creating duplicated or empty name realm", async ({
@@ -77,7 +80,7 @@ test.describe.serial("Realm tests", () => {
 
     await goToRealmSettings(page);
 
-    await switchOff(page, `#${testDisabledName}-switch`);
+    await clickSwitch(page, `#${testDisabledName}-switch`);
     await confirmModal(page);
 
     await assertNotificationMessage(page, "Realm successfully updated");

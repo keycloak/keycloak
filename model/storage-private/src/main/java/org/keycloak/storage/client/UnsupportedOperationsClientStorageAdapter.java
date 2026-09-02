@@ -16,11 +16,11 @@
  */
 package org.keycloak.storage.client;
 
+import java.util.stream.Stream;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RoleModel;
-
-import java.util.stream.Stream;
 
 /**
  * Base helper class.  Unsupported operations are implemented here that throw exception on invocation.

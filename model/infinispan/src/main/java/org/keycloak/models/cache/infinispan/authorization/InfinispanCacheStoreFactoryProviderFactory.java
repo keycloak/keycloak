@@ -17,21 +17,21 @@
 
 package org.keycloak.models.cache.infinispan.authorization;
 
-import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory.REALM_CLEAR_CACHE_EVENTS;
-
-import org.infinispan.Cache;
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
 import org.keycloak.models.cache.authorization.CachedStoreProviderFactory;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
-import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
+
+import org.infinispan.Cache;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME;
+import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory.REALM_CLEAR_CACHE_EVENTS;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -55,21 +55,16 @@ public class InfinispanCacheStoreFactoryProviderFactory implements CachedStorePr
         if (storeCache == null) {
             synchronized (this) {
                 if (storeCache == null) {
-                    Cache<String, Revisioned> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.AUTHORIZATION_CACHE_NAME);
-                    Cache<String, Long> revisions = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.AUTHORIZATION_REVISIONS_CACHE_NAME);
+                    var ispnProvider = session.getProvider(InfinispanConnectionProvider.class);
+                    var cluster = session.getProvider(ClusterProvider.class);
+
+                    Cache<String, Revisioned> cache = ispnProvider.getCache(AUTHORIZATION_CACHE_NAME);
+                    Cache<String, Long> revisions = ispnProvider.getCache(AUTHORIZATION_REVISIONS_CACHE_NAME);
                     storeCache = new StoreFactoryCacheManager(cache, revisions);
-                    ClusterProvider cluster = session.getProvider(ClusterProvider.class);
 
-                    cluster.registerListener(AUTHORIZATION_INVALIDATION_EVENTS, (ClusterEvent event) -> {
-
-                        InvalidationEvent invalidationEvent = (InvalidationEvent) event;
-                        storeCache.invalidationEventReceived(invalidationEvent);
-
-                    });
-
-                    cluster.registerListener(AUTHORIZATION_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> storeCache.clear());
-                    cluster.registerListener(REALM_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> storeCache.clear());
-
+                    cluster.registerListener(AUTHORIZATION_INVALIDATION_EVENTS, storeCache::onInvalidateEvent);
+                    cluster.registerListener(AUTHORIZATION_CLEAR_CACHE_EVENTS, storeCache::onClearEvent);
+                    cluster.registerListener(REALM_CLEAR_CACHE_EVENTS, storeCache::onClearEvent);
                     log.debug("Registered cluster listeners");
                 }
             }

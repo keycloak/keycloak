@@ -19,11 +19,11 @@
 package org.keycloak.testsuite.federation;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.storage.UserStorageProviderFactory;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

@@ -16,17 +16,30 @@
  */
 package org.keycloak.services.resources.admin;
 
-import static org.keycloak.userprofile.UserProfileUtil.createUserProfileMetadata;
-
 import java.util.Collections;
 
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import org.keycloak.component.ComponentValidationException;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.representations.idm.UserProfileMetadata;
+import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.KeycloakOpenAPI;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileProvider;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
@@ -36,19 +49,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-import org.keycloak.component.ComponentValidationException;
-import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.representations.idm.UserProfileMetadata;
-import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
-import org.keycloak.userprofile.UserProfile;
-import org.keycloak.userprofile.UserProfileContext;
-import org.keycloak.userprofile.UserProfileProvider;
-import org.keycloak.representations.userprofile.config.UPConfig;
+import static org.keycloak.userprofile.UserProfileUtil.createUserProfileMetadata;
 
 /**
  * @author Vlastimil Elias <velias@redhat.com>
@@ -77,8 +78,11 @@ public class UserProfileResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public UPConfig getConfiguration() {
-        auth.requireAnyAdminRole();
-        return session.getProvider(UserProfileProvider.class).getConfiguration();
+        if (auth.realm().canViewRealm() || auth.users().canQuery()) {
+            return session.getProvider(UserProfileProvider.class).getConfiguration();
+        } else {
+            throw new ForbiddenException();
+        }
     }
 
     @GET
@@ -91,9 +95,12 @@ public class UserProfileResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public UserProfileMetadata getMetadata() {
-        auth.requireAnyAdminRole();
-        UserProfile profile = session.getProvider(UserProfileProvider.class).create(UserProfileContext.USER_API, Collections.emptyMap());
-        return createUserProfileMetadata(session, profile);
+        if (auth.realm().canViewRealm() || auth.users().canQuery()) {
+            UserProfile profile = session.getProvider(UserProfileProvider.class).create(UserProfileContext.USER_API, Collections.emptyMap());
+            return createUserProfileMetadata(session, profile);
+        } else {
+            throw new ForbiddenException();
+        }
     }
 
     @PUT

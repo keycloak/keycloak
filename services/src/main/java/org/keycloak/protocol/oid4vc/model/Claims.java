@@ -16,13 +16,13 @@
  */
 package org.keycloak.protocol.oid4vc.model;
 
-import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.util.JsonSerialization;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Optional;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>

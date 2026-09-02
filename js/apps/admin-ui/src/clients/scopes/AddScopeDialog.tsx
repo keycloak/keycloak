@@ -21,11 +21,14 @@ import { useTranslation } from "react-i18next";
 import {
   ClientScopeType,
   clientScopeTypesDropdown,
+  ParameterizedScopeLabel,
+  isParameterizedScope,
 } from "../../components/client-scope/ClientScopeTypes";
 import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import useToggle from "../../utils/useToggle";
 import { getProtocolName } from "../utils";
+import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 
 import "./client-scopes.css";
 
@@ -49,6 +52,7 @@ enum ProtocolType {
   All = "All",
   SAML = "SAML",
   OpenIDConnect = "OpenID Connect",
+  OID4VC = "OpenID4VC",
 }
 
 export const AddScopeDialog = ({
@@ -60,10 +64,13 @@ export const AddScopeDialog = ({
   isClientScopesConditionType,
 }: AddScopeDialogProps) => {
   const { t } = useTranslation();
+  const isFeatureEnabled = useIsFeatureEnabled();
   const [addToggle, setAddToggle] = useState(false);
   const [rows, setRows] = useState<ClientScopeRepresentation[]>([]);
   const [filterType, setFilterType] = useState(FilterType.Name);
   const [protocolType, setProtocolType] = useState(ProtocolType.All);
+
+  const isOid4vcEnabled = isFeatureEnabled(Feature.OpenId4VCI);
 
   const [isFilterTypeDropdownOpen, toggleIsFilterTypeDropdownOpen] =
     useToggle();
@@ -76,6 +83,8 @@ export const AddScopeDialog = ({
       return scopes.filter((item) => item.protocol === "openid-connect");
     } else if (protocolType === ProtocolType.SAML) {
       return scopes.filter((item) => item.protocol === "saml");
+    } else if (protocolType === ProtocolType.OID4VC) {
+      return scopes.filter((item) => item.protocol === "oid4vc");
     }
     return scopes;
   }, [scopes, filterType, protocolType]);
@@ -105,6 +114,8 @@ export const AddScopeDialog = ({
       setProtocolType(ProtocolType.SAML);
     } else if (protocolType === ProtocolType.OpenIDConnect) {
       setProtocolType(ProtocolType.OpenIDConnect);
+    } else if (protocolType === ProtocolType.OID4VC) {
+      setProtocolType(ProtocolType.OID4VC);
     } else if (protocolType === ProtocolType.All) {
       setProtocolType(ProtocolType.All);
     }
@@ -112,17 +123,32 @@ export const AddScopeDialog = ({
     toggleIsProtocolTypeDropdownOpen();
   };
 
-  const protocolTypeOptions = [
-    <SelectOption key={1} value={ProtocolType.SAML}>
-      {t("protocolTypes.saml")}
-    </SelectOption>,
-    <SelectOption key={2} value={ProtocolType.OpenIDConnect}>
-      {t("protocolTypes.openid-connect")}
-    </SelectOption>,
-    <SelectOption key={3} value={ProtocolType.All}>
-      {t("protocolTypes.all")}
-    </SelectOption>,
-  ];
+  const protocolTypeOptions = useMemo(() => {
+    const options = [
+      <SelectOption key={1} value={ProtocolType.SAML}>
+        {t("protocolTypes.saml")}
+      </SelectOption>,
+      <SelectOption key={2} value={ProtocolType.OpenIDConnect}>
+        {t("protocolTypes.openid-connect")}
+      </SelectOption>,
+    ];
+
+    if (isOid4vcEnabled) {
+      options.push(
+        <SelectOption key={3} value={ProtocolType.OID4VC}>
+          {t("protocolTypes.oid4vc")}
+        </SelectOption>,
+      );
+    }
+
+    options.push(
+      <SelectOption key={4} value={ProtocolType.All}>
+        {t("protocolTypes.all")}
+      </SelectOption>,
+    );
+
+    return options;
+  }, [t, isOid4vcEnabled]);
 
   return (
     <Modal
@@ -188,7 +214,7 @@ export const AddScopeDialog = ({
                 )}
               >
                 <DropdownList>
-                  {clientScopeTypesDropdown(t, action)}
+                  {clientScopeTypesDropdown(t, action, rows)}
                 </DropdownList>
               </Dropdown>,
               <Button
@@ -293,6 +319,12 @@ export const AddScopeDialog = ({
         columns={[
           {
             name: "name",
+            cellRenderer: (row) => (
+              <>
+                {row.name}{" "}
+                {isParameterizedScope(row) && <ParameterizedScopeLabel />}
+              </>
+            ),
           },
           {
             name: "protocol",

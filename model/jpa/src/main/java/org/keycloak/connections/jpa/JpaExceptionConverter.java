@@ -16,9 +16,9 @@
  */
 package org.keycloak.connections.jpa;
 
-import org.keycloak.provider.ExceptionConverter;
-
 import jakarta.persistence.PersistenceException;
+
+import org.keycloak.provider.ExceptionConverter;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -28,7 +28,7 @@ public class JpaExceptionConverter implements ExceptionConverter {
     @Override
     public Throwable convert(Throwable e) {
         if (!(e instanceof PersistenceException)) return null;
-        return PersistenceExceptionConverter.convert(e.getCause() != null ? e.getCause() : e);
+        return PersistenceExceptionConverter.convert(e);
     }
 
     @Override

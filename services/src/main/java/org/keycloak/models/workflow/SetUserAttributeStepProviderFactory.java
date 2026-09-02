@@ -17,36 +17,18 @@
 
 package org.keycloak.models.workflow;
 
-import java.util.List;
+import java.util.Set;
 
-import org.keycloak.Config;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.ProviderConfigProperty;
 
 public class SetUserAttributeStepProviderFactory implements WorkflowStepProviderFactory<SetUserAttributeStepProvider> {
 
-    public static final String ID = "set-user-attr-step-provider";
+    public static final String ID = "set-user-attribute";
 
     @Override
     public SetUserAttributeStepProvider create(KeycloakSession session, ComponentModel model) {
         return new SetUserAttributeStepProvider(session, model);
-    }
-
-    @Override
-    public void init(Config.Scope config) {
-        // no-op
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-        // no-op
-    }
-
-    @Override
-    public void close() {
-        // no-op
     }
 
     @Override
@@ -55,17 +37,12 @@ public class SetUserAttributeStepProviderFactory implements WorkflowStepProvider
     }
 
     @Override
-    public ResourceType getType() {
-        return ResourceType.USERS;
+    public Set<ResourceType> getSupportedResourceTypes() {
+        return Set.of(ResourceType.USERS);
     }
 
     @Override
     public String getHelpText() {
-        return "Sets an attribute on the user. Configure attributes to set as 'user.attribute.<attribute-name>' in the step's configuration.";
-    }
-
-    @Override
-    public List<ProviderConfigProperty> getConfigProperties() {
-        return List.of();
+        return "Sets attributes on the user";
     }
 }

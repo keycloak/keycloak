@@ -1,6 +1,5 @@
 package org.keycloak.tests.admin.tracing;
 
-import org.junit.jupiter.api.Test;
 import org.keycloak.connections.httpclient.DefaultHttpClientFactory;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.quarkus.runtime.tracing.OTelHttpClientFactory;
@@ -9,6 +8,8 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -19,6 +20,18 @@ public class TracingTest {
 
     @InjectRunOnServer
     RunOnServerClient runOnServer;
+
+    @Test
+    public void tracedHttpClientProviderCanBeCreated() {
+        runOnServer.run(session -> {
+            var provider = session.getProvider(HttpClientProvider.class);
+            assertThat(provider, notNullValue());
+            assertThat(provider.getHttpClient(), notNullValue());
+
+            var factory = session.getKeycloakSessionFactory().getProviderFactory(HttpClientProvider.class);
+            assertThat(factory instanceof OTelHttpClientFactory, is(true));
+        });
+    }
 
     @Test
     public void defaultSettingsIsUsed() {

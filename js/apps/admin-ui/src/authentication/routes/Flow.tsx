@@ -15,9 +15,9 @@ const FlowDetails = lazy(() => import("../FlowDetails"));
 export const FlowRoute: AppRouteObject = {
   path: "/:realm/authentication/:id/:usedBy",
   element: <FlowDetails />,
-  breadcrumb: (t) => t("flowDetails"),
   handle: {
     access: "view-authorization",
+    breadcrumb: (t) => t("flowDetails"),
   },
 };
 

@@ -17,67 +17,112 @@
 
 package org.keycloak.sdjwt;
 
+import java.util.List;
+
+import org.keycloak.common.VerificationException;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 /**
  * Options for Issuer-signed JWT verification.
  *
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
-public class IssuerSignedJwtVerificationOpts {
-    private final boolean validateIssuedAtClaim;
-    private final boolean validateExpirationClaim;
-    private final boolean validateNotBeforeClaim;
+public class IssuerSignedJwtVerificationOpts extends ClaimVerifier {
 
-    public IssuerSignedJwtVerificationOpts(
-            boolean validateIssuedAtClaim,
-            boolean validateExpirationClaim,
-            boolean validateNotBeforeClaim) {
-        this.validateIssuedAtClaim = validateIssuedAtClaim;
-        this.validateExpirationClaim = validateExpirationClaim;
-        this.validateNotBeforeClaim = validateNotBeforeClaim;
+
+    public IssuerSignedJwtVerificationOpts(List<ClaimVerifier.Predicate<ObjectNode>> headerVerifiers,
+                                           List<ClaimVerifier.Predicate<ObjectNode>> contentVerifiers) {
+        super(headerVerifiers, contentVerifiers);
     }
 
-    public boolean mustValidateIssuedAtClaim() {
-        return validateIssuedAtClaim;
-    }
-
-    public boolean mustValidateExpirationClaim() {
-        return validateExpirationClaim;
-    }
-
-    public boolean mustValidateNotBeforeClaim() {
-        return validateNotBeforeClaim;
+    public void verify(JwsToken tokenToVerify) throws VerificationException {
+        super.verifyClaims(tokenToVerify.getJwsHeaderAsNode(), tokenToVerify.getPayload());
     }
 
     public static IssuerSignedJwtVerificationOpts.Builder builder() {
         return new IssuerSignedJwtVerificationOpts.Builder();
     }
 
-    public static class Builder {
-        private boolean validateIssuedAtClaim;
-        private boolean validateExpirationClaim = true;
-        private boolean validateNotBeforeClaim = true;
+    public static class Builder extends ClaimVerifier.Builder {
 
-        public Builder withValidateIssuedAtClaim(boolean validateIssuedAtClaim) {
-            this.validateIssuedAtClaim = validateIssuedAtClaim;
-            return this;
+        public Builder() {
         }
 
-        public Builder withValidateExpirationClaim(boolean validateExpirationClaim) {
-            this.validateExpirationClaim = validateExpirationClaim;
-            return this;
+        public Builder(Integer clockSkew) {
+            super(clockSkew);
         }
 
-        public Builder withValidateNotBeforeClaim(boolean validateNotBeforeClaim) {
-            this.validateNotBeforeClaim = validateNotBeforeClaim;
-            return this;
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder withIatCheck(Integer allowedMaxAge) {
+            return (Builder) super.withIatCheck(allowedMaxAge);
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder withIatCheck(boolean isCheckOptional) {
+            return (Builder) super.withIatCheck(isCheckOptional);
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder withIatCheck(Integer allowedMaxAge, boolean isCheckOptional) {
+            return (Builder) super.withIatCheck(allowedMaxAge, isCheckOptional);
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder withNbfCheck() {
+            return (Builder) super.withNbfCheck();
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder withNbfCheck(boolean isCheckOptional) {
+            return (Builder) super.withNbfCheck(isCheckOptional);
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder withExpCheck() {
+            return (Builder) super.withExpCheck();
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder withExpCheck(boolean isCheckOptional) {
+            return (Builder) super.withExpCheck(isCheckOptional);
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder withClockSkew(int clockSkew) {
+            return (Builder) super.withClockSkew(clockSkew);
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder withContentVerifiers(List<ClaimVerifier.Predicate<ObjectNode>> contentVerifiers) {
+            return (Builder) super.withContentVerifiers(contentVerifiers);
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder addContentVerifiers(List<ClaimVerifier.Predicate<ObjectNode>> contentVerifiers) {
+            return (Builder) super.addContentVerifiers(contentVerifiers);
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder withAudCheck(String expectedAud) {
+            return (Builder) super.withAudCheck(expectedAud);
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder withClaimCheck(String claimName, String expectedValue) {
+            return (Builder) super.withClaimCheck(claimName, expectedValue);
+        }
+
+        @Override
+        public IssuerSignedJwtVerificationOpts.Builder withClaimCheck(String claimName,
+                                                                      String expectedValue,
+                                                                      boolean isOptionalCheck) {
+            return (Builder) super.withClaimCheck(claimName, expectedValue, isOptionalCheck);
         }
 
         public IssuerSignedJwtVerificationOpts build() {
-            return new IssuerSignedJwtVerificationOpts(
-                    validateIssuedAtClaim,
-                    validateExpirationClaim,
-                    validateNotBeforeClaim
-            );
+
+            return new IssuerSignedJwtVerificationOpts(headerVerifiers, contentVerifiers);
         }
     }
 }

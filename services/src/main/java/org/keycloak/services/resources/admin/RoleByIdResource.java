@@ -16,17 +16,22 @@
  */
 package org.keycloak.services.resources.admin;
 
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
-import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.reactive.NoCache;
+import java.util.List;
+import java.util.stream.Stream;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -44,20 +49,17 @@ import org.keycloak.services.resources.admin.fgap.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.utils.ProfileHelper;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import java.util.List;
-import java.util.stream.Stream;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.NoCache;
 
 /**
  * Sometimes its easier to just interact with roles by their ID instead of container/role-name
@@ -162,6 +164,7 @@ public class RoleByIdResource extends RoleResource {
     @Operation(summary = "Update the role")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public void updateRole(final @Parameter(description = "id of role") @PathParam("role-id") String id, final RoleRepresentation rep) {
@@ -194,6 +197,7 @@ public class RoleByIdResource extends RoleResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public void addComposites(final @PathParam("role-id") String id, List<RoleRepresentation> roles) {
+        // any role by ID
         RoleModel role = getRoleModel(id);
         auth.roles().requireManage(role);
         addComposites(auth, adminEvent, session.getContext().getUri(), roles, role);
@@ -227,11 +231,17 @@ public class RoleByIdResource extends RoleResource {
         RoleModel role = getRoleModel(id);
         auth.roles().requireView(role);
 
-        if (search == null && first == null && max == null) {
-            return role.getCompositesStream().map(ModelToRepresentation::toBriefRepresentation);
+        Stream<RoleModel> composites = role.getCompositesStream(search, null, null)
+                .filter(r -> auth.roles().canView(r));
+
+        if (first != null && first > 0) {
+            composites = composites.skip(first);
+        }
+        if (max != null && max >= 0) {
+            composites = composites.limit(max);
         }
 
-        return role.getCompositesStream(search, first, max).map(ModelToRepresentation::toBriefRepresentation);
+        return composites.map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**
@@ -253,7 +263,7 @@ public class RoleByIdResource extends RoleResource {
     public Stream<RoleRepresentation> getRealmRoleComposites(final @PathParam("role-id") String id) {
         RoleModel role = getRoleModel(id);
         auth.roles().requireView(role);
-        return getRealmRoleComposites(role);
+        return getRealmRoleComposites(auth, role);
     }
 
     /**
@@ -283,7 +293,7 @@ public class RoleByIdResource extends RoleResource {
         if (clientModel == null) {
             throw new NotFoundException("Could not find client");
         }
-        return getClientRoleComposites(clientModel, role);
+        return getClientRoleComposites(auth, clientModel, role);
     }
 
     /**
@@ -305,7 +315,7 @@ public class RoleByIdResource extends RoleResource {
                                  @Parameter(description = "A set of roles to be removed") List<RoleRepresentation> roles) {
         RoleModel role = getRoleModel(id);
         auth.roles().requireManage(role);
-        deleteComposites(adminEvent, session.getContext().getUri(), roles, role);
+        deleteComposites(auth, adminEvent, session.getContext().getUri(), roles, role);
     }
 
     /**

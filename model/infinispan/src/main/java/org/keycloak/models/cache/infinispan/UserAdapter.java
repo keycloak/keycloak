@@ -17,6 +17,18 @@
 
 package org.keycloak.models.cache.infinispan;
 
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.ClientModel;
@@ -31,18 +43,6 @@ import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.infinispan.entities.CachedUser;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
-
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -163,6 +163,21 @@ public class UserAdapter implements CachedUserModel {
     }
 
     @Override
+    public Long getLastModifiedTimestamp() {
+        if (updated != null) return updated.getLastModifiedTimestamp();
+        return cached.getLastModifiedTimestamp();
+    }
+
+    @Override
+    public void setLastModifiedTimestamp(Long timestamp) {
+        if (updated == null && Objects.equals(cached.getLastModifiedTimestamp(), timestamp)) {
+            return;
+        }
+        getDelegateForUpdate();
+        updated.setLastModifiedTimestamp(timestamp);
+    }
+
+    @Override
     public boolean isEnabled() {
         if (updated != null) return updated.isEnabled();
         return cached.isEnabled();
@@ -170,6 +185,9 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void setEnabled(boolean enabled) {
+        if (updated == null && cached.isEnabled() == enabled) {
+            return;
+        }
         getDelegateForUpdate();
         updated.setEnabled(enabled);
     }
@@ -180,8 +198,8 @@ public class UserAdapter implements CachedUserModel {
             value = KeycloakModelUtils.toLowerCaseSafe(value);
         }
         if (updated == null) {
-            Set<String> oldEntries = getAttributeStream(name).collect(Collectors.toSet());
-            Set<String> newEntries = value != null ? Set.of(value) : Collections.emptySet();
+            List<String> oldEntries = getAttributeStream(name).sorted().collect(Collectors.toList());
+            List<String> newEntries = value == null ? List.of() : List.of(value);
             if (CollectionUtil.collectionEquals(oldEntries, newEntries)) {
                 return;
             }
@@ -197,13 +215,8 @@ public class UserAdapter implements CachedUserModel {
             if (lowerCasedFirstValue != null) values = Collections.singletonList(lowerCasedFirstValue);
         }
         if (updated == null) {
-            Set<String> oldEntries = getAttributeStream(name).collect(Collectors.toSet());
-            Set<String> newEntries;
-            if (values == null) {
-                newEntries = new HashSet<>();
-            } else {
-                newEntries = new HashSet<>(values);
-            }
+            List<String> oldEntries = getAttributeStream(name).sorted().collect(Collectors.toList());
+            List<String> newEntries = values == null ? List.of() : values.stream().sorted().toList();
             if (CollectionUtil.collectionEquals(oldEntries, newEntries)) {
                 return;
             }
@@ -214,10 +227,11 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void removeAttribute(String name) {
-        if (getFirstAttribute(name) != null) {
-            getDelegateForUpdate();
-            updated.removeAttribute(name);
+        if (updated == null && getFirstAttribute(name) == null) {
+            return;
         }
+        getDelegateForUpdate();
+        updated.removeAttribute(name);
     }
 
     @Override
@@ -247,30 +261,42 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void addRequiredAction(RequiredAction action) {
+        if (action == null || updated == null && getCachedRequiredActions().contains(action.name())) {
+            return;
+        }
         getDelegateForUpdate();
         updated.addRequiredAction(action);
     }
 
     @Override
     public void removeRequiredAction(RequiredAction action) {
-        if (getRequiredActionsStream().anyMatch(s -> Objects.equals(s, action.name()))) {
-            getDelegateForUpdate();
-            updated.removeRequiredAction(action);
+        if (action == null || updated == null && !getCachedRequiredActions().contains(action.name())) {
+            return;
         }
+        getDelegateForUpdate();
+        updated.removeRequiredAction(action);
     }
 
     @Override
     public void addRequiredAction(String action) {
+        if (updated == null && getCachedRequiredActions().contains(action)) {
+            return;
+        }
         getDelegateForUpdate();
         updated.addRequiredAction(action);
     }
 
     @Override
     public void removeRequiredAction(String action) {
-        if (getRequiredActionsStream().anyMatch(s -> Objects.equals(s, action))) {
-            getDelegateForUpdate();
-            updated.removeRequiredAction(action);
+        if (updated == null && !getCachedRequiredActions().contains(action)) {
+            return;
         }
+        getDelegateForUpdate();
+        updated.removeRequiredAction(action);
+    }
+
+    private Set<String> getCachedRequiredActions() {
+        return cached.getRequiredActions(keycloakSession, modelSupplier);
     }
 
     @Override
@@ -281,6 +307,9 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void setEmailVerified(boolean verified) {
+        if (updated == null && cached.isEmailVerified() == verified) {
+            return;
+        }
         getDelegateForUpdate();
         updated.setEmailVerified(verified);
     }
@@ -293,6 +322,9 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void setFederationLink(String link) {
+        if (updated == null && Objects.equals(cached.getFederationLink(), link)) {
+            return;
+        }
         getDelegateForUpdate();
         updated.setFederationLink(link);
     }
@@ -305,6 +337,9 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void setServiceAccountClientLink(String clientInternalId) {
+        if (updated == null && Objects.equals(cached.getServiceAccountClientLink(), clientInternalId)) {
+            return;
+        }
         getDelegateForUpdate();
         updated.setServiceAccountClientLink(clientInternalId);
     }
@@ -388,6 +423,9 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void grantRole(RoleModel role) {
+        if (updated == null && cached.getRoleMappings(keycloakSession, modelSupplier).contains(role.getId())) {
+            return;
+        }
         getDelegateForUpdate();
         updated.grantRole(role);
     }
@@ -411,6 +449,9 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void deleteRoleMapping(RoleModel role) {
+        if (updated == null && !cached.getRoleMappings(keycloakSession, modelSupplier).contains(role.getId())) {
+            return;
+        }
         getDelegateForUpdate();
         updated.deleteRoleMapping(role);
     }
@@ -454,6 +495,10 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void joinGroup(GroupModel group) {
+        // Only REALM groups are cached; organization groups always delegate to persistence
+        if (group.getType() == Type.REALM && updated == null && cached.getGroups(keycloakSession, modelSupplier).contains(group.getId())) {
+            return;
+        }
         getDelegateForUpdate();
         updated.joinGroup(group);
 
@@ -461,6 +506,10 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public void leaveGroup(GroupModel group) {
+        // Only REALM groups are cached; organization groups always delegate to persistence
+        if (group.getType() == Type.REALM && updated == null && !cached.getGroups(keycloakSession, modelSupplier).contains(group.getId())) {
+            return;
+        }
         getDelegateForUpdate();
         updated.leaveGroup(group);
     }

@@ -17,32 +17,29 @@
 
 package org.keycloak.models.workflow;
 
-import java.util.List;
+import java.util.Objects;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.models.KeycloakSession;
+
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_PRIORITY;
 
 public class WorkflowStep implements Comparable<WorkflowStep> {
 
-    public static final String AFTER_KEY = "after";
-    public static final String PRIORITY_KEY = "priority";
-
+    private KeycloakSession session;
     private String id;
-    private String providerId;
+    private final String providerId;
     private MultivaluedHashMap<String, String> config;
-    private List<WorkflowStep> steps = List.of();
 
-    public WorkflowStep() {
-        // reflection
-    }
-
-    public WorkflowStep(String providerId, MultivaluedHashMap<String, String> config, List<WorkflowStep> steps) {
+    public WorkflowStep(String providerId, MultivaluedHashMap<String, String> config) {
         this.providerId = providerId;
         this.config = config;
-        this.steps = steps;
     }
 
-    public WorkflowStep(ComponentModel model) {
+    public WorkflowStep(KeycloakSession session, ComponentModel model) {
+        this.session = session;
         this.id = model.getId();
         this.providerId = model.getProviderId();
         this.config = model.getConfig();
@@ -72,11 +69,11 @@ public class WorkflowStep implements Comparable<WorkflowStep> {
     }
 
     public void setPriority(int priority) {
-        setConfig(PRIORITY_KEY, String.valueOf(priority));
+        setConfig(CONFIG_PRIORITY, String.valueOf(priority));
     }
 
     public int getPriority() {
-        String value = getConfig().getFirst(PRIORITY_KEY);
+        String value = getConfig().getFirst(CONFIG_PRIORITY);
         if (value == null) {
             return Integer.MAX_VALUE;
         }
@@ -87,27 +84,47 @@ public class WorkflowStep implements Comparable<WorkflowStep> {
         }
     }
 
-    public void setAfter(Long ms) {
-        setConfig(AFTER_KEY, String.valueOf(ms));
+    public void setAfter(String after) {
+        setConfig(CONFIG_AFTER, after);
     }
 
-    public Long getAfter() {
-        return Long.valueOf(getConfig().getFirstOrDefault(AFTER_KEY, "0"));
+    public String getAfter() {
+        return getConfig().getFirst(CONFIG_AFTER);
     }
 
-    public List<WorkflowStep> getSteps() {
-        if (steps == null) {
-            return List.of();
+    public String getNotificationSubject() {
+        if (session != null) {
+            WorkflowStepProvider provider = Workflows.getStepProvider(session, this);
+            if (provider != null) {
+                return provider.getNotificationSubject();
+            }
         }
-        return steps;
+        return null;
     }
 
-    public void setSteps(List<WorkflowStep> steps) {
-        this.steps = steps;
+    public String getNotificationMessage() {
+        if (session != null) {
+            WorkflowStepProvider provider = Workflows.getStepProvider(session, this);
+            if (provider != null) {
+                return provider.getNotificationMessage();
+            }
+        }
+        return null;
     }
 
     @Override
     public int compareTo(WorkflowStep other) {
         return Integer.compare(this.getPriority(), other.getPriority());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof WorkflowStep that)) return false;
+        return Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
     }
 }

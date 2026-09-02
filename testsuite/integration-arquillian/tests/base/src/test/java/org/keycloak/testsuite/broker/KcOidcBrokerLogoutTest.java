@@ -1,31 +1,34 @@
 package org.keycloak.testsuite.broker;
 
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.keycloak.OAuth2Constants;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.VerificationException;
 import org.keycloak.cookie.CookieType;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
-import java.util.HashMap;
-import java.util.Map;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
 
@@ -40,14 +43,15 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
     @Test
     public void logoutWithoutInitiatingIdpLogsOutOfIdp() {
         logInAsUserInIDPForFirstTime();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-        oauth.clientId("account");
+        oauth.client("account");
         oauth.redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME + "/account");
-        loginPage.open(REALM_PROV_NAME);
+        oauth.realm(REALM_PROV_NAME);
+        oauth.openLoginForm();
 
         waitForPage(driver, "sign in to provider", true);
     }
@@ -55,27 +59,29 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
     @Test
     public void logoutWithActualIdpAsInitiatingIdpDoesNotLogOutOfIdp() {
         logInAsUserInIDPForFirstTime();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-        oauth.clientId("broker-app");
-        loginPage.open(bc.providerRealmName());
+        oauth.client("broker-app");
+        oauth.realm(bc.providerRealmName());
+        oauth.openLoginForm();
         waitForPage(driver, "sign in to provider", true);
     }
 
     @Test
     public void logoutWithOtherIdpAsInitiatinIdpLogsOutOfIdp() {
         logInAsUserInIDPForFirstTime();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-        oauth.clientId("account");
+        oauth.client("account");
         oauth.redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME + "/account");
-        loginPage.open(REALM_PROV_NAME);
+        oauth.realm(REALM_PROV_NAME);
+        oauth.openLoginForm();
 
         waitForPage(driver, "sign in to provider", true);
     }
@@ -103,9 +109,10 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-        oauth.clientId("account");
+        oauth.client("account");
         oauth.redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME + "/account");
-        loginPage.open(REALM_PROV_NAME);
+        oauth.realm(REALM_PROV_NAME);
+        oauth.openLoginForm();
 
         waitForPage(driver, "sign in to provider", true);
     }
@@ -129,7 +136,7 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
         int expiresInMs = (int) (idToken.getExp() - idToken.getIat());
 
         // simulate token expiration
-        setTimeOffset(expiresInMs * 2);
+        timeOffSet.set(expiresInMs * 2);
 
         logoutFromRealm(
                 getConsumerRoot(),
@@ -141,11 +148,81 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
         );
 
         // user should be logged out successfully from the IDP even though the id_token_hint is expired
-        oauth.clientId("account");
+        oauth.client("account");
         oauth.redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME + "/account");
-        loginPage.open(REALM_PROV_NAME);
+        oauth.realm(REALM_PROV_NAME);
+        oauth.openLoginForm();
 
         waitForPage(driver, "sign in to provider", true);
+    }
+
+    @Test
+    public void logoutWithForgedInitiatingIdpStillLogsOutOfIdpByDefault() {
+        driver.navigate().to(getLoginUrl(getConsumerRoot(), bc.consumerRealmName(), "broker-app"));
+        logInWithBroker(bc);
+        updateAccountInformation();
+
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.realm(bc.consumerRealmName())
+                .client("broker-app", "broker-app-secret")
+                .redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app")
+                .doAccessTokenRequest(code);
+        assertEquals(200, response.getStatusCode());
+
+        // Forge the 'initiating_idp' with the actual broker alias
+        logoutFromRealm(
+                getConsumerRoot(),
+                bc.consumerRealmName(),
+                bc.getIDPAlias(),
+                response.getIdToken(),
+                "broker-app",
+                getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app"
+        );
+
+        // The upstream identity provider logout must still be performed, so the user has to sign in again
+        oauth.client("account");
+        oauth.redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME + "/account");
+        oauth.realm(REALM_PROV_NAME);
+        oauth.openLoginForm();
+
+        waitForPage(driver, "sign in to provider", true);
+    }
+
+    @Test
+    public void logoutWithInitiatingIdpSuppressesIdpLogoutWhenOptionEnabled() {
+        setAllowInitiatingIdpLogoutParam(true);
+        try {
+            driver.navigate().to(getLoginUrl(getConsumerRoot(), bc.consumerRealmName(), "broker-app"));
+            logInWithBroker(bc);
+            updateAccountInformation();
+
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse response = oauth.realm(bc.consumerRealmName())
+                    .client("broker-app", "broker-app-secret")
+                    .redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app")
+                    .doAccessTokenRequest(code);
+            assertEquals(200, response.getStatusCode());
+
+            logoutFromRealm(
+                    getConsumerRoot(),
+                    bc.consumerRealmName(),
+                    bc.getIDPAlias(),
+                    response.getIdToken(),
+                    "broker-app",
+                    getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app"
+            );
+
+            // The upstream identity provider session is kept alive, so re-authentication is silent
+            logInAsUserInIDPWithReAuthenticate();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+        } finally {
+            setAllowInitiatingIdpLogoutParam(false);
+        }
+    }
+
+    private void setAllowInitiatingIdpLogoutParam(boolean allow) {
+        runOnServerMaster.run(RunHelpers.setSystemPropertyOnServer("oidc.allow-initiating-idp-logout-param", String.valueOf(allow)));
+        runOnServerMaster.run(RunHelpers.reinitializeProviderFactoryWithSystemPropertiesScope(LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc."));
     }
 
     @Test
@@ -162,7 +239,7 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
             config.put("sendClientIdOnLogout", Boolean.TRUE.toString());
             identityProviderResource.update(representation);
             logInAsUserInIDPForFirstTime();
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             executeLogoutFromRealm(
                     getConsumerRoot(),
                     bc.consumerRealmName(),
@@ -171,14 +248,15 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
                     "account",
                     getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/account"
             );
-            logoutConfirmPage.isCurrent();
+            logoutConfirmPage.assertCurrent();
             // confirm logout at consumer
             logoutConfirmPage.confirmLogout();
             // confirm logout at provider
             logoutConfirmPage.confirmLogout();
-            oauth.clientId("account");
+            oauth.client("account");
             oauth.redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME + "/account");
-            loginPage.open(REALM_PROV_NAME);
+            oauth.realm(REALM_PROV_NAME);
+            oauth.openLoginForm();
             waitForPage(driver, "sign in to provider", true);
         } finally {
             representation.setConfig(originalConfig);
@@ -222,9 +300,10 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
             );
 
             // user should be logged out successfully from the IDP
-            oauth.clientId(bc.getIDPClientIdInProviderRealm());
+            oauth.client(bc.getIDPClientIdInProviderRealm());
             oauth.redirectUri(BrokerTestTools.getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/broker/" + bc.getIDPAlias() + "/endpoint/*");
-            loginPage.open(REALM_PROV_NAME);
+            oauth.realm(REALM_PROV_NAME);
+            oauth.openLoginForm();
             waitForPage(driver, "sign in to provider", true);
         } finally {
             representation.setConfig(originalConfig);
@@ -240,16 +319,20 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
         Map<String, String> config = representation.getConfig();
         Map<String, String> originalConfig = new HashMap<>(config);
 
-        try (ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, bc.consumerRealmName(), "broker-app")
+        try (ClientAttributeUpdater clientUpdaterConsumer = ClientAttributeUpdater.forClient(adminClient, bc.consumerRealmName(), "broker-app")
                 .setFrontchannelLogout(true)
                 .setAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, getConsumerRoot() + "/auth/realms/" + bc.consumerRealmName() + "/app/logout")
-                .update()){
+                .update();
+             ClientAttributeUpdater clientUpdaterProvider = ClientAttributeUpdater.forClient(adminClient, bc.providerRealmName(), bc.getIDPClientIdInProviderRealm())
+                     .setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "") // use frontchannel in client logout
+                     .update();) {
+
             config.put("backchannelSupported", Boolean.FALSE.toString());
             config.put("sendIdTokenOnLogout", Boolean.FALSE.toString());
             config.put("sendClientIdOnLogout", Boolean.TRUE.toString());
             identityProviderResource.update(representation);
             logInAsUserInIDPForFirstTime();
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             executeLogoutFromRealm(
                     getConsumerRoot(),
                     bc.consumerRealmName(),
@@ -258,24 +341,59 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
                     "broker-app",
                     null
             );
-            logoutConfirmPage.isCurrent();
+            logoutConfirmPage.assertCurrent();
             // confirm logout at consumer
             logoutConfirmPage.confirmLogout();
             // confirm logout at provider
             logoutConfirmPage.confirmLogout();
 
-            WaitUtils.waitForPageToLoad();
-            logoutConfirmPage.isCurrent();
-            Assert.assertTrue(driver.getPageSource().contains("You are logging out from following apps"));
-            Assert.assertTrue(driver.getPageSource().contains("broker-app"));
+            Assertions.assertEquals("Logging out", driver.getTitle());
+            Assertions.assertTrue(driver.getPageSource().contains("You are logging out from following apps"));
+            Assertions.assertTrue(driver.getPageSource().contains("broker-app"));
 
-            oauth.clientId("account");
+            oauth.client("account");
             oauth.redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME + "/account");
-            loginPage.open(REALM_PROV_NAME);
+            oauth.realm(REALM_PROV_NAME);
+            oauth.openLoginForm();
             waitForPage(driver, "sign in to provider", true);
         } finally {
             representation.setConfig(originalConfig);
             identityProviderResource.update(representation);
         }
     }
+
+    @Test
+    public void logoutSucceedsWhenIdpIsDisabled() {
+        logInAsUserInIDPForFirstTime();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+
+        // Disable the identity provider while the user session is still active
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+        IdentityProviderResource idpResource = consumerRealm.identityProviders().get(bc.getIDPAlias());
+        IdentityProviderRepresentation idpRep = idpResource.toRepresentation();
+        idpRep.setEnabled(false);
+        idpResource.update(idpRep);
+
+        try {
+            // Browser logout should complete gracefully even though the IdP is disabled
+            logoutFromRealm(
+                    getConsumerRoot(),
+                    bc.consumerRealmName(),
+                    null,
+                    null,
+                    null,
+                    null
+            );
+
+            // Verify user is actually logged out
+            oauth.client("broker-app");
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
+            waitForPage(driver, "sign in to", true);
+        } finally {
+            idpRep.setEnabled(true);
+            idpResource.update(idpRep);
+        }
+    }
+
 }

@@ -22,7 +22,7 @@ package org.keycloak.authentication.requiredactions;
 
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
-import org.jboss.logging.Logger;
+
 import org.keycloak.Config;
 import org.keycloak.authentication.CredentialAction;
 import org.keycloak.authentication.InitiatedActionSupport;

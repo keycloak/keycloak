@@ -16,6 +16,11 @@
  */
 package org.keycloak.client.cli.util;
 
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.function.Consumer;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -23,11 +28,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>

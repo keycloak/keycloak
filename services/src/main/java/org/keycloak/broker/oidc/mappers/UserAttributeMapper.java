@@ -17,6 +17,16 @@
 
 package org.keycloak.broker.oidc.mappers;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -29,16 +39,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.saml.common.util.StringUtil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -50,6 +50,8 @@ public class UserAttributeMapper extends AbstractClaimMapper {
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     public static final String USER_ATTRIBUTE = "user.attribute";
+    public static final String ALLOW_NULLABLE = "allow.nullable.property";
+    public static final String USERNAME = "username";
     public static final String EMAIL = "email";
     public static final String FIRST_NAME = "firstName";
     public static final String LAST_NAME = "lastName";
@@ -58,6 +60,7 @@ public class UserAttributeMapper extends AbstractClaimMapper {
     static {
         ProviderConfigProperty property;
         ProviderConfigProperty property1;
+        ProviderConfigProperty allowNullableProperty;
         property1 = new ProviderConfigProperty();
         property1.setName(CLAIM);
         property1.setLabel("Claim");
@@ -67,9 +70,16 @@ public class UserAttributeMapper extends AbstractClaimMapper {
         property = new ProviderConfigProperty();
         property.setName(USER_ATTRIBUTE);
         property.setLabel("User Attribute Name");
-        property.setHelpText("User attribute name to store claim.  Use email, lastName, and firstName to map to those predefined user properties.");
+        property.setHelpText("User attribute name to store claim.  Use username, email, lastName, and firstName to map to those predefined user properties.");
         property.setType(ProviderConfigProperty.USER_PROFILE_ATTRIBUTE_LIST_TYPE);
         configProperties.add(property);
+        allowNullableProperty = new ProviderConfigProperty();
+        allowNullableProperty.setName(ALLOW_NULLABLE);
+        allowNullableProperty.setLabel("Allow Nullable Property");
+        allowNullableProperty.setHelpText("If true, the property will be set to null when the claim is empty.");
+        allowNullableProperty.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        allowNullableProperty.setDefaultValue(Boolean.FALSE.toString());
+        configProperties.add(allowNullableProperty); 
     }
 
     public static final String PROVIDER_ID = "oidc-user-attribute-idp-mapper";
@@ -113,7 +123,9 @@ public class UserAttributeMapper extends AbstractClaimMapper {
         Object value = getClaimValue(mapperModel, context);
         List<String> values = toList(value);
 
-        if (EMAIL.equalsIgnoreCase(attribute)) {
+        if (USERNAME.equalsIgnoreCase(attribute)) {
+            setIfNotBlank(context::setModelUsername, values);
+        } else if (EMAIL.equalsIgnoreCase(attribute)) {
             setIfNotEmpty(context::setEmail, values);
         } else if (FIRST_NAME.equalsIgnoreCase(attribute)) {
             setIfNotEmpty(context::setFirstName, values);
@@ -135,6 +147,16 @@ public class UserAttributeMapper extends AbstractClaimMapper {
         }
     }
 
+    private void setIfNotBlank(Consumer<String> consumer, List<String> values) {
+        if (values != null && !values.isEmpty() && !values.get(0).isBlank()) {
+            consumer.accept(values.get(0));
+        }
+    }
+
+    private void setNullable(Consumer<String> consumer, List<String> values) {
+        consumer.accept(values == null || values.isEmpty() ? null : values.get(0));
+    }
+
     private List<String> toList(Object value) {
         List<Object> values = (value instanceof List)
                 ? (List) value
@@ -153,12 +175,28 @@ public class UserAttributeMapper extends AbstractClaimMapper {
         }
         Object value = getClaimValue(mapperModel, context);
         List<String> values = toList(value);
-        if (EMAIL.equalsIgnoreCase(attribute)) {
-            setIfNotEmpty(user::setEmail, values);
+        boolean isNullableProperty = Boolean.parseBoolean(mapperModel.getConfig().getOrDefault(ALLOW_NULLABLE, Boolean.FALSE.toString()));
+
+        if (USERNAME.equalsIgnoreCase(attribute)) {
+            setIfNotBlank(user::setUsername, values);
+        } else if (EMAIL.equalsIgnoreCase(attribute)) {
+            if (isNullableProperty) {
+                setNullable(user::setEmail, values);
+            } else {
+                setIfNotEmpty(user::setEmail, values);
+            }
         } else if (FIRST_NAME.equalsIgnoreCase(attribute)) {
-            setIfNotEmpty(user::setFirstName, values);
+            if (isNullableProperty) {
+                setNullable(user::setFirstName, values);
+            } else {
+                setIfNotEmpty(user::setFirstName, values);
+            }
         } else if (LAST_NAME.equalsIgnoreCase(attribute)) {
-            setIfNotEmpty(user::setLastName, values);
+            if (isNullableProperty) {
+                setNullable(user::setLastName, values);
+            } else {
+                setIfNotEmpty(user::setLastName, values);
+            }
         } else {
             List<String> current = user.getAttributeStream(attribute).collect(Collectors.toList());
             if (!CollectionUtil.collectionEquals(values, current)) {

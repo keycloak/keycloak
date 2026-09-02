@@ -17,14 +17,18 @@
 
 package org.keycloak.tests.admin;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
+
 import jakarta.ws.rs.core.Response;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.concurrent.BasicThreadFactory;
-import org.hamcrest.Matchers;
-import org.jboss.logging.Logger;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.admin.client.resource.ComponentResource;
 import org.keycloak.admin.client.resource.ComponentsResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -48,19 +52,18 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
-import org.keycloak.testsuite.components.TestComponentProvider;
-import org.keycloak.testsuite.components.TestComponentProviderFactory;
-import org.keycloak.tests.utils.admin.ApiUtil;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.providers.components.TestComponentProvider;
+import org.keycloak.tests.providers.components.TestComponentProviderFactory;
+import org.keycloak.tests.suites.DatabaseTest;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.concurrent.BasicThreadFactory;
+import org.hamcrest.Matchers;
+import org.jboss.logging.Logger;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -77,6 +80,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @KeycloakIntegrationTest(config = ComponentsTest.ComponentsTestServerConfig.class)
+@DatabaseTest
 public class ComponentsTest {
 
     @InjectRealm(lifecycle = LifeCycle.METHOD)
@@ -300,7 +304,7 @@ public class ComponentsTest {
     }
 
     @Test
-    public void testSecretConfig() throws Exception {
+    public void testSecretConfig() {
         ComponentRepresentation rep = createComponentRepresentation("mycomponent");
         rep.getConfig().addFirst("secret", "some secret value!!");
         rep.getConfig().addFirst("required", "some required value");
@@ -376,7 +380,7 @@ public class ComponentsTest {
     }
 
     @Test
-    public void testLongValueInComponentConfigAscii() throws Exception {
+    public void testLongValueInComponentConfigAscii() {
         ComponentRepresentation rep = createComponentRepresentation("mycomponent");
         String value = StringUtils.repeat("0123456789", 400);  // 4000 8-bit characters
 
@@ -390,7 +394,7 @@ public class ComponentsTest {
     }
 
     @Test
-    public void testLongValueInComponentConfigExtLatin() throws Exception {
+    public void testLongValueInComponentConfigExtLatin() {
         ComponentRepresentation rep = createComponentRepresentation("mycomponent");
         String value = StringUtils.repeat("ěščřžýíŮÍÁ", 400);  // 4000 Unicode extended-Latin characters
 
@@ -489,29 +493,6 @@ public class ComponentsTest {
         protected void scheduleDeleteComponent(String id) {
             s.submit(new DeleteComponent(id));
         }
-    }
-
-    private class CreateComponentWithFlatChildren extends CreateComponent {
-
-        public CreateComponentWithFlatChildren(ExecutorService s, int i, RealmResource realm) {
-            super(s, i, realm);
-        }
-
-        public CreateComponentWithFlatChildren(ExecutorService s, int i) {
-            super(s, i);
-        }
-
-        @Override
-        protected void createChildren(String id) {
-            for (int j = 0; j < NUMBER_OF_CHILDREN; j ++) {
-                ComponentRepresentation rep = createComponentRepresentation("test-" + i + ":" + j);
-                rep.setParentId(id);
-                rep.getConfig().putSingle("required", "required-value");
-
-                assertThat(createComponent(this.realm, rep), Matchers.notNullValue());
-            }
-        }
-
     }
 
     private class CreateAndDeleteComponentWithFlatChildren extends CreateAndDeleteComponent {

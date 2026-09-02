@@ -38,6 +38,11 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.StringUtil;
 
+import static org.keycloak.models.Constants.DEFAULT_ACCESS_CODE_LIFESPAN;
+import static org.keycloak.models.Constants.DEFAULT_ACCESS_CODE_LIFESPAN_LOGIN;
+import static org.keycloak.models.Constants.DEFAULT_ACCESS_CODE_LIFESPAN_USER_ACTION;
+import static org.keycloak.models.Constants.DEFAULT_SESSION_IDLE_TIMEOUT;
+import static org.keycloak.models.Constants.DEFAULT_SESSION_MAX_LIFESPAN;
 import static org.keycloak.models.UserModel.IS_TEMP_ADMIN_ATTR_NAME;
 
 /**
@@ -53,11 +58,7 @@ public class ApplianceBootstrap {
     }
 
     public boolean isNewInstall() {
-        if (session.realms().getRealmByName(Config.getAdminRealm()) != null) {
-            return false;
-        } else {
-            return true;
-        }
+        return session.realms().getRealmByName(Config.getAdminRealm()) == null;
     }
 
     public boolean isNoMasterUser() {
@@ -66,7 +67,7 @@ public class ApplianceBootstrap {
         return session.users().getUsersCount(realm, true) == 0;
     }
 
-    public boolean createMasterRealm() {
+    public void createMasterRealm() {
         if (!isNewInstall()) {
             throw new IllegalStateException("Can't create default realm as realms already exists");
         }
@@ -82,17 +83,17 @@ public class ApplianceBootstrap {
         realm.setEnabled(true);
         realm.addRequiredCredential(CredentialRepresentation.PASSWORD);
         realm.setDefaultSignatureAlgorithm(Constants.DEFAULT_SIGNATURE_ALGORITHM);
-        realm.setSsoSessionIdleTimeout(1800);
+        realm.setSsoSessionIdleTimeout(DEFAULT_SESSION_IDLE_TIMEOUT);
         realm.setAccessTokenLifespan(60);
         realm.setAccessTokenLifespanForImplicitFlow(Constants.DEFAULT_ACCESS_TOKEN_LIFESPAN_FOR_IMPLICIT_FLOW_TIMEOUT);
-        realm.setSsoSessionMaxLifespan(36000);
+        realm.setSsoSessionMaxLifespan(DEFAULT_SESSION_MAX_LIFESPAN);
         realm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
         // KEYCLOAK-7688 Offline Session Max for Offline Token
         realm.setOfflineSessionMaxLifespanEnabled(false);
         realm.setOfflineSessionMaxLifespan(Constants.DEFAULT_OFFLINE_SESSION_MAX_LIFESPAN);
-        realm.setAccessCodeLifespan(60);
-        realm.setAccessCodeLifespanUserAction(300);
-        realm.setAccessCodeLifespanLogin(1800);
+        realm.setAccessCodeLifespan(DEFAULT_ACCESS_CODE_LIFESPAN);
+        realm.setAccessCodeLifespanUserAction(DEFAULT_ACCESS_CODE_LIFESPAN_USER_ACTION);
+        realm.setAccessCodeLifespanLogin(DEFAULT_ACCESS_CODE_LIFESPAN_LOGIN);
         realm.setSslRequired(SslRequired.EXTERNAL);
         realm.setRegistrationAllowed(false);
         realm.setRegistrationEmailAsUsername(false);
@@ -110,18 +111,32 @@ public class ApplianceBootstrap {
             }
         }
         UserProfileProvider.setConfiguration(upConfig);
-
-        return true;
     }
 
     /**
      * Create a temporary admin user
-     * @param username
-     * @param password
+     * @param username the admin username
+     * @param password the admin password
+     * @param isTemporary whether the user is a temporary admin
      * @param initialUser if true only create the user if no other users exist
      * @return false if the user could not be created
      */
     public boolean createMasterRealmAdminUser(String username, String password, boolean isTemporary, /*Integer expriationMinutes,*/ boolean initialUser) {
+        return createMasterRealmAdminUser(username, password, null, null, null, isTemporary, initialUser);
+    }
+
+    /**
+     * Create a temporary admin user with additional profile information
+     * @param username the admin username
+     * @param password the admin password
+     * @param firstName the admin user's first name (optional)
+     * @param lastName the admin user's last name (optional)
+     * @param email the admin user's email address (optional)
+     * @param isTemporary whether the user is a temporary admin
+     * @param initialUser if true only create the user if no other users exist
+     * @return false if the user could not be created
+     */
+    public boolean createMasterRealmAdminUser(String username, String password, String firstName, String lastName, String email, boolean isTemporary, /*Integer expriationMinutes,*/ boolean initialUser) {
         RealmModel realm = session.realms().getRealmByName(Config.getAdminRealm());
         session.getContext().setRealm(realm);
 
@@ -136,6 +151,15 @@ public class ApplianceBootstrap {
         try {
             UserModel adminUser = session.users().addUser(realm, username);
             adminUser.setEnabled(true);
+            if (StringUtil.isNotBlank(firstName)) {
+                adminUser.setFirstName(firstName);
+            }
+            if (StringUtil.isNotBlank(lastName)) {
+                adminUser.setLastName(lastName);
+            }
+            if (StringUtil.isNotBlank(email)) {
+                adminUser.setEmail(email);
+            }
             if (isTemporary) {
                 adminUser.setSingleAttribute(IS_TEMP_ADMIN_ATTR_NAME, Boolean.TRUE.toString());
                 // also set the expiration - could be relative to a creation timestamp, or computed
@@ -200,7 +224,11 @@ public class ApplianceBootstrap {
     }
 
     public void createMasterRealmUser(String username, String password, boolean isTemporary) {
-        createMasterRealmAdminUser(username, password, isTemporary, true);
+        createMasterRealmAdminUser(username, password, null, null, null, isTemporary, true);
+    }
+
+    public void createMasterRealmUser(String username, String password, String firstName, String lastName, String email, boolean isTemporary) {
+        createMasterRealmAdminUser(username, password, firstName, lastName, email, isTemporary, true);
     }
 
 }

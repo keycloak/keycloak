@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,16 +17,6 @@
 
 package org.keycloak.protocol.oid4vc.issuance.mappers;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.ProtocolMapper;
-import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
-import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
-import org.keycloak.provider.ProviderConfigProperty;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -35,8 +25,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
+import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.utils.JsonUtils;
+
 /**
- * Allows to add user attributes to the credential subject
+ * Allows adding user properties to the credential subject
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
@@ -50,20 +52,16 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
     static {
         ProviderConfigProperty subjectPropertyNameConfig = new ProviderConfigProperty();
         subjectPropertyNameConfig.setName(CLAIM_NAME);
-        subjectPropertyNameConfig.setLabel("Claim Name");
-        subjectPropertyNameConfig.setHelpText("The name of the claim added to the credential subject that is extracted " +
-                                                      "from the user attributes.");
+        subjectPropertyNameConfig.setLabel(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME_LABEL);
+        subjectPropertyNameConfig.setHelpText(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME_TOOLTIP);
         subjectPropertyNameConfig.setType(ProviderConfigProperty.STRING_TYPE);
         CONFIG_PROPERTIES.add(subjectPropertyNameConfig);
 
         ProviderConfigProperty userAttributeConfig = new ProviderConfigProperty();
         userAttributeConfig.setName(USER_ATTRIBUTE_KEY);
-        userAttributeConfig.setLabel("User attribute");
-        userAttributeConfig.setHelpText("The user attribute to be added to the credential subject.");
-        userAttributeConfig.setType(ProviderConfigProperty.LIST_TYPE);
-        userAttributeConfig.setOptions(
-                List.of(UserModel.USERNAME, UserModel.LOCALE, UserModel.FIRST_NAME, UserModel.LAST_NAME,
-                        UserModel.DISABLED_REASON, UserModel.EMAIL, UserModel.EMAIL_VERIFIED));
+        userAttributeConfig.setLabel(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_LABEL);
+        userAttributeConfig.setHelpText(ProtocolMapperUtils.USER_MODEL_ATTRIBUTE_HELP_TEXT);
+        userAttributeConfig.setType(ProviderConfigProperty.USER_PROFILE_ATTRIBUTE_LIST_TYPE);
         CONFIG_PROPERTIES.add(userAttributeConfig);
 
         ProviderConfigProperty aggregateAttributesConfig = new ProviderConfigProperty();
@@ -79,16 +77,18 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
         return CONFIG_PROPERTIES;
     }
 
-    public void setClaimsForCredential(VerifiableCredential verifiableCredential,
-                                       UserSessionModel userSessionModel) {
+    public void setClaim(VerifiableCredential verifiableCredential,
+                         UserSessionModel userSessionModel) {
         // nothing to do for the mapper.
     }
 
     @Override
-    public void setClaimsForSubject(Map<String, Object> claims, UserSessionModel userSessionModel) {
-        List<String> attributePath = getMetadataAttributePath();
-        String propertyName = attributePath.get(attributePath.size() - 1);
+    public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel) {
+        String claimName = mapperModel.getConfig().get(CLAIM_NAME);
         String userAttribute = mapperModel.getConfig().get(USER_ATTRIBUTE_KEY);
+        if (claimName == null && userAttribute == null) {
+            return;
+        }
         boolean aggregateAttributes = Optional.ofNullable(mapperModel.getConfig().get(AGGREGATE_ATTRIBUTES_KEY))
                 .map(Boolean::parseBoolean).orElse(false);
         Collection<String> attributes =
@@ -96,16 +96,21 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
                         aggregateAttributes);
         attributes.removeAll(Collections.singleton(null));
         if (!attributes.isEmpty()) {
-            claims.put(propertyName, String.join(",", attributes));
+            JsonUtils.mapClaim(
+                    JsonUtils.splitClaimPath(Optional.ofNullable(claimName).orElse(userAttribute)),
+                    String.join(",", attributes),
+                    claims,
+                    false
+            );
         }
     }
 
-    public static ProtocolMapperModel create(String mapperName, String userAttribute, String propertyName,
+    public static ProtocolMapperModel create(String mapperName, String claimName, String userAttribute,
                                              boolean aggregateAttributes) {
-        var mapperModel = new ProtocolMapperModel();
+        ProtocolMapperModel mapperModel = new ProtocolMapperModel();
         mapperModel.setName(mapperName);
         Map<String, String> configMap = new HashMap<>();
-        configMap.put(CLAIM_NAME, propertyName);
+        configMap.put(CLAIM_NAME, claimName);
         configMap.put(USER_ATTRIBUTE_KEY, userAttribute);
         configMap.put(AGGREGATE_ATTRIBUTES_KEY, Boolean.toString(aggregateAttributes));
         mapperModel.setConfig(configMap);
@@ -121,7 +126,7 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
 
     @Override
     public String getHelpText() {
-        return "Maps user attributes to credential subject properties.";
+        return "Maps user attributes or properties to credential claims.";
     }
 
     @Override
@@ -132,5 +137,32 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
     @Override
     public String getId() {
         return MAPPER_ID;
+    }
+
+    @Override
+    public List<String> getMetadataAttributePath() {
+        String claimName = mapperModel.getConfig().get(CLAIM_NAME);
+        String userAttributeName = mapperModel.getConfig().get(USER_ATTRIBUTE_KEY);
+
+        // Split claim name into path segments for metadata endpoint.
+        final List<String> claimPath = Optional.ofNullable(claimName)
+                .map(JsonUtils::splitClaimPath)
+                .orElse(Optional.ofNullable(userAttributeName)
+                        .map(List::of)
+                        .orElse(Collections.emptyList()));
+        if (claimPath.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return prefixMetadataAttributePath(claimPath);
+    }
+
+    @Override
+    protected List<String> getClaimLookupPath() {
+        String claimName = Optional.ofNullable(mapperModel.getConfig().get(CLAIM_NAME))
+                .orElse(mapperModel.getConfig().get(USER_ATTRIBUTE_KEY));
+        if (claimName == null) {
+            return Collections.emptyList();
+        }
+        return JsonUtils.splitClaimPath(claimName);
     }
 }

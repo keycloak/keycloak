@@ -17,17 +17,19 @@
 
 package org.keycloak.url;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Test;
+import org.keycloak.urls.UrlType;
 import org.keycloak.utils.ScopeUtil;
+
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 public class HostnameV2ProviderFactoryTest {
 
@@ -39,7 +41,7 @@ public class HostnameV2ProviderFactoryTest {
         assertHostname("my-example.com", true);
         assertHostname("192.196.0.0", true);
         assertHostname("[2001:0000:130F:0000:0000:09C0:876A:130B]", true);
-        
+
         assertHostname("https://my-example.com?auth.this", false);
         assertHostname("my-example.com/auth.this", false);
         assertHostname("https://my-example.com:8080#fragment", false);
@@ -48,7 +50,7 @@ public class HostnameV2ProviderFactoryTest {
         assertHostname("?my-example.com", false);
         assertHostname("192.196.0.5555", false);
     }
-    
+
     @Test
     public void hostnameUrlExpected() throws IOException {
         Map<String, String> values = new HashMap<>();
@@ -59,16 +61,36 @@ public class HostnameV2ProviderFactoryTest {
                 assertThrows(IllegalArgumentException.class, () -> factory.init(ScopeUtil.createScope(values))).getMessage());
     }
 
-    private void assertHostname(String hostname, boolean valid) {
+    @Test
+    public void hostnameUrlBaseUri() throws IOException {
         Map<String, String> values = new HashMap<>();
-        values.put("hostname", hostname);
+        values.put("hostname", "https://full/path");
+        assertBaseUriEndsWithSlash(values);
+        values.put("hostname", "https://full/path/");
+        assertBaseUriEndsWithSlash(values);
+    }
+
+    private void assertBaseUriEndsWithSlash(Map<String, String> values) {
         HostnameV2ProviderFactory factory = new HostnameV2ProviderFactory();
+        factory.init(ScopeUtil.createScope(values));
+        assertEquals("https://full/path/", factory.create(null).getBaseUri(null, UrlType.FRONTEND).toString());
+    }
+
+    private void assertHostname(String hostname, boolean valid) {
         try {
-            factory.init(ScopeUtil.createScope(values));
+            init(hostname);
             assertTrue(valid);
         } catch (IllegalArgumentException e) {
             assertFalse(valid);
         }
+    }
+
+    public static HostnameV2ProviderFactory init(String hostname) {
+        Map<String, String> values = new HashMap<>();
+        values.put("hostname", hostname);
+        HostnameV2ProviderFactory factory = new HostnameV2ProviderFactory();
+        factory.init(ScopeUtil.createScope(values));
+        return factory;
     }
 
 }

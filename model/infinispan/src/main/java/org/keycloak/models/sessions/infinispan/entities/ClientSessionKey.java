@@ -17,10 +17,11 @@
 
 package org.keycloak.models.sessions.infinispan.entities;
 
+import org.keycloak.marshalling.Marshalling;
+
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.protostream.annotations.Proto;
 import org.infinispan.protostream.annotations.ProtoTypeId;
-import org.keycloak.marshalling.Marshalling;
 
 /**
  * The key stored in the {@link RemoteCache} for {@link RemoteAuthenticatedClientSessionEntity}.

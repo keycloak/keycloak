@@ -16,11 +16,11 @@
  */
 package org.keycloak.broker.social;
 
-import org.keycloak.broker.provider.IdentityProvider;
+import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.models.IdentityProviderModel;
 
 /**
  * @author Pedro Igor
  */
-public interface SocialIdentityProvider<C extends IdentityProviderModel> extends IdentityProvider<C> {
+public interface SocialIdentityProvider<C extends IdentityProviderModel> extends UserAuthenticationIdentityProvider<C> {
 }

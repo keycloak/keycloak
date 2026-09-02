@@ -1,8 +1,11 @@
 package org.keycloak.tests.admin.partialimport;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.events.admin.OperationType;
@@ -12,11 +15,11 @@ import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.tests.suites.DatabaseTest;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.startsWith;
@@ -30,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class PartialImportUserTest extends AbstractPartialImportTest {
 
     @Test
+    @DatabaseTest
     public void testAddUsers() {
         adminEvents.clear();
 
@@ -110,7 +114,7 @@ public class PartialImportUserTest extends AbstractPartialImportTest {
         setFail();
         addUsers();
 
-        UserRepresentation user = UserConfigBuilder.create().username(USER_PREFIX + 999).email(USER_PREFIX + 1 + "@foo.com").name("foo", "bar").build();
+        UserRepresentation user = UserBuilder.create().username(USER_PREFIX + 999).email(USER_PREFIX + 1 + "@foo.com").name("foo", "bar").build();
         piRep.getUsers().add(user);
 
         try (Response response = managedRealm.admin().partialImport(piRep)) {
@@ -131,7 +135,7 @@ public class PartialImportUserTest extends AbstractPartialImportTest {
         addUsers();
         doImport();
 
-        UserRepresentation user = UserConfigBuilder.create().username(USER_PREFIX + 999).email(USER_PREFIX + 1 + "@foo.com").name("foo", "bar").build();
+        UserRepresentation user = UserBuilder.create().username(USER_PREFIX + 999).email(USER_PREFIX + 1 + "@foo.com").name("foo", "bar").build();
         piRep.setUsers(List.of(user));
 
         PartialImportResults results = doImport();

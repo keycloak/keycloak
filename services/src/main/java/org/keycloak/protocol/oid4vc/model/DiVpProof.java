@@ -17,10 +17,10 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.List;
 
 /**
  * W3C Verifiable Presentation as defined by [VC_DATA_2.0] or [VC_DATA] secured using Data Integrity [VC_Data_Integrity].

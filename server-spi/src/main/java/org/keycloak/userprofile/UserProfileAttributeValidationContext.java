@@ -17,7 +17,6 @@
 package org.keycloak.userprofile;
 
 import java.util.Map;
-import java.util.function.Function;
 
 import org.keycloak.models.UserModel;
 import org.keycloak.validate.ValidationContext;

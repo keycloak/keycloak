@@ -17,7 +17,13 @@
 
 package org.keycloak.models.sessions.infinispan;
 
-import org.jboss.logging.Logger;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -33,12 +39,7 @@ import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessi
 import org.keycloak.models.sessions.infinispan.entities.EmbeddedClientSessionKey;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -269,9 +270,7 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
             @Override
             public void runUpdate(UserSessionEntity entity) {
                 if (value == null) {
-                    if (entity.getNotes().containsKey(name)) {
-                        removeNote(name);
-                    }
+                    entity.getNotes().remove(name);
                     return;
                 }
                 entity.getNotes().put(name, value);
@@ -344,6 +343,9 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
 
     @Override
     public void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
+        // Sending a delete statement for each client session may have a performance impact.
+        // The update task will clear the entity.getClientSessions() set.
+        entity.getClientSessions().forEach(clientUUID -> this.clientSessionUpdateTx.addTask(new EmbeddedClientSessionKey(entity.getId(), clientUUID), Tasks.removeSync(offline)));
         UserSessionUpdateTask task = new UserSessionUpdateTask() {
 
             @Override
@@ -362,7 +364,7 @@ public class UserSessionAdapter<T extends SessionRefreshStore & UserSessionProvi
 
         };
 
-        update(task);
+        userSessionUpdateTx.restartEntity(getId(), task);
     }
 
     @Override

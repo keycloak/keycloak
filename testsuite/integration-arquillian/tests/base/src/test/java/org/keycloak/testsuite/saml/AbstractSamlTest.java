@@ -1,24 +1,5 @@
 package org.keycloak.testsuite.saml;
 
-import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.CertificateUtils;
-import org.keycloak.common.util.KeyUtils;
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.dom.saml.v2.SAML2Object;
-import org.keycloak.dom.saml.v2.assertion.AssertionType;
-import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
-import org.keycloak.dom.saml.v2.assertion.NameIDType;
-import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
-import org.keycloak.dom.saml.v2.protocol.ResponseType;
-import org.keycloak.protocol.saml.SamlProtocol;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.testsuite.AbstractAuthTest;
-import org.keycloak.testsuite.util.SamlClient;
-
-import jakarta.ws.rs.core.UriBuilder;
-import jakarta.ws.rs.core.UriBuilderException;
-import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import java.net.URI;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -31,13 +12,35 @@ import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.MatcherAssert.assertThat;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilderException;
+
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.dom.saml.v2.SAML2Object;
+import org.keycloak.dom.saml.v2.assertion.AssertionType;
+import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testsuite.AbstractAuthTest;
+import org.keycloak.testsuite.util.SamlClient;
+import org.keycloak.testsuite.util.saml.SamlConstants;
+
 import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SCHEME;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
+
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author mhajas
@@ -91,28 +94,9 @@ public abstract class AbstractSamlTest extends AbstractAuthTest {
 
 
     // Set date to past (For example with "faketime" utility); then: openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 1 -nodes -subj '/CN=http:\/\/localhost:8080\/sales-post-sig\/'
-    public static final String SAML_CLIENT_SALES_POST_SIG_EXPIRED_PRIVATE_KEY = "MIIEpQIBAAKCAQEA3SMEGYw330CS++XP0KqoFz2UezUxZAhkLv5C93hf5FPGw9QpPmimpGcsN8RCy4DDYOGrbuJLd8GkoBCkmp7xTqQMx/nrUvzDCAWAUSnxnBVgCsq9KbpI5sdacOHd0oEI9pQdRQ71Rj+tipeIt+Fy8S17bkpGBYjQk3xdusMX8E9LR04ksp0C9o2mvX+U0QCrF8HqVCCO9gMJJNOGaot7a3+QaTWnNrPguhMuHgJ6LlsyOUYNFQw5rdxs8Vz2mOsIGvWn1Em/c+KCcMltTIhOhDY3zW3ZrFL3Vwq4kTQ74ju9Qp1qyyQOOJmig6LLm31LQvQHPQWkY7rRcp9VBMRPcQIDAQABAoIBAQDPUpvuY9KiIYVsWvoqFUWAfIBvvuAue9uJX2JjZ1zn0U+Bm7CLTUwmyH/hTMSezHrgotK6I7lDbq4sT04zlJ6B7zX4aqwg4s7q/1VdQui9QCEKHSeaLodYrkBxoqD4UXeYziZe73YvRVYroIRSeTDtQon9Te82Ex4RmEC771rLNZ38rm2EsF2+GfNIavumo458TBmX0DI8w3QwlSMEeXaNZqch2adZSDxehrOFeqzZ9o8KtgCfrJ5P11vgXlKnVGFa7Pfndrc6XacfYhKAtTyX3Bgx9FFaOK+W5k5/XXc2UTbUV6aNmiQdNp5CrjoZ/DuttWFGwOWfg9zSG3i5wwLRAoGBAPR7IWPk1Ejf8+4vGvDED3ZDc94DINrFjszaVZBt2w/Hx0uePdeojulHhTBFMFUtV2Dn8vpG7D9TxDeZj7tmKSHE3/j1DXE6jpo72Z+iOR5byO/HmgiV0kblKxXnZfDy5/cq/Cy6GTJ2MU6k50SDgIIq86gWCXbRwveX9E66qlHdAoGBAOeOUEiuGC332m7N2wfUobBbczNviSWeAzIFP4t15u0QHRhMDeRmfE4xuWS4aL1vfsyTOrxaN5GJ2QeAIdkM42dSA0FqzzumRd9T8VdeJ+J2GGB+ALNmTHNuz8jWepLVD2F1GBhs+gkSh5yS1p+FUodQWkWC5YLI/y2rySpbiPylAoGBAJpV0LJbFpgaqMbH/d3YJ1qlIlQY7XiuFoPDoRhYAV5o46sc7jViNzWU7MOYKfbbdLm8M2tDsogXvVrMGixXRcgHnMxxBldge/1pouxfYGeF0cds3hRlYCVZLmXZekUtUrp57E/f+2AbtOzMtSJPUaTasI5/uuHDca0TxCqfND4RAoGAWS6Fm0h6BZJVLaHZPw3U7FB8cQ3/G17dSjGdRMA3HYy8N/Rq0VHrhE5AYhtoM7Wyd2YpFAwHJOWbkfj2kFsXZl6+5D4X7JhghuAUrpqT7/Od9ePxryayQS8nlemNMeofT2DC0/1822uokVQ4lx3JKFZ5PhZpANMa/OMRyl+QxgUCgYEA4D5YyD5wHz7fNFyaUrgJr4dFLG9vqRv8Pm9IozBAmNumi25Gi7gyi/WN8DrVbsRiq4ywiKiikui5TW3/RR51OYDnX3YCnWE5AGV4okci3PlclJ/UsPjlUOzNlXW7Wr0pFCcJc/WuQm1lgho/o6QGbMbS/BSwxBrUl/bUEp4IZKc=";
-    public static final String SAML_CLIENT_SALES_POST_SIG_EXPIRED_PUBLIC_KEY = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3SMEGYw330CS++XP0KqoFz2UezUxZAhkLv5C93hf5FPGw9QpPmimpGcsN8RCy4DDYOGrbuJLd8GkoBCkmp7xTqQMx/nrUvzDCAWAUSnxnBVgCsq9KbpI5sdacOHd0oEI9pQdRQ71Rj+tipeIt+Fy8S17bkpGBYjQk3xdusMX8E9LR04ksp0C9o2mvX+U0QCrF8HqVCCO9gMJJNOGaot7a3+QaTWnNrPguhMuHgJ6LlsyOUYNFQw5rdxs8Vz2mOsIGvWn1Em/c+KCcMltTIhOhDY3zW3ZrFL3Vwq4kTQ74ju9Qp1qyyQOOJmig6LLm31LQvQHPQWkY7rRcp9VBMRPcQIDAQAB";
-    public static final String SAML_CLIENT_SALES_POST_SIG_EXPIRED_CERTIFICATE = "-----BEGIN CERTIFICATE-----\n" +
-            "MIIDQTCCAimgAwIBAgIUT8qwq3DECizGLB2tQAaaNSGAVLgwDQYJKoZIhvcNAQEL\n" +
-            "BQAwMDEuMCwGA1UEAwwlaHR0cDovL2xvY2FsaG9zdDo4MDgwL3NhbGVzLXBvc3Qt\n" +
-            "c2lnLzAeFw0yMzAxMjcxNjAwMDBaFw0yMzAxMjgxNjAwMDBaMDAxLjAsBgNVBAMM\n" +
-            "JWh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9zYWxlcy1wb3N0LXNpZy8wggEiMA0GCSqG\n" +
-            "SIb3DQEBAQUAA4IBDwAwggEKAoIBAQDdIwQZjDffQJL75c/QqqgXPZR7NTFkCGQu\n" +
-            "/kL3eF/kU8bD1Ck+aKakZyw3xELLgMNg4atu4kt3waSgEKSanvFOpAzH+etS/MMI\n" +
-            "BYBRKfGcFWAKyr0pukjmx1pw4d3SgQj2lB1FDvVGP62Kl4i34XLxLXtuSkYFiNCT\n" +
-            "fF26wxfwT0tHTiSynQL2jaa9f5TRAKsXwepUII72Awkk04Zqi3trf5BpNac2s+C6\n" +
-            "Ey4eAnouWzI5Rg0VDDmt3GzxXPaY6wga9afUSb9z4oJwyW1MiE6ENjfNbdmsUvdX\n" +
-            "CriRNDviO71CnWrLJA44maKDosubfUtC9Ac9BaRjutFyn1UExE9xAgMBAAGjUzBR\n" +
-            "MB0GA1UdDgQWBBR4R5i1kWMxzzdQ3TdgI/MuNLChSDAfBgNVHSMEGDAWgBR4R5i1\n" +
-            "kWMxzzdQ3TdgI/MuNLChSDAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUA\n" +
-            "A4IBAQAacI/f9YFVTUCGXfh/FCVBQI20bgOs9D6IpIhN8L5kEnY6Ox5t00b9G5Bz\n" +
-            "64alK3WMR3DdhTEpufX8IMFpMlme/JnnOQXkfmIvzbev4iIKxcKFvS8qNXav8PVx\n" +
-            "wDApuzgxEq/XZCtFXhDS3q1jGRmlOr+MtQdCNQuJmxy7kOoFPY+UYjhSXTZVrCyF\n" +
-            "I0LYJQfcZ69bYXd+5h1U3UsN4ZvsBgnrz/IhhadaCtTZVtvyr/uzHiJpqT99VO9/\n" +
-            "7lwh2zL8ihPyOUVDjdYxYyCi+BHLRB+udnVAfo7t3fbxMi1gV9xVcYaqTJgSArsY\n" +
-            "M8mxv8p5mhTa8TJknzs4V3Dm+PHs\n" +
-            "-----END CERTIFICATE-----";
+    public static final String SAML_CLIENT_SALES_POST_SIG_EXPIRED_PRIVATE_KEY = SamlConstants.SAML_CLIENT_SALES_POST_SIG_EXPIRED_PRIVATE_KEY;
+    public static final String SAML_CLIENT_SALES_POST_SIG_EXPIRED_PUBLIC_KEY = SamlConstants.SAML_CLIENT_SALES_POST_SIG_EXPIRED_PUBLIC_KEY;
+    public static final String SAML_CLIENT_SALES_POST_SIG_EXPIRED_CERTIFICATE = SamlConstants.SAML_CLIENT_SALES_POST_SIG_EXPIRED_CERTIFICATE;
     public static final String SAML_ASSERTION_CONSUMER_URL_SALES_POST_ENC =  AUTH_SERVER_SCHEME + "://localhost:" + (AUTH_SERVER_SSL_REQUIRED ? AUTH_SERVER_PORT : 8080) + "/sales-post-enc/saml";
     public static final String SAML_CLIENT_ID_SALES_POST_ENC = "http://localhost:8280/sales-post-enc/";
     public static final String SAML_CLIENT_SALES_POST_ENC_PRIVATE_KEY = "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDE5iKDNNW5XxHAF0ITErZcHDYZI68z7u68n7o4dsiywkfOWf7jVnw7PJVnMeDEtLWtTO6f0tRTqJ4OV5HYdJ9+mhPJtn+2UuvrepyYa2IsC1eFPH98ZEtYapsE6ObvhKBQMcu5G/tQrxkCFY2ssDa99unwBH5STLyX78UvqKiYnkPCvIhkiPIHy8ab7DQowc+EE9XhlE3b63A65rp4G9R87rwgJX5VTM3h81WcDuWLPOg7YRYLZoorWz2p38/qL9gXY5NxIRK16EHGfw2W1dPrX3GyMOJbXVyrBNZ6m5IL9Wn7lBEJ/Dl7ZFMFB5W36QkJ+3aaNLT/Tu/Gz+7f24inAgMBAAECggEATiW0zvR6Ww9jgST6AY3suNQtmH60O915/X07sMtcTq6TR1AqvNoHho8+EO4X8ppyfOzKzL4lrWqACNsytIFdCCdo8ScwuxFgN167pjcAiNCblPL0+k7oJJhzHFi/x5KQ+iM5Yye68EP+nfgl+cMahvznzm5KIKn6NCdi0M6U07VRuPIep0v5geqwLOYRWMm8guis5V1p6tpPm6ejplea0QaNpkGxpNuzE2GDJotPRja1TNZUBDV0cKPVY+00BOeuqbiM90V+uk+zRMb9UeeRsuufx2fnLythff19NTgnukgzxWPfU9sSzHen1If1Ul5Xmv3VRG6XhwvOWsLm1TqVuQKBgQD4YgOkRMtpm6BFhOp6pjBcy/H1hN54cMqcTHtpL4w9X7bW+LoN9alfxZiHIRS8+HNATpRtjyKoo5yOQ09NH12/4lFpEIPdkQPzJQIb+kh//QMqqtGcRblCitNObHnlz/HhYDJ3C0nA9frfXhkv3doBAKEELytceGbS1fJ2PcIi2wKBgQDK7+9AmuWXe1qtDt/21j5ymsqhDFjuriPdT6LNvE9ep36h+XRHLe7XEKCKqyOsfYJvK7QI8QQbvB8Jto3pxJf41kBJxmzI9n4SnBKKhInoIICRXXQN4tTDoXVXQGun0idvyhrNEVL3ryW3XPX/UJHFy/Hfjab0sYJm6F50WcQtJQKBgGojUBURBK8zPnCWlLAmdgIhcFqPFZX39MyHbjELjWzoirQgAzlV4bO4Ny5/N2Js9KrlKU4L3S6dA5hTMP7uyVvmtQ0lboPupPZwuQ8Fi5eNoZ3I8ttJfBnwQs1/UzOeAWlidw4ht7mKI1Lx3edzcOX+w8+K7IeON7oejIZ0a5IDAoGAXDrpmIoNWGg2kLpW7V73aKyS9NigvnEkWZus2SYBSHqFIeY2g3cLunCTFhKrluQ/2HibTQkEnfpEfOyb2KeBjhUJiL4GiNsF9z05a/zKlFXZOLepW/pASlzh8HKVuuLXC4Zl4ddCxtCyKoC0SIH8jlGfLsO5IjJemph2/RgjAYUCgYEAkE98bIHsK9jPbt+wnPPs6kyDGHy1JrG9yBlcHOPxsnpxWLFXuxU+9D0qkpbfA28D4jAgehpePzlNPXkF4uIlgarYRDIKss/dX6QQXmmBKjY8UEu+doZYpJGO9SnSuUyih6eRlC/7x9zER/uPjJYia055u2VB0GqO51PKAgq/tqc=";

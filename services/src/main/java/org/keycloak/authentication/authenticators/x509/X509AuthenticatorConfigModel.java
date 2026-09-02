@@ -18,9 +18,52 @@
 
 package org.keycloak.authentication.authenticators.x509;
 
-import org.keycloak.models.AuthenticatorConfigModel;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.*;
+import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.Constants;
+import org.keycloak.utils.StringUtil;
+
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CANONICAL_DN;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_CA_SUBJECT_DN;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_EXTENDED_KEY_USAGE;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_KEY_USAGE;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY_MODE;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY_MODE_ALL;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY_MODE_ANY;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CONFIRMATION_PAGE_DISALLOWED;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CRL_ABORT_IF_NON_UPDATED;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CRL_RELATIVE_PATH;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CUSTOM_ATTRIBUTE_NAME;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.DEFAULT_ATTRIBUTE_NAME;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.DEFAULT_MATCH_ALL_EXPRESSION;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.ENABLE_CRL;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.ENABLE_CRLDP;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.ENABLE_OCSP;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_CERTIFICATE_PEM;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_ISSUERDN;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SERIALNUMBER;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SERIALNUMBER_ISSUERDN;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SHA256_THUMBPRINT;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SUBJECTALTNAME_EMAIL;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SUBJECTALTNAME_OTHERNAME;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SUBJECTDN;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SUBJECTDN_CN;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SUBJECTDN_EMAIL;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_SELECTION;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.OCSPRESPONDER_CERTIFICATE;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.OCSPRESPONDER_URI;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.OCSP_FAIL_OPEN;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.REGULAR_EXPRESSION;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.REVALIDATE_CERTIFICATE;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.SERIALNUMBER_HEX;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.TIMESTAMP_VALIDATION;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.USERNAME_EMAIL_MAPPER;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.USER_ATTRIBUTE_MAPPER;
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.USER_MAPPER_SELECTION;
 
 /**
  * @author <a href="mailto:brat000012001@gmail.com">Peter Nalyvayko</a>
@@ -334,11 +377,32 @@ public class X509AuthenticatorConfigModel extends AuthenticatorConfigModel {
     }
 
     public boolean getRevalidateCertificateEnabled() {
-        return Boolean.parseBoolean(getConfig().get(REVALIDATE_CERTIFICATE));
+        // revalidate is compulsory when CA subject DN is set
+        // maintain previous value for backwards compatibility
+        return !getCASubjectDN().isEmpty() || Boolean.parseBoolean(getConfig().get(REVALIDATE_CERTIFICATE));
     }
 
     public X509AuthenticatorConfigModel setRevalidateCertificateEnabled(boolean value) {
         getConfig().put(REVALIDATE_CERTIFICATE, Boolean.toString(value));
+        return this;
+    }
+
+    public List<String> getCASubjectDN() {
+        String value = getConfig().get(CERTIFICATE_CA_SUBJECT_DN);
+        return value != null
+                ? Arrays.stream(Constants.CFG_DELIMITER_PATTERN.split(value)).filter(StringUtil::isNotBlank).toList()
+                : Collections.emptyList();
+    }
+
+    public X509AuthenticatorConfigModel setCASubjectDN(List<String> value) {
+        value = value != null
+                ? value.stream().filter(StringUtil::isNotBlank).toList()
+                : Collections.emptyList();
+        if (!value.isEmpty()) {
+            getConfig().put(CERTIFICATE_CA_SUBJECT_DN, String.join(Constants.CFG_DELIMITER, value));
+        } else {
+            getConfig().remove(CERTIFICATE_CA_SUBJECT_DN);
+        }
         return this;
     }
 }

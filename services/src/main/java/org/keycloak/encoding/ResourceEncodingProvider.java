@@ -1,9 +1,9 @@
 package org.keycloak.encoding;
 
-import org.keycloak.provider.Provider;
-
 import java.io.IOException;
 import java.io.InputStream;
+
+import org.keycloak.provider.Provider;
 
 public interface ResourceEncodingProvider extends Provider {
 

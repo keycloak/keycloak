@@ -1,14 +1,20 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <#import "theme-resources.ftl" as themeResourceTags>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light${(properties.darkMode)?boolean?then(' dark', '')}">
     <title>Welcome to ${productName}</title>
-    <link rel="shortcut icon" href="${resourcesCommonPath}/img/favicon.ico">
+    <#if themeResources?? && themeResources.favicons?has_content>
+      <@themeResourceTags.renderFavicons themeResources.favicons resourcesCommonPath />
+    <#else>
+      <link rel="shortcut icon" href="${resourcesCommonPath}/img/favicon.ico">
+    </#if>
     <#if properties.darkMode?boolean>
       <script type="module" async blocking="render">
-          const DARK_MODE_CLASS = "${properties.kcDarkModeClass}";
+          <#outputformat "JavaScript">
+          const DARK_MODE_CLASS = ${properties.kcDarkModeClass?c};
           const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
           updateDarkMode(mediaQuery.matches);
@@ -23,16 +29,21 @@
               classList.remove(DARK_MODE_CLASS);
             }
           }
+          </#outputformat>
       </script>
     </#if>
-    <#if properties.stylesCommon?has_content>
+    <#if themeResources?? && themeResources.stylesCommon?has_content>
+      <@themeResourceTags.renderStyles themeResources.stylesCommon resourcesCommonPath />
+    <#elseif properties.stylesCommon?has_content>
       <#list properties.stylesCommon?split(' ') as style>
-        <link rel="stylesheet" href="${resourcesCommonPath}/${style}">
+        <link href="${resourcesCommonPath}/${style}" rel="stylesheet" />
       </#list>
     </#if>
-    <#if properties.styles?has_content>
+    <#if themeResources?? && themeResources.styles?has_content>
+      <@themeResourceTags.renderStyles themeResources.styles resourcesPath />
+    <#elseif properties.styles?has_content>
       <#list properties.styles?split(' ') as style>
-        <link rel="stylesheet" href="${resourcesPath}/${style}">
+        <link href="${resourcesPath}/${style}" rel="stylesheet" />
       </#list>
     </#if>
   </head>
@@ -122,6 +133,42 @@
                       <div class="pf-v5-c-form__group-control">
                         <span class="pf-v5-c-form-control pf-m-required">
                           <input id="password-confirmation" type="password" name="passwordConfirmation" autocomplete="new-password" required>
+                        </span>
+                      </div>
+                    </div>
+                    <div class="pf-v5-c-form__group">
+                      <div class="pf-v5-c-form__group-label">
+                        <label class="pf-v5-c-form__label" for="email">
+                          <span class="pf-v5-c-form__label-text">Email</span>
+                        </label>
+                      </div>
+                      <div class="pf-v5-c-form__group-control">
+                        <span class="pf-v5-c-form-control">
+                          <input id="email" type="email" name="email" autocomplete="email">
+                        </span>
+                      </div>
+                    </div>
+                    <div class="pf-v5-c-form__group">
+                      <div class="pf-v5-c-form__group-label">
+                        <label class="pf-v5-c-form__label" for="firstName">
+                          <span class="pf-v5-c-form__label-text">First name</span>
+                        </label>
+                      </div>
+                      <div class="pf-v5-c-form__group-control">
+                        <span class="pf-v5-c-form-control">
+                          <input id="firstName" type="text" name="firstName" autocomplete="given-name">
+                        </span>
+                      </div>
+                    </div>
+                    <div class="pf-v5-c-form__group">
+                      <div class="pf-v5-c-form__group-label">
+                        <label class="pf-v5-c-form__label" for="lastName">
+                          <span class="pf-v5-c-form__label-text">Last name</span>
+                        </label>
+                      </div>
+                      <div class="pf-v5-c-form__group-control">
+                        <span class="pf-v5-c-form-control">
+                          <input id="lastName" type="text" name="lastName" autocomplete="family-name">
                         </span>
                       </div>
                     </div>

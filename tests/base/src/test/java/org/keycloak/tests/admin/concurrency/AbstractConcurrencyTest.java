@@ -17,7 +17,19 @@
 
 package org.keycloak.tests.admin.concurrency;
 
-import org.jboss.logging.Logger;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -27,18 +39,7 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.realm.ManagedRealm;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -54,6 +55,7 @@ public abstract class AbstractConcurrencyTest {
     private static final Logger LOGGER = Logger.getLogger(AbstractConcurrencyTest.class);
 
     private static final int DEFAULT_THREADS = 4;
+    private static final int DEFAULT_NUMBER_OF_EXECUTIONS = 20 * DEFAULT_THREADS;
 
     public static final String REALM_NAME = "default";
     public static final String MASTER_REALM_NAME = "master";
@@ -62,10 +64,10 @@ public abstract class AbstractConcurrencyTest {
     private static final boolean SYNCHRONIZED = false;
 
     protected void run(final KeycloakRunnable... runnables) {
-        run(DEFAULT_THREADS, runnables);
+        run(DEFAULT_THREADS, DEFAULT_NUMBER_OF_EXECUTIONS, runnables);
     }
 
-    public static void run(final int numThreads, final KeycloakRunnable... runnables) {
+    public static void run(final int numThreads, final int totalNumberOfExecutions, final KeycloakRunnable... runnables) {
         final ExecutorService service = SYNCHRONIZED
                 ? Executors.newSingleThreadExecutor()
                 : Executors.newFixedThreadPool(numThreads);
@@ -104,7 +106,9 @@ public abstract class AbstractConcurrencyTest {
             });
         }
 
-        tasks.addAll(runnablesToTasks);
+        for (int i = 0; i < totalNumberOfExecutions; i ++) {
+            tasks.addAll(runnablesToTasks);
+        }
 
         try {
             service.invokeAll(tasks);

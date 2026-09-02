@@ -16,28 +16,48 @@
  */
 package org.keycloak.quarkus.runtime.services.health;
 
-import io.smallrye.health.api.AsyncHealthCheck;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.inject.Produces;
-import org.eclipse.microprofile.health.Readiness;
+import jakarta.inject.Inject;
+
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProviderFactory;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 
+import io.smallrye.health.api.AsyncHealthCheck;
+import org.eclipse.microprofile.health.Readiness;
+
 @ApplicationScoped
 public class KeycloakClusterReadyHealthCheckProducer {
+
+    private AsyncHealthCheck instance;
+    private boolean ready;
+    @Inject
+    QuarkusKeycloakSessionFactory sessionFactory;
 
     @Produces
     @Readiness
     @Dependent
     public AsyncHealthCheck createHealthCheck() {
-        var sessionFactory = QuarkusKeycloakSessionFactory.getInstance();
-        InfinispanConnectionProviderFactory factory = (InfinispanConnectionProviderFactory) sessionFactory.getProviderFactory(InfinispanConnectionProvider.class);
-        if (factory.isClusterHealthSupported()) {
-            return new KeycloakClusterReadyHealthCheck();
-        } else {
+        if (ready) {
+            // JVM branch prediction may optimize this code and saves on reading a static volatile field
+            return instance;
+        }
+        if (!sessionFactory.isBootstrapCompleted()) {
             return null;
         }
+        synchronized (this) {
+            if (ready) {
+                return instance;
+            }
+            var factory = (InfinispanConnectionProviderFactory) sessionFactory.getProviderFactory(InfinispanConnectionProvider.class);
+            if (factory.isClusterHealthSupported()) {
+                instance = new KeycloakClusterReadyHealthCheck(factory);
+            }
+            ready = true;
+        }
+
+        return instance;
     }
 }

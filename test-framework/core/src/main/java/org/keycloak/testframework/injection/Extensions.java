@@ -1,17 +1,20 @@
 package org.keycloak.testframework.injection;
 
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.keycloak.testframework.TestFrameworkExtension;
-import org.keycloak.testframework.config.Config;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.Set;
+
+import org.keycloak.testframework.TestFrameworkExecutor;
+import org.keycloak.testframework.TestFrameworkExtension;
+import org.keycloak.testframework.config.Config;
+
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 public class Extensions {
 
@@ -21,6 +24,7 @@ public class Extensions {
     private final List<Class<?>> alwaysEnabledValueTypes;
 
     private static Extensions INSTANCE;
+    private final List<TestFrameworkExtension> extensions;
 
     public static Extensions getInstance() {
         if (INSTANCE == null) {
@@ -34,7 +38,7 @@ public class Extensions {
     }
 
     private Extensions() {
-        List<TestFrameworkExtension> extensions = loadExtensions();
+        extensions = loadExtensions();
         valueTypeAlias = loadValueTypeAlias(extensions);
         Config.registerValueTypeAlias(valueTypeAlias);
         logger = new RegistryLogger(valueTypeAlias);
@@ -52,6 +56,19 @@ public class Extensions {
 
     public List<Class<?>> getAlwaysEnabledValueTypes() {
         return alwaysEnabledValueTypes;
+    }
+
+    public List<TestFrameworkExecutor> getTestFrameworkExecutors() {
+        return extensions.stream()
+                .filter(e -> e instanceof TestFrameworkExecutor)
+                .map(e -> (TestFrameworkExecutor) e)
+                .toList();
+    }
+
+    public List<Class<?>> getMethodValueTypes(Method method) {
+        return getTestFrameworkExecutors()
+                .stream()
+                .flatMap(e -> e.getMethodValueTypes(method).stream()).toList();
     }
 
     @SuppressWarnings("unchecked")

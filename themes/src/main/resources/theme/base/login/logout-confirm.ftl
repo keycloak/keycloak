@@ -27,7 +27,7 @@
                 <#if logoutConfirm.skipLink>
                 <#else>
                     <#if (client.baseUrl)?has_content>
-                        <p><a href="${client.baseUrl}">${kcSanitize(msg("backToApplication"))?no_esc}</a></p>
+                        <p><a href="${client.baseUrl}">${msg("backToApplication")}</a></p>
                     </#if>
                 </#if>
             </div>
