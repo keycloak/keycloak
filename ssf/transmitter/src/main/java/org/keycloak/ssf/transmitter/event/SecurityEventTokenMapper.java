@@ -480,7 +480,13 @@ public class SecurityEventTokenMapper {
             return null;
         }
         if (adminEvent != null && adminEvent.getRealmId() != null) {
-            return session.realms().getRealm(adminEvent.getRealmId());
+            RealmModel realm = session.realms().getRealm(adminEvent.getRealmId());
+            if (realm != null) {
+                return realm;
+            }
+            // An id that no longer resolves falls through to the context rather than
+            // returning null: null guarantees the snapshot lookup misses, and a missed
+            // lookup silently skips the local-removal suppression.
         }
         return session.getContext() != null ? session.getContext().getRealm() : null;
     }

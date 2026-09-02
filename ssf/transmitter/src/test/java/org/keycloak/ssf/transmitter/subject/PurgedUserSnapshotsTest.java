@@ -70,6 +70,46 @@ class PurgedUserSnapshotsTest {
     }
 
     @Test
+    void replacingAnId_dropsThePreviousEmailEntry() {
+        // Both indexes have to agree after a replace. Without this, re-capturing the
+        // same user under a different address leaves the old key pointing at the
+        // superseded snapshot, and discard clears only the current key — so the stale
+        // entry would outlive every cleanup path.
+        PurgedUserSnapshot first = snapshot("user-1");
+        PurgedUserSnapshot second = snapshot("user-1");
+        snapshots.put("realm.user-1", "realm.old@local.test", first);
+
+        snapshots.put("realm.user-1", "realm.new@local.test", second);
+
+        assertEquals(1, snapshots.size());
+        assertSame(second, snapshots.byId("realm.user-1"));
+        assertSame(second, snapshots.byEmail("realm.new@local.test"));
+        assertNull(snapshots.byEmail("realm.old@local.test"), "the superseded address must not resolve");
+    }
+
+    @Test
+    void replacingAnIdWithAnEmaillessSnapshot_clearsTheEmailIndex() {
+        snapshots.put("realm.user-1", "realm.old@local.test", snapshot("user-1"));
+
+        snapshots.put("realm.user-1", null, snapshot("user-1"));
+
+        assertNull(snapshots.byEmail("realm.old@local.test"));
+        assertEquals(1, snapshots.size());
+    }
+
+    @Test
+    void replacingAnId_leavesOtherSnapshotsIndexed() {
+        PurgedUserSnapshot other = snapshot("user-2");
+        snapshots.put("realm.user-1", "realm.one@local.test", snapshot("user-1"));
+        snapshots.put("realm.user-2", "realm.two@local.test", other);
+
+        snapshots.put("realm.user-1", "realm.oneprime@local.test", snapshot("user-1"));
+
+        assertSame(other, snapshots.byEmail("realm.two@local.test"), "an unrelated entry must survive");
+        assertEquals(2, snapshots.size());
+    }
+
+    @Test
     void userWithoutEmail_isIndexedByIdOnly() {
         // capture() passes a null email key for a user with no email rather than
         // indexing under a null, so the secondary index stays addressable.
