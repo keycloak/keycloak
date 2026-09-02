@@ -8,7 +8,7 @@
     <#if section="header">
         ${msg("loginOtpTitle")}
     <#elseif section="form">
-        <form id="kc-otp-login-form" class="${properties.kcFormClass!}" onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post">
+        <form id="kc-otp-login-form" class="${properties.kcFormClass!}" data-kc-disable-submit="login" action="${url.loginAction}" method="post">
             <#if otpLogin.userOtpCredentials?size gt 1>
                 <div class="${properties.kcFormGroupClass!}" role="radiogroup" aria-labelledby="kc-otp-credential-selection-label">
                     <div class="${properties.kcFormGroupLabelClass!}">
