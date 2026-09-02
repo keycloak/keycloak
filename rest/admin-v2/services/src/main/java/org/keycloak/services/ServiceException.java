@@ -31,7 +31,7 @@ public class ServiceException extends RuntimeException {
     }
 
     public WebApplicationException toWebApplicationException() {
-        return toWebApplicationException(Response.Status.BAD_REQUEST);
+        return toWebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
     }
 
     public WebApplicationException toWebApplicationException(Response.Status orReturnStatus) {

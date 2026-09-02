@@ -94,6 +94,7 @@ public class ClientApiV2ClientSecretRotationTest extends AbstractClientApiV2Test
             assertThat(createdClient.getAuth(), notNullValue());
             assertThat(createdClient.getAuth().getSecret(), Matchers.not(emptyOrNullString()));
             checkRotatedInfoOnlySecretPresent(createdClient.getUuid(), createdClient.getAuth().getSecret());
+            rep = createdClient;
         }
 
         // update just description should not change the rotation info and keep the same secret
@@ -130,10 +131,9 @@ public class ClientApiV2ClientSecretRotationTest extends AbstractClientApiV2Test
         assertThat(newlyGeneratedSecret, not(emptyOrNullString()));
         assertThat(newlyGeneratedSecret, not(is("new-super-secure-secret")));
         checkRotatedInfoBothPresent(updatedClient.getUuid(), newlyGeneratedSecret, "new-super-secure-secret");
+        rep = updatedClient;
 
-        // put again with no password should not change anything
         rep.setDescription("updated5");
-        rep.getAuth().setSecret(null);
         try (var response = getClientsApi().client(clientId).createOrUpdateClient(rep)) {
             updatedClient = response.readEntity(OIDCClientRepresentation.class);
             assertThat(response.getStatus(), is(200));
@@ -145,7 +145,6 @@ public class ClientApiV2ClientSecretRotationTest extends AbstractClientApiV2Test
         // disable the policy and check rotation data is removed and same password remains
         disablePolicy();
         rep.setDescription("updated6");
-        rep.getAuth().setSecret(null);
         try (var response = getClientsApi().client(clientId).createOrUpdateClient(rep)) {
             assertThat(response.getStatus(), is(200));
             updatedClient = response.readEntity(OIDCClientRepresentation.class);

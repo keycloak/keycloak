@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.stream.StreamSupport;
 
 import org.keycloak.admin.api.ListOptions;
-import org.keycloak.services.client.ClientField;
+import org.keycloak.services.client.ClientSortField;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,7 +40,7 @@ class OpenApiSortParameterTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final String CLIENTS_LIST_PATH_SUFFIX = "/clients/v2";
-    private static final String CLIENT_ALLOWED_FIELDS_MARKER = "Allowed fields: " + ClientField.allowedApiNames();
+    private static final String CLIENT_ALLOWED_FIELDS_MARKER = "Allowed fields: " + ClientSortField.allowedApiNames();
     private static final String SORT_EXPRESSION_MARKER = "Sort expression.";
 
     @Test
@@ -145,7 +145,7 @@ class OpenApiSortParameterTest {
     }
 
     private static String enhanceSortParameterDescription(String description) {
-        return OASModelFilter.enhanceSortParameterDescription(description, ClientField.allowedApiNames());
+        return OASModelFilter.enhanceSortParameterDescription(description, ClientSortField.allowedApiNames());
     }
 
     private static String listOptionsSortDescription() throws Exception {
