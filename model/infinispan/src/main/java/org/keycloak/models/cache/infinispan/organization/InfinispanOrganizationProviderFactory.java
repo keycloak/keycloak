@@ -75,11 +75,13 @@ public class InfinispanOrganizationProviderFactory implements OrganizationProvid
     }
 
     private void registerOrganizationInvalidation(KeycloakSession session, IdentityProviderModel idp) {
-        if (idp.getOrganizationId() != null) {
+        if (idp.hasOrganization()) {
             InfinispanOrganizationProvider orgProvider = (InfinispanOrganizationProvider) session.getProvider(OrganizationProvider.class, getId());
             if (orgProvider != null) {
-                OrganizationModel organization = orgProvider.getById(idp.getOrganizationId());
-                orgProvider.registerOrganizationInvalidation(organization);
+                for (String orgId : idp.getOrganizationIds()) {
+                    OrganizationModel organization = orgProvider.getById(orgId);
+                    orgProvider.registerOrganizationInvalidation(organization);
+                }
             }
         }
     }

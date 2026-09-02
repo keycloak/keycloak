@@ -17,6 +17,7 @@
 package org.keycloak.models.cache.infinispan.organization;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -132,7 +133,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public OrganizationModel getByDomainName(String domainName) {
+    public Stream<OrganizationModel> getByDomainName(String domainName) {
         if (realmCache == null) {
             return getDelegate().getByDomainName(domainName);
         }
@@ -146,19 +147,21 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
         if (cached == null) {
             Long loaded = realmCache.getCache().getCurrentRevision(cacheKey);
-            OrganizationModel model = getDelegate().getByDomainName(domainName);
-            if (model == null) {
-                return null;
+            List<OrganizationModel> models = getDelegate().getByDomainName(domainName).toList();
+            if (models.isEmpty()) {
+                return Stream.empty();
             }
-            cached = new CachedOrganizationIds(loaded, cacheKey, getRealm(), Stream.ofNullable(model));
+            cached = new CachedOrganizationIds(loaded, cacheKey, getRealm(), models.stream());
             realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
-            model = getById(model.getId());
-            if (model instanceof OrganizationAdapter ma) {
-                ma.getCached().addDomainName(domainName);
+            for (OrganizationModel model : models) {
+                OrganizationModel resolved = getById(model.getId());
+                if (resolved instanceof OrganizationAdapter ma) {
+                    ma.getCached().addDomainName(domainName);
+                }
             }
         }
 
-        return cached.getOrgIds().stream().map(this::getById).filter(Objects::nonNull).findAny().orElse(null);
+        return cached.getOrgIds().stream().map(this::getById).filter(Objects::nonNull);
     }
 
     @Override

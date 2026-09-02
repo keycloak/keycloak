@@ -130,7 +130,7 @@ public class Organizations {
     }
 
     public static void stripOrganizationId(IdentityProviderRepresentation representation) {
-        representation.setOrganizationId(null);
+        representation.setOrganizationIds(null);
         if (representation.getConfig() != null) {
             representation.getConfig().remove(OrganizationModel.ORGANIZATION_ATTRIBUTE);
         }
@@ -394,8 +394,7 @@ public class Organizations {
         if (organizations.isEmpty()) {
             // no membership, any org that matches the domain
             return resolveByDomain(ofNullable(emailDomain)
-                    .map(provider::getByDomainName)
-                    .map(List::of)
+                    .map(d -> provider.getByDomainName(d).toList())
                     .orElse(List.of()), emailDomain);
         }
 

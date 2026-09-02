@@ -20,7 +20,6 @@ package org.keycloak.organization.jpa;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -298,14 +297,6 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
         }
 
         Organizations.validateDomain(domainName);
-
-        // Check for conflicts with other organizations
-        OrganizationModel orgModel = provider.getByDomainName(domainName);
-
-        if (orgModel != null && !Objects.equals(getId(), orgModel.getId())
-                && orgModel.getDomains().anyMatch(d -> d.getName().equalsIgnoreCase(domainName))) {
-            throw new ModelValidationException("Domain " + domainName + " is already linked to organization " + orgModel.getName() + " in realm " + realm.getName());
-        }
 
         return domainModel;
     }
