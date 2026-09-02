@@ -26,7 +26,6 @@ import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepres
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
-import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.ClientPolicyCRUDContext;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
 import org.keycloak.util.TokenUtil;
@@ -71,18 +70,15 @@ public class ClientUpdaterContextCondition extends AbstractClientPolicyCondition
 
     @Override
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
-        if (context instanceof ClientPolicyCRUDContext clientPolicyCRUDContext && !(context instanceof ClientCRUDContext)) {
-            return isAuthMethodMatched(clientPolicyCRUDContext.getToken(),
-                    clientPolicyCRUDContext.getAuthenticatedUser() != null || clientPolicyCRUDContext.getAuthenticatedClient() != null)
-                    ? ClientPolicyVote.YES : ClientPolicyVote.NO;
-        }
-
         switch (context.getEvent()) {
         case REGISTER:
         case UPDATE:
         case REGISTERED:
         case UPDATED:
-            if (isAuthMethodMatched((ClientCRUDContext)context)) return ClientPolicyVote.YES;
+        case REGISTER_PROTOCOL_MAPPER:
+        case UPDATE_PROTOCOL_MAPPER:
+        case UNREGISTER_PROTOCOL_MAPPER:
+            if (isAuthMethodMatched((ClientPolicyCRUDContext)context)) return ClientPolicyVote.YES;
             return ClientPolicyVote.NO;
         default:
             return ClientPolicyVote.ABSTAIN;
@@ -103,22 +99,17 @@ public class ClientUpdaterContextCondition extends AbstractClientPolicyCondition
         return expectedAuthMethods.stream().anyMatch(i -> i.equals(authMethod));
     }
 
-    private boolean isAuthMethodMatched(ClientCRUDContext context) {
-        return isAuthMethodMatched(context.getToken(),
-                context.getAuthenticatedUser() != null || context.getAuthenticatedClient() != null);
-    }
-
-    private boolean isAuthMethodMatched(JsonWebToken token, boolean authenticated) {
+    private boolean isAuthMethodMatched(ClientPolicyCRUDContext context) {
         String authMethod = null;
 
-        if (token == null) {
+        if (context.getToken() == null) {
             authMethod = ClientUpdaterContextConditionFactory.BY_ANONYMOUS;
-        } else if (isInitialAccessToken(token)) {
+        } else if (isInitialAccessToken(context.getToken())) {
             authMethod = ClientUpdaterContextConditionFactory.BY_INITIAL_ACCESS_TOKEN;
-        } else if (isRegistrationAccessToken(token)) {
+        } else if (isRegistrationAccessToken(context.getToken())) {
             authMethod = ClientUpdaterContextConditionFactory.BY_REGISTRATION_ACCESS_TOKEN;
-        } else if (isBearerToken(token)) {
-            if (authenticated) {
+        } else if (isBearerToken(context.getToken())) {
+            if (context.getAuthenticatedUser() != null || context.getAuthenticatedClient() != null) {
                 authMethod = ClientUpdaterContextConditionFactory.BY_AUTHENTICATED_USER;
             } else {
                 authMethod = ClientUpdaterContextConditionFactory.BY_ANONYMOUS;
