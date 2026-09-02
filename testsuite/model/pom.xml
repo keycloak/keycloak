@@ -81,6 +81,10 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-server-hotrod</artifactId>
+        </dependency>
+        <dependency>
             <groupId>${jdbc.mvn.groupId}</groupId>
             <artifactId>${jdbc.mvn.artifactId}</artifactId>
             <version>${jdbc.mvn.version}</version>
