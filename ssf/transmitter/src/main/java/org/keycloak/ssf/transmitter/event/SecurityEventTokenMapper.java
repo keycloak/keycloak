@@ -442,7 +442,21 @@ public class SecurityEventTokenMapper {
             // null-safe: an NPE would be swallowed by the catch below and turn every
             // purge into a silent "error generating" null.
             PurgedUserSnapshot snapshot = PurgedUserSnapshot.lookup(session, purgeRealm(adminEvent), userId);
-            if (snapshot != null && snapshot.isLocalRemovalOnly()) {
+            if (snapshot == null) {
+                // The snapshot is the only evidence that this deletion was a real purge.
+                // Without it the check below cannot run, and a federated READ_ONLY /
+                // UNSYNCED account would be reported as purged while it still exists --
+                // under default_subjects=ALL an unresolvable subject is delivered on the
+                // benefit of the doubt, so nothing downstream would catch it either.
+                // Capture is best-effort and swallows its own failures, and for a
+                // federated user it does remote I/O against the very directory in
+                // question, so a miss here is not hypothetical. Emitting nothing costs a
+                // receiver one signal; emitting wrongly costs it data it cannot recover.
+                log.warnf("Not emitting account-purged for user %s: no pre-removal snapshot was "
+                        + "captured, so the deletion cannot be confirmed as a real purge", userId);
+                return null;
+            }
+            if (snapshot.isLocalRemovalOnly()) {
                 log.debugf("Skipping account-purged for user %s: the removal only dropped Keycloak's "
                         + "local copy and the account still exists in its federated store", userId);
                 return null;

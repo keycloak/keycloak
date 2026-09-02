@@ -1,27 +1,46 @@
 package org.keycloak.ssf.transmitter.event;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import java.util.stream.Stream;
 
+import org.keycloak.common.Profile;
+import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.models.KeycloakContext;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.ssf.event.InitiatingEntity;
 import org.keycloak.ssf.event.risc.RiscAccountDisabled;
 import org.keycloak.ssf.event.risc.RiscAccountEnabled;
 import org.keycloak.ssf.event.risc.RiscAccountPurged;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
+import org.keycloak.ssf.transmitter.subject.PurgedUserSnapshot;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 
 /**
  * Unit tests for the RISC {@code account-disabled} / {@code account-enabled} /
@@ -36,18 +55,75 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * they are kept out by the operation type and resource type rather than by
  * anything deliberate, so they are pinned here.
  *
- * <p>Session-independent methods only — subject resolution defaults to
- * {@code iss_sub} (no organization/email lookups), so the mapper is
+ * <p>Most methods here are session-independent — subject resolution defaults to
+ * {@code iss_sub} (no organization/email lookups), so the shared mapper is
  * constructed with a {@code null} session and a stub issuer, mirroring how
  * {@link SsfTransmitterEventListenerTest} constructs the listener with a
  * {@code null} session for predicates that don't touch it.
+ *
+ * <p>The purge generator is the exception: it refuses to emit without a
+ * pre-removal snapshot, since that snapshot is the only evidence the deletion was
+ * a real purge rather than a federated local-only removal. Those tests use
+ * {@link #purgeMapper()}, which carries a session with a captured snapshot.
  */
 class SecurityEventTokenMapperTest {
 
     private static final String USER_ID = "user-123";
 
+    private static final String REALM_ID = "realm-1";
+
+    @BeforeAll
+    static void initProfile() {
+        // PurgedUserSnapshot.capture consults Organizations.isEnabled, which reads the profile.
+        Profile.configure(new PropertiesProfileConfigResolver(new Properties()));
+    }
+
     private final SecurityEventTokenMapper mapper =
             new SecurityEventTokenMapper(null, null, session -> "https://issuer.example/realms/test");
+
+    /**
+     * A mapper whose session carries a snapshot for {@link #USER_ID}, as the real
+     * emission path always does — capture runs on {@code UserPreRemovedEvent} before
+     * the event this mapper converts is fired.
+     */
+    private SecurityEventTokenMapper purgeMapper() {
+        RealmModel realm = mock(RealmModel.class);
+        lenient().when(realm.getId()).thenReturn(REALM_ID);
+
+        KeycloakContext context = mock(KeycloakContext.class);
+        lenient().when(context.getRealm()).thenReturn(realm);
+        lenient().when(context.getHttpRequest()).thenReturn(mock(HttpRequest.class));
+
+        KeycloakSession session = mock(KeycloakSession.class);
+        lenient().when(session.getContext()).thenReturn(context);
+
+        Map<String, Object> attributes = new HashMap<>();
+        doAnswer(invocation -> {
+            attributes.put(invocation.getArgument(0), invocation.getArgument(1));
+            return null;
+        }).when(session).setAttribute(anyString(), any());
+        lenient().when(session.getAttribute(anyString(), any(Class.class))).thenAnswer(invocation -> {
+            Object value = attributes.get(invocation.<String>getArgument(0));
+            return value == null ? null : invocation.<Class<?>>getArgument(1).cast(value);
+        });
+
+        OrganizationProvider orgProvider = mock(OrganizationProvider.class);
+        lenient().when(orgProvider.isEnabled()).thenReturn(false);
+        lenient().when(session.getProvider(OrganizationProvider.class)).thenReturn(orgProvider);
+
+        UserModel user = mock(UserModel.class);
+        lenient().when(user.getId()).thenReturn(USER_ID);
+        lenient().when(user.getUsername()).thenReturn("purged");
+        lenient().when(user.getAttributes()).thenReturn(Map.of(UserModel.USERNAME, List.of("purged")));
+        // A local user: no federation link, so the removal is a real purge.
+        lenient().when(user.getFederationLink()).thenReturn(null);
+        lenient().when(user.getGroupsStream()).thenAnswer(invocation -> Stream.empty());
+        lenient().when(user.getRoleMappingsStream()).thenAnswer(invocation -> Stream.empty());
+
+        PurgedUserSnapshot.capture(session, realm, user);
+
+        return new SecurityEventTokenMapper(session, null, ignored -> "https://issuer.example/realms/test");
+    }
 
     // ----- brute-force permanent lockout (Event path) -----
 
@@ -209,8 +285,18 @@ class SecurityEventTokenMapperTest {
     }
 
     @Test
+    void toSecurityEventToken_withoutSnapshot_doesNotEmit() {
+        // The snapshot is the only evidence the deletion was a real purge. The shared
+        // mapper has no session and therefore no snapshot, which stands in for the
+        // production case where capture failed and swallowed its own exception.
+        assertNull(mapper.toSecurityEventToken(deleteAccountEvent(), streamConfig()));
+        assertNull(mapper.toSecurityEventToken(
+                adminUserDeleteEvent("users/" + USER_ID), streamConfig()));
+    }
+
+    @Test
     void toSecurityEventToken_adminDeletesUser_producesAccountPurgedWithAdminEntity() {
-        SsfSecurityEventToken token = mapper.toSecurityEventToken(
+        SsfSecurityEventToken token = purgeMapper().toSecurityEventToken(
                 adminUserDeleteEvent("users/" + USER_ID), streamConfig());
 
         assertNotNull(token);
@@ -226,7 +312,7 @@ class SecurityEventTokenMapperTest {
 
     @Test
     void toSecurityEventToken_deleteAccountEvent_producesAccountPurgedWithUserEntity() {
-        SsfSecurityEventToken token = mapper.toSecurityEventToken(deleteAccountEvent(), streamConfig());
+        SsfSecurityEventToken token = purgeMapper().toSecurityEventToken(deleteAccountEvent(), streamConfig());
 
         assertNotNull(token);
         Object payload = token.getEvents().get(RiscAccountPurged.TYPE);

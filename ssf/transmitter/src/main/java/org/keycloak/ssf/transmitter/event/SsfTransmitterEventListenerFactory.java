@@ -63,9 +63,14 @@ public class SsfTransmitterEventListenerFactory implements EventListenerProvider
                 PurgedUserSnapshot.capture(preRemoved.getKeycloakSession(), realm, preRemoved.getUser());
             } catch (RuntimeException e) {
                 // Never let a snapshot failure break the deletion itself — the user
-                // removal is the operator's actual intent. Losing the snapshot costs
-                // one undelivered purge SET, which the debug log below makes traceable.
-                log.debugf(e, "SSF: could not snapshot user %s before removal; no purge event will be emitted",
+                // removal is the operator's actual intent.
+                //
+                // Losing the snapshot costs one undelivered purge SET. It is logged at
+                // WARN rather than DEBUG because that is a silent gap in a data-retention
+                // signal, and because the generator refuses to emit without a snapshot:
+                // a miss here is the difference between a receiver being told late and a
+                // federated account being reported as purged while it still exists.
+                log.warnf(e, "SSF: could not snapshot user %s before removal; no purge event will be emitted",
                         preRemoved.getUser() != null ? preRemoved.getUser().getId() : null);
             }
         });
