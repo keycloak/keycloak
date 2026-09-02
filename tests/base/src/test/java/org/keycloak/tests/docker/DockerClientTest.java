@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.docker;
+package org.keycloak.tests.docker;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -22,18 +22,27 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.annotations.InjectEvents;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testframework.events.Events;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
+import org.jboss.logging.Logger;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.Container;
@@ -41,17 +50,16 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT_HTTP;
-import static org.keycloak.testsuite.util.WaitUtils.pause;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assume.assumeTrue;
 
-@EnableFeature(Profile.Feature.DOCKER)
-public class DockerClientTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest(config = DockerClientTest.DockerServerConfig.class)
+public class DockerClientTest {
+
+    private static final Logger LOG = Logger.getLogger(DockerClientTest.class);
+
     public static final String REALM_ID = "docker-test-realm";
     public static final String CLIENT_ID = "docker-test-client";
     public static final String DOCKER_USER = "docker-user";
@@ -61,51 +69,32 @@ public class DockerClientTest extends AbstractKeycloakTest {
     public static final Integer REGISTRY_PORT = 5000;
     public static final String MINIMUM_DOCKER_VERSION = "1.8.0";
 
-    private GenericContainer dockerRegistryContainer = null;
-    private GenericContainer dockerClientContainer = null;
+    @InjectRealm(config = DockerRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    ManagedRealm managedRealm;
 
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
+    @InjectEvents
+    Events events;
 
-    private static String hostIp;
+    private GenericContainer<?> dockerRegistryContainer;
+    private GenericContainer<?> dockerClientContainer;
 
-    @BeforeClass
+    @BeforeAll
     public static void verifyEnvironment() {
         final Optional<DockerVersion> dockerVersion = new DockerHostVersionSupplier().get();
-        assumeTrue("Could not determine docker version for host machine.  It either is not present or accessible to the JVM running the test harness.", dockerVersion.isPresent());
-        assumeTrue("Docker client on host machine is not a supported version.  Please upgrade and try again.", DockerVersion.COMPARATOR.compare(dockerVersion.get(), DockerVersion.parseVersionString(MINIMUM_DOCKER_VERSION)) >= 0);
-
-        hostIp = System.getProperty("host.ip");
-
-        if (hostIp == null) {
-            final Optional<String> foundHostIp = new DockerHostIpSupplier().get();
-            if (foundHostIp.isPresent()) {
-                hostIp = foundHostIp.get();
-            }
-        }
-        Assertions.assertNotNull(hostIp, "Could not resolve host machine's IP address for docker adapter, and 'host.ip' system poperty not set. Client will not be able to authenticate against the keycloak server!");
+        Assumptions.assumeTrue(dockerVersion.isPresent(),
+                "Could not determine docker version for host machine. It either is not present or accessible to the JVM running the test harness.");
+        Assumptions.assumeTrue(DockerVersion.COMPARATOR.compare(dockerVersion.get(), DockerVersion.parseVersionString(MINIMUM_DOCKER_VERSION)) >= 0,
+                "Docker client on host machine is not a supported version. Please upgrade and try again.");
     }
 
-    @Override
-    public void addTestRealms(final List<RealmRepresentation> testRealms) {
-        final RealmRepresentation dockerRealm = DockerTestRealmSetup.createRealm(REALM_ID);
-        DockerTestRealmSetup.configureDockerRegistryClient(dockerRealm, CLIENT_ID);
-        DockerTestRealmSetup.configureUser(dockerRealm, DOCKER_USER, DOCKER_USER_PASSWORD);
-
-        testRealms.add(dockerRealm);
-    }
-
-    @Override
-    public void beforeAbstractKeycloakTest() throws Exception {
-        super.beforeAbstractKeycloakTest();
-
-        // find the realm cert
+    @BeforeEach
+    public void beforeDockerClientTest() throws Exception {
         String realmCert = null;
-        List<KeysMetadataRepresentation.KeyMetadataRepresentation> realmKeys = adminClient.realm(REALM_ID).keys().getKeyMetadata().getKeys();
+        List<KeysMetadataRepresentation.KeyMetadataRepresentation> realmKeys = managedRealm.admin().keys().getKeyMetadata().getKeys();
         for (KeysMetadataRepresentation.KeyMetadataRepresentation key : realmKeys) {
             if (Constants.DEFAULT_SIGNATURE_ALGORITHM.equals(key.getAlgorithm()) && KeyStatus.ACTIVE.name().equals(key.getStatus())) {
                 if (realmCert != null) {
-                     throw new IllegalStateException("More than one public realm cert enabled");
+                    throw new IllegalStateException("More than one public realm cert enabled");
                 }
                 realmCert = key.getCertificate();
             }
@@ -114,26 +103,27 @@ public class DockerClientTest extends AbstractKeycloakTest {
             throw new IllegalStateException("Cannot find public realm cert");
         }
 
-        // save the cert to a file
         File tmpCertFile = File.createTempFile("keycloak-docker-realm-cert-", ".pem");
         tmpCertFile.deleteOnExit();
-        PrintWriter tmpCertWriter = new PrintWriter(tmpCertFile);
-        tmpCertWriter.println(PemUtils.BEGIN_CERT);
-        tmpCertWriter.println(realmCert);
-        tmpCertWriter.println(PemUtils.END_CERT);
-        tmpCertWriter.close();
+        try (PrintWriter tmpCertWriter = new PrintWriter(tmpCertFile)) {
+            tmpCertWriter.println(PemUtils.BEGIN_CERT);
+            tmpCertWriter.println(realmCert);
+            tmpCertWriter.println(PemUtils.END_CERT);
+        }
+
+        String realmBaseUrl = managedRealm.getBaseUrl();
 
         final Map<String, String> environment = new HashMap<>();
         environment.put("REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY", "/tmp");
-        environment.put("REGISTRY_AUTH_TOKEN_REALM", "http://" + hostIp + ":" + AUTH_SERVER_PORT_HTTP + "/auth/realms/" + REALM_ID + "/protocol/docker-v2/auth");
+        environment.put("REGISTRY_AUTH_TOKEN_REALM", realmBaseUrl + "/protocol/docker-v2/auth");
         environment.put("REGISTRY_AUTH_TOKEN_SERVICE", CLIENT_ID);
-        environment.put("REGISTRY_AUTH_TOKEN_ISSUER", "http://" + hostIp + ":" + AUTH_SERVER_PORT_HTTP + "/auth/realms/" + REALM_ID);
+        environment.put("REGISTRY_AUTH_TOKEN_ISSUER", realmBaseUrl);
         environment.put("REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE", "/opt/kc-certs/" + tmpCertFile.getCanonicalFile().getName());
         environment.put("INSECURE_REGISTRY", "--insecure-registry " + REGISTRY_HOSTNAME + ":" + REGISTRY_PORT);
 
         String dockerioPrefix = Boolean.parseBoolean(System.getProperty("docker.io-prefix-explicit")) ? "docker.io/" : "";
 
-        dockerRegistryContainer = new GenericContainer(dockerioPrefix + "registry:2")
+        dockerRegistryContainer = new GenericContainer<>(dockerioPrefix + "registry:2")
                 .withFileSystemBind(tmpCertFile.getCanonicalPath(), "/opt/kc-certs/" + tmpCertFile.getCanonicalFile().getName(), BindMode.READ_ONLY)
                 .withEnv(environment)
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger("dockerRegistryContainer")))
@@ -141,59 +131,58 @@ public class DockerClientTest extends AbstractKeycloakTest {
                 .withPrivilegedMode(true);
         dockerRegistryContainer.start();
 
-        dockerClientContainer = new GenericContainer(dockerioPrefix + "docker:dind")
+        dockerClientContainer = new GenericContainer<>(dockerioPrefix + "docker:dind")
                 .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger("dockerClientContainer")))
                 .withNetworkMode("host")
                 .withPrivilegedMode(true)
                 .waitingFor(Wait.forLogMessage(".*API listen on /var/run/docker.sock.*\\n", 1))
                 .withStartupTimeout(Duration.ofSeconds(120));
         dockerClientContainer.start();
+
+        events.clear();
     }
 
-    @Override
-    public void afterAbstractKeycloakTest() throws Exception {
-        super.afterAbstractKeycloakTest();
+    @AfterEach
+    public void afterDockerClientTest() throws Exception {
+        Thread.sleep(5000); // wait for the container logs
 
-        pause(5000); // wait for the container logs
-
-        dockerClientContainer.close();
-        dockerRegistryContainer.close();
+        if (dockerClientContainer != null) {
+            dockerClientContainer.close();
+        }
+        if (dockerRegistryContainer != null) {
+            dockerRegistryContainer.close();
+        }
     }
 
     @Test
     public void shouldPerformDockerAuthAgainstRegistry() throws Exception {
-        UserRepresentation dockerUser = AdminApiUtil.findUserByUsername(adminClient.realm(REALM_ID), DOCKER_USER);
+        UserRepresentation dockerUser = AdminApiUtil.findUserByUsername(managedRealm.admin(), DOCKER_USER);
 
-        log.info("Starting the attempt for login...");
+        LOG.info("Starting the attempt for login...");
         Container.ExecResult result = dockerClientContainer.execInContainer("docker", "login", "-u", DOCKER_USER, "-p", DOCKER_USER_PASSWORD, REGISTRY_HOSTNAME + ":" + REGISTRY_PORT);
         printCommandResult(result);
         assertThat("Error performing login", result.getExitCode(), is(0));
         assertLogin(dockerUser);
 
-        // create a empty Dockerfile in /tmp
         result = dockerClientContainer.execInContainer("sh", "-c", "echo -e \"FROM scratch\\nWORKDIR /\" > /tmp/Dockerfile");
         printCommandResult(result);
         assertThat("Error creating dockerfile for empty image", result.getExitCode(), is(0));
 
-        // build the empty image
         result = dockerClientContainer.execInContainer("docker", "build", "--tag", REGISTRY_HOSTNAME + ":" + REGISTRY_PORT + "/empty", "/tmp");
         printCommandResult(result);
         assertThat("Error building empty image", result.getExitCode(), is(0));
 
-        // push the image
         result = dockerClientContainer.execInContainer("docker", "push", REGISTRY_HOSTNAME + ":" + REGISTRY_PORT + "/empty");
         printCommandResult(result);
         assertThat("Error pushing to registry", result.getExitCode(), is(0));
         assertLogin(dockerUser);
 
-        // logout
         result = dockerClientContainer.execInContainer("docker", "logout");
         printCommandResult(result);
         assertThat("Error performing logout", result.getExitCode(), is(0));
         assertLogin(dockerUser);
 
-        // disable and login should fail
-        ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_ID), CLIENT_ID);
+        ClientResource client = AdminApiUtil.findClientByClientId(managedRealm.admin(), CLIENT_ID);
         ClientRepresentation clientRep = client.toRepresentation();
         clientRep.setEnabled(Boolean.FALSE);
         client.update(clientRep);
@@ -206,8 +195,8 @@ public class DockerClientTest extends AbstractKeycloakTest {
     }
 
     private void printCommandResult(Container.ExecResult result) {
-        log.infof("Command executed with exit code %d. Output follows:\nSTDOUT: %s\n---\nSTDERR: %s",
-                result.getExitCode(), result.getStdout(), result.getStderr());
+        LOG.info("Command executed with exit code " + result.getExitCode() + ". Output follows:\nSTDOUT: "
+                + result.getStdout() + "\n---\nSTDERR: " + result.getStderr());
     }
 
     private void assertLogin(UserRepresentation dockerUser) {
@@ -222,10 +211,29 @@ public class DockerClientTest extends AbstractKeycloakTest {
     }
 
     private void assertLoginErrorClientDisabled() {
-        EventRepresentation eventRep = EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR)
+        EventRepresentation eventRep = EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
                 .clientId(CLIENT_ID)
                 .userId(null)
-                .error(Errors.CLIENT_DISABLED).getEvent();
+                .error(Errors.CLIENT_DISABLED)
+                .getEvent();
         MatcherAssert.assertThat(eventRep.getIpAddress(), Matchers.any(String.class));
+    }
+
+    public static class DockerServerConfig implements KeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.features(Profile.Feature.DOCKER);
+        }
+    }
+
+    public static class DockerRealmConfig implements RealmConfig {
+        @Override
+        public RealmBuilder configure(RealmBuilder realmBuilder) {
+            RealmRepresentation dockerRealm = DockerTestRealmSetup.createRealm(REALM_ID);
+            DockerTestRealmSetup.configureDockerRegistryClient(dockerRealm, CLIENT_ID);
+            DockerTestRealmSetup.configureUser(dockerRealm, DOCKER_USER, DOCKER_USER_PASSWORD);
+            return RealmBuilder.update(dockerRealm);
+        }
     }
 }
