@@ -349,72 +349,74 @@ export function UserDataTable() {
     <>
       <DeleteConfirm />
       <UnlockUsersConfirm />
-      <KeycloakDataTable
-        isSearching={
-          searchUser !== "" || activeFilters.userAttribute.length !== 0
-        }
-        key={key}
-        loader={loader}
-        isPaginated
-        ariaLabelKey="titleUsers"
-        canSelectAll
-        onSelect={(rows: UserRepresentation[]) => setSelectedRows([...rows])}
-        emptyState={
-          !listUsers ? (
-            <>
-              <Toolbar>
-                <ToolbarContent>{toolbar()}</ToolbarContent>
-              </Toolbar>
-              <EmptyState data-testid="empty-state" variant="lg">
-                <TextContent className="kc-search-users-text">
-                  <Text>{t("searchForUserDescription")}</Text>
-                </TextContent>
-              </EmptyState>
-            </>
-          ) : (
-            <ListEmptyState
-              message={t("noUsersFound")}
-              instructions={t("emptyInstructions")}
-              primaryActionText={t("createNewUser")}
-              onPrimaryAction={goToCreate}
-            />
-          )
-        }
-        toolbarItem={toolbar()}
-        subToolbar={subtoolbar()}
-        actionResolver={(rowData: IRowData) => [
-          {
-            title: t("delete"),
-            onClick: () => {
-              setSelectedRows([rowData.data]);
-              toggleDeleteDialog();
+      <div data-testid="users-table-ready">
+        <KeycloakDataTable
+          isSearching={
+            searchUser !== "" || activeFilters.userAttribute.length !== 0
+          }
+          key={key}
+          loader={loader}
+          isPaginated
+          ariaLabelKey="titleUsers"
+          canSelectAll
+          onSelect={(rows: UserRepresentation[]) => setSelectedRows([...rows])}
+          emptyState={
+            !listUsers ? (
+              <>
+                <Toolbar>
+                  <ToolbarContent>{toolbar()}</ToolbarContent>
+                </Toolbar>
+                <EmptyState data-testid="empty-state" variant="lg">
+                  <TextContent className="kc-search-users-text">
+                    <Text>{t("searchForUserDescription")}</Text>
+                  </TextContent>
+                </EmptyState>
+              </>
+            ) : (
+              <ListEmptyState
+                message={t("noUsersFound")}
+                instructions={t("emptyInstructions")}
+                primaryActionText={t("createNewUser")}
+                onPrimaryAction={goToCreate}
+              />
+            )
+          }
+          toolbarItem={toolbar()}
+          subToolbar={subtoolbar()}
+          actionResolver={(rowData: IRowData) => [
+            {
+              title: t("delete"),
+              onClick: () => {
+                setSelectedRows([rowData.data]);
+                toggleDeleteDialog();
+              },
             },
-          },
-        ]}
-        isRowDisabled={(user: UserRepresentation) => !user.access?.manage}
-        columns={[
-          {
-            name: "username",
-            displayKey: "username",
-            cellRenderer: UserDetailLink,
-          },
-          {
-            name: "email",
-            displayKey: "email",
-            cellRenderer: ValidatedEmail,
-          },
-          {
-            name: "lastName",
-            displayKey: "lastName",
-            cellFormatters: [emptyFormatter()],
-          },
-          {
-            name: "firstName",
-            displayKey: "firstName",
-            cellFormatters: [emptyFormatter()],
-          },
-        ]}
-      />
+          ]}
+          isRowDisabled={(user: UserRepresentation) => !user.access?.manage}
+          columns={[
+            {
+              name: "username",
+              displayKey: "username",
+              cellRenderer: UserDetailLink,
+            },
+            {
+              name: "email",
+              displayKey: "email",
+              cellRenderer: ValidatedEmail,
+            },
+            {
+              name: "lastName",
+              displayKey: "lastName",
+              cellFormatters: [emptyFormatter()],
+            },
+            {
+              name: "firstName",
+              displayKey: "firstName",
+              cellFormatters: [emptyFormatter()],
+            },
+          ]}
+        />
+      </div>
     </>
   );
 }

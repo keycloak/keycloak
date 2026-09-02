@@ -109,18 +109,42 @@ const getDefaultSwitch = (page: Page, name: string) => {
 };
 
 export async function clickSwitchPolicy(page: Page, policyName: string) {
-  await getEnabledSwitch(page, policyName).click({ force: true });
+  await getEnabledSwitch(page, policyName).click();
 }
 
 export async function clickDefaultSwitchPolicy(page: Page, policyName: string) {
-  await getDefaultSwitch(page, policyName).click({ force: true });
+  await getDefaultSwitch(page, policyName).click();
 }
 
 export async function assertSwitchPolicyChecked(
   page: Page,
   policyName: string,
+  checked = true,
 ) {
-  await expect(getEnabledSwitch(page, policyName)).toBeChecked();
+  if (checked) {
+    await expect(getEnabledSwitch(page, policyName)).toBeChecked();
+  } else {
+    await expect(getEnabledSwitch(page, policyName)).not.toBeChecked();
+  }
+}
+
+export async function assertDefaultSwitchPolicyChecked(
+  page: Page,
+  policyName: string,
+  checked = true,
+) {
+  if (checked) {
+    await expect(getDefaultSwitch(page, policyName)).toBeChecked();
+  } else {
+    await expect(getDefaultSwitch(page, policyName)).not.toBeChecked();
+  }
+}
+
+export async function assertSwitchPolicyEnabled(
+  page: Page,
+  policyName: string,
+) {
+  await expect(getEnabledSwitch(page, policyName)).toBeEnabled();
 }
 
 export async function assertDefaultSwitchPolicyEnabled(
@@ -162,15 +186,13 @@ export async function dragExecutionAboveExecution(
     .first();
   const getDragHandle = (row: Locator) =>
     row.getByRole("button", { name: /draggable row/i }).first();
-  const sourceHandle = getDragHandle(sourceRow);
-  const targetHandle = getDragHandle(targetRow);
 
   await expect(sourceRow).toBeVisible({ timeout: 5_000 });
   await expect(targetRow).toBeVisible({ timeout: 5_000 });
+
+  const sourceHandle = getDragHandle(sourceRow);
   await expect(sourceHandle).toBeVisible({ timeout: 5_000 });
-  await expect(targetHandle).toBeVisible({ timeout: 5_000 });
   await sourceHandle.scrollIntoViewIfNeeded();
-  await targetHandle.scrollIntoViewIfNeeded();
 
   const getRowOrder = async () => {
     const rows = await treeGrid.getByRole("row").allInnerTexts();
@@ -181,7 +203,6 @@ export async function dragExecutionAboveExecution(
   };
 
   const initialOrder = await getRowOrder();
-  // Guard against upstream flow-order changes that could turn this test into a no-op.
   expect(
     initialOrder.sourceIndex,
     `Expected "${sourceExecution}" to start below "${targetExecution}" so drag can be verified`,
@@ -197,105 +218,22 @@ export async function dragExecutionAboveExecution(
     );
   };
 
-  const waitForMove = async () => {
-    try {
-      await expect.poll(hasMoved, { timeout: 4_000 }).toBe(true);
-      return true;
-    } catch {
-      return false;
-    }
-  };
+  await sourceHandle.focus();
+  await page.keyboard.press("Space");
 
-  let moved = false;
+  const rows = await treeGrid.getByRole("row").allInnerTexts();
+  const sourceIndex = rows.findIndex((row) => row.includes(sourceExecution));
+  const targetIndex = rows.findIndex((row) => row.includes(targetExecution));
+  const steps =
+    sourceIndex !== -1 && targetIndex !== -1 && sourceIndex > targetIndex
+      ? sourceIndex - targetIndex
+      : 1;
 
-  // Legacy pointer drag path works more reliably with some CI/browser combos.
-  const sourceText = sourceRow.getByText(sourceExecution).first();
-  const targetText = targetRow.getByText(targetExecution).first();
-  const sourceTextBox = await sourceText.boundingBox();
-  const targetTextBox = await targetText.boundingBox();
-  if (sourceTextBox && targetTextBox) {
-    await page.mouse.move(
-      sourceTextBox.x + sourceTextBox.width / 2,
-      sourceTextBox.y + sourceTextBox.height / 2,
-    );
-    await page.mouse.down();
-    await page.mouse.move(
-      targetTextBox.x + targetTextBox.width / 2,
-      targetTextBox.y + targetTextBox.height / 2,
-      { steps: 20 },
-    );
-    await page.mouse.up();
-    moved = await waitForMove();
+  for (let step = 0; step < steps; step++) {
+    await page.keyboard.press("ArrowUp");
   }
+  await page.keyboard.press("Space");
 
-  try {
-    if (!moved) {
-      await sourceHandle.dragTo(targetHandle, { timeout: 3_000 });
-      moved = await waitForMove();
-    }
-  } catch {
-    // Fall back to pointer/keyboard paths when dnd-kit does not trigger drag events in CI.
-  }
-
-  if (!moved) {
-    const sourceBox =
-      (await sourceHandle.boundingBox()) ?? (await sourceRow.boundingBox());
-    const targetBox =
-      (await targetHandle.boundingBox()) ?? (await targetRow.boundingBox());
-
-    if (sourceBox && targetBox) {
-      await page.mouse.move(
-        sourceBox.x + sourceBox.width / 2,
-        sourceBox.y + sourceBox.height / 2,
-      );
-      await page.mouse.down();
-      await page.mouse.move(
-        targetBox.x + targetBox.width / 2,
-        targetBox.y + Math.min(8, Math.max(2, targetBox.height / 4)),
-        { steps: 20 },
-      );
-      await page.mouse.up();
-      moved = await waitForMove();
-    }
-  }
-
-  if (!moved) {
-    try {
-      await sourceRow.dragTo(targetRow, { timeout: 3_000 });
-      moved = await waitForMove();
-    } catch {
-      // Keep trying keyboard fallback below.
-    }
-  }
-
-  if (!moved) {
-    try {
-      await sourceHandle.focus({ timeout: 2_000 });
-      await page.keyboard.press("Space");
-      const rows = await treeGrid.getByRole("row").allInnerTexts();
-      const sourceIndex = rows.findIndex((row) =>
-        row.includes(sourceExecution),
-      );
-      const targetIndex = rows.findIndex((row) =>
-        row.includes(targetExecution),
-      );
-      const steps =
-        sourceIndex !== -1 && targetIndex !== -1 && sourceIndex > targetIndex
-          ? sourceIndex - targetIndex
-          : 1;
-      for (let step = 0; step < steps; step++) {
-        await page.keyboard.press("ArrowUp");
-      }
-      await page.keyboard.press("Space");
-      moved = await waitForMove();
-    } catch {
-      // Keep "moved" false and let the caller assert/fail with context.
-    }
-  }
-
-  if (!moved) {
-    moved = await waitForMove();
-  }
-
-  return moved;
+  await expect.poll(hasMoved, { timeout: 8_000 }).toBe(true);
+  await expect(page.getByTestId("flow-order-stable")).toBeVisible();
 }

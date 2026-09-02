@@ -36,6 +36,7 @@ import { useTranslation } from "react-i18next";
 import { useFetch } from "../../utils/useFetch";
 import { useStoredState } from "../../utils/useStoredState";
 import { KeycloakSpinner } from "../KeycloakSpinner";
+import { LoadingOverlay, TableLoadingSkeleton } from "../LoadingOverlay";
 import { ListEmptyState } from "./ListEmptyState";
 import { PaginatingTableToolbar } from "./PaginatingTableToolbar";
 
@@ -224,7 +225,10 @@ function DataTable<T>({
       {!onCollapse ? (
         <Tbody>
           {(rows as IRow[]).map((row, index) => (
-            <Tr key={index} isExpanded={expandedRows[index]}>
+            <Tr
+              key={get(row.data, "id") ?? index}
+              isExpanded={expandedRows[index]}
+            >
               {canSelect && (
                 <Td
                   select={{
@@ -251,7 +255,7 @@ function DataTable<T>({
         </Tbody>
       ) : (
         (rows as IRow[]).map((row, index) => (
-          <Tbody key={index}>
+          <Tbody key={get(row.data, "id") ?? index}>
             {index % 2 === 0 ? (
               <Tr>
                 <Td
@@ -609,49 +613,55 @@ export function KeycloakDataTable<T>({
           }
           subToolbar={subToolbar}
         >
-          {!loading && !noData && (
-            <DataTable
-              {...props}
-              canSelectAll={canSelectAll}
-              canSelect={!!onSelect}
-              selected={selected}
-              onSelect={(selected) => {
-                setSelected(selected);
-                onSelect?.(selected);
-              }}
-              onCollapse={detailColumns ? onCollapse : undefined}
-              actions={convertAction()}
-              actionResolver={actionResolver}
-              rows={data.slice(0, maxRows)}
-              columns={columns}
-              isNotCompact={isNotCompact}
-              isRadio={isRadio}
-              ariaLabelKey={ariaLabelKey}
-            />
-          )}
-          {!loading && noData && searching && (
-            <ListEmptyState
-              hasIcon={true}
-              icon={icon}
-              isSearchVariant={true}
-              message={t("noSearchResults")}
-              instructions={t("noSearchResultsInstructions")}
-              secondaryActions={
-                !isSearching
-                  ? [
-                      {
-                        text: t("clearAllFilters"),
-                        onClick: () => onSearchChange(""),
-                        type: ButtonVariant.link,
-                      },
-                    ]
-                  : []
-              }
-            />
-          )}
+          <LoadingOverlay
+            isLoading={loading}
+            skeleton={<TableLoadingSkeleton rows={Math.min(maxRows, 5)} />}
+            data-testid={!loading ? "table-ready" : undefined}
+          >
+            {!noData && (
+              <DataTable
+                {...props}
+                canSelectAll={canSelectAll}
+                canSelect={!!onSelect}
+                selected={selected}
+                onSelect={(selected) => {
+                  setSelected(selected);
+                  onSelect?.(selected);
+                }}
+                onCollapse={detailColumns ? onCollapse : undefined}
+                actions={convertAction()}
+                actionResolver={actionResolver}
+                rows={data.slice(0, maxRows)}
+                columns={columns}
+                isNotCompact={isNotCompact}
+                isRadio={isRadio}
+                ariaLabelKey={ariaLabelKey}
+              />
+            )}
+            {noData && searching && (
+              <ListEmptyState
+                hasIcon={true}
+                icon={icon}
+                isSearchVariant={true}
+                message={t("noSearchResults")}
+                instructions={t("noSearchResultsInstructions")}
+                secondaryActions={
+                  !isSearching
+                    ? [
+                        {
+                          text: t("clearAllFilters"),
+                          onClick: () => onSearchChange(""),
+                          type: ButtonVariant.link,
+                        },
+                      ]
+                    : []
+                }
+              />
+            )}
+          </LoadingOverlay>
         </PaginatingTableToolbar>
       )}
-      {loading && <KeycloakSpinner />}
+      {loading && noData && !searching && <KeycloakSpinner />}
       {!loading && noData && !searching && emptyState}
     </>
   );

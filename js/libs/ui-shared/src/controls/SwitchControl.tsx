@@ -40,6 +40,7 @@ export const SwitchControl = <
   return (
     <FormLabel
       hasNoPaddingTop
+      id={props.name}
       name={props.name}
       isRequired={props.rules?.required === true}
       label={props.label}
@@ -57,6 +58,8 @@ export const SwitchControl = <
             label={labelOn}
             aria-label={props.label}
             isChecked={stringify ? value === "true" : value}
+            isDisabled={props.isDisabled}
+            aria-busy={props.isDisabled}
             onChange={(e, checked) => {
               const value = stringify ? checked.toString() : checked;
               props.onChange?.(e, checked);

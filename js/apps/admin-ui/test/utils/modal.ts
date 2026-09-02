@@ -9,11 +9,15 @@ export async function assertModalMessage(page: Page, message: string) {
 }
 
 export async function confirmModal(page: Page) {
-  await page.getByTestId("confirm").click();
+  const confirm = page.getByTestId("confirm");
+  await expect(confirm).toBeVisible();
+  await confirm.click();
 }
 
 export async function cancelModal(page: Page) {
-  await page.getByTestId("cancel").click();
+  const cancel = page.getByTestId("cancel");
+  await expect(cancel).toBeVisible();
+  await cancel.click();
 }
 
 export async function clickAdd(page: Page) {

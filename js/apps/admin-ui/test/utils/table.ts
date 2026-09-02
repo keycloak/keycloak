@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect } from "@playwright/test";
+import { waitForLoadingComplete } from "./loading.ts";
 
 const TABLE_LOAD_TIMEOUT_MS = 5_000;
 
@@ -7,80 +8,24 @@ export async function searchItem(
   placeHolder: string,
   itemName: string,
 ) {
+  await waitForLoadingComplete(page);
   await page
     .locator("table tbody")
     .waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
   await page.getByPlaceholder(placeHolder).fill(itemName);
   await page.keyboard.press("Enter");
+  await waitForLoadingComplete(page);
 }
 
 export async function clearAllFilters(page: Page) {
   await page.getByTestId("clear-all-filters-empty-action").click();
 }
 
-function escapeRegex(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-async function clickLinkWhenAvailable(link: Locator): Promise<boolean> {
-  const candidate = link.first();
-  if ((await candidate.count()) === 0) {
-    return false;
-  }
-
-  try {
-    await candidate.waitFor({ state: "visible", timeout: 500 });
-    await candidate.click({ timeout: 500 });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export async function clickTableRowItem(page: Page, itemName: string) {
+  await waitForLoadingComplete(page);
   const tableBody = page.locator("table tbody");
   await tableBody.waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
-
-  const exactNameRegex = new RegExp(`^${escapeRegex(itemName)}$`, "i");
-
-  for (let attempt = 0; attempt < 6; attempt++) {
-    if (
-      await clickLinkWhenAvailable(
-        tableBody.getByRole("link", { name: itemName, exact: true }),
-      )
-    ) {
-      return;
-    }
-
-    if (
-      await clickLinkWhenAvailable(
-        tableBody.getByRole("link", { name: exactNameRegex }),
-      )
-    ) {
-      return;
-    }
-
-    if (
-      await clickLinkWhenAvailable(
-        tableBody
-          .locator("tr")
-          .filter({ has: page.getByRole("link", { name: exactNameRegex }) })
-          .getByRole("link", { name: exactNameRegex }),
-      )
-    ) {
-      return;
-    }
-
-    if (
-      await clickLinkWhenAvailable(
-        tableBody.getByRole("link", { name: itemName }),
-      )
-    ) {
-      return;
-    }
-  }
-
-  throw new Error(`Table row item "${itemName}" not found`);
+  await tableBody.getByRole("link", { name: itemName, exact: true }).click();
 }
 
 export function getRowByCellText(page: Page, cellText: string): Locator {
@@ -106,6 +51,7 @@ export async function assertRowExists(
   itemName: string,
   exist = true,
 ) {
+  await waitForLoadingComplete(page);
   const row = page.locator("table tbody").getByRole("row", { name: itemName });
   if (exist) {
     await expect(row.first()).toBeVisible();
@@ -144,45 +90,12 @@ export async function clickTableToolbarItem(
     .getByRole("button", { name: itemName, exact: true })
     .or(toolbar.getByRole("link", { name: itemName, exact: true }))
     .first();
-  try {
-    await exactToolbarItem.waitFor({ state: "visible", timeout: 2_000 });
-    await exactToolbarItem.click();
-    return;
-  } catch {
-    // Fall through to partial name and overflow menu attempts.
-  }
-
-  const partialToolbarItem = toolbar
-    .getByRole("button", { name: itemName })
-    .or(toolbar.getByRole("link", { name: itemName }))
-    .first();
-  try {
-    await partialToolbarItem.waitFor({ state: "visible", timeout: 2_000 });
-    await partialToolbarItem.click();
-    return;
-  } catch {
-    // Fall through to overflow menu attempt.
-  }
-
-  const overflowKebab = toolbar.getByTestId("kebab");
-  if ((await overflowKebab.count()) > 0) {
-    await overflowKebab.click();
-    const exactMenuItem = page.getByRole("menuitem", {
-      name: itemName,
-      exact: true,
-    });
-    if ((await exactMenuItem.count()) > 0) {
-      await exactMenuItem.first().click();
-      return;
-    }
-    await page.getByRole("menuitem", { name: itemName }).first().click();
-    return;
-  }
-
-  throw new Error(`Toolbar item "${itemName}" not found`);
+  await exactToolbarItem.waitFor({ state: "visible", timeout: 2_000 });
+  await exactToolbarItem.click();
 }
 
 export async function getTableData(page: Page, name: string) {
+  await waitForLoadingComplete(page);
   const rowsLocator = await getTableRows(page, name);
   const rowCount = await rowsLocator.count();
   const tableData: string[][] = [];
@@ -207,6 +120,7 @@ export async function assertTableRowsLength(
 }
 
 async function getTableRows(page: Page, name: string): Promise<Locator> {
+  await waitForLoadingComplete(page);
   const table = page
     .getByRole("grid")
     .and(page.getByLabel(name, { exact: true }));
@@ -270,4 +184,5 @@ export async function expandRow(page: Page, tableName: string, row: number) {
 
 export async function refreshTable(page: Page) {
   await page.getByTestId("refresh").click();
+  await waitForLoadingComplete(page);
 }

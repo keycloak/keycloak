@@ -1,10 +1,10 @@
-import { expect, test } from "@playwright/test";
+import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { goToIdentityProviders } from "../utils/sidebar.ts";
-import { clickTableRowItem } from "../utils/table.ts";
+import { assertRowExists, clickTableRowItem } from "../utils/table.ts";
 import {
   addAuthConstraints,
   addMapper,
@@ -78,11 +78,7 @@ test.describe.serial("SAML identity provider test", () => {
       await goToMappersTab(page);
       await addMapper(page, type, name);
       await clickSaveMapper(page);
-      await expect(
-        page.getByRole("row", {
-          name: new RegExp(name, "i"),
-        }),
-      ).toBeVisible();
+      await assertRowExists(page, name);
     });
   }
 
