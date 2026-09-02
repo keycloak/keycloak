@@ -68,11 +68,11 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
     @InjectOAuthClient(lifecycle = LifeCycle.METHOD)
     OAuthClient oauth;
 
-    @InjectWebDriver(ref = "secondDriver")
-    protected ManagedWebDriver secondBrowser;
+    @InjectOAuthClient(ref = "oauth2", webDriverRef = "secondDriver", lifecycle = LifeCycle.METHOD)
+    OAuthClient oauth2;
 
-    @InjectWebDriver(ref = "thirdDriver")
-    protected ManagedWebDriver thirdBrowser;
+    @InjectOAuthClient(ref = "oauth3", webDriverRef = "thirdDriver", lifecycle = LifeCycle.METHOD)
+    OAuthClient oauth3;
 
     private String testUserToken;
 
@@ -165,8 +165,6 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         assumeTrue(driver.getBrowserType().equals(BrowserType.HTML_UNIT),
                 "Browser must be htmlunit. Otherwise we are not able to set desired BrowserHeaders");
 
-        WebDriver firstBrowser = oauth.getDriver();
-
         // first browser authenticates from Fedora
         setBrowserHeader("User-Agent", "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1");
         AccessTokenResponse tokenResponse1 = codeGrant("public-client-0");
@@ -182,10 +180,9 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         });
 
         // second browser authenticates from Windows
-        oauth.driver(secondBrowser.driver());
-        setBrowserHeader("User-Agent",
+        setBrowserHeader(oauth2, "User-Agent",
                 "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Gecko/20100101 Firefox/15.0.1");
-        AccessTokenResponse tokenResponse2 = codeGrant("public-client-0");
+        AccessTokenResponse tokenResponse2 = codeGrant(oauth2, "public-client-0");
         devices = getDevicesOtherThanOther();
         // should have two devices
         assertEquals(2, devices.size(), "Should have two devices");
@@ -202,25 +199,22 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         });
 
         // first browser authenticates from Windows using Edge
-        oauth.driver(firstBrowser);
         oauth.logoutForm().idTokenHint(tokenResponse1.getIdToken()).open();
         setBrowserHeader("User-Agent",
                 "Mozilla/5.0 (Windows Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.71 Safari/537.36 Edge/12.0");
         tokenResponse1 = codeGrant("public-client-0");
 
         // second browser authenticates from Windows using Firefox
-        oauth.driver(secondBrowser.driver());
-        oauth.logoutForm().idTokenHint(tokenResponse2.getIdToken()).open();
-        setBrowserHeader("User-Agent",
+        oauth2.logoutForm().idTokenHint(tokenResponse2.getIdToken()).open();
+        setBrowserHeader(oauth2, "User-Agent",
                 "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Gecko/20100101 Firefox/15.0.1");
-        tokenResponse2 = codeGrant("public-client-0");
+        tokenResponse2 = codeGrant(oauth2, "public-client-0");
 
         // third browser authenticates from Windows using Safari
-        oauth.driver(thirdBrowser.driver());
-        setBrowserHeader("User-Agent",
+        setBrowserHeader(oauth3, "User-Agent",
                 "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/11.0 Safari/603.1.30");
-        setBrowserHeader("X-Forwarded-For", "192.168.10.3");
-        AccessTokenResponse tokenResponse3 = codeGrant("public-client-0");
+        setBrowserHeader(oauth3, "X-Forwarded-For", "192.168.10.3");
+        AccessTokenResponse tokenResponse3 = codeGrant(oauth3, "public-client-0");
         devices = getDevicesOtherThanOther(tokenResponse3.getAccessToken());
         assertEquals(
                 1, devices.size(), "Should have a single device because all browsers (and sessions) are from the same platform (OS + OS version)");
@@ -243,29 +237,26 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         });
 
         // third browser authenticates from Windows using a different Windows version
-        oauth.driver(thirdBrowser.driver());
-        oauth.logoutForm().idTokenHint(tokenResponse3.getIdToken()).open();
-        setBrowserHeader("User-Agent",
+        oauth3.logoutForm().idTokenHint(tokenResponse3.getIdToken()).open();
+        setBrowserHeader(oauth3, "User-Agent",
                 "Mozilla/5.0 (Windows 7) AppleWebKit/537.36 (KHTML, like Gecko) Version/11.0 Safari/603.1.30");
-        setBrowserHeader("X-Forwarded-For", "192.168.10.3");
-        tokenResponse3 = codeGrant("public-client-0");
+        setBrowserHeader(oauth3, "X-Forwarded-For", "192.168.10.3");
+        tokenResponse3 = codeGrant(oauth3, "public-client-0");
         devices = getDevicesOtherThanOther();
         windowsDevices = devices.stream()
                 .filter(device -> "Windows".equals(device.getOs())).collect(Collectors.toList());
         assertEquals(2, devices.size(), "Should have two devices for two distinct Windows versions");
         assertEquals(2, windowsDevices.size());
 
-        oauth.driver(firstBrowser);
         oauth.logoutForm().idTokenHint(tokenResponse1.getIdToken()).open();
         setBrowserHeader("User-Agent",
                 "Mozilla/5.0 (iPhone; CPU iPhone OS 5_1_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9B206 Safari/7534.48.3");
         tokenResponse1 = codeGrant("public-client-0");
 
-        oauth.driver(secondBrowser.driver());
-        oauth.logoutForm().idTokenHint(tokenResponse2.getIdToken()).open();
-        setBrowserHeader("User-Agent",
+        oauth2.logoutForm().idTokenHint(tokenResponse2.getIdToken()).open();
+        setBrowserHeader(oauth2, "User-Agent",
                 "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1");
-        tokenResponse2 = codeGrant("public-client-0");
+        tokenResponse2 = codeGrant(oauth2, "public-client-0");
         devices = getDevicesOtherThanOther();
         assertEquals(3, devices.size(), "Should have 3 devices");
         windowsDevices = devices.stream()
@@ -315,8 +306,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
     @Test
     public void testLogoutAll() throws IOException {
         codeGrant("public-client-0");
-        oauth.driver(secondBrowser.driver());
-        AccessTokenResponse tokenResponse = codeGrant("public-client-0");
+        AccessTokenResponse tokenResponse = codeGrant(oauth2, "public-client-0");
 
         assertEquals(3, getSessions().size());
 
@@ -420,6 +410,10 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
     }
 
     private AccessTokenResponse codeGrant(String clientId) {
+        return codeGrant(oauth, clientId);
+    }
+
+    private AccessTokenResponse codeGrant(OAuthClient oauth, String clientId) {
         oauth.client(clientId);
         oauth.redirectUri(OAUTH_CALLBACK_URL);
         String code = oauth.doLogin("test-user@localhost", "password").getCode();
@@ -452,6 +446,10 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
 
 
     private void setBrowserHeader(String name, String value) {
+        setBrowserHeader(oauth, name, value);
+    }
+
+    private void setBrowserHeader(OAuthClient oauth, String name, String value) {
         WebDriver currentDriver = oauth.getDriver();
         if (currentDriver instanceof HtmlUnitDriver) {
             HtmlUnitDriver htmlUnitDriver = (HtmlUnitDriver) currentDriver;
