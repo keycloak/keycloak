@@ -38,6 +38,9 @@ export function bindDisableSubmitOnSameTab(form) {
         const submitButton = event.target.closest('button[type="submit"], input[type="submit"]');
         if (submitButton && form.contains(submitButton) && hasNewTabModifiers(event)) {
             modifierNewTabSubmit = true;
+            queueMicrotask(() => {
+                modifierNewTabSubmit = false;
+            });
         }
     }, true);
 
