@@ -1347,12 +1347,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     public void revokeApplicationSessionsForNotExistingClient() throws IOException {
         managedRealm.cleanup().add(RealmResource::logoutAll);
         String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("manage-account-access", "password").getAccessToken();
+        // Returns 204 instead of 404 to prevent client enumeration via this endpoint.
         try (SimpleHttpResponse response = simpleHttp
                 .doDelete(getAccountUrl("applications/not-existing/sessions"))
                 .header("Accept", "application/json")
                 .auth(token)
                 .asResponse()) {
-            Assertions.assertEquals(404, response.getStatus());
+            Assertions.assertEquals(204, response.getStatus());
         }
     }
 

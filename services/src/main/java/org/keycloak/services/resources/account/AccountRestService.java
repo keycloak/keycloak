@@ -411,10 +411,11 @@ public class AccountRestService {
         event.event(EventType.LOGOUT);
         ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
+            // Return 204 instead of 404 to prevent client enumeration via this endpoint.
             String msg = String.format("No client with clientId: %s found.", clientId);
             event.detail(Details.REASON, msg);
             event.error(Errors.CLIENT_NOT_FOUND);
-            throw ErrorResponse.error(msg, Response.Status.NOT_FOUND);
+            return Response.noContent().build();
         }
 
         Stream.concat(session.sessions().getUserSessionsStream(realm, user), session.sessions().getOfflineUserSessionsStream(realm, user))
