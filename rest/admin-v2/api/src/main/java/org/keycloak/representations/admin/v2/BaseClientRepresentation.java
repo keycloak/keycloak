@@ -32,7 +32,7 @@ import org.hibernate.validator.constraints.URL;
     @JsonSubTypes.Type(value = SAMLClientRepresentation.class, name = SAMLClientRepresentation.PROTOCOL)
 })
 @ServerManagedFieldUnmodified(
-        affectedFieldNames = {"uuid", "createdTimestamp", "updatedTimestamp"},
+        affectedFieldNames = {"uuid"},
         groups = {PutClient.class, PatchClient.class})
 //protocol is technically not server managed, but we can reuse the existing validation
 @ServerManagedFieldUnmodified( 

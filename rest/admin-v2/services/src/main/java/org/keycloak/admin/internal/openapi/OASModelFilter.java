@@ -12,7 +12,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import org.keycloak.services.client.ClientField;
+import org.keycloak.services.client.ClientSortField;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -42,7 +42,7 @@ public class OASModelFilter implements OASFilter {
     private static final String ALLOWED_FIELDS_MARKER = "Allowed fields: ";
     private static final String CLIENTS_LIST_PATH_SUFFIX = "/clients/v2";
     private static final Map<String, Supplier<String>> SORT_ALLOWED_FIELDS_BY_PATH_SUFFIX = Map.of(
-            CLIENTS_LIST_PATH_SUFFIX, ClientField::allowedApiNames
+            CLIENTS_LIST_PATH_SUFFIX, ClientSortField::allowedApiNames
     );
 
     private final Logger log = Logger.getLogger(OASModelFilter.class);

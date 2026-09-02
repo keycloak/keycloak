@@ -36,8 +36,6 @@ import jakarta.ws.rs.core.MediaType;
 
 import org.keycloak.admin.api.ListOptions;
 import org.keycloak.admin.api.PatchTypeNames;
-import org.keycloak.admin.api.SortOption;
-import org.keycloak.admin.api.SortOrder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
@@ -50,7 +48,7 @@ import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
-import org.keycloak.services.client.ClientField;
+import org.keycloak.services.client.ClientSortField;
 import org.keycloak.services.error.ViolationExceptionResponse;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectClient;
@@ -158,7 +156,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         request.setEntity(null);
         try (var response = client.execute(request)) {
             assertEquals(400, response.getStatusLine().getStatusCode());
-            assertThat(EntityUtils.toString(response.getEntity()), Matchers.containsString("Cannot replace client resource with non-object"));
+            assertThat(EntityUtils.toString(response.getEntity()), Matchers.containsString("Invalid patch"));
         }
 
         request.setEntity(new StringEntity("patch client invalid"));
@@ -186,13 +184,13 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         request.setEntity(new StringEntity(""));
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(),is(400));
-            assertThat(EntityUtils.toString(response.getEntity()), Matchers.containsString("Cannot replace client resource with non-object"));
+            assertThat(EntityUtils.toString(response.getEntity()), Matchers.containsString("Invalid patch"));
         }
 
         request.setEntity(new StringEntity("{} {}"));
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(),is(400));
-            assertThat(EntityUtils.toString(response.getEntity()), Matchers.containsString("Patch contains additional content"));
+            assertThat(EntityUtils.toString(response.getEntity()), Matchers.containsString("Invalid patch"));
         }
 
     }
@@ -266,7 +264,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
             List<ClientEvent> events = List.of(runOnServer.fetch(session -> ClientProviderEventListener.INSTANCE.events, ClientEvent[].class));
 
-            assertEquals(List.of(new ClientEvent(EventType.CREATE, "other"), new ClientEvent(EventType.UPDATE, "other")), events);
+            assertEquals(List.of(new ClientEvent(EventType.CREATE, "other"), new ClientEvent(EventType.UPDATE, "other"), new ClientEvent(EventType.UPDATE, "other")), events);
 
         } finally {
             runOnServer.run(session -> {
@@ -386,64 +384,49 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     }
 
     @Test
-    public void clientTimestampsAreServerManaged() throws JsonProcessingException {
+    public void clientTimestampsManagement() throws JsonProcessingException {
         var clientId = "server-managed-timestamp-client";
         OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setEnabled(true);
         rep.setClientId(clientId);
         rep.setDescription("Server managed timestamp test client");
 
+        OIDCClientRepresentation created;
         try (var response = getClientsApi().createClient(rep)) {
             assertThat(response.getStatus(), is(201));
+            created = response.readEntity(OIDCClientRepresentation.class);
         }
+        
+        try {
+            setServerTimeOffset(1);
 
-        // the persisted timestamps may be bumped slightly after creation (e.g. for filling additional
-        // fields), so fetch the authoritative values instead of relying on the create response
-        OIDCClientRepresentation persisted = (OIDCClientRepresentation) getClientsApi().client(clientId).getClient();
-
-        // PUT with a modified createdTimestamp fails
-        OIDCClientRepresentation putRep = new OIDCClientRepresentation();
-        putRep.setEnabled(true);
-        putRep.setClientId(clientId);
-        putRep.setCreatedTimestamp(persisted.getCreatedTimestamp() + 1000);
-        putRep.setUpdatedTimestamp(persisted.getUpdatedTimestamp());
-        try (var response = getClientsApi().client(clientId).createOrUpdateClient(putRep)) {
-            assertThat(response.getStatus(), is(400));
-            var body = response.readEntity(ViolationExceptionResponse.class);
-            assertThat(body.violations(), hasItem("createdTimestamp: createdTimestamp is server-managed and must not be user-specified"));
+            // PUT with a modified values succeeds - readOnly is just ignored
+            OIDCClientRepresentation putRep = new OIDCClientRepresentation();
+            putRep.setEnabled(false);
+            putRep.setClientId(clientId);
+            putRep.setCreatedTimestamp(created.getCreatedTimestamp() + 100000);
+            putRep.setUpdatedTimestamp(created.getUpdatedTimestamp() + 100000);
+            try (var response = getClientsApi().client(clientId).createOrUpdateClient(putRep)) {
+                assertThat(response.getStatus(), is(200));
+                var updated = response.readEntity(OIDCClientRepresentation.class);
+                
+                assertThat(updated.getCreatedTimestamp(), is(created.getCreatedTimestamp()));
+                assertTrue(updated.getUpdatedTimestamp() > created.getUpdatedTimestamp());
+                assertThat(updated.getUpdatedTimestamp(), is(not(putRep.getUpdatedTimestamp())));
+                
+                try {
+                    // wait to perform the get to see if updated response timestamps remain consistent
+                    Thread.sleep(10);    
+                } catch (InterruptedException e) {
+                }
+                
+                var current = getClientsApi().client(clientId).getClient();
+                assertThat(current.getCreatedTimestamp(), is(updated.getCreatedTimestamp()));
+                assertThat(current.getUpdatedTimestamp(), is(updated.getUpdatedTimestamp()));
+            }
+        } finally {
+            setServerTimeOffset(0);
         }
-
-        // PUT with a modified updatedTimestamp fails
-        putRep.setCreatedTimestamp(persisted.getCreatedTimestamp());
-        putRep.setUpdatedTimestamp(persisted.getUpdatedTimestamp() + 1000);
-        try (var response = getClientsApi().client(clientId).createOrUpdateClient(putRep)) {
-            assertThat(response.getStatus(), is(400));
-            var body = response.readEntity(ViolationExceptionResponse.class);
-            assertThat(body.violations(), hasItem("updatedTimestamp: updatedTimestamp is server-managed and must not be user-specified"));
-        }
-
-        // PUT with the unmodified (persisted) timestamps succeeds
-        putRep.setCreatedTimestamp(persisted.getCreatedTimestamp());
-        putRep.setUpdatedTimestamp(persisted.getUpdatedTimestamp());
-        try (var response = getClientsApi().client(clientId).createOrUpdateClient(putRep)) {
-            assertThat(response.getStatus(), is(200));
-        }
-
-        // PATCH with a modified createdTimestamp fails
-        OIDCClientRepresentation createdPatch = new OIDCClientRepresentation();
-        createdPatch.setCreatedTimestamp(persisted.getCreatedTimestamp() + 1000);
-        BadRequestException createdEx = assertThrows(BadRequestException.class,
-                () -> getClientsApi().client(clientId).patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(createdPatch))));
-        var createdBody = createdEx.getResponse().readEntity(ViolationExceptionResponse.class);
-        assertThat(createdBody.violations(), hasItem("createdTimestamp: createdTimestamp is server-managed and must not be user-specified"));
-
-        // PATCH with a modified updatedTimestamp fails
-        OIDCClientRepresentation updatedPatch = new OIDCClientRepresentation();
-        updatedPatch.setUpdatedTimestamp(persisted.getUpdatedTimestamp() + 1000);
-        BadRequestException updatedEx = assertThrows(BadRequestException.class,
-                () -> getClientsApi().client(clientId).patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(updatedPatch))));
-        var updatedBody = updatedEx.getResponse().readEntity(ViolationExceptionResponse.class);
-        assertThat(updatedBody.violations(), hasItem("updatedTimestamp: updatedTimestamp is server-managed and must not be user-specified"));
     }
 
     @Test
@@ -592,7 +575,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         ListOptions listOptions = new ListOptions();
         listOptions.setFields(Set.of("clientId", "displayName"));
-        listOptions.setSort(List.of(SortOption.of(ClientField.DISPLAY_NAME), SortOption.of(ClientField.CLIENT_ID)));
+        listOptions.setSort(ClientSortField.DISPLAY_NAME.getApiName() + "," + ClientSortField.CLIENT_ID.getApiName());
 
         try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
             List<String> sortTestClientIds = clients
@@ -615,7 +598,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
             ListOptions listOptions = new ListOptions();
             listOptions.setFields(Set.of("clientId"));
-            listOptions.setSort(List.of(SortOption.of(ClientField.CREATED_TIMESTAMP)));
+            listOptions.setSort(ClientSortField.CREATED_TIMESTAMP.getApiName());
 
             try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
                 List<String> sortTestClientIds = clients
@@ -648,7 +631,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
             ListOptions listOptions = new ListOptions();
             listOptions.setFields(Set.of("clientId"));
-            listOptions.setSort(List.of(SortOption.of(ClientField.UPDATED_TIMESTAMP)));
+            listOptions.addSortField(ClientSortField.UPDATED_TIMESTAMP.getApiName());
 
             try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
                 List<String> sortTestClientIds = clients
@@ -670,7 +653,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         ListOptions listOptions = new ListOptions();
         listOptions.setFields(Set.of("clientId", "displayName"));
-        listOptions.setSort(List.of(SortOption.of(ClientField.DISPLAY_NAME, SortOrder.DESC), SortOption.of(ClientField.CLIENT_ID, SortOrder.DESC)));
+        listOptions.addSortField(ClientSortField.DISPLAY_NAME.getApiName(), false).addSortField(ClientSortField.CLIENT_ID.getApiName(), false);
 
         try (Stream<BaseClientRepresentation> clients = getClientsApi().getClients(listOptions)) {
             List<String> sortTestClientIds = clients
@@ -937,6 +920,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             OIDCClientRepresentation created = response.readEntity(OIDCClientRepresentation.class);
             assertThat(created.getRoles(), is(Set.of("my-client-role")));
             assertThat(created.getServiceAccountRoles(), is(Set.of(defaultRealmRoles, "offline_access")));
+            rep = created;
         }
 
         rep.setServiceAccountRoles(Set.of(defaultRealmRoles, "offline_access", "my-client-role"));
@@ -952,6 +936,15 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             OIDCClientRepresentation updated = response.readEntity(OIDCClientRepresentation.class);
             assertThat(updated.getServiceAccountRoles(), is(Set.of(defaultRealmRoles, "offline_access")));
             assertThat(updated.getRoles(), is(Set.of("my-client-role")));
+        }
+    }
+    
+    @Test
+    public void unknownRealmAccessForbidden() throws Exception {
+        HttpGet request = new HttpGet("http://localhost:8080/admin/api/foo/clients/v2");
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(401));
+            EntityUtils.consumeQuietly(response.getEntity());
         }
     }
 
@@ -1281,7 +1274,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @ParameterizedTest
     @ValueSource(strings = { ClientIdAndSecretAuthenticator.PROVIDER_ID, JWTClientSecretAuthenticator.PROVIDER_ID })
-    void putUpdateWithNullSecretReusesPersistedSecret(String authenticationMethod) throws IOException {
+    void putUpdateWithNullSecretFails(String authenticationMethod) throws IOException {
         String clientId = authenticationMethod + "-validation-update-put";
         OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
         auth.setMethod(authenticationMethod);
@@ -1292,9 +1285,8 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         assertThat(createdAuth.getSecret(), is(auth.getSecret()));
 
         auth.setSecret(null);
-        OIDCClientRepresentation.Auth putAuth = getResultingAuthConfigPut(auth, clientId);
-        assertThat(putAuth, notNullValue());
-        assertThat(putAuth.getSecret(), is(createdAuth.getSecret()));
+        var assertionError = assertThrows(AssertionError.class, () -> getResultingAuthConfigPut(auth, clientId));
+        assertThat(assertionError.getMessage(), Matchers.containsString("was <400>"));
     }
 
     @ParameterizedTest
