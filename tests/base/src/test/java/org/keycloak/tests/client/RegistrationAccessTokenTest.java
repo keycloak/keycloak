@@ -22,6 +22,7 @@ import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 
@@ -51,23 +52,23 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
     public void before() throws Exception {
         super.before();
 
-        ClientRepresentation c = new ClientRepresentation();
-        c.setEnabled(true);
-        c.setClientId("RegistrationAccessTokenTest");
-        c.setSecret("RegistrationAccessTokenTestClientSecret");
-        c.setRootUrl("http://root");
+        ClientRepresentation c = ClientBuilder.create("RegistrationAccessTokenTest")
+                .secret("RegistrationAccessTokenTestClientSecret")
+                .rootUrl("http://root")
+                .build();
 
         client = createClient(c);
-        getCleanup().addClientUuid(client.getId());
+        String clientId = client.getId();
+        managedRealm.cleanup().add(r -> r.clients().delete(clientId).close());
 
-        c = new ClientRepresentation();
-        c.setEnabled(true);
-        c.setClientId("SomeOtherClient");
-        c.setSecret("RegistrationAccessTokenTestClientSecret");
-        c.setRootUrl("http://root");
+        c = ClientBuilder.create("SomeOtherClient")
+                .secret("RegistrationAccessTokenTestClientSecret")
+                .rootUrl("http://root")
+                .build();
 
         c = createClient(c);
-        getCleanup().addClientUuid(c.getId());
+        String cId = c.getId();
+        managedRealm.cleanup().add(r -> r.clients().get(cId).remove());
 
         reg.auth(Auth.token(client.getRegistrationAccessToken()));
     }

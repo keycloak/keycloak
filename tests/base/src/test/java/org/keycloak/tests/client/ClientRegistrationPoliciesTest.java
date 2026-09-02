@@ -51,7 +51,6 @@ import org.keycloak.representations.idm.ComponentTypeRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientregistration.RegistrationAccessToken;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
@@ -64,7 +63,7 @@ import org.keycloak.services.clientregistration.policy.impl.ProtocolMappersClien
 import org.keycloak.services.clientregistration.policy.impl.TrustedHostClientRegistrationPolicyFactory;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.testsuite.admin.AdminApiUtil;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.AfterEach;
@@ -79,16 +78,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @KeycloakIntegrationTest
 public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTest {
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        super.addTestRealms(testRealms);
-        testRealms.get(0).setId(REALM_NAME);
-    }
-
     @AfterEach
-    @Override
     public void after() throws Exception {
-        super.after();
 
         // Default setup of trustedHostPolicy
         ComponentRepresentation trustedHostPolicy = findPolicyByProviderAndAuth(TrustedHostClientRegistrationPolicyFactory.PROVIDER_ID, getPolicyAnon());

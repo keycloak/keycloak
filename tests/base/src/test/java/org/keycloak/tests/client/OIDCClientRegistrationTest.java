@@ -54,8 +54,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.utils.Assert;
-import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.util.JsonSerialization;
 
 import org.hamcrest.MatcherAssert;
@@ -64,8 +62,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.admin.AdminApiUtil.findClientByClientId;
-import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.findClientByClientId;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -79,17 +76,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
 
     private static final String ERR_MSG_CLIENT_REG_FAIL = "Failed to send request";
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        super.addTestRealms(testRealms);
-        RealmRepresentation testRealm = testRealms.get(0);
-
-        ClientRepresentation samlApp = KeycloakModelUtils.createClient(testRealm, "saml-client");
-        samlApp.setSecret("secret");
-        samlApp.setServiceAccountsEnabled(true);
-        samlApp.setDirectAccessGrantsEnabled(true);
-    }
 
     @BeforeEach
     public void before() throws Exception {
@@ -115,10 +101,6 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         OIDCClientRepresentation response = reg.oidc().create(client);
 
         return response;
-    }
-
-    private void assertCreateFail(OIDCClientRepresentation client, int expectedStatusCode) {
-        assertCreateFail(client, expectedStatusCode, null);
     }
 
     private void assertCreateFail(OIDCClientRepresentation client, int expectedStatusCode, String expectedErrorContains) {
@@ -840,7 +822,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         OIDCClientRepresentation response = create();
         reg.auth(Auth.token(response));
         assertNotNull(reg.oidc().get(response.getClientId()));
-        ClientsResource clientsResource = adminClient.realm(TEST).clients();
+        ClientsResource clientsResource = managedRealm.admin().clients();
         ClientRepresentation client = clientsResource.findByClientId(response.getClientId()).get(0);
 
         // change client to saml
@@ -905,11 +887,11 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     private ClientRepresentation getKeycloakClient(String clientId) {
-        return AdminApiUtil.findClientByClientId(adminClient.realms().realm(REALM_NAME), clientId).toRepresentation();
+        return findClientByClientId(managedRealm.admin(), clientId).toRepresentation();
     }
 
     private String registrationClientUri(String clientId) {
-        return getAuthServerRoot().resolve("realms/" + REALM_NAME + "/clients-registrations/openid-connect/" + clientId).toString();
+        return managedRealm.getBaseUrl() + "/clients-registrations/openid-connect/" + clientId;
     }
 
     @Test

@@ -28,7 +28,6 @@ import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testsuite.util.TokenSignatureUtil;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +35,7 @@ import org.junit.jupiter.api.Test;
 
 @KeycloakIntegrationTest
 public class OIDCClientRegistrationDefaultSignatureTest extends AbstractClientRegistrationTest {
+
     @BeforeEach
     public void before() throws Exception {
         super.before();
@@ -58,51 +58,37 @@ public class OIDCClientRegistrationDefaultSignatureTest extends AbstractClientRe
     public void testIdTokenSignedResponse() throws Exception {
         OIDCClientRepresentation response = null;
         OIDCClientRepresentation updated = null;
-        try {
-            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.ES512);
+        managedRealm.dirty();
+        managedRealm.updateWithCleanup(r -> r.defaultSignatureAlgorithm(Algorithm.ES512));
 
-            // create (no specification)
-            OIDCClientRepresentation clientRep = createRep();
+        // create (no specification)
+        OIDCClientRepresentation clientRep = createRep();
 
-            response = reg.oidc().create(clientRep);
-            Assertions.assertEquals(Algorithm.ES512, response.getIdTokenSignedResponseAlg());
+        response = reg.oidc().create(clientRep);
+        Assertions.assertEquals(Algorithm.ES512, response.getIdTokenSignedResponseAlg());
 
-            // Test Keycloak representation
-            ClientRepresentation kcClient = getClient(response.getClientId());
-            OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
-            // Client representation of id.token.signed.response.alg is null as from realm
-            Assertions.assertNull(config.getIdTokenSignedResponseAlg());
+        // Test Keycloak representation
+        ClientRepresentation kcClient = getClient(response.getClientId());
+        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+        // Client representation of id.token.signed.response.alg is null as from realm
+        Assertions.assertNull(config.getIdTokenSignedResponseAlg());
 
-            // update
-            reg.auth(Auth.token(response));
-            response.setIdTokenSignedResponseAlg(Algorithm.ES256);
-            updated = reg.oidc().update(response);
-            Assertions.assertEquals(Algorithm.ES256, updated.getIdTokenSignedResponseAlg());
+        // update
+        reg.auth(Auth.token(response));
+        response.setIdTokenSignedResponseAlg(Algorithm.ES256);
+        updated = reg.oidc().update(response);
+        Assertions.assertEquals(Algorithm.ES256, updated.getIdTokenSignedResponseAlg());
 
-            // Test Keycloak representation
-            kcClient = getClient(updated.getClientId());
-            config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
-            Assertions.assertEquals(Algorithm.ES256, config.getIdTokenSignedResponseAlg());
+        // Test Keycloak representation
+        kcClient = getClient(updated.getClientId());
+        config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+        Assertions.assertEquals(Algorithm.ES256, config.getIdTokenSignedResponseAlg());
 
-            // update after changing default realm token signature
-            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.ES384);
-            reg.auth(Auth.token(updated));
-            updated.setIdTokenSignedResponseAlg(null);
-            response = reg.oidc().update(updated);
-            Assertions.assertEquals(Algorithm.ES384, response.getIdTokenSignedResponseAlg());
-        } finally {
-            // revert
-            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
-            reg.auth(Auth.token(response));
-            response.setIdTokenSignedResponseAlg(null);
-            updated = reg.oidc().update(response);
-            Assertions.assertNull(updated.getIdTokenSignedResponseAlg());
-
-            // Test Keycloak representation
-            ClientRepresentation kcClient = getClient(updated.getClientId());
-            OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
-            // Client representation of id.token.signed.response.alg is null as from realm
-            Assertions.assertNull(config.getIdTokenSignedResponseAlg());
-        }
+        // update after changing default realm token signature
+        managedRealm.updateWithCleanup(r -> r.defaultSignatureAlgorithm(Algorithm.ES384));
+        reg.auth(Auth.token(updated));
+        updated.setIdTokenSignedResponseAlg(null);
+        response = reg.oidc().update(updated);
+        Assertions.assertEquals(Algorithm.ES384, response.getIdTokenSignedResponseAlg());
     }
 }

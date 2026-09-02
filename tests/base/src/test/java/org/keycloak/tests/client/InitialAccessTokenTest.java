@@ -32,7 +32,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
-import org.keycloak.testsuite.util.TokenSignatureUtil;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -81,23 +80,19 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
 
     @Test
     public void createWithES256() throws JWSInputException, ClientRegistrationException {
-        try {
-            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.ES256);
+        managedRealm.updateWithCleanup(r -> r.defaultSignatureAlgorithm(Algorithm.ES256));
 
-            ClientInitialAccessPresentation response = resource.create(new ClientInitialAccessCreatePresentation());
-            reg.auth(Auth.token(response));
+        ClientInitialAccessPresentation response = resource.create(new ClientInitialAccessCreatePresentation());
+        reg.auth(Auth.token(response));
 
-            String token = response.getToken();
+        String token = response.getToken();
 
-            JWSHeader header = new JWSInput(token).getHeader();
-            assertEquals(Constants.INTERNAL_SIGNATURE_ALGORITHM, header.getAlgorithm().name());
+        JWSHeader header = new JWSInput(token).getHeader();
+        assertEquals(Constants.INTERNAL_SIGNATURE_ALGORITHM, header.getAlgorithm().name());
 
-            ClientRepresentation rep = new ClientRepresentation();
-            ClientRepresentation created = reg.create(rep);
-            Assertions.assertNotNull(created);
-        } finally {
-            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
-        }
+        ClientRepresentation rep = new ClientRepresentation();
+        ClientRepresentation created = reg.create(rep);
+        Assertions.assertNotNull(created);
     }
 
     @Test

@@ -20,12 +20,10 @@ package org.keycloak.tests.client;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.List;
 
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
@@ -34,20 +32,20 @@ import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testsuite.util.KeycloakModelUtils;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ClientConfig;
+import org.keycloak.testframework.realm.ManagedClient;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -63,32 +61,12 @@ public class SAMLClientRegistrationTest extends AbstractClientRegistrationTest {
     @InjectOAuthClient(ref = "saml-oauth", lifecycle = LifeCycle.METHOD)
     OAuthClient oauth;
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        super.addTestRealms(testRealms);
-        RealmRepresentation testRealm = testRealms.get(0);
-
-        ClientRepresentation samlApp = KeycloakModelUtils.createClient(testRealm, "oidc-client");
-        samlApp.setSecret("secret");
-        samlApp.setServiceAccountsEnabled(true);
-        samlApp.setDirectAccessGrantsEnabled(true);
-    }
+    @InjectClient(config = OIDCClient.class)
+    ManagedClient oidcClient;
 
     @BeforeEach
     public void before() throws Exception {
         super.before();
-
-        if (adminClient.realm(REALM_NAME).clients().findByClientId("oidc-client").isEmpty()) {
-            ClientRepresentation oidcClient = new ClientRepresentation();
-            oidcClient.setClientId("oidc-client");
-            oidcClient.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-            oidcClient.setSecret("secret");
-            oidcClient.setPublicClient(false);
-            oidcClient.setServiceAccountsEnabled(true);
-            oidcClient.setDirectAccessGrantsEnabled(true);
-            oidcClient.setEnabled(true);
-            adminClient.realm(REALM_NAME).clients().create(oidcClient).close();
-        }
 
         ClientInitialAccessPresentation token = adminClient.realm(REALM_NAME).clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
         reg.auth(Auth.token(token));
@@ -102,14 +80,14 @@ public class SAMLClientRegistrationTest extends AbstractClientRegistrationTest {
 
     @Test
     public void testSAMLEndpointCreateWithOIDCClient() throws Exception {
-        ClientsResource clientsResource = adminClient.realm(TEST).clients();
+        ClientsResource clientsResource = managedRealm.admin().clients();
         ClientRepresentation oidcClient = clientsResource.findByClientId("oidc-client").get(0);
         String oidcClientServiceId = clientsResource.get(oidcClient.getId()).getServiceAccountUser().getId();
 
         String realmManagementId = clientsResource.findByClientId("realm-management").get(0).getId();
         RoleRepresentation role = clientsResource.get(realmManagementId).roles().get("create-client").toRepresentation();
 
-        adminClient.realm(TEST).users().get(oidcClientServiceId).roles().clientLevel(realmManagementId).add(Arrays.asList(role));
+        managedRealm.admin().users().get(oidcClientServiceId).roles().clientLevel(realmManagementId).add(Arrays.asList(role));
 
         String accessToken = oauth.client("oidc-client", "secret").doClientCredentialsGrantAccessTokenRequest().getAccessToken();
         reg.auth(Auth.token(accessToken));
@@ -142,6 +120,17 @@ public class SAMLClientRegistrationTest extends AbstractClientRegistrationTest {
         Assertions.assertEquals("givenName",mapper.getConfig().get(AttributeStatementHelper.FRIENDLY_NAME));
         Assertions.assertEquals(AttributeStatementHelper.URI_REFERENCE,mapper.getConfig().get(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT));
 
-        adminClient.realm(REALM_NAME).clients().get(response.getId()).remove();
+        managedRealm.admin().clients().get(response.getId()).remove();
+    }
+
+    private static class OIDCClient implements ClientConfig {
+        @Override
+        public ClientBuilder configure(ClientBuilder client) {
+            return client.clientId("oidc-client")
+                    .fullScopeEnabled(true)
+                    .secret("secret")
+                    .serviceAccountsEnabled(true)
+                    .directAccessGrantsEnabled(true);
+        }
     }
 }

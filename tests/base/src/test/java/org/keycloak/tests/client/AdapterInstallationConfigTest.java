@@ -19,15 +19,13 @@ package org.keycloak.tests.client;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
-import org.keycloak.common.enums.SslRequired;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ClientBuilder;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -40,43 +38,24 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class AdapterInstallationConfigTest extends AbstractClientRegistrationTest {
 
     private ClientRepresentation client;
-    private ClientRepresentation client2;
-    private ClientRepresentation clientPublic;
 
     @BeforeEach
     @Override
     public void before() throws Exception {
         super.before();
 
-        client = new ClientRepresentation();
-        client.setEnabled(true);
-        client.setClientId("RegistrationAccessTokenTest");
-        client.setSecret("RegistrationAccessTokenTestClientSecret");
-        client.setPublicClient(false);
-        client.setRegistrationAccessToken("RegistrationAccessTokenTestRegistrationAccessToken");
-        client.setRootUrl("http://root");
+        client = ClientBuilder.create()
+                .enabled(true)
+                .clientId("RegistrationAccessTokenTest")
+                .secret("RegistrationAccessTokenTestClientSecret")
+                .publicClient(false)
+                .registrationAccessToken("RegistrationAccessTokenTestRegistrationAccessToken")
+                .rootUrl("http://root")
+                .build();
         client = createClient(client);
         client.setSecret("RegistrationAccessTokenTestClientSecret");
-        getCleanup().addClientUuid(client.getId());
-
-        client2 = new ClientRepresentation();
-        client2.setEnabled(true);
-        client2.setClientId("RegistrationAccessTokenTest2");
-        client2.setSecret("RegistrationAccessTokenTestClientSecret");
-        client2.setPublicClient(false);
-        client2.setRegistrationAccessToken("RegistrationAccessTokenTestRegistrationAccessToken");
-        client2.setRootUrl("http://root");
-        client2 = createClient(client2);
-        getCleanup().addClientUuid(client2.getId());
-
-        clientPublic = new ClientRepresentation();
-        clientPublic.setEnabled(true);
-        clientPublic.setClientId("RegistrationAccessTokenTestPublic");
-        clientPublic.setPublicClient(true);
-        clientPublic.setRegistrationAccessToken("RegistrationAccessTokenTestRegistrationAccessTokenPublic");
-        clientPublic.setRootUrl("http://root");
-        clientPublic = createClient(clientPublic);
-        getCleanup().addClientUuid(clientPublic.getId());
+        String clientId = client.getId();
+        managedRealm.cleanup().add(r -> r.clients().get(clientId).remove());
     }
 
     @Test
@@ -101,11 +80,10 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
         assertEquals("RegistrationAccessTokenTestClientSecret", config.getCredentials().get("secret"));
 
         assertEquals(client.getClientId(), config.getResource());
-        if (AUTH_SERVER_SSL_REQUIRED) assertEquals(SslRequired.EXTERNAL.name().toLowerCase(), config.getSslRequired());
     }
 
     @Test
-    public void getConfigMissingSecret() throws ClientRegistrationException {
+    public void getConfigMissingSecret() {
         reg.auth(null);
 
         try {
@@ -118,6 +96,17 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
 
     @Test
     public void getConfigWrongClient() throws ClientRegistrationException {
+        ClientRepresentation client2 = ClientBuilder.create()
+                .enabled(true)
+                .clientId("RegistrationAccessTokenTest2")
+                .secret("RegistrationAccessTokenTestClientSecret")
+                .publicClient(false)
+                .registrationAccessToken("RegistrationAccessTokenTestRegistrationAccessToken")
+                .rootUrl("http://root")
+                .build();
+        client2 = createClient(client2);
+        String client2Id = client2.getId();
+        managedRealm.cleanup().add(r -> r.clients().get(client2Id).remove());
         reg.auth(Auth.client(client.getClientId(), client.getSecret()));
 
         try {
@@ -130,6 +119,17 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
 
     @Test
     public void getConfigPublicClient() throws ClientRegistrationException {
+        ClientRepresentation clientPublic = ClientBuilder.create()
+                .enabled(true)
+                .clientId("RegistrationAccessTokenTestPublic")
+                .publicClient(true)
+                .registrationAccessToken("RegistrationAccessTokenTestRegistrationAccessTokenPublic")
+                .rootUrl("http://root")
+                .build();
+        clientPublic = createClient(clientPublic);
+        String clientPublicId = clientPublic.getId();
+        managedRealm.cleanup().add(r -> r.clients().get(clientPublicId).remove());
+
         reg.auth(null);
 
         AdapterConfig config = reg.getAdapterConfig(clientPublic.getClientId());
@@ -140,7 +140,6 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
         assertEquals(0, config.getCredentials().size());
 
         assertEquals(clientPublic.getClientId(), config.getResource());
-        if (AUTH_SERVER_SSL_REQUIRED) assertEquals(SslRequired.EXTERNAL.name().toLowerCase(), config.getSslRequired());
     }
 
 }
