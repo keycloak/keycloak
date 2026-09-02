@@ -18,6 +18,7 @@
 package org.keycloak.testframework.realm;
 
 import java.util.HashMap;
+import java.util.Set;
 
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
@@ -89,8 +90,8 @@ public class IdentityProviderBuilder extends Builder<IdentityProviderRepresentat
         return this;
     }
 
-    public IdentityProviderBuilder organizationId(String organizationId) {
-        rep.setOrganizationId(organizationId);
+    public IdentityProviderBuilder organizationIds(Set<String> organizationIds) {
+        rep.setOrganizationIds(organizationIds);
         return this;
     }
 

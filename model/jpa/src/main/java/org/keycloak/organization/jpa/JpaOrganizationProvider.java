@@ -709,17 +709,11 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             return false;
         }
 
-        // TODO: remove this 1:1 check when M:N is fully supported
-        String existingOrgId = identityProvider.getOrganizationId();
-        if (existingOrgId != null) {
-            throw new ModelValidationException("Identity provider already associated with a different organization");
-        }
-
         OrganizationIdentityProviderEntity link = new OrganizationIdentityProviderEntity();
         link.setOrganization(organizationEntity);
         link.setIdentityProviderId(identityProvider.getInternalId());
         link.setAutoMembership(true);
-        link.setMembershipType("MANAGED");
+        link.setMembershipType("UNMANAGED");
         em.persist(link);
         organizationEntity.getIdentityProviderLinks().add(link);
 

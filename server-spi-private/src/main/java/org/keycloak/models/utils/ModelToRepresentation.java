@@ -1010,7 +1010,7 @@ public class ModelToRepresentation {
         }
 
         if (!export) {
-            providerRep.setOrganizationId(identityProviderModel.getOrganizationId());
+            providerRep.setOrganizationIds(identityProviderModel.getOrganizationIds());
         }
 
         List<IdentityProviderType> identityProviderTypes = IdentityProviderTypeUtil.listTypesFromFactory(session, identityProviderModel.getProviderId());

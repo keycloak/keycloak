@@ -18,6 +18,8 @@
 package org.keycloak.tests.organization.authz;
 
 
+import java.util.Set;
+
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -48,7 +50,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @KeycloakIntegrationTest
@@ -966,7 +968,7 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             IdentityProviderRepresentation idpRep = new IdentityProviderRepresentation();
             idpRep.setAlias("genericOrgBoundIdp");
             idpRep.setProviderId("oidc");
-            idpRep.setOrganizationId(orgId);
+            idpRep.setOrganizationIds(Set.of(orgId));
 
             try (Response response = viewOrgsManageIdpsResource.identityProviders().create(idpRep)) {
                 assertThat(response.getStatus(), equalTo(Status.CREATED.getStatusCode()));
@@ -975,17 +977,17 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
 
             IdentityProviderRepresentation created = viewOrgsManageIdpsResource
                     .identityProviders().get("genericOrgBoundIdp").toRepresentation();
-            assertNull(created.getOrganizationId(),
+            assertTrue(created.getOrganizationIds() == null || created.getOrganizationIds().isEmpty(),
                     "Generic IdP create should not bind the IdP to an organization");
 
-            // update the IdP via generic endpoint with organizationId set — binding should still be stripped
-            created.setOrganizationId(orgId);
+            // update the IdP via generic endpoint with organizationIds set — binding should still be stripped
+            created.setOrganizationIds(Set.of(orgId));
             created.getConfig().put(OrganizationModel.ORGANIZATION_ATTRIBUTE, orgId);
             viewOrgsManageIdpsResource.identityProviders().get("genericOrgBoundIdp").update(created);
 
             IdentityProviderRepresentation updated = viewOrgsManageIdpsResource
                     .identityProviders().get("genericOrgBoundIdp").toRepresentation();
-            assertNull(updated.getOrganizationId(),
+            assertTrue(updated.getOrganizationIds() == null || updated.getOrganizationIds().isEmpty(),
                     "Generic IdP update should not bind the IdP to an organization");
         }
 

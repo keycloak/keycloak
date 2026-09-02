@@ -37,7 +37,9 @@ import jakarta.persistence.Table;
 @NamedQueries({
         @NamedQuery(name = "deleteOrgIdpByRealm",
                 query = "delete from OrganizationIdentityProviderEntity oip " +
-                        "where oip.organization IN (select o from OrganizationEntity o where o.realmId = :realmId)")
+                        "where oip.organization IN (select o from OrganizationEntity o where o.realmId = :realmId)"),
+        @NamedQuery(name = "getOrganizationIdsByIdp",
+                query = "select oip.organization.id from OrganizationIdentityProviderEntity oip where oip.identityProviderId = :idpId")
 })
 public class OrganizationIdentityProviderEntity {
 
