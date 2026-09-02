@@ -62,6 +62,11 @@ public class WaitUtils {
     }
 
     public WaitUtils waitForPageReload(Runnable action) {
+        if (managed.getBrowserType().equals(BrowserType.HTML_UNIT)) {
+            action.run();
+            return this;
+        }
+
         WebElement body = managed.findElement(By.tagName("body"));
         action.run();
         createDefaultWait().until(ExpectedConditions.stalenessOf(body));
