@@ -7,12 +7,9 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.testframework.ui.page.AbstractPage;
 
 import org.junit.jupiter.api.Assertions;
-import org.openqa.selenium.By;
 import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 public class WaitUtils {
@@ -49,13 +46,6 @@ public class WaitUtils {
 
     public WaitUtils waitForTitle(String title) {
         createDefaultWait().until(d -> d.getTitle().equals(title));
-        return this;
-    }
-
-    public WaitUtils waitForPageReload(Runnable action) {
-        WebElement body = managed.findElement(By.tagName("body"));
-        action.run();
-        createDefaultWait().until(ExpectedConditions.stalenessOf(body));
         return this;
     }
 
