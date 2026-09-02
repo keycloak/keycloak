@@ -62,6 +62,8 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
 
     public static final String VERIFY_ACCOUNT_IDP_USERNAME = "VERIFY_ACCOUNT_IDP_USERNAME";
 
+    public static final String VERIFY_ACCOUNT_IDP_EXTERNAL_ID = "VERIFY_ACCOUNT_IDP_EXTERNAL_ID";
+
     public static final String IDP_LINK_CONFIRMATION_EMAIL_KEY = "IDP_LINK_CONFIRMATION_EMAIL_KEY";
 
     @Override
@@ -83,7 +85,8 @@ public class IdpEmailVerificationAuthenticator extends AbstractIdpAuthenticator 
             return;
         }
 
-        if (Objects.equals(authSession.getAuthNote(VERIFY_ACCOUNT_IDP_USERNAME), brokerContext.getUsername())) {
+        if (Objects.equals(authSession.getAuthNote(VERIFY_ACCOUNT_IDP_USERNAME), brokerContext.getUsername())
+                && Objects.equals(authSession.getAuthNote(VERIFY_ACCOUNT_IDP_EXTERNAL_ID), brokerContext.getBrokerUserId())) {
             UserModel existingUser = getExistingUser(session, realm, authSession);
 
             logger.debugf("User '%s' confirmed that wants to link with identity provider '%s' . Identity provider username is '%s' ", existingUser.getUsername(),
