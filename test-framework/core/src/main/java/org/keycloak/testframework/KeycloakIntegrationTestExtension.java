@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.InvocationInterceptor;
 import org.junit.jupiter.api.extension.ParameterContext;
@@ -17,7 +18,7 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 import org.junit.jupiter.api.extension.TestWatcher;
 
-public class KeycloakIntegrationTestExtension implements BeforeAllCallback, BeforeEachCallback, AfterEachCallback, AfterAllCallback, TestWatcher, InvocationInterceptor, ParameterResolver {
+public class KeycloakIntegrationTestExtension implements BeforeAllCallback, BeforeEachCallback, BeforeTestExecutionCallback, AfterEachCallback, AfterAllCallback, TestWatcher, InvocationInterceptor, ParameterResolver {
 
     @Override
     public void beforeAll(ExtensionContext context) {
@@ -30,6 +31,11 @@ public class KeycloakIntegrationTestExtension implements BeforeAllCallback, Befo
         getRegistry(context).beforeEach(context.getRequiredTestInstance(), context.getRequiredTestMethod());
         getLogHandler(context).beforeEachCompleted(context);
         DebugHelper.testStarted(context.getRequiredTestClass(), context.getRequiredTestMethod());
+    }
+
+    @Override
+    public void beforeTestExecution(ExtensionContext context) {
+        getRegistry(context).beforeTestExecution();
     }
 
     @Override

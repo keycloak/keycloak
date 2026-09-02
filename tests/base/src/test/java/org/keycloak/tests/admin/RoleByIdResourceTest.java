@@ -111,7 +111,6 @@ public class RoleByIdResourceTest {
                 .forEach(r -> roleIds.put(r.getName(), r.getId()));
 
         resource = managedRealm.admin().rolesById();
-        adminEvents.skipAll(); // Tested in RealmRolesTest already
     }
 
     @Test
