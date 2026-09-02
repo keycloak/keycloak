@@ -136,7 +136,7 @@ You can end your active sessions with a specific application directly from the *
 . Click *End application session* next to the application.
 . Click *Confirm* in the confirmation dialog.
 
-Your sessions with the application are ended, including any offline sessions, so the application can no longer access {project_name} on your behalf using previously issued tokens. If the application supports it, {project_name} also notifies the application. Because this does not sign you out from {project_name}, the application can sign you in again without asking for your credentials when you access it again. To fully sign out from all applications, use the *Sign out* action on the *Device activity* page instead.
+Your sessions with the application are ended, including any offline sessions. If the application supports it, {project_name} also notifies the application. Because this does not sign you out from {project_name}, the application can sign you in again without asking for your credentials when you access it again. To fully sign out from all applications, use the *Sign out* action on the *Device activity* page instead.
 
 Ending an application session does not revoke the access you granted to the application, so it can obtain new sessions the next time you use it. To revoke the granted access, use the *Remove access* action for the application.
 

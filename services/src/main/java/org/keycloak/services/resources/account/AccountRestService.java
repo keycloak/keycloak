@@ -412,7 +412,8 @@ public class AccountRestService {
         ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
             String msg = String.format("No client with clientId: %s found.", clientId);
-            event.error(msg);
+            event.detail(Details.REASON, msg);
+            event.error(Errors.CLIENT_NOT_FOUND);
             throw ErrorResponse.error(msg, Response.Status.NOT_FOUND);
         }
 
