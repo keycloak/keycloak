@@ -49,6 +49,7 @@ export const ContinueCancelModal = ({
         actions={[
           <Button
             id="modal-confirm"
+            data-testid="confirm"
             key="confirm"
             variant="primary"
             onClick={() => {
@@ -60,6 +61,7 @@ export const ContinueCancelModal = ({
           </Button>,
           <Button
             id="modal-cancel"
+            data-testid="cancel"
             key="cancel"
             variant="secondary"
             onClick={() => setOpen(false)}

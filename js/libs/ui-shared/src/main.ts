@@ -91,6 +91,10 @@ export { PaginatingTableToolbar } from "./controls/table/PaginatingTableToolbar"
 export { TableToolbar } from "./controls/table/TableToolbar";
 export { ListEmptyState } from "./controls/table/ListEmptyState";
 export { KeycloakSpinner } from "./controls/KeycloakSpinner";
+export {
+  LoadingOverlay,
+  TableLoadingSkeleton,
+} from "./controls/LoadingOverlay";
 export { useFetch } from "./utils/useFetch";
 export {
   useErrorBoundary,

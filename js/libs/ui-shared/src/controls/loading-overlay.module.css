@@ -1,0 +1,34 @@
+.overlay {
+  position: relative;
+}
+
+.overlayBusy {
+  pointer-events: none;
+}
+
+.overlaySkeleton {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pf-v5-global--spacer--sm);
+  padding: var(--pf-v5-global--spacer--md);
+  background-color: var(
+    --pf-v5-c-page__main-section--m-light--BackgroundColor,
+    var(--pf-v5-global--BackgroundColor--100)
+  );
+}
+
+.skeletonRow {
+  display: flex;
+  gap: var(--pf-v5-global--spacer--md);
+}
+
+.skeletonCell {
+  flex: 1;
+}
+
+.skeletonCellWide {
+  flex: 2;
+}
