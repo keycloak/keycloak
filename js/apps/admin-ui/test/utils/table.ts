@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect } from "@playwright/test";
+import { waitForLoadingComplete } from "./loading.ts";
 
 // The realm list can load slowly while parallel workers create and delete realms.
 const TABLE_LOAD_TIMEOUT_MS = 15_000;
@@ -8,6 +9,7 @@ export async function searchItem(
   placeHolder: string,
   itemName: string,
 ) {
+  await waitForLoadingComplete(page);
   await page
     .locator("table tbody")
     // Use first() because some pages have multiple <tbody> elements (e.g. drag-and-drop rows).
@@ -15,6 +17,7 @@ export async function searchItem(
     .waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
   await page.getByPlaceholder(placeHolder).fill(itemName);
   await page.keyboard.press("Enter");
+  await waitForLoadingComplete(page);
 }
 
 export async function clearAllFilters(page: Page) {
@@ -26,6 +29,7 @@ function escapeRegex(value: string) {
 }
 
 export async function clickTableRowItem(page: Page, itemName: string) {
+  await waitForLoadingComplete(page);
   const tableBody = page.locator("table tbody");
   await tableBody
     // Use first() because some pages have multiple <tbody> elements (e.g. drag-and-drop rows).
@@ -73,6 +77,7 @@ export async function assertRowExists(
   itemName: string,
   exist = true,
 ) {
+  await waitForLoadingComplete(page);
   const row = page.locator("table tbody").getByRole("row", { name: itemName });
   if (exist) {
     await expect(row.first()).toBeVisible();
@@ -111,47 +116,14 @@ export async function clickTableToolbarItem(
     .getByRole("button", { name: itemName, exact: true })
     .or(toolbar.getByRole("link", { name: itemName, exact: true }))
     .first();
-  try {
-    await exactToolbarItem.waitFor({ state: "visible", timeout: 2_000 });
-    await exactToolbarItem.click();
-    return;
-  } catch {
-    // Fall through to partial name and overflow menu attempts.
-  }
-
-  const partialToolbarItem = toolbar
-    .getByRole("button", { name: itemName })
-    .or(toolbar.getByRole("link", { name: itemName }))
-    .first();
-  try {
-    await partialToolbarItem.waitFor({ state: "visible", timeout: 2_000 });
-    await partialToolbarItem.click();
-    return;
-  } catch {
-    // Fall through to overflow menu attempt.
-  }
-
-  const overflowKebab = toolbar.getByTestId("kebab");
-  if ((await overflowKebab.count()) > 0) {
-    await overflowKebab.click();
-    const exactMenuItem = page.getByRole("menuitem", {
-      name: itemName,
-      exact: true,
-    });
-    if ((await exactMenuItem.count()) > 0) {
-      await exactMenuItem.first().click();
-      return;
-    }
-    await page.getByRole("menuitem", { name: itemName }).first().click();
-    return;
-  }
-
-  throw new Error(`Toolbar item "${itemName}" not found`);
+  await exactToolbarItem.waitFor({ state: "visible", timeout: 2_000 });
+  await exactToolbarItem.click();
 }
 
 export async function getTableData(page: Page, name: string) {
   // Retry the complete data capture so the wait and read cannot race each other
   // during React re-renders that momentarily empty the table.
+  // getTableRows already waits for loading to complete.
   let tableData: string[][] = [];
   await expect
     .poll(
@@ -182,6 +154,7 @@ export async function assertTableRowsLength(
 }
 
 async function getTableRows(page: Page, name: string): Promise<Locator> {
+  await waitForLoadingComplete(page);
   const table = page
     .getByRole("grid")
     .and(page.getByLabel(name, { exact: true }));
@@ -245,4 +218,5 @@ export async function expandRow(page: Page, tableName: string, row: number) {
 
 export async function refreshTable(page: Page) {
   await page.getByTestId("refresh").click();
+  await waitForLoadingComplete(page);
 }

@@ -30,11 +30,8 @@ export default function WorkflowsSection() {
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
 
-  const [key, setKey] = useState(0);
-  const refresh = () => setKey(key + 1);
-
-  const [selectedWorkflow, setSelectedWorkflow] =
-    useState<WorkflowRepresentation>();
+  const [refreshSignal, setRefreshSignal] = useState(0);
+  const [togglingWorkflowId, setTogglingWorkflowId] = useState<string>();
 
   const loader = async () => {
     const workflows = await adminClient.workflows.find();
@@ -50,6 +47,7 @@ export default function WorkflowsSection() {
   const toggleEnabled = async (workflow: WorkflowRepresentation) => {
     const enabled = !(workflow.enabled ?? true);
     const workflowToUpdate = { ...workflow, enabled };
+    setTogglingWorkflowId(workflow.id);
     try {
       await adminClient.workflows.update(
         { id: workflow.id! },
@@ -60,11 +58,18 @@ export default function WorkflowsSection() {
         workflowToUpdate.enabled ? t("workflowEnabled") : t("workflowDisabled"),
         AlertVariant.success,
       );
-      refresh();
+      setRefreshSignal((signal) => signal + 1);
     } catch (error) {
       addError("workflowUpdateError", error);
+    } finally {
+      setTogglingWorkflowId(undefined);
     }
   };
+
+  const [selectedWorkflow, setSelectedWorkflow] =
+    useState<WorkflowRepresentation>();
+
+  const refresh = () => setRefreshSignal((signal) => signal + 1);
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "workflowDeleteConfirm",
@@ -95,7 +100,7 @@ export default function WorkflowsSection() {
       <PageSection variant="light" padding={{ default: "noPadding" }}>
         <DeleteConfirm />
         <KeycloakDataTable
-          key={key}
+          loader={{ signal: refreshSignal, loader }}
           toolbarItem={
             <Button
               data-testid="create-workflow"
@@ -130,10 +135,13 @@ export default function WorkflowsSection() {
               displayKey: "status",
               cellRenderer: (workflow: WorkflowRepresentation) => (
                 <Switch
+                  id={`toggle-enabled-${workflow.id}`}
                   data-testid={`toggle-enabled-${workflow.name}`}
                   label={t("enabled")}
                   labelOff={t("disabled")}
                   isChecked={workflow.enabled ?? true}
+                  isDisabled={togglingWorkflowId === workflow.id}
+                  aria-busy={togglingWorkflowId === workflow.id}
                   onChange={() => toggleEnabled(workflow)}
                 />
               ),
@@ -157,7 +165,6 @@ export default function WorkflowsSection() {
               },
             } as Action<WorkflowRepresentation>,
           ]}
-          loader={loader}
           ariaLabelKey="workflows"
           emptyState={
             <ListEmptyState

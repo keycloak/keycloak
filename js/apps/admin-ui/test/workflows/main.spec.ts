@@ -119,9 +119,7 @@ test.describe.serial("Workflow CRUD", () => {
     await expect(toggleLocator).toBeEnabled();
     await expect(toggleLocator).toBeChecked();
 
-    // Force click (ignores actionability—best for flaky React toggles)
-    // Without this, test fails intermittently waiting for the element to be actionable
-    await toggleLocator.click({ force: true, timeout: 5000 });
+    await toggleLocator.click();
 
     await assertNotificationMessage(page, workflowDisabledMessage);
     await expect(toggleLocator).not.toBeChecked();

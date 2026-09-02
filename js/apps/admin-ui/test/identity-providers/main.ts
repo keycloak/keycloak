@@ -1,6 +1,7 @@
 import { type Page, expect } from "@playwright/test";
 import { selectItem } from "../utils/form.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
+import { waitForLoadingComplete } from "../utils/loading.ts";
 import { SERVER_URL } from "../utils/constants.ts";
 
 const discoveryUrl = `${SERVER_URL}/realms/master/.well-known/openid-configuration`;
@@ -80,7 +81,7 @@ export async function createJwtAuthorizationGrantProviderKey(
   await clickProviderCard(page, providerName);
   await page.getByTestId("config.issuer").fill(issuer);
   await expect(page.getByTestId("config.useJwksUrl")).toBeChecked();
-  await page.getByTestId("config.useJwksUrl").click({ force: true });
+  await page.getByTestId("config.useJwksUrl").click();
   await expect(
     page.getByTestId("config.publicKeySignatureVerifierKeyId"),
   ).toBeVisible();
@@ -229,6 +230,7 @@ export async function clickSaveMapper(page: Page) {
       await expect(page).toHaveURL(/.*mappers$/);
     }
   }
+  await waitForLoadingComplete(page);
 }
 
 export async function clickCancelMapper(page: Page) {

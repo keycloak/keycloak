@@ -348,11 +348,11 @@ const SwitchRenderer = ({
       <DisableConfirm />
       <Controller
         name={clientPolicy.name!}
-        data-testid={`${clientPolicy.name!}-switch`}
         defaultValue={clientPolicy.enabled}
         control={form.control}
         render={({ field }) => (
           <Switch
+            data-testid={`${clientPolicy.name!}-switch`}
             label={t("enabled")}
             labelOff={t("disabled")}
             isChecked={field.value}
