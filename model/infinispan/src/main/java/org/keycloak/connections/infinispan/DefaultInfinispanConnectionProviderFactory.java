@@ -260,9 +260,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         // remove login-failure cache if V2 is active
         if (Profile.isFeatureEnabled(Profile.Feature.LOGIN_FAILURES_V2)) {
-            Arrays.stream(CLUSTERED_CACHE_NAMES)
-                    .filter(LOGIN_FAILURE_CACHE_NAME::equals)
-                    .forEach(holder.getNamedConfigurationBuilders()::remove);
+            holder.getNamedConfigurationBuilders().remove(LOGIN_FAILURE_CACHE_NAME);
         }
 
         StringBuilderWriter sw = new StringBuilderWriter();
