@@ -2702,6 +2702,76 @@ public class CIBATest extends AbstractClientPoliciesTest {
         }
     }
 
+    @Test
+    public void testTokenRedemptionFailsForBruteForceLockedUser() throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        RealmRepresentation realmRep = null;
+        RealmRepresentation backupRealm = null;
+        Boolean originalDirectAccessGrantsEnabled = null;
+        try {
+            final String username = "nutzername-rot";
+
+            clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), TEST_CLIENT_NAME);
+            clientRep = clientResource.toRepresentation();
+            originalDirectAccessGrantsEnabled = clientRep.isDirectAccessGrantsEnabled();
+            clientRep.setDirectAccessGrantsEnabled(true);
+            clientResource.update(clientRep);
+            prepareCIBASettings(clientResource, clientRep);
+            oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+
+            realmRep = managedRealm.admin().toRepresentation();
+            backupRealm = new RealmRepresentation();
+            backupRealm.setBruteForceProtected(realmRep.isBruteForceProtected());
+            backupRealm.setFailureFactor(realmRep.getFailureFactor());
+            backupRealm.setMaxDeltaTimeSeconds(realmRep.getMaxDeltaTimeSeconds());
+            realmRep.setBruteForceProtected(true);
+            realmRep.setFailureFactor(2);
+            realmRep.setMaxDeltaTimeSeconds(60);
+            managedRealm.admin().update(realmRep);
+
+            AuthenticationRequestAcknowledgement response =
+                    doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, "LOCKTEST");
+            assertThat(response.getStatusCode(), is(equalTo(200)));
+
+            TestAuthenticationChannelRequest testRequest = doAuthenticationChannelRequest("LOCKTEST");
+            doAuthenticationChannelCallback(testRequest);
+
+            List<UserRepresentation> users = managedRealm.admin().users().search(username);
+            assertThat(users.size(), is(1));
+            UserRepresentation user = users.get(0);
+
+            for (int i = 0; i < 3; i++) {
+                oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+                oauth.passwordGrantRequest(username, "wrongpassword").send();
+            }
+
+            Map<String, Object> attackInfo = managedRealm.admin().attackDetection().bruteForceUserStatus(user.getId());
+            assertThat((Boolean) attackInfo.get("disabled"), is(true));
+
+            oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+            AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
+            assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
+            assertThat(tokenRes.getError(), is(OAuthErrorException.INVALID_GRANT));
+        } finally {
+            List<UserRepresentation> usersToRestore = managedRealm.admin().users().search("nutzername-rot");
+            if (!usersToRestore.isEmpty()) {
+                managedRealm.admin().attackDetection().clearBruteForceForUser(usersToRestore.get(0).getId());
+            }
+            revertCIBASettings(clientResource, clientRep);
+            if (clientResource != null && clientRep != null && originalDirectAccessGrantsEnabled != null) {
+                clientRep.setDirectAccessGrantsEnabled(originalDirectAccessGrantsEnabled);
+                clientResource.update(clientRep);
+            }
+            if (realmRep != null && backupRealm != null) {
+                realmRep.setBruteForceProtected(backupRealm.isBruteForceProtected());
+                realmRep.setFailureFactor(backupRealm.getFailureFactor());
+                realmRep.setMaxDeltaTimeSeconds(backupRealm.getMaxDeltaTimeSeconds());
+                managedRealm.admin().update(realmRep);
+            }
+        }
+    }
+
     private void testBackchannelAuthenticationFlowNotRegisterSigAlgInAdvanceWithSignedAuthentication(String clientName, boolean useRequestUri, String requestedSigAlg, String sigAlg, int statusCode, String errorDescription) throws Exception {
         String clientId = createClientDynamically(clientName, (OIDCClientRepresentation clientRep) -> {
             List<String> grantTypes = Optional.ofNullable(clientRep.getGrantTypes()).orElse(new ArrayList<>());
