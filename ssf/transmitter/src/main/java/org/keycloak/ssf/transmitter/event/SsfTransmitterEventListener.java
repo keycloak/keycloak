@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import org.keycloak.events.Details;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventType;
