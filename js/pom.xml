@@ -19,7 +19,7 @@
         <module>apps/account-ui</module>
         <module>apps/admin-ui</module>
         <module>libs/keycloak-admin-client</module>
-        <module>libs/ui-shared</module>
+        <module>libs/ui-shared-pf6</module>
         <module>themes-vendor</module>
     </modules>
 

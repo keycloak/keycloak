@@ -57,7 +57,7 @@ const MobileLink = ({ title, onClick, testid }: MobileLinkProps) => {
         onOpenChange={(isOpen) => setOpen(isOpen)}
         toggle={(toggleRef) => (
           <MenuToggle
-            className="pf-v5-u-display-none-on-lg"
+            className="pf-v6-u-display-none-on-lg"
             ref={toggleRef}
             variant="plain"
             onClick={() => setOpen(!open)}
@@ -75,7 +75,7 @@ const MobileLink = ({ title, onClick, testid }: MobileLinkProps) => {
       <Button
         variant="link"
         onClick={onClick}
-        className="pf-v5-u-display-none pf-v5-u-display-inline-flex-on-lg"
+        className="pf-v6-u-display-none pf-v6-u-display-inline-flex-on-lg"
         data-testid={testid}
       >
         {title}
@@ -103,7 +103,7 @@ export const SigningIn = () => {
   ) => {
     const credential = credMetadata.credential;
     const maxWidth = {
-      "--pf-v5-u-max-width--MaxWidth": "300px",
+      "--pf-v6-u-max-width--MaxWidth": "300px",
     } as CSSProperties;
     const icon = credMetadata.iconLight || credMetadata.iconDark;
     const authenticatorProvider = credMetadata.infoProperties?.find(
@@ -126,9 +126,9 @@ export const SigningIn = () => {
             <DataListCell
               key="icon"
               data-testrole="icon"
-              className="pf-v5-c-data-list__cell pf-m-icon pf-v5-u-display-flex pf-v5-u-align-items-center pf-v5-u-pt-0"
+              className="pf-v6-c-data-list__cell pf-m-icon pf-v6-u-display-flex pf-v6-u-align-items-center pf-v6-u-pt-0"
             >
-              <div className="pf-v5-c-icon pf-m-xl">
+              <div className="pf-v6-c-icon pf-m-xl">
                 <picture>
                   {context.environment.darkMode && iconDarkSrc && (
                     <source
@@ -151,12 +151,12 @@ export const SigningIn = () => {
       <DataListCell
         key="title"
         data-testrole="label"
-        className="pf-v5-u-max-width pf-v5-u-pt-0"
+        className="pf-v6-u-max-width pf-v6-u-pt-0"
         style={maxWidth}
       >
         <div>{t(credential.userLabel) || t(credential.type as TFuncKey)}</div>
         {authenticatorProvider && (
-          <div className="pf-v5-u-color-200 pf-v5-u-font-size-sm">
+          <div className="pf-v6-u-color-200 pf-v6-u-font-size-sm">
             {authenticatorProvider}
           </div>
         )}
@@ -168,7 +168,7 @@ export const SigningIn = () => {
         <DataListCell
           key={"created" + credential.id}
           data-testrole="created-at"
-          className="pf-v5-u-pt-0"
+          className="pf-v6-u-pt-0"
         >
           <Trans
             i18nKey="credentialCreatedAt"
@@ -179,7 +179,7 @@ export const SigningIn = () => {
               ),
             }}
           >
-            <strong className="pf-v5-u-mr-md"></strong>
+            <strong className="pf-v6-u-mr-md"></strong>
           </Trans>
         </DataListCell>,
       );
@@ -209,11 +209,11 @@ export const SigningIn = () => {
               </p>
             )}
             {credMetadata.infoProperties && (
-              <Split className="pf-v5-u-mb-lg">
+              <Split className="pf-v6-u-mb-lg">
                 <SplitItem>
                   <InfoAltIcon />
                 </SplitItem>
-                <SplitItem isFilled className="pf-v5-u-ml-xs">
+                <SplitItem isFilled className="pf-v6-u-ml-xs">
                   <DescriptionList
                     isHorizontal
                     horizontalTermWidthModifier={{
@@ -281,7 +281,7 @@ export const SigningIn = () => {
   return (
     <Page title={t("signingIn")} description={t("signingInDescription")}>
       {credentialUniqueCategories.map((category) => (
-        <PageSection key={category} variant="light" className="pf-v5-u-px-0">
+        <PageSection hasBodyWrapper={false} key={category}  className="pf-v6-u-px-0">
           <Title headingLevel="h2" size="xl" id={`${category}-categ-title`}>
             {t(category as TFuncKey)}
           </Title>
@@ -289,16 +289,16 @@ export const SigningIn = () => {
             .filter((cred) => cred.category == category)
             .map((container) => (
               <Fragment key={container.type}>
-                <Split className="pf-v5-u-mt-lg pf-v5-u-mb-lg">
+                <Split className="pf-v6-u-mt-lg pf-v6-u-mb-lg">
                   <SplitItem>
                     <Title
                       headingLevel="h3"
                       size="md"
-                      className="pf-v5-u-mb-md"
+                      className="pf-v6-u-mb-md"
                       data-testid={`${container.type}/help`}
                     >
                       <span
-                        className="cred-title pf-v5-u-display-block"
+                        className="cred-title pf-v6-u-display-block"
                         data-testid={`${container.type}/title`}
                       >
                         {t(container.displayName as TFuncKey)}
@@ -310,7 +310,7 @@ export const SigningIn = () => {
                   </SplitItem>
                   {container.createAction && (
                     <SplitItem isFilled>
-                      <div className="pf-v5-u-float-right">
+                      <div className="pf-v6-u-float-right">
                         <MobileLink
                           onClick={() =>
                             login({
@@ -331,7 +331,7 @@ export const SigningIn = () => {
 
                 <DataList
                   aria-label="credential list"
-                  className="pf-v5-u-mb-xl"
+                  className="pf-v6-u-mb-xl"
                   data-testid={`${container.type}/credential-list`}
                 >
                   {container.userCredentialMetadatas.length === 0 && (
@@ -347,7 +347,7 @@ export const SigningIn = () => {
                     <DataListItem key={meta.credential.id}>
                       <DataListItemRow id={`cred-${meta.credential.id}`}>
                         <DataListItemCells
-                          className="pf-v5-u-py-0 pf-v5-u-align-items-center"
+                          className="pf-v6-u-py-0 pf-v6-u-align-items-center"
                           dataListCells={[
                             ...credentialRowCells(
                               meta,

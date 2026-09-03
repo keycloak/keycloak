@@ -3,21 +3,20 @@ import {
   useEnvironment,
 } from "@keycloak/keycloak-ui-shared";
 import {
-  Button,
-  Chip,
-  ChipGroup,
-  Dropdown,
-  DropdownItem,
-  DropdownList,
-  MenuToggle,
-  OverflowMenu,
-  OverflowMenuContent,
-  OverflowMenuControl,
-  OverflowMenuDropdownItem,
-  OverflowMenuGroup,
-  OverflowMenuItem,
-  Spinner,
-} from "@patternfly/react-core";
+	Label, LabelGroup, Button,
+	Dropdown,
+	DropdownItem,
+	DropdownList,
+	MenuToggle,
+	OverflowMenu,
+	OverflowMenuContent,
+	OverflowMenuControl,
+	OverflowMenuDropdownItem,
+	OverflowMenuGroup,
+	OverflowMenuItem,
+	Spinner
+} from '@patternfly/react-core';
+
 import {
   EditAltIcon,
   EllipsisVIcon,
@@ -231,13 +230,13 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
               {isShared ? (
                 <Td>
                   {resource.scopes.length > 0 && (
-                    <ChipGroup categoryName={t("permissions")}>
+                    <LabelGroup categoryName={t("permissions")}>
                       {resource.scopes.map((scope) => (
-                        <Chip key={scope.name} isReadOnly>
+                        <Label variant="outline" key={scope.name} >
                           {scope.displayName || scope.name}
-                        </Chip>
+                        </Label>
                       ))}
-                    </ChipGroup>
+                    </LabelGroup>
                   )}
                 </Td>
               ) : (
@@ -246,14 +245,14 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
                     <OverflowMenuContent>
                       <OverflowMenuGroup groupType="button">
                         <OverflowMenuItem>
-                          <Button
+                          <Button icon={<ShareAltIcon />}
                             data-testid={`share-${resource.name}`}
                             variant="link"
                             onClick={() =>
                               toggleOpen(resource._id, "shareDialogOpen", true)
                             }
                           >
-                            <ShareAltIcon /> {t("share")}
+                             {t("share")}
                           </Button>
                         </OverflowMenuItem>
                         <OverflowMenuItem>

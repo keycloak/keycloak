@@ -1,7 +1,7 @@
 {
   "themes": [
     {
-      "name": "keycloak.v3",
+      "name": "keycloak.v4",
       "types": [
         "account"
       ]
