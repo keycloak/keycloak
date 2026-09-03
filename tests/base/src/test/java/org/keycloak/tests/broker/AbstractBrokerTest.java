@@ -22,6 +22,7 @@ import org.keycloak.testframework.ui.page.IdpReviewUserProfilePage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.AccountHelper;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -73,6 +74,44 @@ public abstract class AbstractBrokerTest {
             if (UserModel.RequiredAction.VERIFY_PROFILE.name().equals(action.getAlias())) {
                 action.setEnabled(false);
                 getProviderRealm().admin().flows().updateRequiredAction(action.getAlias(), action);
+            }
+        }
+    }
+
+    // Tests that map custom claims onto user attributes (e.g. IdP mappers writing a non-standard
+    // attribute) need the declarative user profile to accept attributes outside its managed schema,
+    // otherwise they're silently dropped when the user is created or later updated (e.g. by the
+    // first-broker-login review-profile form).
+    @BeforeEach
+    void enableUnmanagedAttributes() {
+        UserProfileUtil.enableUnmanagedAttributes(getConsumerRealm().admin().users().userProfile());
+        UserProfileUtil.enableUnmanagedAttributes(getProviderRealm().admin().users().userProfile());
+    }
+
+    // Turns off the first-broker-login review-profile step for flows that want to test something else
+    // without the review-profile page interrupting the redirect back to the consumer. Disabling the flow
+    // execution alone isn't enough: the new-testsuite consumer realm enables the VERIFY_PROFILE required
+    // action by default, which would still intercept the incomplete imported user (the provider user has
+    // no first/last name on purpose), so that is disabled too, mirroring the legacy suite (which never
+    // enabled VERIFY_PROFILE at all).
+    protected void disableUpdateProfileOnFirstLogin() {
+        var flows = getConsumerRealm().admin().flows();
+        for (AuthenticationExecutionInfoRepresentation execution :
+                flows.getExecutions(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW)) {
+            if (IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID.equals(execution.getProviderId())) {
+                execution.setRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE.name());
+                flows.updateExecutions(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW, execution);
+            } else if (execution.getAlias() != null
+                    && execution.getAlias().equals(DefaultAuthenticationFlows.IDP_REVIEW_PROFILE_CONFIG_ALIAS)) {
+                AuthenticatorConfigRepresentation config = flows.getAuthenticatorConfig(execution.getAuthenticationConfig());
+                config.getConfig().put("update.profile.on.first.login", IdentityProviderRepresentation.UPFLM_OFF);
+                flows.updateAuthenticatorConfig(config.getId(), config);
+            }
+        }
+        for (RequiredActionProviderRepresentation action : getConsumerRealm().admin().flows().getRequiredActions()) {
+            if (UserModel.RequiredAction.VERIFY_PROFILE.name().equals(action.getAlias())) {
+                action.setEnabled(false);
+                getConsumerRealm().admin().flows().updateRequiredAction(action.getAlias(), action);
             }
         }
     }

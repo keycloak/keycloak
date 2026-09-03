@@ -1,86 +1,51 @@
-package org.keycloak.testsuite.broker;
+package org.keycloak.tests.broker.saml;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.keycloak.models.IdentityProviderSyncMode;
+import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.KeysMetadataRepresentation.KeyMetadataRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.tests.broker.AbstractKcSamlBrokerTest;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_SAML_SIGN_CERT;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_SAML_SIGN_KEY;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PRIVATE_KEY;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PUBLIC_KEY;
+import org.junit.jupiter.api.BeforeEach;
 
-public class KcSamlSignedDocumentOnlyBrokerTest extends AbstractBrokerTest {
+@KeycloakIntegrationTest
+public class KcSamlSignedDocumentOnlyBrokerTest extends AbstractKcSamlBrokerTest {
 
-    public static class KcSamlSignedBrokerConfiguration extends KcSamlBrokerConfiguration {
+    @BeforeEach
+    void configureSignedDocumentOnly() {
+        String providerSigningCert = activeRs256SigCert(providerRealm);
+        String consumerSigningCert = activeRs256SigCert(consumerRealm);
 
-        @Override
-        public RealmRepresentation createProviderRealm() {
-            RealmRepresentation realm = super.createProviderRealm();
+        String samlClientId = "http://localhost:8080/realms/" + CONSUMER_REALM;
+        ClientRepresentation client = providerRealm.admin().clients().findByClientId(samlClientId).get(0);
+        client.getAttributes().put(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, "false");
+        client.getAttributes().put(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "true");
+        client.getAttributes().put(SamlConfigAttributes.SAML_SIGNATURE_ALGORITHM, "RSA_SHA256");
+        // Require and validate the consumer's signature on incoming AuthnRequests.
+        client.getAttributes().put(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "true");
+        client.getAttributes().put(SamlConfigAttributes.SAML_SIGNING_CERTIFICATE_ATTRIBUTE, consumerSigningCert);
+        providerRealm.admin().clients().get(client.getId()).update(client);
 
-            realm.setPublicKey(REALM_PUBLIC_KEY);
-            realm.setPrivateKey(REALM_PRIVATE_KEY);
-
-            return realm;
-        }
-
-        @Override
-        public RealmRepresentation createConsumerRealm() {
-            RealmRepresentation realm = super.createConsumerRealm();
-
-            realm.setPublicKey(REALM_PUBLIC_KEY);
-            realm.setPrivateKey(REALM_PRIVATE_KEY);
-
-            return realm;
-        }
-
-        @Override
-        public List<ClientRepresentation> createProviderClients() {
-            List<ClientRepresentation> clientRepresentationList = super.createProviderClients();
-
-            for (ClientRepresentation client : clientRepresentationList) {
-                client.setClientAuthenticatorType("client-secret");
-                client.setSurrogateAuthRequired(false);
-
-                Map<String, String> attributes = client.getAttributes();
-                if (attributes == null) {
-                    attributes = new HashMap<>();
-                    client.setAttributes(attributes);
-                }
-
-                attributes.put("saml.assertion.signature", "false");
-                attributes.put("saml.server.signature", "true");
-                attributes.put("saml.client.signature", "true");
-                attributes.put("saml.signature.algorithm", "RSA_SHA256");
-                attributes.put("saml.signing.private.key", IDP_SAML_SIGN_KEY);
-                attributes.put("saml.signing.certificate", IDP_SAML_SIGN_CERT);
-            }
-
-            return clientRepresentationList;
-        }
-
-        @Override
-        public IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode syncMode) {
-            IdentityProviderRepresentation result = super.setUpIdentityProvider(syncMode);
-
-            Map<String, String> config = result.getConfig();
-
-            config.put("validateSignature", "true");
-            config.put("wantAssertionsSigned", "false");
-            config.put("wantAuthnRequestsSigned", "true");
-            config.put("signingCertificate", IDP_SAML_SIGN_CERT);
-
-            return result;
-        }
+        IdentityProviderRepresentation idp = consumerRealm.admin()
+                .identityProviders().get(getIdpAlias()).toRepresentation();
+        idp.getConfig().put(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "true");
+        idp.getConfig().put(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, "false");
+        idp.getConfig().put(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, providerSigningCert);
+        // Sign the AuthnRequests sent to the provider so it can validate them.
+        idp.getConfig().put(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, "true");
+        consumerRealm.admin().identityProviders().get(getIdpAlias()).update(idp);
     }
 
-    @Override
-    protected BrokerConfiguration getBrokerConfiguration() {
-        return KcSamlSignedBrokerConfiguration.INSTANCE;
+    private static String activeRs256SigCert(ManagedRealm realm) {
+        return realm.admin().keys().getKeyMetadata().getKeys().stream()
+                .filter(k -> k.getCertificate() != null && KeyUse.SIG.equals(k.getUse())
+                        && Algorithm.RS256.equals(k.getAlgorithm()))
+                .map(KeyMetadataRepresentation::getCertificate)
+                .findFirst().orElseThrow();
     }
-
 }
