@@ -1307,8 +1307,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
                 MailServerConfiguration.FROM, bc.getUserEmail(),
                 "Someone wants to link your ");
 
-        // At this point, Alice's verification is pending with specific external ID
-        // stored in the token (from bc.getUserLogin() which represents the external IdP username)
+        // At this point, Alice's verification is pending with the external user id
+        // stored in the token; bc.getUserLogin() is the external IdP username, not that id.
 
         // Verify Alice is not linked yet
         assertNumFederatedIdentities(aliceUserId, 0);
