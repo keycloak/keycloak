@@ -211,6 +211,12 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
+    public boolean updateMembershipType(OrganizationModel organization, UserModel member, MembershipType membershipType) {
+        registerMemberInvalidation(organization, member);
+        return getDelegate().updateMembershipType(organization, member, membershipType);
+    }
+
+    @Override
     public Stream<UserModel> getMembersStream(OrganizationModel organization, String search, Boolean exact, Integer first, Integer max) {
         Map<String, String> filters = Optional.ofNullable(search)
                 .map(value -> Map.of(UserModel.SEARCH, value))
