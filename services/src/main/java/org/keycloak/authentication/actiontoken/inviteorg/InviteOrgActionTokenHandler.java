@@ -142,6 +142,8 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
             return disabledOrganizationResponse(tokenContext, token);
         }
 
+        session.getContext().setOrganization(organization);
+
         if (organization.isMember(user)) {
             return alreadyMemberResponse(organization, user, tokenContext, token);
         }
