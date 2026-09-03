@@ -30,6 +30,12 @@ When upgrading {project_name} with large database tables, index creation was pre
 
 {project_name} now automatically creates skipped indexes in the background after startup using non-blocking index creation on PostgreSQL, Oracle, MySQL/MariaDB, and supported Microsoft SQL Server editions. Invalid PostgreSQL indexes left by failed previous attempts are detected and recreated automatically. On databases without non-blocking support, {project_name} continues to log the SQL for manual execution.
 
+== Experimental Helm Chart Operator install
+
+{project_name} now releases an experimental Helm chart to install the Operator.
+
+For installation instructions, see the link:{operatorguide_link}[{operatorguide_name}].
+
 = Themes
 
 == Redesigned identity provider buttons on the login page
