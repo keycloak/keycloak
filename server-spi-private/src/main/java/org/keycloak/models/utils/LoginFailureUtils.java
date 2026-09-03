@@ -29,7 +29,7 @@ public class LoginFailureUtils {
      * Compute the expiration time cut-off in milliseconds for expiring login failure entries.
      *
      * @param realm current realm
-     * @param currentTime current timestamp in seconds since last epoc
+     * @param currentTime current timestamp in seconds since last epoch
      * @return Timestamp in milliseconds, or -1L if the realm will never expire.
      */
     public static long computeExpirationCutOffTimestamp(RealmModel realm, long currentTime) {
