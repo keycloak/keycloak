@@ -31,11 +31,11 @@ public class LoginUsernamePage extends AbstractLoginPage {
     }
 
     public String getUsername() {
-        return usernameInput.getAttribute("value");
+        return usernameInput.getDomProperty("value");
     }
 
     public String getUsernameAutocomplete() {
-        return usernameInput.getDomAttribute("autocomplete");
+        return usernameInput.getDomProperty("autocomplete");
     }
 
     public String getUsernameInputError() {
@@ -47,7 +47,7 @@ public class LoginUsernamePage extends AbstractLoginPage {
     }
 
     public void submit() {
-        driver.waiting().waitForPageReload(() -> submitButton.click());
+        submitButton.click();
     }
 
     @Override

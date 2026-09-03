@@ -17,38 +17,43 @@
  *
  */
 
-package org.keycloak.testsuite.providers;
-
-import java.util.List;
+package org.keycloak.tests.providers;
 
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.authenticators.directgrant.ValidateOTP;
 import org.keycloak.authentication.authenticators.directgrant.ValidatePassword;
 import org.keycloak.authentication.authenticators.directgrant.ValidateUsername;
 import org.keycloak.email.EmailSenderProvider;
-import org.keycloak.examples.providersoverride.CustomDefaultEmailSenderProvider2;
-import org.keycloak.examples.providersoverride.CustomLoginFormsProvider;
-import org.keycloak.examples.providersoverride.CustomValidatePassword2;
-import org.keycloak.examples.providersoverride.CustomValidateUsername;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.provider.Provider;
-import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.providers.runonserver.FetchOnServer;
-import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.tests.common.CustomProvidersServerConfig;
+import org.keycloak.tests.providers.providersoverride.CustomDefaultEmailSenderProvider2;
+import org.keycloak.tests.providers.providersoverride.CustomLoginFormsProvider;
+import org.keycloak.tests.providers.providersoverride.CustomValidatePassword2;
+import org.keycloak.tests.providers.providersoverride.CustomValidateUsername;
 
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
- * Test for having multiple providerFactory of smae SPI with same providerId
- * 
+ * Test for having multiple providerFactory of same SPI with same providerId
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ProvidersOverrideTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest(config = CustomProvidersServerConfig.class)
+public class ProvidersOverrideTest {
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-    }
+    @InjectRealm(attachTo = "master", ref = "master")
+    ManagedRealm masterRealm;
+
+    @InjectRunOnServer(ref = "master", realmRef = "master")
+    RunOnServerClient runOnServerMaster;
 
     @Test
     public void testBuiltinAuthenticatorsOverride() {

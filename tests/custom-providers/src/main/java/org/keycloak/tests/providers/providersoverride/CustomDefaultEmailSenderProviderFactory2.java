@@ -17,18 +17,24 @@
  *
  */
 
-package org.keycloak.examples.providersoverride;
+package org.keycloak.tests.providers.providersoverride;
 
-import org.keycloak.authentication.authenticators.directgrant.ValidateOTP;
+import org.keycloak.email.DefaultEmailSenderProviderFactory;
+import org.keycloak.email.EmailSenderProvider;
+import org.keycloak.models.KeycloakSession;
 
 /**
- * Overrides built-in, but should not be called due the different order
- *
+ * Test for order (This one should be called in favour of DefaultEmailSenderProviderFactory and CustomDefaultEmailSenderProviderFactory1 as it has the highest order)
  */
-public class CustomValidateOTP extends ValidateOTP {
+public class CustomDefaultEmailSenderProviderFactory2 extends DefaultEmailSenderProviderFactory {
 
     @Override
     public int order() {
-        return -1;
+        return 2;
+    }
+
+    @Override
+    public EmailSenderProvider create(KeycloakSession session) {
+        return new CustomDefaultEmailSenderProvider2(session, getEmailAuthenticators());
     }
 }

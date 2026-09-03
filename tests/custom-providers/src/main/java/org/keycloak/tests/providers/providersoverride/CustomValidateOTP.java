@@ -17,20 +17,18 @@
  *
  */
 
-package org.keycloak.examples.providersoverride;
+package org.keycloak.tests.providers.providersoverride;
 
-import java.util.Map;
-
-import org.keycloak.email.DefaultEmailSenderProvider;
-import org.keycloak.email.EmailAuthenticator;
-import org.keycloak.models.KeycloakSession;
+import org.keycloak.authentication.authenticators.directgrant.ValidateOTP;
 
 /**
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * Overrides built-in, but should not be called due the different order
+ *
  */
-public class CustomDefaultEmailSenderProvider1 extends DefaultEmailSenderProvider {
+public class CustomValidateOTP extends ValidateOTP {
 
-    public CustomDefaultEmailSenderProvider1(KeycloakSession session, Map<EmailAuthenticator.AuthenticatorType, EmailAuthenticator> authenticators) {
-        super(session, authenticators);
+    @Override
+    public int order() {
+        return -1;
     }
 }

@@ -354,12 +354,14 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     }
   }, [parameterType]);
 
-  /* Form-level validation handles correctness; here we only prune known optional
+  /* Form-level validation handles correctness; here we only normalize known optional
        OID4VC fields when empty. If new attributes are added, extend
        OID4VC_ATTRIBUTE_KEYS (and related validation) so they participate in cleanup. */
   const onSubmit = (values: ClientScopeDefaultOptionalType) => {
     const isOid4vc = values.protocol === OID4VC_PROTOCOL;
-    const cleaned = isOid4vc ? removeEmptyOid4vcAttributes(values) : values;
+    const cleaned = isOid4vc
+      ? removeEmptyOid4vcAttributes(values, clientScope !== undefined)
+      : values;
     save(cleaned);
   };
 

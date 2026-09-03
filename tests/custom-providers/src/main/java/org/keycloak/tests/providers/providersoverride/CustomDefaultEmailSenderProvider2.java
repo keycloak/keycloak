@@ -17,7 +17,7 @@
  *
  */
 
-package org.keycloak.examples.providersoverride;
+package org.keycloak.tests.providers.providersoverride;
 
 import java.util.Map;
 
