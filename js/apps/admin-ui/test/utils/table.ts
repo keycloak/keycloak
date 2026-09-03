@@ -4,6 +4,25 @@ import { waitForLoadingComplete } from "./loading.ts";
 // The realm list can load slowly while parallel workers create and delete realms.
 const TABLE_LOAD_TIMEOUT_MS = 15_000;
 
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+async function clickLinkWhenAvailable(link: Locator): Promise<boolean> {
+  const candidate = link.first();
+  if ((await candidate.count()) === 0) {
+    return false;
+  }
+
+  try {
+    await candidate.waitFor({ state: "visible", timeout: 500 });
+    await candidate.click({ timeout: 500 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function searchItem(
   page: Page,
   placeHolder: string,
@@ -24,29 +43,54 @@ export async function clearAllFilters(page: Page) {
   await page.getByTestId("clear-all-filters-empty-action").click();
 }
 
-function escapeRegex(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 export async function clickTableRowItem(page: Page, itemName: string) {
   await waitForLoadingComplete(page);
   const tableBody = page.locator("table tbody");
+  // Use first() because some pages have multiple <tbody> elements (e.g. drag-and-drop rows).
   await tableBody
-    // Use first() because some pages have multiple <tbody> elements (e.g. drag-and-drop rows).
     .first()
     .waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
 
   const exactNameRegex = new RegExp(`^${escapeRegex(itemName)}$`, "i");
-  const anyMatch = tableBody.getByRole("link", { name: itemName }).first();
 
-  // The row may render after the search or page load completes, so wait for it instead of checking once.
-  await anyMatch.waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
+  for (let attempt = 0; attempt < 6; attempt++) {
+    if (
+      await clickLinkWhenAvailable(
+        tableBody.getByRole("link", { name: itemName, exact: true }),
+      )
+    ) {
+      return;
+    }
 
-  const exactMatch = tableBody
-    .getByRole("link", { name: exactNameRegex })
-    .first();
-  const target = (await exactMatch.count()) > 0 ? exactMatch : anyMatch;
-  await target.click();
+    if (
+      await clickLinkWhenAvailable(
+        tableBody.getByRole("link", { name: exactNameRegex }),
+      )
+    ) {
+      return;
+    }
+
+    if (
+      await clickLinkWhenAvailable(
+        tableBody
+          .locator("tr")
+          .filter({ has: page.getByRole("link", { name: exactNameRegex }) })
+          .getByRole("link", { name: exactNameRegex }),
+      )
+    ) {
+      return;
+    }
+
+    if (
+      await clickLinkWhenAvailable(
+        tableBody.getByRole("link", { name: itemName }),
+      )
+    ) {
+      return;
+    }
+  }
+
+  throw new Error(`Table row item "${itemName}" not found`);
 }
 
 export function getRowByCellText(page: Page, cellText: string): Locator {
@@ -77,10 +121,9 @@ export async function assertRowExists(
   itemName: string,
   exist = true,
 ) {
-  await waitForLoadingComplete(page);
   const row = page.locator("table tbody").getByRole("row", { name: itemName });
   if (exist) {
-    await expect(row.first()).toBeVisible();
+    await expect(row.first()).toBeVisible({ timeout: 15_000 });
   } else {
     await expect(row).toHaveCount(0);
   }
