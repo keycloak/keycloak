@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @Deprecated
 public abstract class AbstractPatternFlyAlert {
-    public static final String ALERT_CLASS_NAME = "pf-v5-c-alert";
+    public static final String ALERT_CLASS_NAME = "pf-v6-c-alert";
 
     protected final Logger log = Logger.getLogger(this.getClass());
 
