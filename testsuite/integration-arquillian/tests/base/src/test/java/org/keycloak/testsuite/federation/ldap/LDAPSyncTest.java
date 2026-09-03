@@ -730,4 +730,70 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             ctx.getRealm().updateComponent(mapperModel);
         });
     }
+
+    // Test for issue #52293 - LDAP sync should return error on authentication failure
+    @Test
+    public void testSyncWithInvalidBindCredentials() {
+        // Store original bind credentials
+        ComponentRepresentation ldapRep = managedRealm.admin().components().component(ldapModelId).toRepresentation();
+        String originalBindCredential = ldapRep.getConfig().getFirst(LDAPConstants.BIND_CREDENTIAL);
+
+        try {
+            // Update bind credentials to incorrect value
+            ldapRep.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, "wrongPassword123!");
+            managedRealm.admin().components().component(ldapModelId).update(ldapRep);
+
+            // Trigger full sync via Admin REST API - should fail with BadRequestException (not 200 OK)
+            try {
+                SynchronizationResultRepresentation syncResultRep = managedRealm.admin().userStorage().syncUsers(ldapModelId, "triggerFullSync");
+                Assertions.fail("Sync should have failed with authentication error (HTTP 400), but returned success: " + syncResultRep);
+            } catch (BadRequestException e) {
+                // Expected - authentication failure should return 400 Bad Request, not 200 OK
+            }
+
+            // Also verify periodic sync fails the same way
+            try {
+                SynchronizationResultRepresentation syncResultRep = managedRealm.admin().userStorage().syncUsers(ldapModelId, "triggerChangedUsersSync");
+                Assertions.fail("Periodic sync should have failed with authentication error (HTTP 400)");
+            } catch (BadRequestException e) {
+                // Expected
+            }
+
+        } finally {
+            // Restore correct credentials for subsequent tests
+            if (originalBindCredential != null) {
+                ldapRep.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, originalBindCredential);
+                managedRealm.admin().components().component(ldapModelId).update(ldapRep);
+            }
+        }
+    }
+
+    // Test for issue #52293 - LDAP sync should return error when LDAP server is unreachable
+    @Test
+    public void testSyncWithUnreachableLDAPServer() {
+        // Store original connection URL
+        ComponentRepresentation ldapRep = managedRealm.admin().components().component(ldapModelId).toRepresentation();
+        String originalConnectionUrl = ldapRep.getConfig().getFirst(LDAPConstants.CONNECTION_URL);
+
+        try {
+            // Update connection URL to unreachable server
+            ldapRep.getConfig().putSingle(LDAPConstants.CONNECTION_URL, "ldap://unreachable.invalid:389");
+            managedRealm.admin().components().component(ldapModelId).update(ldapRep);
+
+            // Trigger full sync via Admin REST API - should fail with BadRequestException (not 200 OK)
+            try {
+                SynchronizationResultRepresentation syncResultRep = managedRealm.admin().userStorage().syncUsers(ldapModelId, "triggerFullSync");
+                Assertions.fail("Sync should have failed with communication error (HTTP 400), but returned success: " + syncResultRep);
+            } catch (BadRequestException e) {
+                // Expected - connection failure should return 400 Bad Request, not 200 OK
+            }
+
+        } finally {
+            // Restore correct connection URL for subsequent tests
+            if (originalConnectionUrl != null) {
+                ldapRep.getConfig().putSingle(LDAPConstants.CONNECTION_URL, originalConnectionUrl);
+                managedRealm.admin().components().component(ldapModelId).update(ldapRep);
+            }
+        }
+    }
 }
