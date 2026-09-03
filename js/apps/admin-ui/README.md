@@ -66,10 +66,10 @@ These test-only variables are different from server bootstrap variables such as 
 Async UI in the admin console exposes stable loading signals for E2E tests:
 
 - `data-testid="loading-spinner"` — present on the loading overlay while a section or table is fetching (`LoadingOverlay` skeleton).
-- `aria-busy="true"` — set on `LoadingOverlay` containers during fetch.
+- `aria-busy="true"` — set on `LoadingOverlay` containers during fetch (same window as the spinner).
 - `data-testid="table-ready"` — set on `KeycloakDataTable` when the current fetch has completed.
 
-Use `waitForLoadingComplete` from `test/utils/loading.ts` before interacting with tables or forms inside a loading scope:
+Use `waitForLoadingComplete` from `test/utils/loading.ts` before interacting with tables or forms inside a loading scope. It waits until all `loading-spinner` markers are absent (not every `aria-busy` on the page, since save buttons and switches may use that attribute independently):
 
 ```ts
 import { waitForLoadingComplete } from "./utils/loading.ts";
