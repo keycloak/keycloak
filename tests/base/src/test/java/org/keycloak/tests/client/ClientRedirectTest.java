@@ -34,8 +34,6 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.injection.LifeCycle;
-import org.keycloak.testframework.oauth.OAuthClient;
-import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
@@ -60,19 +58,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @KeycloakIntegrationTest
 public class ClientRedirectTest extends AbstractClientRegistrationTest {
 
-    @InjectRealm(ref = "redirect", config = ClientRedirectRealmConfig.class)
+    @InjectRealm(config = ClientRedirectRealmConfig.class)
     ManagedRealm managedRealm;
 
-    @InjectUser(config = BasicUserConfig.class, realmRef = "redirect")
+    @InjectUser(config = BasicUserConfig.class)
     ManagedUser managedUser;
 
     @InjectWebDriver(lifecycle = LifeCycle.METHOD)
     ManagedWebDriver driver;
 
-    @InjectOAuthClient(ref = "redirect-oauth", realmRef = "redirect", lifecycle = LifeCycle.METHOD)
-    OAuthClient oauth;
-
-    @InjectEvents(realmRef = "redirect")
+    @InjectEvents
     Events events;
     
     @InjectSimpleHttp
