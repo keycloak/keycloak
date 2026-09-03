@@ -10,6 +10,7 @@
 
 package org.keycloak.tests.scim.tck;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -18,7 +19,10 @@ import java.util.function.Function;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
@@ -105,6 +109,15 @@ public abstract class AbstractScimTest {
 
     protected ClientRepresentation createScimClient(String clientId) {
         return createScimClient(realm.getName(), clientId);
+    }
+
+    protected String getScimClientToken(SimpleHttp http) throws IOException {
+        return http.doPost(keycloakUrls.getToken(realm.getName()))
+                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS)
+                .param(OAuth2Constants.CLIENT_ID, "scim-client")
+                .param(OAuth2Constants.CLIENT_SECRET, "secret")
+                .asJson(AccessTokenResponse.class)
+                .getToken();
     }
 
     protected ClientRepresentation createScimClient(String realm, String clientId) {
