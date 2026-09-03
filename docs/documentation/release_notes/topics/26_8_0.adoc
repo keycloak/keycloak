@@ -30,6 +30,18 @@ Deployments using the `multi-site` or `clusterless` features continue to store l
 The previous in-memory behavior is available as `login-failures:v1` but is deprecated.
 For details, see the link:{upgradingguide_link}[{upgradingguide_name}].
 
+== First-class CLI options for cluster and node name
+// https://github.com/keycloak/keycloak/issues/44605
+
+The embedded cache cluster name and node name can now be configured with the new `--cache-embedded-cluster-name` and `--cache-embedded-node-name` CLI options, replacing the low-level SPI options that were previously required.
+
+By default, the node name is a random value generated on each start, making it difficult to correlate metrics, logs, and JGroups diagnostics across restarts.
+Setting a stable node name is especially useful for observability tools such as Grafana dashboards and log aggregation.
+
+When deploying with the {project_name} Operator, the node name is now automatically set to the Kubernetes pod name (for example, `keycloak-0`).
+For standalone deployments on Kubernetes, set `KC_CACHE_EMBEDDED_NODE_NAME` using the downward API to inject the pod name.
+For non-Kubernetes deployments, pass `--cache-embedded-node-name=<name>` with a value that uniquely identifies each node.
+
 == Automatic non-blocking index creation for large tables
 // https://github.com/keycloak/keycloak/issues/46555
 
