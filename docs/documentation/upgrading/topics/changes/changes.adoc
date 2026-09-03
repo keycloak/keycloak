@@ -1,17 +1,30 @@
 [[migration-changes]]
 == Migration Changes
 
+=== Migrating to 27.0.0
+
+==== Login theme moved to `keycloak.v3` and PatternFly 6
+
+The built-in login experience now has a new versioned theme, `keycloak.v3`, based on PatternFly 6.
+
+For new realms, `keycloak.v3` is now the default login theme.
+Existing realms that explicitly use `keycloak.v2` are migrated to `keycloak.v3` during upgrade.
+
+The built-in `keycloak.v2` login theme has been removed. If you maintain a custom login theme that extends or copies `keycloak.v2`, migrate it to PatternFly 6 before switching to `keycloak.v3`.
+
+To assist with migration, use the new script:
+
+[source,bash]
+----
+node misc/scripts/migrate-login-theme-pf5-to-pf6.mjs --theme-path /path/to/your/theme
+----
+
+Run the script in dry-run mode first, review the generated report, and then rerun with `--apply` when ready.
+After migration, validate your customizations manually for light and dark mode, social provider buttons, and custom CSS overrides.
+
 === Migrating to 26.8.0
 
 include::changes-26_8_0.adoc[leveloffset=2]
-
-=== Migrating to 26.7.3
-
-include::changes-26_7_3.adoc[leveloffset=2]
-
-=== Migrating to 26.7.2
-
-include::changes-26_7_2.adoc[leveloffset=2]
 
 === Migrating to 26.7.0
 

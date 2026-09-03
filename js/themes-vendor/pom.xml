@@ -106,6 +106,26 @@
                             </resources>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>copy-patternfly-v6</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/${dir.vendor}/patternfly-v6</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>node_modules/@patternfly-v6/patternfly</directory>
+                                    <includes>
+                                        <include>patternfly.min.css</include>
+                                        <include>patternfly-addons.css</include>
+                                        <include>assets/**</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>
