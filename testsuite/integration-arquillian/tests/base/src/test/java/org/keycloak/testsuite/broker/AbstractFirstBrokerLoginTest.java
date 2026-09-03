@@ -1318,7 +1318,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         // Confirm linking
         waitForPage(driver, "Confirm linking", false);
-        driver.findElement(org.openqa.selenium.By.linkText("» Click here to proceed")).click();
+        driver.findElement(By.cssSelector("a[href]")).click();
 
         // Should show success
         waitForPage(driver, "successfully confirmed linking", false);
