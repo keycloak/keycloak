@@ -37,8 +37,11 @@ import org.keycloak.models.cache.infinispan.CachedCount;
 import org.keycloak.models.cache.infinispan.CachedExists;
 import org.keycloak.models.cache.infinispan.RealmCacheSession;
 import org.keycloak.models.cache.infinispan.UserCacheSession;
+import org.keycloak.models.OrganizationDomainModel;
+import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.organization.InvitationManager;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.representations.idm.MembershipType;
 
 import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProviderStorageProvider.cacheKeyForLogin;
 import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProviderStorageProvider.cacheKeyIdpAlias;
@@ -404,6 +407,30 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
+    public boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider,
+                                       boolean autoMembership, MembershipType membershipType) {
+        boolean added = getDelegate().addIdentityProvider(organization, identityProvider, autoMembership, membershipType);
+        if (added) {
+            registerOrganizationInvalidation(organization);
+            registerIdentityProviderInvalidation(identityProvider);
+        }
+        return added;
+    }
+
+    @Override
+    public OrganizationIdentityProviderLinkModel getIdentityProviderLink(OrganizationModel organization, IdentityProviderModel identityProvider) {
+        return getDelegate().getIdentityProviderLink(organization, identityProvider);
+    }
+
+    @Override
+    public void updateIdentityProviderLink(OrganizationModel organization, IdentityProviderModel identityProvider,
+                                           boolean autoMembership, MembershipType membershipType) {
+        getDelegate().updateIdentityProviderLink(organization, identityProvider, autoMembership, membershipType);
+        registerOrganizationInvalidation(organization);
+        registerIdentityProviderInvalidation(identityProvider);
+    }
+
+    @Override
     public Stream<IdentityProviderModel> getIdentityProviders(OrganizationModel organization) {
         return getDelegate().getIdentityProviders(organization);
     }
@@ -414,6 +441,49 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         if (removed) {
             registerOrganizationInvalidation(organization);
             registerIdentityProviderInvalidation(identityProvider);
+        }
+        return removed;
+    }
+
+    @Override
+    public OrganizationDomainModel createDomain(String name, boolean verified, String identityProviderAlias, boolean autoRedirect) {
+        return getDelegate().createDomain(name, verified, identityProviderAlias, autoRedirect);
+    }
+
+    @Override
+    public OrganizationDomainModel getDomainByName(String name) {
+        return getDelegate().getDomainByName(name);
+    }
+
+    @Override
+    public Stream<OrganizationDomainModel> getDomains(String search, Integer first, Integer max) {
+        return getDelegate().getDomains(search, first, max);
+    }
+
+    @Override
+    public void updateDomain(String name, boolean verified, String identityProviderAlias, boolean autoRedirect) {
+        getDelegate().updateDomain(name, verified, identityProviderAlias, autoRedirect);
+    }
+
+    @Override
+    public boolean removeDomain(String name) {
+        return getDelegate().removeDomain(name);
+    }
+
+    @Override
+    public boolean addDomainToOrganization(OrganizationModel organization, String domainName) {
+        boolean added = getDelegate().addDomainToOrganization(organization, domainName);
+        if (added) {
+            registerOrganizationInvalidation(organization);
+        }
+        return added;
+    }
+
+    @Override
+    public boolean removeDomainFromOrganization(OrganizationModel organization, String domainName) {
+        boolean removed = getDelegate().removeDomainFromOrganization(organization, domainName);
+        if (removed) {
+            registerOrganizationInvalidation(organization);
         }
         return removed;
     }

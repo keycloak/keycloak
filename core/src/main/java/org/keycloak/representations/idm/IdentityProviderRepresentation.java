@@ -64,6 +64,8 @@ public class IdentityProviderRepresentation {
     protected String firstBrokerLoginFlowAlias;
     protected String postBrokerLoginFlowAlias;
     protected Set<String> organizationIds;
+    protected Boolean autoMembership;
+    protected String orgMembershipType;
     protected Map<String, String> config = new HashMap<>();
     protected List<String> types; // Null by default for the compatibility with older versions of Keycloak server (26.4 and older)
 
@@ -231,6 +233,22 @@ public class IdentityProviderRepresentation {
         } else {
             this.organizationIds = null;
         }
+    }
+
+    public Boolean getAutoMembership() {
+        return autoMembership;
+    }
+
+    public void setAutoMembership(Boolean autoMembership) {
+        this.autoMembership = autoMembership;
+    }
+
+    public String getOrgMembershipType() {
+        return orgMembershipType;
+    }
+
+    public void setOrgMembershipType(String orgMembershipType) {
+        this.orgMembershipType = orgMembershipType;
     }
 
     public List<String> getTypes() {

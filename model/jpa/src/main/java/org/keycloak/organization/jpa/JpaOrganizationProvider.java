@@ -48,6 +48,7 @@ import org.keycloak.models.MembershipMetadata;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelValidationException;
+import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
@@ -55,6 +56,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.entities.GroupAttributeEntity;
 import org.keycloak.models.jpa.entities.GroupEntity;
+import org.keycloak.models.jpa.entities.IdentityProviderEntity;
 import org.keycloak.models.jpa.entities.OrganizationDomainEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
 import org.keycloak.models.jpa.entities.OrganizationIdentityProviderEntity;
@@ -944,6 +946,175 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         query.setParameter("realmId", getRealm().getId());
 
         return query.getSingleResult();
+    }
+
+    @Override
+    public OrganizationDomainModel createDomain(String name, boolean verified, String identityProviderAlias, boolean autoRedirect) {
+        validateDomain(name);
+        String normalizedName = name.trim().toLowerCase();
+        RealmModel realm = getRealm();
+
+        try {
+            em.createNamedQuery("getDomainByRealmAndName", OrganizationDomainEntity.class)
+                    .setParameter("realmId", realm.getId())
+                    .setParameter("name", normalizedName)
+                    .getSingleResult();
+            throw new ModelDuplicateException("A domain with name '" + normalizedName + "' already exists in the realm");
+        } catch (NoResultException expected) {
+        }
+
+        OrganizationDomainEntity entity = new OrganizationDomainEntity();
+        entity.setId(KeycloakModelUtils.generateId());
+        entity.setName(normalizedName);
+        entity.setVerified(verified);
+        entity.setRealmId(realm.getId());
+        entity.setIdentityProvider(resolveRealmIdentityProvider(identityProviderAlias));
+        entity.setAutoRedirect(autoRedirect);
+        em.persist(entity);
+
+        return toModel(entity);
+    }
+
+    @Override
+    public OrganizationDomainModel getDomainByName(String name) {
+        if (StringUtil.isBlank(name)) return null;
+        try {
+            OrganizationDomainEntity entity = em.createNamedQuery("getDomainByRealmAndName", OrganizationDomainEntity.class)
+                    .setParameter("realmId", getRealm().getId())
+                    .setParameter("name", name.trim().toLowerCase())
+                    .getSingleResult();
+            return toModel(entity);
+        } catch (NoResultException e) {
+            return null;
+        }
+    }
+
+    @Override
+    public Stream<OrganizationDomainModel> getDomains(String search, Integer first, Integer max) {
+        String realmId = getRealm().getId();
+        TypedQuery<OrganizationDomainEntity> query;
+
+        if (StringUtil.isNotBlank(search)) {
+            query = em.createNamedQuery("searchDomainsByRealm", OrganizationDomainEntity.class)
+                    .setParameter("realmId", realmId)
+                    .setParameter("search", "%" + search.trim().toLowerCase() + "%");
+        } else {
+            query = em.createNamedQuery("getAllDomainsByRealm", OrganizationDomainEntity.class)
+                    .setParameter("realmId", realmId);
+        }
+
+        return closing(paginateQuery(query, first, max).getResultStream().map(this::toModel));
+    }
+
+    @Override
+    public void updateDomain(String name, boolean verified, String identityProviderAlias, boolean autoRedirect) {
+        if (StringUtil.isBlank(name)) {
+            throw new ModelValidationException("Domain name cannot be empty");
+        }
+
+        OrganizationDomainEntity entity;
+        try {
+            entity = em.createNamedQuery("getDomainByRealmAndName", OrganizationDomainEntity.class)
+                    .setParameter("realmId", getRealm().getId())
+                    .setParameter("name", name.trim().toLowerCase())
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            throw new ModelException("Domain '" + name + "' does not exist in the realm");
+        }
+
+        entity.setVerified(verified);
+        entity.setIdentityProvider(resolveRealmIdentityProvider(identityProviderAlias));
+        entity.setAutoRedirect(autoRedirect);
+    }
+
+    @Override
+    public boolean removeDomain(String name) {
+        if (StringUtil.isBlank(name)) return false;
+
+        OrganizationDomainEntity entity;
+        try {
+            entity = em.createNamedQuery("getDomainByRealmAndName", OrganizationDomainEntity.class)
+                    .setParameter("realmId", getRealm().getId())
+                    .setParameter("name", name.trim().toLowerCase())
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            return false;
+        }
+
+        long claimCount = em.createNamedQuery("countOrgClaimsForDomain", Long.class)
+                .setParameter("domainId", entity.getId())
+                .getSingleResult();
+
+        if (claimCount > 0) {
+            throw new ModelException("Domain '" + name + "' is still claimed by " + claimCount + " organization(s)");
+        }
+
+        entity.setIdentityProvider(null);
+        em.remove(entity);
+        return true;
+    }
+
+    @Override
+    public boolean addDomainToOrganization(OrganizationModel organization, String domainName) {
+        throwExceptionIfObjectIsNull(organization, "organization");
+        if (StringUtil.isBlank(domainName)) {
+            throw new ModelValidationException("Domain name cannot be empty");
+        }
+
+        String normalizedName = domainName.trim().toLowerCase();
+        OrganizationDomainEntity domainEntity;
+        try {
+            domainEntity = em.createNamedQuery("getDomainByRealmAndName", OrganizationDomainEntity.class)
+                    .setParameter("realmId", getRealm().getId())
+                    .setParameter("name", normalizedName)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            throw new ModelException("Domain '" + normalizedName + "' does not exist in the realm");
+        }
+
+        OrganizationEntity orgEntity = getEntity(organization.getId());
+        if (orgEntity.getDomains().contains(domainEntity)) {
+            return false;
+        }
+
+        orgEntity.addDomain(domainEntity);
+        return true;
+    }
+
+    @Override
+    public boolean removeDomainFromOrganization(OrganizationModel organization, String domainName) {
+        throwExceptionIfObjectIsNull(organization, "organization");
+        if (StringUtil.isBlank(domainName)) return false;
+
+        String normalizedName = domainName.trim().toLowerCase();
+        OrganizationEntity orgEntity = getEntity(organization.getId());
+
+        OrganizationDomainEntity toRemove = orgEntity.getDomains().stream()
+                .filter(d -> normalizedName.equals(d.getName()))
+                .findFirst()
+                .orElse(null);
+
+        if (toRemove == null) {
+            return false;
+        }
+
+        orgEntity.removeDomain(toRemove);
+        return true;
+    }
+
+    private IdentityProviderEntity resolveRealmIdentityProvider(String alias) {
+        if (alias == null) return null;
+        IdentityProviderModel idpModel = session.identityProviders().getByAlias(alias);
+        if (idpModel == null) {
+            throw new ModelValidationException("Identity provider with alias '" + alias + "' does not exist in the realm");
+        }
+        return em.getReference(IdentityProviderEntity.class, idpModel.getInternalId());
+    }
+
+    private OrganizationDomainModel toModel(OrganizationDomainEntity entity) {
+        IdentityProviderEntity idp = entity.getIdentityProvider();
+        String alias = idp != null ? idp.getAlias() : null;
+        return new OrganizationDomainModel(entity.getName(), entity.isVerified(), alias, entity.isAutoRedirect());
     }
 
     @Override

@@ -191,22 +191,16 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
                 .map(this::validateDomain)
                 .collect(Collectors.toMap(OrganizationDomainModel::getName, Function.identity()));
 
+        // unclaim domains removed from the set (only remove ORG_DOMAIN link, keep DOMAIN row)
         for (OrganizationDomainEntity domainEntity : new HashSet<>(this.entity.getDomains())) {
-            if (modelMap.containsKey(domainEntity.getName())) {
-                OrganizationDomainModel model = modelMap.get(domainEntity.getName());
-                domainEntity.setVerified(model.isVerified());
-                domainEntity.setIdentityProvider(resolveIdentityProvider(em, model.getIdentityProviderAlias()));
-                domainEntity.setAutoRedirect(model.isAutoRedirect());
-                modelMap.remove(domainEntity.getName());
-            } else {
+            if (!modelMap.containsKey(domainEntity.getName())) {
                 this.entity.removeDomain(domainEntity);
-                domainEntity.setIdentityProvider(null);
-                // TODO: when separate domain management allows M:N sharing, only remove the join row
-                //  and rely on orphan cleanup instead of deleting the DOMAIN row outright
-                em.remove(domainEntity);
+            } else {
+                modelMap.remove(domainEntity.getName());
             }
         }
 
+        // claim-or-create: for new domains in the set
         for (OrganizationDomainModel model : modelMap.values()) {
             OrganizationDomainEntity domainEntity;
             try {
@@ -214,16 +208,17 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
                         .setParameter("realmId", realm.getId())
                         .setParameter("name", model.getName())
                         .getSingleResult();
-                domainEntity.setVerified(model.isVerified());
+                // domain already exists — just claim it, do not overwrite global properties
             } catch (jakarta.persistence.NoResultException e) {
+                // domain doesn't exist — create it with provided properties
                 domainEntity = new OrganizationDomainEntity();
                 domainEntity.setId(KeycloakModelUtils.generateId());
                 domainEntity.setName(model.getName());
                 domainEntity.setVerified(model.isVerified());
                 domainEntity.setRealmId(realm.getId());
+                domainEntity.setIdentityProvider(resolveIdentityProvider(em, model.getIdentityProviderAlias()));
+                domainEntity.setAutoRedirect(model.isAutoRedirect());
             }
-            domainEntity.setIdentityProvider(resolveIdentityProvider(em, model.getIdentityProviderAlias()));
-            domainEntity.setAutoRedirect(model.isAutoRedirect());
             this.entity.addDomain(domainEntity);
         }
     }

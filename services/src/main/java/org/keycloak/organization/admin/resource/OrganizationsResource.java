@@ -232,6 +232,12 @@ public class OrganizationsResource {
         return provider.count(search, exact);
     }
 
+    @Path("domains")
+    public OrganizationDomainsResource domains() {
+        Organizations.checkEnabled(provider, auth);
+        return new OrganizationDomainsResource(session, auth);
+    }
+
     @Path("members/{member-id}/organizations")
     @GET
     @Produces(MediaType.APPLICATION_JSON)

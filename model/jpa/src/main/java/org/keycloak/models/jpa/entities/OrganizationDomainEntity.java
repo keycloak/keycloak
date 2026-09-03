@@ -38,6 +38,9 @@ import jakarta.persistence.Table;
 @Table(name="DOMAIN")
 @NamedQueries({
         @NamedQuery(name = "getDomainByRealmAndName", query = "select d from OrganizationDomainEntity d where d.realmId = :realmId and d.name = :name"),
+        @NamedQuery(name = "getAllDomainsByRealm", query = "select d from OrganizationDomainEntity d where d.realmId = :realmId order by d.name"),
+        @NamedQuery(name = "searchDomainsByRealm", query = "select d from OrganizationDomainEntity d where d.realmId = :realmId and d.name like :search order by d.name"),
+        @NamedQuery(name = "countOrgClaimsForDomain", query = "select count(o) from OrganizationEntity o join o.domains d where d.id = :domainId"),
         @NamedQuery(name = "deleteOrganizationDomainsByRealm", query = "delete from OrganizationDomainEntity d where d.realmId = :realmId")
 })
 public class OrganizationDomainEntity {
