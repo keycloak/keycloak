@@ -250,6 +250,26 @@ async function clickSwitchElement(
   }
 }
 
+async function clickSwitchElement(switchElement: Locator) {
+  await expect(switchElement).toBeVisible();
+  await expect(switchElement).toBeEnabled();
+
+  const switchId = await switchElement.getAttribute("id");
+  const label = switchId
+    ? switchElement.page().locator(`label[for="${switchId}"]`).first()
+    : undefined;
+
+  try {
+    await switchElement.click({ timeout: 3_000 });
+  } catch {
+    if (label && (await label.count()) > 0) {
+      await label.click({ force: true, timeout: 3_000 });
+    } else {
+      await switchElement.click({ force: true, timeout: 3_000 });
+    }
+  }
+}
+
 async function setSwitchState(switchElement: Locator, checked: boolean) {
   const debugEvents: string[] = [];
   const targetState = checked ? "checked" : "unchecked";
@@ -359,6 +379,7 @@ async function setSwitchState(switchElement: Locator, checked: boolean) {
     ...debugEvents,
     `failed to set state to ${targetState} after 3 attempts`,
   ]);
+  await clickSwitchElement(switchElement);
   if (checked) {
     await expect(switchElement).toBeChecked();
   } else {
