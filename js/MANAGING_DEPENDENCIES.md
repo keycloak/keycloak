@@ -17,7 +17,7 @@ There are a number of ways a third-party dependency may be declared:
 * `js/<project>/package.json` - Each individual project can declare its own dependencies
 * Transitive dependencies - Any explicitly declared dependency can include transitive dependencies
 
-Use `pnpm ls --depth 100 <dependency>[@version]` to identify why a third-party dependency is included. For example `pnpm ls --depth 100 react-router@6.30.4`.
+Use `pnpm ls -r --depth 100 <dependency>[@version]` to identify why a third-party dependency is included. For example `pnpm ls -r --depth 100 react-router@6.30.4`.
 
 ## Updating dependencies
 
