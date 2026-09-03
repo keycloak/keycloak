@@ -421,7 +421,10 @@ export function KeycloakDataTable<T>({
   const [selected, setSelected] = useState<T[]>([]);
   const [rows, setRows] = useState<(Row<T> | SubRow<T>)[]>();
   const [unPaginatedData, setUnPaginatedData] = useState<T[]>();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
+
+  const fetchGeneration = useRef(0);
 
   const [defaultPageSize, setDefaultPageSize] = useStoredState(
     localStorage,
@@ -532,6 +535,7 @@ export function KeycloakDataTable<T>({
 
   useFetch(
     async () => {
+      const generation = ++fetchGeneration.current;
       setLoading(true);
       const loaderFn =
         typeof loader === "function"
@@ -542,12 +546,15 @@ export function KeycloakDataTable<T>({
       try {
         return await loaderFn(first, max + 1, search);
       } catch (error) {
-        setLoading(false);
+        if (generation === fetchGeneration.current) {
+          setLoading(false);
+        }
         throw error;
       }
     },
     (data) => {
       prevKey.current = key;
+      setHasLoaded(true);
       if (!isPaginated) {
         setUnPaginatedData(data);
         if (data.length > first) {
@@ -573,20 +580,6 @@ export function KeycloakDataTable<T>({
         : undefined,
     ],
   );
-
-  useEffect(() => {
-    return () => setLoading(false);
-  }, [
-    key,
-    first,
-    max,
-    search,
-    typeof loader !== "function"
-      ? "signal" in loader
-        ? loader.signal
-        : loader
-      : undefined,
-  ]);
 
   const convertAction = () =>
     actions &&
@@ -654,7 +647,7 @@ export function KeycloakDataTable<T>({
           <LoadingOverlay
             isLoading={loading}
             skeleton={<TableLoadingSkeleton rows={Math.min(maxRows, 5)} />}
-            data-testid={!loading ? "table-ready" : undefined}
+            data-testid={hasLoaded && !loading ? "table-ready" : undefined}
           >
             {!noData && (
               <DataTable
@@ -700,7 +693,7 @@ export function KeycloakDataTable<T>({
         </PaginatingTableToolbar>
       )}
       {loading && noData && !searching && <KeycloakSpinner />}
-      {!loading && noData && !searching && (
+      {hasLoaded && !loading && noData && !searching && (
         <div data-testid="table-ready">{emptyState}</div>
       )}
     </>
