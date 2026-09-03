@@ -75,10 +75,10 @@ public class DatabaseIndexCheckerTest {
 
         var schema = factory.getSchema();
 
-        createInvalidIndex(factory, INDEX_NAME, schema);
         boolean recreated = false;
 
         try {
+            createInvalidIndex(factory, INDEX_NAME, schema);
             var detectOnly = new DatabaseIndexChecker(factory::getConnection, session.getKeycloakSessionFactory(), schema, false, 0);
             assertThat(detectOnly.getMissingIndexesName(), hasItem(INDEX_NAME));
 
@@ -212,8 +212,9 @@ public class DatabaseIndexCheckerTest {
     private static void createInvalidIndex(JpaConnectionProviderFactory factory, String indexName, String schema) {
         String indexId = indexName.toLowerCase();
         String tableId = TABLE_NAME.toLowerCase();
-        String qualifiedTable = schema != null ? schema + "." + tableId : tableId;
-        String qualifiedIndex = schema != null ? schema + "." + indexId : indexId;
+        String schemaPrefix = schema != null ? "\"" + schema.replace("\"", "\"\"") + "\"." : "";
+        String qualifiedTable = schemaPrefix + "\"" + tableId.replace("\"", "\"\"") + "\"";
+        String qualifiedIndex = schemaPrefix + "\"" + indexId.replace("\"", "\"\"") + "\"";
 
         String columns = "user_session_id, offline_flag, user_id, realm_id, created_on, last_session_refresh, version, session_bucket, last_session_refresh_coarse";
         String values = "'%s', '0', '__test', '__test', 0, 0, 0, 0, 0";
@@ -234,7 +235,9 @@ public class DatabaseIndexCheckerTest {
                 stmt.executeUpdate(String.format("CREATE UNIQUE INDEX CONCURRENTLY %s ON %s (realm_id)", qualifiedIndex, qualifiedTable));
             }
         } catch (SQLException e) {
-            // Expected: unique violation leaves an invalid index
+            if (!"23505".equals(e.getSQLState())) {
+                throw new RuntimeException("Failed to create invalid index " + indexName, e);
+            }
         }
 
         try (Connection connection = factory.getConnection();
