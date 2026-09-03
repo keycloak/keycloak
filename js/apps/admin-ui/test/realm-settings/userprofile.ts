@@ -57,12 +57,9 @@ export async function switchOffIfOn(page: Page, selector: string) {
 
 export async function clickCreateUser(page: Page) {
   await waitForLoadingComplete(page);
-  await expect(
-    page
-      .getByTestId("table-ready")
-      .or(page.getByTestId("empty-state"))
-      .or(page.getByTestId("add-user")),
-  ).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("table-ready")).toBeVisible({
+    timeout: 15_000,
+  });
 
   const emptyAction = page.locator('[data-testid$="-empty-action"]');
   const addUser = page.getByTestId("add-user");

@@ -520,7 +520,12 @@ export function KeycloakDataTable<T>({
           : "loader" in loader
             ? loader.loader
             : async () => loader;
-      return await loaderFn(first, max + 1, search);
+      try {
+        return await loaderFn(first, max + 1, search);
+      } catch (error) {
+        setLoading(false);
+        throw error;
+      }
     },
     (data) => {
       prevKey.current = key;
@@ -549,6 +554,20 @@ export function KeycloakDataTable<T>({
         : undefined,
     ],
   );
+
+  useEffect(() => {
+    return () => setLoading(false);
+  }, [
+    key,
+    first,
+    max,
+    search,
+    typeof loader !== "function"
+      ? "signal" in loader
+        ? loader.signal
+        : loader
+      : undefined,
+  ]);
 
   const convertAction = () =>
     actions &&
