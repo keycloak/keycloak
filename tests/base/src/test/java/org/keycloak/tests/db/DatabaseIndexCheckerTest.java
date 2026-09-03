@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
@@ -209,6 +210,8 @@ public class DatabaseIndexCheckerTest {
         }
     }
 
+    // Runs outside the @TestOnServer thread to avoid JTA enlistment — uncommitted
+    // drop/inserts would deadlock with CREATE INDEX CONCURRENTLY waiting on join().
     private static void createInvalidIndex(JpaConnectionProviderFactory factory, String indexName, String schema) {
         String indexId = indexName.toLowerCase();
         String tableId = TABLE_NAME.toLowerCase();
@@ -219,32 +222,43 @@ public class DatabaseIndexCheckerTest {
         String columns = "user_session_id, offline_flag, user_id, realm_id, created_on, last_session_refresh, version, session_bucket, last_session_refresh_coarse";
         String values = "'%s', '0', '__test', '__test', 0, 0, 0, 0, 0";
 
-        dropIndex(factory, indexName);
+        var failure = new AtomicReference<RuntimeException>();
+        Thread thread = new Thread(() -> {
+            try {
+                dropIndex(factory, indexName);
 
-        try (Connection connection = factory.getConnection();
-             Statement stmt = connection.createStatement()) {
-            stmt.executeUpdate(String.format("INSERT INTO %s (%s) VALUES (%s)", qualifiedTable, columns, String.format(values, "__test_invalid_idx_1")));
-            stmt.executeUpdate(String.format("INSERT INTO %s (%s) VALUES (%s)", qualifiedTable, columns, String.format(values, "__test_invalid_idx_2")));
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to insert test rows", e);
-        }
+                try (Connection connection = factory.getConnection()) {
+                    connection.setAutoCommit(true);
+                    try (Statement stmt = connection.createStatement()) {
+                        stmt.executeUpdate(String.format("INSERT INTO %s (%s) VALUES (%s)", qualifiedTable, columns, String.format(values, "__test_invalid_idx_1")));
+                        stmt.executeUpdate(String.format("INSERT INTO %s (%s) VALUES (%s)", qualifiedTable, columns, String.format(values, "__test_invalid_idx_2")));
 
-        try (Connection connection = factory.getConnection()) {
-            connection.setAutoCommit(true);
-            try (Statement stmt = connection.createStatement()) {
-                stmt.executeUpdate(String.format("CREATE UNIQUE INDEX CONCURRENTLY %s ON %s (realm_id)", qualifiedIndex, qualifiedTable));
+                        try {
+                            stmt.executeUpdate(String.format("CREATE UNIQUE INDEX CONCURRENTLY %s ON %s (realm_id)", qualifiedIndex, qualifiedTable));
+                        } catch (SQLException e) {
+                            if (!"23505".equals(e.getSQLState())) {
+                                throw e;
+                            }
+                        }
+
+                        stmt.executeUpdate(String.format("DELETE FROM %s WHERE user_session_id IN ('__test_invalid_idx_1', '__test_invalid_idx_2')", qualifiedTable));
+                    }
+                }
+            } catch (SQLException e) {
+                failure.set(new RuntimeException("Failed to create invalid index " + indexName, e));
+            } catch (RuntimeException e) {
+                failure.set(e);
             }
-        } catch (SQLException e) {
-            if (!"23505".equals(e.getSQLState())) {
-                throw new RuntimeException("Failed to create invalid index " + indexName, e);
-            }
+        });
+        thread.start();
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
         }
-
-        try (Connection connection = factory.getConnection();
-             Statement stmt = connection.createStatement()) {
-            stmt.executeUpdate(String.format("DELETE FROM %s WHERE user_session_id LIKE '__test_invalid_idx_%%'", qualifiedTable));
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to clean up test rows", e);
+        if (failure.get() != null) {
+            throw failure.get();
         }
     }
 
