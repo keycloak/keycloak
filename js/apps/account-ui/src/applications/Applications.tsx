@@ -29,7 +29,11 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { AccountEnvironment } from "..";
-import { deleteConsent, getApplications } from "../api/methods";
+import {
+  deleteApplicationSessions,
+  deleteConsent,
+  getApplications,
+} from "../api/methods";
 import { ClientRepresentation } from "../api/representations";
 import { Page } from "../components/page/Page";
 import type { TFuncKey } from "../i18n-type";
@@ -84,6 +88,16 @@ export const Applications = () => {
     }
   };
 
+  const endApplicationSession = async (id: string, name: string) => {
+    try {
+      await deleteApplicationSessions(context, id);
+      refresh();
+      addAlert(t("endApplicationSessionSuccess", { name }));
+    } catch (error) {
+      addError("endApplicationSessionError", error);
+    }
+  };
+
   if (!applications) {
     return <Spinner />;
   }
@@ -125,6 +139,11 @@ export const Applications = () => {
                 >
                   <strong>{t("status")}</strong>
                 </DataListCell>,
+                <DataListCell
+                  key="applications-list-action-header"
+                  width={2}
+                  className="pf-v5-u-pt-md"
+                />,
               ]}
             />
           </DataListItemRow>
@@ -180,7 +199,37 @@ export const Applications = () => {
                     {application.offlineAccess ? ", " + t("offlineAccess") : ""}
                   </DataListCell>,
                   <DataListCell width={2} key={`status${application.clientId}`}>
-                    {application.inUse ? t("inUse") : t("notInUse")}
+                    {application.inUse || application.offlineAccess
+                      ? t("inUse")
+                      : t("notInUse")}
+                  </DataListCell>,
+                  <DataListCell width={2} key={`action${application.clientId}`}>
+                    {(application.inUse || application.offlineAccess) &&
+                      application.clientId !== context.environment.clientId && (
+                        <ContinueCancelModal
+                          buttonTitle={t("endApplicationSession")}
+                          modalTitle={t("endApplicationSession")}
+                          continueLabel={t("confirm")}
+                          cancelLabel={t("cancel")}
+                          buttonVariant="secondary"
+                          onContinue={() =>
+                            endApplicationSession(
+                              application.clientId,
+                              label(
+                                t,
+                                application.clientName || application.clientId,
+                              ),
+                            )
+                          }
+                        >
+                          {t("endApplicationSessionMessage", {
+                            name: label(
+                              t,
+                              application.clientName || application.clientId,
+                            ),
+                          })}
+                        </ContinueCancelModal>
+                      )}
                   </DataListCell>,
                 ]}
               />
