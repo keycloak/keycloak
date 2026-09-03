@@ -119,7 +119,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         }
         CredentialIssuer issuer = getIssuerMetadata();
         // Keep Date explicit for RFC7231 compliance and conformance-suite header validation.
-        keycloakSession.getContext().getHttpResponse().setHeader("Date", DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)));
+        keycloakSession.getContext().getHttpResponse().setHeader(HttpHeaders.DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)));
         return getMetadataResponse(issuer, keycloakSession);
     }
 

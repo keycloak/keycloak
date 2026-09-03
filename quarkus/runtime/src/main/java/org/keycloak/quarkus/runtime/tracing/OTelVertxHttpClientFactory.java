@@ -1,11 +1,14 @@
 package org.keycloak.quarkus.runtime.tracing;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.config.TracingOptions;
 import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.httpclient.VertxHttpClientFactory;
 import org.keycloak.tracing.TracingProvider;
@@ -29,6 +32,11 @@ public class OTelVertxHttpClientFactory extends VertxHttpClientFactory {
     }
 
     @Override
+    public void init(Config.Scope config) {
+        super.init(Config.scope("connectionsHttpClient", VertxHttpClientFactory.PROVIDER_ID));
+    }
+
+    @Override
     public int order() {
         return 110;
     }
@@ -36,6 +44,11 @@ public class OTelVertxHttpClientFactory extends VertxHttpClientFactory {
     @Override
     public Set<Class<? extends Provider>> dependsOn() {
         return Set.of(TracingProvider.class);
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return Collections.emptyList();
     }
 
     @Override
