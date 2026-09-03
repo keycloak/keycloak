@@ -424,6 +424,7 @@ SET GLOBAL binlog_format = 'ROW';
 
 Alternatively, update the MySQL or MariaDB configuration file (`my.cnf` / `my.ini`) to make the change persistent across database restarts.
 
+[#mariadb-galera-cluster-considerations]
 === MariaDB Galera Cluster
 
 WARNING: MariaDB Galera Cluster is not a supported database configuration for {project_name}. The guidance in this section is provided on a best-effort basis. Before reporting bugs, reproduce them with a supported database configuration first.
