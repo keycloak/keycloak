@@ -18,10 +18,8 @@ package org.keycloak.representations.idm;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
@@ -64,7 +62,7 @@ public class IdentityProviderRepresentation {
     protected Boolean hideOnLogin;
     protected String firstBrokerLoginFlowAlias;
     protected String postBrokerLoginFlowAlias;
-    protected Set<String> organizationIds;
+    protected List<OrganizationIdentityProviderLinkRepresentation> organizationLinks;
     protected Map<String, String> config = new HashMap<>();
     protected List<String> types; // Null by default for the compatibility with older versions of Keycloak server (26.4 and older)
 
@@ -212,27 +210,28 @@ public class IdentityProviderRepresentation {
         this.displayName = displayName;
     }
 
-    public Set<String> getOrganizationIds() {
-        return this.organizationIds;
+    public List<OrganizationIdentityProviderLinkRepresentation> getOrganizationLinks() {
+        return organizationLinks;
     }
 
-    public void setOrganizationIds(Set<String> organizationIds) {
-        this.organizationIds = organizationIds;
+    public void setOrganizationLinks(List<OrganizationIdentityProviderLinkRepresentation> organizationLinks) {
+        this.organizationLinks = organizationLinks;
     }
 
     @Deprecated
     @JsonIgnore
     public String getOrganizationId() {
-        return organizationIds != null && !organizationIds.isEmpty() ? organizationIds.iterator().next() : null;
+        if (organizationLinks == null || organizationLinks.isEmpty()) return null;
+        return organizationLinks.get(0).getOrganizationId();
     }
 
     @Deprecated
     @JsonSetter("organizationId")
     public void setOrganizationId(String organizationId) {
         if (organizationId != null) {
-            this.organizationIds = new LinkedHashSet<>(Collections.singleton(organizationId));
+            this.organizationLinks = Collections.singletonList(new OrganizationIdentityProviderLinkRepresentation(organizationId));
         } else {
-            this.organizationIds = null;
+            this.organizationLinks = null;
         }
     }
 
