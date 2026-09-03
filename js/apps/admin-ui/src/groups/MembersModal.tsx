@@ -12,12 +12,18 @@ import { emptyFormatter } from "../util";
 
 type MemberModalProps = {
   membersQuery: (first?: number, max?: number) => Promise<UserRepresentation[]>;
+  availableUsersQuery?: (
+    first?: number,
+    max?: number,
+    search?: string,
+  ) => Promise<UserRepresentation[]>;
   onAdd: (users: UserRepresentation[]) => Promise<void>;
   onClose: () => void;
   orgId?: string;
   titleKey?: string;
   confirmLabelKey?: string;
   filterEmptyEmail?: boolean;
+  canSelectUser?: (user: UserRepresentation) => boolean;
 };
 
 const UserDetail = (user: UserRepresentation) => {
@@ -36,12 +42,14 @@ const UserDetail = (user: UserRepresentation) => {
 
 export const MemberModal = ({
   membersQuery,
+  availableUsersQuery,
   onAdd,
   onClose,
   orgId,
   titleKey = "addMember",
   confirmLabelKey = "add",
   filterEmptyEmail = false,
+  canSelectUser = () => true,
 }: MemberModalProps) => {
   const { adminClient } = useAdminClient();
 
@@ -50,6 +58,12 @@ export const MemberModal = ({
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
 
   const loader = async (first?: number, max?: number, search?: string) => {
+    if (availableUsersQuery) {
+      return (await availableUsersQuery(first, max, search))
+        .filter(canSelectUser)
+        .slice(0, max);
+    }
+
     const members = await membersQuery(first, max);
     const params: { [name: string]: string | number } = {
       first: first!,
@@ -71,9 +85,9 @@ export const MemberModal = ({
     try {
       const users = await usersQuery(params);
       const filtered = differenceBy(users, members, "id");
-      return (
-        filterEmptyEmail ? filtered.filter((u) => u.email) : filtered
-      ).slice(0, max);
+      return (filterEmptyEmail ? filtered.filter((u) => u.email) : filtered)
+        .filter(canSelectUser)
+        .slice(0, max);
     } catch (error) {
       addError("noUsersFoundError", error);
       return [];

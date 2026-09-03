@@ -177,6 +177,15 @@ On both databases, the optimization is automatically disabled when using XA data
 
 You can opt out of this feature by setting `+--spi-connections-jpa--quarkus--async-commit=false+`
 
+=== Generic role type checks
+
+`RoleModel` now distinguishes realm, client and organization roles through `getType()` and the new `isType(RoleModel.Type)` convenience method.
+The existing `RoleModel#isClientRole()` method remains available for compatibility but is deprecated; new code should use `isType(RoleModel.Type.CLIENT)`.
+
+The `RoleUtils.isClientRole(RoleModel, ClientModel)` helper and `RoleModel.RoleNameChangeEvent#getClientId()` also remain available but are deprecated.
+For client role renames, `getClientId()` returns the public client ID; it returns `null` for realm role renames.
+`RoleNameChangeEvent` continues to represent realm and client role renames; organization role renames do not publish this legacy event.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

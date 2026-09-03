@@ -325,7 +325,7 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
 
                     if (role.isClientRole()) {
                         representation.addClientRole(ClientModel.class.cast(role.getContainer()).getClientId(),role.getName());
-                    } else {
+                    } else if (role.isType(RoleModel.Type.REALM)) {
                         representation.addRole(role.getName());
                     }
                 }

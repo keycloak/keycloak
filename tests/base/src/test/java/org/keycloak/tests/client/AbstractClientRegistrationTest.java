@@ -177,6 +177,7 @@ public abstract class AbstractClientRegistrationTest {
             realm.name(REALM_NAME)
                     .id(REALM_NAME)
                     .loginWithEmailAllowed(true)
+                    .organizationsEnabled(true)
                     .clients(ClientBuilder.create("myclient-test")
                     .publicClient(true)
                     .directAccessGrantsEnabled(true));

@@ -50,6 +50,7 @@ public final class Constants {
     public static final String[] BROKER_SERVICE_ROLES = {READ_TOKEN_ROLE};
     public static final String OFFLINE_ACCESS_ROLE = OAuth2Constants.OFFLINE_ACCESS;
     public static final String DEFAULT_ROLES_ROLE_PREFIX = "default-roles";
+    public static final String DEFAULT_ORGANIZATION_ROLES_ROLE_PREFIX = "default-roles-org";
 
     public static final String AUTHZ_UMA_PROTECTION = "uma_protection";
     public static final String AUTHZ_UMA_AUTHORIZATION = "uma_authorization";
