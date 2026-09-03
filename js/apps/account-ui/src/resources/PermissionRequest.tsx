@@ -1,13 +1,15 @@
 import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
-  Badge,
-  Button,
-  Chip,
-  Icon,
-  Modal,
-  ModalVariant,
-  Text,
-} from "@patternfly/react-core";
+	Label, Badge,
+	Button,
+	Icon,
+	Content,
+	Modal,
+	ModalBody,
+	ModalFooter,
+	ModalHeader,
+	ModalVariant,
+} from '@patternfly/react-core';
 import { UserCheckIcon } from "@patternfly/react-icons";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { useState } from "react";
@@ -62,23 +64,15 @@ export const PermissionRequest = ({
 
   return (
     <>
-      <Button variant="link" onClick={toggle}>
-        <Icon size="lg">
+      <Button icon={<Icon size="lg">
           <UserCheckIcon />
-        </Icon>
+        </Icon>} variant="link" onClick={toggle}>
+        
         <Badge>{resource.shareRequests?.length}</Badge>
       </Button>
-      <Modal
-        title={t("permissionRequest", { name: resource.name })}
-        variant={ModalVariant.large}
-        isOpen={open}
-        onClose={toggle}
-        actions={[
-          <Button key="close" variant="link" onClick={toggle}>
-            {t("close")}
-          </Button>,
-        ]}
-      >
+      <Modal variant={ModalVariant.large} isOpen={open} onClose={toggle}>
+        <ModalHeader title={t("permissionRequest", { name: resource.name })} />
+        <ModalBody>
         <Table aria-label={t("resources")}>
           <Thead>
             <Tr>
@@ -94,13 +88,13 @@ export const PermissionRequest = ({
                   {shareRequest.firstName} {shareRequest.lastName}{" "}
                   {shareRequest.lastName ? "" : shareRequest.username}
                   <br />
-                  <Text component="small">{shareRequest.email}</Text>
+                  <Content component="small">{shareRequest.email}</Content>
                 </Td>
                 <Td>
                   {shareRequest.scopes.map((scope) => (
-                    <Chip key={scope.toString()} isReadOnly>
+                    <Label variant="outline" key={scope.toString()} >
                       {scope as string}
-                    </Chip>
+                    </Label>
                   ))}
                 </Td>
                 <Td>
@@ -115,7 +109,7 @@ export const PermissionRequest = ({
                     onClick={async () => {
                       await approveDeny(shareRequest);
                     }}
-                    className="pf-v5-u-ml-sm"
+                    className="pf-v6-u-ml-sm"
                     variant="danger"
                   >
                     {t("deny")}
@@ -125,6 +119,12 @@ export const PermissionRequest = ({
             ))}
           </Tbody>
         </Table>
+        </ModalBody>
+        <ModalFooter>
+          <Button key="close" variant="link" onClick={toggle}>
+            {t("close")}
+          </Button>
+        </ModalFooter>
       </Modal>
     </>
   );
