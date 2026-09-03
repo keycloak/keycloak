@@ -139,7 +139,7 @@ type NavLinkProps = {
   isActive: boolean;
 };
 
-// Matches PatternFly's own "--pf-v5-global--breakpoint--xl" token, which is
+// Matches PatternFly's own "--pf-t--global--breakpoint--xl" token, which is
 // the width below which its Page component switches the sidebar from a
 // persistent panel to a slide-over that must be closed after navigating.
 const PAGE_SIDEBAR_OVERLAY_BREAKPOINT_PX = 1200;

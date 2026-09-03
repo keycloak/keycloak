@@ -3,7 +3,14 @@ import {
   TextControl,
   useEnvironment,
 } from "@keycloak/keycloak-ui-shared";
-import { Button, Form, Modal } from "@patternfly/react-core";
+import {
+	Button,
+	Form,
+	Modal,
+	ModalBody,
+	ModalFooter,
+	ModalHeader,
+} from '@patternfly/react-core';
 import { Fragment, useEffect } from "react";
 import { FormProvider, useFieldArray, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -56,23 +63,9 @@ export const EditTheResource = ({
   };
 
   return (
-    <Modal
-      title={t("editTheResource", { name: resource.name })}
-      variant="medium"
-      isOpen
-      onClose={onClose}
-      actions={[
-        <Button
-          key="confirm"
-          variant="primary"
-          id="done"
-          type="submit"
-          form="edit-form"
-        >
-          {t("done")}
-        </Button>,
-      ]}
-    >
+    <Modal variant="medium" isOpen onClose={onClose}>
+      <ModalHeader title={t("editTheResource", { name: resource.name })} />
+      <ModalBody>
       <Form id="edit-form" onSubmit={handleSubmit(editShares)}>
         <FormProvider {...form}>
           {fields.map((p, index) => (
@@ -97,6 +90,18 @@ export const EditTheResource = ({
           ))}
         </FormProvider>
       </Form>
+      </ModalBody>
+      <ModalFooter>
+        <Button
+          key="confirm"
+          variant="primary"
+          id="done"
+          type="submit"
+          form="edit-form"
+        >
+          {t("done")}
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };
