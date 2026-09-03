@@ -28,11 +28,9 @@ import java.util.Map;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper;
@@ -70,6 +68,7 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
     private SectorIdentifierRedirectUrisProvider sectorIdentifierRedirectUrisProvider;
 
     @BeforeEach
+    @Override
     public void before() throws Exception {
         super.before();
         oauth.getDriver().navigate().to(managedRealm.getBaseUrl());
@@ -104,7 +103,6 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
         audienceMapper.setConfig(config);
 
-        RealmResource realmResource = realmsResouce().realm(REALM_NAME);
         managedRealm.updateClientWithCleanup(clientId, c -> c.protocolMappers(audienceMapper));
 
         return response;
@@ -115,9 +113,6 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         OIDCClientRepresentation clientRep = createRep();
         clientRep.setSubjectType("pairwise");
         OIDCClientRepresentation pairwiseClient = reg.oidc().create(clientRep);
-
-        // No need to remove default sub mapper. As the pairwise sub mapper should be executed after the default one.
-        //removeDefaultBasicClientScope(pairwiseClient.getClientId());
 
         // Add audience mapper so the client can introspect its own tokens
         String clientId = pairwiseClient.getClientId();
@@ -186,12 +181,12 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         sectorRedirects.addAll(response.getRedirectUris());
         sectorIdentifierRedirectUrisProvider.setSectorIdentifierRedirectUris(sectorRedirects);
 
-        response.setSectorIdentifierUri(pairwiseSectorIdentifierUri());
+        response.setSectorIdentifierUri(sectorIdentifierRedirectUrisProvider.getUri());
 
         OIDCClientRepresentation updated = reg.oidc().update(response);
 
         Assertions.assertEquals("pairwise", updated.getSubjectType());
-        Assertions.assertEquals(pairwiseSectorIdentifierUri(), updated.getSectorIdentifierUri());
+        Assertions.assertEquals(sectorIdentifierRedirectUrisProvider.getUri(), updated.getSectorIdentifierUri());
 
     }
 
@@ -206,7 +201,7 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         sectorRedirects.addAll(response.getRedirectUris());
         sectorIdentifierRedirectUrisProvider.setSectorIdentifierRedirectUris(sectorRedirects);
 
-        String sectorIdentifierUri = pairwiseSectorIdentifierUri();
+        String sectorIdentifierUri = sectorIdentifierRedirectUrisProvider.getUri();
 
         // Add protocolMapper through admin REST endpoint
         String clientId = response.getClientId();
@@ -229,13 +224,12 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         // Push empty list to the sector identifier URI
         sectorIdentifierRedirectUrisProvider.setSectorIdentifierRedirectUris(new ArrayList<>());
 
-        String sectorIdentifierUri = pairwiseSectorIdentifierUri();
+        String sectorIdentifierUri = sectorIdentifierRedirectUrisProvider.getUri();
 
         // Add protocolMapper through admin REST endpoint
         String clientId = response.getClientId();
         ProtocolMapperRepresentation pairwiseProtMapper = SHA256PairwiseSubMapper.createPairwiseMapper(sectorIdentifierUri, null);
-        RealmResource realmResource = realmsResouce().realm("test");
-        ClientResource clientResource = AdminApiUtil.findClientByClientId(realmsResouce().realm("test"), clientId);
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), clientId);
         try (Response resp = clientResource.getProtocolMappers().createMapper(pairwiseProtMapper)) {
             Assertions.assertEquals(400, resp.getStatus());
         }
@@ -257,15 +251,15 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         sectorIdentifierRedirectUrisProvider.setSectorIdentifierRedirectUris(sectorRedirects);
 
         clientRep.setSubjectType("pairwise");
-        clientRep.setSectorIdentifierUri(pairwiseSectorIdentifierUri());
+        clientRep.setSectorIdentifierUri(sectorIdentifierRedirectUrisProvider.getUri());
 
         OIDCClientRepresentation response = reg.oidc().create(clientRep);
         Assertions.assertEquals("pairwise", response.getSubjectType());
-        Assertions.assertEquals(pairwiseSectorIdentifierUri(), response.getSectorIdentifierUri());
+        Assertions.assertEquals(sectorIdentifierRedirectUrisProvider.getUri(), response.getSectorIdentifierUri());
     }
 
     @Test
-    public void createPairwiseClientWithRedirectsToMultipleHostsWithoutSectorIdentifierURI() throws Exception {
+    public void createPairwiseClientWithRedirectsToMultipleHostsWithoutSectorIdentifierURI() {
         OIDCClientRepresentation clientRep = createRep();
 
         List<String> redirects = new ArrayList<>();
@@ -289,17 +283,17 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         sectorIdentifierRedirectUrisProvider.setSectorIdentifierRedirectUris(redirects);
 
         clientRep.setSubjectType("pairwise");
-        clientRep.setSectorIdentifierUri(pairwiseSectorIdentifierUri());
+        clientRep.setSectorIdentifierUri(sectorIdentifierRedirectUrisProvider.getUri());
         clientRep.setRedirectUris(redirects);
 
         OIDCClientRepresentation response = reg.oidc().create(clientRep);
         Assertions.assertEquals("pairwise", response.getSubjectType());
-        Assertions.assertEquals(pairwiseSectorIdentifierUri(), response.getSectorIdentifierUri());
+        Assertions.assertEquals(sectorIdentifierRedirectUrisProvider.getUri(), response.getSectorIdentifierUri());
         Assert.assertNames(response.getRedirectUris(), "http://redirect1", "http://redirect2");
     }
 
     @Test
-    public void createPairwiseClientWithSectorIdentifierURIContainingMismatchedRedirects() throws Exception {
+    public void createPairwiseClientWithSectorIdentifierURIContainingMismatchedRedirects() {
         OIDCClientRepresentation clientRep = createRep();
 
         // Push redirect uris to the sector identifier URI
@@ -308,13 +302,13 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         sectorIdentifierRedirectUrisProvider.setSectorIdentifierRedirectUris(sectorRedirects);
 
         clientRep.setSubjectType("pairwise");
-        clientRep.setSectorIdentifierUri(pairwiseSectorIdentifierUri());
+        clientRep.setSectorIdentifierUri(sectorIdentifierRedirectUrisProvider.getUri());
 
         assertCreateFail(clientRep, 400, "Client redirect URIs does not match redirect URIs fetched from the Sector Identifier URI.");
     }
 
     @Test
-    public void createPairwiseClientWithSectorIdentifierURIContainingMismatchedRedirectsPublicSubject() throws Exception {
+    public void createPairwiseClientWithSectorIdentifierURIContainingMismatchedRedirectsPublicSubject() {
         OIDCClientRepresentation clientRep = createRep();
 
         // Push redirect uris to the sector identifier URI
@@ -323,13 +317,13 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         sectorIdentifierRedirectUrisProvider.setSectorIdentifierRedirectUris(sectorRedirects);
 
         clientRep.setSubjectType("public");
-        clientRep.setSectorIdentifierUri(pairwiseSectorIdentifierUri());
+        clientRep.setSectorIdentifierUri(sectorIdentifierRedirectUrisProvider.getUri());
 
         assertCreateFail(clientRep, 400, "Client redirect URIs does not match redirect URIs fetched from the Sector Identifier URI.");
     }
 
     @Test
-    public void createPairwiseClientWithInvalidSectorIdentifierURI() throws Exception {
+    public void createPairwiseClientWithInvalidSectorIdentifierURI() {
         OIDCClientRepresentation clientRep = createRep();
         clientRep.setSubjectType("pairwise");
         clientRep.setSectorIdentifierUri("malformed");
@@ -337,7 +331,7 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
     }
 
     @Test
-    public void createPairwiseClientWithUnreachableSectorIdentifierURI() throws Exception {
+    public void createPairwiseClientWithUnreachableSectorIdentifierURI() {
         OIDCClientRepresentation clientRep = createRep();
         clientRep.setSubjectType("pairwise");
         clientRep.setSectorIdentifierUri("http://localhost/dummy");
@@ -359,7 +353,7 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         String tokenUserId = accessToken.getSubject();
 
         // Assert public client has same subject like userId
-        UserRepresentation user = realmsResouce().realm("test").users().search("test-user", 0, 1).get(0);
+        UserRepresentation user = managedRealm.admin().users().search("test-user", 0, 1).get(0);
         Assertions.assertEquals(user.getId(), tokenUserId);
 
         // Create pairwise client
@@ -511,27 +505,4 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         return new String(Base64.getUrlDecoder().decode(payloadBase64), StandardCharsets.UTF_8);
     }
 
-    private String pairwiseSectorIdentifierUri() {
-        return sectorIdentifierRedirectUrisProvider.getUri();
-    }
-
-    public void addDefaultBasicClientScope(String clientId) {
-        realmsResouce().realm(REALM_NAME).getDefaultDefaultClientScopes()
-                .stream()
-                .filter(scope-> scope.getName().equals(OIDCLoginProtocolFactory.BASIC_SCOPE))
-                .findFirst()
-                .ifPresent(scope-> {
-                    AdminApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), clientId).addDefaultClientScope(scope.getId());
-                });
-    }
-
-    public void removeDefaultBasicClientScope(String clientId) {
-        realmsResouce().realm(REALM_NAME).getDefaultDefaultClientScopes()
-                .stream()
-                .filter(scope-> scope.getName().equals(OIDCLoginProtocolFactory.BASIC_SCOPE))
-                .findFirst()
-                .ifPresent(scope-> {
-                    AdminApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), clientId).removeDefaultClientScope(scope.getId());
-                });
-    }
 }

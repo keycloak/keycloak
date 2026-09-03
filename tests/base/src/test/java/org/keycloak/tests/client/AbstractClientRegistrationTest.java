@@ -23,7 +23,6 @@ import java.util.List;
 import jakarta.ws.rs.NotFoundException;
 
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
@@ -39,7 +38,6 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -137,10 +135,6 @@ public abstract class AbstractClientRegistrationTest {
         return keycloakUrls.getBaseBuilder().path("/").build();
     }
 
-    protected RealmsResource realmsResouce() {
-        return adminClient.realms();
-    }
-
     protected String createUser(String realm, String username, String password, String... requiredActions) {
         UserRepresentation user = new UserRepresentation();
         user.setEnabled(true);
@@ -164,11 +158,7 @@ public abstract class AbstractClientRegistrationTest {
         public RealmBuilder configure(RealmBuilder realm) {
             realm.name(REALM_NAME)
                     .id(REALM_NAME)
-                    .loginWithEmailAllowed(true)
-                    .clients(ClientBuilder.create("myclient-test")
-                            .publicClient(true)
-                            .directAccessGrantsEnabled(true)
-                    );
+                    .loginWithEmailAllowed(true);
 
             UserBuilder manageClientUser = UserBuilder.create()
                     .username("manage-clients")
@@ -194,7 +184,7 @@ public abstract class AbstractClientRegistrationTest {
                     .emailVerified(true);
 
             UserBuilder appUser = UserBuilder.create()
-                    .username("test-user")
+                    .username("test-user") // TODO could be changed into a manageduser
                     .name("test", "user")
                     .password("password")
                     .email("test-user@localhost")

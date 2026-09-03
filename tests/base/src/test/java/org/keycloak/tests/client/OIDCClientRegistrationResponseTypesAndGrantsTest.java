@@ -66,6 +66,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 public class OIDCClientRegistrationResponseTypesAndGrantsTest extends AbstractClientRegistrationTest {
 
     @BeforeEach
+    @Override
     public void before() throws Exception {
         super.before();
 

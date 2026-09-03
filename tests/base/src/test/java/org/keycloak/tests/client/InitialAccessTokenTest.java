@@ -51,6 +51,7 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
     private ClientInitialAccessResource resource;
 
     @BeforeEach
+    @Override
     public void before() throws Exception {
         super.before();
 

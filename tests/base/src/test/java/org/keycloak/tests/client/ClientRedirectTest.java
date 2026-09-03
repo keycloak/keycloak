@@ -72,8 +72,8 @@ public class ClientRedirectTest extends AbstractClientRegistrationTest {
     @InjectSimpleHttp
     SimpleHttp simpleHttp;
 
-    @Override
     @BeforeEach
+    @Override
     public void before() {
         // This class does not use dynamic client registration from the base class.
     }

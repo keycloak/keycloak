@@ -49,6 +49,7 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
     private ClientRepresentation client;
 
     @BeforeEach
+    @Override
     public void before() throws Exception {
         super.before();
 

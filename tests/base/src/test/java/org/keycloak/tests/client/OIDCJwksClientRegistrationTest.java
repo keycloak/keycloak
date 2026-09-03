@@ -45,11 +45,9 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
-import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.JwksProvider;
 import org.keycloak.testframework.oauth.annotations.InjectJwksProvider;
-import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
@@ -78,14 +76,12 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
     @InjectTimeOffSet
     TimeOffSet timeOffSet;
 
-    @InjectRealm(ref="master", attachTo="master")
-    ManagedRealm managedMasterRealm;
-
     @InjectRunOnServer(ref = "master", realmRef = "master",
             permittedPackages = {"org.keycloak.tests", "org.keycloak.testsuite.util.runonserver"})
     RunOnServerClient runOnServerMaster;
 
     @BeforeEach
+    @Override
     public void before() throws Exception {
         super.before();
 

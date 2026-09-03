@@ -65,16 +65,17 @@ public class SAMLClientRegistrationTest extends AbstractClientRegistrationTest {
     ManagedClient oidcClient;
 
     @BeforeEach
+    @Override
     public void before() throws Exception {
         super.before();
 
-        ClientInitialAccessPresentation token = adminClient.realm(REALM_NAME).clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
+        ClientInitialAccessPresentation token = managedRealm.admin().clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
         reg.auth(Auth.token(token));
     }
 
     @Test
     public void createClient() throws ClientRegistrationException, IOException {
-        String entityDescriptor = IOUtils.toString(getClass().getResourceAsStream("/clientreg-test/saml-entity-descriptor.xml"), Charset.defaultCharset());
+        String entityDescriptor = IOUtils.toString(getClass().getResourceAsStream("/org/keycloak/tests/client/clientreg-test/saml-entity-descriptor.xml"), Charset.defaultCharset());
         assertClientCreation(entityDescriptor);
     }
 
@@ -92,7 +93,7 @@ public class SAMLClientRegistrationTest extends AbstractClientRegistrationTest {
         String accessToken = oauth.client("oidc-client", "secret").doClientCredentialsGrantAccessTokenRequest().getAccessToken();
         reg.auth(Auth.token(accessToken));
 
-        String entityDescriptor = IOUtils.toString(getClass().getResourceAsStream("/clientreg-test/saml-entity-descriptor.xml"), Charset.defaultCharset());
+        String entityDescriptor = IOUtils.toString(getClass().getResourceAsStream("/org/keycloak/tests/client/clientreg-test/saml-entity-descriptor.xml"), Charset.defaultCharset());
         assertClientCreation(entityDescriptor);
     }
 

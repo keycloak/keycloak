@@ -78,6 +78,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     private static final String ERR_MSG_CLIENT_REG_FAIL = "Failed to send request";
 
     @BeforeEach
+    @Override
     public void before() throws Exception {
         super.before();
 
