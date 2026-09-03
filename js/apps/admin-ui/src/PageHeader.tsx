@@ -23,7 +23,7 @@ const ManageAccountDropdownItem = () => {
   const { t } = useTranslation();
   const isFeatureDisabled = useIsFeatureDisabled();
 
-  if (isFeatureDisabled(Feature.AccountV3)) {
+  if (isFeatureDisabled(Feature.AccountV4)) {
     return null;
   }
 
